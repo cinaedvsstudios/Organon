@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organon System Manual</title>
+  <style>
+    /* ==========================================================
+       ORGANON SUB-PAGE STYLING DEFAULTS
+       ========================================================== */
+    :root {
+      --bg-nightsky: #181919;
+      --stone-ochre: #E0A360;
+      --stone-border: #896B49;
+      --water-blue: #4B84BF;
+      --heading-blue: #75B2DE;
+      --input-text-ivory: #F0EBCB;
+      --dark-stone-ink: #292A24;
+      
+      --font-headers: 'Cinzel', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-nightsky);
+      color: var(--input-text-ivory);
+      font-family: var(--font-body);
+      margin: 0;
+      padding: 24px;
+      line-height: 1.6;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-x: hidden;
+    }
+
+    /* Classical Headings */
+    h1, h2, h3 {
+      font-family: var(--font-headers);
+      color: var(--heading-blue);
+      margin-top: 0;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+    }
+
+    h1 {
+      font-size: 26px;
+      border-bottom: 2px solid var(--stone-border);
+      padding-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Sandstone light panels */
+    .sandstone-bar {
+      background-color: var(--stone-ochre);
+      border: 1px solid var(--stone-border);
+      border-radius: 4px;
+      padding: 15px 20px;
+      color: var(--dark-stone-ink);
+    }
+    .sandstone-bar h2 {
+      color: var(--dark-stone-ink);
+      font-size: 18px;
+      margin: 0 0 8px 0;
+      font-weight: 600;
+    }
+
+    /* Universal Dark Stone Bordering Rules */
+    .stone-panel {
+      border: 1px solid var(--stone-border);
+      background-color: rgba(41, 42, 36, 0.2);
+      border-radius: 6px;
+      padding: 24px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .stone-panel h3 {
+      color: var(--stone-ochre);
+      font-size: 16px;
+      border-bottom: 1px solid rgba(137, 107, 73, 0.3);
+      padding-bottom: 8px;
+      margin-bottom: 14px;
+    }
+
+    /* Code Block Formatting */
+    pre, code {
+      font-family: monospace;
+      font-size: 13px;
+      background-color: rgba(0, 0, 0, 0.4);
+      color: var(--heading-blue);
+      border-radius: 4px;
+    }
+    pre {
+      padding: 14px;
+      border: 1px solid rgba(137, 107, 73, 0.2);
+      overflow-x: auto;
+      margin: 12px 0;
+    }
+    code {
+      padding: 2px 6px;
+    }
+
+    /* Interactive 3D Button Style */
+    .aq-btn-pure-css {
+      background: linear-gradient(135deg, #242626 0%, #1c1d1d 100%);
+      color: var(--stone-ochre);
+      font-family: var(--font-body);
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid var(--stone-border);
+      border-bottom: 3px solid var(--stone-border);
+      padding: 10px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease-in-out;
+      outline: none;
+    }
+
+    .aq-btn-pure-css:hover {
+      color: var(--heading-blue);
+      border-color: var(--heading-blue);
+      border-bottom-color: var(--heading-blue);
+      box-shadow: 0 0 12px rgba(117, 178, 222, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .aq-btn-pure-css:active {
+      color: var(--water-blue);
+      border-bottom-width: 1px;
+      transform: translateY(1px);
+      box-shadow: none;
+    }
+
+    /* Table rules */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+    }
+    th, td {
+      border: 1px solid rgba(137, 107, 73, 0.3);
+      padding: 10px 12px;
+      font-size: 13px;
+      text-align: left;
+    }
+    th {
+      background-color: rgba(41, 42, 36, 0.4);
+      color: var(--stone-ochre);
+    }
+
+    /* List styling */
+    ul, ol {
+      margin: 0 0 16px 0;
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- sandstone header section -->
+  <div class="sandstone-bar">
+    <h2>🏛️ THE ORGANON PARADIGM</h2>
+    <p style="margin: 0; font-size: 13px;">
+      Welcome to the documentation repository. The Organon Hub is a Greek-themed modular platform carrying human logic. Below you will find specifications for visual guidelines, sync protocols, and developer handshake APIs.
+    </p>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr; gap: 24px;">
+    
+    <!-- SECTION 1: DEV HANDSHAKE -->
+    <div class="stone-panel">
+      <h3>1. CROSS-IFRAME POSTMESSAGE SPECIFICATION</h3>
+      <p>
+        Individual pages nested inside the Central Hub's iframe can easily transmit mouseover status messages back to the parent container's centered status board. This preserves interactive continuity throughout the user journey.
+      </p>
+      
+      <p>Register a message callback inside any sub-tool by pasting the following script:</p>
+      <pre><code>// Broadcast description text dynamically to the Organon status center
+function setHubStatus(text) {
+  window.parent.postMessage({ type: 'set-status', text: text }, '*');
+}
+
+// Clear current message and restore default "ORGANON ONLINE" fallback
+function clearHubStatus() {
+  window.parent.postMessage({ type: 'clear-status' }, '*');
+}</code></pre>
+
+      <p><strong>Standard Implementation:</strong></p>
+      <pre><code>const uploadButton = document.getElementById('image-upload');
+
+uploadButton.addEventListener('mouseenter', () => {
+  setHubStatus('Load a target asset from your device into the coordinate slicer workspace.');
+});
+
+uploadButton.addEventListener('mouseleave', () => {
+  clearHubStatus();
+});</code></pre>
+    </div>
+
+    <!-- SECTION 2: MASTER SYNC PROTOCOLS -->
+    <div class="stone-panel">
+      <h3>2. GLOBAL SETTINGS BACKUP & STORAGE STRATEGY</h3>
+      <p>
+        To prevent bloated storage and disjointed favorites lists across the toolsuite, all sub-pages read and write directly to standard browser <code>localStorage</code> keys. 
+      </p>
+      <p>The Master Hub consolidates these databases through the settings cog modal, offering two distinct import behaviors:</p>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>Protocol Option</th>
+            <th>Visual Theme Color</th>
+            <th>Operational Execution</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Import (Merge)</strong></td>
+            <td>Sand Ochre</td>
+            <td>Combines keys in the uploaded file directly with existing browser data, overwriting duplicates but keeping other variables safe.</td>
+          </tr>
+          <tr>
+            <td><strong>Import (Replace)</strong></td>
+            <td>Red Glow</td>
+            <td>Clears all browser localStorage completely before rebuilding the variables table from the ground up using the loaded .json package.</td>
+          </tr>
+          <tr>
+            <td><strong>Purge</strong></td>
+            <td>Crimson Danger</td>
+            <td>Completely erases all saved tools, options, and states from the device, triggering a system hard reboot.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 3: INTERFACE ASSETS & DESIGN RULES -->
+    <div class="stone-panel">
+      <h3>3. INTERFACE RATIOS & TACTILE DESIGN STANDARD</h3>
+      <p>
+        The following pre-rendered assets are mapped with rigid ratios inside the global stylesheet to ensure button scaling maintains crisp edges without pixel stretching:
+      </p>
+      <ul>
+        <li><strong>Level 2 Folder Buttons (<code>button.png</code>)</strong>: Ratio aspect is approx <code>3.88</code>. Configured on L2 folders as <code>146px</code> wide by <code>38px</code> high.</li>
+        <li><strong>Level 3 Action Buttons (<code>button2.png</code>)</strong>: Ratio aspect is approx <code>5.56</code>. Configured on L3 actions as <code>167px</code> wide by <code>30px</code> high.</li>
+      </ul>
+      <p>Buttons inside your sub-tools must use chiseled 3D CSS borders to maintain tactile alignment. Copy the button format below:</p>
+      
+      <div style="margin: 15px 0;">
+        <button class="aq-btn-pure-css" onclick="setHubStatus('Interactive click registered inside the sandbox manual!')">
+          <span>SAMPLE TACTILE CONTROL</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <footer style="text-align: center; padding-top: 10px; border-top: 1px solid rgba(137, 107, 73, 0.2);">
+    <p style="font-size: 11px; color: var(--stone-border); margin: 0;">ORGANON DOCUMENTATION INTERFACE &bull; ESTABLISHED AD 2026</p>
+  </footer>
+
+</body>
+</html>
