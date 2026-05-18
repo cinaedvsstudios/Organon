@@ -184,10 +184,10 @@
             top: 0;
             z-index: 100;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../images/stonetext.jpg');
-            background-size: cover;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.32), rgba(224, 163, 96, 0.32)), url('../../images/stonetext.jpg');
+            background-size: 260px 260px;
             background-position: center;
-            background-repeat: no-repeat;
+            background-repeat: repeat;
             padding: 16px 16px 12px 16px; /* Tight padding to match other apps */
             box-sizing: border-box;
             border-bottom: 1px solid var(--chiseled-bronze) !important;
@@ -435,6 +435,73 @@
             border-color: var(--stone-ochre);
         }
 
+        .search-submit-btn {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            background-color: rgba(24, 25, 25, 0.9);
+            color: var(--water-spray);
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.35);
+        }
+
+        .search-submit-btn:hover,
+        .search-submit-btn.search-pending {
+            border-color: var(--water-spray);
+            background-color: var(--forest-teal);
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.35);
+            transform: translateY(-1px);
+        }
+
+        .search-submit-btn.search-pending {
+            animation: pulseBlue 1.6s infinite;
+        }
+
+        .fav-actions-inline {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .fav-icon-btn {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            padding: 0 !important;
+            border-radius: 50% !important;
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.82rem !important;
+            line-height: 1;
+            background-color: rgba(24, 25, 25, 0.72) !important;
+            color: var(--water-spray) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            box-shadow: none !important;
+            text-transform: none !important;
+        }
+
+        .fav-icon-btn:hover {
+            border-color: var(--water-spray) !important;
+            background-color: var(--forest-teal) !important;
+            box-shadow: 0 0 10px rgba(121, 180, 227, 0.3) !important;
+        }
+
+        .fav-icon-btn:disabled {
+            opacity: 0.42;
+            cursor: not-allowed !important;
+            background-color: rgba(24, 25, 25, 0.35) !important;
+            box-shadow: none !important;
+        }
+
         .search-clear-btn {
             position: absolute;
             right: 11px;
@@ -487,7 +554,7 @@
         .middle-scroll-panel {
             flex: 1;
             background-color: #000000; 
-            padding: 16px 16px 120px 16px; 
+            padding: 16px 16px 54px 16px; 
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -782,10 +849,10 @@
             max-width: 540px; 
             z-index: 110;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
-            background-size: cover;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.32), rgba(224, 163, 96, 0.32)), url('../../images/stonetext.jpg');
+            background-size: 260px 260px;
             background-position: center;
-            background-repeat: no-repeat;
+            background-repeat: repeat;
             padding: 10px 14px 14px 14px; /* Tight padding to match */
             box-sizing: border-box;
             display: flex;
@@ -794,6 +861,7 @@
             border-top: 1px solid var(--chiseled-bronze) !important;
             border-top-left-radius: 24px; /* Smoother curve transition */
             border-top-right-radius: 24px;
+            transition: transform 0.25s ease-in-out;
         }
 
         /* Bottom Sticky Button styling - tight & elegant */
@@ -822,6 +890,47 @@
             cursor: not-allowed !important;
             box-shadow: none !important;
             transform: none !important;
+        }
+
+        .bottom-sticky-panel.bottom-panel-collapsed {
+            transform: translateX(-50%) translateY(calc(100% - 18px));
+            padding-top: 18px;
+        }
+
+        .bottom-sticky-panel.bottom-panel-open {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .bottom-panel-handle {
+            position: absolute;
+            top: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 72px;
+            height: 18px;
+            border: 1px solid var(--chiseled-bronze);
+            border-bottom: none;
+            border-top-left-radius: 9999px;
+            border-top-right-radius: 9999px;
+            background-color: rgba(24, 25, 25, 0.88);
+            color: var(--water-spray);
+            font-size: 0.65rem;
+            line-height: 16px;
+            text-align: center;
+            cursor: pointer;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .bottom-panel-handle:hover {
+            border-color: var(--water-spray);
+            box-shadow: 0 0 10px rgba(121, 180, 227, 0.3);
+        }
+
+        .bottom-panel-placeholder {
+            min-height: 24px;
+            width: 100%;
+            pointer-events: none;
         }
 
         .loader-overlay {
@@ -37988,7 +38097,7 @@
             <!-- Absolute Title Pill -->
             <div class="title-pill">
                 <div style="display: flex; align-items: center;">
-                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <div id="countdown-circle" class="countdown-circle-indicator">🔒</div>
                     <span>CHAR LIBRARY</span>
                 </div>
                 <button type="button" id="clear-search-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Reset Search</button>
@@ -38002,9 +38111,9 @@
                         <div id="sensitivity-popover" class="toolbar-popover sensitivity-popover hidden">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                 <label for="fuzzy-sensitivity">Fuzzy Search Sensitivity</label>
-                                <span class="slider-val" id="sensitivity-val">Normal</span>
+                                <span class="slider-val" id="sensitivity-val">Fuzzy</span>
                             </div>
-                            <input type="range" id="fuzzy-sensitivity" min="1" max="3" value="2">
+                            <input type="range" id="fuzzy-sensitivity" min="1" max="3" value="3">
                         </div>
                     </div>
 
@@ -38028,6 +38137,7 @@
                     </div>
 
                     <button type="button" id="search-mode-toggle" class="search-mode-toggle" title="Toggle AND / OR search">AND</button>
+                    <button type="button" id="search-submit-btn" class="search-submit-btn" title="Search">🔍</button>
                 </div>
 
                 <!-- Autocomplete Dropdown Panel -->
@@ -38047,9 +38157,11 @@
                             <div style="display:flex; align-items:center;">
                                 <span style="font-weight: 600; letter-spacing: 0.08em;">FAVORITES</span>
                             </div>
-                            <div style="display:flex; gap:6px; align-items:center;">
+                            <div class="fav-actions-inline">
                                 <select id="active-list-selector" style="font-size: 0.7rem; padding: 4px 24px 4px 10px; width: auto; background-color: var(--bg-input); height: 26px; border-radius: 9999px;"></select>
-                                <button type="button" id="edit-list-btn" class="btn-pill" style="padding: 3px 10px; font-size: 0.65rem; background-color: rgba(24, 25, 25, 0.6) !important;">Edit</button>
+                                <button type="button" id="add-selected-to-favs-btn" class="btn-pill fav-icon-btn" disabled title="Add selected character to favorites">❤️</button>
+                                <button type="button" id="new-list-trigger-btn" class="btn-pill fav-icon-btn" title="New favorites list">📂</button>
+                                <button type="button" id="edit-list-btn" class="btn-pill fav-icon-btn" title="Edit active favorites list">✎</button>
                             </div>
                         </div>
                         
@@ -38104,13 +38216,9 @@
         </main>
 
         <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS -->
-        <div class="bottom-sticky-panel">
-            <button type="button" class="btn-pill" id="add-selected-to-favs-btn" disabled>
-                ❤️ Add to Favorites
-            </button>
-            <button type="button" class="btn-pill" id="new-list-trigger-btn" style="background-color: rgba(24,25,25,0.8); border: 1px solid var(--chiseled-bronze);">
-                📂 New List
-            </button>
+        <div class="bottom-sticky-panel bottom-panel-collapsed" id="bottom-sticky-panel">
+            <button type="button" id="bottom-panel-handle" class="bottom-panel-handle" title="Show / hide bottom panel">⌃</button>
+            <div class="bottom-panel-placeholder" aria-hidden="true"></div>
         </div>
 
     </div>
@@ -38190,6 +38298,7 @@
             const sensitivityPopover = document.getElementById("sensitivity-popover");
             const categoryPopover = document.getElementById("category-popover");
             const searchModeToggle = document.getElementById("search-mode-toggle");
+            const searchSubmitBtn = document.getElementById("search-submit-btn");
 
             const libSettingsCog = document.getElementById("lib-settings-cog");
             const skinToneContainer = document.getElementById("skin-tone-container");
@@ -38203,6 +38312,8 @@
             const addSelectedToFavsBtn = document.getElementById("add-selected-to-favs-btn");
             const newListTriggerBtn = document.getElementById("new-list-trigger-btn");
             const largePreviewBox = document.getElementById("large-preview-box");
+            const bottomStickyPanel = document.getElementById("bottom-sticky-panel");
+            const bottomPanelHandle = document.getElementById("bottom-panel-handle");
 
             // Modals elements
             const customDialogModal = document.getElementById("custom-dialog-modal");
@@ -38223,6 +38334,7 @@
             let popoverCloseTimer = null;
             let lastCapToastKey = "";
             let lastSearchMatches = [];
+            let searchDirty = false;
 
             // Dynamic Favorites Library Multi-Lists
             let favoriteLibrary = {
@@ -38325,6 +38437,24 @@
                 searchClearX.style.display = (hasText || hasTokens) ? "block" : "none";
             }
 
+            function markSearchDirty() {
+                searchDirty = true;
+                if (searchSubmitBtn) searchSubmitBtn.classList.add("search-pending");
+            }
+
+            function markSearchClean() {
+                searchDirty = false;
+                if (searchSubmitBtn) searchSubmitBtn.classList.remove("search-pending");
+            }
+
+            function runManualSearch() {
+                processCommaSearchInput();
+                syncSearchClearVisibility();
+                executeSearch();
+                markSearchClean();
+                autocompleteBox.classList.add("hidden");
+            }
+
             function addSearchTerm(term) {
                 const cleaned = term.trim().toLowerCase();
                 if (!cleaned) return;
@@ -38337,8 +38467,8 @@
             function removeSearchTerm(index) {
                 searchTerms.splice(index, 1);
                 renderSearchTokens();
-                executeSearch();
                 syncSearchClearVisibility();
+                markSearchDirty();
             }
 
             function renderSearchTokens() {
@@ -38374,7 +38504,7 @@
                 const raw = String(phrase || "").trim();
                 if (!raw) {
                     renderSearchTokens();
-                    executeSearch();
+                    markSearchDirty();
                     return;
                 }
                 const parts = raw.includes(",") ? raw.split(",") : raw.split(/\s+OR\s+|\s+\+\s+/i);
@@ -38385,7 +38515,7 @@
                 }
                 renderSearchTokens();
                 syncSearchClearVisibility();
-                executeSearch();
+                markSearchDirty();
             }
 
             function processCommaSearchInput() {
@@ -38405,7 +38535,7 @@
                 else if (val === 2) sensitivityVal.innerText = "Normal";
                 else if (val === 3) sensitivityVal.innerText = "Fuzzy";
                 syncSliderBackground(fuzzySensitivity);
-                executeSearch();
+                markSearchDirty();
                 scheduleToolbarPopoverClose(sensitivityPopover);
             });
 
@@ -38431,7 +38561,7 @@
                 searchMode = searchMode === "AND" ? "OR" : "AND";
                 searchModeToggle.innerText = searchMode;
                 searchModeToggle.classList.toggle("or-mode", searchMode === "OR");
-                executeSearch();
+                markSearchDirty();
             });
 
             document.addEventListener("click", (e) => {
@@ -38474,8 +38604,12 @@
                 renderSearchTokens();
                 searchClearX.style.display = "none";
                 activeCategories = new Set(["emoji", "math", "greek", "ascii"]);
+                fuzzySensitivity.value = "3";
+                sensitivityVal.innerText = "Fuzzy";
+                syncSliderBackground(fuzzySensitivity);
                 filterCircleBtns.forEach(p => p.classList.add("active"));
                 executeSearch();
+                markSearchClean();
             });
 
             // Search clear "x" inline button trigger
@@ -38484,7 +38618,7 @@
                 searchTerms = [];
                 renderSearchTokens();
                 searchClearX.style.display = "none";
-                executeSearch();
+                markSearchDirty();
                 globalSearchInput.focus();
             });
 
@@ -38540,7 +38674,7 @@
                         btn.classList.add("active");
                         activeCategories.add(category);
                     }
-                    executeSearch();
+                    markSearchDirty();
                     scheduleToolbarPopoverClose(categoryPopover);
                 });
             });
@@ -38549,23 +38683,33 @@
             globalSearchInput.addEventListener("input", () => {
                 processCommaSearchInput();
                 syncSearchClearVisibility();
-                executeSearch();
+                markSearchDirty();
             });
 
             globalSearchInput.addEventListener("keydown", (e) => {
                 if (e.key === "Backspace" && globalSearchInput.value.length === 0 && searchTerms.length > 0) {
                     searchTerms.pop();
                     renderSearchTokens();
-                    executeSearch();
+                    markSearchDirty();
                     e.preventDefault();
                 }
-                if (e.key === "Enter" && globalSearchInput.value.trim().length > 0) {
-                    addSearchTerm(globalSearchInput.value);
-                    globalSearchInput.value = "";
-                    executeSearch();
+                if (e.key === "Enter") {
+                    runManualSearch();
                     e.preventDefault();
                 }
             });
+
+            searchSubmitBtn.addEventListener("click", runManualSearch);
+
+            if (bottomPanelHandle && bottomStickyPanel) {
+                bottomPanelHandle.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    const opening = bottomStickyPanel.classList.contains("bottom-panel-collapsed");
+                    bottomStickyPanel.classList.toggle("bottom-panel-collapsed", !opening);
+                    bottomStickyPanel.classList.toggle("bottom-panel-open", opening);
+                    bottomPanelHandle.innerText = opening ? "⌄" : "⌃";
+                });
+            }
 
             function supportsSkinTone(item) {
                 return item && item.supportsSkinTone === true;
@@ -38736,7 +38880,7 @@
                         updateLargePreview();
 
                         addSelectedToFavsBtn.disabled = false;
-                        addSelectedToFavsBtn.innerHTML = `❤️ Add to Favorites`;
+                        addSelectedToFavsBtn.innerHTML = `❤️`;
                     });
 
                     card.addEventListener("mouseenter", () => {
@@ -38799,10 +38943,10 @@
             editListBtn.addEventListener("click", () => {
                 if (favoritesEditControls.classList.contains("hidden")) {
                     favoritesEditControls.classList.remove("hidden");
-                    editListBtn.innerText = "Close";
+                    editListBtn.innerText = "×";
                 } else {
                     favoritesEditControls.classList.add("hidden");
-                    editListBtn.innerText = "Edit";
+                    editListBtn.innerText = "✎";
                 }
             });
 
@@ -38867,6 +39011,7 @@
                             selectedCharacter = { ...item, renderedChar: finalChar };
                             updateLargePreview();
                             addSelectedToFavsBtn.disabled = false;
+                            addSelectedToFavsBtn.innerHTML = "❤️";
                             document.querySelectorAll(".char-card").forEach(c => {
                                 if(c.innerText.includes(finalChar)) {
                                     c.classList.add("selected");
@@ -38927,7 +39072,7 @@
                 renderActiveListSelector();
                 renderFavorites();
                 favoritesEditControls.classList.add("hidden");
-                editListBtn.innerText = "Edit";
+                editListBtn.innerText = "✎";
             });
 
             dialogCancelBtn.addEventListener("click", () => {
@@ -38955,7 +39100,7 @@
                     delete favoriteLibrary[activeListName];
                     activeListName = val;
                     favoritesEditControls.classList.add("hidden");
-                    editListBtn.innerText = "Edit";
+                    editListBtn.innerText = "✎";
                 }
 
                 safeStorage.setItem("organon_favorite_lists", JSON.stringify(favoriteLibrary));
@@ -39001,6 +39146,7 @@
             registerHoverDescription('#sensitivity-popover-btn', 'Open the search sensitivity slider.');
             registerHoverDescription('#category-popover-btn', 'Open category filters for emojis, math, Greek, and ASCII symbols.');
             registerHoverDescription('#search-mode-toggle', 'Toggle whether search pills are combined with AND or OR logic.');
+            registerHoverDescription('#search-submit-btn', 'Run the current search terms and filters.');
             registerHoverDescription('#pill-emoji', 'Toggle visibility of selected emojis inside the output viewport.');
             registerHoverDescription('#pill-math', 'Toggle visibility of specialized calculus, set-theory, and arithmetic symbols.');
             registerHoverDescription('#pill-greek', 'Toggle visibility of Greek coordinates and scientific variables.');
@@ -39010,6 +39156,7 @@
             registerHoverDescription('#edit-list-btn', 'Expose active list configuration commands (rename, delete).');
             registerHoverDescription('#add-selected-to-favs-btn', 'Add the selected character result to your active favorites list.');
             registerHoverDescription('#new-list-trigger-btn', 'Define and spawn a new favorites list namespace.');
+            registerHoverDescription('#bottom-panel-handle', 'Show or hide the reserved bottom panel.');
             registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
             registerHoverDescription('#lib-settings-cog', 'Open emoji skin tone modifiers when compatible emoji are available in the current results.');
             registerHoverDescription('#large-preview-box', 'Click to copy selected character to clipboard.');
@@ -39022,7 +39169,7 @@
 
             let countdownVal = 5;
             let countdownInterval = null;
-            let isPanelLocked = false;
+            let isPanelLocked = true;
             let isHoveringPanel = false;
 
             function updateCircleDisplay() {
@@ -39113,6 +39260,7 @@
                     // Initialize Search result grids & data lists now that dictionary is loaded
                     renderActiveListSelector();
                     executeSearch();
+                    markSearchClean();
                     renderFavorites();
 
                 } catch (error) {
@@ -39130,6 +39278,7 @@
                         // Initialize Search result grids & data lists
                         renderActiveListSelector();
                         executeSearch();
+                        markSearchClean();
                         renderFavorites();
                         
                         notify("Loaded local offline backup.", "success");
@@ -39155,6 +39304,7 @@
                         }, 300);
                     }
                     // Engage UI minimizing timer
+                    updateCircleDisplay();
                     startCountdown();
                 }
             }
