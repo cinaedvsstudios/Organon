@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tile Image</title>
+    
+    <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
+    <script>
+        if (window.self === window.top) {
+            window.location.href = '../../index.html';
+        }
+    </script>
+    
+    <!-- External Fonts for Organon Styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- PyScript Assets -->
+    <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
+    <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+    <style>
+        /* ==========================================================
+           ORGANON GLOBAL BRAND STYLING TEMPLATE
+           Strict Color Mappings & Total Rounded Pill Realignment
+           ========================================================== */
+        :root {
+            /* 1. General Body Text (Alabaster Paper) */
+            --alabaster-paper: #F2ECE0;
+
+            /* 2. Classical Headings & Default Menu Text (Warm Stone Ochre) */
+            --stone-ochre: #E5A862;
+
+            /* 3. Hover Highlights & Glows (Water Spray Light Blue) */
+            --water-spray: #79B4E3;
+
+            /* 4. Selected & Active Focus Elements (Aqueduct Water Blue) */
+            --water-blue: #4B84BF;
+
+            /* 5. Inactive / Metadata Labels (Chiseled Bronze) */
+            --chiseled-bronze: #896b49; /* Standardized brand border */
+
+            /* 6. Warnings, Failures & Destructive Logs (Deep Burgundy) */
+            --burgundy: #4A1525;
+
+            /* 7. System Indicators & Directories (Muted Forest Teal) */
+            --forest-teal: #26615C;
+
+            /* Core Canvas Settings */
+            --bg-nightsky: #181919;
+            --bg-card: #292a24; /* Updated Card Background */
+            --bg-input: rgba(24, 25, 25, 0.95);
+
+            /* Typography Hierarchies */
+            --font-headers: 'Cinzel', 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', 'Geist', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+
+            /* Custom Refined Palette Variable Nodes */
+            --light-blue: #75b2de;
+            --slider-active: #9a2f4f; /* Vibrant Ruby Pink (ON state / thumb) */
+            --slider-track: #61112e;  /* Dark Burgundy (OFF state / right track) */
+            --light-blend-stone: #e0a360;
+        }
+
+        /* Global Reset & Core Body Settings */
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Custom Text Highlight Selection */
+        ::selection {
+            background-color: var(--water-blue);
+            color: var(--bg-nightsky);
+        }
+
+        /* Classical Serified Headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            margin-top: 0;
+            transition: color 0.25s ease, text-shadow 0.25s ease;
+        }
+
+        /* Fluid Hover Anchor Links */
+        a {
+            color: var(--stone-ochre);
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        a:hover {
+            color: var(--water-spray);
+            text-shadow: 0 0 8px rgba(121, 180, 227, 0.65), 0 0 16px rgba(121, 180, 227, 0.3);
+        }
+
+        a:active {
+            color: var(--water-blue);
+            text-shadow: none;
+        }
+
+        /* ==========================================================
+           PILL SELECTORS & INTERACTIVE TEXTBOX INPUTS
+           ========================================================== */
+        input, select, textarea {
+            background-color: var(--bg-input);
+            color: #f0ebcb !important; /* Harmonized Input Text */
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px; /* Complete Pill Shape */
+            transition: all 0.2s ease-in-out;
+            box-sizing: border-box;
+            font-size: 15px; /* Prevents auto-zoom on iOS safari */
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        /* Remove default spin buttons for number inputs to keep the pill shape absolutely flawless */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            text-align: center;
+        }
+
+        ::placeholder {
+            color: var(--chiseled-bronze);
+            opacity: 0.8;
+        }
+
+        /* Sleek custom arrow reset for dropdown select elements */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23896b49'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 18px center;
+            background-size: 16px;
+            padding-right: 46px !important;
+            cursor: pointer;
+        }
+
+        /* Custom Smooth Scrollbar with Water Accents */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--chiseled-bronze);
+            border-radius: 9999px; /* Complete Pill Shape Scrollbars */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--water-blue);
+        }
+
+        /* ==========================================================
+           ROUNDED PILL UTILITY BUTTONS
+           ========================================================== */
+        .btn-pill {
+            background-color: var(--forest-teal);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            border-radius: 9999px; /* Absolute Pill Shape */
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(38, 97, 92, 0.2);
+            touch-action: manipulation;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .btn-pill:hover {
+            background-color: var(--water-blue);
+            box-shadow: 0 6px 16px rgba(75, 132, 191, 0.4);
+            transform: translateY(-1px);
+            color: var(--alabaster-paper);
+            text-shadow: 0 0 6px rgba(242, 236, 224, 0.4);
+        }
+
+        .btn-pill:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(75, 132, 191, 0.2);
+            background-color: var(--water-blue);
+        }
+
+        .btn-pill:disabled {
+            background-color: rgba(132, 104, 78, 0.2) !important;
+            color: var(--chiseled-bronze) !important;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+            border: 1px solid rgba(132, 104, 78, 0.1);
+        }
+
+        .btn-pill-secondary {
+            background-color: transparent;
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--stone-ochre);
+        }
+
+        .btn-pill-secondary:hover {
+            background-color: rgba(229, 168, 98, 0.1);
+            border-color: var(--stone-ochre);
+            box-shadow: 0 0 12px rgba(229, 168, 98, 0.15);
+        }
+
+        /* ==========================================================
+           TACTILE CUSTOM PILL SWITCH TOGGLE (NO SQUARES)
+           ========================================================== */
+        .switch-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            user-select: none;
+            color: var(--alabaster-paper);
+        }
+
+        .switch-input {
+            display: none;
+        }
+
+        .switch-slider {
+            width: 46px;
+            height: 24px;
+            background-color: rgba(132, 104, 78, 0.25);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 9999px; /* Perfect Capsule Track */
+            position: relative;
+            transition: all 0.25s ease-in-out;
+        }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%; /* Absolute circular ball */
+            background-color: var(--stone-ochre);
+            top: 3px;
+            left: 4px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .switch-input:checked + .switch-slider {
+            background-color: var(--forest-teal);
+            border-color: var(--water-blue);
+        }
+
+        .switch-input:checked + .switch-slider::before {
+            transform: translateX(20px);
+            background-color: var(--water-spray);
+        }
+
+        /* ==========================================================
+           3-PANEL VERTICAL VIEWPORT STRUCTURE (MAX 540PX)
+           ========================================================== */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px; /* Constrained strictly to 2 buttons wide */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        /* Panel 1: Top Sticky Upload Panel with blended Light Stone Background, Fallback & Curved Bottom Corners */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../images/stonetext.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 24px 16px 16px 16px; /* Added extra top padding */
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--chiseled-bronze) !important;
+            border-bottom-left-radius: 28px; /* Elegant bottom curve integration */
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Left-aligned text inside */
+            background-color: rgba(24, 25, 25, 0.9);
+            color: var(--light-blue);
+            font-family: var(--font-headers);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            user-select: none;
+            box-sizing: border-box;
+            width: 100%; /* Spans all the way across */
+            max-width: 100%;
+        }
+
+        /* Custom top sticky button override for light bg panel */
+        .top-sticky-panel .btn-pill {
+            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
+            color: var(--light-blue) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+        }
+
+        .top-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+
+        /* Drop Zone Styles (Standard Layout - Fitted with a clean narrow width) */
+        .upload-container {
+            border: 2px dashed var(--chiseled-bronze) !important;
+            background-color: var(--bg-card);
+            border-radius: 28px; /* Extra smooth corners */
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 340px; /* Constrained fixed width */
+            max-width: 100%; /* Mobile responsivity guard */
+        }
+
+        /* Keeping background solid var(--bg-card) on hover, changing borders/glows to light blue */
+        .upload-container:hover, .upload-container.dragover {
+            border-color: var(--light-blue) !important;
+            background-color: var(--bg-card) !important; /* Kept solid dark background */
+            box-shadow: 0 0 16px rgba(117, 178, 222, 0.2);
+        }
+
+        .upload-icon {
+            width: 40px;
+            height: 40px;
+            stroke: var(--stone-ochre);
+            fill: none;
+            transition: all 0.25s ease;
+        }
+
+        /* Sync icon color to light blue on container hover */
+        .upload-container:hover .upload-icon {
+            stroke: var(--light-blue) !important;
+            transform: translateY(-4px);
+        }
+
+        /* Sync title color to light blue on container hover */
+        .upload-container:hover h3 {
+            color: var(--light-blue) !important;
+            text-shadow: 0 0 8px rgba(117, 178, 222, 0.5);
+        }
+
+        /* Compact Loaded Banner (Splits into 2 square thumbnails side-by-side) */
+        .compact-upload-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 24px; /* Curved card style instead of pill shape */
+            padding: 12px 16px;
+            box-sizing: border-box;
+            gap: 8px;
+            width: 340px; /* Constrained fixed width matching drop zone */
+            max-width: 100%;
+        }
+
+        .squares-container {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .square-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .square-thumb {
+            width: 100%;
+            max-width: 110px;
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            object-fit: cover;
+            border: 1px solid var(--chiseled-bronze) !important;
+            background-color: #000;
+        }
+
+        .square-label {
+            font-size: 0.65rem;
+            color: var(--chiseled-bronze); /* Clean brand dark brown */
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .compact-actions {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            border-top: 1px dashed rgba(137, 107, 73, 0.3);
+            padding-top: 8px;
+        }
+
+        /* Panel 2: Middle Scrollable Body (Set to pure Black) */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000; /* Pure Black Background */
+            padding: 16px 16px 120px 16px; /* Heavy bottom padding so inputs clear the sticky footer */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            font-size: 0.8rem; /* Make the text size in the middle panel smaller */
+        }
+
+        /* Interactive Preview Target Card */
+        .preview-card {
+            background-color: var(--bg-card) !important; /* Re-themed `#292a24` background */
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 28px; /* Rounded card containers */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .preview-canvas-wrapper {
+            width: 100%;
+            height: 280px; /* Highly optimized heights for mobile viewports */
+            border-radius: 20px; /* Highly rounded inner layout viewport */
+            overflow: hidden;
+            background-color: rgba(10, 10, 10, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #tiled-preview-viewport {
+            width: 100%;
+            height: 100%;
+            background-repeat: repeat;
+            background-position: center center;
+            background-size: 50%;
+            transition: background-size 0.1s ease-out;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Settings grid splitting nicely into direct row layout in Panel 2 */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* Spans the invisible HR completely across the grid to align adjacent columns */
+        .settings-grid .invisible-hr {
+            grid-column: 1 / -1;
+            visibility: hidden;
+            margin: 0;
+            padding: 0;
+            border: none;
+            height: 0;
+            width: 100%;
+        }
+
+        /* Compact Setting Card Groupings */
+        .config-card {
+            background-color: var(--bg-card) !important; /* Re-themed `#292a24` background */
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        /* Double-Row layout configuration for crop boxes to keep them identical in size and height aligned */
+        .crop-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .crop-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .crop-row .form-row {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .invisible-hr {
+            visibility: hidden;
+            margin: 6px 0;
+            padding: 0;
+            border: none;
+            height: 0;
+            width: 100%;
+        }
+
+        /* Harmonized Section Headings Color Node */
+        .group-title, .control-group-title, .preview-card h3 {
+            color: var(--light-blue) !important;
+        }
+
+        .control-group-title {
+            font-size: 0.7rem; /* Make section title labels inside middle panel smaller */
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid rgba(132, 104, 78, 0.15);
+            padding-bottom: 6px;
+        }
+
+        .control-group-title svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Adjusted label typography size for smaller presentation */
+        label {
+            font-size: 0.75rem !important;
+            color: var(--alabaster-paper);
+            opacity: 0.85;
+            letter-spacing: 0.03em;
+        }
+
+        /* Slightly tightened inputs inside middle panel settings */
+        .middle-scroll-panel input, 
+        .middle-scroll-panel select {
+            font-size: 14px !important;
+            padding: 8px 14px !important;
+        }
+
+        /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Fallback */
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px; /* Clamped tightly to match vertical flow */
+            z-index: 110;
+            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 16px 16px 20px 16px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze) !important;
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+        }
+
+        /* Custom bottom sticky button overrides for light bg panel */
+        /* opacity adjusted to 0.9 to significantly decrease transparency and make button darker */
+        .bottom-sticky-panel .btn-pill {
+            flex: 1; /* Split evenly - precisely 2 buttons wide */
+            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
+            color: var(--light-blue) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            width: 100%;
+        }
+
+        .bottom-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+
+        /* Sliders Layout Configuration */
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        /* Customized Slider Track & Thumb Handles (Border Removed) */
+        /* Left inactive track is #61112e, Right active track & thumb is #9a2f4f */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 9999px;
+            border: none !important; /* Strictly borderless track */
+            padding: 0;
+            width: 100%;
+            touch-action: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
+            border: none !important; /* Strictly borderless thumb */
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--water-spray) !important;
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
+            border: none !important; /* Strictly borderless thumb */
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: var(--water-spray) !important;
+            transform: scale(1.15);
+        }
+
+        .slider-val {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+            text-align: right;
+            margin-top: -4px;
+        }
+
+        /* Loading Engine Overlay Screen */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-nightsky);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 168, 98, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--stone-ochre);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .loader-title {
+            font-family: var(--font-headers);
+            font-size: 1.8rem;
+            color: var(--stone-ochre);
+            margin: 0;
+            letter-spacing: 0.15em;
+        }
+
+        .loader-progress {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--water-spray);
+            max-width: 320px;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Toast Stack */
+        .toast-container {
+            position: fixed;
+            bottom: 84px; /* Rises over the sticky button bar */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: calc(100% - 32px);
+            max-width: 508px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .toast-notification {
+            background-color: var(--burgundy);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze) !important;
+            padding: 10px 20px;
+            border-radius: 9999px; /* Pure Pill Shape */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(120%);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+        }
+
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background-color: var(--forest-teal);
+            border-color: var(--water-spray) !important;
+        }
+
+        /* Seam Markers overlay rules */
+        .seam-marker-line {
+            position: absolute;
+            pointer-events: none;
+            border: 1px dashed rgba(229, 168, 98, 0.85);
+            z-index: 5;
+            display: none;
+        }
+
+        /* Helper Styles */
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .metadata-text {
+            color: var(--chiseled-bronze);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        /* Adjust setting grid on ultra-small viewports */
+        @media (max-width: 480px) {
+            .settings-grid {
+                grid-template-columns: 1fr; /* Roll to 1 column on extra narrow phones */
+            }
+            .settings-grid .invisible-hr {
+                display: none; /* Hide multi-column spacer on singular stack */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PYSCRIPT PRE-FLIGHT SYSTEM ENGINE LOADER -->
+    <div id="loading-overlay" class="loader-overlay">
+        <div class="loader-spinner"></div>
+        <div class="loader-title">TILE IMAGE ENGINE</div>
+        <div class="loader-progress" id="loader-progress-text">
+            Mounting Virtual Python Machine & OpenCV components... (takes ~5-7s)
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="app-wrapper">
+        
+        <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
+        <div class="top-sticky-panel">
+            <!-- Absolute Title Pill -->
+            <div class="title-pill">IMAGE TILER</div>
+
+            <!-- State A: Upload box visible when unpopulated -->
+            <div id="drop-zone" class="upload-container">
+                <svg class="upload-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                </svg>
+                <div style="margin-top: -4px;">
+                    <h3 style="margin-bottom: 2px; font-size: 0.95rem; transition: color 0.25s ease, text-shadow 0.25s ease;">Load Source Texture</h3>
+                    <p style="opacity: 0.7; font-size: 0.75rem; margin: 0;">Drag & drop image or click to browse</p>
+                </div>
+                <input type="file" id="file-input" accept="image/*" class="hidden">
+            </div>
+
+            <!-- State B: Highly space-efficient capsule with Before/After squares side-by-side -->
+            <div id="compact-loaded-banner" class="compact-upload-bar hidden">
+                <div class="squares-container">
+                    <div class="square-wrapper">
+                        <img id="compact-thumb-before" class="square-thumb" src="" alt="Before">
+                        <div class="square-label">Before</div>
+                    </div>
+                    <div class="square-wrapper">
+                        <img id="compact-thumb-after" class="square-thumb" src="" alt="After">
+                        <div class="square-label">After</div>
+                    </div>
+                </div>
+                <div class="compact-actions">
+                    <span id="original-dims" class="metadata-text">0 x 0 px</span>
+                    <button type="button" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
+                        Change
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: MIDDLE SCROLLABLE PREVIEW & SETTINGS -->
+        <main class="middle-scroll-panel">
+            
+            <!-- Tiled Test Space Card (Hidden until image is set) -->
+            <div id="tiled-preview-card" class="preview-card hidden">
+                <div class="flex-between">
+                    <h3 style="font-size: 0.95rem; margin: 0;">Tiled Repeater Test</h3>
+                    <button type="button" id="toggle-repeater-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Expand</button>
+                </div>
+                
+                <!-- Collapsible Content Wrapper (Hidden/minimized by default) -->
+                <div id="repeater-content-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px; border-top: 1px dashed rgba(137, 107, 73, 0.3); padding-top: 12px;">
+                    <div class="flex-between">
+                        <span class="metadata-text">Check infinite repeating alignment:</span>
+                        <label class="switch-label">
+                            <input type="checkbox" id="toggle-seams" class="switch-input">
+                            <span class="switch-slider"></span>
+                            Show Seams
+                        </label>
+                    </div>
+                    
+                    <div class="preview-canvas-wrapper" style="border: 1px solid rgba(121, 180, 227, 0.25);">
+                        <div id="tiled-preview-viewport"></div>
+                        <!-- Seam overlays -->
+                        <div id="seam-v" class="seam-marker-line" style="top: 0; bottom: 0; left: 50%; width: 0;"></div>
+                        <div id="seam-h" class="seam-marker-line" style="left: 0; right: 0; top: 50%; height: 0;"></div>
+                    </div>
+                    
+                    <div class="flex-between" style="gap: 12px; margin-top: 4px;">
+                        <label for="tile-scale" style="font-size: 0.8rem; white-space: nowrap;">Zoom Scale</label>
+                        <input type="range" id="tile-scale" min="15" max="100" value="50" style="flex:1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Grid Layout -->
+            <div class="settings-grid">
+                
+                <!-- 1. Cut Off Edges Card (Col 1) -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
+                        1. Cut Off Edges (px)
+                    </div>
+                    <div class="crop-grid">
+                        <!-- Row 1: Left / Top -->
+                        <div class="crop-row">
+                            <div class="form-row">
+                                <label for="crop-left">Left</label>
+                                <input type="number" id="crop-left" value="0" min="0">
+                            </div>
+                            <div class="form-row">
+                                <label for="crop-top">Top</label>
+                                <input type="number" id="crop-top" value="0" min="0">
+                            </div>
+                        </div>
+                        
+                        <!-- Balanced height anchor line -->
+                        <hr class="invisible-hr">
+                        
+                        <!-- Row 2: Right / Bottom -->
+                        <div class="crop-row">
+                            <div class="form-row">
+                                <label for="crop-right">Right</label>
+                                <input type="number" id="crop-right" value="0" min="0">
+                            </div>
+                            <div class="form-row">
+                                <label for="crop-bottom">Bottom</label>
+                                <input type="number" id="crop-bottom" value="0" min="0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Make It Seamless Card (Col 2) -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        2. Make Seamless
+                    </div>
+                    <div class="form-row">
+                        <label for="blend-method">Method</label>
+                        <select id="blend-method" style="padding: 10px 14px;">
+                            <option value="1">Linear Edge Blend</option>
+                            <option value="2">Symmetry Mirror</option>
+                            <option value="3">Spliced Blend</option>
+                            <option value="4">Restore Frame</option>
+                        </select>
+                    </div>
+                    <div class="slider-row" id="overlap-row" style="margin-top: 6px;">
+                        <div class="flex-between">
+                            <label for="overlap-percent">Blend Width</label>
+                            <span class="slider-val" id="overlap-val">10%</span>
+                        </div>
+                        <input type="range" id="overlap-percent" min="2" max="30" value="10">
+                    </div>
+                </div>
+
+                <!-- Invisible HR spanning both columns to force 3 & 4 to start aligned -->
+                <hr class="invisible-hr">
+
+                <!-- 3. Fix Uneven Lighting Card (Col 1) -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        3. Fix Lighting
+                    </div>
+                    <div class="slider-row">
+                        <div class="flex-between">
+                            <label for="average-intensity">Intensity</label>
+                            <span class="slider-val" id="intensity-val">15</span>
+                        </div>
+                        <input type="range" id="average-intensity" min="0" max="100" value="15">
+                    </div>
+                    <div class="slider-row" style="margin-top: 10px;">
+                        <div class="flex-between">
+                            <label for="average-radius">Equalize Area</label>
+                            <span class="slider-val" id="radius-val">12</span>
+                        </div>
+                        <input type="range" id="average-radius" min="1" max="25" value="12">
+                    </div>
+                </div>
+
+                <!-- 4. Save Format Card (Col 2) -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                        4. Save Options
+                    </div>
+                    <div class="form-row">
+                        <label for="export-format">Format</label>
+                        <select id="export-format" style="padding: 10px 14px;">
+                            <option value="jpeg">JPEG</option>
+                            <option value="png">PNG-24</option>
+                        </select>
+                    </div>
+                    <div class="slider-row" id="jpeg-quality-row" style="margin-top: 6px;">
+                        <div class="flex-between">
+                            <label for="jpeg-quality">Quality</label>
+                            <span class="slider-val" id="quality-val">90</span>
+                        </div>
+                        <input type="range" id="jpeg-quality" min="10" max="100" value="90">
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+
+        <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS (Strictly Download only, auto-processes) -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill" id="download-btn" disabled>
+                Download
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Hidden native element required by JS pipeline mapping -->
+    <img id="original-display" class="hidden" alt="Original Hidden Canvas Source">
+
+    <!-- TOAST NOTIFICATION STACK -->
+    <div id="toast-stack" class="toast-container"></div>
+
+    <!-- ==========================================================
+       PYTHON VIRTUAL WEB ENGINE (PyScript Setup & Running Block)
+       ========================================================== */ -->
+    <script type="py" config='{"packages": ["numpy", "opencv-python", "pillow"]}'>
+import cv2
+import numpy as np
+import io
+import base64
+from PIL import Image
+from pyscript import document, window
+
+# Global reference to source image
+src_image_bgr = None
+
+def init_app():
+    # Bind directly to window so Javascript can safely invoke them bypassing PyScript SDK changes
+    window.load_image_from_js = load_image_from_js
+    window.process_and_output = process_and_output
+    
+    # Hide the system loading screen and initialize JS listeners
+    loading_overlay = document.getElementById("loading-overlay")
+    loading_overlay.classList.add("hidden")
+    print("Backend Pipeline Initialized Successfully.")
+
+def load_image_from_js(base64_data):
+    global src_image_bgr
+    try:
+        # Convert Base64 back to numpy array
+        img_bytes = base64.b64decode(base64_data.split(",")[1])
+        pil_img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
+        src_image_bgr = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+        return True
+    except Exception as e:
+        print(f"Error importing image: {e}")
+        return False
+
+def apply_crop(img, left, top, right, bottom):
+    h, w = img.shape[:2]
+    # Keep safe crop values
+    left = min(left, w - 1)
+    top = min(top, h - 1)
+    right = min(right, w - left - 1)
+    bottom = min(bottom, h - top - 1)
+    
+    return img[top:h-bottom, left:w-right]
+
+def apply_equalization(img, intensity, radius):
+    if intensity <= 0:
+        return img
+        
+    # Standard CLAHE-inspired and Gaussian leveling logic
+    h, w, c = img.shape
+    # Ensure large odd kernel for global blur
+    kernel_size = int(max(w, h) * (radius / 100.0))
+    if kernel_size % 2 == 0:
+        kernel_size += 1
+    kernel_size = max(5, kernel_size)
+    
+    # Calculate blurred illumination
+    img_float = img.astype(np.float32)
+    blurred = cv2.GaussianBlur(img_float, (kernel_size, kernel_size), 0)
+    
+    # Extract structural details with dynamic leveling offset
+    mean_val = np.mean(img_float, axis=(0, 1))
+    detail = img_float - blurred
+    leveled = blurred + (mean_val - blurred) * (intensity / 100.0) + detail
+    
+    return np.clip(leveled, 0, 255).astype(np.uint8)
+
+def execute_linear_blend(img, overlap_pct):
+    h, w, c = img.shape
+    ov_x = int(w * (overlap_pct / 100.0))
+    ov_y = int(h * (overlap_pct / 100.0))
+    
+    # Ensure boundaries are inside limits
+    ov_x = max(2, min(ov_x, w // 2 - 1))
+    ov_y = max(2, min(ov_y, h // 2 - 1))
+    
+    # Establish linear alpha interpolation ramp
+    mask_x = np.linspace(0, 1, ov_x).reshape(1, ov_x, 1).astype(np.float32)
+    mask_y = np.linspace(0, 1, ov_y).reshape(ov_y, 1, 1).astype(np.float32)
+    
+    # 1. Blending X-axis (Left-Right)
+    left_strip = img[:, :ov_x].astype(np.float32)
+    right_strip = img[:, w-ov_x:].astype(np.float32)
+    blended_x = (right_strip * (1.0 - mask_x)) + (left_strip * mask_x)
+    
+    img_x = img[:, ov_x:w-ov_x].copy()
+    img_seamless_x = np.hstack((blended_x.astype(np.uint8), img_x))
+    
+    # 2. Blending Y-axis (Top-Bottom)
+    new_h, new_w = img_seamless_x.shape[:2]
+    top_strip = img_seamless_x[:ov_y, :].astype(np.float32)
+    bottom_strip = img_seamless_x[new_h-ov_y:, :].astype(np.float32)
+    blended_y = (bottom_strip * (1.0 - mask_y)) + (top_strip * mask_y)
+    
+    img_y = img_seamless_x[ov_y:new_h-ov_y, :].copy()
+    final_img = np.vstack((blended_y.astype(np.uint8), img_y))
+    
+    return final_img
+
+def execute_symmetry_mirror(img):
+    # Standard tile mirroring across dimensions
+    flipped_h = cv2.flip(img, 1)
+    flipped_v = cv2.flip(img, 0)
+    flipped_hv = cv2.flip(img, -1)
+    
+    # Combine tiles
+    top_row = np.hstack((img, flipped_h))
+    bottom_row = np.hstack((flipped_v, flipped_hv))
+    return np.vstack((top_row, bottom_row))
+
+def execute_splicing_blend(img, overlap_pct):
+    # Method 3: Multidirectional Offset and Spliced Feather
+    h, w, c = img.shape
+    ov_x = int(w * (overlap_pct / 100.0))
+    ov_y = int(h * (overlap_pct / 100.0))
+    
+    ov_x = max(2, min(ov_x, w // 2 - 1))
+    ov_y = max(2, min(ov_y, h // 2 - 1))
+    
+    # Run offset (shift image center to edges)
+    shifted = np.roll(img, (h // 2, w // 2), axis=(0, 1))
+    
+    # Build a 2D cross-mask to blend shifted edges seamlessly
+    mask_x = np.ones((h, w, 1), dtype=np.float32)
+    mask_y = np.ones((h, w, 1), dtype=np.float32)
+    
+    # Interpolate along edges
+    ramp_x = np.linspace(0, 1, ov_x).reshape(1, ov_x, 1)
+    ramp_y = np.linspace(0, 1, ov_y).reshape(ov_y, 1, 1)
+    
+    cx, cy = w // 2, h // 2
+    # Apply interpolation values across shift seams
+    mask_x[:, cx - ov_x//2 : cx + ov_x//2] = ramp_x
+    mask_y[cy - ov_y//2 : cy + ov_y//2, :] = ramp_y
+    
+    combined_mask = mask_x * mask_y
+    blended = (img.astype(np.float32) * combined_mask) + (shifted.astype(np.float32) * (1.0 - combined_mask))
+    
+    return np.clip(blended, 0, 255).astype(np.uint8)
+
+def process_and_output(crop_l, crop_t, crop_r, crop_b, method, overlap_pct, intensity, radius, format_type, quality):
+    global src_image_bgr
+    if src_image_bgr is None:
+        return ""
+        
+    # Phase 1: Crop
+    processed = apply_crop(src_image_bgr, crop_l, crop_t, crop_r, crop_b)
+    
+    # Phase 2: Equalize Lighting
+    processed = apply_equalization(processed, intensity, radius)
+    
+    # Phase 3: Synthesize
+    if method == 1:
+        processed = execute_linear_blend(processed, overlap_pct)
+    elif method == 2:
+        processed = execute_symmetry_mirror(processed)
+    elif method == 3:
+        processed = execute_splicing_blend(processed, overlap_pct)
+    elif method == 4:
+        # Re-averaging Edge Restore specialist
+        processed = execute_linear_blend(processed, max(5, overlap_pct // 2))
+        processed = apply_equalization(processed, intensity * 0.5, radius)
+        
+    # Phase 4: Serialize array to base64
+    success, buffer = cv2.imencode(f".{format_type}", processed, [int(cv2.IMWRITE_JPEG_QUALITY), quality] if format_type == "jpeg" else [])
+    if not success:
+        return ""
+        
+    encoded_bytes = base64.b64encode(buffer)
+    mime = f"image/{format_type if format_type != 'jpg' else 'jpeg'}"
+    return f"data:{mime};base64,{encoded_bytes.decode('utf-8')}"
+
+# Bind elements to Python environment
+init_app()
+</script>
+
+    <!-- FRONTEND JAVASCRIPT LAYER -->
+    <script>
+        // Track states
+        let uploadedImageBase64 = null;
+        let outputImageBase64 = null;
+        let processTimeout = null;
+
+        // Custom UI Control Bindings
+        const dropZone = document.getElementById("drop-zone");
+        const compactLoadedBanner = document.getElementById("compact-loaded-banner");
+        const compactThumbBefore = document.getElementById("compact-thumb-before");
+        const compactThumbAfter = document.getElementById("compact-thumb-after");
+        
+        const fileInput = document.getElementById("file-input");
+        const downloadBtn = document.getElementById("download-btn");
+        const tiledPreviewCard = document.getElementById("tiled-preview-card");
+        const toggleRepeaterBtn = document.getElementById("toggle-repeater-btn");
+        const repeaterContentWrapper = document.getElementById("repeater-content-wrapper");
+        
+        const cropL = document.getElementById("crop-left");
+        const cropT = document.getElementById("crop-top");
+        const cropR = document.getElementById("crop-right");
+        const cropB = document.getElementById("crop-bottom");
+        
+        const blendMethod = document.getElementById("blend-method");
+        const overlapPercent = document.getElementById("overlap-percent");
+        const overlapVal = document.getElementById("overlap-val");
+        const overlapRow = document.getElementById("overlap-row");
+        
+        const avgIntensity = document.getElementById("average-intensity");
+        const intensityVal = document.getElementById("intensity-val");
+        const avgRadius = document.getElementById("average-radius");
+        const radiusVal = document.getElementById("radius-val");
+        
+        const exportFormat = document.getElementById("export-format");
+        const jpegQuality = document.getElementById("jpeg-quality");
+        const qualityVal = document.getElementById("quality-val");
+        const jpegQualityRow = document.getElementById("jpeg-quality-row");
+        
+        const originalDisplay = document.getElementById("original-display");
+        const originalDims = document.getElementById("original-dims");
+        const tiledPreviewViewport = document.getElementById("tiled-preview-viewport");
+        const tileScale = document.getElementById("tile-scale");
+        const toggleSeams = document.getElementById("toggle-seams");
+
+        // Helper to update dynamic slider track values (No borders, left OFF is #61112e, right ON is #9a2f4f)
+        function syncSliderBackground(slider) {
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const val = parseFloat(slider.value) || 0;
+            const percentage = ((val - min) / (max - min)) * 100;
+            slider.style.background = `linear-gradient(to right, #61112e ${percentage}%, #9a2f4f ${percentage}%)`;
+        }
+
+        // Initialize and bind slider sync listeners
+        const sliders = [overlapPercent, avgIntensity, avgRadius, jpegQuality, tileScale];
+        sliders.forEach(slider => {
+            slider.addEventListener("input", () => syncSliderBackground(slider));
+            syncSliderBackground(slider); // Initialize immediately on page render
+        });
+
+        // Set Text View Updates
+        overlapPercent.addEventListener("input", () => overlapVal.innerText = `${overlapPercent.value}%`);
+        avgIntensity.addEventListener("input", () => intensityVal.innerText = avgIntensity.value);
+        avgRadius.addEventListener("input", () => radiusVal.innerText = avgRadius.value);
+        jpegQuality.addEventListener("input", () => qualityVal.innerText = jpegQuality.value);
+        
+        // Scale Tiled Background
+        tileScale.addEventListener("input", () => {
+            tiledPreviewViewport.style.backgroundSize = `${tileScale.value}%`;
+        });
+
+        // Hide overlap controls if Method 2 (Mirror) is chosen
+        blendMethod.addEventListener("change", () => {
+            if (blendMethod.value === "2") {
+                overlapRow.classList.add("hidden");
+            } else {
+                overlapRow.classList.remove("hidden");
+            }
+            syncSliderBackground(overlapPercent);
+        });
+
+        // Toggle Seam Guides visibility
+        toggleSeams.addEventListener("change", () => {
+            const vLine = document.getElementById("seam-v");
+            const hLine = document.getElementById("seam-h");
+            if (toggleSeams.checked) {
+                vLine.style.display = "block";
+                hLine.style.display = "block";
+            } else {
+                vLine.style.display = "none";
+                hLine.style.display = "none";
+            }
+        });
+
+        exportFormat.addEventListener("change", () => {
+            if (exportFormat.value === "png") {
+                jpegQualityRow.classList.add("hidden");
+            } else {
+                jpegQualityRow.classList.remove("hidden");
+            }
+            syncSliderBackground(jpegQuality);
+        });
+
+        // Toggle Repeater Collapsible Test Box Visibility
+        toggleRepeaterBtn.addEventListener("click", () => {
+            if (repeaterContentWrapper.classList.contains("hidden")) {
+                repeaterContentWrapper.classList.remove("hidden");
+                toggleRepeaterBtn.innerText = "Collapse";
+                // Force sync slider since it was hidden on initialization
+                syncSliderBackground(tileScale);
+            } else {
+                repeaterContentWrapper.classList.add("hidden");
+                toggleRepeaterBtn.innerText = "Expand";
+            }
+        });
+
+        // Custom Interactive Toast Notifications (Replaces alert)
+        function notify(message, type = "success") {
+            const container = document.getElementById("toast-stack");
+            const toast = document.createElement("div");
+            toast.className = `toast-notification ${type === "success" ? "toast-success" : ""}`;
+            toast.innerHTML = `
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add("show"), 50);
+            
+            setTimeout(() => {
+                toast.classList.remove("show");
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Drag and Drop Interactions
+        ["dragenter", "dragover"].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add("dragover");
+            }, false);
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("dragover");
+            }, false);
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) handleFile(files[0]);
+        });
+
+        dropZone.addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener("change", (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith("image/")) {
+                notify("Invalid file. Please select an image file format.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                uploadedImageBase64 = event.target.result;
+                originalDisplay.src = uploadedImageBase64;
+                compactThumbBefore.src = uploadedImageBase64;
+                
+                originalDisplay.onload = function() {
+                    originalDims.innerText = `${originalDisplay.naturalWidth} x ${originalDisplay.naturalHeight} px`;
+                    
+                    // Call global direct function bound on Python start
+                    if (window.load_image_from_js) {
+                        const loaded_ok = window.load_image_from_js(uploadedImageBase64);
+                        if (loaded_ok) {
+                            notify("Image uploaded successfully.");
+                            
+                            // Swap Drop Zone with Compact Sticky Banner Layout
+                            dropZone.classList.add("hidden");
+                            compactLoadedBanner.classList.remove("hidden");
+                            tiledPreviewCard.classList.remove("hidden");
+                            
+                            // Immediately run the live-updating processing engine on load
+                            executeProcessing();
+                        } else {
+                            notify("Error loading image into Python workspace.", "error");
+                        }
+                    } else {
+                        notify("Python kernel is initializing. Please wait...", "error");
+                    }
+                };
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // De-bounced Auto-Processing Core (Prevents CPU locks during rapid adjustments)
+        function triggerAutoProcess() {
+            if (!uploadedImageBase64) return;
+            if (processTimeout) clearTimeout(processTimeout);
+            
+            processTimeout = setTimeout(() => {
+                executeProcessing();
+            }, 150);
+        }
+
+        function executeProcessing() {
+            try {
+                if (window.process_and_output) {
+                    const result_base64 = window.process_and_output(
+                        parseInt(cropL.value) || 0,
+                        parseInt(cropT.value) || 0,
+                        parseInt(cropR.value) || 0,
+                        parseInt(cropB.value) || 0,
+                        parseInt(blendMethod.value),
+                        parseFloat(overlapPercent.value),
+                        parseInt(avgIntensity.value),
+                        parseInt(avgRadius.value),
+                        exportFormat.value,
+                        parseInt(jpegQuality.value)
+                    );
+
+                    if (result_base64 && result_base64.trim() !== "") {
+                        outputImageBase64 = result_base64;
+                        
+                        // Update repeating preview background grid
+                        tiledPreviewViewport.style.backgroundImage = `url(${outputImageBase64})`;
+                        
+                        // Update active "After" thumbnail preview in top panel
+                        compactThumbAfter.src = outputImageBase64;
+                        
+                        // Fully enable download action pill
+                        downloadBtn.disabled = false;
+                        notify("Seamless texture updated.");
+                    } else {
+                        notify("Synthesis completed with internal error.", "error");
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                notify("An error occurred during Python math rendering.", "error");
+            }
+        }
+
+        // Bind auto-update listeners to all settings inputs
+        const configInputs = [cropL, cropT, cropR, cropB, blendMethod, overlapPercent, avgIntensity, avgRadius, exportFormat, jpegQuality];
+        configInputs.forEach(input => {
+            const eventType = input.tagName === "SELECT" ? "change" : "input";
+            input.addEventListener(eventType, triggerAutoProcess);
+        });
+
+        // Trigger Local Browser Download File
+        downloadBtn.addEventListener("click", () => {
+            if (!outputImageBase64) {
+                notify("No synthesized texture available to download yet.", "error");
+                return;
+            }
+            const ext = exportFormat.value;
+            const link = document.createElement("a");
+            link.href = outputImageBase64;
+            link.download = `seamless_texture.${ext}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            notify("Downloading synthesized texture file...");
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organon Central Hub</title>
+  <style>
+    /* ==========================================================
+       ORGANON ROOT THEME & VARIABLES
+       ========================================================== */
+    :root {
+      --bg-nightsky: #181919;
+      --stone-ochre: #E0A360;
+      --stone-border: #896B49;
+      --water-blue: #4B84BF;
+      --heading-blue: #75B2DE;
+      --input-text-ivory: #F0EBCB;
+      --dark-stone-ink: #292A24;
+      
+      --font-headers: 'Cinzel', 'Playfair Display', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-nightsky);
+      color: var(--input-text-ivory);
+      font-family: var(--font-body);
+      margin: 0;
+      padding: 0;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ==========================================================
+       ORGANON LAYERED CONTROLS (THE TOP BAR SYSTEM)
+       ========================================================== */
+    
+    /* Level 1 (L1): The Crown Conduit - Full Color Sandstone Background */
+    .l1-header {
+      background: url('images/stonetext.jpg') repeat;
+      background-color: var(--stone-ochre); /* Warm base fallback */
+      border-bottom: 2px solid var(--stone-border);
+      padding: 10px 20px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 30;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.95); /* Heavy 3D shadow beneath L1 */
+    }
+
+    .l1-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      grid-column: 1;
+    }
+
+    .l1-logo {
+      height: 42px;
+      width: auto;
+      aspect-ratio: 2304 / 1842;
+      border-radius: 6px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.85)); /* Precision contour shadow */
+    }
+
+    .l1-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .l1-title-img {
+      height: 32px;
+      width: auto;
+      aspect-ratio: 965 / 293;
+      object-fit: contain;
+      display: block;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.85)); /* Precision contour shadow */
+    }
+
+    .l1-title-group h1 {
+      font-family: var(--font-headers);
+      color: var(--stone-ochre);
+      font-size: 20px;
+      margin: 0;
+      letter-spacing: 0.08em;
+      line-height: 1;
+    }
+
+    /* Round Version Pill Badge with Contrast Shadows */
+    .version-pill {
+      background-color: rgba(41, 42, 36, 0.65); /* Rich dark stone translucent backing */
+      color: var(--stone-ochre);
+      border: 1px solid var(--stone-border);
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: bold;
+      padding: 2px 10px;
+      border-radius: 9999px; /* Round pill layout */
+      white-space: nowrap;
+      display: inline-block;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7); /* Pill shadow */
+    }
+
+    /* Centered Fixed-Width Status Box with Shadows - Responsive 3x Width */
+    .l1-status-center {
+      grid-column: 2;
+      justify-self: center;
+      background-color: rgba(24, 25, 25, 0.85);
+      border: 1px solid var(--stone-border);
+      padding: 6px 16px;
+      border-radius: 9999px; /* Rounded pill style */
+      width: 540px; /* 3 times wider than original 180px */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.8); /* Drop shadow */
+      transition: width 0.3s ease, padding 0.3s ease, gap 0.3s ease;
+      overflow: hidden; /* Safe lock for text sizing */
+    }
+
+    .l1-status-text {
+      font-size: 13px; /* Slightly bigger writing */
+      font-weight: bold;
+      color: #75B2DE;
+      font-family: monospace;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis; /* Prevent overflow on desktop hover-descriptions */
+      text-align: center;
+      display: block;
+      max-width: 480px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--water-blue);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--water-blue);
+      flex-shrink: 0;
+      animation: ripple 2s infinite ease-in-out;
+    }
+
+    .l1-actions-right {
+      grid-column: 3;
+      justify-self: end;
+    }
+
+    /* Responsive adjustments for status window to remain mobile friendly */
+    @media (max-width: 992px) {
+      .l1-status-center {
+        width: 320px; /* Scales down on tablets to leave space for brand & actions */
+      }
+      .l1-status-text {
+        max-width: 280px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .l1-status-center {
+        width: 140px; /* Compact format on mobile viewports to prevent layout break */
+        padding: 6px 10px;
+        gap: 6px;
+      }
+      .l1-status-text {
+        font-size: 11px; /* Scaled cleanly for mobile readability */
+        letter-spacing: 0.02em;
+        max-width: 110px;
+      }
+    }
+
+    /* ==========================================================
+       LEVEL 2 COLLAPSIBLE SYSTEM WRAPPER
+       ========================================================== */
+    #l2-wrapper {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease-in-out;
+      will-change: max-height, opacity;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 21;
+    }
+    #l2-wrapper.visible {
+      max-height: 80px; /* Accommodates L2 button height with padding and layout spacing safely */
+      opacity: 1;
+    }
+
+    /* Level 2 (L2): Dynamic Tool Folders - Moderately Darkened Stone background */
+    .l2-tabs-container {
+      background: var(--bg-nightsky) url('images/stonetext.jpg') repeat;
+      background-blend-mode: multiply;
+      background-color: rgba(20, 21, 21, 0.85); /* Recessed moderately dark stone texture mapping */
+      border-bottom: 2px solid var(--stone-border);
+      display: flex;
+      gap: 10px;
+      padding: 10px 20px;
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.9); /* Heavy drop shadow under L2 */
+    }
+    .l2-tabs-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ==========================================================
+       LEVEL 3 DYNAMIC COLLAPSIBLE SYSTEM WRAPPER
+       ========================================================== */
+    #l3-wrapper {
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease-in-out;
+      will-change: max-height, opacity;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      z-index: 10;
+    }
+    #l3-wrapper.visible {
+      max-height: 100px; /* Accommodates dividers and L3 action height safely */
+      opacity: 1;
+    }
+
+    /* Level 3 (L3): Action Taps - Deeply Darkened Stone background */
+    .l3-sub-container {
+      background: var(--bg-nightsky) url('images/stonetext.jpg') repeat;
+      background-blend-mode: multiply;
+      background-color: rgba(10, 11, 11, 0.95); /* Deeply recessed dark stone texture mapping */
+      padding: 10px 20px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .l3-sub-container::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* ==========================================================
+       TACTILE WORKFLOWS: DIVIDERS & THE MODULE ENGINES
+       ========================================================== */
+
+    /* Divider between L1 and L2 (The Primary Pull-down Interactive Zone) */
+    .divider-l1-l2 {
+      height: 12px;
+      background: url('images/divide line.png') repeat-x center;
+      background-size: auto 100%;
+      border-top: 1px solid var(--stone-border);
+      border-bottom: 1px solid var(--stone-border);
+      flex-shrink: 0;
+      opacity: 0.95;
+      position: relative;
+      z-index: 25;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.9); /* Adds physical separation shadow */
+      cursor: pointer; /* Indicates interactive hover functionality */
+    }
+
+    /* Divider between L2 and L3 - Configured to 5px (50% less tall) with zero border duplication */
+    .divider-l2-l3 {
+      height: 5px;
+      background: url('images/divide line2.png') repeat-x center;
+      background-size: auto 100%;
+      border: none; /* Removed the top/bottom solid borders to fix duplicate line issue */
+      flex-shrink: 0;
+      opacity: 0.95;
+      position: relative;
+      z-index: 15;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.85); /* Adds physical separation shadow */
+    }
+
+    /* Divider between Level 3 and Basin Content Frame (Using divide line3.png) - 3px and 50% opacity */
+    .divider-l3-basin {
+      height: 3px; /* Customized to sleek 3px width/height */
+      background: url('images/divide line3.png') repeat-x center;
+      background-size: auto 100%;
+      border: none;
+      flex-shrink: 0;
+      opacity: 0.5; /* 50% Transparent */
+      position: relative;
+      z-index: 15;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.95); /* Heavy 3D shadow separating controls from workspace */
+    }
+
+    /* ==========================================================
+       UNIFIED ORGANON BUTTON SYSTEM (button.png / button2.png)
+       ========================================================== */
+    .org-btn-unified {
+      border: none;
+      background: none !important; /* Clear direct background to render isolated pseudo-element */
+      position: relative;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.25s ease-in-out;
+      outline: none;
+      user-select: none;
+      flex-shrink: 0;
+      text-transform: uppercase; /* Enforce ALL CAPS */
+    }
+
+    /* Pseudo-element containing the background image for isolated opacity control */
+    .org-btn-unified::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      z-index: 1;
+      transition: opacity 0.25s ease-in-out;
+      opacity: 1; /* Default fully opaque */
+    }
+
+    /* Unified Bold, Contrast Label Text above the background */
+    .org-btn-unified span {
+      position: relative;
+      z-index: 2; /* Forces label text onto a higher z-index plane than background pseudo-element */
+      font-weight: bold; /* Bold lettering weight */
+      color: var(--dark-stone-ink); /* Enforces dark charcoal-green color #292A24 by default */
+      transition: color 0.25s ease-in-out, text-shadow 0.25s ease-in-out;
+    }
+
+    /* Level 2 Folders use button.png (Originally 194x50, now reduced by 25% to 146x38) */
+    .org-btn-unified.l2-btn {
+      width: 146px;
+      height: 38px;
+      padding: 2px 10px 0 10px; /* Aligns text cleanly over vertical depth */
+    }
+    .org-btn-unified.l2-btn::before {
+      background-image: url('images/button.png');
+    }
+
+    /* Level 2 Hover and Active highlights (50% Background Transparency & Glowing Blue Text) */
+    .org-btn-unified.l2-btn:hover::before,
+    .org-btn-unified.l2-btn.active::before {
+      opacity: 0.5; /* ONLY background graphic goes 50% transparent on mouseover / click */
+    }
+    .org-btn-unified.l2-btn:hover span,
+    .org-btn-unified.l2-btn.active span {
+      color: #a3c8ff; /* Highly brightened glowing light blue core */
+      text-shadow: 0 0 8px #5085be, 0 0 16px #5085be, 0 0 24px #5085be; /* Immersive glowing neon blue */
+    }
+
+    /* Level 3 Contextual Actions use button2.png (Originally 222x40, now reduced by 25% to 167x30) */
+    .org-btn-unified.l3-btn {
+      width: 167px;
+      height: 30px;
+      padding: 1px 8px 0 8px; /* Aligns text cleanly over vertical depth */
+    }
+    .org-btn-unified.l3-btn::before {
+      background-image: url('images/button2.png');
+    }
+
+    /* Level 3 Hover and Active highlights (50% Background Transparency & Glowing Red Text) */
+    .org-btn-unified.l3-btn:hover::before,
+    .org-btn-unified.l3-btn.active::before {
+      opacity: 0.5; /* ONLY background graphic goes 50% transparent on mouseover / click */
+    }
+    .org-btn-unified.l3-btn:hover span,
+    .org-btn-unified.l3-btn.active span {
+      color: #ff9cb3; /* Highly brightened glowing light red core */
+      text-shadow: 0 0 8px #9a2f4f, 0 0 16px #9a2f4f, 0 0 24px #9a2f4f; /* Immersive glowing neon red */
+    }
+
+    /* ==========================================================
+       CENTRAL BASIN (THE ACTIVE CONTENT WINDOW)
+       ========================================================= */
+    .basin-content-wrapper {
+      flex-grow: 1;
+      position: relative;
+      background-color: #292a24; /* Mapped dark stone bg layout for empty state */
+      z-index: 1;
+    }
+
+    .basin-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+      background-color: #292a24; /* Prevents frame background color mismatch */
+    }
+
+    @keyframes ripple {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Level 1 (L1): The Crown Conduit -->
+  <header class="l1-header">
+    <div class="l1-brand">
+      <img src="images/logoemoji.png" alt="Organon Logo" class="l1-logo" onerror="this.style.display='none'">
+      <div class="l1-title-group">
+        <img src="images/title.png" alt="ORGANON" class="l1-title-img" onerror="showFallbackTitle(this)">
+        <h1 id="fallback-title" style="display: none;">ORGANON</h1>
+        <span class="version-pill" id="site-version">...</span>
+      </div>
+    </div>
+    
+    <!-- Geographically Centered Fixed-Width Status Box -->
+    <div class="l1-status-center">
+      <div class="status-dot"></div>
+      <span class="l1-status-text">ORGANON ONLINE</span>
+    </div>
+
+    <!-- Empty slot maintained on grid to balance centering parameters perfectly -->
+    <div class="l1-actions-right"></div>
+  </header>
+
+  <!-- Divider L1-L2 (The Always-Visible Trigger Strip) -->
+  <div class="divider-l1-l2"></div>
+
+  <!-- COLLAPSIBLE LEVEL 2 STRUCTURAL WRAPPER -->
+  <div id="l2-wrapper">
+    <!-- Level 2 (L2): Dynamic Tool Folders -->
+    <div class="l2-tabs-container" id="l2-tabs"></div>
+  </div>
+
+  <!-- COLLAPSIBLE LEVEL 3 STRUCTURAL WRAPPER -->
+  <div id="l3-wrapper">
+    <!-- Divider L2-L3 -->
+    <div class="divider-l2-l3"></div>
+
+    <!-- Level 3 (L3): Contextual Sub-Actions & Tools -->
+    <div class="l3-sub-container" id="l3-tabs"></div>
+
+    <!-- Divider L3-Basin (Using divide line3.png) -->
+    <div class="divider-l3-basin"></div>
+  </div>
+
+  <!-- Content Basin Frame -->
+  <main class="basin-content-wrapper">
+    <iframe id="basin-frame" class="basin-iframe" src="about:blank"></iframe>
+  </main>
+
+  <script {nonce}>
+    let manifest = null;
+    let activeCategory = 'create';
+    let activeTool = '';
+
+    // Interaction states to control L2 and L3 dynamic visibility rules
+    let isOverDivider = false;
+    let isOverL2 = false;
+    let isOverL3 = false;
+    let isPersistent = false;   // True upon hovering or clicking L1-L2 divider, or selecting an L2 category
+    let menuTimer = null;        // 5-second persistence countdown clock
+    let collapseTimeout = null;  // 200ms bridge window to glide smoothly across visual gaps
+
+    function showFallbackTitle(img) {
+      img.style.display = 'none';
+      document.getElementById('fallback-title').style.display = 'block';
+    }
+
+    // Centered status-bar text manipulation channel
+    function setStatusText(text) {
+      const statusTextEl = document.querySelector('.l1-status-text');
+      if (statusTextEl) {
+        statusTextEl.innerText = text.toUpperCase();
+      }
+    }
+
+    // Interactive Visibility Engine (Smoothly slides and fades away L2 & L3)
+    function updateMenus(instant = false) {
+      if (collapseTimeout) clearTimeout(collapseTimeout);
+
+      const triggerAction = () => {
+        const l2Wrapper = document.getElementById('l2-wrapper');
+        const l3Wrapper = document.getElementById('l3-wrapper');
+        
+        // L2 visibility criteria
+        const showL2 = isOverDivider || isOverL2 || isOverL3 || isPersistent;
+        
+        // L3 visibility criteria (L2 must be open + has activeCategory tools + is focused/persistent)
+        const showL3 = showL2 && activeCategory && (isOverL2 || isOverL3 || isPersistent);
+
+        if (showL2) {
+          l2Wrapper.classList.add('visible');
+        } else {
+          l2Wrapper.classList.remove('visible');
+        }
+
+        if (showL3) {
+          l3Wrapper.classList.add('visible');
+        } else {
+          l3Wrapper.classList.remove('visible');
+        }
+      };
+
+      // Instantly open on focus, otherwise debounce close action to bridge visual divider spaces cleanly
+      if (instant || isOverDivider || isOverL2 || isOverL3 || isPersistent) {
+        triggerAction();
+      } else {
+        collapseTimeout = setTimeout(triggerAction, 200);
+      }
+    }
+
+    // Start or restart the 5-second persistence override timer
+    function triggerPersistence() {
+      isPersistent = true;
+      updateMenus(true);
+
+      if (menuTimer) clearTimeout(menuTimer);
+      menuTimer = setTimeout(() => {
+        isPersistent = false;
+        updateMenus();
+      }, 5000);
+    }
+
+    // Iframe postMessage communications listener setup (Dynamic descriptions picker)
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'set-status') {
+        setStatusText(event.data.text);
+      } else if (event.data && event.data.type === 'clear-status') {
+        setStatusText("ORGANON ONLINE");
+      }
+    });
+
+    window.onload = async () => {
+      try {
+        const response = await fetch('tools.json');
+        manifest = await response.json();
+        
+        // Dynamically pull and load version directly from manifest config
+        if (manifest.version) {
+          document.getElementById('site-version').innerText = manifest.version;
+        }
+        
+        renderL2Tabs();
+        setupInteractionListeners();
+        
+        // Check if there is an initial hash route to direct load
+        const initialHash = window.location.hash.substring(1);
+        if (initialHash) {
+          let found = false;
+          manifest.categories.forEach(cat => {
+            const match = cat.tools.find(t => t.id === initialHash);
+            if (match) {
+              activeCategory = cat.id;
+              renderL2Tabs();
+              selectCategory(cat.id, false); // select folder
+              selectTool(match);             // load tool
+              found = true;
+            }
+          });
+          if (!found) {
+            selectCategory(activeCategory, false); // Start blank
+          }
+        } else {
+          // If no deep link, render category L2/L3 controls without auto-loading iframe
+          selectCategory(activeCategory, false); 
+        }
+      } catch (err) {
+        console.warn("Could not load tools.json manifest. Using mock hydration framework.");
+        useMockData();
+      }
+    };
+
+    function setupInteractionListeners() {
+      const divider12 = document.querySelector('.divider-l1-l2');
+      const l2Wrapper = document.getElementById('l2-wrapper');
+      const l3Wrapper = document.getElementById('l3-wrapper');
+
+      // 1. Divider interaction triggers (pop open L2 on hover or tap)
+      divider12.addEventListener('mouseenter', () => {
+        isOverDivider = true;
+        triggerPersistence();
+      });
+      divider12.addEventListener('mouseleave', () => {
+        isOverDivider = false;
+        updateMenus();
+      });
+      divider12.addEventListener('click', () => {
+        triggerPersistence();
+      });
+
+      // 2. L2 Container interaction trackers
+      l2Wrapper.addEventListener('mouseenter', () => {
+        isOverL2 = true;
+        updateMenus(true);
+      });
+      l2Wrapper.addEventListener('mouseleave', () => {
+        isOverL2 = false;
+        updateMenus();
+      });
+
+      // 3. L3 Container interaction trackers
+      l3Wrapper.addEventListener('mouseenter', () => {
+        isOverL3 = true;
+        updateMenus(true);
+      });
+      l3Wrapper.addEventListener('mouseleave', () => {
+        isOverL3 = false;
+        updateMenus();
+      });
+    }
+
+    function useMockData() {
+      manifest = {
+        "version": "v1.01-mock",
+        "categories": [
+          {
+            "id": "create",
+            "label": "CREATE",
+            "tools": [
+              {
+                "id": "animated-gif",
+                "label": "ANIMATED GIF",
+                "path": "tools/animated-gif/index.html",
+                "description": "Generate or edit animated GIFs from images or video segments."
+              }
+            ]
+          },
+          {
+            "id": "modify",
+            "label": "MODIFY",
+            "tools": [
+              {
+                "id": "image-tile",
+                "label": "TILE IMAGE",
+                "path": "tools/image-tile/index.html",
+                "description": "Slice and tile images into precise, custom grid coordinates."
+              },
+              {
+                "id": "img2normal",
+                "label": "IMG2NORMAL",
+                "path": "tools/img2normal/index.html",
+                "description": "Convert images into normal maps for 3D rendering."
+              },
+              {
+                "id": "jpeg-compress",
+                "label": "JPEG COMPRESS",
+                "path": "tools/jpeg-compress/index.html",
+                "description": "Compress JPEG images to optimized files sizes."
+              }
+            ]
+          },
+          {
+            "id": "tools",
+            "label": "TOOLS",
+            "tools": [
+              {
+                "id": "bulk-download",
+                "label": "BULK DOWNLOAD",
+                "path": "tools/bulk-download/index.html",
+                "description": "Download multiple files or assets in batch."
+              }
+            ]
+          },
+          {
+            "id": "analyze",
+            "label": "ANALYZE",
+            "tools": [
+              {
+                "id": "vector-sync",
+                "label": "VECTOR SYNC",
+                "path": "tools/vector-sync/index.html",
+                "description": "Analyze vector offsets and categorical nodes inside the metadata cache."
+              }
+            ]
+          }
+        ]
+      };
+      document.getElementById('site-version').innerText = manifest.version;
+      renderL2Tabs();
+      setupInteractionListeners();
+      selectCategory(activeCategory, false); // Default start blank
+    }
+
+    function renderL2Tabs() {
+      const container = document.getElementById('l2-tabs');
+      container.innerHTML = '';
+
+      manifest.categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = `org-btn-unified l2-btn ${cat.id === activeCategory ? 'active' : ''}`;
+        btn.id = `cat-${cat.id}`;
+        
+        // CORRECTION IMPLEMENTED: Pass "false" so clicking L2 folder ONLY populates L3, leaving iframe alone.
+        btn.onclick = () => selectCategory(cat.id, false); 
+        btn.innerHTML = `<span>${cat.label}</span>`;
+
+        // Custom descriptions on hub categories hover
+        btn.onmouseover = () => setStatusText(`Category Folder: Access ${cat.label} Utilities`);
+        btn.onmouseleave = () => setStatusText("ORGANON ONLINE");
+
+        container.appendChild(btn);
+      });
+    }
+
+    function selectCategory(catId, autoLoadFirst = true) {
+      activeCategory = catId;
+      document.querySelectorAll('.l2-tabs-container .org-btn-unified').forEach(el => el.classList.remove('active'));
+      const activeL2 = document.getElementById(`cat-${catId}`);
+      if (activeL2) activeL2.classList.add('active');
+
+      const categoryObj = manifest.categories.find(c => c.id === catId);
+      renderL3Tabs(categoryObj ? categoryObj.tools : [], autoLoadFirst);
+
+      // Trigger 5 seconds click override persistence cycle
+      triggerPersistence();
+    }
+
+    function renderL3Tabs(tools, autoLoadFirst = true) {
+      const container = document.getElementById('l3-tabs');
+      container.innerHTML = '';
+
+      if (tools.length === 0) {
+        container.innerHTML = `<span style="font-size: 11px; color: var(--chiseled-bronze); font-family: monospace;">No actions configuration found</span>`;
+        return;
+      }
+
+      tools.forEach((tool, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `org-btn-unified l3-btn ${tool.id === activeTool ? 'active' : ''}`;
+        btn.id = `tool-${tool.id}`;
+        btn.onclick = () => selectTool(tool);
+        btn.innerHTML = `<span>${tool.label}</span>`;
+
+        // Custom descriptions on hub tools hover
+        btn.onmouseover = () => setStatusText(tool.description || tool.label);
+        btn.onmouseleave = () => setStatusText("ORGANON ONLINE");
+
+        container.appendChild(btn);
+
+        // Auto-select tool in active column only on direct user-click navigations
+        if (idx === 0 && autoLoadFirst) {
+          selectTool(tool);
+        }
+      });
+    }
+
+    function selectTool(tool) {
+      activeTool = tool.id;
+      document.querySelectorAll('.l3-sub-container .org-btn-unified').forEach(el => el.classList.remove('active'));
+      const activeBtn = document.getElementById('tool-' + tool.id);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      const iframe = document.getElementById('basin-frame');
+      iframe.src = tool.path;
+
+      window.history.pushState(null, null, '#' + tool.id);
+    }
+
+    window.addEventListener('hashchange', () => {
+      const toolId = window.location.hash.substring(1);
+      if (toolId && manifest) {
+        manifest.categories.forEach(cat => {
+          const match = cat.tools.find(t => t.id === toolId);
+          if (match) {
+            activeCategory = cat.id;
+            renderL2Tabs();
+            selectCategory(cat.id, false);
+            selectTool(match);
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

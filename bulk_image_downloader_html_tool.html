@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bulk Image Downloader</title>
+
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        padding: 20px;
+        color: #222;
+    }
+
+    h1 {
+        margin-bottom: 10px;
+    }
+
+    textarea {
+        width: 100%;
+        height: 180px;
+        padding: 10px;
+        font-size: 14px;
+        box-sizing: border-box;
+        resize: vertical;
+    }
+
+    button {
+        margin-top: 12px;
+        padding: 12px 20px;
+        font-size: 15px;
+        cursor: pointer;
+        border: none;
+        background: #111;
+        color: white;
+        border-radius: 6px;
+    }
+
+    button:hover {
+        background: #333;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background: white;
+    }
+
+    th, td {
+        border: 1px solid #ccc;
+        padding: 10px;
+        text-align: left;
+        vertical-align: top;
+        word-break: break-word;
+    }
+
+    th {
+        background: #eee;
+    }
+
+    .success {
+        color: green;
+        font-weight: bold;
+    }
+
+    .error {
+        color: red;
+        font-weight: bold;
+    }
+
+    .pending {
+        color: #666;
+    }
+</style>
+</head>
+<body>
+
+<h1>Bulk Image Downloader</h1>
+
+<p>Paste one image URL per line:</p>
+
+<textarea id="urlInput" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.png"></textarea>
+
+<br>
+
+<button id="startBtn">Start Download</button>
+
+<table id="resultsTable">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>URL</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<script>
+const startBtn = document.getElementById('startBtn');
+const urlInput = document.getElementById('urlInput');
+const tableBody = document.querySelector('#resultsTable tbody');
+
+function getFileName(url, index) {
+    try {
+        const parsed = new URL(url);
+        const path = parsed.pathname;
+        const name = path.substring(path.lastIndexOf('/') + 1);
+
+        if (name && name.includes('.')) {
+            return name;
+        }
+
+        return `image_${index + 1}.jpg`;
+    } catch {
+        return `image_${index + 1}.jpg`;
+    }
+}
+
+async function downloadImage(url, index, statusCell) {
+    try {
+        statusCell.textContent = 'Downloading...';
+        statusCell.className = 'pending';
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status} ${response.statusText}`);
+        }
+
+        const blob = await response.blob();
+
+        if (!blob.type.startsWith('image/')) {
+            throw new Error(`URL did not return an image (${blob.type || 'unknown type'})`);
+        }
+
+        const blobUrl = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = getFileName(url, index);
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+
+        URL.revokeObjectURL(blobUrl);
+
+        statusCell.textContent = 'Downloaded';
+        statusCell.className = 'success';
+
+    } catch (err) {
+        statusCell.textContent = err.message;
+        statusCell.className = 'error';
+    }
+}
+
+startBtn.addEventListener('click', async () => {
+    tableBody.innerHTML = '';
+
+    const urls = urlInput.value
+        .split('\n')
+        .map(u => u.trim())
+        .filter(u => u.length > 0);
+
+    if (urls.length === 0) {
+        alert('Please paste at least one URL.');
+        return;
+    }
+
+    startBtn.disabled = true;
+
+    const rows = [];
+
+    urls.forEach((url, index) => {
+        const row = document.createElement('tr');
+
+        const numCell = document.createElement('td');
+        numCell.textContent = index + 1;
+
+        const urlCell = document.createElement('td');
+        urlCell.textContent = url;
+
+        const statusCell = document.createElement('td');
+        statusCell.textContent = 'Waiting...';
+        statusCell.className = 'pending';
+
+        row.appendChild(numCell);
+        row.appendChild(urlCell);
+        row.appendChild(statusCell);
+
+        tableBody.appendChild(row);
+
+        rows.push(statusCell);
+    });
+
+    for (let i = 0; i < urls.length; i++) {
+        await downloadImage(urls[i], i, rows[i]);
+    }
+
+    startBtn.disabled = false;
+});
+</script>
+
+</body>
+</html>

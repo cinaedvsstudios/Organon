@@ -1,0 +1,53 @@
+{
+  "version": "v1.0.0-alpha",
+  "categories": [
+    {
+      "id": "create",
+      "label": "CREATE",
+      "tools": [
+        {
+          "id": "image-tile",
+          "label": "Tile Image",
+          "path": "tools/image-tile/index.html",
+          "description": "Slice and tile images into custom coordinates and layouts seamlessly without distortion."
+        }
+      ]
+    },
+    {
+      "id": "analyze",
+      "label": "ANALYZE",
+      "tools": [
+        {
+          "id": "vector-sync",
+          "label": "Vector Sync",
+          "path": "tools/vector-sync/index.html",
+          "description": "Analyze vector offsets and categorical nodes inside the metadata cache."
+        }
+      ]
+    },
+    {
+      "id": "garden",
+      "label": "GARDEN",
+      "tools": [
+        {
+          "id": "concept-mapper",
+          "label": "Concept Mapper",
+          "path": "tools/concept-mapper/index.html",
+          "description": "Visualize your physical and logical notes within an interactive garden chart."
+        }
+      ]
+    },
+    {
+      "id": "config",
+      "label": "CONFIG",
+      "tools": [
+        {
+          "id": "system-settings",
+          "label": "System Variables",
+          "path": "tools/system-settings/index.html",
+          "description": "Adjust global rendering speeds and baseline parameters."
+        }
+      ]
+    }
+  ]
+}
