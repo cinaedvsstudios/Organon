@@ -256,15 +256,35 @@
     }
 
     @media (max-width: 600px) {
+      .l1-header {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        row-gap: 8px;
+        column-gap: 12px;
+        padding: 8px 16px;
+      }
+      .l1-brand {
+        grid-column: 1;
+        grid-row: 1;
+      }
+      .l1-actions-right {
+        grid-column: 2;
+        grid-row: 1;
+        justify-self: end;
+      }
       .l1-status-center {
-        width: 140px; /* Compact format on mobile viewports to prevent layout break */
-        padding: 6px 10px;
-        gap: 6px;
+        grid-column: 1 / span 2;
+        grid-row: 2;
+        width: 100%;
+        max-width: 480px;
+        justify-self: center;
+        padding: 6px 16px;
+        gap: 10px;
       }
       .l1-status-text {
         font-size: 11px; /* Scaled cleanly for mobile readability */
         letter-spacing: 0.02em;
-        max-width: 110px;
+        max-width: 100%;
       }
     }
 
@@ -821,6 +841,7 @@
       setStatusText('Global Settings Workspace');
     }
 
+    // Acknowledging settings closure sequence
     function closeSettingsModal() {
       const overlay = document.getElementById('settings-overlay');
       overlay.classList.remove('open');
