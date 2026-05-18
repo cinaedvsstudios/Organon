@@ -60,30 +60,6 @@
           "description": "Browse and manage the global character library sheet metadata."
         }
       ]
-    },
-    {
-      "id": "garden",
-      "label": "GARDEN",
-      "tools": [
-        {
-          "id": "concept-mapper",
-          "label": "CONCEPT MAPPER",
-          "path": "tools/concept-mapper/index.html",
-          "description": "Visualize your physical and logical notes within an interactive garden chart."
-        }
-      ]
-    },
-    {
-      "id": "config",
-      "label": "CONFIG",
-      "tools": [
-        {
-          "id": "system-settings",
-          "label": "SYSTEM VARIABLES",
-          "path": "tools/system-settings/index.html",
-          "description": "Adjust global rendering speeds and baseline parameters."
-        }
-      ]
     }
   ]
 }

@@ -4,6 +4,20 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Organon Central Hub</title>
+  <script>
+    function showFallbackTitle(img) {
+      img.style.display = 'none';
+      const fallbackTitle = document.getElementById('fallback-title');
+      if (fallbackTitle) {
+        fallbackTitle.style.display = 'block';
+      } else {
+        document.addEventListener('DOMContentLoaded', () => {
+          const fb = document.getElementById('fallback-title');
+          if (fb) fb.style.display = 'block';
+        });
+      }
+    }
+  </script>
   <style>
     /* ==========================================================
        ORGANON ROOT THEME & VARIABLES
@@ -775,11 +789,6 @@
     // Dynamic state configuration for file uploads
     let importMode = 'merge';
 
-    function showFallbackTitle(img) {
-      img.style.display = 'none';
-      document.getElementById('fallback-title').style.display = 'block';
-    }
-
     // Centered status-bar text manipulation channel
     function setStatusText(text, force = false) {
       if (statusOverrideActive && !force) return;
@@ -1169,7 +1178,7 @@
 
     function useMockData() {
       manifest = {
-        "version": "v1.07-mock",
+        "version": "v1.08-mock",
         "categories": [
           {
             "id": "create",
@@ -1226,7 +1235,7 @@
               {
                 "id": "character-library",
                 "label": "CHARACTER LIBRARY",
-                "path": "tools/Character-library/index.html",
+                "path": "tools/character-library/index.html", // Updated lowercase path target
                 "description": "Browse and manage the global character library sheet metadata."
               }
             ]
@@ -1248,7 +1257,7 @@
         btn.className = `org-btn-unified l2-btn ${cat.id === activeCategory ? 'active' : ''}`;
         btn.id = `cat-${cat.id}`;
         
-        // CORRECTION IMPLEMENTED: Pass "false" so clicking L2 folder ONLY populates L3, leaving iframe alone.
+        // Clicking L2 folder ONLY populates L3, leaving iframe alone.
         btn.onclick = () => selectCategory(cat.id, false); 
         btn.innerHTML = `<span>${cat.label}</span>`;
 
