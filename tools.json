@@ -1,15 +1,51 @@
 {
-  "version": "v1.0.0-alpha",
+  "version": "v1.02-alpha",
   "categories": [
     {
       "id": "create",
       "label": "CREATE",
       "tools": [
         {
+          "id": "animated-gif",
+          "label": "ANIMATED GIF",
+          "path": "tools/animated-gif/index.html",
+          "description": "Generate or edit animated GIFs from images or video segments."
+        }
+      ]
+    },
+    {
+      "id": "modify",
+      "label": "MODIFY",
+      "tools": [
+        {
           "id": "image-tile",
-          "label": "Tile Image",
+          "label": "TILE IMAGE",
           "path": "tools/image-tile/index.html",
-          "description": "Slice and tile images into custom coordinates and layouts seamlessly without distortion."
+          "description": "Slice and tile images into precise, custom grid coordinates."
+        },
+        {
+          "id": "img2normal",
+          "label": "IMG2NORMAL",
+          "path": "tools/img2normal/index.html",
+          "description": "Convert images into normal maps for 3D rendering."
+        },
+        {
+          "id": "jpeg-compress",
+          "label": "JPEG COMPRESS",
+          "path": "tools/jpeg-compress/index.html",
+          "description": "Compress JPEG images to optimized files sizes."
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "label": "TOOLS",
+      "tools": [
+        {
+          "id": "bulk-download",
+          "label": "BULK DOWNLOAD",
+          "path": "tools/bulk-download/index.html",
+          "description": "Download multiple files or assets in batch."
         }
       ]
     },
@@ -19,7 +55,7 @@
       "tools": [
         {
           "id": "vector-sync",
-          "label": "Vector Sync",
+          "label": "VECTOR SYNC",
           "path": "tools/vector-sync/index.html",
           "description": "Analyze vector offsets and categorical nodes inside the metadata cache."
         }
@@ -31,7 +67,7 @@
       "tools": [
         {
           "id": "concept-mapper",
-          "label": "Concept Mapper",
+          "label": "CONCEPT MAPPER",
           "path": "tools/concept-mapper/index.html",
           "description": "Visualize your physical and logical notes within an interactive garden chart."
         }
@@ -43,7 +79,7 @@
       "tools": [
         {
           "id": "system-settings",
-          "label": "System Variables",
+          "label": "SYSTEM VARIABLES",
           "path": "tools/system-settings/index.html",
           "description": "Adjust global rendering speeds and baseline parameters."
         }

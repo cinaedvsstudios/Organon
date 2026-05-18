@@ -143,6 +143,17 @@
       max-width: 480px;
     }
 
+    /* Interactive hybrid container holding either standard status-dot or countdown-timer */
+    .status-indicator-wrap {
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      position: relative;
+    }
+
     .status-dot {
       width: 8px;
       height: 8px;
@@ -153,9 +164,69 @@
       animation: ripple 2s infinite ease-in-out;
     }
 
+    /* High-contrast circular countdown SVG component */
+    .status-timer {
+      position: relative;
+      width: 18px;
+      height: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .status-timer svg {
+      transform: rotate(-90deg);
+      width: 100%;
+      height: 100%;
+    }
+    .status-timer circle {
+      fill: none;
+      stroke-width: 2px;
+    }
+    .status-timer .timer-bg {
+      stroke: rgba(224, 163, 96, 0.2); /* Faint ochre path boundary */
+    }
+    .status-timer .timer-progress {
+      stroke: var(--water-blue);
+      stroke-dasharray: 47.12; /* Calculated: 2 * PI * r (r=7.5) */
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 0.1s linear;
+    }
+    .status-timer .timer-text {
+      position: absolute;
+      font-size: 8px;
+      font-weight: bold;
+      color: var(--heading-blue);
+      font-family: monospace;
+      line-height: 1;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
     .l1-actions-right {
       grid-column: 3;
       justify-self: end;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Info button styling - highly integrated with top bar ochre */
+    .info-btn {
+      background: none;
+      border: none;
+      color: var(--dark-stone-ink);
+      font-size: 20px;
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      outline: none;
+    }
+    .info-btn:hover {
+      color: var(--water-blue);
+      transform: scale(1.15);
     }
 
     /* Responsive adjustments for status window to remain mobile friendly */
@@ -271,6 +342,11 @@
       z-index: 25;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.9); /* Adds physical separation shadow */
       cursor: pointer; /* Indicates interactive hover functionality */
+      transition: box-shadow 0.3s ease;
+    }
+    /* Blue glow class applied when the menus are hidden - ENHANCED BRIGHTNESS */
+    .divider-l1-l2.blue-glow {
+      box-shadow: 0 0 22px rgba(117, 178, 222, 1), 0 0 10px rgba(80, 133, 190, 1), 0 4px 10px rgba(0, 0, 0, 0.9);
     }
 
     /* Divider between L2 and L3 - Configured to 5px (50% less tall) with zero border duplication */
@@ -284,6 +360,11 @@
       position: relative;
       z-index: 15;
       box-shadow: 0 4px 8px rgba(0, 0, 0, 0.85); /* Adds physical separation shadow */
+      transition: box-shadow 0.3s ease;
+    }
+    /* Red glow class applied when L2 folder is open but L3 actions are closed - ENHANCED BRIGHTNESS */
+    .divider-l2-l3.red-glow {
+      box-shadow: 0 0 22px rgba(255, 156, 179, 1), 0 0 10px rgba(154, 47, 79, 1), 0 4px 8px rgba(0, 0, 0, 0.85);
     }
 
     /* Divider between Level 3 and Basin Content Frame (Using divide line3.png) - 3px and 50% opacity */
@@ -352,15 +433,15 @@
       background-image: url('images/button.png');
     }
 
-    /* Level 2 Hover and Active highlights (50% Background Transparency & Glowing Blue Text) */
+    /* Level 2 Hover and Active highlights (50% Background Transparency & Amplified Glowing Blue Text) */
     .org-btn-unified.l2-btn:hover::before,
     .org-btn-unified.l2-btn.active::before {
       opacity: 0.5; /* ONLY background graphic goes 50% transparent on mouseover / click */
     }
     .org-btn-unified.l2-btn:hover span,
     .org-btn-unified.l2-btn.active span {
-      color: #a3c8ff; /* Highly brightened glowing light blue core */
-      text-shadow: 0 0 8px #5085be, 0 0 16px #5085be, 0 0 24px #5085be; /* Immersive glowing neon blue */
+      color: #ffffff; /* Highly intense pure white glowing core for maximum luminance */
+      text-shadow: 0 0 4px #ffffff, 0 0 12px #a3c8ff, 0 0 24px #5085be, 0 0 36px #5085be; /* Ultra-bright glowing blue */
     }
 
     /* Level 3 Contextual Actions use button2.png (Originally 222x40, now reduced by 25% to 167x30) */
@@ -373,15 +454,15 @@
       background-image: url('images/button2.png');
     }
 
-    /* Level 3 Hover and Active highlights (50% Background Transparency & Glowing Red Text) */
+    /* Level 3 Hover and Active highlights (50% Background Transparency & Amplified Glowing Red Text) */
     .org-btn-unified.l3-btn:hover::before,
     .org-btn-unified.l3-btn.active::before {
       opacity: 0.5; /* ONLY background graphic goes 50% transparent on mouseover / click */
     }
     .org-btn-unified.l3-btn:hover span,
     .org-btn-unified.l3-btn.active span {
-      color: #ff9cb3; /* Highly brightened glowing light red core */
-      text-shadow: 0 0 8px #9a2f4f, 0 0 16px #9a2f4f, 0 0 24px #9a2f4f; /* Immersive glowing neon red */
+      color: #ffffff; /* Highly intense pure white glowing core for maximum luminance */
+      text-shadow: 0 0 4px #ffffff, 0 0 12px #ff9cb3, 0 0 24px #9a2f4f, 0 0 36px #9a2f4f; /* Ultra-bright glowing red */
     }
 
     /* ==========================================================
@@ -390,7 +471,7 @@
     .basin-content-wrapper {
       flex-grow: 1;
       position: relative;
-      background-color: #292a24; /* Mapped dark stone bg layout for empty state */
+      background-color: #000000; /* Mapped to solid black for pure empty state */
       z-index: 1;
     }
 
@@ -399,7 +480,7 @@
       height: 100%;
       border: none;
       display: block;
-      background-color: #292a24; /* Prevents frame background color mismatch */
+      background-color: #000000; /* Prevents frame background color mismatch */
     }
 
     @keyframes ripple {
@@ -421,18 +502,29 @@
       </div>
     </div>
     
-    <!-- Geographically Centered Fixed-Width Status Box -->
+    <!-- Geographically Centered Fixed-Width Status Box with Countdown Indicator -->
     <div class="l1-status-center">
-      <div class="status-dot"></div>
+      <div class="status-indicator-wrap">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-timer" id="status-timer" style="display: none;">
+          <svg width="18" height="18" viewBox="0 0 20 20">
+            <circle cx="10" cy="10" r="7.5" class="timer-bg" />
+            <circle cx="10" cy="10" r="7.5" class="timer-progress" id="timer-progress" />
+          </svg>
+          <span class="timer-text" id="timer-text">5</span>
+        </div>
+      </div>
       <span class="l1-status-text">ORGANON ONLINE</span>
     </div>
 
-    <!-- Empty slot maintained on grid to balance centering parameters perfectly -->
-    <div class="l1-actions-right"></div>
+    <!-- Info Manual button placed on the far right of L1 -->
+    <div class="l1-actions-right">
+      <button class="info-btn" onclick="loadInfoTool()" onmouseover="setStatusText('System Manual & Documentation', true)" onmouseleave="setStatusText('ORGANON ONLINE')">ℹ️</button>
+    </div>
   </header>
 
-  <!-- Divider L1-L2 (The Always-Visible Trigger Strip) -->
-  <div class="divider-l1-l2"></div>
+  <!-- Divider L1-L2 (The Always-Visible Trigger Strip - Starts Glowing Blue) -->
+  <div class="divider-l1-l2 blue-glow"></div>
 
   <!-- COLLAPSIBLE LEVEL 2 STRUCTURAL WRAPPER -->
   <div id="l2-wrapper">
@@ -470,16 +562,89 @@
     let menuTimer = null;        // 5-second persistence countdown clock
     let collapseTimeout = null;  // 200ms bridge window to glide smoothly across visual gaps
 
+    // Navigation and Transition States
+    let wasL2Open = false;
+    let wasL3Open = false;
+    let statusOverrideActive = false;
+    let transitionTextTimeout = null;
+
+    // Countdown clock and UI handling variables
+    let countdownInterval = null;
+    let timeLeft = 0;
+    const totalDuration = 5000; // 5000ms
+
     function showFallbackTitle(img) {
       img.style.display = 'none';
       document.getElementById('fallback-title').style.display = 'block';
     }
 
     // Centered status-bar text manipulation channel
-    function setStatusText(text) {
+    function setStatusText(text, force = false) {
+      if (statusOverrideActive && !force) return;
       const statusTextEl = document.querySelector('.l1-status-text');
       if (statusTextEl) {
         statusTextEl.innerText = text.toUpperCase();
+      }
+    }
+
+    // Override status text dynamically during open/close animations
+    function triggerStatusOverride(text) {
+      statusOverrideActive = true;
+      setStatusText(text, true);
+      if (transitionTextTimeout) clearTimeout(transitionTextTimeout);
+      transitionTextTimeout = setTimeout(() => {
+        statusOverrideActive = false;
+        setStatusText("ORGANON ONLINE", true);
+      }, 700);
+    }
+
+    // High-precision circular SVG countdown ticker
+    function startCountdown() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      const tickRate = 100; // Tick every 100ms
+      countdownInterval = setInterval(() => {
+        // If cursor hovers over any trigger category, freeze and reset the countdown timer
+        if (isOverDivider || isOverL2 || isOverL3) {
+          timeLeft = totalDuration;
+          updateTimerUI();
+          return;
+        }
+
+        timeLeft -= tickRate;
+        if (timeLeft <= 0) {
+          timeLeft = 0;
+          isPersistent = false;
+          clearInterval(countdownInterval);
+          updateMenus();
+        }
+        updateTimerUI();
+      }, tickRate);
+    }
+
+    // Redraw radial progress and numeral second remaining text
+    function updateTimerUI() {
+      const dot = document.getElementById('status-dot');
+      const timer = document.getElementById('status-timer');
+      const progress = document.getElementById('timer-progress');
+      const text = document.getElementById('timer-text');
+
+      // Only count down visually if L2/L3 are open strictly due to persistence timer
+      const isCountingDown = isPersistent && !isOverDivider && !isOverL2 && !isOverL3;
+
+      if (isCountingDown) {
+        dot.style.display = 'none';
+        timer.style.display = 'flex';
+
+        const circumference = 2 * Math.PI * 7.5; // Circle circumference
+        const ratio = timeLeft / totalDuration;
+        progress.style.strokeDashoffset = circumference * (1 - ratio);
+
+        // Display current ceiling seconds integer
+        text.innerText = Math.ceil(timeLeft / 1000);
+      } else {
+        dot.style.display = 'block';
+        timer.style.display = 'none';
       }
     }
 
@@ -497,6 +662,37 @@
         // L3 visibility criteria (L2 must be open + has activeCategory tools + is focused/persistent)
         const showL3 = showL2 && activeCategory && (isOverL2 || isOverL3 || isPersistent);
 
+        // Dynamic Glow state mapping
+        const div12 = document.querySelector('.divider-l1-l2');
+        const div23 = document.querySelector('.divider-l2-l3');
+
+        if (!showL2) {
+          div12.classList.add('blue-glow');
+        } else {
+          div12.classList.remove('blue-glow');
+        }
+
+        if (showL2 && !showL3) {
+          div23.classList.add('red-glow');
+        } else {
+          div23.classList.remove('red-glow');
+        }
+
+        // Detect open/close transitions for status text reporting
+        if (showL2 !== wasL2Open || showL3 !== wasL3Open) {
+          const isOpening = (showL2 && !wasL2Open) || (showL3 && !wasL3Open);
+          const isClosing = (!showL2 && wasL2Open) || (!showL3 && wasL3Open);
+          
+          if (isOpening) {
+            triggerStatusOverride("OPENING PANEL");
+          } else if (isClosing) {
+            triggerStatusOverride("CLOSING PANEL");
+          }
+        }
+
+        wasL2Open = showL2;
+        wasL3Open = showL3;
+
         if (showL2) {
           l2Wrapper.classList.add('visible');
         } else {
@@ -508,6 +704,8 @@
         } else {
           l3Wrapper.classList.remove('visible');
         }
+
+        updateTimerUI();
       };
 
       // Instantly open on focus, otherwise debounce close action to bridge visual divider spaces cleanly
@@ -521,13 +719,29 @@
     // Start or restart the 5-second persistence override timer
     function triggerPersistence() {
       isPersistent = true;
+      timeLeft = totalDuration;
       updateMenus(true);
+      startCountdown();
+    }
 
-      if (menuTimer) clearTimeout(menuTimer);
-      menuTimer = setTimeout(() => {
-        isPersistent = false;
-        updateMenus();
-      }, 5000);
+    // Direct manual document launcher
+    function loadInfoTool() {
+      const infoTool = {
+        id: 'info',
+        label: 'INFO',
+        path: 'tools/info/index.html',
+        description: 'SYSTEM MANUAL & DOCUMENTATION'
+      };
+      
+      // Clear L3 active buttons since info is global
+      document.querySelectorAll('.l3-sub-container .org-btn-unified').forEach(el => el.classList.remove('active'));
+      activeTool = 'info';
+      
+      const iframe = document.getElementById('basin-frame');
+      iframe.src = infoTool.path;
+
+      window.history.pushState(null, null, '#info');
+      setStatusText(infoTool.description, true);
     }
 
     // Iframe postMessage communications listener setup (Dynamic descriptions picker)
@@ -555,19 +769,23 @@
         // Check if there is an initial hash route to direct load
         const initialHash = window.location.hash.substring(1);
         if (initialHash) {
-          let found = false;
-          manifest.categories.forEach(cat => {
-            const match = cat.tools.find(t => t.id === initialHash);
-            if (match) {
-              activeCategory = cat.id;
-              renderL2Tabs();
-              selectCategory(cat.id, false); // select folder
-              selectTool(match);             // load tool
-              found = true;
+          if (initialHash === 'info') {
+            loadInfoTool();
+          } else {
+            let found = false;
+            manifest.categories.forEach(cat => {
+              const match = cat.tools.find(t => t.id === initialHash);
+              if (match) {
+                activeCategory = cat.id;
+                renderL2Tabs();
+                selectCategory(cat.id, false); // select folder
+                selectTool(match);             // load tool
+                found = true;
+              }
+            });
+            if (!found) {
+              selectCategory(activeCategory, false); // Start blank
             }
-          });
-          if (!found) {
-            selectCategory(activeCategory, false); // Start blank
           }
         } else {
           // If no deep link, render category L2/L3 controls without auto-loading iframe
@@ -620,7 +838,7 @@
 
     function useMockData() {
       manifest = {
-        "version": "v1.01-mock",
+        "version": "v1.05-mock",
         "categories": [
           {
             "id": "create",
@@ -768,15 +986,19 @@
     window.addEventListener('hashchange', () => {
       const toolId = window.location.hash.substring(1);
       if (toolId && manifest) {
-        manifest.categories.forEach(cat => {
-          const match = cat.tools.find(t => t.id === toolId);
-          if (match) {
-            activeCategory = cat.id;
-            renderL2Tabs();
-            selectCategory(cat.id, false);
-            selectTool(match);
-          }
-        });
+        if (toolId === 'info') {
+          loadInfoTool();
+        } else {
+          manifest.categories.forEach(cat => {
+            const match = cat.tools.find(t => t.id === toolId);
+            if (match) {
+              activeCategory = cat.id;
+              renderL2Tabs();
+              selectCategory(cat.id, false);
+              selectTool(match);
+            }
+          });
+        }
       }
     });
   </script>

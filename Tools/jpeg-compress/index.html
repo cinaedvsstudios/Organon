@@ -276,6 +276,17 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+
+        /* Auto-Minimizing Panel state rules */
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .upload-container,
+        .top-sticky-panel.minimized .compact-upload-bar {
+            display: none !important;
         }
 
         /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
@@ -300,28 +311,29 @@
             max-width: 100%;
         }
 
-        /* Custom top sticky button override for light bg panel */
-        .top-sticky-panel .btn-pill {
-            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
-            color: var(--light-blue) !important;
-            border: 1px solid var(--chiseled-bronze) !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
+        /* Tactile Countdown Circle styling */
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            margin-right: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+            transition: all 0.2s ease;
         }
-
-        .top-sticky-panel .btn-pill:hover {
-            background-color: rgba(41, 42, 36, 0.95) !important;
-            border-color: var(--water-spray) !important;
-            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
-        }
-
-        .top-sticky-panel .btn-pill:disabled {
-            background-color: rgba(24, 25, 25, 0.3) !important;
-            color: rgba(137, 107, 73, 0.5) !important;
-            border-color: rgba(137, 107, 73, 0.2) !important;
-            cursor: not-allowed !important;
-            box-shadow: none !important;
-            transform: none !important;
+        .countdown-circle-indicator:hover {
+            border-color: var(--water-spray);
+            color: var(--water-spray);
+            box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
         }
 
         /* Drop Zone Styles (Standard Layout - Fitted with a clean narrow width) */
@@ -686,71 +698,48 @@
             text-align: center;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Status Toast Stack */
-        .toast-container {
+        /* Custom Popup Overlay Card (Error Summary list details) */
+        .overlay-modal {
             position: fixed;
-            bottom: 84px; /* Rises over the sticky button bar */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000; /* Raised high above sticky headers */
             display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: calc(100% - 32px);
-            max-width: 508px;
-            box-sizing: border-box;
-            pointer-events: none;
-        }
-
-        .toast-notification {
-            background-color: var(--burgundy);
-            color: var(--alabaster-paper);
-            border: 1px solid var(--chiseled-bronze) !important;
-            padding: 10px 20px;
-            border-radius: 9999px; /* Pure Pill Shape */
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
-            font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transform: translateY(120%);
-            opacity: 0;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: auto;
-        }
-
-        .toast-notification.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .toast-success {
-            background-color: var(--forest-teal);
-            border-color: var(--water-spray) !important;
-        }
-
-        /* Inline Loader for AI enhancing action */
-        .ai-loading-container {
-            display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 8px;
-            padding: 12px 0;
-            color: var(--water-spray);
+            padding: 24px;
+            box-sizing: border-box;
         }
 
-        .ai-loading-spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(121, 180, 227, 0.1);
-            border-radius: 50%;
-            border-top-color: var(--water-spray);
-            animation: spin 0.8s linear infinite;
+        .modal-body-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 28px;
+            padding: 24px;
+            width: 100%;
+            max-width: 440px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+            position: relative; /* Ensure it registers pointer clicks cleanly */
+            z-index: 2101;
+        }
+
+        .modal-title {
+            margin: 0;
+            color: var(--brand-red) !important;
+            font-size: 1.1rem;
+            border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
+            padding-bottom: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
 
         /* Helper Styles */
@@ -798,8 +787,11 @@
         <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
         <div class="top-sticky-panel">
             <!-- Absolute Title Pill with Far-Right Mode Selector Button -->
-            <div class="title-pill">
-                <span id="app-title-text">JPEG COMPRESSOR</span>
+            <div class="title-pill" id="title-banner-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span id="app-title-text">JPEG COMPRESSOR</span>
+                </div>
                 <button type="button" id="mode-toggle-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Upscale</button>
             </div>
 
@@ -829,7 +821,7 @@
                 </div>
                 <div class="compact-actions">
                     <span id="original-dims" class="metadata-text">0 x 0 px</span>
-                    <button type="button" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
+                    <button type="button" id="change-asset-btn" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
                         Change
                     </button>
                 </div>
@@ -1077,87 +1069,6 @@ init_app()
         const cardAiEnhance = document.getElementById("card-ai-enhance");
         const aiCardTitleText = document.getElementById("ai-card-title-text");
         const settingsDividerHr = document.getElementById("settings-divider-hr");
-
-        // Mode Switching Logic
-        modeToggleBtn.addEventListener("click", () => {
-            if (currentMode === 'compress') {
-                // Switch to Upscale Mode
-                currentMode = 'upscale';
-                appTitleText.innerText = "IMAGE UPSCALER";
-                modeToggleBtn.innerText = "Compress";
-                
-                // Adjust panel visibilities (Create split 2 columns view)
-                cardQuality.classList.add("hidden");
-                cardAiEnhance.classList.remove("hidden");
-                
-                // Remove full width span from AI card so it takes Col 2
-                cardAiEnhance.style.gridColumn = "auto";
-                
-                // Update Settings Card numbering titles cleanly
-                scaleCardTitleText.innerText = "1. Normal Upscale";
-                aiCardTitleText.innerText = "2. AI Upscale";
-                
-                scaleSliderLabel.innerText = "Upscale Dimensions";
-                
-                // Adjust slider boundaries for Upscale
-                compressScale.min = "100";
-                compressScale.max = "400";
-                if (parseInt(compressScale.value) < 100) {
-                    compressScale.value = "200"; // Default to 2x upscale
-                }
-                
-                // Update label metrics
-                compactAfterLabel.innerText = "Upscaled";
-                metricsTitle.innerText = "Upscale Statistics";
-                compressedSizeLabel.innerText = "Upscaled Size";
-                savingsPctRow.classList.add("hidden"); // Hide savings percentage when upscaling file size
-                settingsDividerHr.classList.add("hidden"); // Hide full row HR since we are in side-by-side split view
-            } else {
-                // Switch back to Compress Mode
-                currentMode = 'compress';
-                appTitleText.innerText = "JPEG COMPRESSOR";
-                modeToggleBtn.innerText = "Upscale";
-                
-                // Adjust panel visibilities (Col 1 quality, Col 2 scale)
-                cardQuality.classList.remove("hidden");
-                cardAiEnhance.classList.add("hidden");
-                
-                // Reset AI card span
-                cardAiEnhance.style.gridColumn = "1 / -1";
-                
-                // Restore original titles numbering sequence
-                scaleCardTitleText.innerText = "2. Resize Factor";
-                aiCardTitleText.innerText = "3. AI Super-Resolution Detail Enhancer";
-                
-                scaleSliderLabel.innerText = "Scale Dimensions";
-                
-                // Adjust slider boundaries for Compression
-                compressScale.min = "10";
-                compressScale.max = "100";
-                if (parseInt(compressScale.value) > 100) {
-                    compressScale.value = "100"; // Revert to full dimension limits
-                }
-                
-                // Update label metrics
-                compactAfterLabel.innerText = "Compressed";
-                metricsTitle.innerText = "Compression Statistics";
-                compressedSizeLabel.innerText = "Compressed Size";
-                savingsPctRow.classList.remove("hidden");
-                settingsDividerHr.classList.remove("hidden"); // Show HR divider for potential full row stacks
-            }
-            
-            // Sync slider track displays
-            sliders.forEach(syncSliderBackground);
-            scaleFactorVal.innerText = `${compressScale.value}%`;
-            updateTargetDims();
-            triggerAutoProcess();
-        });
-
-        // Initialize state view limits on cold start
-        if (currentMode === 'compress') {
-            cardAiEnhance.classList.add("hidden");
-            settingsDividerHr.classList.add("hidden");
-        }
 
         // Helper to update dynamic slider track values (No borders, left active is #9a2f4f, right inactive track is #61112e)
         function syncSliderBackground(slider) {
@@ -1442,6 +1353,200 @@ init_app()
             document.body.removeChild(link);
             notify("Downloading image file...");
         });
+
+        // Helper to broadcast button hover events to the parent Organon Hub Status Window
+        function registerHoverDescription(selector, descriptionText) {
+            const element = document.querySelector(selector);
+            if (!element) return;
+
+            element.addEventListener('mouseenter', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
+                }
+            });
+
+            element.addEventListener('mouseleave', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'clear-status' }, '*');
+                }
+            });
+        }
+
+        // Register interactive hovers for seamless Organon Hub unification
+        registerHoverDescription('#title-banner-pill', 'JPEG Compressor & Resizer - optimize sizes or upscale using Lanczos & Gemini.');
+        registerHoverDescription('#mode-toggle-btn', 'Click to switch active processing environment between Compressor mode and Upscaler mode.');
+        registerHoverDescription('#drop-zone', 'Drag and drop an image file, or click here to browse local file directories.');
+        registerHoverDescription('#change-asset-btn', 'Discard the current picture and select a new image file to load.');
+        registerHoverDescription('#compress-quality', 'Slide to configure the target output quality (lower factors reduce size).');
+        registerHoverDescription('#compress-scale', 'Modify target scaling proportions (downscale to save space, or upscale up to 400%).');
+        registerHoverDescription('#ai-enhance-btn', 'Connect to Gemini AI to reconstruct crisp features, clear compression blur, and upscale details.');
+        registerHoverDescription('#download-btn', 'Download the processed image to your hard drive.');
+        registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
+
+        // Mode Switching Logic
+        modeToggleBtn.addEventListener("click", () => {
+            if (currentMode === 'compress') {
+                // Switch to Upscale Mode
+                currentMode = 'upscale';
+                appTitleText.innerText = "IMAGE UPSCALER";
+                modeToggleBtn.innerText = "Compress";
+                
+                // Adjust panel visibilities (Create split 2 columns view)
+                cardQuality.classList.add("hidden");
+                cardAiEnhance.classList.remove("hidden");
+                
+                // Remove full width span from AI card so it takes Col 2
+                cardAiEnhance.style.gridColumn = "auto";
+                
+                // Update Settings Card numbering titles cleanly
+                scaleCardTitleText.innerText = "1. Normal Upscale";
+                aiCardTitleText.innerText = "2. AI Upscale";
+                
+                scaleSliderLabel.innerText = "Upscale Dimensions";
+                
+                // Adjust slider boundaries for Upscale
+                compressScale.min = "100";
+                compressScale.max = "400";
+                if (parseInt(compressScale.value) < 100) {
+                    compressScale.value = "200"; // Default to 2x upscale
+                }
+                
+                // Update label metrics
+                compactAfterLabel.innerText = "Upscaled";
+                metricsTitle.innerText = "Upscale Statistics";
+                compressedSizeLabel.innerText = "Upscaled Size";
+                savingsPctRow.classList.add("hidden"); // Hide savings percentage when upscaling file size
+                settingsDividerHr.classList.add("hidden"); // Hide full row HR since we are in side-by-side split view
+            } else {
+                // Switch back to Compress Mode
+                currentMode = 'compress';
+                appTitleText.innerText = "JPEG COMPRESSOR";
+                modeToggleBtn.innerText = "Upscale";
+                
+                // Adjust panel visibilities (Col 1 quality, Col 2 scale)
+                cardQuality.classList.remove("hidden");
+                cardAiEnhance.classList.add("hidden");
+                
+                // Reset AI card span
+                cardAiEnhance.style.gridColumn = "1 / -1";
+                
+                // Restore original titles numbering sequence
+                scaleCardTitleText.innerText = "2. Resize Factor";
+                aiCardTitleText.innerText = "3. AI Super-Resolution Detail Enhancer";
+                
+                scaleSliderLabel.innerText = "Scale Dimensions";
+                
+                // Adjust slider boundaries for Compression
+                compressScale.min = "10";
+                compressScale.max = "100";
+                if (parseInt(compressScale.value) > 100) {
+                    compressScale.value = "100"; // Revert to full dimension limits
+                }
+                
+                // Update label metrics
+                compactAfterLabel.innerText = "Compressed";
+                metricsTitle.innerText = "Compression Statistics";
+                compressedSizeLabel.innerText = "Compressed Size";
+                savingsPctRow.classList.remove("hidden");
+                settingsDividerHr.classList.remove("hidden"); // Show HR divider for potential full row stacks
+            }
+            
+            // Sync slider track displays
+            sliders.forEach(syncSliderBackground);
+            scaleFactorVal.innerText = `${compressScale.value}%`;
+            updateTargetDims();
+            triggerAutoProcess();
+        });
+
+        // Initialize state view limits on cold start
+        if (currentMode === 'compress') {
+            cardAiEnhance.classList.add("hidden");
+            settingsDividerHr.classList.add("hidden");
+        }
+
+        // ==========================================================
+        // AUTO-MINIMIZATION & TIMED LOCK CONTROL PIPELINE
+        // ==========================================================
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            if (isPanelLocked) {
+                countdownCircle.innerHTML = "🔒";
+            } else {
+                countdownCircle.innerHTML = countdownVal;
+            }
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    minimizePanel();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        // Bind interactive event handlers to panel coordinates
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+
+        // Initialize Countdown on load
+        startCountdown();
     </script>
 </body>
 </html>

@@ -268,6 +268,16 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+
+        /* Auto-Minimizing Panel state rules */
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .input-card-container {
+            display: none !important;
         }
 
         /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
@@ -290,6 +300,31 @@
             box-sizing: border-box;
             width: 100%; /* Spans all the way across */
             max-width: 100%;
+        }
+
+        /* Tactile Countdown Circle styling */
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            margin-right: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .countdown-circle-indicator:hover {
+            border-color: var(--water-spray);
+            color: var(--water-spray);
+            box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
         }
 
         /* Paste Container styling */
@@ -709,7 +744,10 @@
         <div class="top-sticky-panel">
             <!-- Absolute Title Pill -->
             <div class="title-pill">
-                <span>BULK DOWNLOADER</span>
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>BULK DOWNLOADER</span>
+                </div>
                 <button type="button" id="clear-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Clear Queue</button>
             </div>
 
@@ -891,6 +929,7 @@
         registerHoverDescription('#clear-failed-btn', 'Remove failed and CORS blocked image rows from the queue.');
         registerHoverDescription('#start-btn', 'Assemble all healthy resources, compress them into a unified ZIP package, and trigger download.');
         registerHoverDescription('#cors-info-trigger', 'Click to read how Cross-Origin Resource Sharing affects direct image downloads.');
+        registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
 
         // Slider Color Synchronizer Node
         function syncSliderBackground(slider) {
@@ -1207,6 +1246,90 @@
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
         }
+
+        // ==========================================================
+        // AUTO-MINIMIZATION & TIMED LOCK CONTROL PIPELINE
+        // ==========================================================
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            if (isPanelLocked) {
+                countdownCircle.innerHTML = "🔒";
+            } else {
+                countdownCircle.innerHTML = countdownVal;
+            }
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    minimizePanel();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        // Bind interactive event handlers to panel coordinates
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+
+        // Initialize Countdown on load
+        startCountdown();
     </script>
 </body>
 </html>

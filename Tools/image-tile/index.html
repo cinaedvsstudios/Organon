@@ -44,6 +44,7 @@
 
             /* 6. Warnings, Failures & Destructive Logs (Deep Burgundy) */
             --burgundy: #4A1525;
+            --brand-red: #9a2f4f;
 
             /* 7. System Indicators & Directories (Muted Forest Teal) */
             --forest-teal: #26615C;
@@ -223,12 +224,12 @@
         }
 
         .btn-pill:disabled {
-            background-color: rgba(132, 104, 78, 0.2) !important;
-            color: var(--chiseled-bronze) !important;
-            cursor: not-allowed;
-            transform: none !important;
+            background-color: rgba(24, 25, 25, 0.3) !important;
+            color: rgba(137, 107, 73, 0.5) !important;
+            border-color: rgba(137, 107, 73, 0.2) !important;
+            cursor: not-allowed !important;
             box-shadow: none !important;
-            border: 1px solid rgba(132, 104, 78, 0.1);
+            transform: none !important;
         }
 
         .btn-pill-secondary {
@@ -240,7 +241,6 @@
         .btn-pill-secondary:hover {
             background-color: rgba(229, 168, 98, 0.1);
             border-color: var(--stone-ochre);
-            box-shadow: 0 0 12px rgba(229, 168, 98, 0.15);
         }
 
         /* ==========================================================
@@ -326,6 +326,17 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+
+        /* Auto-Minimizing Panel state rules */
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .upload-container,
+        .top-sticky-panel.minimized .compact-upload-bar {
+            display: none !important;
         }
 
         /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
@@ -350,19 +361,29 @@
             max-width: 100%;
         }
 
-        /* Custom top sticky button override for light bg panel */
-        .top-sticky-panel .btn-pill {
-            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
-            color: var(--light-blue) !important;
-            border: 1px solid var(--chiseled-bronze) !important;
-            box-shadow: none !important;
-            text-shadow: none !important;
+        /* Tactile Countdown Circle styling */
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            margin-right: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+            transition: all 0.2s ease;
         }
-
-        .top-sticky-panel .btn-pill:hover {
-            background-color: rgba(41, 42, 36, 0.95) !important;
-            border-color: var(--water-spray) !important;
-            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        .countdown-circle-indicator:hover {
+            border-color: var(--water-spray);
+            color: var(--water-spray);
+            box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
         }
 
         /* Drop Zone Styles (Standard Layout - Fitted with a clean narrow width) */
@@ -394,7 +415,7 @@
             height: 40px;
             stroke: var(--stone-ochre);
             fill: none;
-            transition: all 0.25s ease;
+            transition: transform 0.25s ease;
         }
 
         /* Sync icon color to light blue on container hover */
@@ -651,6 +672,15 @@
             box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
         }
 
+        .bottom-sticky-panel .btn-pill:disabled {
+            background-color: rgba(24, 25, 25, 0.3) !important;
+            color: rgba(137, 107, 73, 0.5) !important;
+            border-color: rgba(137, 107, 73, 0.2) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
         /* Sliders Layout Configuration */
         .slider-row {
             display: flex;
@@ -660,7 +690,7 @@
         }
 
         /* Customized Slider Track & Thumb Handles (Border Removed) */
-        /* Left inactive track is #61112e, Right active track & thumb is #9a2f4f */
+        /* Left active (filled) track is #9a2f4f, Right inactive (empty) track is #61112e */
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
@@ -858,7 +888,12 @@
         <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
         <div class="top-sticky-panel">
             <!-- Absolute Title Pill -->
-            <div class="title-pill">IMAGE TILER</div>
+            <div class="title-pill" id="title-banner-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>IMAGE TILER</span>
+                </div>
+            </div>
 
             <!-- State A: Upload box visible when unpopulated -->
             <div id="drop-zone" class="upload-container">
@@ -886,7 +921,7 @@
                 </div>
                 <div class="compact-actions">
                     <span id="original-dims" class="metadata-text">0 x 0 px</span>
-                    <button type="button" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
+                    <button type="button" id="change-asset-btn" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
                         Change
                     </button>
                 </div>
@@ -932,9 +967,9 @@
             <div class="settings-grid">
                 
                 <!-- 1. Cut Off Edges Card (Col 1) -->
-                <div class="config-card">
+                <div class="config-card" id="card-crop">
                     <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
                         1. Cut Off Edges (px)
                     </div>
                     <div class="crop-grid">
@@ -968,9 +1003,9 @@
                 </div>
 
                 <!-- 2. Make It Seamless Card (Col 2) -->
-                <div class="config-card">
+                <div class="config-card" id="card-seamless">
                     <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
                         2. Make Seamless
                     </div>
                     <div class="form-row">
@@ -995,9 +1030,9 @@
                 <hr class="invisible-hr">
 
                 <!-- 3. Fix Uneven Lighting Card (Col 1) -->
-                <div class="config-card">
+                <div class="config-card" id="card-lighting">
                     <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
                         3. Fix Lighting
                     </div>
                     <div class="slider-row">
@@ -1017,9 +1052,9 @@
                 </div>
 
                 <!-- 4. Save Format Card (Col 2) -->
-                <div class="config-card">
+                <div class="config-card" id="card-save">
                     <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
                         4. Save Options
                     </div>
                     <div class="form-row">
@@ -1285,7 +1320,7 @@ init_app()
             const max = parseFloat(slider.max) || 100;
             const val = parseFloat(slider.value) || 0;
             const percentage = ((val - min) / (max - min)) * 100;
-            slider.style.background = `linear-gradient(to right, #61112e ${percentage}%, #9a2f4f ${percentage}%)`;
+            slider.style.background = `linear-gradient(to right, #9a2f4f ${percentage}%, #61112e ${percentage}%)`;
         }
 
         // Initialize and bind slider sync listeners
@@ -1295,7 +1330,7 @@ init_app()
             syncSliderBackground(slider); // Initialize immediately on page render
         });
 
-        // Set Text View Updates
+        // Set Slider View Updates
         overlapPercent.addEventListener("input", () => overlapVal.innerText = `${overlapPercent.value}%`);
         avgIntensity.addEventListener("input", () => intensityVal.innerText = avgIntensity.value);
         avgRadius.addEventListener("input", () => radiusVal.innerText = avgRadius.value);
@@ -1509,6 +1544,128 @@ init_app()
             document.body.removeChild(link);
             notify("Downloading synthesized texture file...");
         });
+
+        // Helper to broadcast button hover events to the parent Organon Hub Status Window
+        function registerHoverDescription(selector, descriptionText) {
+            const element = document.querySelector(selector);
+            if (!element) return;
+
+            element.addEventListener('mouseenter', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
+                }
+            });
+
+            element.addEventListener('mouseleave', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'clear-status' }, '*');
+                }
+            });
+        }
+
+        // Register interactive hovers for seamless Organon Hub unification
+        registerHoverDescription('#title-banner-pill', 'Seamless Texture Splicer — tile your graphic assets infinitely.');
+        registerHoverDescription('#drop-zone', 'Drag and drop your image, or click here to browse local file directories.');
+        registerHoverDescription('#change-asset-btn', 'Choose a different graphic file to load.');
+        registerHoverDescription('#toggle-repeater-btn', 'Expand or collapse the infinite repeating preview canvas container.');
+        registerHoverDescription('#toggle-seams', 'Display dashed guides marking exactly where tile edges stitch together.');
+        registerHoverDescription('#tile-scale', 'Adjust repeat sizing factors in the tiled canvas viewport.');
+        registerHoverDescription('#crop-left', 'Trim off uneven edge pixels on the left boundary of your image.');
+        registerHoverDescription('#crop-top', 'Trim off uneven edge pixels on the top boundary of your image.');
+        registerHoverDescription('#crop-right', 'Trim off uneven edge pixels on the right boundary of your image.');
+        registerHoverDescription('#crop-bottom', 'Trim off uneven edge pixels on the bottom boundary of your image.');
+        registerHoverDescription('#blend-method', 'Select the mathematical boundary blending synthesis algorithm.');
+        registerHoverDescription('#overlap-percent', 'Configure the width of the overlapping blending area (2% to 30%).');
+        registerHoverDescription('#average-intensity', 'Equalize background lighting gradients to resolve tile checkerboarding.');
+        registerHoverDescription('#average-radius', 'Set pixel radius boundaries used to analyze background illumination.');
+        registerHoverDescription('#export-format', 'Select either high-fidelity JPEG compression or lossless PNG-24.');
+        registerHoverDescription('#jpeg-quality', 'Configure JPG compression ratios from 10 (smallest size) to 100 (crispest features).');
+        registerHoverDescription('#download-btn', 'Download the synthesized tile asset to your local hard drive.');
+        registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
+
+        // ==========================================================
+        // AUTO-MINIMIZATION & TIMED LOCK CONTROL PIPELINE
+        // ==========================================================
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            if (isPanelLocked) {
+                countdownCircle.innerHTML = "🔒";
+            } else {
+                countdownCircle.innerHTML = countdownVal;
+            }
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    minimizePanel();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        // Bind interactive event handlers to panel coordinates
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+
+        // Initialize Countdown on load
+        startCountdown();
     </script>
 </body>
 </html>
