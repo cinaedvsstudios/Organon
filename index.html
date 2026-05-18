@@ -218,15 +218,17 @@
       color: var(--dark-stone-ink);
       font-size: 20px;
       cursor: pointer;
-      transition: transform 0.2s ease, color 0.2s ease;
+      transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease, filter 0.2s ease;
       display: flex;
       align-items: center;
       justify-content: center;
       outline: none;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.85)); /* Shadow on emojis */
     }
     .info-btn:hover {
       color: var(--water-blue);
       transform: scale(1.15);
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 10px rgba(75, 132, 191, 0.6)); /* Glowing hover shadow */
     }
 
     /* Responsive adjustments for status window to remain mobile friendly */
@@ -483,6 +485,145 @@
       background-color: #000000; /* Prevents frame background color mismatch */
     }
 
+    /* ==========================================================
+       GLOBAL SETTINGS POPUP MODAL STYLING
+       ========================================================== */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.85);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.open {
+      display: flex;
+      opacity: 1;
+    }
+    .settings-modal {
+      background: var(--bg-nightsky) url('images/stonetext.jpg') repeat;
+      background-blend-mode: multiply;
+      background-color: rgba(41, 42, 36, 0.95); /* Rich dark stone-like tone */
+      border: 2px solid var(--stone-border);
+      border-radius: 8px;
+      width: 480px;
+      max-width: 90%;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.95);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      transform: scale(0.9);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .modal-overlay.open .settings-modal {
+      transform: scale(1);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--stone-border);
+      padding-bottom: 12px;
+    }
+    .modal-header h3 {
+      font-family: var(--font-headers);
+      color: var(--stone-ochre);
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0.05em;
+    }
+    .modal-close-x {
+      background: none;
+      border: none;
+      color: var(--stone-border);
+      font-size: 24px;
+      cursor: pointer;
+      line-height: 1;
+      outline: none;
+    }
+    .modal-close-x:hover {
+      color: var(--heading-blue);
+    }
+    .modal-body {
+      font-size: 13px;
+      color: var(--input-text-ivory);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      line-height: 1.6;
+    }
+    .modal-body p {
+      margin: 0;
+    }
+    .settings-actions-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 10px;
+    }
+    .settings-action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 12px;
+      border: 1px solid rgba(137, 107, 73, 0.4);
+      border-radius: 4px;
+    }
+    .settings-action-desc {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .settings-action-title {
+      font-weight: bold;
+      color: var(--stone-ochre);
+      font-size: 12px;
+    }
+    .settings-action-sub {
+      font-size: 10px;
+      color: var(--stone-border);
+    }
+    .settings-btn-action {
+      background-color: var(--stone-ochre);
+      border: 1px solid var(--stone-border);
+      color: var(--dark-stone-ink);
+      font-family: var(--font-body);
+      font-weight: bold;
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.2s ease-in-out;
+      outline: none;
+    }
+    .settings-btn-action:hover {
+      background-color: var(--heading-blue);
+      color: #ffffff;
+      border-color: var(--heading-blue);
+    }
+    .settings-btn-action.btn-danger {
+      background-color: rgba(154, 47, 79, 0.2);
+      border-color: #9a2f4f;
+      color: #ff9cb3;
+    }
+    .settings-btn-action.btn-danger:hover {
+      background-color: #9a2f4f;
+      color: #ffffff;
+    }
+    #import-file-input {
+      display: none;
+    }
+
     @keyframes ripple {
       0%, 100% { transform: scale(1); opacity: 0.8; }
       50% { transform: scale(1.2); opacity: 1; }
@@ -517,8 +658,9 @@
       <span class="l1-status-text">ORGANON ONLINE</span>
     </div>
 
-    <!-- Info Manual button placed on the far right of L1 -->
+    <!-- Info & Sync settings buttons placed on the far right of L1 -->
     <div class="l1-actions-right">
+      <button class="info-btn" onclick="openSettingsModal()" onmouseover="setStatusText('System Sync & Settings Backup', true)" onmouseleave="setStatusText('ORGANON ONLINE')">⚙️</button>
       <button class="info-btn" onclick="loadInfoTool()" onmouseover="setStatusText('System Manual & Documentation', true)" onmouseleave="setStatusText('ORGANON ONLINE')">ℹ️</button>
     </div>
   </header>
@@ -543,6 +685,59 @@
     <!-- Divider L3-Basin (Using divide line3.png) -->
     <div class="divider-l3-basin"></div>
   </div>
+
+  <!-- GLOBAL SYNC & SETTINGS MODAL overlay -->
+  <div class="modal-overlay" id="settings-overlay" onclick="if(event.target === this) closeSettingsModal()">
+    <div class="settings-modal">
+      <div class="modal-header">
+        <h3>System Settings & Global Sync</h3>
+        <button class="modal-close-x" onclick="closeSettingsModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>This panel synchronizes user data, preferences, and favorites across the entire suite of Organon applications. Individual files are aggregated here into a single, clean system database package.</p>
+        
+        <div class="settings-actions-group">
+          <!-- Export Action Row -->
+          <div class="settings-action-row">
+            <div class="settings-action-desc">
+              <span class="settings-action-title">Export Settings Backup</span>
+              <span class="settings-action-sub">Download your global workspace data as a .json file</span>
+            </div>
+            <button class="settings-btn-action" onclick="exportSystemBackup()">Export</button>
+          </div>
+          
+          <!-- Import (Merge) Action Row -->
+          <div class="settings-action-row">
+            <div class="settings-action-desc">
+              <span class="settings-action-title">Import (Merge)</span>
+              <span class="settings-action-sub">Combine backup keys with existing settings</span>
+            </div>
+            <button class="settings-btn-action" onclick="triggerImportFile('merge')">Merge</button>
+          </div>
+
+          <!-- Import (Replace) Action Row -->
+          <div class="settings-action-row">
+            <div class="settings-action-desc">
+              <span class="settings-action-title" style="color: #ff9cb3;">Import (Replace)</span>
+              <span class="settings-action-sub">Overwrite all existing settings with the backup file</span>
+            </div>
+            <button class="settings-btn-action btn-danger" onclick="triggerImportFile('replace')">Replace</button>
+          </div>
+
+          <!-- Purge Action Row -->
+          <div class="settings-action-row">
+            <div class="settings-action-desc">
+              <span class="settings-action-title" style="color: #ff9cb3;">Purge All System Data</span>
+              <span class="settings-action-sub">Erase local storage tables and cache states</span>
+            </div>
+            <button class="settings-btn-action btn-danger" id="reset-button" onclick="handlePurgeClick()">Purge</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <input type="file" id="import-file-input" accept="application/json" onchange="importSystemBackup(event)">
 
   <!-- Content Basin Frame -->
   <main class="basin-content-wrapper">
@@ -573,6 +768,13 @@
     let timeLeft = 0;
     const totalDuration = 5000; // 5000ms
 
+    // Two-stage custom confirmation for data purge
+    let purgeStage = 0;
+    let purgeTimeout = null;
+
+    // Dynamic state configuration for file uploads
+    let importMode = 'merge';
+
     function showFallbackTitle(img) {
       img.style.display = 'none';
       document.getElementById('fallback-title').style.display = 'block';
@@ -596,6 +798,135 @@
         statusOverrideActive = false;
         setStatusText("ORGANON ONLINE", true);
       }, 700);
+    }
+
+    // ==========================================================
+    // GLOBAL SETTINGS MODAL & SYNC STORAGE LOGIC
+    // ==========================================================
+    function openSettingsModal() {
+      const overlay = document.getElementById('settings-overlay');
+      overlay.style.display = 'flex';
+      setTimeout(() => {
+        overlay.classList.add('open');
+      }, 10);
+      setStatusText('Global Settings Workspace');
+    }
+
+    function closeSettingsModal() {
+      const overlay = document.getElementById('settings-overlay');
+      overlay.classList.remove('open');
+      setTimeout(() => {
+        overlay.style.display = 'none';
+        resetPurgeButton();
+      }, 300);
+      setStatusText('ORGANON ONLINE');
+    }
+
+    function exportSystemBackup() {
+      try {
+        const backupData = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          backupData[key] = localStorage.getItem(key);
+        }
+
+        const jsonString = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const link = document.createElement('a');
+        link.download = `organon_global_sync_${new Date().toISOString().slice(0,10)}.json`;
+        link.href = url;
+        link.click();
+        
+        URL.revokeObjectURL(url);
+        setStatusText('Backup exported successfully!', true);
+      } catch (err) {
+        console.error('Failed to export system backup', err);
+        setStatusText('Export failed', true);
+      }
+    }
+
+    function triggerImportFile(mode) {
+      importMode = mode;
+      document.getElementById('import-file-input').click();
+    }
+
+    function importSystemBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          
+          if (importedData && typeof importedData === 'object') {
+            // Replace mode completely flushes the local database beforehand
+            if (importMode === 'replace') {
+              localStorage.clear();
+            }
+
+            Object.keys(importedData).forEach(key => {
+              localStorage.setItem(key, importedData[key]);
+            });
+
+            setStatusText('SYNC COMPLETE - RELOADING SYSTEM', true);
+            
+            // Reload active iframe to synchronize settings immediately
+            const iframe = document.getElementById('basin-frame');
+            if (iframe && iframe.src !== 'about:blank') {
+              iframe.contentWindow.location.reload();
+            }
+
+            setTimeout(() => {
+              closeSettingsModal();
+              event.target.value = ''; // clear input state
+            }, 1200);
+          } else {
+            setStatusText('INVALID BACKUP FILE STRUCTURE', true);
+          }
+        } catch (err) {
+          console.error('Import parse error', err);
+          setStatusText('PARSE ERROR - IMPORT ABORTED', true);
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function handlePurgeClick() {
+      const btn = document.getElementById('reset-button');
+      if (purgeStage === 0) {
+        purgeStage = 1;
+        btn.innerText = "CONFIRM PURGE?";
+        btn.style.backgroundColor = "#9a2f4f";
+        btn.style.color = "#ffffff";
+        setStatusText('ATTENTION: PURGE REQUIRES CONFIRMATION', true);
+
+        purgeTimeout = setTimeout(() => {
+          resetPurgeButton();
+        }, 3000);
+      } else {
+        clearTimeout(purgeTimeout);
+        localStorage.clear();
+        setStatusText('SYSTEM SETTINGS PURGED - REBOOTING', true);
+        const iframe = document.getElementById('basin-frame');
+        if (iframe) iframe.src = 'about:blank';
+        
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      }
+    }
+
+    function resetPurgeButton() {
+      purgeStage = 0;
+      const btn = document.getElementById('reset-button');
+      if (btn) {
+        btn.innerText = "PURGE";
+        btn.style.backgroundColor = "";
+        btn.style.color = "";
+      }
     }
 
     // High-precision circular SVG countdown ticker
@@ -838,7 +1169,7 @@
 
     function useMockData() {
       manifest = {
-        "version": "v1.05-mock",
+        "version": "v1.07-mock",
         "categories": [
           {
             "id": "create",
@@ -893,10 +1224,10 @@
             "label": "ANALYZE",
             "tools": [
               {
-                "id": "vector-sync",
-                "label": "VECTOR SYNC",
-                "path": "tools/vector-sync/index.html",
-                "description": "Analyze vector offsets and categorical nodes inside the metadata cache."
+                "id": "character-library",
+                "label": "CHARACTER LIBRARY",
+                "path": "tools/Character-library/index.html",
+                "description": "Browse and manage the global character library sheet metadata."
               }
             ]
           }

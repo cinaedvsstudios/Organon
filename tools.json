@@ -1,5 +1,5 @@
 {
-  "version": "v1.02-alpha",
+  "version": "v1.08-alpha",
   "categories": [
     {
       "id": "create",
@@ -54,10 +54,10 @@
       "label": "ANALYZE",
       "tools": [
         {
-          "id": "vector-sync",
-          "label": "VECTOR SYNC",
-          "path": "tools/vector-sync/index.html",
-          "description": "Analyze vector offsets and categorical nodes inside the metadata cache."
+          "id": "character-library",
+          "label": "CHARACTER LIBRARY",
+          "path": "tools/Character-library/index.html",
+          "description": "Browse and manage the global character library sheet metadata."
         }
       ]
     },

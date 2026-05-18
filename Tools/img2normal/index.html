@@ -1,0 +1,1518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Normal Map Generator</title>
+    
+    <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
+    <script>
+        if (window.self === window.top) {
+            window.location.href = '../../index.html';
+        }
+    </script>
+    
+    <!-- External Fonts for Organon Styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Three.js Library for 3D Shader/Lighting Previews -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <style>
+        /* ==========================================================
+           ORGANON GLOBAL BRAND STYLING TEMPLATE
+           Strict Color Mappings & Total Rounded Pill Realignment
+           ========================================================== */
+        :root {
+            /* 1. General Body Text (Alabaster Paper) */
+            --alabaster-paper: #F2ECE0;
+
+            /* 2. Classical Headings & Default Menu Text (Warm Stone Ochre) */
+            --stone-ochre: #E5A862;
+
+            /* 3. Hover Highlights & Glows (Water Spray Light Blue) */
+            --water-spray: #79B4E3;
+
+            /* 4. Selected & Active Focus Elements (Aqueduct Water Blue) */
+            --water-blue: #4B84BF;
+
+            /* 5. Inactive / Metadata Labels (Chiseled Bronze) */
+            --chiseled-bronze: #896b49; /* Standardized brand border */
+
+            /* 6. Warnings, Failures & Destructive Logs (Deep Burgundy) */
+            --burgundy: #4A1525;
+            --brand-red: #9a2f4f;
+
+            /* 7. System Indicators & Directories (Muted Forest Teal) */
+            --forest-teal: #26615C;
+
+            /* Core Canvas Settings */
+            --bg-nightsky: #181919;
+            --bg-card: #292a24; /* Updated Card Background */
+            --bg-input: rgba(24, 25, 25, 0.95);
+
+            /* Typography Hierarchies */
+            --font-headers: 'Cinzel', 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', 'Geist', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+
+            /* Custom Refined Palette Variable Nodes */
+            --light-blue: #75b2de;
+            --slider-active: #9a2f4f; /* Vibrant Ruby Pink (ON state / thumb) */
+            --slider-track: #61112e;  /* Dark Burgundy (OFF state / right track) */
+            --light-blend-stone: #e0a360;
+        }
+
+        /* Global Reset & Core Body Settings */
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Custom Text Highlight Selection */
+        ::selection {
+            background-color: var(--water-blue);
+            color: var(--bg-nightsky);
+        }
+
+        /* Classical Serified Headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            margin-top: 0;
+            transition: color 0.25s ease, text-shadow 0.25s ease;
+        }
+
+        /* Fluid Hover Anchor Links */
+        a {
+            color: var(--stone-ochre);
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        a:hover {
+            color: var(--water-spray);
+            text-shadow: 0 0 8px rgba(121, 180, 227, 0.65), 0 0 16px rgba(121, 180, 227, 0.3);
+        }
+
+        a:active {
+            color: var(--water-blue);
+            text-shadow: none;
+        }
+
+        /* ==========================================================
+           PILL SELECTORS & INTERACTIVE TEXTBOX INPUTS
+           ========================================================== */
+        input, select, textarea {
+            background-color: var(--bg-input);
+            color: #f0ebcb !important; /* Harmonized Input Text */
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px; /* Complete Pill Shape */
+            transition: all 0.2s ease-in-out;
+            box-sizing: border-box;
+            font-size: 15px; /* Prevents auto-zoom on iOS safari */
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        /* Remove default spin buttons for number inputs to keep the pill shape absolutely flawless */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            text-align: center;
+        }
+
+        ::placeholder {
+            color: var(--chiseled-bronze);
+            opacity: 0.8;
+        }
+
+        /* Sleek custom arrow reset for dropdown select elements */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23896b49'><path d='M7 10l5 5 5-5z'/></svg>");
+            background-repeat: no-repeat;
+            background-position: right 18px center;
+            background-size: 16px;
+            padding-right: 46px !important;
+            cursor: pointer;
+        }
+
+        /* Custom Smooth Scrollbar with Water Accents */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--chiseled-bronze);
+            border-radius: 9999px; /* Complete Pill Shape Scrollbars */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--water-blue);
+        }
+
+        /* ==========================================================
+           ROUNDED PILL UTILITY BUTTONS
+           ========================================================== */
+        .btn-pill {
+            background-color: var(--forest-teal);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            border-radius: 9999px; /* Absolute Pill Shape */
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(38, 97, 92, 0.2);
+            touch-action: manipulation;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .btn-pill:hover {
+            background-color: var(--water-blue);
+            box-shadow: 0 6px 16px rgba(75, 132, 191, 0.4);
+            transform: translateY(-1px);
+            color: var(--alabaster-paper);
+            text-shadow: 0 0 6px rgba(242, 236, 224, 0.4);
+        }
+
+        .btn-pill:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(75, 132, 191, 0.2);
+            background-color: var(--water-blue);
+        }
+
+        .btn-pill:disabled {
+            background-color: rgba(24, 25, 25, 0.3) !important;
+            color: rgba(137, 107, 73, 0.5) !important;
+            border-color: rgba(137, 107, 73, 0.2) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .btn-pill-secondary {
+            background-color: transparent;
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--stone-ochre);
+        }
+
+        .btn-pill-secondary:hover {
+            background-color: rgba(229, 168, 98, 0.1);
+            border-color: var(--stone-ochre);
+        }
+
+        /* ==========================================================
+           TACTILE CUSTOM PILL SWITCH TOGGLE (NO SQUARES)
+           ========================================================== */
+        .switch-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            user-select: none;
+            color: var(--alabaster-paper);
+        }
+
+        .switch-input {
+            display: none;
+        }
+
+        .switch-slider {
+            width: 46px;
+            height: 24px;
+            background-color: rgba(132, 104, 78, 0.25);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 9999px; /* Perfect Capsule Track */
+            position: relative;
+            transition: all 0.25s ease-in-out;
+        }
+
+        .switch-slider::before {
+            content: "";
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%; /* Absolute circular ball */
+            background-color: var(--stone-ochre);
+            top: 3px;
+            left: 4px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+
+        .switch-input:checked + .switch-slider {
+            background-color: var(--forest-teal);
+            border-color: var(--water-blue);
+        }
+
+        .switch-input:checked + .switch-slider::before {
+            transform: translateX(20px);
+            background-color: var(--water-spray);
+        }
+
+        /* ==========================================================
+           3-PANEL VERTICAL VIEWPORT STRUCTURE (MAX 540PX)
+           ========================================================== */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px; /* Constrained strictly to 2 buttons wide */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        /* Panel 1: Top Sticky Upload Panel with blended Light Stone Background, Fallback & Curved Bottom Corners */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../images/stonetext.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 24px 16px 16px 16px; /* Added extra top padding */
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--chiseled-bronze) !important;
+            border-bottom-left-radius: 28px; /* Elegant bottom curve integration */
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+
+        /* Auto-Minimizing Panel state rules */
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .upload-container,
+        .top-sticky-panel.minimized .compact-upload-bar {
+            display: none !important;
+        }
+
+        /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start; /* Left-aligned text inside */
+            background-color: rgba(24, 25, 25, 0.9);
+            color: var(--light-blue);
+            font-family: var(--font-headers);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            user-select: none;
+            box-sizing: border-box;
+            width: 100%; /* Spans all the way across */
+            max-width: 100%;
+        }
+
+        /* Tactile Countdown Circle styling */
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            margin-right: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .countdown-circle-indicator:hover {
+            border-color: var(--water-spray);
+            color: var(--water-spray);
+            box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
+        }
+
+        /* Drop Zone Styles (Standard Layout - Fitted with a clean narrow width) */
+        .upload-container {
+            border: 2px dashed var(--chiseled-bronze) !important;
+            background-color: var(--bg-card);
+            border-radius: 28px; /* Extra smooth corners */
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            width: 340px; /* Constrained fixed width */
+            max-width: 100%; /* Mobile responsivity guard */
+        }
+
+        /* Keeping background solid var(--bg-card) on hover, changing borders/glows to light blue */
+        .upload-container:hover, .upload-container.dragover {
+            border-color: var(--light-blue) !important;
+            background-color: var(--bg-card) !important; /* Kept solid dark background */
+            box-shadow: 0 0 16px rgba(117, 178, 222, 0.2);
+        }
+
+        .upload-icon {
+            width: 40px;
+            height: 40px;
+            stroke: var(--stone-ochre);
+            fill: none;
+            transition: transform 0.25s ease;
+        }
+
+        /* Sync icon color to light blue on container hover */
+        .upload-container:hover .upload-icon {
+            stroke: var(--light-blue) !important;
+            transform: translateY(-4px);
+        }
+
+        /* Sync title color to light blue on container hover */
+        .upload-container:hover h3 {
+            color: var(--light-blue) !important;
+            text-shadow: 0 0 8px rgba(117, 178, 222, 0.5);
+        }
+
+        /* Compact Loaded Banner (Splits into 2 square thumbnails side-by-side) */
+        .compact-upload-bar {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 24px; /* Curved card style instead of pill shape */
+            padding: 12px 16px;
+            box-sizing: border-box;
+            gap: 8px;
+            width: 340px; /* Constrained fixed width matching drop zone */
+            max-width: 100%;
+        }
+
+        .squares-container {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .square-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .square-thumb {
+            width: 100%;
+            max-width: 110px;
+            aspect-ratio: 1 / 1;
+            border-radius: 16px;
+            object-fit: cover;
+            border: 1px solid var(--chiseled-bronze) !important;
+            background-color: #000;
+        }
+
+        .square-label {
+            font-size: 0.65rem;
+            color: var(--chiseled-bronze); /* Clean brand dark brown */
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-align: center;
+            margin-top: 4px;
+        }
+
+        .compact-actions {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            border-top: 1px dashed rgba(137, 107, 73, 0.3);
+            padding-top: 8px;
+        }
+
+        /* Panel 2: Middle Scrollable Body (Set to pure Black) */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000; /* Pure Black Background */
+            padding: 16px 16px 120px 16px; /* Heavy bottom padding so inputs clear the sticky footer */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            font-size: 0.8rem; /* Make the text size in the middle panel smaller */
+        }
+
+        /* Interactive Preview Target Card */
+        .preview-card {
+            background-color: var(--bg-card) !important; /* Re-themed `#292a24` background */
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 28px; /* Rounded card containers */
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .preview-canvas-wrapper {
+            width: 100%;
+            height: 280px; /* Highly optimized heights for mobile viewports */
+            border-radius: 20px; /* Highly rounded inner layout viewport */
+            overflow: hidden;
+            background-color: rgba(10, 10, 10, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Settings grid splitting nicely into direct row layout in Panel 2 */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+
+        /* Spans the invisible HR completely across the grid to align adjacent columns */
+        .settings-grid .invisible-hr {
+            grid-column: 1 / -1;
+            visibility: hidden;
+            margin: 0;
+            padding: 0;
+            border: none;
+            height: 0;
+            width: 100%;
+        }
+
+        /* Compact Setting Card Groupings */
+        .config-card {
+            background-color: var(--bg-card) !important; /* Re-themed `#292a24` background */
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        /* Harmonized Section Headings Color Node */
+        .group-title, .control-group-title, .preview-card h3 {
+            color: var(--light-blue) !important;
+        }
+
+        .control-group-title {
+            font-size: 0.7rem; /* Make section title labels inside middle panel smaller */
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid rgba(132, 104, 78, 0.15);
+            padding-bottom: 6px;
+        }
+
+        .control-group-title svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Adjusted label typography size for smaller presentation */
+        label {
+            font-size: 0.75rem !important;
+            color: var(--alabaster-paper);
+            opacity: 0.85;
+            letter-spacing: 0.03em;
+        }
+
+        /* Slightly tightened inputs inside middle panel settings */
+        .middle-scroll-panel input, 
+        .middle-scroll-panel select {
+            font-size: 14px !important;
+            padding: 8px 14px !important;
+        }
+
+        /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Fallback */
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px; /* Clamped tightly to match vertical flow */
+            z-index: 110;
+            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 16px 16px 20px 16px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze) !important;
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+        }
+
+        /* Custom bottom sticky button overrides for light bg panel */
+        .bottom-sticky-panel .btn-pill {
+            flex: 1; /* Split evenly - precisely 2 buttons wide */
+            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
+            color: var(--light-blue) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            width: 100%;
+        }
+
+        .bottom-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+
+        .bottom-sticky-panel .btn-pill:disabled {
+            background-color: rgba(24, 25, 25, 0.3) !important;
+            color: rgba(137, 107, 73, 0.5) !important;
+            border-color: rgba(137, 107, 73, 0.2) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        /* Sliders Layout Configuration */
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        /* Customized Slider Track & Thumb Handles (Border Removed) */
+        /* Left active track is #9a2f4f, Right inactive track is #61112e */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 9999px;
+            border: none !important; /* Strictly borderless track */
+            padding: 0;
+            width: 100%;
+            touch-action: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
+            border: none !important; /* Strictly borderless thumb */
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--water-spray) !important;
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
+            border: none !important; /* Strictly borderless thumb */
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: var(--water-spray) !important;
+            transform: scale(1.15);
+        }
+
+        .slider-val {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+            text-align: right;
+            margin-top: -4px;
+        }
+
+        /* Loading Engine Overlay Screen */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-nightsky);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 168, 98, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--stone-ochre);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .loader-title {
+            font-family: var(--font-headers);
+            font-size: 1.8rem;
+            color: var(--stone-ochre);
+            margin: 0;
+            letter-spacing: 0.15em;
+        }
+
+        .loader-progress {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--water-spray);
+            max-width: 320px;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Status Toast Stack */
+        .toast-container {
+            position: fixed;
+            bottom: 84px; /* Rises over the sticky button bar */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: calc(100% - 32px);
+            max-width: 508px;
+            box-sizing: border-box;
+            pointer-events: none;
+        }
+
+        .toast-notification {
+            background-color: var(--burgundy);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze) !important;
+            padding: 10px 20px;
+            border-radius: 9999px; /* Pure Pill Shape */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(120%);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: auto;
+        }
+
+        .toast-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast-success {
+            background-color: var(--forest-teal);
+            border-color: var(--water-spray) !important;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .metadata-text {
+            color: var(--chiseled-bronze);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        /* Adjust setting grid on ultra-small viewports */
+        @media (max-width: 480px) {
+            .settings-grid {
+                grid-template-columns: 1fr; /* Roll to 1 column on extra narrow phones */
+            }
+            .settings-grid .invisible-hr {
+                display: none; /* Hide multi-column spacer on singular stack */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PYSCRIPT PRE-FLIGHT SYSTEM ENGINE LOADER -->
+    <div id="loading-overlay" class="loader-overlay">
+        <div class="loader-spinner"></div>
+        <div class="loader-title">NORMAL MAP SYSTEM</div>
+        <div class="loader-progress" id="loader-progress-text">
+            Initializing local canvas processors and WebGL previewers...
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="app-wrapper">
+        
+        <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
+        <div class="top-sticky-panel">
+            <!-- Absolute Title Pill -->
+            <div class="title-pill" id="title-banner-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>NORMAL GENERATOR</span>
+                </div>
+            </div>
+
+            <!-- State A: Upload box visible when unpopulated -->
+            <div id="drop-zone" class="upload-container">
+                <svg class="upload-icon" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+                </svg>
+                <div style="margin-top: -4px;">
+                    <h3 style="margin-bottom: 2px; font-size: 0.95rem; transition: color 0.25s ease, text-shadow 0.25s ease;">Load Heightmap</h3>
+                    <p style="opacity: 0.7; font-size: 0.75rem; margin: 0;">Drag & drop image or click to browse</p>
+                </div>
+                <input type="file" id="file-input" accept="image/*" class="hidden">
+            </div>
+
+            <!-- State B: Highly space-efficient capsule with Before/After squares side-by-side -->
+            <div id="compact-loaded-banner" class="compact-upload-bar hidden">
+                <div class="squares-container">
+                    <div class="square-wrapper">
+                        <img id="compact-thumb-before" class="square-thumb" src="" alt="Source">
+                        <div class="square-label">Height / Diffuse</div>
+                    </div>
+                    <div class="square-wrapper">
+                        <canvas id="compact-thumb-after-canvas" class="square-thumb" style="object-fit: contain;"></canvas>
+                        <div class="square-label">Normal Map</div>
+                    </div>
+                </div>
+                <div class="compact-actions">
+                    <span id="original-dims" class="metadata-text">0 x 0 px</span>
+                    <button type="button" id="change-asset-btn" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
+                        Change
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: MIDDLE SCROLLABLE PREVIEW & SETTINGS -->
+        <main class="middle-scroll-panel">
+            
+            <!-- 3D Lit Material Preview Box (Hidden until image is set) -->
+            <div id="tiled-preview-card" class="preview-card hidden">
+                <div class="flex-between">
+                    <h3>3D Lighting Preview</h3>
+                    <button type="button" id="toggle-repeater-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Expand</button>
+                </div>
+                
+                <!-- Collapsible Content Wrapper (Hidden/minimized by default) -->
+                <div id="repeater-content-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px; border-top: 1px dashed rgba(137, 107, 73, 0.3); padding-top: 12px;">
+                    <span class="metadata-text" style="font-size:0.75rem;">Drag on preview to orbit light angle.</span>
+                    
+                    <div class="preview-canvas-wrapper" id="canvas-3d-wrapper" style="border: 1px solid rgba(121, 180, 227, 0.25);">
+                        <!-- Three.js Canvas Injection Point -->
+                    </div>
+                    
+                    <div class="flex-between" style="gap: 12px; margin-top: 4px;">
+                        <label for="material-gloss" style="font-size: 0.8rem; white-space: nowrap;">Glossiness</label>
+                        <input type="range" id="material-gloss" min="0" max="100" value="50" style="flex:1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Grid Layout -->
+            <div class="settings-grid">
+                
+                <!-- 1. Normal map configuration (Col 1) -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                        <span>1. Normal Settings</span>
+                    </div>
+                    <div class="slider-row">
+                        <div class="flex-between">
+                            <label for="normal-strength">Strength</label>
+                            <span class="slider-val" id="strength-val">2.5</span>
+                        </div>
+                        <input type="range" id="normal-strength" min="1" max="100" value="25">
+                    </div>
+                    <div class="slider-row" style="margin-top: 12px;">
+                        <div class="flex-between">
+                            <label for="normal-blur">Sharpness / Blur</label>
+                            <span class="slider-val" id="blur-val">1.0</span>
+                        </div>
+                        <input type="range" id="normal-blur" min="1" max="10" value="1">
+                    </div>
+                </div>
+
+                <!-- 2. Channel Configuration Card (Col 2) -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
+                        <span>2. Channel Inversion</span>
+                    </div>
+                    <div class="form-row" style="margin-top: 8px;">
+                        <label class="switch-label">
+                            <input type="checkbox" id="invert-red" class="switch-input">
+                            <span class="switch-slider"></span>
+                            Invert Red (X Axis)
+                        </label>
+                    </div>
+                    <div class="form-row" style="margin-top: 16px;">
+                        <label class="switch-label">
+                            <input type="checkbox" id="invert-green" class="switch-input">
+                            <span class="switch-slider"></span>
+                            Invert Green (Y Axis)
+                        </label>
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+
+        <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill" id="download-btn" disabled>
+                Download Normal Map
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Hidden standard canvas used for image Sobel computations -->
+    <canvas id="hidden-source-canvas" class="hidden"></canvas>
+    <canvas id="hidden-normal-canvas" class="hidden"></canvas>
+
+    <!-- TOAST NOTIFICATION STACK -->
+    <div id="toast-stack" class="toast-container"></div>
+
+    <script>
+        // Track System Loader Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById("loading-overlay");
+            setTimeout(() => {
+                overlay.style.opacity = "0";
+                setTimeout(() => overlay.remove(), 500);
+            }, 1200);
+        });
+
+        // UI Binding Nodes
+        const dropZone = document.getElementById("drop-zone");
+        const compactLoadedBanner = document.getElementById("compact-loaded-banner");
+        const compactThumbBefore = document.getElementById("compact-thumb-before");
+        const compactThumbAfterCanvas = document.getElementById("compact-thumb-after-canvas");
+        const compactThumbAfterCtx = compactThumbAfterCanvas.getContext("2d");
+        
+        const fileInput = document.getElementById("file-input");
+        const downloadBtn = document.getElementById("download-btn");
+        const tiledPreviewCard = document.getElementById("tiled-preview-card");
+        const toggleRepeaterBtn = document.getElementById("toggle-repeater-btn");
+        const repeaterContentWrapper = document.getElementById("repeater-content-wrapper");
+        
+        const normalStrength = document.getElementById("normal-strength");
+        const strengthVal = document.getElementById("strength-val");
+        const normalBlur = document.getElementById("normal-blur");
+        const blurVal = document.getElementById("blur-val");
+        const invertRed = document.getElementById("invert-red");
+        const invertGreen = document.getElementById("invert-green");
+        
+        const originalDims = document.getElementById("original-dims");
+        const canvas3DWrapper = document.getElementById("canvas-3d-wrapper");
+        const materialGloss = document.getElementById("material-gloss");
+
+        // Canvas Pipeline Nodes
+        const sourceCanvas = document.getElementById("hidden-source-canvas");
+        const sourceCtx = sourceCanvas.getContext("2d");
+        const normalCanvas = document.getElementById("hidden-normal-canvas");
+        const normalCtx = normalCanvas.getContext("2d");
+
+        let sourceImage = null;
+        let processTimeout = null;
+
+        // Three.js Preview Variables
+        let renderer3D, scene3D, camera3D, mesh3D, light3D, normalTexture3D;
+        let is3DInitialized = false;
+
+        // Mouse light tracking drag parameters
+        let isDragging3D = false;
+        let previousMouseX = 0;
+        let previousMouseY = 0;
+        let lightAngleTheta = 0; // horizontal rotation
+        let lightAnglePhi = Math.PI / 4; // vertical rotation angle
+
+        // Helper to update range tracks (ON track #9a2f4f, OFF track #61112e)
+        function syncSliderBackground(slider) {
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const val = parseFloat(slider.value) || 0;
+            const percentage = ((val - min) / (max - min)) * 100;
+            slider.style.background = `linear-gradient(to right, #9a2f4f ${percentage}%, #61112e ${percentage}%)`;
+        }
+
+        // Init range slider visual profiles
+        const sliders = [normalStrength, normalBlur, materialGloss];
+        sliders.forEach(slider => {
+            slider.addEventListener("input", () => syncSliderBackground(slider));
+            syncSliderBackground(slider);
+        });
+
+        // Live labels syncing
+        normalStrength.addEventListener("input", () => {
+            strengthVal.innerText = (parseFloat(normalStrength.value) / 10).toFixed(1);
+            triggerRender();
+        });
+        normalBlur.addEventListener("input", () => {
+            blurVal.innerText = parseFloat(normalBlur.value).toFixed(1);
+            triggerRender();
+        });
+
+        invertRed.addEventListener("change", triggerRender);
+        invertGreen.addEventListener("change", triggerRender);
+
+        // Toggle Repeater/3D Collapsible Test Box Visibility
+        toggleRepeaterBtn.addEventListener("click", () => {
+            if (repeaterContentWrapper.classList.contains("hidden")) {
+                repeaterContentWrapper.classList.remove("hidden");
+                toggleRepeaterBtn.innerText = "Collapse";
+                
+                // Lazy initialisation of the 3D WebGL space inside the collapsible preview card
+                if (!is3DInitialized) {
+                    init3DPreview();
+                }
+                
+                // Force sync three sliders since they were hidden
+                sliders.forEach(syncSliderBackground);
+            } else {
+                repeaterContentWrapper.classList.add("hidden");
+                toggleRepeaterBtn.innerText = "Expand";
+            }
+        });
+
+        // Helper to broadcast button hover events to the parent Organon Hub Status Window
+        function registerHoverDescription(selector, descriptionText) {
+            const element = document.querySelector(selector);
+            if (!element) return;
+
+            element.addEventListener('mouseenter', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
+                }
+            });
+
+            element.addEventListener('mouseleave', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'clear-status' }, '*');
+                }
+            });
+        }
+
+        // Register interactive hovers for seamless Organon Hub unification
+        registerHoverDescription('#title-banner-pill', 'Normal Map Generator — convert color heights into physical relief vectors.');
+        registerHoverDescription('#drop-zone', 'Drag and drop your heightmap image, or click here to load a local texture asset.');
+        registerHoverDescription('#change-asset-btn', 'Discard the current loaded heightmap and select a new image file.');
+        registerHoverDescription('#toggle-repeater-btn', 'Expand or collapse the live 3D lit preview viewport.');
+        registerHoverDescription('#normal-strength', 'Slide to adjust depth intensity. Higher strengths amplify local shadow gradients.');
+        registerHoverDescription('#normal-blur', 'Set the filter step stride. Higher steps smooth noise, producing soft transitions.');
+        registerHoverDescription('#invert-red', 'Flip the Red (X Axis) channel vector direction. Changes left-to-right bevel orientations.');
+        registerHoverDescription('#invert-green', 'Flip the Green (Y Axis) channel vector direction. Changes bottom-to-top bevel orientations.');
+        registerHoverDescription('#material-gloss', 'Set the specular glossiness/roughness values of the rotating 3D preview model.');
+        registerHoverDescription('#download-btn', 'Trigger download of the generated 24-bit RGB Normal Map canvas to your disk.');
+        registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
+
+        // Custom Interactive Toast Notifications (Replaces alert)
+        function notify(message, type = "success") {
+            const container = document.getElementById("toast-stack");
+            const toast = document.createElement("div");
+            toast.className = `toast-notification ${type === "success" ? "toast-success" : ""}`;
+            toast.innerHTML = `
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add("show"), 50);
+            
+            setTimeout(() => {
+                toast.classList.remove("show");
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // Drag and Drop Interactions
+        ["dragenter", "dragover"].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add("dragover");
+            }, false);
+        });
+
+        ["dragleave", "drop"].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("dragover");
+            }, false);
+        });
+
+        dropZone.addEventListener("drop", (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length) handleFile(files[0]);
+        });
+
+        dropZone.addEventListener("click", () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener("change", (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        function handleFile(file) {
+            if (!file.type.startsWith("image/")) {
+                notify("Invalid file. Please select an image file format.", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    sourceImage = img;
+                    originalDims.innerText = `${img.naturalWidth} x ${img.naturalHeight} px`;
+                    
+                    // Display thumbnails immediately
+                    compactThumbBefore.src = event.target.result;
+                    
+                    // Fit standard hidden workspaces to image aspect ratios
+                    sourceCanvas.width = img.naturalWidth;
+                    sourceCanvas.height = img.naturalHeight;
+                    sourceCtx.drawImage(img, 0, 0);
+
+                    normalCanvas.width = img.naturalWidth;
+                    normalCanvas.height = img.naturalHeight;
+
+                    // Set target thumbnail thumbnail canvas properties
+                    compactThumbAfterCanvas.width = 110;
+                    compactThumbAfterCanvas.height = 110;
+
+                    notify("Texture uploaded successfully.");
+                    
+                    // Swap drop-zone with visual split preview
+                    dropZone.classList.add("hidden");
+                    compactLoadedBanner.classList.remove("hidden");
+                    tiledPreviewCard.classList.remove("hidden");
+                    downloadBtn.disabled = false;
+                    
+                    triggerRender();
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // De-bounce compiler updates
+        function triggerRender() {
+            if (!sourceImage) return;
+            if (processTimeout) clearTimeout(processTimeout);
+            
+            processTimeout = setTimeout(() => {
+                executeSobelNormalMapping();
+            }, 100);
+        }
+
+        // Optimized JavaScript Sobel Filter (Width-padded boundary steps)
+        function executeSobelNormalMapping() {
+            const width = sourceCanvas.width;
+            const height = sourceCanvas.height;
+            const srcData = sourceCtx.getImageData(0, 0, width, height);
+            const dstData = normalCtx.createImageData(width, height);
+            
+            const src = srcData.data;
+            const dst = dstData.data;
+
+            const strength = parseFloat(normalStrength.value) / 10.0;
+            const step = Math.max(1, Math.round(parseFloat(normalBlur.value))); // Filter stride acts as immediate sharp/blur step
+
+            const invR = invertRed.checked ? -1 : 1;
+            const invG = invertGreen.checked ? -1 : 1;
+
+            // Compute luminance array beforehand to avoid repeated channel multiplication
+            const luma = new Float32Array(width * height);
+            for (let i = 0, len = src.length; i < len; i += 4) {
+                // Classic luma formula
+                luma[i >> 2] = (src[i] * 0.299 + src[i + 1] * 0.587 + src[i + 2] * 0.114);
+            }
+
+            // Execute edge differentiation
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = (y * width + x) * 4;
+
+                    // Fetch padded neighbor coordinates
+                    const xL = Math.max(0, x - step);
+                    const xR = Math.min(width - 1, x + step);
+                    const yT = Math.max(0, y - step);
+                    const yB = Math.min(height - 1, y + step);
+
+                    // Standard Sobel kernel sampling matrix
+                    const tl = luma[yT * width + xL];
+                    const tc = luma[yT * width + x];
+                    const tr = luma[yT * width + xR];
+                    const ml = luma[y * width + xL];
+                    const mr = luma[y * width + xR];
+                    const bl = luma[yB * width + xL];
+                    const bc = luma[yB * width + x];
+                    const br = luma[yB * width + xR];
+
+                    // horizontal Sobel gradient
+                    const dx = (tr + 2.0 * mr + br) - (tl + 2.0 * ml + bl);
+                    // vertical Sobel gradient
+                    const dy = (bl + 2.0 * bc + br) - (tl + 2.0 * tc + tr);
+
+                    // Calculate normal vector components (Scale gradients to normalize Z mapping)
+                    const nx = -dx * strength * invR;
+                    const ny = -dy * strength * invYCoordinateAdjustment(invG); // Adjust coordinates
+                    const nz = 255.0; // Steady vertical base
+
+                    // Vector normalization
+                    const mag = Math.sqrt(nx * nx + ny * ny + nz * nz);
+                    const rx = nx / mag;
+                    const ry = ny / mag;
+                    const rz = nz / mag;
+
+                    // Map vector coordinates from [-1, 1] to [0, 255] RGB color profile
+                    dst[idx]     = Math.round((rx * 0.5 + 0.5) * 255);
+                    dst[idx + 1] = Math.round((ry * 0.5 + 0.5) * 255);
+                    dst[idx + 2] = Math.round((rz * 0.5 + 0.5) * 255);
+                    dst[idx + 3] = 255; // Solid Alpha
+                }
+            }
+
+            normalCtx.putImageData(dstData, 0, 0);
+
+            // Update top compact thumbnail canvas representation
+            compactThumbAfterCtx.clearRect(0, 0, 110, 110);
+            compactThumbAfterCtx.drawImage(normalCanvas, 0, 0, 110, 110);
+
+            // Update WebGL Material mapping textures
+            if (is3DInitialized && normalTexture3D) {
+                normalTexture3D.needsUpdate = true;
+            }
+        }
+
+        // Minor Helper to flip coordinate space based on invert state
+        function invYCoordinateAdjustment(val) {
+            return val * -1; // Align axis alignment coordinate rules
+        }
+
+        // ==========================================================
+        // THREE.JS 3D VIEWPORT PREVIEW COMPILER
+        // ==========================================================
+        function init3DPreview() {
+            if (is3DInitialized) return;
+
+            const w = canvas3DWrapper.clientWidth || 340;
+            const h = 280;
+
+            // 1. Scene & Camera Setup
+            scene3D = new THREE.Scene();
+            camera3D = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+            camera3D.position.set(0, 0, 3.5);
+
+            // 2. WebGL Renderer
+            renderer3D = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer3D.setSize(w, h);
+            renderer3D.setPixelRatio(window.devicePixelRatio || 1);
+            canvas3DWrapper.appendChild(renderer3D.domElement);
+
+            // 3. Dynamic Normal Texture Bridge
+            normalTexture3D = new THREE.CanvasTexture(normalCanvas);
+            normalTexture3D.wrapS = THREE.RepeatWrapping;
+            normalTexture3D.wrapT = THREE.RepeatWrapping;
+
+            // 4. Mesh Material parameters
+            const material = new THREE.MeshStandardMaterial({
+                color: 0x999999,
+                roughness: 0.5,
+                metalness: 0.1,
+                normalMap: normalTexture3D,
+                normalScale: new THREE.Vector2(1, 1)
+            });
+
+            const geometry = new THREE.PlaneGeometry(1.8, 1.8, 32, 32);
+            mesh3D = new THREE.Mesh(geometry, material);
+            scene3D.add(mesh3D);
+
+            // 5. Ambient and rotatable Directional lighting
+            const ambient = new THREE.AmbientLight(0xffffff, 0.2);
+            scene3D.add(ambient);
+
+            light3D = new THREE.DirectionalLight(0xfff3e0, 1.2);
+            scene3D.add(light3D);
+            updateLightDirection();
+
+            // Bind slider update hook to live rough material parameters
+            materialGloss.addEventListener("input", () => {
+                material.roughness = 1.0 - (parseFloat(materialGloss.value) / 100.0);
+            });
+
+            // Bind touch/drag mouse orbital events directly to the container
+            setup3DInteractivity();
+
+            // Run rendering frame tick loop
+            is3DInitialized = true;
+            animate3D();
+        }
+
+        function updateLightDirection() {
+            if (!light3D) return;
+            // Calculate spherical light angles
+            const x = Math.sin(lightAnglePhi) * Math.sin(lightAngleTheta);
+            const z = Math.sin(lightAnglePhi) * Math.cos(lightAngleTheta);
+            const y = Math.cos(lightAnglePhi);
+            
+            light3D.position.set(x * 4, y * 4, z * 4);
+        }
+
+        function setup3DInteractivity() {
+            const el = renderer3D.domElement;
+
+            el.addEventListener("mousedown", (e) => {
+                isDragging3D = true;
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+            });
+
+            window.addEventListener("mouseup", () => {
+                isDragging3D = false;
+            });
+
+            el.addEventListener("mousemove", (e) => {
+                if (!isDragging3D) return;
+                const deltaX = e.clientX - previousMouseX;
+                const deltaY = e.clientY - previousMouseY;
+
+                previousMouseX = e.clientX;
+                previousMouseY = e.clientY;
+
+                // Rotate light coordinates based on drag displacements
+                lightAngleTheta -= deltaX * 0.01;
+                lightAnglePhi = Math.max(0.1, Math.min(Math.PI / 2.1, lightAnglePhi - deltaY * 0.01));
+
+                updateLightDirection();
+            });
+
+            // Touch support for mobile dragging
+            el.addEventListener("touchstart", (e) => {
+                if (e.touches.length === 1) {
+                    isDragging3D = true;
+                    previousMouseX = e.touches[0].clientX;
+                    previousMouseY = e.touches[0].clientY;
+                }
+            });
+
+            el.addEventListener("touchmove", (e) => {
+                if (!isDragging3D || e.touches.length !== 1) return;
+                const deltaX = e.touches[0].clientX - previousMouseX;
+                const deltaY = e.touches[0].clientY - previousMouseY;
+
+                previousMouseX = e.touches[0].clientX;
+                previousMouseY = e.touches[0].clientY;
+
+                lightAngleTheta -= deltaX * 0.01;
+                lightAnglePhi = Math.max(0.1, Math.min(Math.PI / 2.1, lightAnglePhi - deltaY * 0.01));
+
+                updateLightDirection();
+            });
+
+            el.addEventListener("touchend", () => {
+                isDragging3D = false;
+            });
+        }
+
+        function animate3D() {
+            if (!is3DInitialized) return;
+            requestAnimationFrame(animate3D);
+
+            // Gentle model yaw sway to demonstrate shifting surface normal details
+            if (mesh3D && !isDragging3D) {
+                mesh3D.rotation.y = Math.sin(Date.now() * 0.0006) * 0.15;
+            }
+
+            renderer3D.render(scene3D, camera3D);
+        }
+
+        // Download Action Trigger
+        downloadBtn.addEventListener("click", () => {
+            if (!sourceImage) return;
+            
+            const link = document.createElement("a");
+            link.href = normalCanvas.toDataURL("image/png");
+            link.download = "normal_map.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            notify("Normal Map downloaded successfully.");
+        });
+
+        // ==========================================================
+        // AUTO-MINIMIZATION & TIMED LOCK CONTROL PIPELINE
+        // ==========================================================
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            if (isPanelLocked) {
+                countdownCircle.innerHTML = "🔒";
+            } else {
+                countdownCircle.innerHTML = countdownVal;
+            }
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    minimizePanel();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        // Bind interactive event handlers to panel coordinates
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+
+        // Initialize Countdown on load
+        startCountdown();
+    </script>
+</body>
+</html>

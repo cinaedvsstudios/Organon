@@ -1,0 +1,1562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Library</title>
+    
+    <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
+    <script>
+        if (window.self === window.top) {
+            window.location.href = '../../index.html';
+        }
+    </script>
+    
+    <!-- External Fonts for Organon Styling -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================
+           ORGANON GLOBAL BRAND STYLING TEMPLATE
+           Strict Color Mappings & Total Rounded Pill Realignment
+           ========================================================== */
+        :root {
+            /* 1. General Body Text (Alabaster Paper) */
+            --alabaster-paper: #F2ECE0;
+
+            /* 2. Classical Headings & Default Menu Text (Warm Stone Ochre) */
+            --stone-ochre: #E5A862;
+
+            /* 3. Hover Highlights & Glows (Water Spray Light Blue) */
+            --water-spray: #79B4E3;
+
+            /* 4. Selected & Active Focus Elements (Aqueduct Water Blue) */
+            --water-blue: #4B84BF;
+
+            /* 5. Inactive / Metadata Labels (Chiseled Bronze) */
+            --chiseled-bronze: #896b49; /* Standardized brand border */
+
+            /* 6. Warnings, Failures & Destructive Logs (Deep Burgundy) */
+            --burgundy: #4A1525;
+            --brand-red: #9a2f4f;
+
+            /* 7. System Indicators & Directories (Muted Forest Teal) */
+            --forest-teal: #26615C;
+
+            /* Core Canvas Settings */
+            --bg-nightsky: #181919;
+            --bg-card: #292a24; /* Updated Card Background */
+            --bg-input: rgba(24, 25, 25, 0.95);
+
+            /* Typography Hierarchies */
+            --font-headers: 'Cinzel', 'Playfair Display', Georgia, serif;
+            --font-body: 'Inter', 'Geist', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+
+            /* Custom Refined Palette Variable Nodes */
+            --light-blue: #75b2de;
+            --slider-active: #9a2f4f; /* Vibrant Ruby Pink (ON state / thumb) */
+            --slider-track: #61112e;  /* Dark Burgundy (OFF state / right track) */
+            --light-blend-stone: #e0a360;
+        }
+
+        /* Global Reset & Core Body Settings */
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        /* Custom Text Highlight Selection */
+        ::selection {
+            background-color: var(--water-blue);
+            color: var(--bg-nightsky);
+        }
+
+        /* Classical Serified Headers */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-weight: 600;
+            letter-spacing: 0.03em;
+            margin-top: 0;
+            transition: color 0.25s ease, text-shadow 0.25s ease;
+        }
+
+        /* Fluid Hover Anchor Links */
+        a {
+            color: var(--stone-ochre);
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        a:hover {
+            color: var(--water-spray);
+            text-shadow: 0 0 8px rgba(121, 180, 227, 0.65), 0 0 16px rgba(121, 180, 227, 0.3);
+        }
+
+        a:active {
+            color: var(--water-blue);
+            text-shadow: none;
+        }
+
+        /* ==========================================================
+           PILL SELECTORS & INTERACTIVE TEXTBOX INPUTS
+           ========================================================== */
+        input, select, textarea {
+            background-color: var(--bg-input);
+            color: #f0ebcb !important; /* Harmonized Input Text */
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px; /* Complete Pill Shape */
+            transition: all 0.2s ease-in-out;
+            box-sizing: border-box;
+            font-size: 15px; /* Prevents auto-zoom on iOS safari */
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        ::placeholder {
+            color: var(--chiseled-bronze);
+            opacity: 0.8;
+        }
+
+        /* Custom Smooth Scrollbar with Water Accents */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--chiseled-bronze);
+            border-radius: 9999px; /* Complete Pill Shape Scrollbars */
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--water-blue);
+        }
+
+        /* ==========================================================
+           ROUNDED PILL UTILITY BUTTONS
+           ========================================================== */
+        .btn-pill {
+            background-color: var(--forest-teal);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.85rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            border-radius: 9999px; /* Absolute Pill Shape */
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(38, 97, 92, 0.2);
+            touch-action: manipulation;
+            box-sizing: border-box;
+            white-space: nowrap;
+        }
+
+        .btn-pill:hover {
+            background-color: var(--water-blue);
+            box-shadow: 0 6px 16px rgba(75, 132, 191, 0.4);
+            transform: translateY(-1px);
+            color: var(--alabaster-paper);
+            text-shadow: 0 0 6px rgba(242, 236, 224, 0.4);
+        }
+
+        .btn-pill:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 8px rgba(75, 132, 191, 0.2);
+            background-color: var(--water-blue);
+        }
+
+        .btn-pill:disabled {
+            background-color: rgba(24, 25, 25, 0.3) !important;
+            color: rgba(137, 107, 73, 0.5) !important;
+            border-color: rgba(137, 107, 73, 0.2) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        .btn-pill-secondary {
+            background-color: transparent;
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--stone-ochre);
+        }
+
+        .btn-pill-secondary:hover {
+            background-color: rgba(229, 168, 98, 0.1);
+            border-color: var(--stone-ochre);
+        }
+
+        /* ==========================================================
+           3-PANEL VERTICAL VIEWPORT STRUCTURE (MAX 540PX)
+           ========================================================== */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px; /* Constrained strictly to 2 buttons wide */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        /* Panel 1: Top Sticky Upload Panel with blended Light Stone Background, Fallback & Curved Bottom Corners */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 24px 16px 16px 16px; /* Added extra top padding */
+            box-sizing: border-box;
+            border-bottom: 1px solid var(--chiseled-bronze) !important;
+            border-bottom-left-radius: 28px; /* Elegant bottom curve integration */
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+
+        /* Auto-Minimizing Panel state rules */
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .input-card-container {
+            display: none !important;
+        }
+
+        /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(24, 25, 25, 0.9);
+            color: var(--light-blue);
+            font-family: var(--font-headers);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            user-select: none;
+            box-sizing: border-box;
+            width: 100%; /* Spans all the way across */
+            max-width: 100%;
+        }
+
+        /* Tactile Countdown Circle styling */
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            margin-right: 12px;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .countdown-circle-indicator:hover {
+            border-color: var(--water-spray);
+            color: var(--water-spray);
+            box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
+        }
+
+        /* Input Container styling */
+        .input-card-container {
+            width: 340px; /* Constrained fixed width */
+            max-width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        /* Inline clear search x button */
+        .search-clear-btn {
+            position: absolute;
+            right: 14px;
+            top: 10px;
+            background: none;
+            border: none;
+            font-size: 1.15rem;
+            color: var(--chiseled-bronze);
+            cursor: pointer;
+            display: none;
+            padding: 0;
+            line-height: 1;
+        }
+        .search-clear-btn:hover {
+            color: var(--brand-red);
+        }
+
+        /* Autocomplete Box dropdown styling */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            width: 100%;
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 16px;
+            z-index: 1000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            max-height: 180px;
+            overflow-y: auto;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            padding: 6px 0;
+        }
+        .autocomplete-row {
+            padding: 8px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--alabaster-paper);
+            cursor: pointer;
+            text-align: left;
+            transition: background-color 0.2s;
+        }
+        .autocomplete-row:hover {
+            background-color: rgba(75, 132, 191, 0.15);
+            color: var(--water-spray);
+        }
+
+        /* Panel 2: Middle Scrollable Body (Set to pure Black) */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000; /* Pure Black Background */
+            padding: 16px 16px 120px 16px; /* Heavy bottom padding so inputs clear the sticky footer */
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            font-size: 0.8rem;
+        }
+
+        /* Compact Setting Card Groupings */
+        .config-card {
+            background-color: var(--bg-card) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+            position: relative;
+        }
+
+        /* Card Content Collapsible State */
+        .card-content {
+            transition: all 0.3s ease;
+        }
+        .card-content.hidden {
+            display: none !important;
+        }
+
+        /* Settings grid splitting nicely into direct layout */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+
+        /* Category Filter Circular Buttons Grid */
+        .category-filter-grid {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            margin-top: 10px;
+            margin-bottom: 12px;
+        }
+
+        .filter-circle-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            background-color: rgba(24, 25, 25, 0.6);
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            user-select: none;
+        }
+        .filter-circle-btn.active {
+            background-color: var(--forest-teal);
+            border-color: var(--water-spray);
+            box-shadow: 0 0 10px rgba(121, 180, 227, 0.25);
+        }
+        .filter-circle-btn:hover {
+            border-color: var(--water-spray);
+            transform: scale(1.05);
+        }
+
+        /* Dynamic Grid Layout for character results */
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(56px, 1fr));
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .char-card {
+            background-color: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 12px;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.20s ease-in-out;
+            position: relative;
+        }
+        .char-card:hover {
+            border-color: var(--water-spray) !important;
+            background-color: rgba(75, 132, 191, 0.1);
+            transform: scale(1.05);
+        }
+        .char-card.selected {
+            outline: 2px solid var(--water-spray);
+            border-color: var(--water-spray) !important;
+            background-color: rgba(75, 132, 191, 0.15);
+        }
+        .char-card:active {
+            transform: scale(0.95);
+        }
+
+        /* Small Info Overlay badge for items */
+        .char-latex-name {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--chiseled-bronze);
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            margin-top: 2px;
+        }
+
+        /* Master Favorites Shelf */
+        .favorites-shelf {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 42px;
+            padding: 8px;
+            border-radius: 14px;
+            background-color: rgba(24, 25, 25, 0.5);
+            border: 1px dashed rgba(137, 107, 73, 0.3) !important;
+            margin-top: 8px;
+        }
+
+        .fav-pill {
+            background-color: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 9999px;
+            padding: 4px 10px 4px 14px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .fav-pill:hover {
+            border-color: var(--brand-red) !important;
+        }
+
+        .fav-remove {
+            color: var(--brand-red);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 2px 4px;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .fav-remove:hover {
+            background-color: rgba(154, 47, 79, 0.2);
+        }
+
+        /* Sliders Layout Configuration */
+        .slider-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        /* Customized Slider Track & Thumb Handles (Border Removed) */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 9999px;
+            border: none !important;
+            padding: 0;
+            width: 100%;
+            touch-action: none;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
+            border: none !important;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--water-spray) !important;
+            transform: scale(1.15);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: var(--slider-active) !important;
+            border: none !important;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+        }
+
+        input[type="range"]::-moz-range-thumb:hover {
+            background: var(--water-spray) !important;
+            transform: scale(1.15);
+        }
+
+        .slider-val {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+            text-align: right;
+            margin-top: -4px;
+        }
+
+        /* Harmonized Section Headings Color Node */
+        .group-title, .control-group-title, .config-card h3 {
+            color: var(--light-blue) !important;
+        }
+
+        .control-group-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border-bottom: 1px solid rgba(132, 104, 78, 0.15);
+            padding-bottom: 6px;
+        }
+
+        .control-group-title svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Adjusted label typography size */
+        label {
+            font-size: 0.75rem !important;
+            color: var(--alabaster-paper);
+            opacity: 0.85;
+            letter-spacing: 0.03em;
+        }
+
+        /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Fallback */
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px; /* Clamped tightly to match vertical flow */
+            z-index: 110;
+            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            padding: 16px 16px 20px 16px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze) !important;
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+        }
+
+        .bottom-sticky-panel .btn-pill {
+            flex: 1;
+            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
+            color: var(--light-blue) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            box-shadow: none !important;
+            text-shadow: none !important;
+            width: 100%;
+        }
+
+        .bottom-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+
+        .bottom-sticky-panel .btn-pill:disabled {
+            background-color: rgba(24, 25, 25, 0.3) !important;
+            color: rgba(137, 107, 73, 0.5) !important;
+            border-color: rgba(137, 107, 73, 0.2) !important;
+            cursor: not-allowed !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+
+        /* Loading Engine Overlay Screen */
+        .loader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-nightsky);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .loader-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(229, 168, 98, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--stone-ochre);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        .loader-title {
+            font-family: var(--font-headers);
+            font-size: 1.8rem;
+            color: var(--stone-ochre);
+            margin: 0;
+            letter-spacing: 0.15em;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .metadata-text {
+            color: var(--chiseled-bronze);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        /* Custom Popup Overlay Modals */
+        .overlay-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            box-sizing: border-box;
+        }
+
+        .modal-body-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze) !important;
+            border-radius: 28px;
+            padding: 24px;
+            width: 100%;
+            max-width: 440px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 2101;
+        }
+
+        .modal-title {
+            margin: 0;
+            color: var(--stone-ochre) !important;
+            font-size: 1.1rem;
+            border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
+            padding-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PRE-FLIGHT SYSTEM ENGINE LOADER -->
+    <div id="loading-overlay" class="loader-overlay">
+        <div class="loader-spinner"></div>
+        <div class="loader-title">CHARACTER SYSTEM</div>
+        <p style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--water-spray);">Initializing local maps and unicode structures...</p>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div class="app-wrapper">
+        
+        <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
+        <div class="top-sticky-panel">
+            <!-- Absolute Title Pill -->
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>CHAR LIBRARY</span>
+                </div>
+                <button type="button" id="clear-search-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Reset Search</button>
+            </div>
+
+            <!-- Global Search Card -->
+            <div class="input-card-container">
+                <input type="text" id="global-search-input" placeholder="Search keywords (e.g. 'arrow', 'alpha', 'smile')..." autocomplete="off">
+                <span id="search-clear-x" class="search-clear-btn">&times;</span>
+                
+                <!-- Autocomplete Dropdown Panel -->
+                <div id="autocomplete-box" class="autocomplete-dropdown hidden"></div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: MIDDLE SCROLLABLE PREVIEW & SETTINGS -->
+        <main class="middle-scroll-panel">
+            
+            <div class="settings-grid">
+                
+                <!-- 1. Search Settings & Category Toggles (Collapsed / Minimized by default) -->
+                <div class="config-card">
+                    <div class="flex-between" style="align-items: center; border-bottom: 1px solid rgba(132, 104, 78, 0.15); padding-bottom: 6px; margin-bottom: 6px;">
+                        <div class="control-group-title" style="border: none; margin: 0; padding: 0;">
+                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                            <span>1. Filter & Search Settings</span>
+                        </div>
+                        <button type="button" id="toggle-filter-card-btn" class="btn-pill" style="padding: 3px 10px; font-size: 0.65rem; background-color: rgba(24, 25, 25, 0.6) !important;">Expand</button>
+                    </div>
+                    
+                    <div id="filter-card-content" class="card-content hidden">
+                        <label style="text-align: center; display: block; margin-top: 8px;">Include Categories</label>
+                        <div class="category-filter-grid">
+                            <div class="filter-circle-btn active" id="pill-emoji" data-category="emoji" title="Emojis">😀</div>
+                            <div class="filter-circle-btn active" id="pill-math" data-category="math" title="Math Notation">∑</div>
+                            <div class="filter-circle-btn active" id="pill-greek" data-category="greek" title="Greek / Science">Ω</div>
+                            <div class="filter-circle-btn active" id="pill-ascii" data-category="ascii" title="ASCII / Retro">█</div>
+                        </div>
+
+                        <div class="slider-row" style="margin-top: 14px;">
+                            <div class="flex-between">
+                                <label for="fuzzy-sensitivity">Fuzzy Search Sensitivity</label>
+                                <span class="slider-val" id="sensitivity-val">Normal</span>
+                            </div>
+                            <input type="range" id="fuzzy-sensitivity" min="1" max="3" value="2">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Favorites Shelf Card -->
+                <div class="config-card">
+                    <div class="control-group-title" style="justify-content: space-between; align-items: center;">
+                        <div style="display:flex; align-items:center;">
+                            <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                            <span>2. Favorites & Starred List</span>
+                        </div>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <select id="active-list-selector" style="font-size: 0.7rem; padding: 4px 24px 4px 10px; width: auto; background-color: var(--bg-input); height: 26px; border-radius: 9999px;"></select>
+                            <button type="button" id="edit-list-btn" class="btn-pill" style="padding: 3px 10px; font-size: 0.65rem; background-color: rgba(24, 25, 25, 0.6) !important;">Edit</button>
+                        </div>
+                    </div>
+                    
+                    <div id="favorites-edit-controls" class="hidden" style="margin-bottom: 8px; display: flex; gap: 8px; justify-content: flex-end; border-bottom: 1px dashed rgba(137, 107, 73, 0.2); padding-bottom: 8px;">
+                        <button type="button" id="rename-list-trigger" class="btn-pill btn-pill-secondary" style="font-size: 0.65rem; padding: 4px 10px;">Rename</button>
+                        <button type="button" id="delete-list-trigger" class="btn-pill btn-pill-secondary" style="font-size: 0.65rem; padding: 4px 10px; color: var(--brand-red); border-color: var(--brand-red);">Delete</button>
+                    </div>
+
+                    <div class="favorites-shelf" id="favorites-shelf-container">
+                        <!-- Fav pills are injected here -->
+                    </div>
+                </div>
+
+                <!-- 3. Dynamic Results Card -->
+                <div class="config-card">
+                    <div class="control-group-title">
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                        <span>3. Library Output (<span id="results-count">0</span> characters)</span>
+                    </div>
+                    <div class="char-grid" id="char-results-container">
+                        <!-- Visual grids loaded here -->
+                    </div>
+                </div>
+                
+            </div>
+        </main>
+
+        <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill" id="add-selected-to-favs-btn" disabled>
+                Add to Favorites
+            </button>
+            <button type="button" class="btn-pill" id="new-list-trigger-btn">
+                New List
+            </button>
+        </div>
+
+    </div>
+
+    <!-- CUSTOM POPUP MODAL DIALOGS -->
+    <div id="custom-dialog-modal" class="overlay-modal hidden">
+        <div class="modal-body-card">
+            <h3 class="modal-title" id="dialog-modal-title">Create New Favorites List</h3>
+            <div class="form-row" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                <label for="dialog-input-field" id="dialog-input-label">Enter list name (emoji or text):</label>
+                <input type="text" id="dialog-input-field" placeholder="e.g., ⭐ Game Assets">
+            </div>
+            <div class="flex-between" style="gap: 12px; margin-top: 16px;">
+                <button type="button" id="dialog-cancel-btn" class="btn-pill btn-pill-secondary" style="flex: 1;">Cancel</button>
+                <button type="button" id="dialog-confirm-btn" class="btn-pill" style="flex: 1;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION STACK -->
+    <div id="toast-stack" class="toast-container"></div>
+
+    <script>
+        // Pre-loaded client-side character maps
+        const CHAR_DICTIONARY = [
+            // EMOJIS
+            { char: "😀", name: "grinning face", category: "emoji", keywords: "smile happy joy laugh" },
+            { char: "😂", name: "face with tears of joy", category: "emoji", keywords: "laugh cry hilarious funny" },
+            { char: "🔥", name: "fire", category: "emoji", keywords: "hot flame burn trend glow" },
+            { char: "✨", name: "sparkles", category: "emoji", keywords: "shine glitter magic stars" },
+            { char: "⭐", name: "star", category: "emoji", keywords: "gold yellow rate shine favorite" },
+            { char: "❤️", name: "red heart", category: "emoji", keywords: "love passion like favorite" },
+            { char: "👍", name: "thumbs up", category: "emoji", keywords: "yes approve ok correct hand" },
+            { char: "🚀", name: "rocket", category: "emoji", keywords: "speed fast launch space ship" },
+            { char: "💡", name: "light bulb", category: "emoji", keywords: "idea smart thought glow lamp" },
+            { char: "⚙️", name: "gear", category: "emoji", keywords: "settings tool machinery options cog" },
+            { char: "🔒", name: "locked", category: "emoji", keywords: "security lock closed protection private" },
+            { char: "🔓", name: "unlocked", category: "emoji", keywords: "open access free security public" },
+            { char: "🎨", name: "artist palette", category: "emoji", keywords: "color paint art design tool draw" },
+            { char: "📁", name: "file folder", category: "emoji", keywords: "directory open save assets organize" },
+
+            // MATH NOTATIONS
+            { char: "∑", name: "summation", category: "math", latex: "\\sum", keywords: "sum add math series sigma" },
+            { char: "∫", name: "integral", category: "math", latex: "\\int", keywords: "calculus integrate math area" },
+            { char: "∏", name: "product", category: "math", latex: "\\prod", keywords: "product multiply series pi math" },
+            { char: "√", name: "square root", category: "math", latex: "\\sqrt", keywords: "radical root power algebra" },
+            { char: "∞", name: "infinity", category: "math", latex: "\\infty", keywords: "limit endless math bound forever" },
+            { char: "∂", name: "partial differential", category: "math", latex: "\\partial", keywords: "calculus delta math derivative" },
+            { char: "∇", name: "nabla", category: "math", latex: "\\nabla", keywords: "gradient math vector delta calculus" },
+            { char: "≈", name: "almost equal to", category: "math", latex: "\\approx", keywords: "approximate estimation equal" },
+            { char: "≠", name: "not equal to", category: "math", latex: "\\neq", keywords: "unequal logic algebra math" },
+            { char: "≤", name: "less-than or equal to", category: "math", latex: "\\leq", keywords: "comparison bounds limit algebra" },
+            { char: "≥", name: "greater-than or equal to", category: "math", latex: "\\geq", keywords: "comparison bounds limit algebra" },
+            { char: "±", name: "plus-minus", category: "math", latex: "\\pm", keywords: "deviation tolerance positive negative" },
+            { char: "∈", name: "element of", category: "math", latex: "\\in", keywords: "set theory contains logic member" },
+            { char: "∉", name: "not an element of", category: "math", latex: "\\notin", keywords: "set theory logic exclude member" },
+            { char: "⊂", name: "subset of", category: "math", latex: "\\subset", keywords: "set theory logic category" },
+            { char: "∪", name: "union", category: "math", latex: "\\cup", keywords: "set theory join logical or" },
+            { char: "∩", name: "intersection", category: "math", latex: "\\cap", keywords: "set theory overlap logical and" },
+
+            // GREEK & SCIENTIFIC
+            { char: "α", name: "alpha", category: "greek", latex: "\\alpha", keywords: "greek math variable first angle constant" },
+            { char: "β", name: "beta", category: "greek", latex: "\\beta", keywords: "greek math variable second coefficient angle" },
+            { char: "γ", name: "gamma", category: "greek", latex: "\\gamma", keywords: "greek math variable third factor constant" },
+            { char: "Δ", name: "Delta", category: "greek", latex: "\\Delta", keywords: "greek math capital change difference" },
+            { char: "δ", name: "delta", category: "greek", latex: "\\delta", keywords: "greek math variable error change" },
+            { char: "θ", name: "theta", category: "greek", latex: "\\theta", keywords: "greek math variable angle coordinate" },
+            { char: "λ", name: "lambda", category: "greek", latex: "\\lambda", keywords: "greek math wavelength variable physics" },
+            { char: "μ", name: "mu", category: "greek", latex: "\\mu", keywords: "greek math micro mean factor friction coefficient" },
+            { char: "π", name: "pi", category: "greek", latex: "\\pi", keywords: "greek math constant ratio circle geometry" },
+            { char: "σ", name: "sigma", category: "greek", latex: "\\sigma", keywords: "greek math variable standard deviation physics" },
+            { char: "Ω", name: "Omega", category: "greek", latex: "\\Omega", keywords: "greek math capital resistance ohm physics constant" },
+            { char: "ω", name: "omega", category: "greek", latex: "\\omega", keywords: "greek math variable angular frequency" },
+            { char: "Φ", name: "Phi", category: "greek", latex: "\\Phi", keywords: "greek math capital flux constant" },
+            { char: "φ", name: "phi", category: "greek", latex: "\\phi", keywords: "greek math variable angle phase golden ratio" },
+
+            // ASCII ART & RETRO SYMBOLS
+            { char: "░", name: "light shade block", category: "ascii", keywords: "shade brick retro ascii screen text texture paint" },
+            { char: "▒", name: "medium shade block", category: "ascii", keywords: "shade brick retro ascii screen text texture paint" },
+            { char: "▓", name: "dark shade block", category: "ascii", keywords: "shade brick retro ascii screen text texture paint" },
+            { char: "█", name: "full block", category: "ascii", keywords: "solid bar box ascii screen texture paint fill" },
+            { char: "▄", name: "lower half block", category: "ascii", keywords: "bar box bottom screen paint" },
+            { char: "▀", name: "upper half block", category: "ascii", keywords: "bar box top screen paint" },
+            { char: "▲", name: "black up-pointing triangle", category: "ascii", keywords: "arrow play up high north increment" },
+            { char: "▼", name: "black down-pointing triangle", category: "ascii", keywords: "arrow play down low south decrement" },
+            { char: "◄", name: "black left-pointing pointer", category: "ascii", keywords: "arrow play left west back" },
+            { char: "►", name: "black right-pointing pointer", category: "ascii", keywords: "arrow play right east forward" },
+            { char: "★", name: "solid star", category: "ascii", keywords: "gold yellow rate shine favorite" },
+            { char: "☠", name: "skull and crossbones", category: "ascii", keywords: "danger poison toxic death pirate" },
+            { char: "☢", name: "radioactive", category: "ascii", keywords: "danger warning toxic radiation" },
+            { char: "☣", name: "biohazard", category: "ascii", keywords: "danger warning virus toxic infection" },
+            { char: "♫", name: "musical eighth note", category: "ascii", keywords: "sound music play song instrument" },
+            { char: "✿", name: "blossom flower", category: "ascii", keywords: "floral spring graphic nature bloom decoration" },
+            { char: "┌", name: "box drawings light down and right", category: "ascii", keywords: "corner line frame box top left" },
+            { char: "┐", name: "box drawings light down and left", category: "ascii", keywords: "corner line frame box top right" },
+            { char: "└", name: "box drawings light up and right", category: "ascii", keywords: "corner line frame box bottom left" },
+            { char: "┘", name: "box drawings light up and left", category: "ascii", keywords: "corner line frame box bottom right" },
+            { char: "─", name: "box drawings light horizontal", category: "ascii", keywords: "line frame box dash horizontal" },
+            { char: "│", name: "box drawings light vertical", category: "ascii", keywords: "line frame box bar vertical" }
+        ];
+
+        // UI Bindings
+        const globalSearchInput = document.getElementById("global-search-input");
+        const searchClearX = document.getElementById("search-clear-x");
+        const autocompleteBox = document.getElementById("autocomplete-box");
+        const clearSearchBtn = document.getElementById("clear-search-btn");
+        const fuzzySensitivity = document.getElementById("fuzzy-sensitivity");
+        const sensitivityVal = document.getElementById("sensitivity-val");
+        const filterCircleBtns = document.querySelectorAll(".filter-circle-btn");
+        const resultsContainer = document.getElementById("char-results-container");
+        const resultsCountSpan = document.getElementById("results-count");
+        const favoritesShelf = document.getElementById("favorites-shelf-container");
+        const activeListSelector = document.getElementById("active-list-selector");
+        
+        const toggleFilterCardBtn = document.getElementById("toggle-filter-card-btn");
+        const filterCardContent = document.getElementById("filter-card-content");
+        
+        const editListBtn = document.getElementById("edit-list-btn");
+        const favoritesEditControls = document.getElementById("favorites-edit-controls");
+        const renameListTrigger = document.getElementById("rename-list-trigger");
+        const deleteListTrigger = document.getElementById("delete-list-trigger");
+
+        const addSelectedToFavsBtn = document.getElementById("add-selected-to-favs-btn");
+        const newListTriggerBtn = document.getElementById("new-list-trigger-btn");
+        const clearAllFavsBtn = document.getElementById("clear-all-favs-btn"); // Kept in background logic
+
+        // Modals elements
+        const customDialogModal = document.getElementById("custom-dialog-modal");
+        const dialogModalTitle = document.getElementById("dialog-modal-title");
+        const dialogInputLabel = document.getElementById("dialog-input-label");
+        const dialogInputField = document.getElementById("dialog-input-field");
+        const dialogCancelBtn = document.getElementById("dialog-cancel-btn");
+        const dialogConfirmBtn = document.getElementById("dialog-confirm-btn");
+
+        // State management
+        let activeCategories = new Set(["emoji", "math", "greek", "ascii"]);
+        let selectedCharacter = null;
+        let recentSearches = [];
+        let currentModalAction = ""; // "create" or "rename"
+
+        // Dynamic Favorites Library Multi-Lists
+        let favoriteLibrary = {
+            "⭐ Favorites": []
+        };
+        let activeListName = "⭐ Favorites";
+
+        // Load multi-lists database from LocalStorage
+        if (localStorage.getItem("organon_favorite_lists")) {
+            try {
+                favoriteLibrary = JSON.parse(localStorage.getItem("organon_favorite_lists"));
+            } catch(e) {
+                favoriteLibrary = { "⭐ Favorites": [] };
+            }
+        }
+        if (localStorage.getItem("organon_active_list_name")) {
+            activeListName = localStorage.getItem("organon_active_list_name");
+            if (!favoriteLibrary[activeListName]) {
+                activeListName = Object.keys(favoriteLibrary)[0];
+            }
+        }
+        // Load recent searches
+        if (localStorage.getItem("organon_recent_searches")) {
+            try {
+                recentSearches = JSON.parse(localStorage.getItem("organon_recent_searches"));
+            } catch (e) {
+                recentSearches = [];
+            }
+        }
+
+        // Initialize Slider Visual Tracking
+        syncSliderBackground(fuzzySensitivity);
+        fuzzySensitivity.addEventListener("input", () => {
+            const val = parseInt(fuzzySensitivity.value);
+            if (val === 1) sensitivityVal.innerText = "Exact";
+            else if (val === 2) sensitivityVal.innerText = "Normal";
+            else if (val === 3) sensitivityVal.innerText = "Fuzzy";
+            syncSliderBackground(fuzzySensitivity);
+            executeSearch();
+        });
+
+        // Toggle first settings panel card (Collapsed / Minimized by default)
+        toggleFilterCardBtn.addEventListener("click", () => {
+            if (filterCardContent.classList.contains("hidden")) {
+                filterCardContent.classList.remove("hidden");
+                toggleFilterCardBtn.innerText = "Collapse";
+            } else {
+                filterCardContent.classList.add("hidden");
+                toggleFilterCardBtn.innerText = "Expand";
+            }
+        });
+
+        // Reset search triggers
+        clearSearchBtn.addEventListener("click", () => {
+            globalSearchInput.value = "";
+            searchClearX.style.display = "none";
+            activeCategories = new Set(["emoji", "math", "greek", "ascii"]);
+            filterCircleBtns.forEach(p => p.classList.add("active"));
+            executeSearch();
+            notify("Filters and search cleared.");
+        });
+
+        // Search clear "x" inline button trigger
+        searchClearX.addEventListener("click", () => {
+            globalSearchInput.value = "";
+            searchClearX.style.display = "none";
+            executeSearch();
+            globalSearchInput.focus();
+        });
+
+        // Autocomplete & Recent Search Drawer Mechanics
+        globalSearchInput.addEventListener("focus", () => {
+            showAutocomplete();
+        });
+        document.addEventListener("click", (e) => {
+            if (!globalSearchInput.contains(e.target) && !autocompleteBox.contains(e.target)) {
+                autocompleteBox.classList.add("hidden");
+            }
+        });
+
+        function showAutocomplete() {
+            autocompleteBox.innerHTML = "";
+            if (recentSearches.length === 0) {
+                autocompleteBox.classList.add("hidden");
+                return;
+            }
+            
+            recentSearches.forEach(term => {
+                const row = document.createElement("div");
+                row.className = "autocomplete-row";
+                row.innerText = term;
+                row.addEventListener("click", () => {
+                    globalSearchInput.value = term;
+                    searchClearX.style.display = "block";
+                    autocompleteBox.classList.add("hidden");
+                    executeSearch();
+                });
+                autocompleteBox.appendChild(row);
+            });
+            autocompleteBox.classList.remove("hidden");
+        }
+
+        function saveSearchToHistory(term) {
+            term = term.trim();
+            if (term.length === 0) return;
+            recentSearches = recentSearches.filter(t => t !== term);
+            recentSearches.unshift(term);
+            if (recentSearches.length > 10) {
+                recentSearches.pop();
+            }
+            localStorage.setItem("organon_recent_searches", JSON.stringify(recentSearches));
+        }
+
+        // Bind interactive category clicks to circles
+        filterCircleBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                const category = btn.getAttribute("data-category");
+                if (btn.classList.contains("active")) {
+                    btn.classList.remove("active");
+                    activeCategories.delete(category);
+                } else {
+                    btn.classList.add("active");
+                    activeCategories.add(category);
+                }
+                executeSearch();
+            });
+        });
+
+        // Core Search implementation
+        globalSearchInput.addEventListener("input", () => {
+            if (globalSearchInput.value.trim().length > 0) {
+                searchClearX.style.display = "block";
+            } else {
+                searchClearX.style.display = "none";
+            }
+            executeSearch();
+        });
+
+        function executeSearch() {
+            const query = globalSearchInput.value.trim().toLowerCase();
+            const mode = parseInt(fuzzySensitivity.value); // 1 = exact, 2 = normal, 3 = fuzzy
+            resultsContainer.innerHTML = "";
+
+            if (query.length > 0) {
+                saveSearchToHistory(query);
+            }
+
+            // Filter by categories first
+            let matches = CHAR_DICTIONARY.filter(item => activeCategories.has(item.category));
+
+            if (query.length > 0) {
+                matches = matches.filter(item => {
+                    const charVal = item.char;
+                    const nameVal = item.name.toLowerCase();
+                    const keywordsVal = item.keywords.toLowerCase();
+                    const latexVal = item.latex ? item.latex.toLowerCase() : "";
+
+                    if (mode === 1) {
+                        return charVal === query || nameVal.includes(query) || latexVal === query;
+                    } else if (mode === 2) {
+                        return nameVal.includes(query) || keywordsVal.includes(query) || latexVal.includes(query);
+                    } else {
+                        const terms = query.split(/\s+/);
+                        return terms.every(term => 
+                            nameVal.includes(term) || keywordsVal.includes(term) || latexVal.includes(term)
+                        );
+                    }
+                });
+            }
+
+            resultsCountSpan.innerText = matches.length;
+
+            if (matches.length === 0) {
+                resultsContainer.innerHTML = `
+                    <div style="grid-column: 1 / -1; padding: 24px 0; text-align: center; opacity: 0.6; font-size: 0.8rem;">
+                        No matching symbols found. Modify filters or use the Fuzzy setting.
+                    </div>
+                `;
+                return;
+            }
+
+            matches.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "char-card";
+                if (selectedCharacter && selectedCharacter.char === item.char) {
+                    card.classList.add("selected");
+                }
+                
+                const subLabel = item.latex ? `<div class="char-latex-name" title="${item.latex}">${item.latex}</div>` : `<div class="char-latex-name">${item.name}</div>`;
+                
+                card.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%;">
+                        <div>${item.char}</div>
+                        ${subLabel}
+                    </div>
+                `;
+
+                // Handle single-click visual selection & immediate copy
+                card.addEventListener("click", () => {
+                    document.querySelectorAll(".char-card").forEach(c => c.classList.remove("selected"));
+                    card.classList.add("selected");
+                    selectedCharacter = item;
+                    
+                    // Enable bottom favorite addition pill
+                    addSelectedToFavsBtn.disabled = false;
+                    addSelectedToFavsBtn.innerText = `Add "${item.char}" to active list`;
+                    
+                    copyToClipboard(item.char);
+                });
+
+                card.addEventListener("mouseenter", () => {
+                    const latexNotice = item.latex ? ` (LaTeX: ${item.latex})` : "";
+                    notifyHubStatus(`Click to select and copy: "${item.char}" - ${item.name}${latexNotice}`);
+                });
+                card.addEventListener("mouseleave", clearHubStatus);
+
+                resultsContainer.appendChild(card);
+            });
+        }
+
+        // Favorites Multi-List Core Logic
+        function renderActiveListSelector() {
+            activeListSelector.innerHTML = "";
+            Object.keys(favoriteLibrary).forEach(listName => {
+                const opt = document.createElement("option");
+                opt.value = listName;
+                opt.innerText = listName;
+                if (listName === activeListName) {
+                    opt.selected = true;
+                }
+                activeListSelector.appendChild(opt);
+            });
+        }
+
+        activeListSelector.addEventListener("change", () => {
+            activeListName = activeListSelector.value;
+            localStorage.setItem("organon_active_list_name", activeListName);
+            renderFavorites();
+        });
+
+        // Edit control toggles
+        editListBtn.addEventListener("click", () => {
+            if (favoritesEditControls.classList.contains("hidden")) {
+                favoritesEditControls.classList.remove("hidden");
+                editListBtn.innerText = "Close";
+            } else {
+                favoritesEditControls.classList.add("hidden");
+                editListBtn.innerText = "Edit";
+            }
+        });
+
+        // Add selected character to current favorites list
+        addSelectedToFavsBtn.addEventListener("click", () => {
+            if (!selectedCharacter) return;
+            
+            if (!favoriteLibrary[activeListName]) {
+                favoriteLibrary[activeListName] = [];
+            }
+
+            const exists = favoriteLibrary[activeListName].some(item => item.char === selectedCharacter.char);
+            if (!exists) {
+                favoriteLibrary[activeListName].push(selectedCharacter);
+                localStorage.setItem("organon_favorite_lists", JSON.stringify(favoriteLibrary));
+                renderFavorites();
+                notify(`Added "${selectedCharacter.char}" to active list: ${activeListName}`);
+            } else {
+                notify(`"${selectedCharacter.char}" already exists in ${activeListName}.`, "error");
+            }
+        });
+
+        // Favorites list renderer
+        function renderFavorites() {
+            favoritesShelf.innerHTML = "";
+            const activeList = favoriteLibrary[activeListName] || [];
+
+            if (activeList.length === 0) {
+                favoritesShelf.innerHTML = `
+                    <div style="padding: 6px; text-align: center; opacity: 0.6; font-size: 0.75rem; width: 100%;">
+                        Starred items appear here. Select a character below and tap "Add to Favorites".
+                    </div>
+                `;
+                return;
+            }
+
+            activeList.forEach(item => {
+                const favPill = document.createElement("span");
+                favPill.className = "fav-pill";
+                favPill.innerHTML = `
+                    <span>${item.char}</span>
+                    <span class="fav-remove" title="Remove">&times;</span>
+                `;
+
+                favPill.addEventListener("click", (e) => {
+                    if (e.target.classList.contains("fav-remove")) {
+                        e.stopPropagation();
+                        removeFavorite(item.char);
+                    } else {
+                        copyToClipboard(item.char);
+                        notify(`Copied favored symbol "${item.char}"`);
+                    }
+                });
+
+                favPill.addEventListener("mouseenter", () => {
+                    notifyHubStatus(`Favorite: "${item.char}" - ${item.name}. Click to copy, or tap 'x' to remove.`);
+                });
+                favPill.addEventListener("mouseleave", clearHubStatus);
+
+                favoritesShelf.appendChild(favPill);
+            });
+        }
+
+        function removeFavorite(char) {
+            if (favoriteLibrary[activeListName]) {
+                favoriteLibrary[activeListName] = favoriteLibrary[activeListName].filter(item => item.char !== char);
+                localStorage.setItem("organon_favorite_lists", JSON.stringify(favoriteLibrary));
+                renderFavorites();
+                notify("Removed character from starred list.");
+            }
+        }
+
+        // Open Dialog modals
+        newListTriggerBtn.addEventListener("click", () => {
+            currentModalAction = "create";
+            dialogModalTitle.innerText = "Create New Favorites List";
+            dialogInputLabel.innerText = "Enter list name (emoji or text):";
+            dialogInputField.value = "";
+            dialogInputField.placeholder = "e.g., ⭐ Game Assets";
+            customDialogModal.classList.remove("hidden");
+        });
+
+        renameListTrigger.addEventListener("click", () => {
+            currentModalAction = "rename";
+            dialogModalTitle.innerText = `Rename Active List (${activeListName})`;
+            dialogInputLabel.innerText = "Enter new list name:";
+            dialogInputField.value = activeListName;
+            customDialogModal.classList.remove("hidden");
+        });
+
+        deleteListTrigger.addEventListener("click", () => {
+            const listNames = Object.keys(favoriteLibrary);
+            if (listNames.length <= 1) {
+                notify("Cannot delete the last remaining favorites list.", "error");
+                return;
+            }
+            
+            const listToDelete = activeListName;
+            delete favoriteLibrary[listToDelete];
+            
+            // Re-assign active pointer
+            activeListName = Object.keys(favoriteLibrary)[0];
+            localStorage.setItem("organon_favorite_lists", JSON.stringify(favoriteLibrary));
+            localStorage.setItem("organon_active_list_name", activeListName);
+            
+            renderActiveListSelector();
+            renderFavorites();
+            favoritesEditControls.classList.add("hidden");
+            editListBtn.innerText = "Edit";
+            notify(`Deleted custom list: "${listToDelete}"`);
+        });
+
+        // Dialog Actions confirm & cancel bindings
+        dialogCancelBtn.addEventListener("click", () => {
+            customDialogModal.classList.add("hidden");
+        });
+
+        dialogConfirmBtn.addEventListener("click", () => {
+            const val = dialogInputField.value.trim();
+            if (val.length === 0) {
+                notify("List name cannot be empty.", "error");
+                return;
+            }
+
+            if (currentModalAction === "create") {
+                if (favoriteLibrary[val]) {
+                    notify("A list with that name already exists.", "error");
+                    return;
+                }
+                favoriteLibrary[val] = [];
+                activeListName = val;
+                notify(`Created new list: "${val}"`);
+            } else if (currentModalAction === "rename") {
+                if (val === activeListName) {
+                    customDialogModal.classList.add("hidden");
+                    return;
+                }
+                if (favoriteLibrary[val]) {
+                    notify("A list with that name already exists.", "error");
+                    return;
+                }
+                // Map contents to new key
+                favoriteLibrary[val] = favoriteLibrary[activeListName];
+                delete favoriteLibrary[activeListName];
+                activeListName = val;
+                favoritesEditControls.classList.add("hidden");
+                editListBtn.innerText = "Edit";
+                notify(`Renamed list to: "${val}"`);
+            }
+
+            localStorage.setItem("organon_favorite_lists", JSON.stringify(favoriteLibrary));
+            localStorage.setItem("organon_active_list_name", activeListName);
+            
+            renderActiveListSelector();
+            renderFavorites();
+            customDialogModal.classList.add("hidden");
+        });
+
+        // Clipboard Copy function using compatible direct fallback commands
+        function copyToClipboard(text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'absolute';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            notify(`Copied character: "${text}" to clipboard!`);
+        }
+
+        // Parent Window Status broadcasters
+        function notifyHubStatus(text) {
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({ type: 'set-status', text: text }, '*');
+            }
+        }
+
+        function clearHubStatus() {
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({ type: 'clear-status' }, '*');
+            }
+        }
+
+        // Helper to update dynamic slider track values
+        function syncSliderBackground(slider) {
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const val = parseFloat(slider.value) || 0;
+            const percentage = ((val - min) / (max - min)) * 100;
+            slider.style.background = `linear-gradient(to right, #9a2f4f ${percentage}%, #61112e ${percentage}%)`;
+        }
+
+        // Register hover explanations for seamless Organon Hub unification
+        registerHoverDescription('#title-banner-pill', 'Character Library — browse and copy specialized math, Greek, and retro symbols.');
+        registerHoverDescription('#clear-search-btn', 'Clear search text and restore all category filter switches.');
+        registerHoverDescription('#global-search-input', 'Type descriptors, names, or LaTeX tags (e.g., "alpha", "square", "locked") to search the archive.');
+        registerHoverDescription('#pill-emoji', 'Toggle visibility of selected emojis inside the output viewport.');
+        registerHoverDescription('#pill-math', 'Toggle visibility of specialized calculus, set-theory, and arithmetic symbols.');
+        registerHoverDescription('#pill-greek', 'Toggle visibility of Greek coordinates and scientific variables.');
+        registerHoverDescription('#pill-ascii', 'Toggle visibility of retro block shades, arrow vectors, and graphical lines.');
+        registerHoverDescription('#fuzzy-sensitivity', 'Slide to adjust keyword sensitivity. Left is strict literal contains; Right searches loosely by keywords.');
+        registerHoverDescription('#active-list-selector', 'Switch active favorites list tab.');
+        registerHoverDescription('#edit-list-btn', 'Expose active list configuration commands (rename, delete).');
+        registerHoverDescription('#add-selected-to-favs-btn', 'Add the selected character result to your active favorites list.');
+        registerHoverDescription('#new-list-trigger-btn', 'Define and spawn a new favorites list namespace.');
+        registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
+
+        // Initialize Search result grids
+        renderActiveListSelector();
+        executeSearch();
+        renderFavorites();
+
+        // ==========================================================
+        // AUTO-MINIMIZATION & TIMED LOCK CONTROL PIPELINE
+        // ==========================================================
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            if (isPanelLocked) {
+                countdownCircle.innerHTML = "🔒";
+            } else {
+                countdownCircle.innerHTML = countdownVal;
+            }
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    minimizePanel();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        // Bind interactive event handlers to panel coordinates
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+
+        // Initialize Countdown on load
+        startCountdown();
+    </script>
+</body>
+</html>

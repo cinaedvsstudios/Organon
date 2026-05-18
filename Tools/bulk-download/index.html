@@ -276,7 +276,8 @@
             padding: 8px 16px !important;
             cursor: pointer;
         }
-        .top-sticky-panel.minimized .input-card-container {
+        .top-sticky-panel.minimized .input-card-container,
+        .top-sticky-panel.minimized .compact-upload-bar {
             display: none !important;
         }
 
@@ -407,14 +408,15 @@
         /* Rounded row pills for lists (no sharp squares) */
         .queue-row {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
+            flex-direction: column;
+            align-items: stretch;
             background-color: rgba(24, 25, 25, 0.5);
             border: 1px solid rgba(137, 107, 73, 0.2);
-            border-radius: 9999px; /* Pure Pill row shape */
-            padding: 6px 16px;
-            gap: 12px;
+            border-radius: 16px; /* Pill row shape */
+            padding: 8px 16px;
+            gap: 4px;
             box-sizing: border-box;
+            height: auto;
         }
 
         .queue-index {
@@ -473,9 +475,10 @@
             border: none;
             color: var(--water-spray);
             text-decoration: underline;
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             cursor: pointer;
             padding: 0;
+            margin-left: 4px;
         }
 
         .fallback-btn:hover {
@@ -683,48 +686,28 @@
             letter-spacing: 0.15em;
         }
 
-        /* Custom Popup Overlay Card (Error Summary list details) */
-        .overlay-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 2000; /* Raised high above sticky headers */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            box-sizing: border-box;
-        }
-
-        .modal-body-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--chiseled-bronze) !important;
-            border-radius: 28px;
-            padding: 24px;
-            width: 100%;
-            max-width: 440px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
-            position: relative; /* Ensure it registers pointer clicks cleanly */
-            z-index: 2101;
-        }
-
-        .modal-title {
-            margin: 0;
-            color: var(--brand-red) !important;
-            font-size: 1.1rem;
-            border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
-            padding-bottom: 8px;
-        }
-
         @keyframes spin {
             to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .metadata-text {
+            color: var(--chiseled-bronze);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+
+        /* Adjust setting grid on ultra-small viewports */
+        @media (max-width: 480px) {
+            .settings-grid {
+                grid-template-columns: 1fr; /* Roll to 1 column on extra narrow phones */
+            }
+            .settings-grid .invisible-hr {
+                display: none; /* Hide multi-column spacer on singular stack */
+            }
         }
     </style>
 </head>
@@ -757,7 +740,7 @@
                 
                 <div class="flex-between" style="gap: 10px; width: 100%;">
                     <button type="button" id="paste-action-btn" class="btn-pill" style="flex: 1; padding: 8px 16px; font-size: 0.75rem;">Paste Clipboard</button>
-                    <button type="button" id="error-log-trigger-btn" class="btn-pill" style="flex: 1; padding: 8px 16px; font-size: 0.75rem; background-color: var(--burgundy) !important; color: #ff9e9e !important;" disabled>Error Log (0)</button>
+                    <div id="error-count-badge" class="btn-pill" style="flex: 1; padding: 8px 16px; font-size: 0.75rem; background-color: var(--burgundy) !important; color: #ff9e9e !important; justify-content: center; cursor: default; user-select: none; border-color: rgba(255, 158, 158, 0.2) !important;">Errors: 0</div>
                 </div>
             </div>
         </div>
@@ -844,17 +827,6 @@
 
     </div>
 
-    <!-- Real-time Custom Error Log summary popup modal -->
-    <div id="error-modal" class="overlay-modal hidden">
-        <div class="modal-body-card">
-            <h3 class="modal-title">Failed Download Log</h3>
-            <div id="error-modal-list" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; font-size: 0.7rem; font-family: var(--font-mono);">
-                <!-- Dynamic failed rows listed here -->
-            </div>
-            <button type="button" id="close-error-modal-btn" class="btn-pill" onclick="document.getElementById('error-modal').classList.add('hidden')" style="align-self: center; background-color: var(--burgundy); border-color: var(--stone-ochre); padding: 8px 24px;">Close Log</button>
-        </div>
-    </div>
-
     <!-- Hidden native element required by JS pipeline mapping -->
     <img id="original-display" class="hidden" alt="Original Hidden Source">
 
@@ -885,10 +857,7 @@
         const proxyInput = document.getElementById("proxy-input");
 
         const pasteActionBtn = document.getElementById("paste-action-btn");
-        const errorLogTriggerBtn = document.getElementById("error-log-trigger-btn");
-        const errorModal = document.getElementById("error-modal");
-        const errorModalList = document.getElementById("error-modal-list");
-        const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
+        const errorCountBadge = document.getElementById("error-count-badge");
         const corsInfoTrigger = document.getElementById("cors-info-trigger");
 
         const clearSuccessBtn = document.getElementById("clear-success-btn");
@@ -896,7 +865,7 @@
 
         let urlQueueList = [];
         let itemStatusCache = {}; // index -> { status: 'pending'|'success'|'failed', reason: '' }
-        let failedDownloadsList = [];
+        let failedDownloadsCount = 0;
 
         // Helper to broadcast button hover events to the parent Organon Hub Status Window
         function registerHoverDescription(selector, descriptionText) {
@@ -919,7 +888,7 @@
         // Register interactive hovers for seamless Organon Hub unification
         registerHoverDescription('#urlInput', 'Enter raw text containing image links. Smart separators (commas, spaces, semicolons, lines) parse them automatically.');
         registerHoverDescription('#paste-action-btn', 'Read system clipboard text directly to format and populate the download queue list.');
-        registerHoverDescription('#error-log-trigger-btn', 'Display a dynamic list of failed URLs alongside their precise security network block reasons.');
+        registerHoverDescription('#error-count-badge', 'Displays a live tally showing the count of blocked or failed assets in the current run.');
         registerHoverDescription('#clear-btn', 'Reset and completely empty the active download queue list.');
         registerHoverDescription('#prefix-input', 'Specify a prefix string to apply as base filenames for zipped assets (e.g. tile_001.png).');
         registerHoverDescription('#index-input', 'Configure the initial index sequence count for numbering batch assets.');
@@ -977,36 +946,6 @@
         // Trigger CORS Info Overlay explanation via toast
         corsInfoTrigger.addEventListener("click", () => {
             notify("CORS is a browser block. To prevent websites from reading other site data, direct image fetching is disabled. Route via a proxy if images fail.", "success");
-        });
-
-        // Display Custom Error log summary popup modal
-        errorLogTriggerBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            errorModalList.innerHTML = "";
-            if (failedDownloadsList.length === 0) {
-                errorModalList.innerHTML = `<p style="opacity:0.6; text-align:center;">No errors logged in the current queue batch.</p>`;
-            } else {
-                failedDownloadsList.forEach((item, i) => {
-                    const row = document.createElement("div");
-                    row.style.borderBottom = "1px solid rgba(137,107,73,0.15)";
-                    row.style.paddingBottom = "6px";
-                    row.style.wordBreak = "break-all";
-                    row.innerHTML = `
-                        <div style="color:var(--brand-red); font-weight:700;">URL #${item.index + 1}:</div>
-                        <div style="opacity:0.75; font-size:0.65rem; margin:2px 0;">${item.url}</div>
-                        <div style="color:var(--stone-ochre); font-weight:600;">Reason: <span style="color:var(--alabaster-paper); opacity:0.85;">${item.reason}</span></div>
-                    `;
-                    errorModalList.appendChild(row);
-                });
-            }
-            errorModal.classList.remove("hidden");
-        });
-
-        closeErrorModalBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            errorModal.classList.add("hidden");
         });
 
         // Clear queue based on success status
@@ -1075,9 +1014,8 @@
             
             // Reset status caches and logs
             itemStatusCache = {};
-            failedDownloadsList = [];
-            errorLogTriggerBtn.disabled = true;
-            errorLogTriggerBtn.innerText = "Error Log (0)";
+            failedDownloadsCount = 0;
+            errorCountBadge.innerText = "Errors: 0";
             clearSuccessBtn.disabled = true;
             clearFailedBtn.disabled = true;
 
@@ -1100,9 +1038,12 @@
                 row.className = "queue-row";
                 row.id = `queue-row-${index}`;
                 row.innerHTML = `
-                    <span class="queue-index">#${index + 1}</span>
-                    <span class="queue-url" title="${url}">${url}</span>
-                    <span class="badge badge-pending" id="status-${index}">Pending</span>
+                    <div class="flex-between" style="width: 100%; gap: 12px;">
+                        <span class="queue-index">#${index + 1}</span>
+                        <span class="queue-url" title="${url}">${url}</span>
+                        <span class="badge badge-pending" id="status-${index}">Pending</span>
+                    </div>
+                    <div id="error-reason-${index}" class="hidden" style="color: #ff9e9e; font-size: 0.65rem; margin-top: 4px; font-family: var(--font-mono); padding-left: 24px; word-break: break-all;"></div>
                 `;
                 queueContainer.appendChild(row);
                 itemStatusCache[index] = { status: 'pending', reason: '' };
@@ -1133,12 +1074,14 @@
             const proxy = proxyInput.value.trim();
 
             let successfulDownloads = 0;
-            failedDownloadsList = [];
+            failedDownloadsCount = 0;
+            errorCountBadge.innerText = "Errors: 0";
 
             for (let i = 0; i < urlQueueList.length; i++) {
                 const url = urlQueueList[i];
                 const badge = document.getElementById(`status-${i}`);
                 const rowElement = document.getElementById(`queue-row-${i}`);
+                const errorReasonDiv = document.getElementById(`error-reason-${i}`);
                 
                 badge.innerText = "Fetching...";
                 badge.className = "badge badge-fetching";
@@ -1180,27 +1123,29 @@
                     badge.className = "badge badge-cors";
                     itemStatusCache[i] = { status: 'failed', reason: reasonText };
                     
-                    failedDownloadsList.push({ index: i, url: url, reason: reasonText });
+                    failedDownloadsCount++;
+                    errorCountBadge.innerText = `Errors: ${failedDownloadsCount}`;
                     clearFailedBtn.disabled = false;
                     
+                    // Display details inside the queue row capsule inline (replaces popup log)
+                    errorReasonDiv.innerText = `Reason: ${reasonText}`;
+                    errorReasonDiv.classList.remove("hidden");
+                    
                     // Append direct click action link to manually bypass sandbox constraints inside the badge row
-                    const existingFallback = rowElement.querySelector('.fallback-btn');
+                    const existingFallback = errorReasonDiv.querySelector('.fallback-btn');
                     if (!existingFallback) {
                         const directDload = document.createElement("button");
                         directDload.className = "fallback-btn";
                         directDload.innerText = "Direct Open";
-                        directDload.onclick = () => {
+                        directDload.onclick = (e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             const win = window.open(url, '_blank');
                             if (win) win.focus();
                         };
-                        rowElement.appendChild(directDload);
+                        errorReasonDiv.appendChild(document.createTextNode(" | "));
+                        errorReasonDiv.appendChild(directDload);
                     }
-                }
-
-                // Update Error log counters in real time during process runs
-                if (failedDownloadsList.length > 0) {
-                    errorLogTriggerBtn.disabled = false;
-                    errorLogTriggerBtn.innerText = `Error Log (${failedDownloadsList.length})`;
                 }
             }
 
