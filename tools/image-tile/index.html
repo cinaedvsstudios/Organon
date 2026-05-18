@@ -6,12 +6,11 @@
 
 
     <title>Tile Image</title>
-
     
-    <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
+    <!-- Iframe Guard: Redirects to the hub if opened directly -->
     <script>
         if (window.self === window.top) {
-            window.location.href = '../../index.html';
+            window.location.href = 'index.html';
         }
     </script>
     
@@ -27,31 +26,32 @@
     <style>
         /* ==========================================================
            ORGANON GLOBAL BRAND STYLING TEMPLATE
-           Strict Color Mappings & Total Rounded Pill Realignment
+           Integrated & Optimized for Tile Image (Seamless Texture Maker)
            ========================================================== */
         :root {
-            --alabaster-paper: #F2ECE0;
+            /* Color Palette Variables */
+            --bg-nightsky: #000000; /* Pure black backdrop behind all panels */
             --stone-ochre: #E5A862;
-            --water-spray: #79B4E3;
+            --chiseled-bronze: #84684E;
             --water-blue: #4B84BF;
-            --chiseled-bronze: #896b49; 
-            --burgundy: #4A1525;
-            --brand-red: #9a2f4f;
+            --water-spray: #79B4E3;
+            --alabaster-paper: #F2ECE0;
             --forest-teal: #26615C;
-            --bg-nightsky: #000000;
-            --bg-card: #292a24; 
-            --bg-input: rgba(24, 25, 25, 0.95);
+            --burgundy: #4A1525;
 
+            /* Typography Hierarchies */
             --font-headers: 'Cinzel', 'Playfair Display', Georgia, serif;
             --font-body: 'Inter', 'Geist', system-ui, -apple-system, sans-serif;
             --font-mono: 'Geist Mono', 'Courier New', monospace;
-
-            --light-blue: #75b2de;
+            
+            /* Custom Additions */
+            --bg-card: rgba(30, 31, 31, 0.7);
+            --bg-input: rgba(24, 25, 25, 0.85);
             --slider-active: #9a2f4f; 
             --slider-track: #61112e;  
-            --light-blend-stone: #e0a360;
         }
 
+        /* Global Reset & Core Body Settings */
         body {
             background-color: var(--bg-nightsky);
             color: var(--alabaster-paper);
@@ -62,15 +62,16 @@
             -webkit-font-smoothing: antialiased;
             min-height: 100vh;
             display: flex;
-            justify-content: center;
-            box-sizing: border-box;
+            flex-direction: column;
         }
 
+        /* Custom Text Highlight Selection */
         ::selection {
             background-color: var(--water-blue);
             color: var(--bg-nightsky);
         }
 
+        /* Classical Serified Headers */
         h1, h2, h3, h4, h5, h6 {
             font-family: var(--font-headers);
             color: var(--stone-ochre);
@@ -80,13 +81,31 @@
             transition: color 0.25s ease, text-shadow 0.25s ease;
         }
 
+        /* Fluid Hover Anchor Links */
+        a {
+            color: var(--stone-ochre);
+            text-decoration: none;
+            transition: all 0.2s ease-in-out;
+        }
+
+        a:hover {
+            color: var(--water-spray);
+            text-shadow: 0 0 8px rgba(121, 180, 227, 0.65), 0 0 16px rgba(121, 180, 227, 0.3);
+        }
+
+        a:active {
+            color: var(--water-blue);
+            text-shadow: none;
+        }
+
+        /* Tactile Input & Selector Defaults */
         input, select, textarea {
             background-color: var(--bg-input);
             color: #f0ebcb !important; 
             border: 1px solid var(--chiseled-bronze) !important;
             font-family: var(--font-body);
-            padding: 10px 18px;
-            border-radius: 9999px; 
+            padding: 10px 18px; 
+            border-radius: 9999px; /* Rounded pill inputs */
             transition: all 0.2s ease-in-out;
             box-sizing: border-box;
             font-size: 15px; 
@@ -145,7 +164,7 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
             padding: 12px 24px;
-            border-radius: 9999px; 
+            border-radius: 9999px; /* Absolute Pill Shape */
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
@@ -186,6 +205,7 @@
             border: 1px solid var(--chiseled-bronze);
             color: var(--stone-ochre);
         }
+
         .btn-pill-secondary:hover {
             background-color: rgba(229, 168, 98, 0.1);
             border-color: var(--stone-ochre);
@@ -250,13 +270,13 @@
         }
 
         /* Panel 1: Top Sticky Upload Panel with blended Light Stone Background & Curved Bottom Corners */
-        /* Opacity reduced to 0.25 for crisp, high-fidelity stone visibility */
+        /* Transparency level optimized to 0.15 so the real image is completely visible underneath */
         .top-sticky-panel {
             position: sticky;
             top: 0;
             z-index: 100;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.25), rgba(224, 163, 96, 0.25)), url('../../images/stonetext.jpg');
+            background-image: linear-gradient(rgba(224, 163, 96, 0.15), rgba(224, 163, 96, 0.15)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -559,8 +579,8 @@
             padding: 8px 14px !important;
         }
 
-        /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Fallback (Compact Symmetrically) */
-        /* Opacity reduced to 0.25 for crisp, high-fidelity stone visibility */
+        /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Curved Corners */
+        /* Lower opacity of 0.15 ensures perfect details are visible when loaded successfully */
         .bottom-sticky-panel {
             position: fixed;
             bottom: 0;
@@ -570,7 +590,7 @@
             max-width: 540px; 
             z-index: 110;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.25), rgba(224, 163, 96, 0.25)), url('../../images/stonetext.jpg');
+            background-image: linear-gradient(rgba(224, 163, 96, 0.15), rgba(224, 163, 96, 0.15)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -606,9 +626,10 @@
             background-color: rgba(24, 25, 25, 0.3) !important;
             color: rgba(137, 107, 73, 0.5) !important;
             border-color: rgba(137, 107, 73, 0.2) !important;
-            cursor: not-allowed !important;
-            box-shadow: none !important;
+            cursor: not-allowed;
             transform: none !important;
+            box-shadow: none !important;
+            border: 1px solid rgba(132, 104, 78, 0.1);
         }
 
         .slider-row {
@@ -804,189 +825,134 @@
         </div>
     </div>
 
-    <!-- MAIN APP WRAPPER -->
-    <div class="app-wrapper">
-        
-        <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
-        <div class="top-sticky-panel">
-            <!-- Absolute Title Pill -->
-            <div class="title-pill" id="title-banner-pill">
-                <div style="display: flex; align-items: center;">
-                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
-                    <span>IMAGE TILER</span>
-                </div>
-            </div>
-
-            <!-- State A: Upload box visible when unpopulated -->
-            <div id="drop-zone" class="upload-container">
-                <svg class="upload-icon" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-                </svg>
-                <div style="margin-top: -4px;">
-                    <h3 style="margin-bottom: 2px; font-size: 0.95rem; transition: color 0.25s ease, text-shadow 0.25s ease;">Load Source Texture</h3>
-                    <p style="opacity: 0.7; font-size: 0.75rem; margin: 0;">Drag & drop image or click to browse</p>
-                </div>
-                <input type="file" id="file-input" accept="image/*" class="hidden">
-            </div>
-
-            <!-- State B: Highly space-efficient capsule with Before/After squares side-by-side -->
-            <div id="compact-loaded-banner" class="compact-upload-bar hidden">
-                <div class="squares-container">
-                    <div class="square-wrapper">
-                        <img id="compact-thumb-before" class="square-thumb" src="" alt="Before">
-                        <div class="square-label">Before</div>
-                    </div>
-                    <div class="square-wrapper">
-                        <img id="compact-thumb-after" class="square-thumb" src="" alt="After">
-                        <div class="square-label">After</div>
-                    </div>
-                </div>
-                <div class="compact-actions">
-                    <span id="original-dims" class="metadata-text">0 x 0 px</span>
-                    <button type="button" id="change-asset-btn" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
-                        Change
-                    </button>
-                </div>
+    <!-- MAIN APP STRUCTURE -->
+    <div class="top-sticky-panel">
+        <div class="title-pill" id="title-banner-pill">
+            <div style="display: flex; align-items: center;">
+                <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                <span>IMAGE TILER</span>
             </div>
         </div>
 
-        <!-- PANEL 2: MIDDLE SCROLLABLE PREVIEW & SETTINGS -->
-        <main class="middle-scroll-panel">
-            
-            <!-- Tiled Test Space Card (Hidden until image is set) -->
-            <div id="tiled-preview-card" class="preview-card hidden">
-                <div class="flex-between">
-                    <h3 style="font-size: 0.95rem; margin: 0;">Tiled Repeater Test</h3>
-                    <button type="button" id="toggle-repeater-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Expand</button>
+        <!-- Drag & Drop Upload Space inside banner for unified design layout -->
+        <div id="drop-zone" class="upload-container" style="width:340px; max-width:100%; padding:20px;">
+            <svg class="upload-icon" viewBox="0 0 24 24" style="width:32px; height:32px;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+            </svg>
+            <div>
+                <h3 style="margin-bottom: 2px; font-size:0.9rem">Load Source Texture</h3>
+                <p style="opacity: 0.7; font-size:0.75rem; margin:0">Drag/drop or click to browse</p>
+            </div>
+            <input type="file" id="file-input" accept="image/*" class="hidden">
+        </div>
+
+        <!-- State B: Highly space-efficient capsule with Before/After squares side-by-side -->
+        <div id="compact-loaded-banner" class="compact-upload-bar hidden">
+            <div class="squares-container">
+                <div class="square-wrapper">
+                    <img id="compact-thumb-before" class="square-thumb" src="" alt="Before">
+                    <div class="square-label">Before</div>
                 </div>
-                
-                <!-- Collapsible Content Wrapper (Hidden/minimized by default) -->
-                <div id="repeater-content-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px; border-top: 1px dashed rgba(137, 107, 73, 0.3); padding-top: 12px;">
-                    <div class="flex-between">
-                        <span class="metadata-text">Check infinite repeating alignment:</span>
-                        <label class="switch-label">
-                            <input type="checkbox" id="toggle-seams" class="switch-input">
-                            <span class="switch-slider"></span>
-                            Show Seams
-                        </label>
+                <div class="square-wrapper">
+                    <img id="compact-thumb-after" class="square-thumb" src="" alt="After">
+                    <div class="square-label">After</div>
+                </div>
+            </div>
+            <div class="compact-actions">
+                <span id="original-dims" class="metadata-text">0 x 0 px</span>
+                <button type="button" id="change-asset-btn" class="btn-pill" style="padding: 6px 16px; font-size: 0.7rem;" onclick="document.getElementById('file-input').click()">
+                    Change
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <!-- SEAMLESS CONTROL BAR -->
+        <aside class="control-panel">
+            <div class="control-group" id="card-crop">
+                <div class="group-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-top:-2px"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
+                    1. Cut Off Edges (Pixels)
+                </div>
+                <div class="form-grid-4">
+                    <div class="form-row">
+                        <label for="crop-left">Left</label>
+                        <input type="number" id="crop-left" value="0" min="0">
                     </div>
-                    
-                    <div class="preview-canvas-wrapper" style="border: 1px solid rgba(121, 180, 227, 0.25);">
-                        <div id="tiled-preview-viewport"></div>
-                        <!-- Seam overlays -->
-                        <div id="seam-v" class="seam-marker-line" style="top: 0; bottom: 0; left: 50%; width: 0;"></div>
-                        <div id="seam-h" class="seam-marker-line" style="left: 0; right: 0; top: 50%; height: 0;"></div>
+                    <div class="form-row">
+                        <label for="crop-top">Top</label>
+                        <input type="number" id="crop-top" value="0" min="0">
                     </div>
-                    
-                    <div class="flex-between" style="gap: 12px; margin-top: 4px;">
-                        <label for="tile-scale" style="font-size: 0.8rem; white-space: nowrap;">Zoom Scale</label>
-                        <input type="range" id="tile-scale" min="15" max="100" value="50" style="flex:1">
+                    <div class="form-row">
+                        <label for="crop-right">Right</label>
+                        <input type="number" id="crop-right" value="0" min="0">
+                    </div>
+                    <div class="form-row">
+                        <label for="crop-bottom">Bottom</label>
+                        <input type="number" id="crop-bottom" value="0" min="0">
                     </div>
                 </div>
             </div>
 
-            <!-- Settings Grid Layout -->
-            <div class="settings-grid">
-                
-                <!-- 1. Cut Off Edges Card (Col 1) -->
-                <div class="config-card" id="card-crop">
-                    <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
-                        1. Cut Off Edges (px)
-                    </div>
-                    <div class="crop-grid">
-                        <!-- Row 1: Left / Top -->
-                        <div class="crop-row">
-                            <div class="form-row">
-                                <label for="crop-left">Left</label>
-                                <input type="number" id="crop-left" value="0" min="0">
-                            </div>
-                            <div class="form-row">
-                                <label interpreter="crop-top">Top</label>
-                                <input type="number" id="crop-top" value="0" min="0">
-                            </div>
-                        </div>
-                        
-                        <!-- Balanced height anchor line -->
-                        <hr class="invisible-hr">
-                        
-                        <!-- Row 2: Right / Bottom -->
-                        <div class="crop-row">
-                            <div class="form-row">
-                                <label for="crop-right">Right</label>
-                                <input type="number" id="crop-right" value="0" min="0">
-                            </div>
-                            <div class="form-row">
-                                <label for="crop-bottom">Bottom</label>
-                                <input type="number" id="crop-bottom" value="0" min="0">
-                            </div>
-                        </div>
-                    </div>
+            <div class="control-group" id="card-seamless">
+                <div class="group-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-top:-2px"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                    2. Make Seamless (Method)
                 </div>
-
-                <!-- 2. Make It Seamless Card (Col 2) -->
-                <div class="config-card" id="card-seamless">
-                    <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-                        2. Make Seamless
+                <div class="form-row">
+                    <label for="blend-method">Algorithm Type</label>
+                    <select id="blend-method">
+                        <option value="1">Method 1 (Linear Blend Edge Synthesis)</option>
+                        <option value="2">Method 2 (Four-Way Symmetry Mirroring)</option>
+                        <option value="3">Method 3 (Multi-Band Directional Splice)</option>
+                        <option value="4">Method 4 (Pre-averaging & Edge Restore)</option>
+                    </select>
+                </div>
+                <div class="form-row" id="overlap-row">
+                    <div class="flex-between">
+                        <label for="overlap-percent">Edge Blend Width</label>
+                        <span class="slider-val" id="overlap-val">10%</span>
                     </div>
+                    <input type="range" id="overlap-percent" min="2" max="30" value="10">
+                </div>
+            </div>
+
+            <div class="control-group" id="card-lighting">
+                <div class="group-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-top:-2px"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
+                    3. Fix Uneven Lighting (Equalize)
+                </div>
+                <div class="form-row">
+                    <div class="flex-between">
+                        <label for="average-intensity">Luminance Balance</label>
+                        <span class="slider-val" id="intensity-val">15</span>
+                    </div>
+                    <input type="range" id="average-intensity" min="0" max="100" value="15">
+                </div>
+                <div class="form-row">
+                    <div class="flex-between">
+                        <label for="average-radius">Equalization Area</label>
+                        <span class="slider-val" id="radius-val">12</span>
+                    </div>
+                    <input type="range" id="average-radius" min="1" max="25" value="12">
+                </div>
+            </div>
+
+            <div class="control-group" id="card-save">
+                <div class="group-title">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24" style="margin-top:-2px"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
+                    4. Save Format & Quality
+                </div>
+                <div class="form-grid-2">
                     <div class="form-row">
-                        <label for="blend-method">Method</label>
-                        <select id="blend-method" style="padding: 10px 14px;">
-                            <option value="1">Linear Edge Blend</option>
-                            <option value="2">Symmetry Mirror</option>
-                            <option value="3">Spliced Blend</option>
-                            <option value="4">Restore Frame</option>
-                        </select>
-                    </div>
-                    <div class="slider-row" id="overlap-row" style="margin-top: 6px;">
-                        <div class="flex-between">
-                            <label for="overlap-percent">Blend Width</label>
-                            <span class="slider-val" id="overlap-val">10%</span>
-                        </div>
-                        <input type="range" id="overlap-percent" min="2" max="30" value="10">
-                    </div>
-                </div>
-
-                <!-- Invisible HR spanning both columns to force 3 & 4 to start aligned -->
-                <hr class="invisible-hr">
-
-                <!-- 3. Fix Uneven Lighting Card (Col 1) -->
-                <div class="config-card" id="card-lighting">
-                    <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg>
-                        3. Fix Lighting
-                    </div>
-                    <div class="slider-row">
-                        <div class="flex-between">
-                            <label for="average-intensity">Intensity</label>
-                            <span class="slider-val" id="intensity-val">15</span>
-                        </div>
-                        <input type="range" id="average-intensity" min="0" max="100" value="15">
-                    </div>
-                    <div class="slider-row" style="margin-top: 10px;">
-                        <div class="flex-between">
-                            <label for="average-radius">Equalize Area</label>
-                            <span class="slider-val" id="radius-val">12</span>
-                        </div>
-                        <input type="range" id="average-radius" min="1" max="25" value="12">
-                    </div>
-                </div>
-
-                <!-- 4. Save Format Card (Col 2) -->
-                <div class="config-card" id="card-save">
-                    <div class="control-group-title">
-                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-                        4. Save Options
-                    </div>
-                    <div class="form-row">
-                        <label for="export-format">Format</label>
-                        <select id="export-format" style="padding: 10px 14px;">
+                        <label for="export-format">Encoding Format</label>
+                        <select id="export-format">
                             <option value="jpeg">JPEG</option>
-                            <option value="png">PNG-24</option>
+                            <option value="png">PNG-24 (Lossless)</option>
                         </select>
                     </div>
-                    <div class="slider-row" id="jpeg-quality-row" style="margin-top: 6px;">
+                    <div class="form-row" id="jpeg-quality-row">
                         <div class="flex-between">
                             <label for="jpeg-quality">Quality</label>
                             <span class="slider-val" id="quality-val">90</span>
@@ -994,21 +960,57 @@
                         <input type="range" id="jpeg-quality" min="10" max="100" value="90">
                     </div>
                 </div>
-                
+            </div>
+        </aside>
+
+        <!-- PREVIEW WORKSPACE -->
+        <main class="workspace-panel">
+            <!-- Previews Grid -->
+            <div id="preview-grid" style="display:flex; flex-direction:column; gap:16px;">
+                <!-- Tiled Test Space -->
+                <div class="preview-card" id="tiled-preview-card" style="width:100%;">
+                    <div class="flex-between">
+                        <h3>Tiled Repeater Test</h3>
+                        <button type="button" id="toggle-repeater-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Expand</button>
+                    </div>
+                    
+                    <!-- Collapsible Content Wrapper (Hidden/minimized by default) -->
+                    <div id="repeater-content-wrapper" class="hidden" style="display: flex; flex-direction: column; gap: 12px; margin-top: 8px; border-top: 1px dashed rgba(137, 107, 73, 0.3); padding-top: 12px;">
+                        <div class="flex-between">
+                            <span class="metadata-text" style="font-size:0.75rem;">Check infinite repeating alignment:</span>
+                            <label class="switch-label">
+                                <input type="checkbox" id="toggle-seams" class="switch-input">
+                                <span class="switch-slider"></span>
+                                Show Seams
+                            </label>
+                        </div>
+                        
+                        <div class="preview-canvas-wrapper" style="border: 1px solid rgba(121, 180, 227, 0.25);">
+                            <div id="tiled-preview-viewport"></div>
+                            <!-- Seam overlays -->
+                            <div id="seam-v" class="seam-marker-line" style="top: 0; bottom: 0; left: 50%; width: 0;"></div>
+                            <div id="seam-h" class="seam-marker-line" style="left: 0; right: 0; top: 50%; height: 0;"></div>
+                        </div>
+                        
+                        <div class="flex-between" style="gap: 12px; margin-top: 4px;">
+                            <label for="tile-scale" style="font-size: 0.8rem; white-space: nowrap;">Zoom Scale</label>
+                            <input type="range" id="tile-scale" min="15" max="100" value="50" style="flex:1">
+                        </div>
+                    </div>
+                </div>
             </div>
         </main>
 
-        <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS (Strictly Download only, auto-processes) -->
+        <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS -->
         <div class="bottom-sticky-panel">
             <button type="button" class="btn-pill" id="download-btn" disabled>
                 Download
             </button>
         </div>
-
     </div>
 
     <!-- Hidden native element required by JS pipeline mapping -->
-    <img id="original-display" class="hidden" alt="Original Hidden Canvas Source">
+    <img id="original-display" class="hidden" alt="Original Upload">
 
     <!-- TOAST NOTIFICATION STACK -->
     <div id="toast-stack" class="toast-container"></div>
@@ -1242,7 +1244,7 @@ init_app()
             const max = parseFloat(slider.max) || 100;
             const val = parseFloat(slider.value) || 0;
             const percentage = ((val - min) / (max - min)) * 100;
-            slider.style.background = `linear-gradient(to right, #9a2f4f ${percentage}%, #61112e ${percentage}%)`;
+            slider.style.background = `linear-gradient(to right, #61112e ${percentage}%, #9a2f4f ${percentage}%)`;
         }
 
         // Initialize and bind slider sync listeners
