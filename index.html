@@ -788,8 +788,10 @@
     let isOverL2 = false;
     let isOverL3 = false;
     let isPersistent = false;   // True upon hovering or clicking L1-L2 divider, or selecting an L2 category
+    let isMenuRevealed = false;  // Flag ensuring menus only show once fully unlocked by hover/tap/click
     let menuTimer = null;        // 5-second persistence countdown clock
     let collapseTimeout = null;  // 200ms bridge window to glide smoothly across visual gaps
+    let hoverOpenTimeout = null; // 2-second hover throttle for mouse past events
 
     // Navigation and Transition States
     let wasL2Open = false;
@@ -976,6 +978,7 @@
         if (timeLeft <= 0) {
           timeLeft = 0;
           isPersistent = false;
+          isMenuRevealed = false; // Reset the revealed menu lock state
           clearInterval(countdownInterval);
           updateMenus();
         }
@@ -1017,8 +1020,8 @@
         const l2Wrapper = document.getElementById('l2-wrapper');
         const l3Wrapper = document.getElementById('l3-wrapper');
         
-        // L2 visibility criteria
-        const showL2 = isOverDivider || isOverL2 || isOverL3 || isPersistent;
+        // L2 visibility criteria - now bound strictly by isMenuRevealed state
+        const showL2 = isMenuRevealed && (isOverDivider || isOverL2 || isOverL3 || isPersistent);
         
         // L3 visibility criteria (L2 must be open + has activeCategory tools + is focused/persistent)
         const showL3 = showL2 && activeCategory && (isOverL2 || isOverL3 || isPersistent);
@@ -1079,10 +1082,27 @@
 
     // Start or restart the 5-second persistence override timer
     function triggerPersistence() {
+      isMenuRevealed = true;
       isPersistent = true;
       timeLeft = totalDuration;
       updateMenus(true);
       startCountdown();
+    }
+
+    // Forceful instantaneous clean shutdown of all popup elements
+    function closeAllMenus() {
+      if (hoverOpenTimeout) clearTimeout(hoverOpenTimeout);
+      isMenuRevealed = false;
+      isPersistent = false;
+      isOverDivider = false;
+      isOverL2 = false;
+      isOverL3 = false;
+      timeLeft = 0;
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+      }
+      updateMenus(true);
     }
 
     // Direct manual document launcher
@@ -1166,14 +1186,30 @@
       // 1. Divider interaction triggers (pop open L2 on hover or tap)
       divider12.addEventListener('mouseenter', () => {
         isOverDivider = true;
-        triggerPersistence();
+        if (hoverOpenTimeout) clearTimeout(hoverOpenTimeout);
+        
+        // Start 2-second hover verification delay to avoid fast mouse sweeps
+        hoverOpenTimeout = setTimeout(() => {
+          if (isOverDivider) {
+            triggerPersistence();
+          }
+        }, 2000);
       });
+      
       divider12.addEventListener('mouseleave', () => {
         isOverDivider = false;
+        if (hoverOpenTimeout) clearTimeout(hoverOpenTimeout);
         updateMenus();
       });
+      
+      // Dual-Platform Click Toggle Listener (Second click closes the pane)
       divider12.addEventListener('click', () => {
-        triggerPersistence();
+        if (isMenuRevealed) {
+          closeAllMenus();
+        } else {
+          if (hoverOpenTimeout) clearTimeout(hoverOpenTimeout);
+          triggerPersistence();
+        }
       });
 
       // 2. L2 Container interaction trackers
