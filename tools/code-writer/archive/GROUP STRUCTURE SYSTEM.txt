@@ -1,0 +1,244 @@
+UI REPOSITORY — GROUP STRUCTURE SYSTEM
+
+The UI Repository works like an online shopping system for UI features and behaviors.
+
+Users browse the repository and click numbered components to add them into a structured UI build document (“basket”). The basket is not just a favorites list — it is a structured interface planning and prompt assembly system.
+
+Each repository item has:
+
+* Main Terminology Name
+* Short Prompt Description
+* Code Risk Rating
+* Complexity/Behavior Information
+* Live Example
+* Possible Applications
+* Modifications
+
+When a numbered repository item is clicked, it immediately inserts into the Components section at the user's last active cursor position.
+
+==================================================
+EXAMPLE GROUP STRUCTURE
+=======================
+
+======== GROUP 1: SIDE PANEL ========
+
+Notes:
+[Same for mobile + desktop]
+[Panel collapses automatically]
+[Hover delay before reopen]
+
+This feature should appear on:
+[Mobile] [Desktop]
+
+Code Risk:
+★★★☆☆ (3/5) Difficult
+
+====
+
+.......... TOP / UPPER ..........
+
+Align = [Center]
+Colors = [Default Palette]
+
+Components:
+[12 Floating Icon Dock]
+[27 Two-Stage Confirm Button]
+[44 Dynamic Search Bar]
+
+Behavior:
+[Collapses left automatically]
+[Returns on click/tap]
+[Persists open for 5 sec after hover ends]
+
+Interactions:
+[Hover Glow]
+[Soft Pulse Animation]
+
+Dynamic Content:
+[Current active section text]
+
+Links:
+[Settings]
+[Inventory]
+[Export]
+
+..........
+
+.......... MIDDLE / CENTER ..........
+
+Align = [Center]
+Colors = [Custom]
+
+Components:
+[91 Dynamic Text Box]
+[55 Scrollable Activity Feed]
+
+Behavior:
+[Auto refresh every 5 sec]
+
+Interactions:
+[Fade transition]
+
+Dynamic Content:
+[Current task status]
+[Latest imported file]
+
+Links:
+[None]
+
+..........
+
+.......... LOWER / BOTTOM ..........
+
+Align = [Left]
+Colors = [Default Palette]
+
+Components:
+[3 Emoji Status Row]
+[16 Version Display Panel]
+
+Behavior:
+[Always visible]
+
+Interactions:
+[Tooltip on hover]
+
+Dynamic Content:
+[Current version number]
+[Save state indicator]
+
+Links:
+[Patch Notes]
+[Version History]
+
+..........
+
+================================
+
+SYSTEM RULES
+
+1. GROUPS
+
+* Groups are major UI layout sections.
+* Group numbers are identifiers only.
+* Group names define the UI location or purpose.
+* Major groups always use:
+  ======== GROUP X: NAME ========
+
+2. NOTES SECTION
+
+* Every group automatically contains a Notes section.
+* Notes default to a clickable [None] pill.
+* Notes support free typing and editable pills.
+* Notes are for instructions that do not belong cleanly in another category.
+
+3. PLATFORM RULES
+
+* Every group automatically includes:
+  This feature should appear on:
+  [Mobile] [Desktop]
+* Mobile/Desktop are separate toggleable pills.
+
+4. CODE RISK
+
+* Code Risk measures the likelihood that the feature could destabilize or complicate the codebase.
+* Ratings:
+  0 = Breezy
+  1 = Easy
+  2 = Intermediate
+  3 = Difficult
+  4 = Hard
+  5 = Warning
+
+5. SUBSECTIONS
+
+* Every group automatically contains:
+  TOP / UPPER
+  MIDDLE / CENTER
+  LOWER / BOTTOM
+* Subsections use dotted separators:
+  .......... SECTION NAME ..........
+
+6. SECTION DEFAULTS
+   Every subsection automatically contains:
+
+* Align
+* Colors
+* Components
+* Behavior
+* Interactions
+* Dynamic Content
+* Links
+
+7. COMPONENTS
+
+* Repository items insert into Components.
+* Components are represented as draggable pills.
+* Pills can be reordered.
+* Pills can be deleted using X.
+* Pills can be grouped.
+
+8. BEHAVIOR
+   Behavior defines structural logic:
+
+* collapse
+* persistence
+* timers
+* auto-close
+* drag behavior
+* sticky behavior
+* visibility logic
+
+9. INTERACTIONS
+   Interactions define user actions and effects:
+
+* hover glow
+* pulse
+* expand
+* swipe
+* tooltip
+* click animations
+
+10. DYNAMIC CONTENT
+    Dynamic Content defines live or changing data:
+
+* counters
+* version text
+* status indicators
+* generated text
+* timers
+* selected item displays
+
+11. FLOATING PREDICTIVE TOOLBAR
+
+* A floating toolbar appears above the cursor.
+* Toolbar options change dynamically depending on the active section.
+* Users can click suggested pills or free type custom text.
+* Free text automatically becomes editable pills.
+
+12. GROUPING SYSTEM
+
+* Users can select pills and create groups.
+* Exported groups use visible dividers:
+  ======== GROUP X: NAME ========
+* Groups help organize layout zones and functionality clusters.
+
+13. PERSISTENCE
+
+* Basket contents persist using local storage until manually cleared.
+* Cursor position is remembered for component insertion.
+
+14. EXPORT OPTIONS
+    Users can:
+
+* Copy to clipboard
+* Download TXT
+* Save iterations/history locally
+
+15. VISUAL DESIGN RULES
+
+* Dark mode default
+* Standard palette applied globally
+* Repository examples keep their own demonstration colors
+* Decorative identity should not interfere with usability
+* Mobile and desktop layouts should both remain comfortable and readable

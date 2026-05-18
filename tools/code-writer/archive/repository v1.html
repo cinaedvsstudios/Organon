@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Personal UI Component Library</title>
+  <style>
+    :root {
+      --bg-main: #0f1115;
+      --bg-card: #161920;
+      --bg-input: #1e222b;
+      --accent-blue: #2563eb;
+      --accent-muted: #3b82f633;
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --border-color: #2e3440;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+    }
+
+    .library-container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 15px;
+      margin-bottom: 40px;
+    }
+
+    .component-wrapper {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 32px;
+    }
+
+    .component-meta {
+      margin-bottom: 20px;
+    }
+
+    .component-num {
+      font-weight: bold;
+      color: var(--accent-blue);
+      text-transform: uppercase;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    .component-title {
+      font-size: 1.25rem;
+      margin: 4px 0;
+    }
+
+    .component-demo {
+      background-color: #0b0c10;
+      border-radius: 8px;
+      padding: 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100px;
+      position: relative;
+    }
+
+    /* 1. Segmented Control Styling */
+    .segmented-control {
+      display: flex;
+      background-color: #000000;
+      padding: 3px;
+      border-radius: 9999px;
+      border: 1px solid #333;
+    }
+    .segmented-control button {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 8px 20px;
+      font-size: 0.9rem;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .segmented-control button.active {
+      background-color: var(--accent-blue);
+      color: white;
+    }
+
+    /* 2. Input Box with Inline Elements Styling */
+    .search-container {
+      position: relative;
+      width: 100%;
+      max-width: 500px;
+    }
+    .search-input {
+      width: 100%;
+      background-color: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: 9999px;
+      padding: 12px 45px 12px 40px;
+      color: white;
+      box-sizing: border-box;
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--accent-blue);
+    }
+    .leading-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .trailing-action {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: #2d3139;
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 3. Navigation Drawer Styling */
+    .sidebar-mock {
+      width: 240px;
+      background-color: #11141a;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 15px;
+    }
+    .sidebar-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 12px;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 4px;
+    }
+    .sidebar-item svg { margin-right: 12px; }
+    .sidebar-item.active {
+      background-color: var(--accent-blue);
+      color: white;
+    }
+    .sidebar-header {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin: 15px 0 5px 12px;
+      font-weight: bold;
+    }
+
+    /* 4. Accordion with Choice Chips Styling */
+    .accordion {
+      width: 100%;
+      max-width: 400px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-input);
+      overflow: hidden;
+    }
+    .accordion-summary {
+      padding: 14px;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+      font-weight: bold;
+      user-select: none;
+    }
+    .accordion-details {
+      padding: 0 14px 14px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip {
+      background: #2a2f3b;
+      border: 1px solid #444;
+      color: var(--text-main);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+    .chip.selected {
+      background: var(--accent-blue);
+      border-color: var(--accent-blue);
+    }
+
+    /* 5. Combobox Popover Styling */
+    .combobox-popover {
+      width: 100%;
+      max-width: 320px;
+      background: #12161f;
+      border: 1px solid #2d3341;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    }
+    .combobox-popover input {
+      width: 100%;
+      background: #090b10;
+      border: 1px solid #2d3341;
+      border-radius: 6px;
+      padding: 8px;
+      color: white;
+      box-sizing: border-box;
+      margin-bottom: 10px;
+    }
+    .combobox-list-item {
+      padding: 8px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+    }
+    .combobox-list-item:hover {
+      background: #1c212e;
+    }
+
+    /* 6. FAB and Badge Styling */
+    .fab-container {
+      position: relative;
+    }
+    .fab {
+      background-color: #1a1d24;
+      border: 1px solid #333;
+      border-radius: 50%;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .notification-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #ef4444;
+      color: white;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 9999px;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 7. Range Slider & Select Styling */
+    .controls-panel {
+      width: 100%;
+      max-width: 500px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .control-box {
+      background: #141822;
+      border: 1px solid #262c3a;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .control-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+    }
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .slider-row input[type="range"] {
+      width: 100%;
+      accent-color: #a855f7;
+    }
+    .custom-select {
+      width: 100%;
+      background: #090b10;
+      border: 1px solid #2d3341;
+      padding: 10px;
+      color: white;
+      border-radius: 8px;
+      outline: none;
+    }
+
+    /* 8. Persistent Bottom Sheet Styling */
+    .footer-panel-mock {
+      width: 100%;
+      background: #eab308;
+      border-radius: 16px 16px 0 0;
+      padding: 12px 20px;
+      display: flex;
+      gap: 12px;
+    }
+    .footer-btn {
+      flex: 1;
+      padding: 12px;
+      border-radius: 9999px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .footer-btn.primary { background: #1a1d24; color: #cbd5e1; }
+    .footer-btn.secondary { background: rgba(0,0,0,0.15); color: #451a03; }
+
+    /* 9. Container Card Accent Border Styling */
+    .accent-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-input);
+      border-radius: 0 12px 12px 0;
+      border: 1px solid var(--border-color);
+      border-left: 5px solid var(--accent-blue);
+      padding: 20px;
+    }
+
+    /* 10. Button with Leading Icon Styling */
+    .leading-icon-btn {
+      background: var(--accent-blue);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="library-container">
+    <h1>UI Component Master Library</h1>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 01</span>
+        <h2 class="component-title">Segmented Control</h2>
+      </div>
+      <div class="component-demo">
+        <div class="segmented-control">
+          <button class="active" onclick="toggleSegment(this)">Code</button>
+          <button onclick="toggleSegment(this)">Preview</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 02</span>
+        <h2 class="component-title">Input Box with Inline Elements</h2>
+      </div>
+      <div class="component-demo">
+        <div class="search-container">
+          <span class="leading-icon">🔍</span>
+          <input type="text" class="search-input" value="red" placeholder="Search components...">
+          <button class="trailing-action" title="Randomize">🎲</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 03</span>
+        <h2 class="component-title">Collapsible Navigation Drawer</h2>
+      </div>
+      <div class="component-demo">
+        <div class="sidebar-mock">
+          <div class="sidebar-item">💬 New chat</div>
+          <div class="sidebar-item">⭐ My stuff</div>
+          <div class="sidebar-header">Chats</div>
+          <div class="sidebar-item active">📘 Learning UI/UX Terminology</div>
+          <div class="sidebar-item">⚙️ Settings</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 04</span>
+        <h2 class="component-title">Accordion with Choice Chips</h2>
+      </div>
+      <div class="component-demo">
+        <div class="accordion">
+          <div class="accordion-summary" onclick="toggleAccordion(this)">
+            BUSINESS UNIT <span>▲</span>
+          </div>
+          <div class="accordion-details" id="panel-details">
+            <div class="chip selected" onclick="this.classList.toggle('selected')">Wholesale</div>
+            <div class="chip" onclick="this.classList.toggle('selected')">Offprice</div>
+            <div class="chip" onclick="this.classList.toggle('selected')">B2B Manufacturing</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 05</span>
+        <h2 class="component-title">Combobox Popover</h2>
+      </div>
+      <div class="component-demo">
+        <div class="combobox-popover">
+          <input type="text" placeholder="Add 1 or more people">
+          <div class="combobox-list-item">👥 Create a space</div>
+          <div class="combobox-list-item">🌐 Browse spaces</div>
+          <div class="combobox-list-item">👤 Josefin Wagner</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 06</span>
+        <h2 class="component-title">Floating Action Button (FAB) with Badge</h2>
+      </div>
+      <div class="component-demo">
+        <div class="fab-container">
+          <div class="fab">💬</div>
+          <div class="notification-badge">1</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 07</span>
+        <h2 class="component-title">Range Slider & Custom Select Dropdown</h2>
+      </div>
+      <div class="component-demo">
+        <div class="controls-panel">
+          <div class="control-box">
+            <div class="control-label">🎵 3. Fix Lighting</div>
+            <div class="slider-row">
+              <label style="font-size:0.8rem">Intensity</label>
+              <input type="range" min="1" max="100" value="15">
+            </div>
+          </div>
+          <div class="control-box">
+            <div class="control-label">💾 4. Save Options</div>
+            <label style="font-size:0.8rem; display:block; margin-bottom:4px;">Format</label>
+            <select class="custom-select">
+              <option>JPEG</option>
+              <option>PNG</option>
+              <option>WEBP</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 08</span>
+        <h2 class="component-title">Persistent Bottom Sheet</h2>
+      </div>
+      <div class="component-demo" style="padding: 30px 0 0 0; overflow:hidden;">
+        <div class="footer-panel-mock">
+          <button class="footer-btn secondary">❤️ Add to Favorites</button>
+          <button class="footer-btn primary">📁 New List</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 09</span>
+        <h2 class="component-title">Container Card with Accent Border</h2>
+      </div>
+      <div class="component-demo">
+        <div class="accent-card">
+          <h3 style="margin-top:0;">MASTER TARGET</h3>
+          <p style="color:var(--text-muted); margin-bottom:0; font-size:0.9rem;">Paste item operational target dataset metrics inside this code window container view block.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="component-wrapper">
+      <div class="component-meta">
+        <span class="component-num">Component 10</span>
+        <h2 class="component-title">Text Button with Leading Icon</h2>
+      </div>
+      <div class="component-demo">
+        <button class="leading-icon-btn">
+          <span style="font-size:1.1rem;">📝</span> Send to Editor
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    function toggleSegment(button) {
+      const buttons = button.parentElement.querySelectorAll('button');
+      buttons.forEach(b => b.classList.remove('active'));
+      button.classList.add('active');
+    }
+
+    function toggleAccordion(summary) {
+      const details = document.getElementById('panel-details');
+      const arrow = summary.querySelector('span');
+      if (details.style.display === 'none') {
+        details.style.display = 'flex';
+        arrow.textContent = '▲';
+      } else {
+        details.style.display = 'none';
+        arrow.textContent = '▼';
+      }
+    }
+  </script>
+</body>
+</html>

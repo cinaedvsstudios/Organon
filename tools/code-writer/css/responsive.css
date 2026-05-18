@@ -1,0 +1,13 @@
+@media (max-width: 768px) {
+  #notepad-window {
+    position: fixed !important;
+    inset: 0.75rem !important;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0;
+    min-height: 0;
+    resize: none;
+  }
+  .component-card { padding: 1rem !important; }
+  .mobile-move-btn { display: inline-flex; }
+}

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Repository</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { fontFamily: { sans: ['Inter','sans-serif'], mono: ['JetBrains Mono','monospace'] }, colors: {
+        'repo-dark':'#292a2a','repo-card':'#1e1f1e','repo-brown':'#8c7355','repo-white':'#ffffff','repo-blue':'#5185c5','repo-lightblue':'#7bb2db','repo-darkteal':'#316a68','repo-teal':'#56a29a','repo-maroon':'#581a30','repo-magenta':'#9e2a53','repo-salmon':'#d98276','repo-sand':'#df9f5e','repo-cream':'#eee6ce'
+      } } }
+    }
+  </script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/repository.css">
+  <link rel="stylesheet" href="css/component-cards.css">
+  <link rel="stylesheet" href="css/builder.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body class="bg-black text-repo-cream font-sans min-h-screen selection:bg-repo-blue selection:text-white">
+  <header class="repository-header sticky top-0 z-40 px-6 py-4 shadow-md">
+    <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black tracking-tight text-repo-blue mt-1 flex items-center gap-2">UI Repository</h1>
+        <p class="text-sm text-repo-cream/70 mt-0.5">Component glossary, live sandbox library, prompt injector, and UI Builder planning workspace.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="run-guide-btn" class="px-4 py-2 rounded-lg bg-repo-sand hover:bg-yellow-500 text-xs font-black text-repo-dark shadow-lg flex items-center gap-2 transition">🚀 Run Sandbox Guide</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8 px-4 md:px-6 py-8 relative">
+    <aside id="left-sidebar" class="w-full lg:w-64 flex-shrink-0 relative">
+      <div id="sidebar-index-container" class="sticky top-24 bg-repo-card border border-repo-blue rounded-2xl p-4 max-h-[80vh] overflow-y-auto shadow-xl">
+        <div id="sidebar-tools-block" class="mb-5 space-y-3 border-b border-repo-blue pb-5">
+          <button id="toggle-basket-btn" class="w-full py-2.5 bg-repo-blue hover:bg-repo-lightblue text-repo-white font-bold text-xs rounded transition shadow-[0_0_10px_#5185c5] border border-repo-blue">🛒 ACTIVATE BUILDER BASKET</button>
+          <button id="open-ui-builder-btn" class="w-full py-2.5 bg-repo-maroon hover:bg-repo-magenta text-white font-bold text-xs rounded transition shadow-lg border border-repo-salmon/30">📝 OPEN UI BUILDER</button>
+        </div>
+        <h3 class="text-xs font-black text-repo-blue uppercase tracking-widest mb-3 pb-2 border-b border-repo-blue">Component Index</h3>
+        <nav id="catalog-nav" class="space-y-1 text-xs"></nav>
+      </div>
+    </aside>
+
+    <main class="flex-1 space-y-12 pb-24" id="component-render-zone"></main>
+  </div>
+
+  <div id="notepad-window" class="fixed top-24 right-8 bg-repo-card border-2 border-repo-blue rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col z-[200] hidden overflow-hidden">
+    <div id="notepad-header" class="bg-repo-blue text-repo-white px-4 py-3 font-black text-sm uppercase flex justify-between items-center cursor-move select-none shrink-0">
+      <span class="tracking-widest drop-shadow-md">🛠️ UI BUILDER</span>
+      <button id="close-builder-btn" class="hover:text-repo-dark transition text-lg leading-none">✕</button>
+    </div>
+    <div class="bg-repo-dark p-2 border-b border-repo-blue flex flex-wrap gap-2 text-[10px] select-none shrink-0">
+      <div class="flex gap-1 w-full">
+        <button id="template-btn" class="bg-repo-sand hover:bg-yellow-500 text-repo-dark px-3 py-1 rounded font-bold transition shadow border border-repo-sand">Template</button>
+        <select id="notepad-section" class="bg-[#1a1b1a] text-repo-cream border border-[#444] rounded px-1 py-1.5 flex-1 outline-none font-bold cursor-pointer hover:border-repo-blue transition">
+          <option value="">+ Add Section...</option>
+          <option value="Menu">Menu</option>
+          <option value="Body">Body</option>
+          <option value="Side Panel">Side Panel</option>
+          <option value="Lower Panel">Lower Panel</option>
+          <option value="Desktop Version Only">Desktop Version Only</option>
+          <option value="Mobile Version Only">Mobile Version Only</option>
+          <option value="TOP / UPPER">TOP / UPPER</option>
+          <option value="MIDDLE / CENTER">MIDDLE / CENTER</option>
+          <option value="LOWER / BOTTOM">LOWER / BOTTOM</option>
+        </select>
+        <button id="group-selected-btn" class="bg-repo-teal hover:bg-repo-darkteal text-white px-3 py-1 rounded font-bold transition shadow border border-repo-teal">Group</button>
+      </div>
+      <div class="flex gap-1 w-full justify-between mt-1">
+        <button id="btn-dock" class="bg-[#333] hover:bg-repo-blue hover:border-repo-lightblue text-white px-3 py-1 rounded font-bold transition border border-[#555]">Dock</button>
+        <button id="btn-download" class="bg-[#333] hover:bg-repo-blue hover:border-repo-lightblue text-white px-3 py-1 rounded font-bold transition border border-[#555]">Download</button>
+        <button id="btn-copy-all" class="bg-[#333] hover:bg-repo-blue hover:border-repo-lightblue text-white px-3 py-1 rounded font-bold transition border border-[#555]">Copy All</button>
+        <button id="btn-clear" class="bg-repo-maroon hover:bg-repo-salmon text-white px-3 py-1 rounded font-bold transition border border-repo-salmon/30">Clear</button>
+      </div>
+    </div>
+    <div id="notepad-list" class="flex-1 overflow-y-auto p-4 flex flex-col items-start bg-black cursor-text pb-32 relative"></div>
+  </div>
+
+  <div id="toast-wrapper" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[300] pointer-events-none transition-all duration-300 transform translate-y-10 opacity-0 select-none">
+    <div id="toast-content" class="bg-repo-dark text-repo-white border border-repo-teal rounded-xl px-4 py-2.5 text-xs font-semibold shadow-2xl flex items-center gap-2">
+      <span class="text-repo-teal">✓</span><span id="toast-text">Ready</span>
+    </div>
+  </div>
+  <div id="stacked-toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
+
+  <div id="blocking-modal-overlay" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#161a26] border border-[#2b3142] rounded-xl shadow-2xl max-w-sm w-full overflow-hidden p-6 text-center transform scale-90 transition-transform duration-200" id="blocking-modal-panel">
+      <span class="text-3xl mb-2 block">🌌</span>
+      <h3 class="text-white font-black text-sm uppercase tracking-widest mb-2">Portal Access Restricted</h3>
+      <p class="text-xs text-gray-400 leading-relaxed mb-6">Quantum matrices are currently out of balance. Overwrite core coordinates to establish link?</p>
+      <div class="flex gap-2 justify-center">
+        <button data-close-blocking-modal class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-[10px] font-bold uppercase transition">Retreat</button>
+        <button data-confirm-blocking-modal class="px-5 py-2 bg-[#a855f7] hover:bg-[#b56ef8] text-white rounded text-[10px] font-bold uppercase transition">Establish Link</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sandbox-context-menu" class="fixed hidden bg-[#1e1f1e] border border-repo-brown/50 rounded-lg shadow-2xl p-1.5 z-[250] w-40 select-none">
+    <button data-context-action="hyperwarp" class="w-full text-left p-2 hover:bg-repo-blue/20 rounded text-[11px] text-gray-200">☄️ Engage Hyperwarp</button>
+    <button data-context-action="shields" class="w-full text-left p-2 hover:bg-repo-blue/20 rounded text-[11px] text-gray-200">🛡️ Shield Protocols</button>
+  </div>
+
+  <div id="sandbox-omnibar-overlay" class="fixed inset-0 bg-black/80 backdrop-blur-xs z-[200] hidden items-center justify-center opacity-0 transition-opacity duration-150">
+    <div class="bg-[#11141c] border border-gray-800 rounded-xl max-w-md w-full p-4 shadow-2xl relative">
+      <input type="text" id="omnibar-query" class="w-full bg-[#0a0c10] border border-gray-800 rounded-lg py-2 px-3 text-xs outline-none focus:border-purple-500/50 mb-3 text-white" placeholder="Type a command shortcut...">
+      <div class="space-y-1 font-mono text-[10px]" id="omnibar-list">
+        <div class="omnibar-item p-2 hover:bg-purple-950/20 hover:text-purple-300 text-gray-300 cursor-pointer rounded flex items-center justify-between transition"><span>☄️ engage_warp_drive</span><span class="text-gray-600">CMD_1</span></div>
+        <div class="omnibar-item p-2 hover:bg-purple-950/20 hover:text-purple-300 text-gray-300 cursor-pointer rounded flex items-center justify-between transition"><span>🛡️ refresh_magnetic_shields</span><span class="text-gray-600">CMD_2</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/component-data.js" defer></script>
+  <script src="data/builder-default-template.js" defer></script>
+  <script src="js/ui-utils.js" defer></script>
+  <script src="js/storage.js" defer></script>
+  <script src="js/sandbox-actions.js" defer></script>
+  <script src="js/sandbox-engine.js" defer></script>
+  <script src="js/repository-render.js" defer></script>
+  <script src="js/builder-dragdrop.js" defer></script>
+  <script src="js/builder-export.js" defer></script>
+  <script src="js/builder-render.js" defer></script>
+  <script src="js/builder-engine.js" defer></script>
+</body>
+</html>

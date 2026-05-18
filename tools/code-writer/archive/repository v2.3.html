@@ -1,0 +1,1302 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Repository</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
+          colors: {
+            'repo-dark': '#292a2a', 'repo-card': '#1e1f1e', 'repo-brown': '#8c7355',
+            'repo-white': '#ffffff', 'repo-blue': '#5185c5', 'repo-lightblue': '#7bb2db',
+            'repo-darkteal': '#316a68', 'repo-teal': '#56a29a', 'repo-maroon': '#581a30',
+            'repo-magenta': '#9e2a53', 'repo-salmon': '#d98276', 'repo-sand': '#df9f5e',
+            'repo-cream': '#eee6ce'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #000; }
+    ::-webkit-scrollbar-thumb { background: #5185c5; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #7bb2db; }
+
+    input[type="range"].custom-range { -webkit-appearance: none; width: 100%; height: 8px; background: #8c7355; border-radius: 9999px; outline: none; }
+    input[type="range"].custom-range::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #df9f5e; cursor: pointer; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+    
+    .drawer-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+    textarea.resizable-textarea { resize: both; overflow: auto; }
+    textarea.resizable-textarea::-webkit-resizer { background-color: #df9f5e; border-radius: 4px; }
+
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+
+    body.basket-mode-active .add-to-basket { animation: basket-pulse-glow 1.5s infinite; }
+    @keyframes basket-pulse-glow {
+      0% { box-shadow: 0 0 0px rgba(81, 133, 197, 0.5); }
+      50% { box-shadow: 0 0 15px rgba(81, 133, 197, 0.8); }
+      100% { box-shadow: 0 0 0px rgba(81, 133, 197, 0.5); }
+    }
+    
+    .notepad-pill.dragging { opacity: 0.5; border: 2px dashed #5185c5; }
+    .notepad-pill.active-pill { border: 2px solid #d98276; box-shadow: 0 0 10px rgba(217,130,118,0.6); }
+
+    .index-collapsed-mode nav > a { display: none; }
+    .index-collapsed-mode nav > div { cursor: pointer; border-radius: 4px; padding: 4px; transition: background 0.2s; }
+    .index-collapsed-mode nav > div:hover { background: rgba(81,133,197,0.2); }
+    .index-collapsed-mode nav > div::after { content: ' ▼'; font-size: 8px; opacity: 0.5; }
+    .index-collapsed-mode nav > a.expanded { display: block; padding-left: 16px; border-left: 2px solid #5185c5; margin-left: 4px; }
+
+    hr { border-color: #5185c5 !important; }
+    .attention-text { color: #d98276; font-weight: bold; }
+  </style>
+</head>
+<body class="bg-black text-repo-cream font-sans min-h-screen selection:bg-repo-blue selection:text-white">
+
+  <header class="border-b border-repo-blue bg-repo-dark/90 backdrop-blur sticky top-0 z-40 px-6 py-4 shadow-md select-none">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-repo-teal/20 text-repo-teal border border-repo-teal/30">Enterprise Spec</span>
+          <span class="text-xs text-repo-sand font-mono">Interactive Database</span>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-repo-blue mt-1 flex items-center gap-2">UI Repository</h1>
+        <p class="text-sm text-repo-cream/70 mt-0.5">Customizable components, prompt injectors, and architectural blueprints.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="startVisualTutorial()" class="px-4 py-2 rounded-lg bg-repo-sand hover:bg-yellow-500 text-xs font-black text-repo-dark shadow-lg flex items-center gap-2 transition">
+          🚀 Run Sandbox Guide
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8 px-4 md:px-6 py-8 relative">
+    
+    <aside id="left-sidebar" class="w-full lg:w-64 flex-shrink-0 relative select-none">
+      <div id="sidebar-index-container" class="sticky top-24 bg-repo-card border border-repo-blue rounded-2xl p-4 max-h-[80vh] overflow-y-auto shadow-xl">
+        <div id="sidebar-tools-block" class="mb-5 space-y-3 border-b border-repo-blue pb-5">
+          <button id="toggle-basket-btn" onclick="toggleBasketMode()" class="w-full py-2.5 bg-repo-blue text-repo-white font-bold text-xs rounded transition shadow-[0_0_10px_#5185c5] border border-repo-blue">
+            🛒 ACTIVATE BUILDER BASKET
+          </button>
+          <button onclick="openNotepad()" class="w-full py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold text-xs rounded transition shadow-lg border border-red-500">
+            📝 OPEN UI BUILDER
+          </button>
+        </div>
+
+        <h3 class="text-xs font-black text-repo-blue uppercase tracking-widest mb-3 pb-2 border-b border-repo-blue">Component Index</h3>
+        <nav id="catalog-nav" class="space-y-1 text-xs">
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 uppercase mt-1">Core Inputs</div>
+          <a onclick="scrollToComponent('comp-01')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">01. Segmented Control</a>
+          <a onclick="scrollToComponent('comp-02')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">02. Decorated Input Box</a>
+          <a onclick="scrollToComponent('comp-03')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">03. Collapsible Navigation</a>
+          <a onclick="scrollToComponent('comp-04')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">04. Multi-Row Accordion</a>
+          <a onclick="scrollToComponent('comp-05')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">05. Combobox Popover</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Logic & Layouts</div>
+          <a onclick="scrollToComponent('comp-09')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">09. Card & Resize Grip</a>
+          <a onclick="scrollToComponent('comp-11')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">11. Draggable Window</a>
+          <a onclick="scrollToComponent('comp-12')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">12. Custom Markup Compiler</a>
+          <a onclick="scrollToComponent('comp-13')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">13. Fuzzy Typo Search</a>
+          <a onclick="scrollToComponent('comp-14')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">14. JSON Syntax Locator</a>
+          <a onclick="scrollToComponent('comp-15')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">15. Adaptive Image Cycler</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">States & Feedback</div>
+          <a onclick="scrollToComponent('comp-16')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">16. Action Confirm</a>
+          <a onclick="scrollToComponent('comp-17')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">17. Radial SVG Ticker</a>
+          <a onclick="scrollToComponent('comp-21')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">21. Highlight Cycler</a>
+          <a onclick="scrollToComponent('comp-24')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">24. Debounced Drawer</a>
+          <a onclick="scrollToComponent('comp-25')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">25. Portal Step Guide</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Dynamic Modules</div>
+          <a onclick="scrollToComponent('comp-26')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">26. Stacked Toasts</a>
+          <a onclick="scrollToComponent('comp-27')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">27. Spinners</a>
+          <a onclick="scrollToComponent('comp-28')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">28. Custom Toggles</a>
+          <a onclick="scrollToComponent('comp-29')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">29. Blocking Modal Dialog</a>
+          <a onclick="scrollToComponent('comp-30')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">30. Skeleton Placeholders</a>
+          <a onclick="scrollToComponent('comp-31')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">31. Semantic Dot Badges</a>
+          <a onclick="scrollToComponent('comp-32')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">32. Navigational Breadcrumbs</a>
+          <a onclick="scrollToComponent('comp-33')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">33. Runic Star Evaluator</a>
+          <a onclick="scrollToComponent('comp-34')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">34. Morphing Copy Button</a>
+          <a onclick="scrollToComponent('comp-35')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">35. Progress Upload Cards</a>
+          <a onclick="scrollToComponent('comp-36')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition text-repo-sand font-bold">36. Interactive Glossary Box</a>
+
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Premium Components</div>
+          <a onclick="scrollToComponent('comp-37')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition text-repo-sand font-bold">37. Context Right-Click Menu</a>
+          <a onclick="scrollToComponent('comp-38')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition text-repo-sand font-bold">38. Stepped Milestones</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Enterprise Architecture</div>
+          <a onclick="scrollToComponent('architecture-blueprint')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition text-repo-salmon font-bold">📐 Naming & Color Tokens</a>
+        </nav>
+      </div>
+    </aside>
+
+    <div class="flex-1 space-y-12 pb-24" id="component-render-zone">
+      <!-- Components injected via JS to save raw HTML limits while preserving full data -->
+    </div>
+  </div>
+
+  <!-- Builder Basket / Notepad Floating Window -->
+  <div id="notepad-window" class="fixed top-24 right-8 w-[400px] bg-repo-card border-2 border-repo-blue rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col z-[200] hidden resize overflow-hidden">
+    <div id="notepad-header" class="bg-repo-blue text-repo-white px-4 py-3 font-black text-sm uppercase flex justify-between items-center cursor-move select-none">
+      <span class="tracking-widest drop-shadow-md">🛠️ UI BUILDER</span>
+      <button onclick="toggleNotepad()" class="hover:text-repo-dark transition">✕</button>
+    </div>
+    
+    <div class="bg-repo-dark p-2 border-b border-repo-blue flex flex-wrap gap-2 text-[10px] select-none">
+      <div class="flex gap-1 w-full">
+        <select id="notepad-section" onchange="if(this.value){addSection(this.value); this.value='';}" class="bg-[#1a1b1a] text-repo-cream border border-[#444] rounded px-1 py-1.5 flex-1 outline-none font-bold">
+          <option value="">+ Add Section...</option>
+          <option value="Menu">Menu</option>
+          <option value="Body">Body</option>
+          <option value="Side Panel">Side Panel</option>
+          <option value="Lower Panel">Lower Panel</option>
+          <option value="Desktop Version Only">Desktop Version Only</option>
+          <option value="Mobile Version Only">Mobile Version Only</option>
+          <option value="TOP / UPPER">TOP / UPPER</option>
+          <option value="MIDDLE / CENTER">MIDDLE / CENTER</option>
+          <option value="LOWER / BOTTOM">LOWER / BOTTOM</option>
+        </select>
+        <button onclick="groupSelectedItems()" class="bg-repo-teal hover:bg-repo-darkteal text-white px-3 py-1 rounded font-bold transition shadow">Group</button>
+      </div>
+      <div class="flex gap-1 w-full justify-between">
+        <button onclick="toggleDock()" id="btn-dock" class="bg-[#333] hover:bg-[#444] text-white px-3 py-1 rounded font-bold transition border border-[#555]">Dock</button>
+        <button onclick="downloadNotepadTxt()" class="bg-[#333] hover:bg-[#444] text-white px-3 py-1 rounded font-bold transition border border-[#555]">Download</button>
+        <button onclick="copyNotepadToClipboard()" class="bg-[#333] hover:bg-[#444] text-white px-3 py-1 rounded font-bold transition border border-[#555]">Copy All</button>
+        <button onclick="clearBasket()" class="bg-repo-maroon hover:bg-repo-magenta text-white px-3 py-1 rounded font-bold transition border border-repo-salmon/30">Clear</button>
+      </div>
+    </div>
+
+    <!-- List Area: Black background, inline-flex pills -->
+    <div id="notepad-list" class="flex-1 overflow-y-auto p-4 flex flex-col items-start bg-black min-h-[300px]">
+    </div>
+
+    <div class="bg-repo-dark p-3 border-t border-repo-blue flex flex-col gap-2 select-none">
+      <div class="flex gap-1">
+        <input type="text" id="notepad-freetext" onkeypress="if(event.key==='Enter') addFreeText()" class="bg-[#1a1b1a] text-xs text-repo-cream border border-[#444] rounded px-2 py-1.5 flex-1 outline-none focus:border-repo-blue" placeholder="Free type notes...">
+        <button onclick="addFreeText()" class="bg-repo-blue hover:bg-repo-lightblue text-repo-white px-3 rounded font-bold text-[10px] transition">Add Note</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-wrapper" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[300] pointer-events-none transition-all duration-300 transform translate-y-10 opacity-0 select-none">
+    <div id="toast-content" class="bg-repo-dark text-repo-white border border-repo-teal rounded-xl px-4 py-2.5 text-xs font-semibold shadow-2xl flex items-center gap-2">
+      <span class="text-repo-teal">✓</span>
+      <span id="toast-text">Phrase copied successfully!</span>
+    </div>
+  </div>
+
+  <!-- Interactive Sandbox Overlays -->
+  <div id="stacked-toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
+
+  <div id="blocking-modal-overlay" onclick="closeSandboxBlockingModal(event)" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#161a26] border border-[#2b3142] rounded-xl shadow-2xl max-w-sm w-full overflow-hidden p-6 text-center transform scale-90 transition-transform duration-200" id="blocking-modal-panel">
+      <span class="text-3xl mb-2 block">🌌</span>
+      <h3 class="text-white font-black text-sm uppercase tracking-widest mb-2">Portal Access Restricted</h3>
+      <p class="text-xs text-gray-400 leading-relaxed mb-6">Quantum matrices are currently out of balance. Overwrite core coordinates to establish link?</p>
+      <div class="flex gap-2 justify-center">
+        <button onclick="closeSandboxBlockingModal(null)" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-[10px] font-bold uppercase transition">Retreat</button>
+        <button onclick="showToast('Establishing warp coordinates...'); closeSandboxBlockingModal(null);" class="px-5 py-2 bg-[#a855f7] hover:bg-[#b56ef8] text-white rounded text-[10px] font-bold uppercase transition">Establish Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Component Data Database -->
+  <script>
+    const db = [
+      {
+        id: '01', title: 'Segmented Control',
+        term: 'Toggle group, button switcher, slider capsule.',
+        desc: 'Houses a horizontal row of mutually exclusive buttons within a single rounded container.',
+        apps: 'Flipping between code panels and previews.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">iOS Settings</a>',
+        mods: 'Map to animate via CSS transforms.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div id="sandbox-segmented" class="inline-flex bg-black p-[3px] rounded-full border border-[#333] transition-all duration-300">
+            <button onclick="showToast('Code Active')" class="px-5 py-1.5 rounded-full text-xs font-semibold bg-repo-blue text-white border border-repo-lightblue/30">Sub-Space Code</button>
+            <button onclick="showToast('Preview Active')" class="px-5 py-1.5 rounded-full text-xs font-semibold text-gray-400 hover:text-gray-100 border border-transparent">Holo-Preview</button>
+          </div>
+        `,
+        prompt: 'Create a Segmented Control Switcher styled with Matrix Blue active states and a subtle neon glow effect.'
+      },
+      {
+        id: '02', title: 'Decorated Input Box',
+        term: 'Inline search bar, input action capsule.',
+        desc: 'A text field featuring absolute leading icons and embedded trailing action triggers.',
+        apps: 'Used for global site searches, filtering grids.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Google Search</a>',
+        mods: 'Replace trailing action with voice mic.',
+        risk: '1', riskText: 'Easy',
+        html: `
+          <div class="relative w-full max-w-md mx-auto">
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 text-repo-lightblue">🔍</span>
+            <input type="text" class="w-full bg-[#1a1b1a] border border-[#444] rounded-full pl-11 pr-12 py-2 text-xs outline-none focus:border-repo-blue" value="dilithium">
+            <button onclick="showToast('Randomized!')" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-repo-sand hover:bg-yellow-500 text-repo-dark flex items-center justify-center text-xs transition">🌀</button>
+          </div>
+        `,
+        prompt: 'Build a rounded Input field containing a leading search icon and an absolute-positioned trailing action button inside its right boundary.'
+      },
+      {
+        id: '03', title: 'Collapsible Navigation Drawer',
+        term: 'Side nav deck, layout drawer.',
+        desc: 'Side nav deck that contracts width, hiding labels to display high-density icon sets.',
+        apps: 'Dashboard primary navigation.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">YouTube Sidebar</a>',
+        mods: 'Can transition to off-canvas on mobile.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="w-[220px] bg-repo-dark border border-[#444] rounded-xl p-3 flex flex-col gap-1.5 mx-auto">
+            <div class="flex items-center justify-between px-2 py-1 mb-1">
+              <button onclick="showToast('Toggle sidebar')" class="w-8 h-8 rounded-full border border-[#444] hover:bg-[#333] flex items-center justify-center text-white">🛠️</button>
+              <span class="text-[10px] text-gray-400 font-bold uppercase">CONTROL</span>
+            </div>
+            <div class="bg-repo-blue/20 border border-repo-blue/50 text-repo-lightblue flex items-center p-2 rounded-lg text-xs gap-3">
+              <span>🛰️</span><span class="font-medium truncate">Nexus Core Uplink</span>
+            </div>
+          </div>
+        `,
+        prompt: 'Implement a Collapsible Navigation Drawer. When folded, animate its width down and hide text labels, leaving only icons visible.'
+      },
+      {
+        id: '04', title: 'Multi-Row Accordion',
+        term: 'Expandable list, collapse panel.',
+        desc: 'Expandable menu boxes with Choice Chips.',
+        apps: 'E-commerce faceted filtering.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Amazon Filters</a>',
+        mods: 'Rig as a true accordion (one open at a time).',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="w-full max-w-sm mx-auto border border-[#444] rounded-xl bg-repo-dark overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 bg-[#222] cursor-pointer" onclick="showToast('Toggled Accordion')">
+              <span class="text-[10px] font-bold text-repo-lightblue uppercase">Spell Schools</span>
+              <span class="text-xs text-repo-blue">▲</span>
+            </div>
+            <div class="p-3 border-t border-[#444] flex flex-wrap gap-1.5">
+              <button class="px-2.5 py-1 rounded text-[10px] font-bold border border-repo-blue/50 bg-repo-blue/20 text-repo-lightblue">Evocation</button>
+              <button class="px-2.5 py-1 rounded text-[10px] font-bold border border-[#555] text-gray-300">Necromancy</button>
+            </div>
+          </div>
+        `,
+        prompt: 'Create an Accordion container. Inside the expanded panel, render a set of choice chip tags.'
+      },
+      {
+        id: '05', title: 'Combobox Popover',
+        term: 'Typeahead menu, action launcher.',
+        desc: 'Dynamic dropdown panels filtering items locally.',
+        apps: 'Filters contacts, command palettes.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Slack Jump To</a>',
+        mods: 'Embed rich HTML objects inside list.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="w-full max-w-xs mx-auto bg-repo-dark border border-[#444] rounded-xl p-3">
+            <input type="text" class="w-full bg-[#111] border border-[#333] rounded-lg py-1.5 px-3 text-xs outline-none text-repo-white" placeholder="Filter targets...">
+            <div class="space-y-0.5 mt-2">
+              <div class="flex items-center gap-2 p-1.5 rounded text-xs text-repo-cream hover:bg-[#333] cursor-pointer"><span>☄️</span><span>Initiate Hyperjump</span></div>
+            </div>
+          </div>
+        `,
+        prompt: 'Build a Combobox Popover dropdown. Position a sleek input bar at the top, and let the list elements beneath filter dynamically.'
+      },
+      {
+        id: '09', title: 'Card with Resize Grip',
+        term: 'Resizable terminal, active accent card.',
+        desc: 'A layout card featuring a left vertical accent stripe representing state, coupled with a native browser-rendered draggable resizer grip.',
+        apps: 'Code playgrounds, console outputs.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">JSFiddle</a>',
+        mods: 'Handle visible only on hover.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="w-full max-w-sm mx-auto bg-repo-dark border border-[#444] border-l-[5px] border-l-repo-blue p-4 rounded-r-xl">
+            <div class="text-[9px] font-black text-gray-400 mb-1 uppercase tracking-widest">ARCANE SPELL MATRIX</div>
+            <textarea class="resizable-textarea w-full bg-[#111] border border-[#333] rounded-lg p-2 text-xs text-repo-lightblue outline-none" rows="2" placeholder="Drag corner..."></textarea>
+          </div>
+        `,
+        prompt: 'Create a resizable card featuring a left vertical accent border and a draggable bottom-right resizer grip.'
+      },
+      {
+        id: '11', title: 'Draggable Window',
+        term: 'Floating widget, moveable dialog.',
+        desc: 'Moveable window panels triggered inside active containment bounding environments.',
+        apps: 'HUD interfaces, non-blocking toolbars.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Figma</a>',
+        mods: 'Snap to grid functionality.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="bg-[#161a26] border border-[#2b3142] rounded-xl shadow-2xl w-48 mx-auto overflow-hidden">
+            <div class="bg-[#212738] px-2.5 py-1.5 cursor-grab flex items-center justify-between">
+              <span class="text-[9px] font-bold text-repo-lightblue">🛸 TERMINAL</span>
+              <span class="w-2 h-2 rounded-full bg-repo-salmon"></span>
+            </div>
+            <div class="p-3 text-[11px] text-gray-400">Grab and drag my header bar!</div>
+          </div>
+        `,
+        prompt: 'Create a Draggable Modeless Window component inside a containment area with a header grab-bar.'
+      },
+      {
+        id: '12', title: 'Custom Markup Compiler',
+        term: 'Custom string parser, inline text formatter.',
+        desc: 'Evaluates raw text strings, searching for custom inline delimiters (like `!!`) and compiling them directly into styled HTML structures.',
+        apps: 'Custom chat client micro-editors.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Discord Markdown</a>',
+        mods: 'Support custom regex arrays.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="bg-black p-4 border border-[#333] rounded-lg space-y-3 w-full max-w-sm mx-auto">
+            <textarea class="w-full bg-repo-dark border border-[#444] rounded p-2 text-xs text-repo-lightblue font-mono outline-none" rows="2">!!Bold!! text here</textarea>
+            <div class="bg-repo-dark/50 border border-repo-blue/20 rounded p-2.5 text-xs text-gray-300 min-h-[40px]"><strong class="text-repo-lightblue font-extrabold">Bold</strong> text here</div>
+          </div>
+        `,
+        prompt: 'Build a Lightweight Markup Parsing Engine that compiles text bolding using Exclamation (!!bold!!) tags.'
+      },
+      {
+        id: '13', title: 'Fuzzy Typo Search',
+        term: 'Spellcheck finder, distance calculator.',
+        desc: 'Calculates edit distances between input and data nodes, enabling typo-tolerant lookups.',
+        apps: 'Search bars with high typo probability.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Algolia Search</a>',
+        mods: 'Adjust threshold of allowed edit steps.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="w-full max-w-sm mx-auto space-y-2">
+            <input type="text" class="w-full bg-repo-dark border border-[#444] rounded-full py-1.5 px-3 text-xs outline-none text-repo-white" placeholder="Type to search (fuzzy)...">
+            <div class="flex items-center justify-between bg-[#111] p-1.5 rounded border border-gray-800">
+              <span class="font-bold text-gray-200">orichalcum</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded font-mono bg-green-500/10 text-green-400">Offset: 1</span>
+            </div>
+          </div>
+        `,
+        prompt: 'Create a Typo-Tolerant search input using a Levenshtein distance matrix function.'
+      },
+      {
+        id: '14', title: 'JSON Syntax Locator',
+        term: 'Error syntax parser, visual code pointer.',
+        desc: 'Intercepts parsing exceptions and generates a direct visual carat pointer under the error index.',
+        apps: 'Code editors, configuration validators.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">JSONLint</a>',
+        mods: 'Integrated into live forms to prevent submission.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="w-full max-w-sm mx-auto">
+            <pre class="bg-black border border-repo-maroon/50 text-repo-salmon p-2.5 rounded text-[9px] font-mono whitespace-pre overflow-x-auto min-h-[50px] w-full">Error spot: { "bad": true, }&#10;                           ^</pre>
+          </div>
+        `,
+        prompt: 'Build a JSON syntax validator widget that isolates the character index of an exception and prints a carat pointer.'
+      },
+      {
+        id: '15', title: 'Adaptive Image Cycler',
+        term: 'Smart image shifter, fallback loader.',
+        desc: 'Validates image path existence offscreen, routing instantly to custom backups upon load failure.',
+        apps: 'User profile avatars, robust galleries.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Netflix Thumbnails</a>',
+        mods: 'Rotate through an array of fallback images.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="relative cursor-pointer max-w-[200px] mx-auto" onclick="showToast('Cycled image!')">
+            <img src="https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&q=80" class="w-full h-24 object-cover rounded-xl border border-repo-blue/50">
+            <div class="absolute bottom-1 right-1 bg-black/75 px-1.5 py-0.5 rounded text-[8px] text-repo-lightblue font-mono">Index: 1</div>
+          </div>
+        `,
+        prompt: 'Create an image carousel that validates paths before rendering using an in-memory Image instance.'
+      },
+      {
+        id: '16', title: 'Action Confirm',
+        term: 'Two-stage trigger, safety-toggle button.',
+        desc: 'Protects system critical actions by requiring a verified second click within a strict countdown window.',
+        apps: 'Database deletions, irreversible system overrides.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">AWS Delete Prompts</a>',
+        mods: 'Add a shaking animation on the first click.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="flex flex-col items-center justify-center p-4 min-h-[80px]">
+            <button onclick="showToast('Click 1: Warning state activated!')" class="px-5 py-2.5 rounded-lg bg-repo-maroon hover:bg-repo-magenta text-xs font-black uppercase tracking-wider text-white transition duration-150 border border-repo-salmon animate-pulse">💥 CONFIRM PURGE?</button>
+          </div>
+        `,
+        prompt: 'Create a Two-Stage Confirm Action Button with a 3-second self-canceling timeout on first click.'
+      },
+      {
+        id: '17', title: 'Radial SVG Ticker',
+        term: 'Circular countdown, SVG elapsed indicator.',
+        desc: 'A circular countdown timer utilizing CSS stroke-dashoffset transitions driven by millisecond tickers.',
+        apps: 'Session timeouts, OTP expirations.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Google Authenticator</a>',
+        mods: 'Change color based on time remaining.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="relative w-12 h-12 flex items-center justify-center mx-auto">
+            <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="16" class="fill-none stroke-repo-darkteal stroke-[2px]" />
+              <circle cx="18" cy="18" r="16" class="fill-none stroke-repo-teal stroke-[2px]" style="stroke-dasharray: 100; stroke-dashoffset: 25;" />
+            </svg>
+            <span class="absolute text-[10px] font-black text-repo-teal font-mono">3s</span>
+          </div>
+        `,
+        prompt: 'Create an SVG Radial Countdown Timer adjusting stroke-dashoffset dynamically inside an interval loop.'
+      },
+      {
+        id: '21', title: 'Highlight Cycler',
+        term: 'State color toggle, row highlighter.',
+        desc: 'Instantly cycles database rows through glowing semantic overlays.',
+        apps: 'Table classifications, priority tagging.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Asana Row Colors</a>',
+        mods: 'Persist state to local storage.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="space-y-2 max-w-sm mx-auto">
+            <div class="p-3 bg-repo-blue/20 border border-repo-blue rounded-lg text-xs flex justify-between">
+              <span class="text-repo-lightblue">🚀 Highlight Level 1</span>
+              <span class="text-[9px] text-repo-blue uppercase tracking-wide">Cycle layer</span>
+            </div>
+          </div>
+        `,
+        prompt: 'Build an Interactive Highlight Layer Cycler that cycles elements through 5 semantic translucent glowing colors on click.'
+      },
+      {
+        id: '24', title: 'Debounced Drawer',
+        term: 'Hover menu, delayed dropdown.',
+        desc: 'Hovering over the trigger bar opens secondary options. Employs a 200ms bridge window to glide across visual gaps seamlessly.',
+        apps: 'Mega-menus, complex navigation bars.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Stripe Mega Menu</a>',
+        mods: 'Click to lock persistence.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="flex flex-col items-center max-w-sm mx-auto">
+            <div class="w-full h-3 border-y border-repo-teal bg-repo-darkteal/30 rounded cursor-pointer transition flex items-center justify-center relative z-20">
+              <span class="text-[6px] tracking-widest text-repo-teal font-bold">HOVER DIVIDER BRIDGE</span>
+            </div>
+            <div class="w-full bg-[#111] border border-[#333] rounded-b-xl p-3 flex gap-2 justify-center shadow-2xl relative z-10 -mt-1">
+              <button class="px-3 py-1.5 bg-repo-blue text-white rounded text-[10px] font-black uppercase">☄️ Jump</button>
+            </div>
+          </div>
+        `,
+        prompt: 'Create a Multi-Tiered Hover Drawer with Bridged Debounce utilizing a 200ms gap to maintain open dropdown states.'
+      },
+      {
+        id: '25', title: 'Portal Step Guide',
+        term: 'Onboarding walkthrough, tour pulse.',
+        desc: 'Sequentially targets specific DOM nodes, applying glowing pulsers and automatically sliding them into center focus.',
+        apps: 'New user onboarding, feature tours.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Intro.js</a>',
+        mods: 'Add skip/back functionality.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="flex items-center justify-center p-4">
+            <button onclick="showToast('Started guide!')" class="px-5 py-2.5 rounded-lg bg-repo-sand text-repo-dark font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_#df9f5e]">🚀 Launch Tutorial</button>
+          </div>
+        `,
+        prompt: 'Create a Step-by-Step Tutorial Walkthrough targeting specific layout elements with pulsating highlight outlines.'
+      },
+      {
+        id: '26', title: 'Stacked Toasts',
+        term: 'Notification drawer, sliding alerts.',
+        desc: 'Instantiates non-blocking notification cards that stack cleanly with semantic colors and timeline timers.',
+        apps: 'Server warnings, success responses.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Vercel Dashboard</a>',
+        mods: 'Swipe to dismiss.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="flex flex-wrap gap-2 justify-center p-4">
+            <div class="bg-green-900/40 border border-green-500/40 text-green-300 text-xs font-bold rounded-lg p-3">
+              Success: Sub-space aligned.
+            </div>
+          </div>
+        `,
+        prompt: 'Create an animated Stacked Toast Notification System with slide-in animations and automated self-destruction timers.'
+      },
+      {
+        id: '27', title: 'Spinners',
+        term: 'Async visual loaders, progress loops.',
+        desc: 'Highly optimized vector animation loops indicating operations are running in the background.',
+        apps: 'API loading, form submissions.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">YouTube Buffering</a>',
+        mods: 'Determinate progress variants.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="flex items-center justify-center py-4">
+            <svg class="animate-spin h-8 w-8 text-repo-sand" style="box-shadow: 0 0 15px rgba(223,159,94,0.5); border-radius: 9999px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        `,
+        prompt: 'Build Indeterminate Loading Spinners using inline SVGs featuring Tailwind keyframe animations and glows.'
+      },
+      {
+        id: '28', title: 'Custom Toggles',
+        term: 'Switch button, binary slider.',
+        desc: 'Smooth, iOS-styled switches that slide their thumb nodes seamlessly.',
+        apps: 'Settings panels, binary states.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">iOS Settings</a>',
+        mods: 'Change colors dynamically based on state.',
+        risk: '1', riskText: 'Easy',
+        html: `
+          <div class="flex items-center justify-center gap-4 py-4">
+            <div class="w-10 h-6 bg-repo-blue rounded-full p-0.5 transition-colors duration-200 relative shadow-[0_0_10px_rgba(81,133,197,0.4)]">
+              <span class="w-5 h-5 bg-white rounded-full block transition-transform duration-200 translate-x-4"></span>
+            </div>
+          </div>
+        `,
+        prompt: 'Build a custom toggle switch animating the indicator node shift and changing track background colors.'
+      },
+      {
+        id: '29', title: 'Blocking Modal Dialog',
+        term: 'Popup window, overlay alert.',
+        desc: 'A high-priority popup window. Blurs the parent viewport layout, locking focus until resolved.',
+        apps: 'Critical confirmations, paywalls.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Stripe Checkout</a>',
+        mods: 'Click outside to dismiss.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="flex items-center justify-center py-4">
+            <button onclick="showToast('Modal opened')" class="px-5 py-2 rounded bg-repo-maroon text-white font-bold text-xs uppercase transition">Initiate Lock</button>
+          </div>
+        `,
+        prompt: 'Build a Blocking Modal Dialog with an absolute backdrop, centered scale-up panel, and ESC key bindings.'
+      },
+      {
+        id: '30', title: 'Skeleton Placeholders',
+        term: 'Ghost loader, content wireframe.',
+        desc: 'Pulsating placeholder blocks indicating that content is compiling.',
+        apps: 'Heavy API queries, feed loading.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">LinkedIn Feed</a>',
+        mods: 'Shimmer sweep animation instead of pulse.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="animate-pulse space-y-3 max-w-xs mx-auto">
+            <div class="h-16 bg-[#333] rounded-xl"></div>
+            <div class="h-3 w-2/3 bg-[#333] rounded"></div>
+          </div>
+        `,
+        prompt: 'Create Skeleton Loader Placeholders matching the exact layout structure with keyframe pulse animations.'
+      },
+      {
+        id: '31', title: 'Semantic Dot Badges',
+        term: 'Status chip, indicator pill.',
+        desc: 'Badges carrying minor dot-indicators, mapping status properties immediately through color standards.',
+        apps: 'User online status, server health.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">GitHub Actions</a>',
+        mods: 'Ping animation on the dot.',
+        risk: '1', riskText: 'Easy',
+        html: `
+          <div class="flex justify-center py-4">
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold bg-repo-darkteal/20 text-repo-teal border border-repo-teal/40">
+              <span class="w-1.5 h-1.5 rounded-full bg-repo-teal animate-pulse"></span> Live System
+            </span>
+          </div>
+        `,
+        prompt: 'Build semantic status Tag/Badge components with matching translucent backgrounds and embedded dot lights.'
+      },
+      {
+        id: '32', title: 'Navigational Breadcrumbs',
+        term: 'Hierarchy trail, route path.',
+        desc: 'Active step lines detailing route hierarchy, with inline divider chevron characters.',
+        apps: 'Deep folder structures, e-commerce categories.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Amazon Categories</a>',
+        mods: 'Dropdowns on intermediate steps.',
+        risk: '1', riskText: 'Easy',
+        html: `
+          <div class="flex justify-center py-4">
+            <nav class="flex items-center gap-2 text-xs font-mono text-gray-500">
+              <span class="text-repo-lightblue">SYSTEM</span> <span>➔</span> <span class="text-repo-white font-bold">NEXUS_A</span>
+            </nav>
+          </div>
+        `,
+        prompt: 'Build a Navigational Breadcrumbs Trail component. Style links with hover changes and separate them with chevrons.'
+      },
+      {
+        id: '33', title: 'Runic Star Evaluator',
+        term: 'Rating matrix, review stars.',
+        desc: 'Clickable rating matrices that dynamically update filled vectors on mouseenter and click.',
+        apps: 'Product reviews, user feedback.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Yelp Reviews</a>',
+        mods: 'Half-star support.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="flex justify-center py-4 text-2xl">
+            <span class="text-repo-sand">★</span><span class="text-repo-sand">★</span><span class="text-repo-sand">★</span><span class="text-[#333]">★</span><span class="text-[#333]">★</span>
+          </div>
+        `,
+        prompt: 'Build a 5-Star Rating matrix. Bind hover, mouseleave, and click events to fill in preceding vectors dynamically.'
+      },
+      {
+        id: '34', title: 'Morphing Copy Button',
+        term: 'Clipboard trigger, success button.',
+        desc: 'Buttons that capture string parameters and temporarily morph text/styles to green checkmarks upon success.',
+        apps: 'Share links, API key reveals.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Tailwind UI Docs</a>',
+        mods: 'Slide-up icon animation on success.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="flex justify-center py-4">
+            <button class="inline-flex items-center gap-2 px-5 py-2.5 bg-repo-darkteal/30 border border-repo-teal text-xs font-black text-repo-teal rounded-lg">
+              ✓ COPIED SECURE!
+            </button>
+          </div>
+        `,
+        prompt: 'Create a Copy-to-Clipboard Action Button that morphs text/icons temporarily to a success state for 2 seconds.'
+      },
+      {
+        id: '35', title: 'Progress Upload Cards',
+        term: 'File transfer block, progress bar.',
+        desc: 'Card layouts detailing asynchronous transfer states, complete with advancing percentage indicators.',
+        apps: 'Cloud drives, form attachments.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Google Drive Upload</a>',
+        mods: 'Cancel/Pause functionality.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="w-full max-w-sm mx-auto space-y-2 bg-[#111] p-3 rounded-lg border border-[#333]">
+            <div class="flex justify-between text-[10px] font-black text-gray-400"><span>warp_drive.bin</span><span>65%</span></div>
+            <div class="w-full h-2 bg-gray-800 rounded-full"><div class="w-[65%] h-full bg-repo-blue"></div></div>
+          </div>
+        `,
+        prompt: 'Create a Progressive File Upload status card displaying file metadata and a horizontal percentage bar.'
+      },
+      {
+        id: '36', title: 'Interactive Glossary Box',
+        term: 'Concept preview board, hover lookup.',
+        desc: 'A split column layout where hovering over dictionary tags instantly compiles a visual simulation card.',
+        apps: 'API documentation, design systems.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Stripe Docs</a>',
+        mods: 'Mouseclick triggers as a persistent lock.',
+        risk: '4', riskText: 'Hard',
+        html: `
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2 bg-[#111] border border-[#333] rounded cursor-pointer"><span class="text-repo-sand">⚡ Affordance</span></div>
+            <div class="p-2 bg-[#111] border border-[#333] rounded text-center text-gray-500">Preview Area</div>
+          </div>
+        `,
+        prompt: 'Create an Interactive Glossary and Preview component arranged in a layout, triggered via Hover.'
+      },
+      {
+        id: '37', title: 'Context Right-Click Menu',
+        term: 'Floating action list, custom context.',
+        desc: 'Overrides the native browser context menu, positioning an absolute floating menu block at the mouse cursor.',
+        apps: 'Web-based OS interfaces, file managers.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Google Drive</a>',
+        mods: 'Nested sub-menus on hover.',
+        risk: '3', riskText: 'Difficult',
+        html: `
+          <div class="w-full bg-[#111] border-2 border-dashed border-[#444] rounded-xl p-4 text-center text-xs text-gray-400">
+            Right-Click inside zone
+          </div>
+        `,
+        prompt: 'Build a Contextual Right-Click Dropdown component. Cancel native context actions, mapping absolute coordinates to a hidden node.'
+      },
+      {
+        id: '38', title: 'Stepped Milestones',
+        term: 'Progress stepper, milestone bar.',
+        desc: 'A progression trail mapping completed, active, and locked phases with vector connected track bars.',
+        apps: 'Checkout flows, onboarding wizards.',
+        wild: '<a href="#" class="text-repo-blue hover:text-white underline">Shopify Checkout</a>',
+        mods: 'Clickable steps for navigation back.',
+        risk: '2', riskText: 'Intermediate',
+        html: `
+          <div class="flex items-center justify-between w-full max-w-sm mx-auto pt-2">
+            <div class="w-6 h-6 rounded-full bg-repo-teal text-[10px] text-white flex items-center justify-center">✓</div>
+            <div class="flex-1 h-0.5 bg-repo-teal"></div>
+            <div class="w-6 h-6 rounded-full bg-[#111] border border-repo-blue text-[10px] text-repo-lightblue flex items-center justify-center">02</div>
+          </div>
+        `,
+        prompt: 'Build a Stepped Milestones Tracker. Style connectors and circular indicators with status properties.'
+      }
+    ];
+
+    function renderComponents() {
+      const zone = document.getElementById('component-render-zone');
+      let html = '';
+      
+      db.forEach(c => {
+        let borderClass = 'border-repo-blue';
+        let textClass = 'text-repo-blue';
+        let badgeClass = 'bg-repo-blue text-repo-white';
+        
+        // Premium components
+        if(parseInt(c.id) >= 36) {
+          borderClass = 'border-repo-sand/50 hover:border-repo-sand shadow-[0_0_20px_rgba(223,159,94,0.15)]';
+          textClass = 'text-repo-sand';
+          badgeClass = 'bg-repo-sand text-repo-dark';
+        }
+
+        html += `
+        <section id="comp-${c.id}" class="scroll-mt-24 flex flex-col lg:flex-row gap-6">
+          <div class="lg:w-1/2 bg-repo-card border-2 ${borderClass} p-6 rounded-2xl flex flex-col shadow-lg">
+            <div class="flex items-center gap-4 mb-4">
+              <div id="badge-${c.id}" class="flex flex-col items-center justify-center ${badgeClass} px-2 py-1 rounded cursor-pointer add-to-basket transition w-10 text-center" onclick="addToBasket('${c.id}', '${c.title.replace(/'/g,"\\'")}', 'prompt-${c.id}')" title="Click to add to UI Builder">
+                <span class="font-sans text-sm font-bold leading-none">${c.id}</span>
+                <span class="text-[10px] mt-0.5 leading-none">🛒</span>
+              </div>
+              <h3 class="text-lg font-bold ${textClass} uppercase tracking-wider">${c.title}</h3>
+            </div>
+            <div class="text-xs space-y-3 leading-relaxed text-repo-cream">
+              <p><strong class="${textClass}">TERMINOLOGY:</strong> ${c.term}</p>
+              <p><strong class="${textClass}">WHAT IT DOES:</strong> ${c.desc}</p>
+              <div>
+                <strong class="${textClass}">POSSIBLE APPLICATIONS:</strong>
+                <details class="inline-block group cursor-pointer align-top">
+                  <summary class="text-repo-lightblue text-[10px] font-bold outline-none uppercase tracking-widest ml-1 hover:text-white transition">🔽</summary>
+                  <div class="block mt-2 pl-3 border-l-2 ${borderClass} text-gray-400 text-xs w-full mb-2">${c.apps}</div>
+                </details>
+              </div>
+              <p><strong class="${textClass} block mb-1">LIVE EXAMPLES IN THE WILD:</strong> ${c.wild}</p>
+              <div>
+                <strong class="${textClass}">MODIFICATIONS:</strong>
+                <details class="inline-block group cursor-pointer align-top">
+                  <summary class="text-repo-lightblue text-[10px] font-bold outline-none uppercase tracking-widest ml-1 hover:text-white transition">🔽</summary>
+                  <div class="block mt-2 pl-3 border-l-2 ${borderClass} text-gray-400 text-xs w-full mb-2">${c.mods}</div>
+                </details>
+              </div>
+              <p><strong class="${textClass}">CODE RISK:</strong> <span class="text-repo-sand text-sm">${c.risk === '1' ? '★☆☆☆☆' : c.risk === '2' ? '★★☆☆☆' : c.risk === '3' ? '★★★☆☆' : c.risk === '4' ? '★★★★☆' : '★★★★★'}</span> (${c.risk}/5) Rating: ${c.riskText}</p>
+            </div>
+          </div>
+          <div class="lg:w-1/2 bg-repo-dark/60 p-5 rounded-xl border-2 border-repo-sand/60 flex flex-col justify-between gap-4 shadow-lg">
+            <div>
+              <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox</span>
+              <div class="w-full">${c.html}</div>
+            </div>
+            <div class="bg-black/60 border border-repo-sand/30 p-3 rounded-lg relative mt-2">
+              <p id="prompt-${c.id}" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">${c.prompt}</p>
+              <button onclick="copyGeneratedPrompt('prompt-${c.id}')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+            </div>
+          </div>
+        </section>
+        `;
+      });
+      zone.innerHTML = html;
+      syncBasketBadges();
+    }
+  </script>
+
+  <!-- ================= INTERFACE ARCHITECTURE & COLOR TOKEN BLUEPRINT ================= -->
+  <section id="architecture-blueprint" class="max-w-7xl mx-auto px-4 md:px-6 scroll-mt-24 pb-24 border-t border-repo-blue pt-12 space-y-8">
+    <div class="text-center max-w-3xl mx-auto">
+      <h2 class="text-2xl font-black text-repo-blue uppercase tracking-widest">📐 Interface Architecture & Color Token Blueprint</h2>
+      <p class="text-xs text-repo-cream/70 mt-1">Naming conventions, design tokens, and color contrast rules for modern dark-themed web interfaces.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="bg-repo-card border-2 border-repo-blue p-6 rounded-2xl space-y-4 shadow-lg">
+        <h4 class="text-xs font-black text-repo-blue uppercase tracking-widest border-b border-repo-blue pb-2 flex items-center gap-1.5">
+          <span>🏷️</span> CLASSIFICATION & NOMENCLATURE
+        </h4>
+        <div class="space-y-4 text-xs">
+          <div>
+            <strong class="text-repo-white block font-bold mb-1">1. Popover vs. Tooltip vs. Modal</strong>
+            <p class="text-repo-cream/80 leading-relaxed">
+              * <span class="text-repo-lightblue font-bold">Tooltip</span>: Tiny, hover-triggered inline label showing simple descriptors.<br>
+              * <span class="text-repo-lightblue font-bold">Popover</span>: Multi-line rich content cards positioned relative to anchors containing options.<br>
+              * <span class="text-repo-lightblue font-bold">Modal</span>: Viewport-blocking central dialogs requiring dismissal actions.
+            </p>
+          </div>
+          <div>
+            <strong class="text-repo-white block font-bold mb-1">2. Drawer vs. Sheet</strong>
+            <p class="text-repo-cream/80 leading-relaxed">
+              * <span class="text-repo-lightblue font-bold">Drawer</span>: Side menu slider panels anchored to left/right boundaries.<br>
+              * <span class="text-repo-lightblue font-bold">Sheet</span>: Bottom-anchored layouts designed for mobile interactions.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="bg-repo-card border-2 border-repo-sand p-6 rounded-2xl space-y-4 shadow-lg">
+        <h4 class="text-xs font-black text-repo-sand uppercase tracking-widest border-b border-repo-sand pb-2 flex items-center gap-1.5">
+          <span>🎨</span> CONTRAST GUIDELINES & WCAG AA
+        </h4>
+        <div class="space-y-3 text-xs leading-relaxed text-repo-cream/80">
+          <p>
+            To maintain strict <strong class="text-repo-white">WCAG AA compliance</strong>, text components must maintain a contrast ratio of at least <strong class="text-repo-lightblue font-bold">4.5:1</strong> against adjacent background blocks. Large header strings require a minimum ratio of <strong class="text-repo-lightblue font-bold">3:1</strong>.
+          </p>
+          <div class="space-y-2 mt-4">
+            <div class="flex justify-between items-center bg-repo-dark p-2.5 border border-[#333] rounded">
+              <span class="font-bold text-repo-white">Dark Token Surface</span>
+              <span class="font-mono text-repo-lightblue">#292A2A</span>
+            </div>
+            <div class="flex justify-between items-center bg-[#1e1f1e] p-2.5 border border-[#333] rounded">
+              <span class="font-bold text-repo-white">Elevation Layer</span>
+              <span class="font-mono text-repo-lightblue">#1E1F1E</span>
+            </div>
+            <div class="flex justify-between items-center bg-[#8c7355] p-2.5 border border-[#555] rounded">
+              <span class="font-bold text-repo-dark">Accent Borders</span>
+              <span class="font-mono text-repo-dark font-bold">#8C7355</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Builder Basket / Notepad Floating Window -->
+  <div id="notepad-window" class="fixed top-24 right-8 w-[400px] bg-repo-card border-2 border-repo-blue rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col z-[200] hidden resize overflow-hidden">
+    <div id="notepad-header" class="bg-repo-blue text-repo-white px-4 py-3 font-black text-sm uppercase flex justify-between items-center cursor-move select-none">
+      <span class="tracking-widest drop-shadow-md">🛠️ UI BUILDER</span>
+      <button onclick="toggleNotepad()" class="hover:text-repo-dark transition">✕</button>
+    </div>
+    
+    <div class="bg-repo-dark p-2 border-b border-repo-blue flex flex-wrap gap-2 text-[10px] select-none">
+      <div class="flex gap-1 w-full">
+        <select id="notepad-section" onchange="if(this.value){addSection(this.value); this.value='';}" class="bg-[#1a1b1a] text-repo-cream border border-[#444] rounded px-1 py-1.5 flex-1 outline-none font-bold">
+          <option value="">+ Add Section...</option>
+          <option value="Menu">Menu</option>
+          <option value="Body">Body</option>
+          <option value="Side Panel">Side Panel</option>
+          <option value="Lower Panel">Lower Panel</option>
+          <option value="Desktop Version Only">Desktop Version Only</option>
+          <option value="Mobile Version Only">Mobile Version Only</option>
+          <option value="TOP / UPPER">TOP / UPPER</option>
+          <option value="MIDDLE / CENTER">MIDDLE / CENTER</option>
+          <option value="LOWER / BOTTOM">LOWER / BOTTOM</option>
+        </select>
+        <button onclick="groupSelectedItems()" class="bg-repo-teal hover:bg-repo-darkteal text-white px-3 py-1 rounded font-bold transition shadow">Group</button>
+      </div>
+      <div class="flex gap-1 w-full justify-between">
+        <button onclick="toggleDock()" id="btn-dock" class="bg-[#333] hover:bg-[#444] text-white px-3 py-1 rounded font-bold transition border border-[#555]">Dock</button>
+        <button onclick="downloadNotepadTxt()" class="bg-[#333] hover:bg-[#444] text-white px-3 py-1 rounded font-bold transition border border-[#555]">Download</button>
+        <button onclick="copyNotepadToClipboard()" class="bg-[#333] hover:bg-[#444] text-white px-3 py-1 rounded font-bold transition border border-[#555]">Copy All</button>
+        <button onclick="clearBasket()" class="bg-repo-maroon hover:bg-repo-magenta text-white px-3 py-1 rounded font-bold transition border border-repo-salmon/30">Clear</button>
+      </div>
+    </div>
+
+    <!-- List Area: Black background, inline-flex pills -->
+    <div id="notepad-list" class="flex-1 overflow-y-auto p-4 flex flex-col items-start bg-black min-h-[300px]">
+    </div>
+
+    <div class="bg-repo-dark p-3 border-t border-repo-blue flex flex-col gap-2 select-none">
+      <div class="flex gap-1">
+        <input type="text" id="notepad-freetext" onkeypress="if(event.key==='Enter') addFreeText()" class="bg-[#1a1b1a] text-xs text-repo-cream border border-[#444] rounded px-2 py-1.5 flex-1 outline-none focus:border-repo-blue" placeholder="Free type notes...">
+        <button onclick="addFreeText()" class="bg-repo-blue hover:bg-repo-lightblue text-repo-white px-3 rounded font-bold text-[10px] transition">Add Note</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-wrapper" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-[300] pointer-events-none transition-all duration-300 transform translate-y-10 opacity-0 select-none">
+    <div id="toast-content" class="bg-repo-dark text-repo-white border border-repo-teal rounded-xl px-4 py-2.5 text-xs font-semibold shadow-2xl flex items-center gap-2">
+      <span class="text-repo-teal">✓</span>
+      <span id="toast-text">Phrase copied successfully!</span>
+    </div>
+  </div>
+
+  <script>
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toast-wrapper');
+      const text = document.getElementById('toast-text');
+      text.textContent = message;
+      clearTimeout(toastTimeout);
+      toast.classList.remove('translate-y-10', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-10', 'opacity-0');
+      }, 3000);
+    }
+
+    function copyPrompt(phrase) {
+      const el = document.createElement('textarea');
+      el.value = phrase;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      try { document.execCommand('copy'); showToast("Copied to clipboard!"); } catch (err) {}
+      document.body.removeChild(el);
+    }
+
+    function copyGeneratedPrompt(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      copyPrompt(text);
+    }
+
+    // ================== BUILDER BASKET & NOTEPAD ==================
+    let basketItems = JSON.parse(localStorage.getItem('ui_repo_basket')) || [];
+    let basketModeActive = false;
+    let groupCounter = 1;
+    let selectedForGroup = new Set();
+    let draggedItemIdx = null;
+    let activePillId = null;
+    let isDocked = false;
+
+    function loadDefaultTemplate() {
+      basketItems = [
+        { id: Date.now() + 1, type: 'group_start', name: 'GROUP 1: SIDE PANEL' },
+        { id: Date.now() + 2, type: 'text', text: 'Notes:' },
+        { id: Date.now() + 3, type: 'text', text: '[Same for mobile + desktop]' },
+        { id: Date.now() + 4, type: 'text', text: '[Panel collapses automatically]' },
+        { id: Date.now() + 6, type: 'text', text: 'This feature should appear on:' },
+        { id: Date.now() + 7, type: 'text', text: '[Mobile] [Desktop]' },
+        { id: Date.now() + 8, type: 'text', text: 'Code Risk: ★★★☆☆ (3/5) Difficult' },
+        { id: Date.now() + 9, type: 'section', name: 'TOP / UPPER' },
+        { id: Date.now() + 10, type: 'text', text: 'Align = [Center]' },
+        { id: Date.now() + 11, type: 'text', text: 'Colors = [Default Palette]' },
+        { id: Date.now() + 12, type: 'text', text: 'Components:' },
+        { id: Date.now() + 13, type: 'text', text: 'Behavior:' },
+        { id: Date.now() + 14, type: 'text', text: '[Collapses left automatically]' },
+        { id: Date.now() + 21, type: 'group_end', name: 'GROUP 1: SIDE PANEL' }
+      ];
+      saveBasket();
+      renderNotepad();
+      syncBasketBadges();
+    }
+
+    function toggleBasketMode() {
+      basketModeActive = !basketModeActive;
+      document.body.classList.toggle('basket-mode-active', basketModeActive);
+      const btn = document.getElementById('toggle-basket-btn');
+      if (basketModeActive) {
+        btn.innerText = "🛒 DEACTIVATE BUILDER BASKET";
+        btn.className = "w-full py-2.5 bg-green-600 hover:bg-green-500 text-white font-bold text-xs rounded transition shadow-[0_0_15px_#22c55e] border border-green-400";
+        showToast("Basket Mode Active! Click component numbers to add.");
+      } else {
+        btn.innerText = "🛒 ACTIVATE BUILDER BASKET";
+        btn.className = "w-full py-2.5 bg-repo-blue hover:bg-repo-lightblue text-repo-white font-bold text-xs rounded transition shadow-[0_0_10px_#5185c5] border border-repo-blue";
+      }
+    }
+
+    function setActivePill(id) {
+      activePillId = id;
+      renderNotepad();
+    }
+
+    function syncBasketBadges() {
+      // Reset all
+      document.querySelectorAll('.add-to-basket').forEach(b => {
+        let isPremium = parseInt(b.innerText) >= 36;
+        b.className = `flex flex-col items-center justify-center px-2 py-1 rounded cursor-pointer add-to-basket transition w-10 text-center ${isPremium ? 'bg-repo-sand text-repo-dark' : 'bg-repo-blue text-repo-white'}`;
+      });
+
+      // Highlight ones in basket
+      basketItems.forEach(i => {
+        if(i.type === 'component') {
+          const badge = document.getElementById('badge-' + i.compId);
+          if(badge) {
+            badge.className = "flex flex-col items-center justify-center bg-repo-blue text-white px-2 py-1 rounded cursor-pointer add-to-basket transition w-10 text-center shadow-[0_0_15px_#5185c5]";
+          }
+        }
+      });
+    }
+
+    function addToBasket(id, name, promptId) {
+      if (!basketModeActive) return showToast("Activate Builder Basket first!");
+      const promptText = document.getElementById(promptId)?.innerText || "";
+      const newItem = {
+        id: Date.now() + Math.random(),
+        type: 'component',
+        compId: id,
+        name: name,
+        prompt: promptText
+      };
+
+      if (activePillId !== null) {
+        const idx = basketItems.findIndex(i => i.id === activePillId);
+        if (idx > -1) {
+          basketItems.splice(idx + 1, 0, newItem);
+          activePillId = newItem.id;
+        } else {
+          basketItems.push(newItem);
+        }
+      } else {
+        basketItems.push(newItem);
+      }
+      
+      saveBasket();
+      syncBasketBadges();
+      showToast(`Added [${id}] ${name} to basket!`);
+      renderNotepad();
+    }
+
+    function openNotepad() {
+      const np = document.getElementById('notepad-window');
+      np.classList.remove('hidden');
+      if (basketItems.length === 0) loadDefaultTemplate();
+      else renderNotepad();
+    }
+    function toggleNotepad() { 
+      const np = document.getElementById('notepad-window');
+      np.classList.toggle('hidden');
+    }
+
+    function addFreeText() {
+       const val = document.getElementById('notepad-freetext').value;
+       if (!val) return;
+       const newItem = { id: Date.now(), type: 'text', text: val };
+       
+       if (activePillId !== null) {
+        const idx = basketItems.findIndex(i => i.id === activePillId);
+        if (idx > -1) {
+          basketItems.splice(idx + 1, 0, newItem);
+          activePillId = newItem.id;
+        } else basketItems.push(newItem);
+       } else basketItems.push(newItem);
+
+       document.getElementById('notepad-freetext').value = '';
+       saveBasket(); renderNotepad();
+    }
+
+    function addSection(val) {
+       const newItem = { id: Date.now(), type: 'section', name: val };
+       if (activePillId !== null) {
+        const idx = basketItems.findIndex(i => i.id === activePillId);
+        if (idx > -1) {
+          basketItems.splice(idx + 1, 0, newItem);
+          activePillId = newItem.id;
+        } else basketItems.push(newItem);
+       } else basketItems.push(newItem);
+
+       saveBasket(); renderNotepad();
+    }
+
+    function toggleGroupSelection(checkbox, itemId) {
+       if (checkbox.checked) selectedForGroup.add(itemId);
+       else selectedForGroup.delete(itemId);
+    }
+
+    function groupSelectedItems() {
+       if (selectedForGroup.size === 0) return showToast("Check the boxes of items to group first.");
+       
+       let indices = [];
+       basketItems.forEach((item, index) => {
+          if (selectedForGroup.has(item.id)) indices.push(index);
+       });
+       
+       if (indices.length > 0) {
+          const groupName = prompt("Enter Group Name (e.g. SIDE PANEL):", "NEW GROUP");
+          if (!groupName) return;
+
+          const min = Math.min(...indices);
+          const max = Math.max(...indices);
+          
+          basketItems.splice(max + 1, 0, { id: Date.now()+1, type: 'group_end', name: groupName.toUpperCase() });
+          basketItems.splice(min, 0, { id: Date.now(), type: 'group_start', name: groupName.toUpperCase() });
+       }
+       selectedForGroup.clear();
+       saveBasket(); renderNotepad();
+       showToast("Items wrapped in a new Group Block.");
+    }
+
+    function removeItem(id) {
+       basketItems = basketItems.filter(i => i.id !== id);
+       if (activePillId === id) activePillId = null;
+       saveBasket(); renderNotepad(); syncBasketBadges();
+    }
+
+    function clearBasket() {
+       if(confirm("Clear all items and reset to the Default Group Template?")) {
+         loadDefaultTemplate();
+       }
+    }
+
+    function editTextPill(id) {
+       const item = basketItems.find(i => i.id === id);
+       if (item && item.type === 'text') {
+         const newText = prompt("Edit text note:", item.text);
+         if (newText !== null && newText.trim() !== "") {
+             item.text = newText;
+             saveBasket(); renderNotepad();
+         }
+       }
+    }
+
+    function saveBasket() {
+      localStorage.setItem('ui_repo_basket', JSON.stringify(basketItems));
+    }
+
+    function handleDragStart(e, idx) {
+       draggedItemIdx = idx;
+       e.target.classList.add('dragging');
+       e.dataTransfer.effectAllowed = 'move';
+       e.dataTransfer.setData('text/plain', idx); 
+    }
+    function handleDragEnd(e) {
+       e.target.classList.remove('dragging');
+       draggedItemIdx = null;
+    }
+    function handleDragOver(e) {
+       e.preventDefault();
+       e.dataTransfer.dropEffect = 'move';
+    }
+    function handleDrop(e, targetIdx) {
+       e.preventDefault();
+       if (draggedItemIdx === null || draggedItemIdx === targetIdx) return;
+       const item = basketItems.splice(draggedItemIdx, 1)[0];
+       basketItems.splice(targetIdx, 0, item);
+       saveBasket(); renderNotepad();
+    }
+
+    function toggleDock() {
+      const npWindow = document.getElementById('notepad-window');
+      const sidebarContainer = document.getElementById('sidebar-index-container');
+      const dockBtn = document.getElementById('btn-dock');
+      const dragHeader = document.getElementById('notepad-header');
+
+      if (!isDocked) {
+        npWindow.classList.remove('fixed', 'top-24', 'right-8', 'w-[400px]', 'shadow-[0_10px_30px_rgba(0,0,0,0.8)]', 'z-[200]', 'resize');
+        npWindow.classList.add('w-full', 'mb-6', 'border-2', 'border-repo-blue', 'rounded-xl', 'flex', 'flex-col');
+        npWindow.style.transform = 'none'; 
+        
+        dragHeader.classList.remove('cursor-move');
+        dragHeader.querySelector('span').innerText = "📝 Builder Notepad (Docked)";
+
+        sidebarContainer.insertBefore(npWindow, sidebarContainer.firstChild);
+        dockBtn.innerText = "Undock";
+        document.body.classList.add('index-collapsed-mode');
+        isDocked = true;
+
+        document.querySelectorAll('#catalog-nav > div').forEach(div => {
+          div.onclick = function() {
+            let nextEl = this.nextElementSibling;
+            while(nextEl && nextEl.tagName === 'A') {
+              nextEl.classList.toggle('expanded');
+              nextEl = nextEl.nextElementSibling;
+            }
+          };
+        });
+
+      } else {
+        npWindow.classList.add('fixed', 'top-24', 'right-8', 'w-[400px]', 'shadow-[0_10px_30px_rgba(0,0,0,0.8)]', 'z-[200]', 'resize');
+        npWindow.classList.remove('w-full', 'mb-6');
+        
+        dragHeader.classList.add('cursor-move');
+        dragHeader.querySelector('span').innerText = "📝 Builder Notepad";
+
+        document.body.appendChild(npWindow);
+        dockBtn.innerText = "Dock";
+        document.body.classList.remove('index-collapsed-mode');
+        isDocked = false;
+
+        document.querySelectorAll('#catalog-nav > div').forEach(div => {
+          div.onclick = null;
+        });
+      }
+    }
+
+    function renderNotepad() {
+      const list = document.getElementById('notepad-list');
+      list.innerHTML = '';
+      
+      if(basketItems.length === 0) {
+        list.innerHTML = '<div class="text-center text-xs text-gray-500 mt-10 italic w-full">Basket is empty. Activate mode and click numbers!</div>';
+        return;
+      }
+
+      basketItems.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = "notepad-pill bg-repo-dark border border-repo-blue px-3 py-1.5 rounded-full flex items-center gap-2 cursor-grab transition shadow-sm text-[10px] my-1 inline-flex max-w-full";
+        
+        if (item.id === activePillId) {
+          div.classList.add('active-pill');
+        }
+
+        div.draggable = true;
+        div.ondragstart = (e) => handleDragStart(e, idx);
+        div.ondragend = handleDragEnd;
+        div.ondragover = handleDragOver;
+        div.ondrop = (e) => handleDrop(e, idx);
+
+        let contentHtml = '';
+        if (item.type === 'component') {
+          contentHtml = `
+            <input type="checkbox" onchange="toggleGroupSelection(this, ${item.id})" class="mt-0.5 shrink-0" ${selectedForGroup.has(item.id) ? 'checked' : ''}>
+            <div class="flex-1 min-w-0 truncate" onclick="setActivePill(${item.id})">
+              <strong class="text-repo-blue">Comp ${item.compId}: ${item.name}</strong>
+            </div>
+            <button onclick="removeItem(${item.id})" class="text-repo-maroon hover:text-repo-magenta font-bold shrink-0 ml-2">✕</button>
+          `;
+        } else if (item.type === 'text') {
+          contentHtml = `
+            <input type="checkbox" onchange="toggleGroupSelection(this, ${item.id})" class="mt-0.5 shrink-0" ${selectedForGroup.has(item.id) ? 'checked' : ''}>
+            <div class="flex-1 min-w-0 cursor-pointer hover:text-repo-white truncate" onclick="setActivePill(${item.id}); editTextPill(${item.id});">
+              <span class="text-repo-sand italic">"${item.text}"</span>
+            </div>
+            <button onclick="removeItem(${item.id})" class="text-repo-maroon hover:text-repo-magenta font-bold shrink-0 ml-2">✕</button>
+          `;
+        } else if (item.type === 'section') {
+          div.classList.replace('bg-repo-dark', 'bg-repo-teal/10');
+          div.classList.replace('border-repo-blue', 'border-repo-teal/50');
+          div.classList.replace('rounded-full', 'rounded');
+          div.className += " w-full"; // Sections full width
+          contentHtml = `
+            <input type="checkbox" onchange="toggleGroupSelection(this, ${item.id})" class="mt-0.5 shrink-0" ${selectedForGroup.has(item.id) ? 'checked' : ''}>
+            <div class="flex-1 min-w-0 font-black text-repo-teal uppercase text-center tracking-widest cursor-pointer" onclick="setActivePill(${item.id})">
+              .......... ${item.name} ..........
+            </div>
+            <button onclick="removeItem(${item.id})" class="text-repo-maroon hover:text-repo-magenta font-bold shrink-0 ml-2">✕</button>
+          `;
+        } else if (item.type === 'group_start') {
+          div.classList.replace('bg-repo-dark', 'bg-[#111]');
+          div.classList.replace('rounded-full', 'rounded');
+          div.className += " w-full";
+          contentHtml = `<div class="flex-1 min-w-0 font-black text-repo-brown text-center cursor-pointer" onclick="setActivePill(${item.id})">======== GROUP: ${item.name} ========</div><button onclick="removeItem(${item.id})" class="text-gray-600 hover:text-white shrink-0">✕</button>`;
+        } else if (item.type === 'group_end') {
+          div.classList.replace('bg-repo-dark', 'bg-[#111]');
+          div.classList.replace('rounded-full', 'rounded');
+          div.className += " w-full";
+          contentHtml = `<div class="flex-1 min-w-0 font-black text-repo-brown text-center cursor-pointer" onclick="setActivePill(${item.id})">================================</div><button onclick="removeItem(${item.id})" class="text-gray-600 hover:text-white shrink-0">✕</button>`;
+        }
+        
+        div.innerHTML = contentHtml;
+        list.appendChild(div);
+      });
+    }
+
+    function generateNotepadOutput() {
+        let out = "";
+        basketItems.forEach(item => {
+           if (item.type === 'section') out += `\n.......... ${item.name.toUpperCase()} ..........\n`;
+           else if (item.type === 'group_start') out += `\n======== GROUP: ${item.name} ========\n`;
+           else if (item.type === 'group_end') out += `================================\n\n`;
+           else if (item.type === 'text') out += `${item.text}\n`;
+           else if (item.type === 'component') out += `[${item.compId} ${item.name}]\n  Prompt: ${item.prompt}\n`;
+        });
+        return out.trim();
+    }
+
+    function copyNotepadToClipboard() {
+      if(basketItems.length === 0) return showToast("Basket is empty!");
+      copyPrompt(generateNotepadOutput());
+    }
+
+    function downloadNotepadTxt() {
+      if(basketItems.length === 0) return showToast("Basket is empty!");
+      const text = generateNotepadOutput();
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `UI_Builder_Spec_${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    const dragNpHeader = document.getElementById('notepad-header');
+    const dragNpWindow = document.getElementById('notepad-window');
+    let npActiveDrag = false;
+    let npXOffset = 0, npYOffset = 0;
+    let npInitialX, npInitialY;
+
+    dragNpHeader.addEventListener('mousedown', (e) => {
+      npInitialX = e.clientX - npXOffset;
+      npInitialY = e.clientY - npYOffset;
+      npActiveDrag = true;
+    });
+    document.addEventListener('mousemove', (e) => {
+      if(npActiveDrag && !isDocked) {
+        e.preventDefault();
+        npXOffset = e.clientX - npInitialX;
+        npYOffset = e.clientY - npInitialY;
+        dragNpWindow.style.transform = `translate3d(${npXOffset}px, ${npYOffset}px, 0)`;
+      }
+    });
+    document.addEventListener('mouseup', () => npActiveDrag = false);
+
+    window.onload = function() {
+      renderComponents();
+      if (basketItems.length > 0) renderNotepad();
+    }
+  </script>
+</body>
+</html>

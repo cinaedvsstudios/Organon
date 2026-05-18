@@ -1,0 +1,30 @@
+.repository-header {
+  border-bottom: 1px solid var(--repo-blue);
+  background: rgba(41,42,42,0.92);
+  backdrop-filter: blur(8px);
+}
+
+.index-collapsed-mode #catalog-nav a { display: none; }
+.index-collapsed-mode #catalog-nav .category-heading {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 4px;
+}
+.index-collapsed-mode #catalog-nav .category-heading:hover { background: rgba(81,133,197,0.2); }
+.index-collapsed-mode #catalog-nav .category-heading::after { content: ' ▼'; font-size: 8px; opacity: 0.5; }
+.index-collapsed-mode #catalog-nav a.expanded {
+  display: block;
+  padding-left: 16px;
+  border-left: 2px solid var(--repo-blue);
+  margin-left: 4px;
+}
+
+#component-render-zone { min-width: 0; }
+.category-heading {
+  color: var(--repo-teal);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  margin-top: 10px;
+}

@@ -18,20 +18,19 @@
       --stone-ochre: #e0a360;             /* [Color #1] Warm Sandstone */
       --chiseled-bronze: #896b49;         /* [Color #2] Border Bronze */
       --white-accent: #ffffff;            /* [Color #3] Pure White */
-      --bg-card: #292a24;                 /* [Color #12] Charcoal Stone Card (Fallback) */
-      --bg-input: rgba(24, 25, 25, 0.95);  /* [Color #12] Contrast Dark Input BG */
-      --dark-stone-ink: #292A24;          
-      
-      --water-blue: #4B84BF;              /* [Color #4] Flowing Blue Accent */
+      --water-blue: #4b84bf;              /* [Color #4] Flowing Blue Accent */
       --water-spray: #75b2de;             /* [Color #5] Sky Blue Accent */
-      --forest-teal: #26615C;             /* [Color #6] Deep Forest Teal */
+      --forest-teal: #26615c;             /* [Color #6] Deep Forest Teal */
       --light-teal: #449e92;              /* [Color #7] Spliced Active Teal */
-      
-      --burgundy: #4A1525;                /* [Color #8] Warning Deep Burgundy */
+      --burgundy: #4a1525;                /* [Color #8] Warning Deep Burgundy */
       --brand-red: #9a2f4f;               /* [Color #9] Active Element Ruby Red */
       --terracotta-peach: #d27d6c;        /* [Color #10] Soft Terracotta/Peach */
       --alabaster-paper: #f5f0db;         /* [Color #11] Pure Primary Copy */
-      --bg-nightsky: #181919;             /* [Color #12] Deep Space Black backdrop */
+      --bg-nightsky: #1e201c;             /* [Color #12] Deep Space Black backdrop */
+      
+      --bg-card: #292a24;                 /* Fallback Charcoal Stone Card */
+      --bg-input: rgba(24, 25, 25, 0.95);  /* Contrast Dark Input BG */
+      --dark-stone-ink: #292A24;          
       
       --font-headers: 'Cinzel', Georgia, serif;
       --font-body: 'Inter', system-ui, -apple-system, sans-serif;
@@ -46,7 +45,8 @@
       padding: 0;
       line-height: 1.6;
       display: flex;
-      justify-content: center;
+      flex-direction: column; /* Force strict vertical stacking to prevent side-by-side layout breaks */
+      align-items: center;
     }
 
     .container {
@@ -403,6 +403,12 @@
       color: var(--stone-ochre);
       font-size: 0.85rem;
       font-weight: 600;
+      transition: color 0.15s ease;
+    }
+
+    .module-path:hover {
+      color: var(--water-spray);
+      text-decoration: underline;
     }
 
     .module-status {
@@ -476,7 +482,6 @@
       transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.35s ease;
       font-size: 0.8rem;
       color: var(--alabaster-paper);
-      border-top: 1px dashed rgba(137, 107, 73, 0.2);
     }
 
     .module-card.expanded {
@@ -485,9 +490,10 @@
     }
 
     .module-card.expanded .module-details {
-      max-height: 600px;
+      max-height: 800px;
       margin-top: 12px;
       padding-top: 12px;
+      border-top: 1px dashed rgba(137, 107, 73, 0.2);
     }
 
     .details-section {
@@ -500,233 +506,12 @@
       text-transform: uppercase;
       font-size: 0.7rem;
       letter-spacing: 0.05em;
-    }
-
-    /* Unified Asset Layout Table */
-    .asset-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 12px;
-      font-size: 0.9rem;
-    }
-
-    .asset-table th {
-      background-color: rgba(137, 107, 73, 0.2);
-      border: 1px solid var(--chiseled-bronze);
-      color: var(--stone-ochre);
-      font-family: var(--font-headers);
-      font-weight: bold;
-      padding: 12px;
-      text-align: left;
-    }
-
-    .asset-table td {
-      border: 1px solid var(--chiseled-bronze);
-      padding: 12px;
-      color: rgba(242, 236, 224, 0.85);
-    }
-
-    .asset-table tr:nth-child(even) {
-      background-color: rgba(0, 0, 0, 0.15);
-    }
-
-    .resolution-badge {
-      background-color: rgba(0, 0, 0, 0.4);
-      border: 1px solid var(--chiseled-bronze);
-      border-radius: 4px;
-      color: var(--water-spray);
-      font-family: var(--font-mono);
-      padding: 2px 6px;
-      font-size: 0.8rem;
-      font-weight: 500;
-    }
-
-    /* Module Filter Controls */
-    .filter-bar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      margin: 20px 0;
-      border-bottom: 1px solid var(--chiseled-bronze);
-      padding-bottom: 16px;
-    }
-
-    .filter-btn {
-      background-color: rgba(0, 0, 0, 0.4);
-      border: 1.5px solid var(--chiseled-bronze);
-      color: var(--alabaster-paper);
-      font-family: var(--font-headers);
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      padding: 8px 16px;
-      border-radius: 9999px;
-      cursor: pointer;
-      transition: all 0.2s ease-in-out;
-    }
-
-    .filter-btn:hover, .filter-btn.active {
-      background-color: var(--stone-ochre);
-      border-color: var(--stone-ochre);
-      color: var(--dark-stone-ink);
-      box-shadow: 0 0 10px rgba(229, 168, 98, 0.35);
-      font-weight: bold;
-    }
-
-    /* Module Directory Mapping Grid */
-    .module-directory-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 16px;
-      margin-top: 16px;
-    }
-
-    @media (min-width: 600px) {
-      .module-directory-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    .module-card {
-      background-color: var(--bg-card);
-      border: 1.5px solid var(--chiseled-bronze);
-      border-radius: 14px;
-      padding: 18px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .module-card:hover {
-      transform: translateY(-2px);
-      border-color: var(--water-spray);
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-    }
-
-    .module-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .module-path {
-      font-family: var(--font-mono);
-      color: var(--stone-ochre);
-      font-size: 0.85rem;
-      font-weight: 600;
-    }
-
-    .module-status {
-      font-size: 0.65rem;
-      font-family: var(--font-mono);
-      text-transform: uppercase;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-
-    .status-active {
-      background-color: rgba(38, 97, 92, 0.2);
-      color: var(--water-spray);
-      border: 1px solid var(--forest-teal);
-    }
-
-    .status-system {
-      background-color: rgba(75, 132, 191, 0.15);
-      color: var(--water-spray);
-      border: 1px solid var(--water-blue);
-    }
-
-    .status-template {
-      background-color: rgba(229, 168, 98, 0.15);
-      color: var(--stone-ochre);
-      border: 1px solid var(--chiseled-bronze);
-    }
-
-    .status-roadmap {
-      background-color: rgba(154, 47, 79, 0.15);
-      color: #ff9cb3;
-      border: 1px solid var(--brand-red);
-    }
-
-    .status-recommended {
-      background-color: rgba(38, 97, 92, 0.2);
-      color: #79e3b8;
-      border: 1px solid #26615c;
-    }
-
-    .status-parked {
-      background-color: rgba(74, 21, 37, 0.3);
-      color: #ea8292;
-      border: 1px solid #4a1525;
-    }
-
-    .module-description {
-      font-size: 0.8rem;
-      color: rgba(242, 236, 224, 0.75);
-      margin: 0;
-    }
-
-    .score-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-family: var(--font-mono);
-      font-size: 0.75rem;
-      color: var(--stone-ochre);
-      background-color: rgba(0, 0, 0, 0.3);
-      padding: 2px 8px;
-      border-radius: 9999px;
-      border: 1px solid rgba(137, 107, 73, 0.3);
-    }
-
-    /* Accordion Detailed Specification Container */
-    .module-details {
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.35s ease;
-      font-size: 0.8rem;
-      color: var(--alabaster-paper);
-      border-top: 1px dashed rgba(137, 107, 73, 0.2);
-    }
-
-    .module-card.expanded {
-      border-color: var(--water-spray) !important;
-      box-shadow: 0 4px 20px rgba(117, 178, 222, 0.15);
-    }
-
-    .module-card.expanded .module-details {
-      max-height: 600px;
-      margin-top: 12px;
-      padding-top: 12px;
-    }
-
-    .details-section {
-      margin-bottom: 8px;
-    }
-
-    .details-label {
-      font-weight: bold;
-      color: var(--water-spray);
-      text-transform: uppercase;
-      font-size: 0.7rem;
-      letter-spacing: 0.05em;
-    }
-
-    /* Hidden form to process iframe-safe clipboard copies */
-    #clipboard-holder {
-      position: absolute;
-      left: -9999px;
-      top: -9999px;
     }
   </style>
 </head>
 <body>
 
+  <!-- SINGLE MASTER CONTAINER START -->
   <div class="container">
     
     <h1>Organon Blueprint & Design Manual</h1>
@@ -750,7 +535,6 @@
     </p>
 
     <div class="color-swatch-grid">
-      <!-- Swatch 1 -->
       <div class="swatch-card" onclick="copyHex('#e0a360')">
         <div class="swatch-block" style="background-color: #e0a360; color: #181919;">#E0A360</div>
         <div class="swatch-info">
@@ -759,7 +543,6 @@
           <span class="swatch-variable">--stone-ochre</span>
         </div>
       </div>
-      <!-- Swatch 2 -->
       <div class="swatch-card" onclick="copyHex('#896b49')">
         <div class="swatch-block" style="background-color: #896b49;">#896B49</div>
         <div class="swatch-info">
@@ -768,7 +551,6 @@
           <span class="swatch-variable">--chiseled-bronze</span>
         </div>
       </div>
-      <!-- Swatch 3 -->
       <div class="swatch-card" onclick="copyHex('#ffffff')">
         <div class="swatch-block" style="background-color: #ffffff; color: #181919; border: 1px solid rgba(137,107,73,0.3);">#FFFFFF</div>
         <div class="swatch-info">
@@ -777,7 +559,6 @@
           <span class="swatch-variable">--white-accent</span>
         </div>
       </div>
-      <!-- Swatch 4 -->
       <div class="swatch-card" onclick="copyHex('#4b84bf')">
         <div class="swatch-block" style="background-color: #4b84bf;">#4B84BF</div>
         <div class="swatch-info">
@@ -786,7 +567,6 @@
           <span class="swatch-variable">--water-blue</span>
         </div>
       </div>
-      <!-- Swatch 5 -->
       <div class="swatch-card" onclick="copyHex('#75b2de')">
         <div class="swatch-block" style="background-color: #75b2de; color: #181919;">#75B2DE</div>
         <div class="swatch-info">
@@ -795,7 +575,6 @@
           <span class="swatch-variable">--water-spray</span>
         </div>
       </div>
-      <!-- Swatch 6 -->
       <div class="swatch-card" onclick="copyHex('#26615c')">
         <div class="swatch-block" style="background-color: #26615c;">#26615C</div>
         <div class="swatch-info">
@@ -804,7 +583,6 @@
           <span class="swatch-variable">--forest-teal</span>
         </div>
       </div>
-      <!-- Swatch 7 -->
       <div class="swatch-card" onclick="copyHex('#449e92')">
         <div class="swatch-block" style="background-color: #449e92; color: #181919;">#449E92</div>
         <div class="swatch-info">
@@ -813,7 +591,6 @@
           <span class="swatch-variable">--light-teal</span>
         </div>
       </div>
-      <!-- Swatch 8 -->
       <div class="swatch-card" onclick="copyHex('#4a1525')">
         <div class="swatch-block" style="background-color: #4a1525;">#4A1525</div>
         <div class="swatch-info">
@@ -822,7 +599,6 @@
           <span class="swatch-variable">--burgundy</span>
         </div>
       </div>
-      <!-- Swatch 9 -->
       <div class="swatch-card" onclick="copyHex('#9a2f4f')">
         <div class="swatch-block" style="background-color: #9a2f4f;">#9A2F4F</div>
         <div class="swatch-info">
@@ -831,7 +607,6 @@
           <span class="swatch-variable">--brand-red</span>
         </div>
       </div>
-      <!-- Swatch 10 -->
       <div class="swatch-card" onclick="copyHex('#d27d6c')">
         <div class="swatch-block" style="background-color: #d27d6c; color: #181919;">#D27D6C</div>
         <div class="swatch-info">
@@ -840,7 +615,6 @@
           <span class="swatch-variable">--terracotta-peach</span>
         </div>
       </div>
-      <!-- Swatch 11 -->
       <div class="swatch-card" onclick="copyHex('#f5f0db')">
         <div class="swatch-block" style="background-color: #f5f0db; color: #181919;">#F5F0DB</div>
         <div class="swatch-info">
@@ -849,7 +623,6 @@
           <span class="swatch-variable">--alabaster-paper</span>
         </div>
       </div>
-      <!-- Swatch 12 -->
       <div class="swatch-card" onclick="copyHex('#1e201c')">
         <div class="swatch-block" style="background-color: #1e201c; border: 1px dashed var(--chiseled-bronze);">#1E201C</div>
         <div class="swatch-info">
@@ -860,7 +633,6 @@
       </div>
     </div>
 
-    <!-- PALETTE ALIGNMENT TABLE -->
     <table class="asset-table">
       <thead>
         <tr>
@@ -1075,7 +847,7 @@
     <!-- SECTION 4: SYSTEM DIRECTORY EXPLORER -->
     <h2>4. Modules &amp; Planned Roadmap Explorer</h2>
     <p>
-      Browse the active and upcoming tools for the Organon suite. Use the filters below to sort modules by feasibility score and status. Click any tool card to inspect detailed design specifications and click paths to copy.
+      Browse the active and upcoming tools for the Organon suite. Use the filters below to sort modules by feasibility score and status. Click any path to copy its directory path instantly.
     </p>
 
     <div class="filter-bar">
@@ -1088,7 +860,6 @@
 
     <div class="module-directory-grid" id="directory-grid">
       <!-- SYSTEM DIRECTORY ITEMS -->
-      <!-- Boilerplate -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/boilerplate/</span>
@@ -1101,7 +872,6 @@
         </div>
       </div>
 
-      <!-- Bulk Download -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/bulk-download/</span>
@@ -1114,20 +884,19 @@
         </div>
       </div>
 
-      <!-- Character Library -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/character-library/</span>
           <span class="module-status status-active">Active</span>
         </div>
-        <p class="module-description">Central character configuration index, maintaining sheet directories and local index data.</p>
+        <p class="module-description">Central character configuration index, combined with a searchable tabbed Unicode &amp; Greek notation keyboard picker.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Sync Protocol:</span> Stores selected assets and lists to device <code>localStorage</code>.</div>
-          <div class="details-section"><span class="details-label">Directory:</span> Formatted to lowercase <code>character-library</code> directory rules.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Inspired by Emojipedia and EverythingFonts. Clean, tabbed viewports dividing Emojis, proper LaTeX Math Notation, Greek &amp; Scientific, and ASCII Art/Symbols. Clicking copies directly to your clipboard.</div>
+          <div class="details-section"><span class="details-label">Custom Integration (Smart Search):</span> Global Search checks all categories at once. Interactive Filter Toggles restrict focus areas (e.g., Turn off Unicode/ASCII). Fuzzy Sensitivity Slider controls spelling tolerance (precise vs partial semantic matches).</div>
+          <div class="details-section"><span class="details-label">Sync Protocol:</span> Stores selected assets and favorites to device <code>localStorage</code>. Omits internal export buttons, relying strictly on the Master Hub for global JSON aggregation.</div>
         </div>
       </div>
 
-      <!-- Image Tile -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/image-tile/</span>
@@ -1140,7 +909,6 @@
         </div>
       </div>
 
-      <!-- Img2Normal -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/img2normal/</span>
@@ -1153,7 +921,6 @@
         </div>
       </div>
 
-      <!-- Info -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/info/</span>
@@ -1166,7 +933,6 @@
         </div>
       </div>
 
-      <!-- Jpeg Compress -->
       <div class="module-card active-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
           <span class="module-path">tools/jpeg-compress/</span>
@@ -1180,167 +946,148 @@
       </div>
 
       <!-- PLANNED ROADMAP ITEMS -->
-      <!-- 1. Character Map -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">1. Character Map Explorer</span>
-          <span class="module-status status-roadmap">Feasibility: 5/5</span>
-        </div>
-        <p class="module-description">Searchable tabbed Unicode &amp; Greek notation keyboard picker. Fast, clientside, zero-latency.</p>
-        <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Clean, tabbed viewports dividing Emojis, proper LaTeX formulas, Greek &amp; ASCII elements in the middle panel. Clicking copies directly to your clipboard.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Global fuzzy-search, quick filter switches, and spelling tolerance range sliders. Favorites saved to hub <code>localStorage</code>.</div>
-        </div>
-      </div>
-
-      <!-- 2. Contrast Extractor -->
-      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
-        <div class="module-card-header">
-          <span class="module-path">2. Contrast Checker (WCAG)</span>
+          <span class="module-path">tools/contrast-checker/</span>
           <span class="module-status status-roadmap">Feasibility: 4.5/5</span>
         </div>
         <p class="module-description">Symmetric image adjustments combined with an accessibility contrast analyzer.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Non-destructive image canvas edits (brightness, crop, saturation). Scans the image to extract dominant color swatches.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Interactive color eye-dropper tool, allowing you to click directly on your canvas to run real-time contrast checking.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Non-destructive image canvas edits (brightness, contrast, cropping, rotation, saturation). Scans the image to extract the 5 dominant colors and tests if text overlapping these colors passes accessibility contrast checks.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Includes a local pixel color picker tool. Click anywhere on your uploaded image to test a specific pixel's contrast ratio in real time.</div>
+          <div class="details-section"><span class="details-label">WCAG Algorithm:</span> Reads RGBA canvas pixel values, translates to relative luminance. Computes <code>(L1 + 0.05) / (L2 + 0.05)</code>, scoring against AA (4.5:1) and AAA (7:1) parameters.</div>
         </div>
       </div>
 
-      <!-- 3. Bulk Format Converter -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">3. Batch File Converter</span>
+          <span class="module-path">tools/batch-converter/</span>
           <span class="module-status status-roadmap">Feasibility: 4.5/5</span>
         </div>
         <p class="module-description">Batch pipeline converting format files natively using canvas buffers.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Queue pipeline utilizing web-decoders (like <code>heic2any</code>) to translate SVGs, JPEGs, PNGs, and HEICs natively.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> "Batch Mode" compiles files into a <code>.zip</code> package and triggers a system download folder selection window.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Adapts asynchronous queue pipeline to batch convert PNG, WebP, JPEG, GIF, TIFF, BMP, HEIC, AVIF, SVG to optimized JPG or PNG natively without servers.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Single file conversions simply download straight to the default "Downloads" folder without popup prompts. If switched to "Batch Mode", it processes and bundles files into a structured <code>.zip</code> folder, triggering a "Save As" file system prompt.</div>
+          <div class="details-section"><span class="details-label">Queue Pipeline:</span> Loads files sequentially into offscreen <code>&lt;canvas&gt;</code> elements (using <code>heic2any</code> for HEIC bounds), calling <code>canvas.toBlob()</code> with format-type mime parameters.</div>
         </div>
       </div>
 
-      <!-- 4. Video Frame Extractor -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">4. Video Frame Extractor</span>
+          <span class="module-path">tools/frame-extractor/</span>
           <span class="module-status status-roadmap">Feasibility: 4/5</span>
         </div>
         <p class="module-description">Frame-accurate snapshot utility pulling canvas rendering slices from local video files.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Immersive HTML5 player element rendering local media buffers, featuring discrete step back/forward frame rendering.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Custom timeline sliders, frame navigation buttons ($24\text{fps}$ / $30\text{fps}$ presets), and direct input number jumps.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Immersive HTML5 player element rendering local media buffers (MP4, WebM, and OGG). Clicking "Capture" writes the current frame buffer directly to a canvas and outputs a high-fidelity PNG.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Microscopic navigation buttons step backward or forward precisely frame-by-frame (24fps or 30fps). Includes a custom timeline scrub, dedicated step buttons, and an interactive input box to type exact frame numbers to jump straight to that point.</div>
+          <div class="details-section"><span class="details-label">Frame Seek Logic:</span> Sets <code>video.currentTime = targetFrame / fps</code>. On the video's <code>seeked</code> event handler, draws the video frame into an active canvas.</div>
         </div>
       </div>
 
-      <!-- 5. Collage Maker -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">5. Collage Maker (Smart Grid)</span>
+          <span class="module-path">tools/collage-maker/</span>
           <span class="module-status status-roadmap">Feasibility: 4/5</span>
         </div>
         <p class="module-description">Dynamic, aspect-ratio-aware grid compiler, arranging loaded graphics automatically.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Grid compiler calculating coordinate dimensions, generating proportional tile alignments without crop clipping.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Padding range sliders, custom background color maps, and drag-and-drop tile swap triggers. Supports templates (e.g., $2 \times 2$, $3 \times 1$).</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Fast, grid-based collage compiler. Upload multiple photos and select from grid templates (e.g., 2 x 2, 3 x 1, or free-form).</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Smart aspect calculation doesn't force locked layout sizes first. It computes the optimal layout to fit and display every image fully without cropping. Includes padding sliders (for square/round frames against custom canvas backdrops) and drag-and-drop mechanics to swap adjacent images.</div>
+          <div class="details-section"><span class="details-label">Layout Engine:</span> Iterates through aspect ratios of all uploaded images. Automatically computes optimal packing grids using column height algorithms.</div>
         </div>
       </div>
 
-      <!-- 6. Code Notepad -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">6. WYSIWYG &amp; Spreadsheet Editor</span>
+          <span class="module-path">tools/code-editor/</span>
           <span class="module-status status-roadmap">Feasibility: 3.5/5</span>
         </div>
-        <p class="module-description">Rich editor workspace merging Notepad code sheets, visual JSON trees, and grid CSV sheets.</p>
+        <p class="module-description"><strong>This is your master HTML and Code Editor.</strong> Merges raw notepad code sheets, a live sandboxed WYSIWYG preview frame, visual JSON trees, and grid CSV tables.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Four interactive tabs: 1. Code Notepad, 2. Sandboxed WYSIWYG iframe preview with draggable split-view divider, 3. Collapsible JSON tree, 4. Interactive table spreadsheet with filters.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Side-by-side comparison Diff checker, key merging VLookup utilities, live memory edit guard, and silent saving over original files (via browser File System Access API).</div>
+          <div class="details-section"><span class="details-label">Four tabbed viewports:</span>
+            <br>1. <strong>Raw Editor:</strong> Plain text and code editor w/ line numbers &amp; syntax formatting (HTML, CSS, JS, JSON, PHP, .txt files).
+            <br>2. <strong>WYSIWYG View:</strong> Split-screen real-time sandboxed frame rendering HTML/CSS/JS. Draggable middle slider to resize preview area.
+            <br>3. <strong>JSON Tree View:</strong> Visual interactive editor mapping collapsible JSON objects.
+            <br>4. <strong>Grid Spreadsheet:</strong> Converts CSV/JSON arrays into interactive tables. Cell editing, smart sorting, highlight filtering.
+          </div>
+          <div class="details-section"><span class="details-label">Custom Integration (Merge &amp; Diff):</span> Side-by-side Diff comparison highlighting changes, merge missing fields/keys, or run local VLookup matching data arrays using keys.</div>
+          <div class="details-section"><span class="details-label">Memory Guard &amp; Silent Saving:</span> Edits stay in live memory (never overwriting files automatically). Authorized via browser File System Access API, clicking the bottom SAVE button silently overwrites the hard-drive file with zero repeated "Save As" prompts.</div>
         </div>
       </div>
 
-      <!-- 7. Spritesheet Animator -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">7. Spritesheet Animator (Game Dev)</span>
+          <span class="module-path">tools/spritesheet-wizard/</span>
           <span class="module-status status-roadmap">Feasibility: 2.5/5</span>
         </div>
-        <p class="module-description">Spritesheet slicer, timeline frame animator, and animated GIF constructor.</p>
+        <p class="module-description"><strong>Combined Utility:</strong> Integrated animation timeline, tileset auto-slicer, hitbox coordinator, and real-time palette recolor swapper.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> GIF assembly builder + Spritesheet crop analyzer, playing coordinate sequences in miniature preview frames.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Timeline manual frame-scrub range slider, "Auto-Motion" frame and interval delay calculator, scene checklist asset indexer, and automatic level coordinate auto-slicer ($16\text{px}$, $32\text{px}$, $64\text{px}$). Includes a polygonal hitbox coordinates paint vector exporter.</div>
+          <div class="details-section"><span class="details-label">Features Combined (Original 7 &amp; 13):</span>
+            <br>1. <strong>Spritesheet Previewer:</strong> Input grid parameters (rows, cols). Cuts and animates walking/jump sequences inside viewport frames.
+            <br>2. <strong>Sprite Palette Swapper:</strong> Scans sprite sheet pixel data on load, extracts unique colors to swatches. Swapping swatch colors instantly recolors the canvas (e.g. green slime to red slime).
+            <br>3. <strong>Tileset Auto-Slicer:</strong> Segments large levels into 16px, 32px, or 64px tiles, packaging coordinate-named grids into a ZIP.
+            <br>4. <strong>Hitbox Painter:</strong> Paint square, circular, or custom polygonal collision boundaries over sprite frames, exporting coords as a JSON file.
+          </div>
+          <div class="details-section"><span class="details-label">Game Dev Wizard Helpers:</span> Timeline manual frame scrub slider. <strong>Animation Calculator:</strong> Select Landscape/Animal/Object/Character/VFX to estimate frames/ms delays for natural movement. <strong>Checklist Organizer:</strong> Nested folders for scenes/levels, drag-and-drop into frame slots to check off missing assets.</div>
         </div>
       </div>
 
-      <!-- 8. Audio Cutter -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">8. Split Audio &amp; WAV Cutter</span>
+          <span class="module-path">tools/audio-cutter/</span>
           <span class="module-status status-roadmap">Feasibility: 2.5/5</span>
         </div>
         <p class="module-description">Web Audio waveform analyzer and trimmer. Quick, sharp cuts without complex bloat.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Web Audio context decoding MP3/WAV, drawing pixel canvas wave plots in real time. Features sliding crop range handles.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Removes bloated envelope, compression, and fade parameters, keeping trimming operations fast and razor sharp.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Client-side sound cutter decoding MP3/WAV into raw Web Audio contexts. Middle panel displays interactive generated waveform.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Users drag handles to define start and end cuts, test-play the crop, and export directly as a .wav file. Fully optimized to remove unnecessary fade sliders, keeping crop actions fast and sharp.</div>
+          <div class="details-section"><span class="details-label">Waveform Engine:</span> Runs <code>AudioContext.decodeAudioData()</code> on loaded buffers. Slices binary ArrayBuffers upon save to output WAV headers cleanly.</div>
         </div>
       </div>
 
-      <!-- 9. Keyboard Synth -->
       <div class="module-card roadmap-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">9. Sequencer &amp; 8-Bit Synth</span>
+          <span class="module-path">tools/keyboard-synth/</span>
           <span class="module-status status-roadmap">Feasibility: 2/5</span>
         </div>
         <p class="module-description">On-screen synthesizer synth, chiptune sound generator, and quantized timeline recorder.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Presets tab (blasts, jumps, lasers) with envelopes + Musical Keyboard play keys mapped directly to your physical keyboard.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> Quantized music recorder snap-aligning sequences to standard 1-8 beat grid intervals. ABC notation notepad player, compiling and running pasted musical sheet transcriptions instantly.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> SFX Tab includes retro 8-bit presets (lasers, explosions, jumps, powerups) with custom envelope slider adjustments. Keyboard Tab lets users play keys via on-screen GUI or mapped computer keys (A, S, D, F, G).</div>
+          <div class="details-section"><span class="details-label">Custom Integration (Sequencer &amp; Notepad):</span> <strong>Quantized Music Sequencer:</strong> "Record" schedules beats to standard musical timeline (quantizing inputs to a 1-8 beat grid, no delay lag). <strong>Note Paste Player:</strong> ABC notation. Paste musical sheets directly into editor, click play to compile/play tunes. Includes musical search suggestions.</div>
+          <div class="details-section"><span class="details-label">Web Audio Synth:</span> Programmatically generates oscillators (<code>sawtooth</code>, <code>triangle</code>, <code>sine</code>, <code>square</code>), chaining gain nodes with ADSR envelopes (Attack, Decay, Sustain, Release) and BiquadFilters to generate chiptunes.</div>
         </div>
       </div>
 
       <!-- RECOMMENDED ADDITIONS -->
-      <!-- 13. Sprite Palette Swapper -->
       <div class="module-card recommended-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">13. Sprite Palette Swapper</span>
-          <span class="module-status status-recommended">Feasibility: 4.5/5</span>
-        </div>
-        <p class="module-description">Scan, isolate, and swap the color palette of 2D game sprites in real-time.</p>
-        <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Scans diffuse pixel maps, compiles active swatch arrays, and swaps them dynamically (e.g., green slime to ruby slime) on canvas blocks.</div>
-          <div class="details-section"><span class="details-label">Custom Integration:</span> One-click color box variations, batch swatch exports, and immediate asset download.</div>
-        </div>
-      </div>
-
-      <!-- 14. Bitmap Font Atlas Packer -->
-      <div class="module-card recommended-group" onclick="toggleDetails(this)">
-        <div class="module-card-header">
-          <span class="module-path">14. Bitmap Font Atlas Packer</span>
+          <span class="module-path">tools/font-packer/</span>
           <span class="module-status status-recommended">Feasibility: 3.5/5</span>
         </div>
         <p class="module-description">Construct packed spritesheet font atlases paired with relative coordinate JSON maps.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Design Concept:</span> Input character lists, select any loaded local font, adjust pixel padding values, and bundle atlas frames cleanly.</div>
+          <div class="details-section"><span class="details-label">Design Concept:</span> Input character lists, select any loaded local system or Google Font, adjust pixel padding values, and bundle atlas frames cleanly.</div>
           <div class="details-section"><span class="details-label">Custom Integration:</span> Grid coordinate alignment, PNG atlas canvas download, and accompanying metrics JSON coordinate exporter.</div>
+          <div class="details-section"><span class="details-label">Packing Engine:</span> Renders glyphs on canvas with custom font metrics. Utilizes rectangle bin-packing algorithms to tightly arrange characters, saving layout coordinates in a mapping JSON object.</div>
         </div>
       </div>
 
       <!-- PARKED MODULES -->
-      <!-- 10. YT Downloader -->
       <div class="module-card parked-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">10. YouTube MP3/MP4 Downloader</span>
+          <span class="module-path">tools/youtube-downloader/</span>
           <span class="module-status status-parked">Parked</span>
         </div>
         <p class="module-description">Postponed. External cross-origin restrictions block native clientside media download stream extraction.</p>
         <div class="module-details">
-          <div class="details-section"><span class="details-label">Technical Barrier:</span> YouTube prevents CORS fetches. Overriding requires an active backend proxy server, violating our zero-overhead hosting architecture.</div>
+          <div class="details-section"><span class="details-label">Technical Barrier:</span> YouTube prevents CORS fetches. Overriding requires an active backend proxy server, violating our strict zero-overhead hosting architecture.</div>
         </div>
       </div>
 
-      <!-- 11. YT Transcriber -->
       <div class="module-card parked-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">11. Transcription Generator</span>
+          <span class="module-path">tools/transcription-generator/</span>
           <span class="module-status status-parked">Parked</span>
         </div>
         <p class="module-description">Postponed. YouTube transcripts requires server scrapers or expensive API coordinate calls.</p>
@@ -1349,10 +1096,9 @@
         </div>
       </div>
 
-      <!-- 12. GIF to MP4 -->
       <div class="module-card parked-group" onclick="toggleDetails(this)">
         <div class="module-card-header">
-          <span class="module-path">12. GIF-to-MP4 Video Converter</span>
+          <span class="module-path">tools/gif-to-mp4/</span>
           <span class="module-status status-parked">Parked</span>
         </div>
         <p class="module-description">Postponed. Heavy WebAssembly compilers (FFmpeg.wasm) are blocked by standard sandbox iframe security headers.</p>
@@ -1360,7 +1106,7 @@
           <div class="details-section"><span class="details-label">Technical Barrier:</span> Browser sandboxes disable SharedArrayBuffer headers needed by FFmpeg WASM. Will revisit once native Canvas-to-MP4 browser support improves.</div>
         </div>
       </div>
-    </div>
+    </div> <!-- THIS IS THE CORRECT GRID CLOSURE TAG -->
 
     <!-- SECTION 5: AI DEVELOPMENT SPECIFICATION -->
     <h2>5. AI Sub-App Generation Specification</h2>
@@ -1372,7 +1118,7 @@
         <li><strong>Structural Wrapper:</strong> Constrain the page layout to <code>.app-wrapper</code> with a maximum width of <code>540px</code>, centered horizontally on the screen against a solid <code>--bg-nightsky</code> background.</li>
         <li><strong>Three-Panel Layout:</strong>
           <ul>
-            <li><strong>Panel 1 (Top Panel):</strong> <code>position: sticky; top: 0;</code> with a sandstone texture background map <code>../../Images/stonetext.jpg</code> (strictly capital "I") layered over a translucent gold filter. Use a <code>5 -> 0</code> second countdown circle that collapses the sticky bar into a minimalist header unless hovered, clicked, or locked (🔒) via double-click.</li>
+            <li><strong>Panel 1 (Top Panel):</strong> <code>position: sticky; top: 0;</code> with a sandstone texture background map <code>../../Images/stonetext.jpg</code> (strictly capital "I") layered over a translucent gold filter. Use a <code>5 to 0</code> second countdown circle that collapses the sticky bar into a minimalist header unless hovered, clicked, or locked (🔒) via double-click. Wrap the relative path top-level iframe guard in a safe <code>window === window.parent</code> check to avoid triggering cross-origin browser security logs.</li>
             <li><strong>Panel 2 (Middle Scrollable Panel):</strong> Pure black (<code>#000000</code>) background containing configuration elements, rounded card segments, and a deep bottom-padding offset of <code>120px</code>.</li>
             <li><strong>Panel 3 (Bottom Panel):</strong> Fixed sticky layout at the bottom of the viewport carrying a low-transparency dark action button.</li>
           </ul>
@@ -1391,12 +1137,20 @@
       </p>
       <pre><code>// Broadcast to Organon Hub Centered Status Bar
 function setHubStatus(text) {
-  window.parent.postMessage({ type: 'set-status', text: text }, '*');
+  try {
+    if (window.parent && window.parent.postMessage) {
+      window.parent.postMessage({ type: 'set-status', text: text }, '*');
+    }
+  } catch (err) {}
 }
 
 // Clear status bar and restore "ORGANON ONLINE"
 function clearHubStatus() {
-  window.parent.postMessage({ type: 'clear-status' }, '*');
+  try {
+    if (window.parent && window.parent.postMessage) {
+      window.parent.postMessage({ type: 'clear-status' }, '*');
+    }
+  } catch (err) {}
 }</code></pre>
     </div>
 
@@ -1422,7 +1176,7 @@ function clearHubStatus() {
     
     &lt;!-- Iframe Guard: Redirects to the hub if opened directly --&gt;
     &lt;script&gt;
-        if (window.self === window.top) {
+        if (window === window.parent) {
             window.location.href = '../../index.html';
         }
     &lt;/script&gt;
@@ -1645,16 +1399,21 @@ function clearHubStatus() {
             const element = document.querySelector(selector);
             if (!element) return;
             element.addEventListener('mouseenter', () => {
-                if (window.parent &amp;&amp; window.parent.postMessage) {
-                    window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
-                }
+                try {
+                    if (window.parent &amp;&amp; window.parent.postMessage) {
+                        window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
+                    }
+                } catch(e) {}
             });
             element.addEventListener('mouseleave', () => {
-                if (window.parent &amp;&amp; window.parent.postMessage) {
-                    window.parent.postMessage({ type: 'clear-status' }, '*');
-                }
+                try {
+                    if (window.parent &amp;&amp; window.parent.postMessage) {
+                        window.parent.postMessage({ type: 'clear-status' }, '*');
+                    }
+                } catch(e) {}
             });
         }
+        
         registerHoverDescription('#action-btn', 'Activate settings parameters to run the workspace script.');
 
         const topStickyPanel = document.querySelector(".top-sticky-panel");
@@ -1728,72 +1487,62 @@ function clearHubStatus() {
                 }
             }
         });
+        
         startCountdown();
     &lt;/script&gt;
 &lt;/body&gt;
 &lt;/html&gt;</code></pre>
-  </div>
+    
+  </div> <!-- THIS IS THE SINGLE, CORRECT CLOSURE TAG FOR THE MASTER CONTAINER -->
 
   <!-- Clipboard Auxiliary Helper Element -->
-  <input type="text" id="clipboard-holder">
+  <textarea id="clipboard-holder" aria-hidden="true" style="position: absolute; left: -9999px; top: -9999px; width: 1px; height: 1px; opacity: 0;"></textarea>
   <div class="toast" id="toast-notice">Copied value directly!</div>
 
   <script>
-    // Copy Hex code to clipboard (iframe-friendly fallback copy)
-    function copyHex(hexCode) {
+    function safeCopy(text, successMsg) {
       const copyField = document.getElementById('clipboard-holder');
-      copyField.value = hexCode;
-      copyField.select();
-      copyField.setSelectionRange(0, 99999); // Safe viewport selection limit
-      
-      try {
-        const success = document.execCommand('copy');
-        if (success) {
-          triggerToast(`HEX / Path value copied directly!`);
-        }
-      } catch (err) {
-        console.warn("Iframe copy restricted.", err);
-      }
-    }
-
-    // Copy Boilerplate Content
-    function copyBoilerplate() {
-      const copyField = document.getElementById('clipboard-holder');
-      const boilerplateText = document.getElementById('boilerplate-code').innerText;
-      copyField.value = boilerplateText;
+      copyField.value = text;
       copyField.select();
       copyField.setSelectionRange(0, 99999);
       
       try {
-        const success = document.execCommand('copy');
-        if (success) {
-          triggerToast("Sub-App Boilerplate Code Copied!");
-        }
-      } catch (err) {
-        console.warn("Iframe copy restricted.", err);
-      }
+        document.execCommand('copy');
+        triggerToast(successMsg);
+      } catch (err) {}
     }
 
-    // Trigger floating notification toast
+    function copyHex(hexCode) {
+      safeCopy(hexCode, 'Copied HEX: ' + hexCode);
+    }
+
+    function copyBoilerplate() {
+      const boilerplateText = document.getElementById('boilerplate-code').textContent;
+      safeCopy(boilerplateText, "Sub-App Boilerplate Code Copied!");
+    }
+
+    let toastTimeout;
     function triggerToast(message) {
       const toast = document.getElementById('toast-notice');
       toast.innerText = message;
       toast.classList.add('show');
-      setTimeout(() => {
+      
+      if (toastTimeout) {
+        clearTimeout(toastTimeout);
+      }
+      
+      toastTimeout = setTimeout(() => {
         toast.classList.remove('show');
       }, 2500);
     }
 
-    // Filter Modules logically
     function filterModules(category, buttonEl) {
-      // Toggle button states
       const buttons = document.querySelectorAll('.filter-btn');
       buttons.forEach(btn => btn.classList.remove('active'));
       buttonEl.classList.add('active');
 
       const cards = document.querySelectorAll('.module-card');
       cards.forEach(card => {
-        // Clear expand states
         card.classList.remove('expanded');
         
         if (category === 'all') {
@@ -1826,9 +1575,7 @@ function clearHubStatus() {
       });
     }
 
-    // Toggle Card details accordion
     function toggleDetails(cardEl) {
-      // Close other cards
       const cards = document.querySelectorAll('.module-card');
       cards.forEach(card => {
         if (card !== cardEl) {
@@ -1837,6 +1584,21 @@ function clearHubStatus() {
       });
       cardEl.classList.toggle('expanded');
     }
+
+    document.querySelectorAll('.module-details').forEach(details => {
+      details.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+    });
+
+    document.querySelectorAll('.module-path').forEach(pathEl => {
+      pathEl.style.cursor = 'pointer';
+      pathEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const pathText = pathEl.textContent.trim();
+        safeCopy(pathText, 'Copied path: ' + pathText);
+      });
+    });
   </script>
 </body>
 </html>

@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Comprehensive Spellbook & Sci-Fi UI Glossary</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter & Monospace Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            darkBg: '#06080b',
+            darkCard: '#0f111a',
+            darkInput: '#151822',
+            accentBlue: '#3b82f6',
+            accentPurple: '#a855f7',
+            accentGold: '#eab308'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #06080b; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Custom Range Scrubber styling */
+    input[type="range"].custom-range {
+      -webkit-appearance: none; width: 100%; height: 8px; background: #3c0d27; border-radius: 9999px; outline: none;
+    }
+    input[type="range"].custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #b12c5c; cursor: pointer; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); transition: background-color 0.15s ease-in-out;
+    }
+    input[type="range"].custom-range::-webkit-slider-thumb:hover { background: #d63c73; }
+
+    /* Drawer & Transition classes */
+    .drawer-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Resizer Grip definitions */
+    textarea.resizable-textarea { resize: both; overflow: auto; }
+    textarea.resizable-textarea::-webkit-resizer { background-color: #212530; border-radius: 4px; box-shadow: 0 0 5px rgba(168, 85, 247, 0.5); }
+
+    /* Highlight Keyframes for Tutorial Pulse */
+    @keyframes tutorial-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); border-color: #a855f7; }
+      50% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); border-color: #3b82f6; }
+      100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); border-color: #a855f7; }
+    }
+    .tutorial-highlight { animation: tutorial-pulse 1.8s infinite; position: relative; z-index: 50; }
+
+    /* Highlight Layer Definitions */
+    .hl-1 { background-color: rgba(59, 130, 246, 0.3) !important; border-color: #3b82f6 !important; } 
+    .hl-2 { background-color: rgba(16, 185, 129, 0.3) !important; border-color: #10b981 !important; } 
+    .hl-3 { background-color: rgba(245, 158, 11, 0.3) !important; border-color: #f59e0b !important; } 
+    .hl-4 { background-color: rgba(239, 68, 68, 0.3) !important; border-color: #ef4444 !important; }  
+    .hl-5 { background-color: rgba(168, 85, 247, 0.3) !important; border-color: #a855f7 !important; } 
+  </style>
+</head>
+<body class="bg-darkBg text-gray-200 font-sans min-h-screen select-none selection:bg-accentPurple selection:text-white">
+
+  <!-- Header Banner -->
+  <header class="border-b border-gray-800 bg-[#0c0e15]/90 backdrop-blur sticky top-0 z-40 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">v2.0 Master Architecture</span>
+          <span class="text-xs text-gray-500 font-mono">2026 Stable Sandbox</span>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-white mt-1 flex items-center gap-2">
+          🔮 The Master Code Registry & UI Glossary
+        </h1>
+        <p class="text-sm text-gray-400 mt-0.5">Comprehensive visual components and utility scripts extracted directly from core production platforms.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="startVisualTutorial()" class="px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-xs font-black text-white shadow-lg flex items-center gap-2 transition">
+          🚀 Run Sandbox Guide
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar Catalog Index & Main Content Grid -->
+  <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 px-4 md:px-6 py-8">
+    
+    <!-- Left Navigation Index Menu -->
+    <aside class="w-full lg:w-64 flex-shrink-0">
+      <div class="sticky top-24 bg-darkCard border border-gray-800 rounded-2xl p-4 max-h-[80vh] overflow-y-auto">
+        <h3 class="text-xs font-black text-purple-400 uppercase tracking-widest mb-3 pb-2 border-b border-gray-800">Component Index</h3>
+        <nav class="space-y-1 text-xs">
+          <!-- Categorized Index -->
+          <div class="text-[10px] font-bold text-gray-500 px-2 py-1 uppercase mt-1">Core Inputs</div>
+          <a onclick="scrollToComponent('comp-1')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">01. Segmented Control</a>
+          <a onclick="scrollToComponent('comp-2')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">02. Decorated Input Box</a>
+          <a onclick="scrollToComponent('comp-3')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">03. Collapsible Navigation</a>
+          <a onclick="scrollToComponent('comp-4')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">04. Multi-Row Accordion</a>
+          <a onclick="scrollToComponent('comp-5')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">05. Combobox Popover</a>
+          
+          <div class="text-[10px] font-bold text-gray-500 px-2 py-1 mt-3 uppercase">Logic & Layouts</div>
+          <a onclick="scrollToComponent('comp-9')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">09. Card & Resize Grip</a>
+          <a onclick="scrollToComponent('comp-12')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">12. Custom Markup Compiler</a>
+          <a onclick="scrollToComponent('comp-13')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">13. Fuzzy Typo Search</a>
+          <a onclick="scrollToComponent('comp-14')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">14. JSON Syntax Locator</a>
+          <a onclick="scrollToComponent('comp-15')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition">15. Adaptive Image Cycler</a>
+          
+          <div class="text-[10px] font-bold text-gray-500 px-2 py-1 mt-3 uppercase">States & Feedback</div>
+          <a onclick="scrollToComponent('comp-16')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-purple-300">16. Action Confirm</a>
+          <a onclick="scrollToComponent('comp-17')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-purple-300">17. Radial SVG Ticker</a>
+          <a onclick="scrollToComponent('comp-21')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-purple-300">21. Highlight Cycler</a>
+          <a onclick="scrollToComponent('comp-24')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-purple-300">24. Debounced Drawer</a>
+          
+          <div class="text-[10px] font-bold text-gray-500 px-2 py-1 mt-3 uppercase">Dynamic Modules</div>
+          <a onclick="scrollToComponent('comp-26')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-blue-300">26. Stacked Toasts</a>
+          <a onclick="scrollToComponent('comp-27')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-blue-300">27. Indeterminate Spinners</a>
+          <a onclick="scrollToComponent('comp-29')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-blue-300">29. Blocking Modal Dialog</a>
+          <a onclick="scrollToComponent('comp-30')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-blue-300">30. Skeleton Placeholders</a>
+          <a onclick="scrollToComponent('comp-36')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-[#eab308] font-bold">36. Interactive Glossary Box</a>
+
+          <div class="text-[10px] font-bold text-gray-500 px-2 py-1 mt-3 uppercase">Enterprise Architecture</div>
+          <a onclick="scrollToComponent('architecture-blueprint')" class="block p-2 rounded hover:bg-gray-800/50 cursor-pointer transition text-emerald-400 font-bold">📐 Naming & Color Tokens</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Core Workspace -->
+    <div class="flex-1 space-y-12">
+
+      <!-- ================= COMPONENT 1 ================= -->
+      <section id="comp-1" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#11141c] border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-purple-500 font-bold bg-purple-500/10 px-2.5 py-1 rounded">01</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Segmented Control</h3>
+            </div>
+            <div class="text-xs space-y-3 text-gray-400 mt-4 leading-relaxed">
+              <p><strong>TERMINOLOGY:</strong> Toggle group, button switcher, slider capsule.</p>
+              <p><strong>WHAT IT DOES:</strong> Houses a horizontal row of mutually exclusive buttons within a single rounded container. A moving backdrop indicator shifts cleanly over the active selection.</p>
+              <p><strong>POSSIBLE APPLICATIONS:</strong> Flipping between raw code panels and live previews inside sandboxed editors.</p>
+              <p><strong>LIVE EXAMPLES IN THE WILD:</strong> iOS system settings, Airtable view switches, Notion page filters.</p>
+              <p><strong>MODIFICATIONS:</strong> Can be mapped to animate via CSS transform translations on active index shifts.</p>
+              <p><strong>COMPLEXITY:</strong> ★★☆☆☆ (2/5)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-darkBg/60 p-5 rounded-xl border border-gray-800 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-purple-400 uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex flex-col items-center justify-center p-6 bg-darkBg border border-gray-900 rounded-lg min-h-[120px]">
+              <div id="sandbox-segmented" class="inline-flex bg-black p-[3px] rounded-full border border-gray-800 transition-all duration-300 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+                <button id="seg-custom-btn-1" onclick="switchSegment('code')" class="px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 bg-[#3b0764] text-purple-200 border border-purple-500/30">Sub-Space Code</button>
+                <button id="seg-custom-btn-2" onclick="switchSegment('preview')" class="px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 text-gray-400 hover:text-gray-100">Holo-Preview</button>
+              </div>
+              <div id="segment-feedback" class="text-xs font-mono text-purple-400 mt-4 bg-purple-950/20 px-3 py-1 rounded border border-purple-900/30">Current Uplink: "Sub-Space Code" active</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Customizer Controls -->
+          <div class="border-t border-gray-800 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-seg-color" onchange="updateSegmentedControl()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="purple">Aether Purple</option>
+                <option value="blue">Matrix Blue</option>
+              </select>
+              <select id="cust-seg-glow" onchange="updateSegmentedControl()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="enabled">Glow Enabled</option>
+                <option value="disabled">Glow Disabled</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-purple-900/20 p-3 rounded-lg relative mt-2">
+            <p id="prompt-seg" class="text-[10px] font-mono text-gray-300 pr-12 leading-relaxed">Create a Segmented Control Switcher styled with Aether Purple active states and a subtle neon glow effect.</p>
+            <button onclick="copyGeneratedPrompt('prompt-seg')" class="absolute right-2.5 bottom-2.5 text-purple-400 hover:text-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 9 ================= -->
+      <section id="comp-9" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#11141c] border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-purple-500 font-bold bg-purple-500/10 px-2.5 py-1 rounded">09</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Card with Status Accent & Resize Grip</h3>
+            </div>
+            <div class="text-xs space-y-3 text-gray-400 mt-4 leading-relaxed">
+              <p><strong>TERMINOLOGY:</strong> Resizable text terminal, draggable status box, active accent card.</p>
+              <p><strong>WHAT IT DOES:</strong> A layout card featuring a left vertical accent stripe representing state, coupled with a native browser-rendered draggable resizer grip.</p>
+              <p><strong>POSSIBLE APPLICATIONS:</strong> Code playgrounds, console outputs, adjustable dashboard widgets.</p>
+              <p><strong>LIVE EXAMPLES IN THE WILD:</strong> JSFiddle editor grids, Linear task boards.</p>
+              <p><strong>MODIFICATIONS:</strong> Configure the resizer handle to only be visible upon hovering.</p>
+              <p><strong>COMPLEXITY:</strong> ★★★☆☆ (3/5)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-darkBg/60 p-5 rounded-xl border border-gray-800 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-purple-400 uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex flex-col items-center justify-center p-6 bg-darkBg border border-gray-900 rounded-lg min-h-[160px]">
+              <div id="accent-card-sandbox" class="w-full max-w-sm bg-[#151821] border border-gray-800 border-l-[5px] border-l-blue-500 p-4 rounded-r-xl transition-all duration-300">
+                <div class="text-[9px] font-black text-gray-400 mb-1 uppercase tracking-widest">ARCANE SPELL MATRIX (RESIZABLE)</div>
+                <textarea class="resizable-textarea w-full bg-[#0d0f14] border border-[#232733] rounded-lg p-2 text-xs text-purple-300 outline-none" rows="2" placeholder="Drag corner handle..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-800 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-card-color" onchange="updateCustomCard()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="blue">Neutral Blue</option>
+                <option value="green">Success Green</option>
+                <option value="red">Danger Red</option>
+              </select>
+              <select id="cust-card-border" onchange="updateCustomCard()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="l-5">Thin Border (5px)</option>
+                <option value="l-8">Thick Border (8px)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-purple-900/20 p-3 rounded-lg relative mt-2">
+            <p id="prompt-card" class="text-[10px] font-mono text-gray-300 pr-12 leading-relaxed">Create a resizable card featuring a left vertical accent border styled in Neutral Blue (5px) and a draggable bottom-right resizer grip.</p>
+            <button onclick="copyGeneratedPrompt('prompt-card')" class="absolute right-2.5 bottom-2.5 text-purple-400 hover:text-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 12 ================= -->
+      <section id="comp-12" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#11141c] border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-purple-500 font-bold bg-purple-500/10 px-2.5 py-1 rounded">12</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Lightweight Markup Parsing Engine</h3>
+            </div>
+            <div class="text-xs space-y-3 text-gray-400 mt-4 leading-relaxed">
+              <p><strong>TERMINOLOGY:</strong> Custom string parser, inline text formatter, shortcode compiler.</p>
+              <p><strong>WHAT IT DOES:</strong> Evaluates raw text strings, searching for custom inline delimiters (like `!!`, `**`) and compiling them directly into styled HTML structures.</p>
+              <p><strong>POSSIBLE APPLICATIONS:</strong> Custom chat client micro-editors, comment threads, lightweight doc formatting widgets.</p>
+              <p><strong>LIVE EXAMPLES IN THE WILD:</strong> Discord markdown parser, Slack rich-text inputs, Notion slash commands.</p>
+              <p><strong>MODIFICATIONS:</strong> Can support custom regex arrays to map tokens like emojis on the fly.</p>
+              <p><strong>COMPLEXITY:</strong> ★★★★☆ (4/5)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-darkBg/60 p-5 rounded-xl border border-gray-800 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-purple-400 uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="bg-darkBg p-4 border border-gray-900 rounded-lg space-y-3">
+              <textarea id="markup-input" onkeyup="compileSandboxMarkup(this.value)" class="w-full bg-[#161a26] border border-gray-800 rounded p-2 text-xs text-purple-300 font-mono outline-none" rows="2">***** REGION == -- Core sector !!Alpha!! == =====</textarea>
+              <div id="markup-output" class="bg-darkBg border border-purple-900/20 rounded p-2.5 text-xs text-gray-300 min-h-[60px] leading-relaxed"></div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-800 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-markup-bold" onchange="updateMarkupCompiler()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="!!">Exclamation (!!bold!!)</option>
+                <option value="**">Asterisks (**bold**)</option>
+              </select>
+              <select id="cust-markup-style" onchange="updateMarkupCompiler()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="violet">Violet Highlight</option>
+                <option value="gold">Gold Highlight</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-purple-900/20 p-3 rounded-lg relative mt-2">
+            <p id="prompt-markup" class="text-[10px] font-mono text-gray-300 pr-12 leading-relaxed">Build a Lightweight Markup Parsing Engine that compiles text bolding using Exclamation (!!bold!!) tags and applies Violet Highlight outputs.</p>
+            <button onclick="copyGeneratedPrompt('prompt-markup')" class="absolute right-2.5 bottom-2.5 text-purple-400 hover:text-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 26 ================= -->
+      <section id="comp-26" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#11141c] border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1 rounded">26</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Stacked Toast Notification System</h3>
+            </div>
+            <div class="text-xs space-y-3 text-gray-400 mt-4 leading-relaxed">
+              <p><strong>TERMINOLOGY:</strong> Notification drawer, sliding toast alerts, dynamic feedback tray.</p>
+              <p><strong>WHAT IT DOES:</strong> Instantiates non-blocking notification cards that stack cleanly. Features customizable fixed corner coordinates, frosted glass styles, and timeline timer bars.</p>
+              <p><strong>POSSIBLE APPLICATIONS:</strong> Displaying API query updates, server warnings, network connectivity drop-offs.</p>
+              <p><strong>LIVE EXAMPLES IN THE WILD:</strong> Vercel dashboard toasts, Shopify merchant panels, GitHub issue events.</p>
+              <p><strong>MODIFICATIONS:</strong> Can clear the automatic dismissal timer when the user's cursor hovers over the card.</p>
+              <p><strong>COMPLEXITY:</strong> ★★★★☆ (4/5)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-darkBg/60 p-5 rounded-xl border border-gray-800 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-purple-400 uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="flex flex-wrap gap-2 justify-center py-4 bg-darkBg rounded-lg border border-gray-900">
+              <button onclick="triggerStackedToast('success', 'Portal Lock Set', 'Sub-space coordinates aligned.')" class="px-3.5 py-2 bg-green-950/40 border border-green-500/40 text-green-300 text-xs font-bold rounded-lg hover:bg-green-950/60 transition">Success Toast</button>
+              <button onclick="triggerStackedToast('warning', 'Anomaly Detected', 'Quantum shields dropping.')" class="px-3.5 py-2 bg-yellow-950/40 border border-yellow-500/40 text-yellow-300 text-xs font-bold rounded-lg hover:bg-yellow-950/60 transition">Warning Toast</button>
+              <button onclick="triggerStackedToast('error', 'Warp Core Failure', 'Containment matrix breached!')" class="px-3.5 py-2 bg-red-950/40 border border-red-500/40 text-red-300 text-xs font-bold rounded-lg hover:bg-red-950/60 transition">Error Toast</button>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-800 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-toast-pos" onchange="updateToastSystem()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="bottom-right">Bottom-Right Stack</option>
+                <option value="top-right">Top-Right Stack</option>
+              </select>
+              <select id="cust-toast-glass" onchange="updateToastSystem()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="opaque">Opaque Surface</option>
+                <option value="frosted">Frosted Glass Blur</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-purple-900/20 p-3 rounded-lg relative mt-2">
+            <p id="prompt-toast" class="text-[10px] font-mono text-gray-300 pr-12 leading-relaxed">Build a Stacked Toast system positioned at bottom-right (fixed bottom-6 right-6), styled with Opaque Surface (solid background) and progress timers.</p>
+            <button onclick="copyGeneratedPrompt('prompt-toast')" class="absolute right-2.5 bottom-2.5 text-purple-400 hover:text-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 27 ================= -->
+      <section id="comp-27" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#11141c] border border-gray-800 p-6 rounded-2xl hover:border-gray-700 transition">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-blue-400 font-bold bg-blue-500/10 px-2.5 py-1 rounded">27</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Indeterminate Loading Spinners</h3>
+            </div>
+            <div class="text-xs space-y-3 text-gray-400 mt-4 leading-relaxed">
+              <p><strong>TERMINOLOGY:</strong> Async visual loaders, progress loops, glowing radar elements.</p>
+              <p><strong>WHAT IT DOES:</strong> Highly optimized vector animation loops indicating operations are running in the background. Uses CSS dropshadows and pings for depth.</p>
+              <p><strong>POSSIBLE APPLICATIONS:</strong> API loading templates, form submission indicators, background compilations.</p>
+              <p><strong>LIVE EXAMPLES IN THE WILD:</strong> Windows system updates, YouTube video buffering circles.</p>
+              <p><strong>MODIFICATIONS:</strong> Can use raw SVG filters to calculate glowing contour outlines on path segments.</p>
+              <p><strong>COMPLEXITY:</strong> ★★★☆☆ (3/5)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-darkBg/60 p-5 rounded-xl border border-gray-800 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-purple-400 uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="flex items-center justify-center gap-8 py-6 bg-darkBg rounded-lg border border-gray-900" id="sandbox-spinner-container">
+              <svg class="animate-spin h-8 w-8 text-blue-500" style="box-shadow: 0 0 15px rgba(59,130,246,0.5); border-radius: 9999px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-800 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-spin-glow" onchange="updateSpinnerComponent()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="box-shadow">Box-Shadow Glow</option>
+                <option value="drop-shadow">Drop-Shadow Filter</option>
+              </select>
+              <select id="cust-spin-color" onchange="updateSpinnerComponent()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="blue">Blue Flux</option>
+                <option value="purple">Purple Warp</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-purple-900/20 p-3 rounded-lg relative mt-2">
+            <p id="prompt-spin" class="text-[10px] font-mono text-gray-300 pr-12 leading-relaxed">Build an Indeterminate Loading Spinner styled with Box-Shadow Glow (border glow) and colored in Blue Flux.</p>
+            <button onclick="copyGeneratedPrompt('prompt-spin')" class="absolute right-2.5 bottom-2.5 text-purple-400 hover:text-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 36 ================= -->
+      <section id="comp-36" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-[#11141c] border border-yellow-500/30 p-6 rounded-2xl hover:border-yellow-500/50 transition shadow-[0_0_20px_rgba(234,179,8,0.05)]">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-yellow-500 font-bold bg-yellow-500/10 px-2.5 py-1 rounded">36</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Interactive Glossary & Hover-Preview</h3>
+            </div>
+            <div class="text-xs space-y-3 text-gray-400 mt-4 leading-relaxed">
+              <p><strong>TERMINOLOGY:</strong> Information deck, concept preview board, hover lookup switcher.</p>
+              <p><strong>WHAT IT DOES:</strong> A split column layout where hovering over dictionary tags instantly compiles a visual simulation card in the adjacent preview container.</p>
+              <p><strong>POSSIBLE APPLICATIONS:</strong> Interactive API documentation panels, design system guidelines, game glossary decks.</p>
+              <p><strong>LIVE EXAMPLES IN THE WILD:</strong> Wikipedia lookup popovers, Stripe docs overview cards, Steam badge hover decks.</p>
+              <p><strong>MODIFICATIONS:</strong> Can support mouseclick triggers as a persistent locked state on mobile.</p>
+              <p><strong>COMPLEXITY:</strong> ★★★★☆ (4/5)</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-darkBg/60 p-5 rounded-xl border border-gray-800 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-yellow-500 uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div class="sm:col-span-6 space-y-1.5">
+                <div onmouseenter="setGlossaryPreview('affordance')" class="p-2.5 bg-darkCard hover:bg-gray-800 rounded-lg cursor-pointer transition border border-gray-800 text-xs flex justify-between">
+                  <span>⚡ Affordance</span><span class="text-purple-400 font-mono text-[9px]">Concept</span>
+                </div>
+                <div onmouseenter="setGlossaryPreview('fitts')" class="p-2.5 bg-darkCard hover:bg-gray-800 rounded-lg cursor-pointer transition border border-gray-800 text-xs flex justify-between">
+                  <span>📏 Fitts's Law</span><span class="text-purple-400 font-mono text-[9px]">Interaction</span>
+                </div>
+                <div onmouseenter="setGlossaryPreview('stacking')" class="p-2.5 bg-darkCard hover:bg-gray-800 rounded-lg cursor-pointer transition border border-gray-800 text-xs flex justify-between">
+                  <span>🥞 Stacking Context</span><span class="text-purple-400 font-mono text-[9px]">CSS Depth</span>
+                </div>
+              </div>
+              <div id="glossary-preview-sandbox" class="sm:col-span-6 p-4 bg-[#080a0f] border border-blue-900/30 rounded-lg text-xs min-h-[140px] flex flex-col justify-center items-center text-center text-gray-400">
+                Hover over a glossary term to activate visual simulation...
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-gray-800 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-gloss-layout" onchange="updateGlossarySystem()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="split">Split Columns (Side-by-side)</option>
+                <option value="stacked">Stacked Blocks (Top/bottom)</option>
+              </select>
+              <select id="cust-gloss-trigger" onchange="updateGlossarySystem()" class="w-full bg-[#161a26] border border-gray-800 rounded p-1.5 outline-none text-gray-300">
+                <option value="hover">Hover Enter Trigger</option>
+                <option value="click">Manual Click Trigger</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-yellow-900/20 p-3 rounded-lg relative mt-2">
+            <p id="prompt-gloss" class="text-[10px] font-mono text-gray-300 pr-12 leading-relaxed">Create a Glossary and Preview component arranged in a Split Columns (Side-by-side) layout, triggered via Hover Enter (Mouseover trigger).</p>
+            <button onclick="copyGeneratedPrompt('prompt-gloss')" class="absolute right-2.5 bottom-2.5 text-yellow-500 hover:text-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= INTERFACE ARCHITECTURE & COLOR TOKEN BLUEPRINT ================= -->
+      <section id="architecture-blueprint" class="scroll-mt-24 mt-20 pt-12 border-t border-gray-800 space-y-8">
+        
+        <div class="text-center max-w-3xl mx-auto">
+          <h2 class="text-2xl font-black text-white uppercase tracking-widest">📐 Interface Architecture & Color Token Blueprint</h2>
+          <p class="text-xs text-gray-400 mt-1">Naming conventions, design tokens, and color contrast rules for modern dark-themed web interfaces.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Column 1: Nomenclature Standards -->
+          <div class="bg-darkCard border border-gray-800 p-6 rounded-2xl space-y-4">
+            <h4 class="text-xs font-black text-[#eab308] uppercase tracking-widest border-b border-gray-800 pb-2 flex items-center gap-1.5">
+              <span>🏷️</span> CLASSIFICATION & NOMENCLATURE
+            </h4>
+            <div class="space-y-4 text-xs">
+              <div>
+                <strong class="text-gray-200 block font-bold mb-1">1. Popover vs. Tooltip vs. Modal</strong>
+                <p class="text-gray-400 leading-relaxed">
+                  * <span class="text-purple-300 font-bold">Tooltip</span>: Tiny, non-interactive, hover-triggered inline label showing simple descriptors (e.g. "Save layout").<br>
+                  * <span class="text-purple-300 font-bold">Popover</span>: Multi-line rich content cards positioned relative to anchors containing options or lists (Component 05).<br>
+                  * <span class="text-purple-300 font-bold">Modal</span>: Viewport-blocking central dialogs requiring dismissal actions (Component 29).
+                </p>
+              </div>
+              <div>
+                <strong class="text-gray-200 block font-bold mb-1">2. Drawer vs. Sheet</strong>
+                <p class="text-gray-400 leading-relaxed">
+                  * <span class="text-purple-300 font-bold">Drawer</span>: Side menu slider panels anchored to the left/right boundaries (Component 03).<br>
+                  * <span class="text-purple-300 font-bold">Sheet</span>: Bottom-anchored layouts designed for mobile interactions (Component 08).
+                </p>
+              </div>
+              <div>
+                <strong class="text-gray-200 block font-bold mb-1">3. Tab Deck vs. Panels</strong>
+                <p class="text-gray-400 leading-relaxed">
+                  * <span class="text-purple-300 font-bold">Tab Deck</span>: Horizontal state anchors switching nested views inside the same wrapper grid (Component 40).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Color Contrast & WCAG AA Guidelines -->
+          <div class="bg-darkCard border border-gray-800 p-6 rounded-2xl space-y-4">
+            <h4 class="text-xs font-black text-[#eab308] uppercase tracking-widest border-b border-gray-800 pb-2 flex items-center gap-1.5">
+              <span>🎨</span> CONTRAST GUIDELINES & WCAG AA
+            </h4>
+            <div class="space-y-3 text-xs leading-relaxed text-gray-400">
+              <p>
+                To maintain strict <strong class="text-gray-200">WCAG AA compliance</strong>, text components must maintain a contrast ratio of at least <strong class="text-purple-300 font-bold">4.5:1</strong> against adjacent background blocks. Large header strings require a minimum ratio of <strong class="text-purple-300 font-bold">3:1</strong>. This ensures legibility for users with visual impairments. In our dark theme, we utilize `text-gray-200` (#e5e7eb) against `bg-darkBg` (#06080b) to exceed a 10:1 ratio.
+              </p>
+              <div class="space-y-2 mt-4">
+                <div class="flex justify-between items-center bg-[#06080b] p-2.5 border border-gray-800 rounded">
+                  <span class="font-bold text-gray-200">Dark Token Surface</span>
+                  <span class="font-mono text-purple-400">#06080B</span>
+                </div>
+                <div class="flex justify-between items-center bg-[#0f111a] p-2.5 border border-gray-800 rounded">
+                  <span class="font-bold text-gray-200">Elevation Layer</span>
+                  <span class="font-mono text-purple-400">#0F111A</span>
+                </div>
+                <div class="flex justify-between items-center bg-[#151822] p-2.5 border border-gray-800 rounded">
+                  <span class="font-bold text-gray-200">Active Borders</span>
+                  <span class="font-mono text-purple-400">#30363D</span>
+                </div>
+              </div>
+              <p class="text-[10px] italic mt-2">
+                Pro Tip: Always use native opacity properties alongside dark background tones to soften contrast without reducing readability across mobile device displays.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </div>
+
+  <!-- Interactive Global Guide Dialog Toast Overlay -->
+  <div id="tutorial-card-dialog" class="fixed bottom-24 right-8 z-[100] w-80 bg-[#161a26] border-2 border-purple-500 rounded-xl shadow-2xl overflow-hidden hidden select-none">
+    <div class="bg-purple-600 text-[#0c0e15] px-4 py-2 font-black text-[10px] uppercase tracking-widest flex items-center justify-between">
+      <span>🛸 Star-Gate System Guide</span>
+      <button onclick="closeSandboxTutorial()" class="font-black text-xs hover:text-white">✕</button>
+    </div>
+    <div class="p-4 space-y-3">
+      <p id="tutorial-card-text" class="text-xs text-gray-300 leading-relaxed"></p>
+      <div class="flex gap-2 justify-end pt-2">
+        <button onclick="closeSandboxTutorial()" class="px-3 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-[9px] uppercase">Skip</button>
+        <button id="tutorial-next-btn" onclick="nextTutorialStep()" class="px-4 py-1.5 rounded bg-purple-600 hover:bg-purple-500 text-white font-bold text-[9px] uppercase">Next Step ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Global Toast Container -->
+  <div id="toast-wrapper" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 transform translate-y-10 opacity-0">
+    <div id="toast-content" class="bg-gray-900 text-gray-100 border border-gray-800 rounded-xl px-4 py-2.5 text-xs font-semibold shadow-2xl flex items-center gap-2">
+      <span class="text-green-400">✓</span>
+      <span id="toast-text">Phrase copied successfully!</span>
+    </div>
+  </div>
+
+  <!-- Interactive Stacked Toast Layer Container (Component 26) -->
+  <div id="stacked-toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
+
+  <!-- Blocking Modal Container (Component 29) -->
+  <div id="blocking-modal-overlay" onclick="closeSandboxBlockingModal(event)" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-[200] items-center justify-center hidden opacity-0 transition-opacity duration-200">
+    <div class="bg-[#161a26] border border-[#2b3142] rounded-xl shadow-2xl max-w-sm w-full overflow-hidden p-6 text-center select-none transform scale-90 transition-transform duration-200" id="blocking-modal-panel">
+      <span class="text-3xl mb-2 block">🌌</span>
+      <h3 class="text-white font-black text-sm uppercase tracking-widest mb-2">Portal Access Restricted</h3>
+      <p class="text-xs text-gray-400 leading-relaxed mb-6">Quantum matrices are currently out of balance. Overwrite core coordinates to establish link?</p>
+      <div class="flex gap-2 justify-center">
+        <button onclick="closeSandboxBlockingModal(null)" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded text-[10px] font-bold uppercase transition">Retreat</button>
+        <button onclick="showToast('Establishing warp coordinates...'); closeSandboxBlockingModal(null);" class="px-5 py-2 bg-[#a855f7] hover:bg-[#b56ef8] text-white rounded text-[10px] font-bold uppercase transition">Establish Link</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Sandbox JavaScript Handlers -->
+  <script>
+    // --- Central Application State & Globals ---
+    const FANTASY_REGISTRY = ["orichalcum", "chronosphere", "manaflux", "hyperdrive", "vortex injector", "nanogrid", "plasma core"];
+    const CAROUSEL_PROJECTOR_ASSETS = [
+      "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&q=80",
+      "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=400&q=80"
+    ];
+    const BACKUP_FALLBACK_POOL = ["https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=400&q=80"];
+    
+    // (FIX APPLIED: MOCK_SORTER_DATABASE is now declared exactly once)
+    const MOCK_SORTER_DATABASE = [
+      { name: "Plasma Ray", level: 5, sector: "Sector-3" },
+      { name: "Laser Grid", level: 2, sector: "Sector-1" },
+      { name: "Aegis Shield", level: 5, sector: "Sector-2" },
+      { name: "Vortex Blast", level: 1, sector: "Sector-5" }
+    ];
+
+    // GLOSSARY HOVER VISUALIZATIONS (36)
+    const GLOSSARY_BLUEPRINTS = {
+      affordance: `
+        <div class="space-y-2 animate-fade-in text-center">
+          <strong class="text-yellow-400 block text-xs tracking-wider uppercase">Visual Affordance</strong>
+          <p class="text-[10px] text-gray-400 max-w-[200px] mx-auto leading-relaxed">Design properties that suggest usage. This button clearly protrudes, signaling "click me".</p>
+          <button class="px-4 py-2 mt-2 bg-purple-600 rounded border-b-4 border-purple-800 text-[10px] text-white font-black">TACTILE CORE</button>
+        </div>
+      `,
+      fitts: `
+        <div class="space-y-2 animate-fade-in text-center">
+          <strong class="text-yellow-400 block text-xs tracking-wider uppercase">Fitts's Law</strong>
+          <p class="text-[10px] text-gray-400 max-w-[220px] mx-auto leading-relaxed">Target acquisition time is a function of distance and target size.</p>
+          <div class="flex gap-4 items-center justify-center mt-2">
+            <div class="w-6 h-6 rounded bg-red-950 text-[8px] flex items-center justify-center font-bold">Tiny</div>
+            <div class="w-14 h-14 rounded-full bg-green-950 border-2 border-green-500 text-[10px] flex items-center justify-center font-black">Fast Target</div>
+          </div>
+        </div>
+      `,
+      stacking: `
+        <div class="space-y-2 animate-fade-in text-center">
+          <strong class="text-yellow-400 block text-xs tracking-wider uppercase">CSS Z-Index Context</strong>
+          <p class="text-[10px] text-gray-400 max-w-[200px] mx-auto leading-relaxed">Higher stacking values sit closer to the user along the depth vector.</p>
+          <div class="relative w-32 h-16 mx-auto mt-4">
+            <div class="absolute top-0 left-0 w-16 h-8 bg-purple-950/80 border border-purple-500/30 rounded p-1 text-[8px] z-10 font-bold shadow-lg">Z-INDEX: 1</div>
+            <div class="absolute top-4 left-8 w-16 h-8 bg-blue-900 border border-blue-500/50 rounded p-1 text-[8px] z-20 font-bold shadow-xl">Z-INDEX: 2</div>
+          </div>
+        </div>
+      `
+    };
+
+    // Smooth navigation anchor
+    function scrollToComponent(elementId) {
+      document.getElementById(elementId).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Dynamic global toast message handler
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toast-wrapper');
+      const text = document.getElementById('toast-text');
+      text.textContent = message;
+      clearTimeout(toastTimeout);
+      toast.classList.remove('translate-y-10', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-10', 'opacity-0');
+      }, 3000);
+    }
+
+    // Copy to clipboard with fallback
+    function copyPrompt(phrase) {
+      const el = document.createElement('textarea');
+      el.value = phrase;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand('copy');
+        showToast("Copied to clipboard! Ready to paste into chat.");
+      } catch (err) {}
+      document.body.removeChild(el);
+    }
+
+    // Dynamic Prompt copy handler
+    function copyGeneratedPrompt(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      copyPrompt(text);
+    }
+
+    // Component 1 Segment Switching Action
+    function switchSegment(mode) {
+      const btnCode = document.getElementById('seg-custom-btn-1');
+      const btnPreview = document.getElementById('seg-custom-btn-2');
+      const feedback = document.getElementById('segment-feedback');
+      
+      const colorSelect = document.getElementById('cust-seg-color')?.value || 'purple';
+      let activeColor = colorSelect === 'blue' ? 'bg-[#0f2d59] text-blue-200 border-blue-500/30' : 'bg-[#3b0764] text-purple-200 border-purple-500/30';
+      
+      if (mode === 'code') {
+        btnCode.className = `px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${activeColor}`;
+        btnPreview.className = "px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 text-gray-400 hover:text-gray-100";
+        feedback.textContent = 'Current Uplink Mode: "Sub-Space Code" active';
+      } else {
+        btnPreview.className = `px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${activeColor}`;
+        btnCode.className = "px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 text-gray-400 hover:text-gray-100";
+        feedback.textContent = 'Current Uplink Mode: "Holo-Preview" Projection Engaged';
+      }
+    }
+
+    function updateSegmentedControl() {
+      const color = document.getElementById('cust-seg-color').value;
+      const glow = document.getElementById('cust-seg-glow').value;
+      const container = document.getElementById('sandbox-segmented');
+      const promptEl = document.getElementById('prompt-seg');
+      
+      let promptColor = color === 'blue' ? "Matrix Blue" : "Aether Purple";
+      let glowClass = "";
+      let promptGlow = "subtle neon glow";
+      
+      if (glow === 'enabled') {
+        glowClass = color === 'blue' ? "shadow-[0_0_15px_rgba(59,130,246,0.4)]" : "shadow-[0_0_15px_rgba(168,85,247,0.4)]";
+      } else {
+        promptGlow = "no visual glow";
+      }
+
+      container.className = `inline-flex bg-black p-[3px] rounded-full border border-gray-800 transition-all duration-300 ${glowClass}`;
+      switchSegment('code'); // refresh active buttons
+      promptEl.textContent = `Create a Segmented Control Switcher styled with ${promptColor} active states and a ${promptGlow} effect.`;
+    }
+
+    // Component 9 Card Accent Selector Customizer
+    function updateCustomCard() {
+      const color = document.getElementById('cust-card-color').value;
+      const border = document.getElementById('cust-card-border').value;
+      const card = document.getElementById('accent-card-sandbox');
+      const promptEl = document.getElementById('prompt-card');
+
+      card.className = "w-full max-w-sm bg-[#151821] border border-gray-800 p-4 rounded-r-xl transition-all duration-300";
+      
+      let borderClass = border === 'l-8' ? "border-l-[8px]" : "border-l-[5px]";
+      let promptThickness = border === 'l-8' ? "Thick (8px)" : "Thin (5px)";
+      card.classList.add(borderClass);
+
+      let colorClass = "border-l-blue-500";
+      let promptColor = "Neutral Blue";
+      if (color === 'green') {
+        colorClass = "border-l-green-500"; promptColor = "Success Green";
+      } else if (color === 'red') {
+        colorClass = "border-l-red-500"; promptColor = "Danger Red";
+      }
+      card.classList.add(colorClass);
+
+      promptEl.textContent = `Create a resizable card featuring a left vertical accent border styled in ${promptColor} (${promptThickness}) and a draggable bottom-right resizer grip.`;
+    }
+
+    // Component 12 Markup
+    function compileSandboxMarkup(rawText) {
+      if (!rawText) return document.getElementById('markup-output').innerHTML = '';
+      
+      const lines = rawText.split('==');
+      const compiledLines = [];
+      let inList = false;
+
+      const boldSymbol = document.getElementById('cust-markup-bold')?.value || '!!';
+      const outputStyle = document.getElementById('cust-markup-style')?.value || 'violet';
+      let boldRegex = boldSymbol === '**' ? /\*\*(.*?)\*\*/g : /!!(.*?)!!/g;
+      let styleClass = outputStyle === 'gold' ? "text-yellow-400 font-extrabold" : "text-purple-300 font-extrabold";
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (line === '=====') {
+          if (inList) { compiledLines.push('</ul>'); inList = false; }
+          compiledLines.push('<hr class="border-gray-800 my-3">'); continue;
+        }
+        if (line.startsWith('*****')) {
+          if (inList) { compiledLines.push('</ul>'); inList = false; }
+          compiledLines.push(`<h4 class="text-purple-400 font-bold tracking-wide uppercase text-xs mt-2 mb-1">${line.replace('*****', '').trim()}</h4>`); continue;
+        }
+        if (line.startsWith('-- ')) {
+          if (!inList) { compiledLines.push('<ul class="list-disc pl-5 my-1 text-[11px] text-gray-400">'); inList = true; }
+          compiledLines.push(`<li class="mb-0.5">${line.substring(3).trim().replace(boldRegex, `<strong class="${styleClass}">$1</strong>`)}</li>`); continue;
+        }
+        if (inList) { compiledLines.push('</ul>'); inList = false; }
+        if (line !== '') compiledLines.push(`<div>${line.replace(boldRegex, `<strong class="${styleClass}">$1</strong>`)}</div>`);
+      }
+      if (inList) compiledLines.push('</ul>');
+      document.getElementById('markup-output').innerHTML = compiledLines.join('\n');
+    }
+
+    function updateMarkupCompiler() {
+      const boldSymbol = document.getElementById('cust-markup-bold').value;
+      const outputStyle = document.getElementById('cust-markup-style').value;
+      const promptEl = document.getElementById('prompt-markup');
+
+      let boldSymbolText = boldSymbol === '**' ? "Asterisks (**bold**)" : "Exclamation (!!bold!!)";
+      let outputStyleText = outputStyle === 'gold' ? "Gold Highlight" : "Violet Highlight";
+
+      promptEl.textContent = `Build a Lightweight Markup Parsing Engine that compiles text bolding using ${boldSymbolText} tags and applies ${outputStyleText} outputs.`;
+      compileSandboxMarkup(document.getElementById('markup-input').value);
+    }
+
+    // Component 26 Toast
+    function triggerStackedToast(type, title, description) {
+      const container = document.getElementById('stacked-toast-container');
+      const toastNode = document.createElement('div');
+      
+      const pos = document.getElementById('cust-toast-pos')?.value || 'bottom-right';
+      const glass = document.getElementById('cust-toast-glass')?.value || 'opaque';
+
+      if (pos === 'top-right') {
+        container.style.bottom = 'auto'; container.style.top = '24px';
+      } else {
+        container.style.top = 'auto'; container.style.bottom = '24px';
+      }
+
+      let bgStyle = "bg-[#161a26]";
+      let borderStyle = "border-gray-800";
+      let titleColor = "text-purple-400";
+      if (type === 'success') {
+        bgStyle = (glass === 'frosted') ? "bg-green-950/30 backdrop-blur-md" : "bg-green-950/90";
+        borderStyle = "border-green-500/40"; titleColor = "text-green-300";
+      } else if (type === 'warning') {
+        bgStyle = (glass === 'frosted') ? "bg-yellow-950/30 backdrop-blur-md" : "bg-yellow-950/90";
+        borderStyle = "border-yellow-500/40"; titleColor = "text-yellow-300";
+      } else if (type === 'error') {
+        bgStyle = (glass === 'frosted') ? "bg-red-950/30 backdrop-blur-md" : "bg-red-950/90";
+        borderStyle = "border-red-500/40"; titleColor = "text-red-300";
+      }
+
+      toastNode.className = `${bgStyle} ${borderStyle} p-3.5 rounded-xl border shadow-2xl flex flex-col gap-1 transition-all duration-300 transform translate-x-12 opacity-0 pointer-events-auto shrink-0 relative overflow-hidden`;
+
+      toastNode.innerHTML = `
+        <div class="flex items-center justify-between">
+          <strong class="${titleColor} text-xs font-black uppercase tracking-wider">${title}</strong>
+          <button onclick="this.closest('.p-3\\.5').remove()" class="text-gray-500 hover:text-white text-[10px] font-bold">✕</button>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-normal">${description}</p>
+        <div class="absolute bottom-0 left-0 h-[2px] bg-purple-500 w-full transition-all duration-[4000ms] linear" id="bar"></div>
+      `;
+      container.appendChild(toastNode);
+
+      setTimeout(() => {
+        toastNode.classList.remove('translate-x-12', 'opacity-0');
+        toastNode.classList.add('translate-x-0', 'opacity-100');
+        toastNode.querySelector('#bar').style.width = "0%";
+      }, 50);
+
+      setTimeout(() => {
+        toastNode.classList.remove('translate-x-0', 'opacity-100');
+        toastNode.classList.add('translate-x-12', 'opacity-0');
+        setTimeout(() => toastNode.remove(), 350);
+      }, 4000);
+    }
+
+    function updateToastSystem() {
+      const pos = document.getElementById('cust-toast-pos').value;
+      const glass = document.getElementById('cust-toast-glass').value;
+      const promptEl = document.getElementById('prompt-toast');
+      let posText = pos === 'top-right' ? "top-right (fixed top-6 right-6)" : "bottom-right (fixed bottom-6 right-6)";
+      let glassText = glass === 'frosted' ? "Frosted Glass (backdrop-blur)" : "Opaque Surface (solid background)";
+      promptEl.textContent = `Build a Stacked Toast system positioned at ${posText}, styled with ${glassText} and progress timers.`;
+    }
+
+    // Component 27 Spinners
+    function updateSpinnerComponent() {
+      const glow = document.getElementById('cust-spin-glow').value;
+      const color = document.getElementById('cust-spin-color').value;
+      const container = document.getElementById('sandbox-spinner-container');
+      const promptEl = document.getElementById('prompt-spin');
+
+      let colorClass = color === 'purple' ? "text-purple-500" : "text-blue-500";
+      let shadowColor = color === 'purple' ? "rgba(168,85,247,0.5)" : "rgba(59,130,246,0.5)";
+      let promptColor = color === 'purple' ? "Purple Warp" : "Blue Flux";
+      let glowStyle = glow === 'drop-shadow' ? `filter: drop-shadow(0 0 8px ${shadowColor});` : `box-shadow: 0 0 15px ${shadowColor}; border-radius: 9999px;`;
+      let promptGlow = glow === 'drop-shadow' ? "Drop-Shadow Filter" : "Box-Shadow Glow";
+
+      container.innerHTML = `
+        <svg class="animate-spin h-8 w-8 ${colorClass}" style="${glowStyle}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      `;
+      promptEl.textContent = `Build an Indeterminate Loading Spinner styled with ${promptGlow} and colored in ${promptColor}.`;
+    }
+
+    // Component 36 Glossary System
+    function setGlossaryPreview(term) {
+      const sandbox = document.getElementById('glossary-preview-sandbox');
+      if (GLOSSARY_BLUEPRINTS[term]) sandbox.innerHTML = GLOSSARY_BLUEPRINTS[term];
+    }
+    
+    function updateGlossarySystem() {
+      const layout = document.getElementById('cust-gloss-layout').value;
+      const trigger = document.getElementById('cust-gloss-trigger').value;
+      const promptEl = document.getElementById('prompt-gloss');
+      let layoutText = layout === 'stacked' ? "Stacked Blocks (Top/bottom)" : "Split Columns (Side-by-side)";
+      let triggerText = trigger === 'click' ? "Manual Click Trigger" : "Hover Enter Trigger";
+      promptEl.textContent = `Create a Glossary and Preview component arranged in a ${layoutText} layout, triggered via ${triggerText}.`;
+    }
+
+    // Component 25 Step Guide
+    let currentTutorialStep = 0;
+    const TUTORIAL_STEPS_蓝 = [
+      { target: "comp-1", text: "Welcome to the Master Code Sandbox! Let's start with Component 01: Segmented Control. Perfect for toggling sub-views." },
+      { target: "comp-9", text: "This is Component 09: Card with accent status lines and native draggable resizers." },
+      { target: "comp-12", text: "Look at Component 12: A custom micro-compiling engine that parses tags on raw strings." },
+      { target: "comp-21", text: "Component 21: High-contrast cell color highlight cyclers let you classify rows on the fly." },
+      { target: "comp-26", text: "Component 26: Test the stacked toast system directly via the interactive module." }
+    ];
+
+    function startVisualTutorial() {
+      currentTutorialStep = 0;
+      document.getElementById('tutorial-card-dialog').classList.remove('hidden');
+      executeTutorialFocalStep();
+    }
+    function nextTutorialStep() {
+      currentTutorialStep++;
+      if (currentTutorialStep >= TUTORIAL_STEPS_蓝.length) {
+        closeSandboxTutorial(); showToast("System guide complete! All components unlocked.");
+      } else {
+        executeTutorialFocalStep();
+      }
+    }
+    function executeTutorialFocalStep() {
+      document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+      const step = TUTORIAL_STEPS_蓝[currentTutorialStep];
+      const targetEl = document.getElementById(step.target);
+      const textEl = document.getElementById('tutorial-card-text');
+      const nextBtn = document.getElementById('tutorial-next-btn');
+
+      if (targetEl) {
+        targetEl.classList.add('tutorial-highlight');
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (textEl) textEl.textContent = step.text;
+      if (nextBtn) nextBtn.textContent = currentTutorialStep === TUTORIAL_STEPS_蓝.length - 1 ? "Finish ✔" : "Next Step ▶";
+    }
+    function closeSandboxTutorial() {
+      document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+      document.getElementById('tutorial-card-dialog').classList.add('hidden');
+    }
+
+    // Initialize Sandbox Scripts
+    window.onload = function() {
+      compileSandboxMarkup(document.getElementById('markup-input').value);
+    }
+  </script>
+</body>
+</html>

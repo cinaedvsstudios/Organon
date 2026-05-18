@@ -1,0 +1,1470 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UI Repository</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Inter & Monospace Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            /* Palette Integration */
+            'repo-dark': '#292a2a',
+            'repo-card': '#1e1f1e',
+            'repo-brown': '#8c7355',
+            'repo-white': '#ffffff',
+            'repo-blue': '#5185c5',
+            'repo-lightblue': '#7bb2db',
+            'repo-darkteal': '#316a68',
+            'repo-teal': '#56a29a',
+            'repo-maroon': '#581a30',
+            'repo-magenta': '#9e2a53',
+            'repo-salmon': '#d98276',
+            'repo-sand': '#df9f5e',
+            'repo-cream': '#eee6ce'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #292a2a; }
+    ::-webkit-scrollbar-thumb { background: #5185c5; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #7bb2db; }
+
+    /* Custom Range Scrubber styling */
+    input[type="range"].custom-range {
+      -webkit-appearance: none; width: 100%; height: 8px; background: #8c7355; border-radius: 9999px; outline: none;
+    }
+    input[type="range"].custom-range::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: #df9f5e; cursor: pointer; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); transition: background-color 0.15s ease-in-out;
+    }
+    input[type="range"].custom-range::-webkit-slider-thumb:hover { background: #d98276; }
+
+    /* Drawer & Transition classes */
+    .drawer-transition { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* Resizer Grip definitions */
+    textarea.resizable-textarea { resize: both; overflow: auto; }
+    textarea.resizable-textarea::-webkit-resizer { background-color: #316a68; border-radius: 4px; }
+
+    /* Highlight Keyframes for Tutorial Pulse */
+    @keyframes tutorial-pulse {
+      0% { box-shadow: 0 0 0 0 rgba(81, 133, 197, 0.7); border-color: #5185c5; }
+      50% { box-shadow: 0 0 0 15px rgba(81, 133, 197, 0); border-color: #7bb2db; }
+      100% { box-shadow: 0 0 0 0 rgba(81, 133, 197, 0); border-color: #5185c5; }
+    }
+    .tutorial-highlight { animation: tutorial-pulse 1.8s infinite; position: relative; z-index: 50; }
+
+    /* Highlight Layer Definitions for Component 21 */
+    .hl-1 { background-color: rgba(59, 130, 246, 0.3) !important; border-color: #3b82f6 !important; } 
+    .hl-2 { background-color: rgba(16, 185, 129, 0.3) !important; border-color: #10b981 !important; } 
+    .hl-3 { background-color: rgba(245, 158, 11, 0.3) !important; border-color: #f59e0b !important; } 
+    .hl-4 { background-color: rgba(239, 68, 68, 0.3) !important; border-color: #ef4444 !important; }  
+    .hl-5 { background-color: rgba(168, 85, 247, 0.3) !important; border-color: #a855f7 !important; } 
+
+    /* Details styling */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+
+    /* Basket Mode Hover styles */
+    body.basket-mode-active .add-to-basket {
+      box-shadow: 0 0 10px #df9f5e;
+      border: 2px solid #df9f5e;
+      animation: pulse-basket 1.5s infinite;
+    }
+    @keyframes pulse-basket {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    
+    .notepad-pill.dragging { opacity: 0.5; border: 2px dashed #5185c5; }
+  </style>
+</head>
+<body class="bg-repo-dark text-repo-cream font-sans min-h-screen select-none selection:bg-repo-blue selection:text-white">
+
+  <!-- Header Banner -->
+  <header class="border-b border-repo-brown/30 bg-repo-dark/90 backdrop-blur sticky top-0 z-40 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-1 rounded-md text-xs font-bold bg-repo-teal/20 text-repo-teal border border-repo-teal/30">Enterprise Spec</span>
+          <span class="text-xs text-repo-sand font-mono">Interactive Database</span>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-repo-white mt-1 flex items-center gap-2">
+          UI Repository
+        </h1>
+        <p class="text-sm text-repo-cream/70 mt-0.5">Customizable components, prompt injectors, and architectural blueprints.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="startVisualTutorial()" class="px-4 py-2 rounded-lg bg-repo-maroon hover:bg-repo-magenta text-xs font-black text-repo-white shadow-lg flex items-center gap-2 transition">
+          🚀 Run Sandbox Guide
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar Catalog Index & Main Content Grid -->
+  <div class="max-w-7xl mx-auto flex flex-col lg:flex-row gap-8 px-4 md:px-6 py-8">
+    
+    <!-- Left Navigation Index Menu -->
+    <aside class="w-full lg:w-64 flex-shrink-0">
+      <div class="sticky top-24 bg-repo-card border border-repo-brown/30 rounded-2xl p-4 max-h-[80vh] overflow-y-auto">
+        
+        <!-- UI Builder Tool Buttons -->
+        <div class="mb-5 space-y-2 border-b border-repo-brown/30 pb-5">
+          <button id="toggle-basket-btn" onclick="toggleBasketMode()" class="w-full py-2 bg-repo-blue hover:bg-repo-lightblue text-repo-white font-bold text-xs rounded transition shadow-lg">
+            🛒 Activate Builder Basket
+          </button>
+          <button onclick="openNotepad()" class="w-full py-2 border border-repo-blue text-repo-blue hover:bg-repo-blue hover:text-repo-white font-bold text-xs rounded transition">
+            📝 View Basket / Notepad
+          </button>
+        </div>
+
+        <h3 class="text-xs font-black text-repo-sand uppercase tracking-widest mb-3 pb-2 border-b border-repo-brown/30">Component Index</h3>
+        <nav class="space-y-1 text-xs">
+          <!-- Categorized Index -->
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 uppercase mt-1">Core Inputs</div>
+          <a onclick="scrollToComponent('comp-1')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">01. Segmented Control</a>
+          <a onclick="scrollToComponent('comp-2')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">02. Decorated Input Box</a>
+          <a onclick="scrollToComponent('comp-3')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">03. Collapsible Navigation</a>
+          <a onclick="scrollToComponent('comp-4')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">04. Multi-Row Accordion</a>
+          <a onclick="scrollToComponent('comp-5')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">05. Combobox Popover</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Logic & Layouts</div>
+          <a onclick="scrollToComponent('comp-9')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">09. Card & Resize Grip</a>
+          <a onclick="scrollToComponent('comp-12')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">12. Custom Markup Compiler</a>
+          <a onclick="scrollToComponent('comp-13')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">13. Fuzzy Typo Search</a>
+          <a onclick="scrollToComponent('comp-14')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">14. JSON Syntax Locator</a>
+          <a onclick="scrollToComponent('comp-15')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">15. Adaptive Image Cycler</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">States & Feedback</div>
+          <a onclick="scrollToComponent('comp-16')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">16. Action Confirm</a>
+          <a onclick="scrollToComponent('comp-17')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">17. Radial SVG Ticker</a>
+          <a onclick="scrollToComponent('comp-21')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">21. Highlight Cycler</a>
+          <a onclick="scrollToComponent('comp-24')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">24. Debounced Drawer</a>
+          
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Dynamic Modules</div>
+          <a onclick="scrollToComponent('comp-26')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">26. Stacked Toasts</a>
+          <a onclick="scrollToComponent('comp-27')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">27. Indeterminate Spinners</a>
+          <a onclick="scrollToComponent('comp-29')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">29. Blocking Modal Dialog</a>
+          <a onclick="scrollToComponent('comp-30')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition">30. Skeleton Placeholders</a>
+          <a onclick="scrollToComponent('comp-36')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition text-repo-sand font-bold">36. Interactive Glossary Box</a>
+
+          <div class="text-[10px] font-bold text-repo-teal px-2 py-1 mt-3 uppercase">Enterprise Architecture</div>
+          <a onclick="scrollToComponent('architecture-blueprint')" class="block p-2 rounded hover:bg-repo-darkteal/50 cursor-pointer transition text-repo-salmon font-bold">📐 Naming & Color Tokens</a>
+        </nav>
+      </div>
+    </aside>
+
+    <!-- Main Core Workspace -->
+    <div class="flex-1 space-y-12">
+
+      <!-- ================= COMPONENT 1 ================= -->
+      <section id="comp-1" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <!-- Left Side: Strict Metadata Formatting -->
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('01', 'Segmented Control', 'prompt-seg')" title="Click to add to Builder Basket">01</span>
+              <h3 class="text-lg font-bold text-repo-white uppercase tracking-wider">Segmented Control</h3>
+            </div>
+            
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Toggle group, button switcher, slider capsule.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> Houses a horizontal row of mutually exclusive buttons within a single rounded container. A moving backdrop indicator shifts cleanly over the active selection.</p>
+              
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Flipping between raw code panels and live previews inside sandboxed editors, toggling data units, or switching list vs grid views.</p>
+              </details>
+              
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://apple.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">iOS System Settings</a>, 
+                <a href="https://airtable.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Airtable View Switches</a>
+              </p>
+              
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can be mapped to animate via CSS transform translations on active index shifts, or embedded inside navigation headers.</p>
+              </details>
+              
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★☆☆☆</span> (2/5) - Rating: Intermediate</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Sandbox & Dynamic Customizer -->
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex flex-col items-center justify-center p-6 bg-[#1a1b1a] border border-[#333] rounded-lg min-h-[120px]">
+              <div id="sandbox-segmented" class="inline-flex bg-black p-[3px] rounded-full border border-[#333] transition-all duration-300 shadow-[0_0_15px_rgba(81,133,197,0.4)]">
+                <button id="seg-custom-btn-1" onclick="switchSegment('code')" class="px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 bg-repo-blue text-white border border-repo-lightblue/30">Sub-Space Code</button>
+                <button id="seg-custom-btn-2" onclick="switchSegment('preview')" class="px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 text-gray-400 hover:text-gray-100 border border-transparent">Holo-Preview</button>
+              </div>
+              <div id="segment-feedback" class="text-xs font-mono text-repo-lightblue mt-4 bg-repo-blue/10 px-3 py-1 rounded border border-repo-blue/30">Current Uplink: "Sub-Space Code" active</div>
+            </div>
+          </div>
+
+          <!-- Dynamic Customizer Controls -->
+          <div class="border-t border-repo-brown/30 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-seg-color" onchange="updateSegmentedControl()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="blue">Matrix Blue</option>
+                <option value="maroon">Deep Maroon</option>
+              </select>
+              <select id="cust-seg-glow" onchange="updateSegmentedControl()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="enabled">Glow Enabled</option>
+                <option value="disabled">Glow Disabled</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-seg" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Create a Segmented Control Switcher styled with Matrix Blue active states and a subtle neon glow effect.</p>
+            <button onclick="copyGeneratedPrompt('prompt-seg')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 2 ================= -->
+      <section id="comp-2" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('02', 'Decorated Input Box', 'prompt-input')" title="Click to add to Builder Basket">02</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Decorated Input Box</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Inline search bar, input action capsule.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> A text field featuring absolute leading icons and embedded trailing action triggers.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Used for global site searches, filtering data grids, or generating random tokens.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://google.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Google Search</a>, 
+                <a href="https://github.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">GitHub Repo Search</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can replace trailing action with a voice dictation microphone or a clear 'X' button.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★☆☆☆☆</span> (1/5) - Rating: Easy</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex flex-col items-center justify-center p-6 bg-[#1a1b1a] border border-[#333] rounded-lg min-h-[120px]">
+              <div class="relative w-full max-w-md mx-auto">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-repo-lightblue">🔍</span>
+                <input type="text" id="sandbox-search-input" onkeyup="checkSearchLength(this.value)" class="w-full bg-[#2a2b2a] border border-[#444] rounded-full pl-11 pr-12 py-2 text-xs text-repo-white outline-none focus:border-repo-blue" value="dilithium">
+                <button onclick="randomizeSearchKeyword()" class="absolute right-2.5 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-repo-blue hover:bg-repo-lightblue flex items-center justify-center text-xs transition">🌀</button>
+              </div>
+              <div id="search-feedback" class="text-xs font-mono text-repo-lightblue mt-4 text-center">Scanning Signature: "dilithium"</div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-input" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Build a rounded Input field containing a leading search icon and an absolute-positioned trailing action button inside its right boundary.</p>
+            <button onclick="copyGeneratedPrompt('prompt-input')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 3 ================= -->
+      <section id="comp-3" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('03', 'Collapsible Navigation', 'prompt-nav')" title="Click to add to Builder Basket">03</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Collapsible Navigation Drawer</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Side nav deck, collapsible sidebar, layout drawer.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> Side nav deck that contracts width, hiding labels to display high-density icon sets.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Dashboard primary navigation, settings panels, or tool palettes in canvas editors.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://youtube.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">YouTube Sidebar</a>, 
+                <a href="https://discord.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Discord Server List</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can transition to a completely hidden off-canvas drawer on mobile devices.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★★☆☆</span> (3/5) - Rating: Difficult</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex items-center justify-center p-6 bg-[#1a1b1a] border border-[#333] rounded-lg min-h-[180px]">
+              <div id="sidebar-container" class="drawer-transition w-[220px] bg-repo-dark border border-[#444] rounded-xl p-3 flex flex-col gap-1.5">
+                <div class="flex items-center justify-between px-2 py-1 mb-1">
+                  <button onclick="toggleSidebarState()" class="w-8 h-8 rounded-full border border-[#444] hover:bg-[#333] flex items-center justify-center text-white transition">🛠️</button>
+                  <span class="sidebar-label text-[10px] text-gray-400 font-bold uppercase">CONTROL</span>
+                </div>
+                <div class="sidebar-item active bg-repo-blue/20 border border-repo-blue/50 text-repo-lightblue flex items-center p-2 rounded-lg text-xs gap-3">
+                  <span>🛰️</span><span class="sidebar-label font-medium truncate">Nexus Core Uplink</span>
+                </div>
+                <div class="sidebar-item text-gray-400 flex items-center p-2 rounded-lg text-xs gap-3 hover:bg-[#333] transition">
+                  <span>📜</span><span class="sidebar-label font-medium truncate">Acquired Artifacts</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-nav" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Implement a Collapsible Navigation Drawer. When folded, animate its width down and hide text labels, leaving only icons visible.</p>
+            <button onclick="copyGeneratedPrompt('prompt-nav')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 4 ================= -->
+      <section id="comp-4" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('04', 'Multi-Row Accordion', 'prompt-acc')" title="Click to add to Builder Basket">04</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Multi-Row Accordion</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Expandable list, collapse panel, details view.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> Expandable menu boxes with Choice Chips. Rendered in single-row layout and dual-column grid layout.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">E-commerce faceted filtering, deep application settings, or FAQ lists.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://amazon.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Amazon Filters</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can be rigged as a "true accordion" where opening one panel automatically closes the others.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★☆☆☆</span> (2/5) - Rating: Intermediate</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex flex-col items-center justify-center p-6 bg-[#1a1b1a] border border-[#333] rounded-lg min-h-[180px] space-y-4">
+              <div class="w-full border border-[#444] rounded-xl bg-repo-dark overflow-hidden">
+                <div onclick="toggleAccordionContent('row-body', 'row-chevron')" class="flex items-center justify-between px-4 py-2.5 bg-[#222] cursor-pointer">
+                  <span class="text-[10px] font-bold text-repo-lightblue uppercase">Spell Schools (Single-Row)</span>
+                  <span id="row-chevron" class="text-xs text-repo-blue transition-transform duration-200">▲</span>
+                </div>
+                <div id="row-body" class="p-3 transition-all duration-300 max-h-[150px] overflow-hidden border-t border-[#444] flex flex-wrap gap-1.5">
+                  <button onclick="toggleChoiceChip(this)" class="px-2.5 py-1 rounded text-[10px] font-bold border border-repo-blue/50 bg-repo-blue/20 text-repo-lightblue transition">Evocation</button>
+                  <button onclick="toggleChoiceChip(this)" class="px-2.5 py-1 rounded text-[10px] font-bold border border-[#555] bg-transparent text-gray-300 transition">Necromancy</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-acc" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Create an Accordion container. Inside the expanded panel, render a set of choice chip tags.</p>
+            <button onclick="copyGeneratedPrompt('prompt-acc')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 9 ================= -->
+      <section id="comp-9" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('09', 'Card with Resize Grip', 'prompt-card')" title="Click to add to Builder Basket">09</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Card with Status Accent & Resize Grip</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Resizable text terminal, draggable status box, active accent card.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> A layout card featuring a left vertical accent stripe representing state, coupled with a native browser-rendered draggable resizer grip.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Code playgrounds, console outputs, adjustable dashboard widgets.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://jsfiddle.net" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">JSFiddle</a>, 
+                <a href="https://linear.app" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Linear Boards</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Configure the resizer handle to only be visible upon hovering.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★★☆☆</span> (3/5) - Rating: Difficult</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox</span>
+            <div class="flex flex-col items-center justify-center p-6 bg-[#1a1b1a] border border-[#333] rounded-lg min-h-[160px]">
+              <div id="accent-card-sandbox" class="w-full max-w-sm bg-repo-dark border border-[#444] border-l-[5px] border-l-repo-blue p-4 rounded-r-xl transition-all duration-300">
+                <div class="text-[9px] font-black text-gray-400 mb-1 uppercase tracking-widest">ARCANE SPELL MATRIX (RESIZABLE)</div>
+                <textarea class="resizable-textarea w-full bg-[#111] border border-[#333] rounded-lg p-2 text-xs text-repo-lightblue outline-none" rows="2" placeholder="Drag corner handle..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customizer Controls -->
+          <div class="border-t border-repo-brown/30 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-card-color" onchange="updateCustomCard()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="blue">Neutral Blue</option>
+                <option value="green">Success Green</option>
+                <option value="red">Danger Red</option>
+              </select>
+              <select id="cust-card-border" onchange="updateCustomCard()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="l-5">Thin Border (5px)</option>
+                <option value="l-8">Thick Border (8px)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-card" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Create a resizable card featuring a left vertical accent border styled in Neutral Blue (5px) and a draggable bottom-right resizer grip.</p>
+            <button onclick="copyGeneratedPrompt('prompt-card')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 12 ================= -->
+      <section id="comp-12" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('12', 'Markup Parsing Engine', 'prompt-markup')" title="Click to add to Builder Basket">12</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Lightweight Markup Parsing Engine</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Custom string parser, inline text formatter, shortcode compiler.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> Evaluates raw text strings, searching for custom inline delimiters (like `!!`, `**`) and compiling them directly into styled HTML structures.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Custom chat client micro-editors, comment threads, lightweight doc formatting widgets.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://discord.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Discord Chat Markdown</a>, 
+                <a href="https://notion.so" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Notion Slash Commands</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can support custom regex arrays to map tokens like emojis on the fly.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★★★☆</span> (4/5) - Rating: Hard</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="bg-[#1a1b1a] p-4 border border-[#333] rounded-lg space-y-3">
+              <textarea id="markup-input" onkeyup="compileSandboxMarkup(this.value)" class="w-full bg-repo-dark border border-[#444] rounded p-2 text-xs text-repo-lightblue font-mono outline-none" rows="2">***** REGION == -- Core sector !!Alpha!! == =====</textarea>
+              <div id="markup-output" class="bg-black border border-repo-blue/20 rounded p-2.5 text-xs text-gray-300 min-h-[60px] leading-relaxed"></div>
+            </div>
+          </div>
+
+          <div class="border-t border-repo-brown/30 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-markup-bold" onchange="updateMarkupCompiler()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="!!">Exclamation (!!bold!!)</option>
+                <option value="**">Asterisks (**bold**)</option>
+              </select>
+              <select id="cust-markup-style" onchange="updateMarkupCompiler()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="violet">Blue Highlight</option>
+                <option value="gold">Gold Highlight</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-markup" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Build a Lightweight Markup Parsing Engine that compiles text bolding using Exclamation (!!bold!!) tags and applies Blue Highlight outputs.</p>
+            <button onclick="copyGeneratedPrompt('prompt-markup')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 26 ================= -->
+      <section id="comp-26" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('26', 'Stacked Toast System', 'prompt-toast')" title="Click to add to Builder Basket">26</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Stacked Toast Notification System</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Notification drawer, sliding toast alerts, dynamic feedback tray.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> Instantiates non-blocking notification cards that stack cleanly. Features customizable fixed corner coordinates, frosted glass styles, and timeline timer bars.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Displaying API query updates, server warnings, network connectivity drop-offs.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://vercel.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Vercel Dashboard</a>, 
+                <a href="https://shopify.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Shopify Polaris</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can clear the automatic dismissal timer when the user's cursor hovers over the card.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★★★☆</span> (4/5) - Rating: Hard</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="flex flex-wrap gap-2 justify-center py-4 bg-[#1a1b1a] rounded-lg border border-[#333]">
+              <button onclick="triggerStackedToast('success', 'Portal Lock Set', 'Sub-space coordinates aligned.')" class="px-3.5 py-2 bg-green-900/40 border border-green-500/40 text-green-300 text-xs font-bold rounded-lg hover:bg-green-900/60 transition">Success Toast</button>
+              <button onclick="triggerStackedToast('warning', 'Anomaly Detected', 'Quantum shields dropping.')" class="px-3.5 py-2 bg-yellow-900/40 border border-yellow-500/40 text-yellow-300 text-xs font-bold rounded-lg hover:bg-yellow-900/60 transition">Warning Toast</button>
+              <button onclick="triggerStackedToast('error', 'Warp Core Failure', 'Containment matrix breached!')" class="px-3.5 py-2 bg-red-900/40 border border-red-500/40 text-red-300 text-xs font-bold rounded-lg hover:bg-red-900/60 transition">Error Toast</button>
+            </div>
+          </div>
+
+          <div class="border-t border-repo-brown/30 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-toast-pos" onchange="updateToastSystem()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="bottom-right">Bottom-Right Stack</option>
+                <option value="top-right">Top-Right Stack</option>
+              </select>
+              <select id="cust-toast-glass" onchange="updateToastSystem()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="opaque">Opaque Surface</option>
+                <option value="frosted">Frosted Glass Blur</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-toast" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Build a Stacked Toast system positioned at bottom-right (fixed bottom-6 right-6), styled with Opaque Surface (solid background) and progress timers.</p>
+            <button onclick="copyGeneratedPrompt('prompt-toast')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 27 ================= -->
+      <section id="comp-27" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-brown/30 p-6 rounded-2xl hover:border-repo-brown transition shadow-lg">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-white font-bold bg-repo-blue px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('27', 'Indeterminate Spinners', 'prompt-spin')" title="Click to add to Builder Basket">27</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Indeterminate Loading Spinners</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Async visual loaders, progress loops, glowing radar elements.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> Highly optimized vector animation loops indicating operations are running in the background. Uses CSS dropshadows and pings for depth.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">API loading templates, form submission indicators, background compilations.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://youtube.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">YouTube Buffering</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can use raw SVG filters to calculate glowing contour outlines on path segments.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★★☆☆</span> (3/5) - Rating: Difficult</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="flex items-center justify-center gap-8 py-6 bg-[#1a1b1a] rounded-lg border border-[#333]" id="sandbox-spinner-container">
+              <svg class="animate-spin h-8 w-8 text-repo-blue" style="box-shadow: 0 0 15px rgba(81,133,197,0.5); border-radius: 9999px;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          </div>
+
+          <div class="border-t border-repo-brown/30 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-spin-glow" onchange="updateSpinnerComponent()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="box-shadow">Box-Shadow Glow</option>
+                <option value="drop-shadow">Drop-Shadow Filter</option>
+              </select>
+              <select id="cust-spin-color" onchange="updateSpinnerComponent()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="blue">Blue Flux</option>
+                <option value="magenta">Magenta Warp</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-spin" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Build an Indeterminate Loading Spinner styled with Box-Shadow Glow (border glow) and colored in Blue Flux.</p>
+            <button onclick="copyGeneratedPrompt('prompt-spin')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= COMPONENT 36 ================= -->
+      <section id="comp-36" class="scroll-mt-24 grid grid-cols-1 lg:grid-cols-12 gap-6 bg-repo-card border border-repo-sand/50 p-6 rounded-2xl hover:border-repo-sand transition shadow-[0_0_20px_rgba(223,159,94,0.15)]">
+        <div class="lg:col-span-6 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-sans text-xs text-repo-dark font-bold bg-repo-sand px-2.5 py-1 rounded cursor-pointer add-to-basket transition" onclick="addToBasket('36', 'Interactive Glossary', 'prompt-gloss')" title="Click to add to Builder Basket">36</span>
+              <h3 class="text-lg font-bold text-white uppercase tracking-wider">Interactive Glossary & Hover-Preview</h3>
+            </div>
+            <div class="text-xs space-y-3 mt-4 leading-relaxed text-repo-cream">
+              <p><strong class="text-repo-blue">TERMINOLOGY:</strong> Information deck, concept preview board, hover lookup switcher.</p>
+              <p><strong class="text-repo-blue">WHAT IT DOES:</strong> A split column layout where hovering over dictionary tags instantly compiles a visual simulation card in the adjacent preview container.</p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">POSSIBLE APPLICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Interactive API documentation panels, design system guidelines, game glossary decks.</p>
+              </details>
+              <p><strong class="text-repo-blue block mb-1">LIVE EXAMPLES IN THE WILD:</strong>
+                <a href="https://stripe.com" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Stripe Docs</a>,
+                <a href="https://wikipedia.org" target="_blank" class="text-repo-lightblue hover:text-repo-white underline">Wikipedia Popovers</a>
+              </p>
+              <details class="group cursor-pointer">
+                <summary class="text-repo-blue font-bold outline-none flex items-center gap-1">MODIFICATIONS <span class="text-[10px] opacity-50 group-open:rotate-180 transition-transform">▼</span></summary>
+                <p class="mt-1.5 pl-3 border-l-2 border-repo-darkteal text-repo-cream/80">Can support mouseclick triggers as a persistent locked state on mobile.</p>
+              </details>
+              <p><strong class="text-repo-blue">COMPLEXITY:</strong> <span class="text-yellow-500 text-sm">★★★★☆</span> (4/5) - Rating: Hard</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-6 bg-repo-dark/60 p-5 rounded-xl border border-repo-brown/20 flex flex-col justify-between gap-4">
+          <div>
+            <span class="text-[10px] font-black text-repo-sand uppercase tracking-widest block mb-2">Live Sandbox Preview</span>
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4">
+              <div class="sm:col-span-6 space-y-1.5">
+                <div onmouseenter="setGlossaryPreview('affordance')" class="p-2.5 bg-[#1a1b1a] hover:bg-[#2a2b2a] rounded-lg cursor-pointer transition border border-[#333] text-xs flex justify-between">
+                  <span>⚡ Affordance</span><span class="text-repo-lightblue font-mono text-[9px]">Concept</span>
+                </div>
+                <div onmouseenter="setGlossaryPreview('fitts')" class="p-2.5 bg-[#1a1b1a] hover:bg-[#2a2b2a] rounded-lg cursor-pointer transition border border-[#333] text-xs flex justify-between">
+                  <span>📏 Fitts's Law</span><span class="text-repo-lightblue font-mono text-[9px]">Interaction</span>
+                </div>
+                <div onmouseenter="setGlossaryPreview('stacking')" class="p-2.5 bg-[#1a1b1a] hover:bg-[#2a2b2a] rounded-lg cursor-pointer transition border border-[#333] text-xs flex justify-between">
+                  <span>🥞 Stacking Context</span><span class="text-repo-lightblue font-mono text-[9px]">CSS Depth</span>
+                </div>
+              </div>
+              <div id="glossary-preview-sandbox" class="sm:col-span-6 p-4 bg-black/40 border border-repo-blue/30 rounded-lg text-xs min-h-[140px] flex flex-col justify-center items-center text-center text-gray-400">
+                Hover over a glossary term to activate visual simulation...
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-repo-brown/30 pt-3 space-y-3">
+            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Prompt Customizer & Code Generator</span>
+            <div class="grid grid-cols-2 gap-3 text-xs">
+              <select id="cust-gloss-layout" onchange="updateGlossarySystem()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="split">Split Columns (Side-by-side)</option>
+                <option value="stacked">Stacked Blocks (Top/bottom)</option>
+              </select>
+              <select id="cust-gloss-trigger" onchange="updateGlossarySystem()" class="w-full bg-[#1a1b1a] border border-[#333] rounded p-1.5 outline-none text-repo-cream">
+                <option value="hover">Hover Enter Trigger</option>
+                <option value="click">Manual Click Trigger</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-black/60 border border-repo-brown/30 p-3 rounded-lg relative mt-2">
+            <p id="prompt-gloss" class="text-[10px] font-mono text-repo-cream/80 pr-12 leading-relaxed">Create a Glossary and Preview component arranged in a Split Columns (Side-by-side) layout, triggered via Hover Enter (Mouseover trigger).</p>
+            <button onclick="copyGeneratedPrompt('prompt-gloss')" class="absolute right-2.5 bottom-2.5 text-repo-sand hover:text-repo-white font-bold text-[10px] tracking-widest">COPY</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= INTERFACE ARCHITECTURE & COLOR TOKEN BLUEPRINT ================= -->
+      <section id="architecture-blueprint" class="scroll-mt-24 mt-20 pt-12 border-t border-repo-brown/30 space-y-8">
+        
+        <div class="text-center max-w-3xl mx-auto">
+          <h2 class="text-2xl font-black text-repo-white uppercase tracking-widest">📐 Interface Architecture & Color Token Blueprint</h2>
+          <p class="text-xs text-repo-cream/70 mt-1">Naming conventions, design tokens, and color contrast rules for modern dark-themed web interfaces.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          
+          <!-- Column 1: Nomenclature Standards -->
+          <div class="bg-repo-card border border-repo-brown/30 p-6 rounded-2xl space-y-4 shadow-lg">
+            <h4 class="text-xs font-black text-repo-sand uppercase tracking-widest border-b border-repo-brown/30 pb-2 flex items-center gap-1.5">
+              <span>🏷️</span> CLASSIFICATION & NOMENCLATURE
+            </h4>
+            <div class="space-y-4 text-xs">
+              <div>
+                <strong class="text-repo-white block font-bold mb-1">1. Popover vs. Tooltip vs. Modal</strong>
+                <p class="text-repo-cream/80 leading-relaxed">
+                  * <span class="text-repo-lightblue font-bold">Tooltip</span>: Tiny, non-interactive, hover-triggered inline label showing simple descriptors (e.g. "Save layout").<br>
+                  * <span class="text-repo-lightblue font-bold">Popover</span>: Multi-line rich content cards positioned relative to anchors containing options or lists.<br>
+                  * <span class="text-repo-lightblue font-bold">Modal</span>: Viewport-blocking central dialogs requiring dismissal actions.
+                </p>
+              </div>
+              <div>
+                <strong class="text-repo-white block font-bold mb-1">2. Drawer vs. Sheet</strong>
+                <p class="text-repo-cream/80 leading-relaxed">
+                  * <span class="text-repo-lightblue font-bold">Drawer</span>: Side menu slider panels anchored to the left/right boundaries.<br>
+                  * <span class="text-repo-lightblue font-bold">Sheet</span>: Bottom-anchored layouts designed for mobile interactions.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Column 2: Color Contrast & WCAG AA Guidelines -->
+          <div class="bg-repo-card border border-repo-brown/30 p-6 rounded-2xl space-y-4 shadow-lg">
+            <h4 class="text-xs font-black text-repo-sand uppercase tracking-widest border-b border-repo-brown/30 pb-2 flex items-center gap-1.5">
+              <span>🎨</span> CONTRAST GUIDELINES & WCAG AA
+            </h4>
+            <div class="space-y-3 text-xs leading-relaxed text-repo-cream/80">
+              <p>
+                To maintain strict <strong class="text-repo-white">WCAG AA compliance</strong>, text components must maintain a contrast ratio of at least <strong class="text-repo-lightblue font-bold">4.5:1</strong> against adjacent background blocks. Large header strings require a minimum ratio of <strong class="text-repo-lightblue font-bold">3:1</strong>. This ensures legibility for users with visual impairments.
+              </p>
+              <div class="space-y-2 mt-4">
+                <div class="flex justify-between items-center bg-repo-dark p-2.5 border border-[#333] rounded">
+                  <span class="font-bold text-repo-white">Dark Token Surface</span>
+                  <span class="font-mono text-repo-lightblue">#2A2B2A</span>
+                </div>
+                <div class="flex justify-between items-center bg-[#1e1f1e] p-2.5 border border-[#333] rounded">
+                  <span class="font-bold text-repo-white">Elevation Layer</span>
+                  <span class="font-mono text-repo-lightblue">#1E1F1E</span>
+                </div>
+                <div class="flex justify-between items-center bg-[#8c7355] p-2.5 border border-[#555] rounded">
+                  <span class="font-bold text-repo-dark">Accent Borders</span>
+                  <span class="font-mono text-repo-dark font-bold">#8C7355</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+  </div>
+
+  <!-- Builder Basket / Notepad Floating Window -->
+  <div id="notepad-window" class="fixed top-24 right-8 w-96 bg-repo-card border-2 border-repo-blue rounded-xl shadow-[0_10px_30px_rgba(0,0,0,0.8)] flex flex-col z-[200] hidden resize overflow-hidden">
+    <!-- Header -->
+    <div id="notepad-header" class="bg-repo-blue text-repo-dark px-4 py-2 font-black text-xs uppercase flex justify-between items-center cursor-move select-none">
+      <span class="tracking-widest">📝 Builder Notepad</span>
+      <button onclick="toggleNotepad()" class="hover:text-repo-white">✕</button>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="bg-repo-dark p-2 border-b border-repo-brown/30 flex flex-wrap gap-2 text-[10px]">
+      <div class="flex gap-1 w-full">
+        <select id="notepad-section" class="bg-[#1a1b1a] text-repo-cream border border-[#444] rounded px-1 flex-1 outline-none">
+          <option value="Menu">Menu</option>
+          <option value="Body">Body</option>
+          <option value="Side Panel">Side Panel</option>
+          <option value="Lower Panel">Lower Panel</option>
+          <option value="Desktop Version Only">Desktop Version Only</option>
+          <option value="Mobile Version Only">Mobile Version Only</option>
+        </select>
+        <button onclick="addSection()" class="bg-repo-darkteal hover:bg-repo-teal text-white px-2 py-1 rounded font-bold">Add Section</button>
+      </div>
+      <div class="flex gap-1 w-full justify-between">
+        <button onclick="groupSelectedItems()" class="bg-repo-brown hover:bg-repo-sand text-repo-dark px-3 py-1 rounded font-bold shadow">Group Selected</button>
+        <button onclick="clearBasket()" class="bg-repo-maroon hover:bg-repo-magenta text-white px-3 py-1 rounded font-bold">Clear All</button>
+      </div>
+    </div>
+
+    <!-- List Area -->
+    <div id="notepad-list" class="flex-1 overflow-y-auto p-3 space-y-2 bg-[#1a1b1a] min-h-[250px]">
+      <!-- Items populated via JS -->
+    </div>
+
+    <!-- Bottom Input & Export -->
+    <div class="bg-repo-dark p-3 border-t border-repo-brown/30 flex flex-col gap-2">
+      <div class="flex gap-1">
+        <input type="text" id="notepad-freetext" class="bg-[#1a1b1a] text-xs text-repo-cream border border-[#444] rounded px-2 py-1.5 flex-1 outline-none focus:border-repo-blue" placeholder="Free type notes...">
+        <button onclick="addFreeText()" class="bg-repo-blue hover:bg-repo-lightblue text-repo-dark px-3 rounded font-bold text-[10px]">Add Note</button>
+      </div>
+      <div class="flex gap-2 justify-between mt-1">
+        <button onclick="copyNotepadToClipboard()" class="bg-repo-teal hover:bg-repo-darkteal text-repo-dark flex-1 py-1.5 rounded text-[10px] font-bold shadow">Copy to Clipboard</button>
+        <button onclick="downloadNotepadTxt()" class="bg-repo-sand hover:bg-repo-brown text-repo-dark flex-1 py-1.5 rounded text-[10px] font-bold shadow">Download .txt</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Global Guide Dialog Toast Overlay -->
+  <div id="tutorial-card-dialog" class="fixed bottom-24 right-8 z-[100] w-80 bg-repo-card border-2 border-repo-blue rounded-xl shadow-2xl overflow-hidden hidden select-none">
+    <div class="bg-repo-blue text-repo-dark px-4 py-2 font-black text-[10px] uppercase tracking-widest flex items-center justify-between">
+      <span>🛸 Star-Gate System Guide</span>
+      <button onclick="closeSandboxTutorial()" class="font-black text-xs hover:text-white">✕</button>
+    </div>
+    <div class="p-4 space-y-3">
+      <p id="tutorial-card-text" class="text-xs text-repo-cream leading-relaxed"></p>
+      <div class="flex gap-2 justify-end pt-2">
+        <button onclick="closeSandboxTutorial()" class="px-3 py-1.5 rounded bg-repo-dark border border-repo-brown hover:bg-[#333] text-repo-cream font-bold text-[9px] uppercase">Skip</button>
+        <button id="tutorial-next-btn" onclick="nextTutorialStep()" class="px-4 py-1.5 rounded bg-repo-blue hover:bg-repo-lightblue text-repo-dark font-bold text-[9px] uppercase">Next Step ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Global Toast Container -->
+  <div id="toast-wrapper" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-300 transform translate-y-10 opacity-0">
+    <div id="toast-content" class="bg-repo-dark text-repo-white border border-repo-teal rounded-xl px-4 py-2.5 text-xs font-semibold shadow-2xl flex items-center gap-2">
+      <span class="text-repo-teal">✓</span>
+      <span id="toast-text">Phrase copied successfully!</span>
+    </div>
+  </div>
+
+  <!-- Interactive Stacked Toast Layer Container (Component 26) -->
+  <div id="stacked-toast-container" class="fixed bottom-6 right-6 z-[100] flex flex-col gap-2.5 pointer-events-none max-w-sm w-full"></div>
+
+  <!-- Interactive Sandbox JavaScript Handlers -->
+  <script>
+    // Smooth navigation anchor
+    function scrollToComponent(elementId) {
+      document.getElementById(elementId).scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // Dynamic global toast message handler
+    let toastTimeout;
+    function showToast(message) {
+      const toast = document.getElementById('toast-wrapper');
+      const text = document.getElementById('toast-text');
+      text.textContent = message;
+      clearTimeout(toastTimeout);
+      toast.classList.remove('translate-y-10', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-10', 'opacity-0');
+      }, 3000);
+    }
+
+    // Copy to clipboard with fallback
+    function copyPrompt(phrase) {
+      const el = document.createElement('textarea');
+      el.value = phrase;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      try {
+        document.execCommand('copy');
+        showToast("Copied to clipboard! Ready to paste into chat.");
+      } catch (err) {}
+      document.body.removeChild(el);
+    }
+
+    // Dynamic Prompt copy handler
+    function copyGeneratedPrompt(elementId) {
+      const text = document.getElementById(elementId).textContent;
+      copyPrompt(text);
+    }
+
+    // ================== BUILDER BASKET & NOTEPAD ==================
+    let basketItems = JSON.parse(localStorage.getItem('ui_repo_basket')) || [];
+    let basketModeActive = false;
+    let groupCounter = 1;
+    let selectedForGroup = new Set();
+    let draggedItemIdx = null;
+
+    function toggleBasketMode() {
+      basketModeActive = !basketModeActive;
+      document.body.classList.toggle('basket-mode-active', basketModeActive);
+      const btn = document.getElementById('toggle-basket-btn');
+      if (basketModeActive) {
+        btn.innerText = "🛒 Deactivate Builder Basket";
+        btn.classList.replace('bg-repo-blue', 'bg-repo-salmon');
+        btn.classList.replace('hover:bg-repo-lightblue', 'hover:bg-repo-maroon');
+        showToast("Basket Mode Active! Click component numbers to add.");
+      } else {
+        btn.innerText = "🛒 Activate Builder Basket";
+        btn.classList.replace('bg-repo-salmon', 'bg-repo-blue');
+        btn.classList.replace('hover:bg-repo-maroon', 'hover:bg-repo-lightblue');
+      }
+    }
+
+    function addToBasket(id, name, promptId) {
+      if (!basketModeActive) return;
+      const promptText = document.getElementById(promptId)?.innerText || "";
+      basketItems.push({
+        id: Date.now() + Math.random(),
+        type: 'component',
+        compId: id,
+        name: name,
+        prompt: promptText
+      });
+      saveBasket();
+      showToast(`Added [${id}] ${name} to basket!`);
+      renderNotepad();
+    }
+
+    function openNotepad() {
+      const np = document.getElementById('notepad-window');
+      np.classList.toggle('hidden');
+      renderNotepad();
+    }
+    function toggleNotepad() { openNotepad(); }
+
+    function addFreeText() {
+       const val = document.getElementById('notepad-freetext').value;
+       if (!val) return;
+       basketItems.push({ id: Date.now(), type: 'text', text: val });
+       document.getElementById('notepad-freetext').value = '';
+       saveBasket(); renderNotepad();
+    }
+
+    function addSection() {
+       const val = document.getElementById('notepad-section').value;
+       if (!val) return;
+       basketItems.push({ id: Date.now(), type: 'section', name: val });
+       saveBasket(); renderNotepad();
+    }
+
+    function toggleGroupSelection(checkbox, itemId) {
+       if (checkbox.checked) selectedForGroup.add(itemId);
+       else selectedForGroup.delete(itemId);
+    }
+
+    function groupSelectedItems() {
+       if (selectedForGroup.size === 0) return showToast("Check the boxes of items to group first.");
+       
+       let indices = [];
+       basketItems.forEach((item, index) => {
+          if (selectedForGroup.has(item.id)) indices.push(index);
+       });
+       
+       if (indices.length > 0) {
+          const min = Math.min(...indices);
+          const max = Math.max(...indices);
+          const groupName = "Group " + groupCounter++;
+          
+          basketItems.splice(max + 1, 0, { id: Date.now()+1, type: 'group_end', name: groupName });
+          basketItems.splice(min, 0, { id: Date.now(), type: 'group_start', name: groupName });
+       }
+       selectedForGroup.clear();
+       saveBasket(); renderNotepad();
+    }
+
+    function removeItem(id) {
+       basketItems = basketItems.filter(i => i.id !== id);
+       saveBasket(); renderNotepad();
+    }
+
+    function clearBasket() {
+       if(confirm("Clear all items from the builder?")) {
+         basketItems = []; saveBasket(); renderNotepad();
+       }
+    }
+
+    function editTextPill(id) {
+       const item = basketItems.find(i => i.id === id);
+       if (item && item.type === 'text') {
+         const newText = prompt("Edit text note:", item.text);
+         if (newText !== null && newText.trim() !== "") {
+             item.text = newText;
+             saveBasket(); renderNotepad();
+         }
+       }
+    }
+
+    function saveBasket() {
+      localStorage.setItem('ui_repo_basket', JSON.stringify(basketItems));
+    }
+
+    // Drag and Drop inside notepad
+    function handleDragStart(e, idx) {
+       draggedItemIdx = idx;
+       e.target.classList.add('dragging');
+       e.dataTransfer.effectAllowed = 'move';
+       // Firefox requires data to be set
+       e.dataTransfer.setData('text/plain', idx); 
+    }
+    function handleDragEnd(e) {
+       e.target.classList.remove('dragging');
+       draggedItemIdx = null;
+    }
+    function handleDragOver(e) {
+       e.preventDefault();
+       e.dataTransfer.dropEffect = 'move';
+    }
+    function handleDrop(e, targetIdx) {
+       e.preventDefault();
+       if (draggedItemIdx === null || draggedItemIdx === targetIdx) return;
+       const item = basketItems.splice(draggedItemIdx, 1)[0];
+       basketItems.splice(targetIdx, 0, item);
+       saveBasket(); renderNotepad();
+    }
+
+    function renderNotepad() {
+      const list = document.getElementById('notepad-list');
+      list.innerHTML = '';
+      
+      if(basketItems.length === 0) {
+        list.innerHTML = '<div class="text-center text-xs text-gray-500 mt-10 italic">Basket is empty. Activate mode and click numbers!</div>';
+        return;
+      }
+
+      basketItems.forEach((item, idx) => {
+        const div = document.createElement('div');
+        div.className = "notepad-pill bg-repo-dark border border-[#444] rounded p-2 flex items-start gap-2 cursor-grab transition shadow-sm text-[10px]";
+        div.draggable = true;
+        div.ondragstart = (e) => handleDragStart(e, idx);
+        div.ondragend = handleDragEnd;
+        div.ondragover = handleDragOver;
+        div.ondrop = (e) => handleDrop(e, idx);
+
+        let contentHtml = '';
+        if (item.type === 'component') {
+          contentHtml = `
+            <input type="checkbox" onchange="toggleGroupSelection(this, ${item.id})" class="mt-1">
+            <div class="flex-1 min-w-0">
+              <strong class="text-repo-blue block">Comp ${item.compId}: ${item.name}</strong>
+              <span class="text-gray-400 block truncate" title="${item.prompt}">${item.prompt}</span>
+            </div>
+            <button onclick="removeItem(${item.id})" class="text-repo-maroon hover:text-repo-magenta font-bold">✕</button>
+          `;
+        } else if (item.type === 'text') {
+          contentHtml = `
+            <input type="checkbox" onchange="toggleGroupSelection(this, ${item.id})" class="mt-1">
+            <div class="flex-1 min-w-0 cursor-pointer hover:text-repo-white" onclick="editTextPill(${item.id})">
+              <span class="text-repo-sand block italic break-words">"${item.text}"</span>
+            </div>
+            <button onclick="removeItem(${item.id})" class="text-repo-maroon hover:text-repo-magenta font-bold">✕</button>
+          `;
+        } else if (item.type === 'section') {
+          div.classList.replace('bg-repo-dark', 'bg-repo-teal/20');
+          div.classList.replace('border-[#444]', 'border-repo-teal');
+          contentHtml = `
+            <div class="flex-1 min-w-0 font-black text-repo-teal uppercase text-center tracking-widest">
+              [ SECTION: ${item.name} ]
+            </div>
+            <button onclick="removeItem(${item.id})" class="text-repo-maroon hover:text-repo-magenta font-bold">✕</button>
+          `;
+        } else if (item.type === 'group_start') {
+          div.classList.replace('bg-repo-dark', 'bg-[#333]');
+          contentHtml = `<div class="flex-1 min-w-0 font-black text-gray-400 text-center">▼ ${item.name} START ▼</div><button onclick="removeItem(${item.id})" class="text-gray-600 hover:text-white">✕</button>`;
+        } else if (item.type === 'group_end') {
+          div.classList.replace('bg-repo-dark', 'bg-[#333]');
+          contentHtml = `<div class="flex-1 min-w-0 font-black text-gray-400 text-center">▲ ${item.name} END ▲</div><button onclick="removeItem(${item.id})" class="text-gray-600 hover:text-white">✕</button>`;
+        }
+        
+        div.innerHTML = contentHtml;
+        list.appendChild(div);
+      });
+    }
+
+    function generateNotepadOutput() {
+        let out = "=== UI BUILDER SPEC ===\n\n";
+        basketItems.forEach(item => {
+           if (item.type === 'section') out += `\n[ SECTION: ${item.name.toUpperCase()} ]\n`;
+           else if (item.type === 'group_start') out += `\n========= ${item.name} START =========\n`;
+           else if (item.type === 'group_end') out += `========= ${item.name} END =========\n\n`;
+           else if (item.type === 'text') out += `NOTE: ${item.text}\n`;
+           else if (item.type === 'component') out += `- COMPONENT ${item.compId}: ${item.name}\n  PROMPT: ${item.prompt}\n`;
+        });
+        return out;
+    }
+
+    function copyNotepadToClipboard() {
+      if(basketItems.length === 0) return showToast("Basket is empty!");
+      copyPrompt(generateNotepadOutput());
+    }
+
+    function downloadNotepadTxt() {
+      if(basketItems.length === 0) return showToast("Basket is empty!");
+      const text = generateNotepadOutput();
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `UI_Builder_Spec_${Date.now()}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Notepad Draggable Window Logic
+    const dragNpHeader = document.getElementById('notepad-header');
+    const dragNpWindow = document.getElementById('notepad-window');
+    let npActiveDrag = false;
+    let npXOffset = 0, npYOffset = 0;
+    let npInitialX, npInitialY;
+
+    dragNpHeader.addEventListener('mousedown', (e) => {
+      npInitialX = e.clientX - npXOffset;
+      npInitialY = e.clientY - npYOffset;
+      npActiveDrag = true;
+    });
+    document.addEventListener('mousemove', (e) => {
+      if(npActiveDrag) {
+        e.preventDefault();
+        npXOffset = e.clientX - npInitialX;
+        npYOffset = e.clientY - npInitialY;
+        dragNpWindow.style.transform = `translate3d(${npXOffset}px, ${npYOffset}px, 0)`;
+      }
+    });
+    document.addEventListener('mouseup', () => npActiveDrag = false);
+
+
+    // ================== COMPONENT LOGIC ==================
+
+    // Component 1 Segment Switching Action
+    function switchSegment(mode) {
+      const btnCode = document.getElementById('seg-custom-btn-1');
+      const btnPreview = document.getElementById('seg-custom-btn-2');
+      const feedback = document.getElementById('segment-feedback');
+      
+      const colorSelect = document.getElementById('cust-seg-color')?.value || 'blue';
+      let activeColor = colorSelect === 'blue' ? 'bg-[#0f2d59] text-blue-200 border-blue-500/30' : 'bg-[#581a30] text-pink-200 border-[#9e2a53]/50';
+      
+      if (mode === 'code') {
+        btnCode.className = `px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${activeColor}`;
+        btnPreview.className = "px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 text-gray-400 hover:text-gray-100 border border-transparent";
+        feedback.textContent = 'Current Uplink Mode: "Sub-Space Code" active';
+      } else {
+        btnPreview.className = `px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border ${activeColor}`;
+        btnCode.className = "px-5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 text-gray-400 hover:text-gray-100 border border-transparent";
+        feedback.textContent = 'Current Uplink Mode: "Holo-Preview" Projection Engaged';
+      }
+    }
+
+    function updateSegmentedControl() {
+      const color = document.getElementById('cust-seg-color').value;
+      const glow = document.getElementById('cust-seg-glow').value;
+      const container = document.getElementById('sandbox-segmented');
+      const promptEl = document.getElementById('prompt-seg');
+      
+      let promptColor = color === 'blue' ? "Matrix Blue" : "Deep Maroon";
+      let glowClass = "";
+      let promptGlow = "subtle neon glow";
+      
+      if (glow === 'enabled') {
+        glowClass = color === 'blue' ? "shadow-[0_0_15px_rgba(81,133,197,0.4)]" : "shadow-[0_0_15px_rgba(158,42,83,0.4)]";
+      } else {
+        promptGlow = "no visual glow";
+      }
+
+      container.className = `inline-flex bg-black p-[3px] rounded-full border border-[#333] transition-all duration-300 ${glowClass}`;
+      switchSegment('code'); 
+      promptEl.textContent = `Create a Segmented Control Switcher styled with ${promptColor} active states and a ${promptGlow} effect.`;
+    }
+
+    // Component 2 Action Handlers
+    function checkSearchLength(value) {
+      const feedback = document.getElementById('search-feedback');
+      feedback.textContent = `Scanning Signature: "${value}" (${value.length} amu)`;
+    }
+    function randomizeSearchKeyword() {
+      const input = document.getElementById('sandbox-search-input');
+      const words = ["antimatter", "chronosphere", "manaflux", "hyperdrive", "orichalcum", "nanogrid"];
+      const randomWord = words[Math.floor(Math.random() * words.length)];
+      input.value = randomWord;
+      checkSearchLength(randomWord);
+      showToast(`Scanned frequency set to: "${randomWord}"`);
+    }
+
+    // Component 3 Sidebar Collapsible Drawer State Action
+    function toggleSidebarState() {
+      const sidebar = document.getElementById('sidebar-container');
+      const labels = document.querySelectorAll('.sidebar-label');
+      
+      if (sidebar.classList.contains('w-[220px]')) {
+        // Collapse state
+        sidebar.classList.remove('w-[220px]');
+        sidebar.classList.add('w-[70px]', 'items-center');
+        labels.forEach(lbl => lbl.classList.add('hidden'));
+        showToast("Command panel compressed into icon mode.");
+      } else {
+        // Expand state
+        sidebar.classList.remove('w-[70px]', 'items-center');
+        sidebar.classList.add('w-[220px]');
+        labels.forEach(lbl => lbl.classList.remove('hidden'));
+        showToast("Full system labels restored.");
+      }
+    }
+
+    // Component 4 Accordion Expansion Trigger (Universal)
+    function toggleAccordionContent(bodyId, chevronId) {
+      const body = document.getElementById(bodyId);
+      const chevron = document.getElementById(chevronId);
+      if (body.classList.contains('max-h-[150px]')) {
+        body.classList.remove('max-h-[150px]');
+        body.classList.add('max-h-0', 'p-0', 'border-t-0');
+        chevron.style.transform = 'rotate(180deg)';
+      } else {
+        body.classList.add('max-h-[150px]');
+        body.classList.remove('max-h-0', 'p-3', 'border-t-0');
+        chevron.style.transform = 'rotate(0deg)';
+      }
+    }
+    function toggleChoiceChip(btn) {
+      if (btn.classList.contains('bg-repo-blue/20')) {
+        btn.className = "px-2.5 py-1 rounded text-[10px] font-bold border border-[#555] bg-transparent text-gray-300 transition hover:text-white";
+      } else {
+        btn.className = "px-2.5 py-1 rounded text-[10px] font-bold border border-repo-blue/50 bg-repo-blue/20 text-repo-lightblue transition";
+      }
+    }
+
+    // Component 9 Card Accent Selector Customizer
+    function updateCustomCard() {
+      const color = document.getElementById('cust-card-color').value;
+      const border = document.getElementById('cust-card-border').value;
+      const card = document.getElementById('accent-card-sandbox');
+      const promptEl = document.getElementById('prompt-card');
+
+      card.className = "w-full max-w-sm bg-[#111] border border-[#333] p-4 rounded-r-xl transition-all duration-300";
+      
+      let borderClass = border === 'l-8' ? "border-l-[8px]" : "border-l-[5px]";
+      let promptThickness = border === 'l-8' ? "Thick Border (8px)" : "Thin Border (5px)";
+      card.classList.add(borderClass);
+
+      let colorClass = "border-l-repo-blue";
+      let promptColor = "Neutral Blue";
+      if (color === 'green') {
+        colorClass = "border-l-repo-teal"; promptColor = "Success Green";
+      } else if (color === 'red') {
+        colorClass = "border-l-repo-maroon"; promptColor = "Danger Red";
+      }
+      card.classList.add(colorClass);
+
+      promptEl.textContent = `Create a resizable card featuring a left vertical accent border styled in ${promptColor} (${promptThickness}) and a draggable bottom-right resizer grip.`;
+    }
+
+    // Component 12 Markup
+    function compileSandboxMarkup(rawText) {
+      if (!rawText) return document.getElementById('markup-output').innerHTML = '';
+      
+      const lines = rawText.split('==');
+      const compiledLines = [];
+      let inList = false;
+
+      const boldSymbol = document.getElementById('cust-markup-bold')?.value || '!!';
+      const outputStyle = document.getElementById('cust-markup-style')?.value || 'blue';
+      let boldRegex = boldSymbol === '**' ? /\*\*(.*?)\*\*/g : /!!(.*?)!!/g;
+      let styleClass = outputStyle === 'gold' ? "text-repo-sand font-extrabold" : "text-repo-lightblue font-extrabold";
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (line === '=====') {
+          if (inList) { compiledLines.push('</ul>'); inList = false; }
+          compiledLines.push('<hr class="border-[#333] my-3">'); continue;
+        }
+        if (line.startsWith('*****')) {
+          if (inList) { compiledLines.push('</ul>'); inList = false; }
+          compiledLines.push(`<h4 class="text-repo-lightblue font-bold tracking-wide uppercase text-xs mt-2 mb-1">${line.replace('*****', '').trim()}</h4>`); continue;
+        }
+        if (line.startsWith('-- ')) {
+          if (!inList) { compiledLines.push('<ul class="list-disc pl-5 my-1 text-[11px] text-gray-400">'); inList = true; }
+          compiledLines.push(`<li class="mb-0.5">${line.substring(3).trim().replace(boldRegex, `<strong class="${styleClass}">$1</strong>`)}</li>`); continue;
+        }
+        if (inList) { compiledLines.push('</ul>'); inList = false; }
+        if (line !== '') compiledLines.push(`<div>${line.replace(boldRegex, `<strong class="${styleClass}">$1</strong>`)}</div>`);
+      }
+      if (inList) compiledLines.push('</ul>');
+      document.getElementById('markup-output').innerHTML = compiledLines.join('\n');
+    }
+
+    function updateMarkupCompiler() {
+      const boldSymbol = document.getElementById('cust-markup-bold').value;
+      const outputStyle = document.getElementById('cust-markup-style').value;
+      const promptEl = document.getElementById('prompt-markup');
+
+      let boldSymbolText = boldSymbol === '**' ? "Asterisks (**bold**)" : "Exclamation (!!bold!!)";
+      let outputStyleText = outputStyle === 'gold' ? "Gold Highlight" : "Blue Highlight";
+
+      promptEl.textContent = `Build a Lightweight Markup Parsing Engine that compiles text bolding using ${boldSymbolText} tags and applies ${outputStyleText} outputs.`;
+      compileSandboxMarkup(document.getElementById('markup-input').value);
+    }
+
+    // Component 21 Highlight Cycler
+    function cycleRowHighlight(element) {
+      const classes = ['hl-1', 'hl-2', 'hl-3', 'hl-4', 'hl-5'];
+      let activeHl = element.getAttribute('data-hl') || '';
+      element.classList.remove(...classes);
+      
+      let currentIdx = classes.indexOf(activeHl);
+      if (currentIdx < classes.length - 1) {
+        let nextClass = classes[currentIdx + 1];
+        element.classList.add(nextClass);
+        element.setAttribute('data-hl', nextClass);
+        showToast(`Row highlight set to Layer ${currentIdx + 2}`);
+      } else {
+        element.setAttribute('data-hl', '');
+        showToast("Row highlights cleared");
+      }
+    }
+
+    // Component 26 Toast
+    function triggerStackedToast(type, title, description) {
+      const container = document.getElementById('stacked-toast-container');
+      const toastNode = document.createElement('div');
+      
+      const pos = document.getElementById('cust-toast-pos')?.value || 'bottom-right';
+      const glass = document.getElementById('cust-toast-glass')?.value || 'opaque';
+
+      if (pos === 'top-right') {
+        container.style.bottom = 'auto'; container.style.top = '24px';
+      } else {
+        container.style.top = 'auto'; container.style.bottom = '24px';
+      }
+
+      let bgStyle = "bg-[#111]";
+      let borderStyle = "border-[#333]";
+      let titleColor = "text-repo-lightblue";
+      if (type === 'success') {
+        bgStyle = (glass === 'frosted') ? "bg-repo-darkteal/30 backdrop-blur-md" : "bg-[#111]";
+        borderStyle = "border-repo-teal/40"; titleColor = "text-repo-teal";
+      } else if (type === 'warning') {
+        bgStyle = (glass === 'frosted') ? "bg-repo-sand/30 backdrop-blur-md" : "bg-[#111]";
+        borderStyle = "border-repo-sand/40"; titleColor = "text-repo-sand";
+      } else if (type === 'error') {
+        bgStyle = (glass === 'frosted') ? "bg-repo-maroon/30 backdrop-blur-md" : "bg-[#111]";
+        borderStyle = "border-repo-maroon/40"; titleColor = "text-repo-salmon";
+      }
+
+      toastNode.className = `${bgStyle} ${borderStyle} p-3.5 rounded-xl border shadow-2xl flex flex-col gap-1 transition-all duration-300 transform translate-x-12 opacity-0 pointer-events-auto shrink-0 relative overflow-hidden`;
+
+      toastNode.innerHTML = `
+        <div class="flex items-center justify-between">
+          <strong class="${titleColor} text-xs font-black uppercase tracking-wider">${title}</strong>
+          <button onclick="this.closest('.p-3\\.5').remove()" class="text-gray-500 hover:text-white text-[10px] font-bold">✕</button>
+        </div>
+        <p class="text-[11px] text-gray-400 leading-normal">${description}</p>
+        <div class="absolute bottom-0 left-0 h-[2px] bg-repo-blue w-full transition-all duration-[4000ms] linear" id="bar"></div>
+      `;
+      container.appendChild(toastNode);
+
+      setTimeout(() => {
+        toastNode.classList.remove('translate-x-12', 'opacity-0');
+        toastNode.classList.add('translate-x-0', 'opacity-100');
+        toastNode.querySelector('#bar').style.width = "0%";
+      }, 50);
+
+      setTimeout(() => {
+        toastNode.classList.remove('translate-x-0', 'opacity-100');
+        toastNode.classList.add('translate-x-12', 'opacity-0');
+        setTimeout(() => toastNode.remove(), 350);
+      }, 4000);
+    }
+
+    function updateToastSystem() {
+      const pos = document.getElementById('cust-toast-pos').value;
+      const glass = document.getElementById('cust-toast-glass').value;
+      const promptEl = document.getElementById('prompt-toast');
+      let posText = pos === 'top-right' ? "Top-Right Stack" : "Bottom-Right Stack";
+      let glassText = glass === 'frosted' ? "Frosted Glass Blur" : "Opaque Surface";
+      promptEl.textContent = `Build a Stacked Toast system positioned at ${posText}, styled with ${glassText} and progress timers.`;
+    }
+
+    // Component 27 Spinners
+    function updateSpinnerComponent() {
+      const glow = document.getElementById('cust-spin-glow').value;
+      const color = document.getElementById('cust-spin-color').value;
+      const container = document.getElementById('sandbox-spinner-container');
+      const promptEl = document.getElementById('prompt-spin');
+
+      let colorClass = color === 'magenta' ? "text-repo-magenta" : "text-repo-blue";
+      let shadowColor = color === 'magenta' ? "rgba(158,42,83,0.5)" : "rgba(81,133,197,0.5)";
+      let promptColor = color === 'magenta' ? "Magenta Warp" : "Blue Flux";
+      let glowStyle = glow === 'drop-shadow' ? `filter: drop-shadow(0 0 8px ${shadowColor});` : `box-shadow: 0 0 15px ${shadowColor}; border-radius: 9999px;`;
+      let promptGlow = glow === 'drop-shadow' ? "Drop-Shadow Filter" : "Box-Shadow Glow";
+
+      container.innerHTML = `
+        <svg class="animate-spin h-8 w-8 ${colorClass}" style="${glowStyle}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      `;
+      promptEl.textContent = `Build an Indeterminate Loading Spinner styled with ${promptGlow} and colored in ${promptColor}.`;
+    }
+
+    // Component 36 Glossary System
+    function setGlossaryPreview(term) {
+      const sandbox = document.getElementById('glossary-preview-sandbox');
+      if (GLOSSARY_BLUEPRINTS[term]) sandbox.innerHTML = GLOSSARY_BLUEPRINTS[term];
+    }
+    
+    function updateGlossarySystem() {
+      const layout = document.getElementById('cust-gloss-layout').value;
+      const trigger = document.getElementById('cust-gloss-trigger').value;
+      const promptEl = document.getElementById('prompt-gloss');
+      let layoutText = layout === 'stacked' ? "Stacked Blocks (Top/bottom)" : "Split Columns (Side-by-side)";
+      let triggerText = trigger === 'click' ? "Manual Click Trigger" : "Hover Enter Trigger";
+      promptEl.textContent = `Create a Glossary and Preview component arranged in a ${layoutText} layout, triggered via ${triggerText}.`;
+    }
+
+    // Component 25 Step Guide
+    let currentTutorialStep = 0;
+    const TUTORIAL_STEPS_蓝 = [
+      { target: "comp-1", text: "Welcome to the Master Code Sandbox! Let's start with Component 01: Segmented Control. Perfect for toggling sub-views." },
+      { target: "comp-9", text: "This is Component 09: Card with accent status lines and native draggable resizers." },
+      { target: "comp-12", text: "Look at Component 12: A custom micro-compiling engine that parses tags on raw strings." },
+      { target: "comp-21", text: "Component 21: High-contrast cell color highlight cyclers let you classify rows on the fly." },
+      { target: "comp-26", text: "Component 26: Test the stacked toast system directly via the interactive module." }
+    ];
+
+    function startVisualTutorial() {
+      currentTutorialStep = 0;
+      document.getElementById('tutorial-card-dialog').classList.remove('hidden');
+      executeTutorialFocalStep();
+    }
+    function nextTutorialStep() {
+      currentTutorialStep++;
+      if (currentTutorialStep >= TUTORIAL_STEPS_蓝.length) {
+        closeSandboxTutorial(); showToast("System guide complete! All components unlocked.");
+      } else {
+        executeTutorialFocalStep();
+      }
+    }
+    function executeTutorialFocalStep() {
+      document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+      const step = TUTORIAL_STEPS_蓝[currentTutorialStep];
+      const targetEl = document.getElementById(step.target);
+      const textEl = document.getElementById('tutorial-card-text');
+      const nextBtn = document.getElementById('tutorial-next-btn');
+
+      if (targetEl) {
+        targetEl.classList.add('tutorial-highlight');
+        targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (textEl) textEl.textContent = step.text;
+      if (nextBtn) nextBtn.textContent = currentTutorialStep === TUTORIAL_STEPS_蓝.length - 1 ? "Finish ✔" : "Next Step ▶";
+    }
+    function closeSandboxTutorial() {
+      document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+      document.getElementById('tutorial-card-dialog').classList.add('hidden');
+    }
+
+    // Initialize Sandbox Scripts
+    window.onload = function() {
+      compileSandboxMarkup(document.getElementById('markup-input').value);
+      renderNotepad();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,45 @@
+.component-card {
+  background: var(--repo-card);
+  border: 2px solid var(--repo-blue);
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+}
+.component-card.premium {
+  border-color: rgba(223,159,94,0.65);
+  box-shadow: 0 0 20px rgba(223,159,94,0.12), 0 10px 30px rgba(0,0,0,0.35);
+}
+.component-meta-panel {
+  border: 1px solid rgba(81,133,197,0.45);
+  background: rgba(0,0,0,0.22);
+  border-radius: 0.9rem;
+}
+.component-sandbox-panel {
+  border: 1.5px solid rgba(223,159,94,0.7);
+  background: rgba(0,0,0,0.55);
+  border-radius: 0.9rem;
+}
+.add-to-basket {
+  background: var(--repo-sand);
+  color: #111;
+  border: 2px solid var(--repo-sand);
+  box-shadow: 0 0 10px rgba(223,159,94,0.35);
+}
+.add-to-basket.in-basket {
+  background: var(--repo-blue) !important;
+  color: #fff !important;
+  border-color: var(--repo-lightblue) !important;
+  box-shadow: 0 0 15px var(--repo-blue);
+  animation: basket-badge-pulse 1.5s infinite;
+}
+body.basket-mode-active .add-to-basket:not(.in-basket) {
+  animation: basket-badge-pulse 1.5s infinite;
+}
+@keyframes basket-badge-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+.code-risk-stars { color: var(--repo-sand); letter-spacing: 0.08em; }
+.prompt-box {
+  background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(223,159,94,0.35);
+}

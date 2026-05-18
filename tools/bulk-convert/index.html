@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Converter | Organon</title>
+    
+    <!-- Iframe Guard: Redirects to the hub if opened directly -->
+    <script>
+        // Modified slightly for Canvas preview to not redirect constantly during testing
+        // if (window === window.parent) {
+        //     window.location.href = '../../index.html';
+        // }
+    </script>
+    
+    <!-- External Engine CDNs for Zip and HEIC processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --stone-ochre: #E5A862;
+            --chiseled-bronze: #896b49;
+            --bg-card: #292a24;
+            --bg-input: rgba(24, 25, 25, 0.95);
+            --water-blue: #4B84BF;
+            --water-spray: #79B4E3;
+            --light-blue: #75b2de;
+            --brand-red: #9A2F4F;
+            --slider-track: #61112E;
+            --alabaster-paper: #F2ECE0;
+            --bg-nightsky: #181919;
+            
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            letter-spacing: 0.03em;
+        }
+
+        input[type="text"], select {
+            background-color: var(--bg-input);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .custom-file-upload {
+            background-color: var(--bg-input);
+            color: var(--water-spray);
+            border: 1px solid var(--chiseled-bronze);
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .custom-file-upload:hover {
+            border-color: var(--water-blue);
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--brand-red);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--slider-track);
+            border-radius: 2px;
+        }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75));
+            background-size: cover;
+            padding: 16px;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(24, 25, 25, 0.9);
+            color: #75b2de;
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .countdown-circle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 120px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .config-card.dragover {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 12px rgba(75, 132, 191, 0.4);
+            background-color: rgba(75, 132, 191, 0.05);
+        }
+
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px;
+            z-index: 110;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75));
+            background-size: cover;
+            padding: 10px 14px 14px 14px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            border-top: 1px solid var(--chiseled-bronze);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        .bottom-sticky-panel .btn-pill {
+            flex: 1;
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            color: #75b2de !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.65rem !important;
+            text-transform: uppercase;
+            padding: 8px 0px !important;
+            border-radius: 9999px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s ease-in-out;
+            white-space: nowrap;
+        }
+        
+        .bottom-sticky-panel .btn-pill:hover, .btn-pill.active {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+
+        /* Download Dropdown Wrapper */
+        .download-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+        }
+        .download-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 110%;
+            left: 0;
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--water-spray);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
+            flex-direction: column;
+            z-index: 120;
+        }
+        .download-dropdown.show {
+            display: flex;
+        }
+        .download-option {
+            padding: 10px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--alabaster-paper);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(137, 107, 73, 0.3);
+        }
+        .download-option:hover {
+            background-color: rgba(117, 178, 222, 0.2);
+            color: var(--water-spray);
+        }
+        .download-option:last-child {
+            border-bottom: none;
+        }
+
+        /* File List Styles */
+        .file-list-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
+            font-size: 0.8rem;
+            transition: background-color 0.2s;
+            border-radius: 4px;
+        }
+        .file-list-item:last-child {
+            border-bottom: none;
+        }
+        .file-list-item.downloadable {
+            cursor: pointer;
+        }
+        .file-list-item.downloadable:hover {
+            background-color: rgba(117, 178, 222, 0.15);
+        }
+        .file-status-icon {
+            margin-right: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+        }
+        .file-name-text {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .download-instruction {
+            font-size: 0.75rem;
+            color: var(--water-spray);
+            margin-bottom: 10px;
+            display: none;
+            font-weight: bold;
+            text-align: center;
+            background: rgba(117, 178, 222, 0.1);
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid var(--water-spray);
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            width: 90%;
+            max-width: 480px;
+            max-height: 80vh;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            padding-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .modal-body {
+            overflow-y: auto;
+            flex: 1;
+            font-size: 0.8rem;
+        }
+        .report-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 6px;
+            border-left: 3px solid var(--stone-ochre);
+        }
+        .report-item.success { border-left-color: #449e92; }
+        .report-item.error { border-left-color: var(--brand-red); }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--stone-ochre);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+
+        /* Toast Notice */
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--brand-red);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+
+        @keyframes pulse-dot-white {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(255, 255, 255, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+        }
+        @keyframes pulse-dot-black {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(0, 0, 0, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 0, 0, 0); }
+        }
+
+        .bg-toggle-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 1px solid var(--chiseled-bronze);
+            flex-shrink: 0;
+            transition: background-color 0.2s;
+        }
+        .bg-toggle-dot.white {
+            background-color: #FFFFFF;
+            animation: pulse-dot-white 2s infinite;
+        }
+        .bg-toggle-dot.black {
+            background-color: #000000;
+            animation: pulse-dot-black 2s infinite;
+            border-color: #444;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>FILE CONVERTER</span>
+                </div>
+            </div>
+            <div class="panel-content-hide" style="width:100%;">
+                <label for="file-input" class="custom-file-upload">
+                    <span id="file-count-label">SELECT FILES</span>
+                </label>
+                <input type="file" id="file-input" multiple accept="image/*,.heic,.heif,.svg,.bmp,.tiff" style="display: none;">
+            </div>
+        </div>
+
+        <main class="middle-scroll-panel">
+            <div class="config-card">
+                
+                <div style="display: flex; gap: 16px; align-items: flex-start;">
+                    <div style="flex: 0 0 calc(50% - 8px);">
+                        <label style="font-size: 0.75rem; color: var(--water-spray); text-transform: uppercase; font-weight: bold;">Output Format</label>
+                        <select id="output-format" style="margin-top: 6px; margin-bottom: 0;">
+                            <option value="image/jpeg">Optimized JPEG (.jpg)</option>
+                            <option value="image/png">Lossless PNG (.png)</option>
+                            <option value="image/webp">WebP (.webp)</option>
+                        </select>
+                    </div>
+
+                    <div id="quality-container" style="flex: 0 0 calc(50% - 8px);">
+                        <label style="font-size: 0.75rem; color: var(--water-spray); text-transform: uppercase; font-weight: bold;">Quality (JPEG/WebP)</label>
+                        <input type="range" id="quality-slider" min="0.1" max="1.0" step="0.1" value="0.9" style="margin-top: 16px;">
+                        <div style="text-align: right; font-family: var(--font-mono); font-size: 0.8rem; color: var(--stone-ochre); margin-top: 4px;" id="quality-val">90%</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="config-card" id="file-list-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0;">File Queue</h3>
+                    <div style="cursor: pointer; font-size: 1.1rem;" id="toggle-filename-btn" title="Set Custom Filename Prefix">🏷️</div>
+                </div>
+                <input type="text" id="custom-filename-input" placeholder="Custom output prefix (e.g. MyFile)" style="display: none; margin-bottom: 12px;">
+                <div class="download-instruction" id="download-instruction">Select a completed file below to download it.</div>
+                <div id="file-list-container">
+                    <div class="file-list-item" style="color: rgba(242, 236, 224, 0.3); border-bottom: none; justify-content: center; padding: 20px 0;">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill" id="btn-process">PROCESS</button>
+            <button type="button" class="btn-pill" id="btn-report">REPORT</button>
+            
+            <div class="download-wrapper">
+                <button type="button" class="btn-pill" id="btn-download">DOWNLOAD ▼</button>
+                <div class="download-dropdown" id="download-dropdown">
+                    <div class="download-option" id="opt-dl-all">All (ZIP)</div>
+                    <div class="download-option" id="opt-dl-one">One</div>
+                </div>
+            </div>
+
+            <button type="button" class="btn-pill" id="btn-clear">CLEAR</button>
+        </div>
+    </div>
+
+    <!-- Modals and Toasts -->
+    <div class="toast" id="toast-notice">Error details here.</div>
+    
+    <div class="modal-overlay" id="report-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 style="margin: 0; color: var(--water-spray);">Process Report</h3>
+                <button class="close-btn" id="close-report">×</button>
+            </div>
+            <div class="modal-body" id="report-body">
+                <!-- Report items populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden canvas for rendering image buffers -->
+    <canvas id="offscreen-canvas" style="display:none;"></canvas>
+
+    <script>
+        // --- BOILERPLATE HANDSHAKE & UI LOGIC --- //
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+        
+        startCountdown();
+
+        // --- FILE CONVERTER STATE & LOGIC --- //
+        let filesData = []; // Store state for all files { fileObj, originalName, newName, blob, status (pending|success|error), errorMsg, bgFillColor }
+        let downloadModeOne = false;
+
+        const fileCountLabel = document.getElementById('file-count-label');
+        const qualitySlider = document.getElementById('quality-slider');
+        const qualityVal = document.getElementById('quality-val');
+        const qualityContainer = document.getElementById('quality-container');
+        const fileInput = document.getElementById('file-input');
+        const outputFormatSel = document.getElementById('output-format');
+        
+        const fileListCard = document.getElementById('file-list-card');
+        const fileListContainer = document.getElementById('file-list-container');
+        const downloadInstruction = document.getElementById('download-instruction');
+        
+        const btnProcess = document.getElementById('btn-process');
+        const btnReport = document.getElementById('btn-report');
+        const btnDownload = document.getElementById('btn-download');
+        const btnClear = document.getElementById('btn-clear');
+        const downloadDropdown = document.getElementById('download-dropdown');
+        const optDlAll = document.getElementById('opt-dl-all');
+        const optDlOne = document.getElementById('opt-dl-one');
+
+        const reportModal = document.getElementById('report-modal');
+        const closeReportBtn = document.getElementById('close-report');
+        const reportBody = document.getElementById('report-body');
+        
+        const toastNotice = document.getElementById('toast-notice');
+        const canvas = document.getElementById('offscreen-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let toastTimeout;
+
+        // Custom Filename Toggle
+        const toggleFilenameBtn = document.getElementById('toggle-filename-btn');
+        const customFilenameInput = document.getElementById('custom-filename-input');
+        
+        toggleFilenameBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (customFilenameInput.style.display === 'none') {
+                customFilenameInput.style.display = 'block';
+                customFilenameInput.focus();
+            } else {
+                customFilenameInput.style.display = 'none';
+            }
+        });
+
+        // Toggle Quality Slider based on format
+        outputFormatSel.addEventListener('change', (e) => {
+            if (e.target.value === 'image/png') {
+                qualityContainer.style.visibility = 'hidden';
+            } else {
+                qualityContainer.style.visibility = 'visible';
+            }
+        });
+
+        qualitySlider.addEventListener('input', (e) => {
+            qualityVal.innerText = Math.round(e.target.value * 100) + '%';
+        });
+
+        function showToast(msg) {
+            toastNotice.innerText = msg;
+            toastNotice.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastNotice.classList.remove('show');
+            }, 3000);
+        }
+
+        // Render File List GUI
+        function renderFileList() {
+            if (filesData.length === 0) {
+                fileListCard.style.display = 'block';
+                fileListContainer.innerHTML = '<div class="file-list-item" style="color: rgba(242, 236, 224, 0.3); border-bottom: none; justify-content: center; padding: 20px 0;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>';
+                return;
+            }
+            fileListCard.style.display = 'block';
+            fileListContainer.innerHTML = '';
+            
+            filesData.forEach((fileItem, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'file-list-item';
+                if (downloadModeOne && fileItem.status === 'success') {
+                    itemDiv.classList.add('downloadable');
+                }
+
+                let iconHtml = '🔴'; // Default pending
+                let clickEvent = '';
+                let isBgToggle = false;
+                
+                if (fileItem.status === 'success') {
+                    iconHtml = '✅';
+                } else if (fileItem.status === 'error') {
+                    iconHtml = '⚠️';
+                    clickEvent = `onclick="showToast('${fileItem.errorMsg.replace(/'/g, "\\'")}')"`;
+                } else if (fileItem.status === 'pending' && fileItem.bgFillColor) {
+                    const dotClass = fileItem.bgFillColor === '#000000' ? 'black' : 'white';
+                    iconHtml = `<div class="bg-toggle-dot ${dotClass}" title="Toggle Background (White/Black)"></div>`;
+                    isBgToggle = true;
+                }
+                
+                itemDiv.innerHTML = `
+                    <span class="file-status-icon" ${clickEvent}>${iconHtml}</span>
+                    <span class="file-name-text">${fileItem.originalName}</span>
+                `;
+
+                if (isBgToggle) {
+                    const dotEl = itemDiv.querySelector('.bg-toggle-dot');
+                    dotEl.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        fileItem.bgFillColor = fileItem.bgFillColor === '#000000' ? '#FFFFFF' : '#000000';
+                        renderFileList();
+                    });
+                }
+
+                // Handle single download click
+                if (downloadModeOne && fileItem.status === 'success') {
+                    itemDiv.addEventListener('click', () => {
+                        triggerSingleDownload(fileItem.blob, fileItem.newName);
+                        // Reset single download mode after a selection
+                        downloadModeOne = false;
+                        downloadInstruction.style.display = 'none';
+                        btnDownload.classList.remove('active');
+                        renderFileList();
+                    });
+                }
+
+                fileListContainer.appendChild(itemDiv);
+            });
+        }
+
+        // Shared function to handle file selection/dropping
+        function handleFiles(files) {
+            filesData = Array.from(files).map(f => {
+                const isTransparent = /\.(png|gif|webp|svg)$/i.test(f.name);
+                return {
+                    fileObj: f,
+                    originalName: f.name,
+                    newName: '',
+                    blob: null,
+                    status: 'pending',
+                    errorMsg: '',
+                    bgFillColor: isTransparent ? '#FFFFFF' : null
+                };
+            });
+            
+            if (files.length > 0) {
+                fileCountLabel.innerText = `${files.length} FILE${files.length !== 1 ? 'S' : ''} SELECTED`;
+            } else {
+                fileCountLabel.innerText = "SELECT FILES";
+            }
+            
+            downloadModeOne = false;
+            downloadInstruction.style.display = 'none';
+            btnDownload.classList.remove('active');
+            renderFileList();
+        }
+
+        // Setup File Queue via Input Click
+        fileInput.addEventListener('change', () => {
+            handleFiles(fileInput.files);
+        });
+
+        // Setup File Queue via Drag and Drop
+        fileListCard.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileListCard.classList.add('dragover');
+        });
+
+        fileListCard.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileListCard.classList.remove('dragover');
+        });
+
+        fileListCard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            fileListCard.classList.remove('dragover');
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFiles(e.dataTransfer.files);
+            }
+        });
+
+        // Conversion Engine
+        async function processSingleFileObj(fileData, format, quality, customPrefix, index) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    let imageBlob = fileData.fileObj;
+                    
+                    if (fileData.originalName.toLowerCase().endsWith('.heic') || fileData.originalName.toLowerCase().endsWith('.heif')) {
+                        imageBlob = await heic2any({ blob: fileData.fileObj, toType: "image/png" });
+                        if (Array.isArray(imageBlob)) imageBlob = imageBlob[0];
+                    }
+
+                    const img = new Image();
+                    const url = URL.createObjectURL(imageBlob);
+                    
+                    img.onload = () => {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        
+                        if (fileData.bgFillColor) {
+                            ctx.fillStyle = fileData.bgFillColor;
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        } else if (format === 'image/jpeg') {
+                            ctx.fillStyle = '#FFFFFF';
+                            ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        }
+                        
+                        ctx.drawImage(img, 0, 0);
+                        
+                        canvas.toBlob((blob) => {
+                            URL.revokeObjectURL(url);
+                            let ext = format.split('/')[1];
+                            if (ext === 'jpeg') ext = 'jpg';
+                            
+                            if (customPrefix) {
+                                const num = String(index + 1).padStart(2, '0');
+                                fileData.newName = `${customPrefix}${num}.${ext}`;
+                            } else {
+                                const baseName = fileData.originalName.substring(0, fileData.originalName.lastIndexOf('.'));
+                                fileData.newName = (baseName || fileData.originalName) + '.' + ext;
+                            }
+                            
+                            fileData.blob = blob;
+                            fileData.status = 'success';
+                            resolve();
+                        }, format, quality);
+                    };
+                    
+                    img.onerror = () => {
+                        fileData.status = 'error';
+                        fileData.errorMsg = 'Failed to draw image to canvas buffer.';
+                        reject();
+                    };
+                    
+                    img.src = url;
+                } catch (err) {
+                    fileData.status = 'error';
+                    fileData.errorMsg = err.message || 'Format parse error.';
+                    reject();
+                }
+            });
+        }
+
+        // Action: Process
+        btnProcess.addEventListener('click', async () => {
+            if (filesData.length === 0) {
+                alert("Please select files to process first.");
+                return;
+            }
+
+            btnProcess.disabled = true;
+            btnProcess.innerText = "WORKING...";
+            const format = outputFormatSel.value;
+            const quality = parseFloat(qualitySlider.value);
+            
+            const customPrefixInput = document.getElementById('custom-filename-input');
+            const customPrefix = (customPrefixInput && customPrefixInput.style.display !== 'none') ? customPrefixInput.value.trim() : '';
+            
+            // Reset statuses before processing
+            filesData.forEach(f => {
+                f.status = 'pending';
+                f.errorMsg = '';
+            });
+            renderFileList();
+
+            for (let i = 0; i < filesData.length; i++) {
+                try {
+                    await processSingleFileObj(filesData[i], format, quality, customPrefix, i);
+                } catch(e) {
+                    // Handled inside process function via fileData state
+                }
+                renderFileList(); // Re-render to show ticks/errors as they complete
+            }
+            
+            btnProcess.disabled = false;
+            btnProcess.innerText = "PROCESS";
+        });
+
+        // Action: Report
+        btnReport.addEventListener('click', () => {
+            if (filesData.length === 0) {
+                alert("No files in queue.");
+                return;
+            }
+            reportBody.innerHTML = '';
+            filesData.forEach(f => {
+                let stateClass = 'pending';
+                let stateText = 'Pending Processing';
+                if (f.status === 'success') { stateClass = 'success'; stateText = 'Success: Converted to ' + f.newName; }
+                if (f.status === 'error') { stateClass = 'error'; stateText = 'Failed: ' + f.errorMsg; }
+
+                reportBody.innerHTML += `
+                    <div class="report-item ${stateClass}">
+                        <strong>${f.originalName}</strong><br>
+                        <span style="color:var(--water-spray);">${stateText}</span>
+                    </div>
+                `;
+            });
+            reportModal.classList.add('show');
+        });
+
+        closeReportBtn.addEventListener('click', () => {
+            reportModal.classList.remove('show');
+        });
+
+        // Action: Download Dropdown Toggle
+        btnDownload.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            downloadDropdown.classList.remove('show');
+        });
+
+        // Action: Download One
+        optDlOne.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.remove('show');
+            const hasSuccess = filesData.some(f => f.status === 'success');
+            if (!hasSuccess) {
+                showToast("No files have been successfully processed yet.");
+                return;
+            }
+            
+            downloadModeOne = true;
+            btnDownload.classList.add('active');
+            downloadInstruction.style.display = 'block';
+            renderFileList();
+        });
+
+        // Action: Download All
+        optDlAll.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.remove('show');
+            const successfulFiles = filesData.filter(f => f.status === 'success');
+            
+            if (successfulFiles.length === 0) {
+                showToast("No successfully processed files to bundle.");
+                return;
+            }
+            
+            try {
+                showToast("Zipping files...");
+                const zip = new JSZip();
+                successfulFiles.forEach(f => {
+                    zip.file(f.newName, f.blob);
+                });
+                
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                triggerSingleDownload(zipBlob, 'organon_batch_converted.zip');
+                showToast("Download complete.");
+            } catch (err) {
+                showToast("Error creating ZIP archive.");
+            }
+        });
+
+        function triggerSingleDownload(blob, filename) {
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(downloadUrl);
+        }
+
+        // Action: Clear
+        btnClear.addEventListener('click', () => {
+            filesData = [];
+            fileInput.value = "";
+            fileCountLabel.innerText = "SELECT FILES";
+            downloadModeOne = false;
+            downloadInstruction.style.display = 'none';
+            btnDownload.classList.remove('active');
+            renderFileList();
+            showToast("Queue cleared.");
+        });
+
+    </script>
+</body>
+</html>
