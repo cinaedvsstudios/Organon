@@ -1,0 +1,1842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organon: Unified System Blueprint</title>
+  
+  <!-- Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================
+       ORGANON BLUEPRINT BRAND STYLING
+       ========================================================== */
+    :root {
+      --stone-ochre: #e0a360;             /* [Color #1] Warm Sandstone */
+      --chiseled-bronze: #896b49;         /* [Color #2] Border Bronze */
+      --white-accent: #ffffff;            /* [Color #3] Pure White */
+      --bg-card: #292a24;                 /* [Color #12] Charcoal Stone Card (Fallback) */
+      --bg-input: rgba(24, 25, 25, 0.95);  /* [Color #12] Contrast Dark Input BG */
+      --dark-stone-ink: #292A24;          
+      
+      --water-blue: #4B84BF;              /* [Color #4] Flowing Blue Accent */
+      --water-spray: #75b2de;             /* [Color #5] Sky Blue Accent */
+      --forest-teal: #26615C;             /* [Color #6] Deep Forest Teal */
+      --light-teal: #449e92;              /* [Color #7] Spliced Active Teal */
+      
+      --burgundy: #4A1525;                /* [Color #8] Warning Deep Burgundy */
+      --brand-red: #9a2f4f;               /* [Color #9] Active Element Ruby Red */
+      --terracotta-peach: #d27d6c;        /* [Color #10] Soft Terracotta/Peach */
+      --alabaster-paper: #f5f0db;         /* [Color #11] Pure Primary Copy */
+      --bg-nightsky: #181919;             /* [Color #12] Deep Space Black backdrop */
+      
+      --font-headers: 'Cinzel', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-mono: 'Geist Mono', 'Courier New', monospace;
+    }
+
+    body {
+      background-color: var(--bg-nightsky);
+      color: var(--alabaster-paper);
+      font-family: var(--font-body);
+      margin: 0;
+      padding: 0;
+      line-height: 1.6;
+      display: flex;
+      justify-content: center;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      padding: 40px 24px 100px 24px;
+      box-sizing: border-box;
+    }
+
+    /* Classical Greco-Roman Headers */
+    h1 {
+      font-family: var(--font-headers);
+      color: var(--stone-ochre);
+      font-size: 2.25rem;
+      border-bottom: 2px solid var(--chiseled-bronze);
+      padding-bottom: 12px;
+      margin-top: 0;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    h2 {
+      font-family: var(--font-headers);
+      color: var(--water-spray);
+      font-size: 1.5rem;
+      border-bottom: 1px dashed rgba(137, 107, 73, 0.4);
+      padding-bottom: 8px;
+      margin-top: 40px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    h3 {
+      font-family: var(--font-headers);
+      color: var(--stone-ochre);
+      font-size: 1.15rem;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      letter-spacing: 0.02em;
+    }
+
+    p {
+      margin-top: 0;
+      margin-bottom: 16px;
+      color: rgba(242, 236, 224, 0.85);
+    }
+
+    /* Code & Highlight Formatting */
+    code {
+      font-family: var(--font-mono);
+      background-color: rgba(0, 0, 0, 0.4);
+      color: var(--water-spray);
+      padding: 3px 6px;
+      border-radius: 4px;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background-color: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--chiseled-bronze);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--alabaster-paper);
+      position: relative;
+    }
+
+    /* Tactile Cards */
+    .stone-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Interactive Color Grid Table */
+    .color-swatch-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+
+    .swatch-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .swatch-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--water-spray);
+    }
+
+    .swatch-block {
+      height: 100px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      color: #fff;
+    }
+
+    .swatch-info {
+      padding: 12px;
+      font-size: 0.8rem;
+    }
+
+    .swatch-info .swatch-index {
+      font-family: var(--font-mono);
+      color: var(--stone-ochre);
+      font-weight: bold;
+      font-size: 0.75rem;
+    }
+
+    .swatch-info .swatch-name {
+      font-weight: 600;
+      color: var(--alabaster-paper);
+      margin: 2px 0 6px 0;
+      font-size: 0.85rem;
+    }
+
+    .swatch-info .swatch-variable {
+      font-family: var(--font-mono);
+      color: var(--water-spray);
+      font-size: 0.75rem;
+    }
+
+    /* Clipboard Copy Notice Overlay */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background-color: var(--water-blue);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 9999px;
+      font-weight: 600;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      opacity: 1;
+    }
+
+    /* Layout Spec Blocks */
+    .layout-spec {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+
+    .layout-icon {
+      font-size: 2rem;
+      background: rgba(137, 107, 73, 0.15);
+      border: 1px solid var(--chiseled-bronze);
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: var(--stone-ochre);
+    }
+
+    .layout-text {
+      flex: 1;
+      min-width: 250px;
+    }
+
+    /* Copy Button */
+    .btn-pill {
+      background-color: var(--forest-teal);
+      color: var(--alabaster-paper);
+      border: 1px solid var(--chiseled-bronze);
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.8rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .btn-pill:hover {
+      background-color: var(--water-blue);
+      border-color: var(--water-spray);
+      box-shadow: 0 0 10px rgba(121,180,227,0.3);
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(0,0,0,0.6);
+      padding: 8px 16px;
+      border: 1px solid var(--chiseled-bronze);
+      border-bottom: none;
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--stone-ochre);
+      margin-top: 16px;
+    }
+
+    .code-header + pre {
+      margin-top: 0;
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+
+    /* Unified Asset Layout Table */
+    .asset-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+
+    .asset-table th {
+      background-color: rgba(137, 107, 73, 0.2);
+      border: 1px solid var(--chiseled-bronze);
+      color: var(--stone-ochre);
+      font-family: var(--font-headers);
+      font-weight: bold;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .asset-table td {
+      border: 1px solid var(--chiseled-bronze);
+      padding: 12px;
+      color: rgba(242, 236, 224, 0.85);
+    }
+
+    .asset-table tr:nth-child(even) {
+      background-color: rgba(0, 0, 0, 0.15);
+    }
+
+    .resolution-badge {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 4px;
+      color: var(--water-spray);
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* Module Filter Controls */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+      border-bottom: 1px solid var(--chiseled-bronze);
+      padding-bottom: 16px;
+    }
+
+    .filter-btn {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1.5px solid var(--chiseled-bronze);
+      color: var(--alabaster-paper);
+      font-family: var(--font-headers);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background-color: var(--stone-ochre);
+      border-color: var(--stone-ochre);
+      color: var(--dark-stone-ink);
+      box-shadow: 0 0 10px rgba(229, 168, 98, 0.35);
+      font-weight: bold;
+    }
+
+    /* Module Directory Mapping Grid */
+    .module-directory-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (min-width: 600px) {
+      .module-directory-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .module-card {
+      background-color: var(--bg-card);
+      border: 1.5px solid var(--chiseled-bronze);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .module-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--water-spray);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .module-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .module-path {
+      font-family: var(--font-mono);
+      color: var(--stone-ochre);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .module-status {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .status-active {
+      background-color: rgba(38, 97, 92, 0.2);
+      color: var(--water-spray);
+      border: 1px solid var(--forest-teal);
+    }
+
+    .status-system {
+      background-color: rgba(75, 132, 191, 0.15);
+      color: var(--water-spray);
+      border: 1px solid var(--water-blue);
+    }
+
+    .status-template {
+      background-color: rgba(229, 168, 98, 0.15);
+      color: var(--stone-ochre);
+      border: 1px solid var(--chiseled-bronze);
+    }
+
+    .status-roadmap {
+      background-color: rgba(154, 47, 79, 0.15);
+      color: #ff9cb3;
+      border: 1px solid var(--brand-red);
+    }
+
+    .status-recommended {
+      background-color: rgba(38, 97, 92, 0.2);
+      color: #79e3b8;
+      border: 1px solid #26615c;
+    }
+
+    .status-parked {
+      background-color: rgba(74, 21, 37, 0.3);
+      color: #ea8292;
+      border: 1px solid #4a1525;
+    }
+
+    .module-description {
+      font-size: 0.8rem;
+      color: rgba(242, 236, 224, 0.75);
+      margin: 0;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--stone-ochre);
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(137, 107, 73, 0.3);
+    }
+
+    /* Accordion Detailed Specification Container */
+    .module-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.35s ease;
+      font-size: 0.8rem;
+      color: var(--alabaster-paper);
+      border-top: 1px dashed rgba(137, 107, 73, 0.2);
+    }
+
+    .module-card.expanded {
+      border-color: var(--water-spray) !important;
+      box-shadow: 0 4px 20px rgba(117, 178, 222, 0.15);
+    }
+
+    .module-card.expanded .module-details {
+      max-height: 600px;
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    .details-section {
+      margin-bottom: 8px;
+    }
+
+    .details-label {
+      font-weight: bold;
+      color: var(--water-spray);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Unified Asset Layout Table */
+    .asset-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 0.9rem;
+    }
+
+    .asset-table th {
+      background-color: rgba(137, 107, 73, 0.2);
+      border: 1px solid var(--chiseled-bronze);
+      color: var(--stone-ochre);
+      font-family: var(--font-headers);
+      font-weight: bold;
+      padding: 12px;
+      text-align: left;
+    }
+
+    .asset-table td {
+      border: 1px solid var(--chiseled-bronze);
+      padding: 12px;
+      color: rgba(242, 236, 224, 0.85);
+    }
+
+    .asset-table tr:nth-child(even) {
+      background-color: rgba(0, 0, 0, 0.15);
+    }
+
+    .resolution-badge {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 4px;
+      color: var(--water-spray);
+      font-family: var(--font-mono);
+      padding: 2px 6px;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+
+    /* Module Filter Controls */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 20px 0;
+      border-bottom: 1px solid var(--chiseled-bronze);
+      padding-bottom: 16px;
+    }
+
+    .filter-btn {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1.5px solid var(--chiseled-bronze);
+      color: var(--alabaster-paper);
+      font-family: var(--font-headers);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      cursor: pointer;
+      transition: all 0.2s ease-in-out;
+    }
+
+    .filter-btn:hover, .filter-btn.active {
+      background-color: var(--stone-ochre);
+      border-color: var(--stone-ochre);
+      color: var(--dark-stone-ink);
+      box-shadow: 0 0 10px rgba(229, 168, 98, 0.35);
+      font-weight: bold;
+    }
+
+    /* Module Directory Mapping Grid */
+    .module-directory-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+
+    @media (min-width: 600px) {
+      .module-directory-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    .module-card {
+      background-color: var(--bg-card);
+      border: 1.5px solid var(--chiseled-bronze);
+      border-radius: 14px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .module-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--water-spray);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+
+    .module-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .module-path {
+      font-family: var(--font-mono);
+      color: var(--stone-ochre);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .module-status {
+      font-size: 0.65rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .status-active {
+      background-color: rgba(38, 97, 92, 0.2);
+      color: var(--water-spray);
+      border: 1px solid var(--forest-teal);
+    }
+
+    .status-system {
+      background-color: rgba(75, 132, 191, 0.15);
+      color: var(--water-spray);
+      border: 1px solid var(--water-blue);
+    }
+
+    .status-template {
+      background-color: rgba(229, 168, 98, 0.15);
+      color: var(--stone-ochre);
+      border: 1px solid var(--chiseled-bronze);
+    }
+
+    .status-roadmap {
+      background-color: rgba(154, 47, 79, 0.15);
+      color: #ff9cb3;
+      border: 1px solid var(--brand-red);
+    }
+
+    .status-recommended {
+      background-color: rgba(38, 97, 92, 0.2);
+      color: #79e3b8;
+      border: 1px solid #26615c;
+    }
+
+    .status-parked {
+      background-color: rgba(74, 21, 37, 0.3);
+      color: #ea8292;
+      border: 1px solid #4a1525;
+    }
+
+    .module-description {
+      font-size: 0.8rem;
+      color: rgba(242, 236, 224, 0.75);
+      margin: 0;
+    }
+
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--stone-ochre);
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 2px 8px;
+      border-radius: 9999px;
+      border: 1px solid rgba(137, 107, 73, 0.3);
+    }
+
+    /* Accordion Detailed Specification Container */
+    .module-details {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1), margin-top 0.35s ease;
+      font-size: 0.8rem;
+      color: var(--alabaster-paper);
+      border-top: 1px dashed rgba(137, 107, 73, 0.2);
+    }
+
+    .module-card.expanded {
+      border-color: var(--water-spray) !important;
+      box-shadow: 0 4px 20px rgba(117, 178, 222, 0.15);
+    }
+
+    .module-card.expanded .module-details {
+      max-height: 600px;
+      margin-top: 12px;
+      padding-top: 12px;
+    }
+
+    .details-section {
+      margin-bottom: 8px;
+    }
+
+    .details-label {
+      font-weight: bold;
+      color: var(--water-spray);
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* Hidden form to process iframe-safe clipboard copies */
+    #clipboard-holder {
+      position: absolute;
+      left: -9999px;
+      top: -9999px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <h1>Organon Blueprint & Design Manual</h1>
+    <p style="font-size: 1.1rem; color: var(--water-spray); font-family: var(--font-headers); letter-spacing: 0.05em;">
+      System Version v1.08-alpha &bull; Platform Specification
+    </p>
+    
+    <div class="stone-card">
+      <h3 style="margin-top: 0;">🏛️ The Paradigm Architecture</h3>
+      <p>
+        The Organon system operates as a unified modular interface built to organize, display, and trigger logical scripts. 
+        This handbook is rendered directly in HTML to provide developers with interactive color palettes, design specs, 
+        and immediate code blocks.
+      </p>
+    </div>
+
+    <!-- SECTION 1: THE PALETTE -->
+    <h2>1. Visual Swatch & Palette Index</h2>
+    <p>
+      Click on any color block below to copy its HEX value. These swatches perfectly replicate the colors inside your <code>palette.jpg</code> asset:
+    </p>
+
+    <div class="color-swatch-grid">
+      <!-- Swatch 1 -->
+      <div class="swatch-card" onclick="copyHex('#e0a360')">
+        <div class="swatch-block" style="background-color: #e0a360; color: #181919;">#E0A360</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #1</span>
+          <div class="swatch-name">Sandstone Ochre</div>
+          <span class="swatch-variable">--stone-ochre</span>
+        </div>
+      </div>
+      <!-- Swatch 2 -->
+      <div class="swatch-card" onclick="copyHex('#896b49')">
+        <div class="swatch-block" style="background-color: #896b49;">#896B49</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #2</span>
+          <div class="swatch-name">Chiseled Bronze</div>
+          <span class="swatch-variable">--chiseled-bronze</span>
+        </div>
+      </div>
+      <!-- Swatch 3 -->
+      <div class="swatch-card" onclick="copyHex('#ffffff')">
+        <div class="swatch-block" style="background-color: #ffffff; color: #181919; border: 1px solid rgba(137,107,73,0.3);">#FFFFFF</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #3</span>
+          <div class="swatch-name">Pure White</div>
+          <span class="swatch-variable">--white-accent</span>
+        </div>
+      </div>
+      <!-- Swatch 4 -->
+      <div class="swatch-card" onclick="copyHex('#4b84bf')">
+        <div class="swatch-block" style="background-color: #4b84bf;">#4B84BF</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #4</span>
+          <div class="swatch-name">Water Blue</div>
+          <span class="swatch-variable">--water-blue</span>
+        </div>
+      </div>
+      <!-- Swatch 5 -->
+      <div class="swatch-card" onclick="copyHex('#75b2de')">
+        <div class="swatch-block" style="background-color: #75b2de; color: #181919;">#75B2DE</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #5</span>
+          <div class="swatch-name">Water Spray / Sky Blue</div>
+          <span class="swatch-variable">--water-spray</span>
+        </div>
+      </div>
+      <!-- Swatch 6 -->
+      <div class="swatch-card" onclick="copyHex('#26615c')">
+        <div class="swatch-block" style="background-color: #26615c;">#26615C</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #6</span>
+          <div class="swatch-name">Forest Teal</div>
+          <span class="swatch-variable">--forest-teal</span>
+        </div>
+      </div>
+      <!-- Swatch 7 -->
+      <div class="swatch-card" onclick="copyHex('#449e92')">
+        <div class="swatch-block" style="background-color: #449e92; color: #181919;">#449E92</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #7</span>
+          <div class="swatch-name">Light Spliced Teal</div>
+          <span class="swatch-variable">--light-teal</span>
+        </div>
+      </div>
+      <!-- Swatch 8 -->
+      <div class="swatch-card" onclick="copyHex('#4a1525')">
+        <div class="swatch-block" style="background-color: #4a1525;">#4A1525</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #8</span>
+          <div class="swatch-name">Burgundy Warning</div>
+          <span class="swatch-variable">--burgundy</span>
+        </div>
+      </div>
+      <!-- Swatch 9 -->
+      <div class="swatch-card" onclick="copyHex('#9a2f4f')">
+        <div class="swatch-block" style="background-color: #9a2f4f;">#9A2F4F</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #9</span>
+          <div class="swatch-name">Brand Ruby Red</div>
+          <span class="swatch-variable">--brand-red</span>
+        </div>
+      </div>
+      <!-- Swatch 10 -->
+      <div class="swatch-card" onclick="copyHex('#d27d6c')">
+        <div class="swatch-block" style="background-color: #d27d6c; color: #181919;">#D27D6C</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #10</span>
+          <div class="swatch-name">Coral / Terracotta</div>
+          <span class="swatch-variable">--terracotta-peach</span>
+        </div>
+      </div>
+      <!-- Swatch 11 -->
+      <div class="swatch-card" onclick="copyHex('#f5f0db')">
+        <div class="swatch-block" style="background-color: #f5f0db; color: #181919;">#F5F0DB</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #11</span>
+          <div class="swatch-name">Alabaster Copy Paper</div>
+          <span class="swatch-variable">--alabaster-paper</span>
+        </div>
+      </div>
+      <!-- Swatch 12 -->
+      <div class="swatch-card" onclick="copyHex('#1e201c')">
+        <div class="swatch-block" style="background-color: #1e201c; border: 1px dashed var(--chiseled-bronze);">#1E201C</div>
+        <div class="swatch-info">
+          <span class="swatch-index">Color #12</span>
+          <div class="swatch-name">Nightsky Canvas BG</div>
+          <span class="swatch-variable">--bg-nightsky</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PALETTE ALIGNMENT TABLE -->
+    <table class="asset-table">
+      <thead>
+        <tr>
+          <th style="width: 10%; text-align: center;">Index</th>
+          <th style="width: 25%;">Variable Mapping</th>
+          <th style="width: 20%; text-align: center;">Swatch (HEX)</th>
+          <th style="width: 45%;">Design Spec &amp; UI Application</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#1</td>
+          <td><code>--stone-ochre</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #e0a360; color: #181919;">#e0a360</span></td>
+          <td>Warm sandstone base applied to main header frames, collapsible category banners, and highlighted slider value readouts.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#2</td>
+          <td><code>--chiseled-bronze</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #896b49; color: #ffffff;">#896b49</span></td>
+          <td>Earthy bounding color. Standardized on outline borders, dashed drop zone indicators, and card partitions.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#3</td>
+          <td><code>--white-accent</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #ffffff; color: #181919;">#ffffff</span></td>
+          <td>Crisp high-contrast value used sparingly on select action icons, focal titles, and glowing outline highlights.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#4</td>
+          <td><code>--water-blue</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #4b84bf; color: #ffffff;">#4b84bf</span></td>
+          <td>Flowing blue accent color utilized for active selection card borders, focus rings, and secondary buttons.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#5</td>
+          <td><code>--water-spray</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #75b2de; color: #181919;">#75b2de</span></td>
+          <td>Celestial sky blue utilized for text links, toast overlays, and hover-triggered accent lighting.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#6</td>
+          <td><code>--forest-teal</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #26615c; color: #ffffff;">#26615c</span></td>
+          <td>The standard background backing color applied behind tactical button pills (<code>.btn-pill</code>) on sub-apps.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#7</td>
+          <td><code>--light-teal</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #449e92; color: #181919;">#449e92</span></td>
+          <td>Secondary active teal highlight applied behind selected buttons and slider tags.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#8</td>
+          <td><code>--burgundy</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #4a1525; color: #ffffff;">#4a1525</span></td>
+          <td>Warning indicator red applied to warning cards, delete buttons, and inactive range slider backings.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#9</td>
+          <td><code>--brand-red</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #9a2f4f; color: #ffffff;">#9a2f4f</span></td>
+          <td>Ruby red accent applied directly onto active range slider track progress fills.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#10</td>
+          <td><code>--terracotta-peach</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #d27d6c; color: #181919;">#d27d6c</span></td>
+          <td>Muted terracotta peach utilized for warning highlights, secondary warning text, and alerts.</td>
+        </tr>
+        <tr>
+          <td style="text-align: bold; text-align: center; color: var(--stone-ochre);">#11</td>
+          <td><code>--alabaster-paper</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #f5f0db; color: #181919;">#f5f0db</span></td>
+          <td>Primary legible text color, providing highly structured contrast across body content.</td>
+        </tr>
+        <tr>
+          <td style="text-align: center; font-weight: bold; color: var(--stone-ochre);">#12</td>
+          <td><code>--bg-nightsky</code></td>
+          <td style="text-align: center;"><span class="resolution-badge" style="background-color: #1e201c; color: #ffffff;">#1e201c</span></td>
+          <td>Unified dark base backing applied across background canvases, margins, and active frames.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- SECTION 2: INTERACTION SPECS -->
+    <h2>2. Interactive Layout Specs & Timing Rules</h2>
+    
+    <div class="stone-card">
+      <div class="layout-spec">
+        <div class="layout-icon">⏱️</div>
+        <div class="layout-text">
+          <h3>2-Second Hover Verification Delay</h3>
+          <p>
+            When a mouse hovers over the <code>.divider-l1-l2</code> trigger bar, the system registers a <strong>2000ms delay</strong>. 
+            If the cursor leaves prior to completion, the process is cancelled. This filters accidental sweeps and prevents 
+            annoying vertical shifting of your central content iframe.
+          </p>
+        </div>
+      </div>
+
+      <div class="layout-spec">
+        <div class="layout-icon">📱</div>
+        <div class="layout-text">
+          <h3>Double-Tap / Toggle Close Lock</h3>
+          <p>
+            Clicking or tapping the trigger bar instantly forces the menus open, bypassing the hover delay. 
+            A second tap on the bar instantly collapses the folders back into the sandstone header. 
+            Similarly, in sub-tools, double-clicking the countdown circle locks the panel open (<code>🔒</code>) 
+            to freeze automated closing states.
+          </p>
+        </div>
+      </div>
+
+      <div class="layout-spec">
+        <div class="layout-icon">🔄</div>
+        <div class="layout-text">
+          <h3>5-Second Persistence Watch</h3>
+          <p>
+            Once open, leaving active menu boundaries starts a <strong>5-second countdown timer</strong> shown with a 
+            circular radial visual progress ring. Re-entering any active control panel freezes and resets the clock.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 3: BRAND ASSET DIRECTORY -->
+    <h2>3. Brand Asset Directory & Image Dimensions</h2>
+    <div class="stone-card">
+      <p>
+        To ensure crisp scaling and avoid layout pixelation, all graphic assets stored in your main repository's <code>images/</code> folder must align with their exact native dimensions. Use this index to configure CSS parameters and image tags:
+      </p>
+
+      <table class="asset-table">
+        <thead>
+          <tr>
+            <th style="width: 25%;">File Name</th>
+            <th style="width: 20%; text-align: center;">Pixel Bounds</th>
+            <th style="width: 55%;">Structural Purpose / Usage Area</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>button.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">500 &times; 129</span></td>
+            <td>Level 2 Category Folders (CREATE, MODIFY, ANALYZE). Scaled responsively to 146 &times; 38px inside the CSS.</td>
+          </tr>
+          <tr>
+            <td><strong>button2.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">484 &times; 87</span></td>
+            <td>Level 3 Contextual Actions &amp; Tools. Scaled responsively to 167 &times; 30px inside the CSS.</td>
+          </tr>
+          <tr>
+            <td><strong>divide line.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">2920 &times; 79</span></td>
+            <td>Horizontal Divider L1-L2. Serves as the primary active pull-down bar (with Blue glowing highlights).</td>
+          </tr>
+          <tr>
+            <td><strong>divide line2.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">200 &times; 10</span></td>
+            <td>Horizontal Divider L2-L3 (with Red glowing highlights).</td>
+          </tr>
+          <tr>
+            <td><strong>divide line3.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">800 &times; 5</span></td>
+            <td>Divider L3-Basin. Sleek 3px wide, 50% opacity border separating navigation headers from the content frame.</td>
+          </tr>
+          <tr>
+            <td><strong>logoemoji.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">2304 &times; 1842</span></td>
+            <td>Default brand asset logo placed in the top-left crown conduit of the Hub.</td>
+          </tr>
+          <tr>
+            <td><strong>logosolid.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">2304 &times; 1842</span></td>
+            <td>Fallback solid layout variant of the main brand logo.</td>
+          </tr>
+          <tr>
+            <td><strong>title.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">965 &times; 293</span></td>
+            <td>Primary "ORGANON" graphical text banner placed in the Level 1 crown conduit header.</td>
+          </tr>
+          <tr>
+            <td><strong>scroll1.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">218 &times; 245</span></td>
+            <td>Tactile scroll elements used as background frames for logs, texts, and dialogue blocks.</td>
+          </tr>
+          <tr>
+            <td><strong>stonetext.jpg</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">1000 &times; 1000</span></td>
+            <td>Seamless sandstone texture. Used as repeating background layers for headers, buttons, and panels.</td>
+          </tr>
+          <tr>
+            <td><strong>leftarrow.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">200 &times; 200</span></td>
+            <td>Tactile navigation arrow left. Used in horizontal scroll wraps and canvas controls.</td>
+          </tr>
+          <tr>
+            <td><strong>rightarrow.png</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">200 &times; 200</span></td>
+            <td>Tactile navigation arrow right. Used in horizontal scroll wraps and canvas controls.</td>
+          </tr>
+          <tr>
+            <td><strong>palette.jpg</strong></td>
+            <td style="text-align: center;"><span class="resolution-badge">715 &times; 210</span></td>
+            <td>Combined system layout reference showing the relative swatches of the visual design system.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SECTION 4: SYSTEM DIRECTORY EXPLORER -->
+    <h2>4. Modules &amp; Planned Roadmap Explorer</h2>
+    <p>
+      Browse the active and upcoming tools for the Organon suite. Use the filters below to sort modules by feasibility score and status. Click any tool card to inspect detailed design specifications and click paths to copy.
+    </p>
+
+    <div class="filter-bar">
+      <button type="button" class="filter-btn active" onclick="filterModules('all', this)">All Modules</button>
+      <button type="button" class="filter-btn" onclick="filterModules('active', this)">Active / System</button>
+      <button type="button" class="filter-btn" onclick="filterModules('roadmap', this)">Upcoming Roadmap</button>
+      <button type="button" class="filter-btn" onclick="filterModules('recommended', this)">Recommended additions</button>
+      <button type="button" class="filter-btn" onclick="filterModules('parked', this)">Parked / Postponed</button>
+    </div>
+
+    <div class="module-directory-grid" id="directory-grid">
+      <!-- SYSTEM DIRECTORY ITEMS -->
+      <!-- Boilerplate -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/boilerplate/</span>
+          <span class="module-status status-template">Template</span>
+        </div>
+        <p class="module-description">Master template for establishing unified visual grids, custom scrollbars, and frame postMessage handshakes.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Integration Hook:</span> Double-click lock indicator. Hover postMessage broadcasts.</div>
+          <div class="details-section"><span class="details-label">System State:</span> Completed &amp; saved under local directory. Ready for duplication.</div>
+        </div>
+      </div>
+
+      <!-- Bulk Download -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/bulk-download/</span>
+          <span class="module-status status-active">Active</span>
+        </div>
+        <p class="module-description">Asynchronous multi-asset fetcher with client-side ZIP packaging compression capabilities.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Engine:</span> <code>jszip.min.js</code> (loaded over external CDN framework safely).</div>
+          <div class="details-section"><span class="details-label">Aesthetic Integration:</span> Sandstone header upload container reflowing to capsule list on population.</div>
+        </div>
+      </div>
+
+      <!-- Character Library -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/character-library/</span>
+          <span class="module-status status-active">Active</span>
+        </div>
+        <p class="module-description">Central character configuration index, maintaining sheet directories and local index data.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Sync Protocol:</span> Stores selected assets and lists to device <code>localStorage</code>.</div>
+          <div class="details-section"><span class="details-label">Directory:</span> Formatted to lowercase <code>character-library</code> directory rules.</div>
+        </div>
+      </div>
+
+      <!-- Image Tile -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/image-tile/</span>
+          <span class="module-status status-active">Active</span>
+        </div>
+        <p class="module-description">Precision grid coordinate coordinate image tiler, utilizing Python and OpenCV scripts inside PyScript.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Core Engine:</span> PyScript virtual environment + Pillow + Numpy + OpenCV.</div>
+          <div class="details-section"><span class="details-label">Interactive Controls:</span> Infinite Repeating Preview card, Show Seams toggle switch, scale slider, and coordinate boundaries.</div>
+        </div>
+      </div>
+
+      <!-- Img2Normal -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/img2normal/</span>
+          <span class="module-status status-active">Active</span>
+        </div>
+        <p class="module-description">Dimensional map synthesis engine, converting loaded 2D images to vector-based rendering normal maps.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Variables Used:</span> Range sliders controlling height offsets, Sobel filters, and normal vector depths.</div>
+          <div class="details-section"><span class="details-label">Status:</span> Fully active, embedded under lowercase pathways.</div>
+        </div>
+      </div>
+
+      <!-- Info -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/info/</span>
+          <span class="module-status status-system">System Spec</span>
+        </div>
+        <p class="module-description">Interactive handbook detailing the core Organon postMessage framework and system standards.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Function:</span> Global manual triggered by clicking the <code>ℹ️</code> icon on the main header.</div>
+          <div class="details-section"><span class="details-label">Structure:</span> Single-file, lightweight pure CSS 3D sand-cards.</div>
+        </div>
+      </div>
+
+      <!-- Jpeg Compress -->
+      <div class="module-card active-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">tools/jpeg-compress/</span>
+          <span class="module-status status-active">Active</span>
+        </div>
+        <p class="module-description">Symmetric JPEG quality compressor, optimizing assets to custom file bounds cleanly.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Layout:</span> Double-thumbnail (Before/After) sticky header reflow.</div>
+          <div class="details-section"><span class="details-label">Sync:</span> Updates real-time metadata (file size, dimensions) on slider movement.</div>
+        </div>
+      </div>
+
+      <!-- PLANNED ROADMAP ITEMS -->
+      <!-- 1. Character Map -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">1. Character Map Explorer</span>
+          <span class="module-status status-roadmap">Feasibility: 5/5</span>
+        </div>
+        <p class="module-description">Searchable tabbed Unicode &amp; Greek notation keyboard picker. Fast, clientside, zero-latency.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Clean, tabbed viewports dividing Emojis, proper LaTeX formulas, Greek &amp; ASCII elements in the middle panel. Clicking copies directly to your clipboard.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Global fuzzy-search, quick filter switches, and spelling tolerance range sliders. Favorites saved to hub <code>localStorage</code>.</div>
+        </div>
+      </div>
+
+      <!-- 2. Contrast Extractor -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">2. Contrast Checker (WCAG)</span>
+          <span class="module-status status-roadmap">Feasibility: 4.5/5</span>
+        </div>
+        <p class="module-description">Symmetric image adjustments combined with an accessibility contrast analyzer.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Non-destructive image canvas edits (brightness, crop, saturation). Scans the image to extract dominant color swatches.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Interactive color eye-dropper tool, allowing you to click directly on your canvas to run real-time contrast checking.</div>
+        </div>
+      </div>
+
+      <!-- 3. Bulk Format Converter -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">3. Batch File Converter</span>
+          <span class="module-status status-roadmap">Feasibility: 4.5/5</span>
+        </div>
+        <p class="module-description">Batch pipeline converting format files natively using canvas buffers.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Queue pipeline utilizing web-decoders (like <code>heic2any</code>) to translate SVGs, JPEGs, PNGs, and HEICs natively.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> "Batch Mode" compiles files into a <code>.zip</code> package and triggers a system download folder selection window.</div>
+        </div>
+      </div>
+
+      <!-- 4. Video Frame Extractor -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">4. Video Frame Extractor</span>
+          <span class="module-status status-roadmap">Feasibility: 4/5</span>
+        </div>
+        <p class="module-description">Frame-accurate snapshot utility pulling canvas rendering slices from local video files.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Immersive HTML5 player element rendering local media buffers, featuring discrete step back/forward frame rendering.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Custom timeline sliders, frame navigation buttons ($24\text{fps}$ / $30\text{fps}$ presets), and direct input number jumps.</div>
+        </div>
+      </div>
+
+      <!-- 5. Collage Maker -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">5. Collage Maker (Smart Grid)</span>
+          <span class="module-status status-roadmap">Feasibility: 4/5</span>
+        </div>
+        <p class="module-description">Dynamic, aspect-ratio-aware grid compiler, arranging loaded graphics automatically.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Grid compiler calculating coordinate dimensions, generating proportional tile alignments without crop clipping.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Padding range sliders, custom background color maps, and drag-and-drop tile swap triggers. Supports templates (e.g., $2 \times 2$, $3 \times 1$).</div>
+        </div>
+      </div>
+
+      <!-- 6. Code Notepad -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">6. WYSIWYG &amp; Spreadsheet Editor</span>
+          <span class="module-status status-roadmap">Feasibility: 3.5/5</span>
+        </div>
+        <p class="module-description">Rich editor workspace merging Notepad code sheets, visual JSON trees, and grid CSV sheets.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Four interactive tabs: 1. Code Notepad, 2. Sandboxed WYSIWYG iframe preview with draggable split-view divider, 3. Collapsible JSON tree, 4. Interactive table spreadsheet with filters.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Side-by-side comparison Diff checker, key merging VLookup utilities, live memory edit guard, and silent saving over original files (via browser File System Access API).</div>
+        </div>
+      </div>
+
+      <!-- 7. Spritesheet Animator -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">7. Spritesheet Animator (Game Dev)</span>
+          <span class="module-status status-roadmap">Feasibility: 2.5/5</span>
+        </div>
+        <p class="module-description">Spritesheet slicer, timeline frame animator, and animated GIF constructor.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> GIF assembly builder + Spritesheet crop analyzer, playing coordinate sequences in miniature preview frames.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Timeline manual frame-scrub range slider, "Auto-Motion" frame and interval delay calculator, scene checklist asset indexer, and automatic level coordinate auto-slicer ($16\text{px}$, $32\text{px}$, $64\text{px}$). Includes a polygonal hitbox coordinates paint vector exporter.</div>
+        </div>
+      </div>
+
+      <!-- 8. Audio Cutter -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">8. Split Audio &amp; WAV Cutter</span>
+          <span class="module-status status-roadmap">Feasibility: 2.5/5</span>
+        </div>
+        <p class="module-description">Web Audio waveform analyzer and trimmer. Quick, sharp cuts without complex bloat.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Web Audio context decoding MP3/WAV, drawing pixel canvas wave plots in real time. Features sliding crop range handles.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Removes bloated envelope, compression, and fade parameters, keeping trimming operations fast and razor sharp.</div>
+        </div>
+      </div>
+
+      <!-- 9. Keyboard Synth -->
+      <div class="module-card roadmap-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">9. Sequencer &amp; 8-Bit Synth</span>
+          <span class="module-status status-roadmap">Feasibility: 2/5</span>
+        </div>
+        <p class="module-description">On-screen synthesizer synth, chiptune sound generator, and quantized timeline recorder.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Presets tab (blasts, jumps, lasers) with envelopes + Musical Keyboard play keys mapped directly to your physical keyboard.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Quantized music recorder snap-aligning sequences to standard 1-8 beat grid intervals. ABC notation notepad player, compiling and running pasted musical sheet transcriptions instantly.</div>
+        </div>
+      </div>
+
+      <!-- RECOMMENDED ADDITIONS -->
+      <!-- 13. Sprite Palette Swapper -->
+      <div class="module-card recommended-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">13. Sprite Palette Swapper</span>
+          <span class="module-status status-recommended">Feasibility: 4.5/5</span>
+        </div>
+        <p class="module-description">Scan, isolate, and swap the color palette of 2D game sprites in real-time.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Scans diffuse pixel maps, compiles active swatch arrays, and swaps them dynamically (e.g., green slime to ruby slime) on canvas blocks.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> One-click color box variations, batch swatch exports, and immediate asset download.</div>
+        </div>
+      </div>
+
+      <!-- 14. Bitmap Font Atlas Packer -->
+      <div class="module-card recommended-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">14. Bitmap Font Atlas Packer</span>
+          <span class="module-status status-recommended">Feasibility: 3.5/5</span>
+        </div>
+        <p class="module-description">Construct packed spritesheet font atlases paired with relative coordinate JSON maps.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Design Concept:</span> Input character lists, select any loaded local font, adjust pixel padding values, and bundle atlas frames cleanly.</div>
+          <div class="details-section"><span class="details-label">Custom Integration:</span> Grid coordinate alignment, PNG atlas canvas download, and accompanying metrics JSON coordinate exporter.</div>
+        </div>
+      </div>
+
+      <!-- PARKED MODULES -->
+      <!-- 10. YT Downloader -->
+      <div class="module-card parked-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">10. YouTube MP3/MP4 Downloader</span>
+          <span class="module-status status-parked">Parked</span>
+        </div>
+        <p class="module-description">Postponed. External cross-origin restrictions block native clientside media download stream extraction.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Technical Barrier:</span> YouTube prevents CORS fetches. Overriding requires an active backend proxy server, violating our zero-overhead hosting architecture.</div>
+        </div>
+      </div>
+
+      <!-- 11. YT Transcriber -->
+      <div class="module-card parked-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">11. Transcription Generator</span>
+          <span class="module-status status-parked">Parked</span>
+        </div>
+        <p class="module-description">Postponed. YouTube transcripts requires server scrapers or expensive API coordinate calls.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Technical Barrier:</span> Violates our strict, serverless client-side hosting strategy. Re-evaluate if open API transcription nodes emerge.</div>
+        </div>
+      </div>
+
+      <!-- 12. GIF to MP4 -->
+      <div class="module-card parked-group" onclick="toggleDetails(this)">
+        <div class="module-card-header">
+          <span class="module-path">12. GIF-to-MP4 Video Converter</span>
+          <span class="module-status status-parked">Parked</span>
+        </div>
+        <p class="module-description">Postponed. Heavy WebAssembly compilers (FFmpeg.wasm) are blocked by standard sandbox iframe security headers.</p>
+        <div class="module-details">
+          <div class="details-section"><span class="details-label">Technical Barrier:</span> Browser sandboxes disable SharedArrayBuffer headers needed by FFmpeg WASM. Will revisit once native Canvas-to-MP4 browser support improves.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 5: AI DEVELOPMENT SPECIFICATION -->
+    <h2>5. AI Sub-App Generation Specification</h2>
+    <div class="stone-card">
+      <p>
+        Feed this master specification page directly into any generative AI model to build a compatible Organon sub-app. The generated module must strictly follow these structural and design directives:
+      </p>
+      <ul>
+        <li><strong>Structural Wrapper:</strong> Constrain the page layout to <code>.app-wrapper</code> with a maximum width of <code>540px</code>, centered horizontally on the screen against a solid <code>--bg-nightsky</code> background.</li>
+        <li><strong>Three-Panel Layout:</strong>
+          <ul>
+            <li><strong>Panel 1 (Top Panel):</strong> <code>position: sticky; top: 0;</code> with a sandstone texture background map <code>../../Images/stonetext.jpg</code> (strictly capital "I") layered over a translucent gold filter. Use a <code>5 -> 0</code> second countdown circle that collapses the sticky bar into a minimalist header unless hovered, clicked, or locked (🔒) via double-click.</li>
+            <li><strong>Panel 2 (Middle Scrollable Panel):</strong> Pure black (<code>#000000</code>) background containing configuration elements, rounded card segments, and a deep bottom-padding offset of <code>120px</code>.</li>
+            <li><strong>Panel 3 (Bottom Panel):</strong> Fixed sticky layout at the bottom of the viewport carrying a low-transparency dark action button.</li>
+          </ul>
+        </li>
+        <li><strong>Tactile Components:</strong> Use fully rounded pills (<code>border-radius: 9999px</code>) for input fields, textareas, selection dropdown lists, and interactive buttons. Hide native numerical spin arrows. Use range sliders with active ruby-pink (<code>#9a2f4f</code>) tracks and dark burgundy (<code>#61112e</code>) inactive track tracks.</li>
+        <li><strong>Handshake APIs:</strong> Integrate <code>postMessage</code> callbacks (<code>setHubStatus(text)</code> / <code>clearHubStatus()</code>) to broadcast action logs dynamically back to the parent Hub. Include the relative path top-level iframe guard redirecting users to <code>../../index.html</code> if launched directly.</li>
+      </ul>
+    </div>
+
+    <!-- SECTION 6: CROSS-IFRAME API SPECS -->
+    <h2>6. Cross-Iframe API Specs</h2>
+    <div class="stone-card">
+      <p>
+        Sub-tools communicate descriptions, errors, and success updates back to the parent hub status bar 
+        using postMessages. Here is the active JS framework for your tools:
+      </p>
+      <pre><code>// Broadcast to Organon Hub Centered Status Bar
+function setHubStatus(text) {
+  window.parent.postMessage({ type: 'set-status', text: text }, '*');
+}
+
+// Clear status bar and restore "ORGANON ONLINE"
+function clearHubStatus() {
+  window.parent.postMessage({ type: 'clear-status' }, '*');
+}</code></pre>
+    </div>
+
+    <!-- SECTION 7: STARTER BOILERPLATE -->
+    <h2>7. Quick-Start Module Boilerplate</h2>
+    <p>
+      Use the button below to instantly copy the complete structured index file boilerplate.
+    </p>
+
+    <div class="code-header">
+      <span>STARTER_INDEX_TEMPLATE.html</span>
+      <button class="btn-pill" id="copy-btn" onclick="copyBoilerplate()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-copy"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+        Copy Boilerplate Code
+      </button>
+    </div>
+<pre><code id="boilerplate-code">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+    &lt;title&gt;Organon Module Starter&lt;/title&gt;
+    
+    &lt;!-- Iframe Guard: Redirects to the hub if opened directly --&gt;
+    &lt;script&gt;
+        if (window.self === window.top) {
+            window.location.href = '../../index.html';
+        }
+    &lt;/script&gt;
+    
+    &lt;link rel="preconnect" href="https://fonts.googleapis.com"&gt;
+    &lt;link rel="preconnect" href="https://fonts.gstatic.com" crossorigin&gt;
+    &lt;link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet"&gt;
+    
+    &lt;style&gt;
+        :root {
+            --stone-ochre: #E5A862;       /* [Color #1] */
+            --chiseled-bronze: #896b49;   /* [Color #2] */
+            --bg-card: #292a24;           /* [Color #3] */
+            --bg-input: rgba(24, 25, 25, 0.95); /* [Color #4] */
+            --water-blue: #4B84BF;        /* [Color #5] */
+            --water-spray: #79B4E3;       /* [Color #6] */
+            --light-blue: #75b2de;        /* [Color #7] */
+            --brand-red: #9A2F4F;         /* [Color #9] */
+            --slider-track: #61112E;      /* [Color #10] */
+            --alabaster-paper: #F2ECE0;   /* [Color #11] */
+            --bg-nightsky: #181919;       /* [Color #12] */
+            
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            letter-spacing: 0.03em;
+        }
+
+        input, select {
+            background-color: var(--bg-input);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+        input:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            padding: 16px;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(24, 25, 25, 0.9);
+            color: #75b2de;
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .countdown-circle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 120px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px;
+            z-index: 110;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            padding: 10px 14px 14px 14px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        .bottom-sticky-panel .btn-pill {
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            color: #75b2de !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.7rem !important;
+            text-transform: uppercase;
+            padding: 8px 16px !important;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.25s ease-in-out;
+        }
+        .bottom-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;div class="app-wrapper"&gt;
+        &lt;div class="top-sticky-panel"&gt;
+            &lt;div class="title-pill"&gt;
+                &lt;div style="display: flex; align-items: center;"&gt;
+                    &lt;div id="countdown-circle" class="countdown-circle-indicator"&gt;5&lt;/div&gt;
+                    &lt;span&gt;TOOL TITLE&lt;/span&gt;
+                &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div class="panel-content-hide" style="width:100%;"&gt;
+                &lt;input type="text" placeholder="Workspace inputs go here..."&gt;
+            &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;main class="middle-scroll-panel"&gt;
+            &lt;div class="config-card"&gt;
+                &lt;h3&gt;Settings Header&lt;/h3&gt;
+                &lt;p style="font-size: 0.8rem; opacity:0.8;"&gt;Configure parameters here.&lt;/p&gt;
+            &lt;/div&gt;
+        &lt;/main&gt;
+
+        &lt;div class="bottom-sticky-panel"&gt;
+            &lt;button type="button" class="btn-pill" id="action-btn"&gt;EXECUTE MODULE&lt;/button&gt;
+        &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;script&gt;
+        function registerHoverDescription(selector, descriptionText) {
+            const element = document.querySelector(selector);
+            if (!element) return;
+            element.addEventListener('mouseenter', () => {
+                if (window.parent &amp;&amp; window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
+                }
+            });
+            element.addEventListener('mouseleave', () => {
+                if (window.parent &amp;&amp; window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'clear-status' }, '*');
+                }
+            });
+        }
+        registerHoverDescription('#action-btn', 'Activate settings parameters to run the workspace script.');
+
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal &lt;= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+        startCountdown();
+    &lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+  </div>
+
+  <!-- Clipboard Auxiliary Helper Element -->
+  <input type="text" id="clipboard-holder">
+  <div class="toast" id="toast-notice">Copied value directly!</div>
+
+  <script>
+    // Copy Hex code to clipboard (iframe-friendly fallback copy)
+    function copyHex(hexCode) {
+      const copyField = document.getElementById('clipboard-holder');
+      copyField.value = hexCode;
+      copyField.select();
+      copyField.setSelectionRange(0, 99999); // Safe viewport selection limit
+      
+      try {
+        const success = document.execCommand('copy');
+        if (success) {
+          triggerToast(`HEX / Path value copied directly!`);
+        }
+      } catch (err) {
+        console.warn("Iframe copy restricted.", err);
+      }
+    }
+
+    // Copy Boilerplate Content
+    function copyBoilerplate() {
+      const copyField = document.getElementById('clipboard-holder');
+      const boilerplateText = document.getElementById('boilerplate-code').innerText;
+      copyField.value = boilerplateText;
+      copyField.select();
+      copyField.setSelectionRange(0, 99999);
+      
+      try {
+        const success = document.execCommand('copy');
+        if (success) {
+          triggerToast("Sub-App Boilerplate Code Copied!");
+        }
+      } catch (err) {
+        console.warn("Iframe copy restricted.", err);
+      }
+    }
+
+    // Trigger floating notification toast
+    function triggerToast(message) {
+      const toast = document.getElementById('toast-notice');
+      toast.innerText = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    // Filter Modules logically
+    function filterModules(category, buttonEl) {
+      // Toggle button states
+      const buttons = document.querySelectorAll('.filter-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+      buttonEl.classList.add('active');
+
+      const cards = document.querySelectorAll('.module-card');
+      cards.forEach(card => {
+        // Clear expand states
+        card.classList.remove('expanded');
+        
+        if (category === 'all') {
+          card.style.display = 'flex';
+        } else if (category === 'active') {
+          if (card.classList.contains('active-group')) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        } else if (category === 'roadmap') {
+          if (card.classList.contains('roadmap-group')) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        } else if (category === 'recommended') {
+          if (card.classList.contains('recommended-group')) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        } else if (category === 'parked') {
+          if (card.classList.contains('parked-group')) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        }
+      });
+    }
+
+    // Toggle Card details accordion
+    function toggleDetails(cardEl) {
+      // Close other cards
+      const cards = document.querySelectorAll('.module-card');
+      cards.forEach(card => {
+        if (card !== cardEl) {
+          card.classList.remove('expanded');
+        }
+      });
+      cardEl.classList.toggle('expanded');
+    }
+  </script>
+</body>
+</html>
