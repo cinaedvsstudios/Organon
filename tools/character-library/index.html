@@ -694,6 +694,72 @@
             animation: none !important;
         }
 
+        .string-mode-toggle {
+            width: 38px !important;
+            min-width: 38px !important;
+            height: 28px !important;
+            padding: 0 8px !important;
+            border-radius: 9999px !important;
+            font-family: var(--font-mono) !important;
+            font-size: 0.62rem !important;
+            font-weight: 800 !important;
+            letter-spacing: 0.02em;
+            line-height: 1;
+            color: var(--water-spray) !important;
+            background-color: rgba(24, 25, 25, 0.72) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            text-transform: uppercase !important;
+        }
+
+        .string-mode-toggle:hover,
+        .string-mode-toggle.string-mode-active {
+            background-color: var(--forest-teal) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.35) !important;
+        }
+
+        .string-mode-toggle.string-mode-active {
+            animation: pulseBlue 1.6s infinite;
+        }
+
+        .string-builder-box {
+            display: block;
+            width: 100%;
+            min-height: 112px;
+            max-height: 150px;
+            resize: vertical;
+            padding: 12px 14px;
+            border-radius: 14px !important;
+            background-color: rgba(24, 25, 25, 0.5) !important;
+            border: 1px dashed rgba(137, 107, 73, 0.3) !important;
+            color: var(--alabaster-paper) !important;
+            font-size: 1.25rem;
+            line-height: 1.45;
+            font-family: var(--font-body);
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .string-builder-box:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        .fav-actions-inline.string-mode-active {
+            gap: 6px;
+        }
+
+        .fav-actions-inline.string-mode-active .fav-icon-btn.string-action-btn {
+            width: auto;
+            min-width: 62px;
+            padding: 0 10px !important;
+            border-radius: 9999px !important;
+            font-size: 0.62rem !important;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase !important;
+        }
+
         /* Bold non-emojis */
         .char-non-emoji {
             font-weight: 700;
@@ -38173,6 +38239,7 @@
                         <div class="favorites-shelf" id="favorites-shelf-container" style="flex-grow: 1; margin-top: 0;">
                             <!-- Fav pills are injected here -->
                         </div>
+                        <textarea id="string-builder-box" class="string-builder-box hidden" placeholder="Tap characters from Library to build a copy/paste string..."></textarea>
                     </div>
 
                     <!-- Right: Large Preview -->
@@ -38204,6 +38271,7 @@
                             <button type="button" id="lib-settings-cog" class="btn-pill btn-pill-secondary skin-tone-toggle" style="padding: 0; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;" title="Emoji Skin Tone Modifiers">
                                 👆
                             </button>
+                            <button type="button" id="string-mode-toggle" class="btn-pill btn-pill-secondary string-mode-toggle" title="Build a copy/paste text string from selected characters">ABC</button>
                         </div>
                     </div>
                     
@@ -38289,6 +38357,7 @@
             const resultsContainer = document.getElementById("char-results-container");
             const resultsCountSpan = document.getElementById("results-count");
             const favoritesShelf = document.getElementById("favorites-shelf-container");
+            const stringBuilderBox = document.getElementById("string-builder-box");
             const activeListSelector = document.getElementById("active-list-selector");
 
             const searchTokenContainer = document.getElementById("search-token-container");
@@ -38301,6 +38370,7 @@
             const searchSubmitBtn = document.getElementById("search-submit-btn");
 
             const libSettingsCog = document.getElementById("lib-settings-cog");
+            const stringModeToggle = document.getElementById("string-mode-toggle");
             const skinToneContainer = document.getElementById("skin-tone-container");
             const skinToneSelector = document.getElementById("skin-tone-selector");
 
@@ -38335,6 +38405,8 @@
             let lastCapToastKey = "";
             let lastSearchMatches = [];
             let searchDirty = false;
+            let isStringMode = false;
+            let stringBuilderValue = "";
 
             // Dynamic Favorites Library Multi-Lists
             let favoriteLibrary = {
@@ -38367,6 +38439,12 @@
                     let parsed = JSON.parse(savedRecentSearches);
                     if (Array.isArray(parsed)) recentSearches = parsed;
                 } catch (e) {}
+            }
+
+            const savedStringBuilderValue = safeStorage.getItem("organon_character_string_builder");
+            if (savedStringBuilderValue !== null) {
+                stringBuilderValue = savedStringBuilderValue;
+                if (stringBuilderBox) stringBuilderBox.value = stringBuilderValue;
             }
 
             // Parent Window Status broadcasters
@@ -38879,13 +38957,18 @@
 
                         updateLargePreview();
 
-                        addSelectedToFavsBtn.disabled = false;
-                        addSelectedToFavsBtn.innerHTML = `❤️`;
+                        if (isStringMode) {
+                            appendToStringBuilder(finalChar);
+                        } else {
+                            addSelectedToFavsBtn.disabled = false;
+                            addSelectedToFavsBtn.innerHTML = `❤️`;
+                        }
                     });
 
                     card.addEventListener("mouseenter", () => {
                         const latexNotice = item.latex ? ` (LaTeX: ${item.latex})` : "";
-                        notifyHubStatus("Click to select: \"" + finalChar + "\" - " + item.name + latexNotice);
+                        const actionText = isStringMode ? "Click to append to string: " : "Click to select: ";
+                        notifyHubStatus(actionText + "\"" + finalChar + "\" - " + item.name + latexNotice);
                     });
                     card.addEventListener("mouseleave", clearHubStatus);
 
@@ -38920,6 +39003,95 @@
                 }
             }
 
+            function persistStringBuilder() {
+                if (!stringBuilderBox) return;
+                stringBuilderValue = stringBuilderBox.value;
+                safeStorage.setItem("organon_character_string_builder", stringBuilderValue);
+                updateStringModeActionButtons();
+            }
+
+            function updateStringModeActionButtons() {
+                if (!isStringMode) return;
+                const hasString = stringBuilderBox && stringBuilderBox.value.length > 0;
+                addSelectedToFavsBtn.disabled = !hasString;
+                addSelectedToFavsBtn.innerText = "Copy";
+                addSelectedToFavsBtn.title = hasString ? "Copy the current character string" : "String is empty";
+                addSelectedToFavsBtn.classList.add("string-action-btn");
+                newListTriggerBtn.disabled = !hasString;
+                newListTriggerBtn.innerText = "Clear";
+                newListTriggerBtn.title = hasString ? "Clear the current character string" : "String is already empty";
+                newListTriggerBtn.classList.add("string-action-btn");
+            }
+
+            function setStringMode(active) {
+                isStringMode = active;
+                stringModeToggle.classList.toggle("string-mode-active", active);
+                stringModeToggle.title = active
+                    ? "String mode is active. Library clicks append characters into the string box."
+                    : "Build a copy/paste text string from selected characters.";
+
+                favoritesShelf.classList.toggle("hidden", active);
+                stringBuilderBox.classList.toggle("hidden", !active);
+                activeListSelector.classList.toggle("hidden", active);
+                editListBtn.classList.toggle("hidden", active);
+                favoritesEditControls.classList.add("hidden");
+                editListBtn.innerText = "✎";
+                addSelectedToFavsBtn.classList.toggle("string-action-btn", active);
+                newListTriggerBtn.classList.toggle("string-action-btn", active);
+                addSelectedToFavsBtn.parentElement.classList.toggle("string-mode-active", active);
+
+                if (active) {
+                    addSelectedToFavsBtn.innerText = "Copy";
+                    newListTriggerBtn.innerText = "Clear";
+                    updateStringModeActionButtons();
+                    stringBuilderBox.focus();
+                } else {
+                    addSelectedToFavsBtn.innerHTML = "❤️";
+                    addSelectedToFavsBtn.title = "Add selected character to favorites";
+                    addSelectedToFavsBtn.disabled = !selectedCharacter;
+                    newListTriggerBtn.innerHTML = "📂";
+                    newListTriggerBtn.title = "New favorites list";
+                    newListTriggerBtn.disabled = false;
+                    renderFavorites();
+                }
+            }
+
+            function appendToStringBuilder(text) {
+                if (!stringBuilderBox || !text) return;
+                const start = stringBuilderBox.selectionStart ?? stringBuilderBox.value.length;
+                const end = stringBuilderBox.selectionEnd ?? stringBuilderBox.value.length;
+                const before = stringBuilderBox.value.slice(0, start);
+                const after = stringBuilderBox.value.slice(end);
+                stringBuilderBox.value = before + text + after;
+                const nextPos = start + text.length;
+                stringBuilderBox.focus();
+                stringBuilderBox.setSelectionRange(nextPos, nextPos);
+                persistStringBuilder();
+            }
+
+            function copyStringBuilder() {
+                if (!stringBuilderBox || stringBuilderBox.value.length === 0) return;
+                copyToClipboard(stringBuilderBox.value, "string");
+            }
+
+            function clearStringBuilder() {
+                if (!stringBuilderBox) return;
+                stringBuilderBox.value = "";
+                persistStringBuilder();
+                stringBuilderBox.focus();
+                notify("String builder cleared.", "success");
+            }
+
+            stringModeToggle.addEventListener("click", () => {
+                setStringMode(!isStringMode);
+            });
+
+            stringBuilderBox.addEventListener("input", persistStringBuilder);
+            stringBuilderBox.addEventListener("mouseenter", () => {
+                notifyHubStatus("String builder: type, paste, backspace, or tap Library characters to build one copyable block.");
+            });
+            stringBuilderBox.addEventListener("mouseleave", clearHubStatus);
+
             // Favorites Multi-List Core Logic
             function renderActiveListSelector() {
                 activeListSelector.innerHTML = "";
@@ -38951,6 +39123,10 @@
             });
 
             addSelectedToFavsBtn.addEventListener("click", () => {
+                if (isStringMode) {
+                    copyStringBuilder();
+                    return;
+                }
                 if (!selectedCharacter) return;
                 
                 if (!favoriteLibrary[activeListName]) {
@@ -38983,6 +39159,7 @@
             });
 
             function renderFavorites() {
+                if (isStringMode) return;
                 favoritesShelf.innerHTML = "";
                 const activeList = favoriteLibrary[activeListName] || [];
 
@@ -39040,6 +39217,10 @@
             }
 
             newListTriggerBtn.addEventListener("click", () => {
+                if (isStringMode) {
+                    clearStringBuilder();
+                    return;
+                }
                 currentModalAction = "create";
                 dialogModalTitle.innerText = "Create New Favorites List";
                 dialogInputLabel.innerText = "Enter list name (emoji or text):";
@@ -39112,7 +39293,7 @@
             });
 
             // Clipboard Copy function
-            function copyToClipboard(text) {
+            function copyToClipboard(text, label = "character") {
                 const el = document.createElement('textarea');
                 el.value = text;
                 el.setAttribute('readonly', '');
@@ -39159,6 +39340,8 @@
             registerHoverDescription('#bottom-panel-handle', 'Show or hide the reserved bottom panel.');
             registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
             registerHoverDescription('#lib-settings-cog', 'Open emoji skin tone modifiers when compatible emoji are available in the current results.');
+            registerHoverDescription('#string-mode-toggle', 'Toggle ABC string mode. When active, clicking Library characters appends them into the string builder in the Favorites card.');
+            registerHoverDescription('#string-builder-box', 'String builder: type, paste, backspace, or tap Library characters to build one copyable block.');
             registerHoverDescription('#large-preview-box', 'Click to copy selected character to clipboard.');
 
             // ==========================================================
