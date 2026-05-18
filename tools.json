@@ -56,7 +56,7 @@
         {
           "id": "character-library",
           "label": "CHARACTER LIBRARY",
-          "path": "tools/Character-library/index.html",
+          "path": "tools/character-library/index.html",
           "description": "Browse and manage the global character library sheet metadata."
         }
       ]
