@@ -3,7 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
     <title>Tile Image</title>
+
     
     <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
     <script>
@@ -35,7 +38,7 @@
             --burgundy: #4A1525;
             --brand-red: #9a2f4f;
             --forest-teal: #26615C;
-            --bg-nightsky: #181919;
+            --bg-nightsky: #000000;
             --bg-card: #292a24; 
             --bg-input: rgba(24, 25, 25, 0.95);
 
@@ -247,12 +250,13 @@
         }
 
         /* Panel 1: Top Sticky Upload Panel with blended Light Stone Background & Curved Bottom Corners */
+        /* Opacity reduced to 0.25 for crisp, high-fidelity stone visibility */
         .top-sticky-panel {
             position: sticky;
             top: 0;
             z-index: 100;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../images/stonetext.jpg');
+            background-image: linear-gradient(rgba(224, 163, 96, 0.25), rgba(224, 163, 96, 0.25)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -556,6 +560,7 @@
         }
 
         /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Fallback (Compact Symmetrically) */
+        /* Opacity reduced to 0.25 for crisp, high-fidelity stone visibility */
         .bottom-sticky-panel {
             position: fixed;
             bottom: 0;
@@ -565,7 +570,7 @@
             max-width: 540px; 
             z-index: 110;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
+            background-image: linear-gradient(rgba(224, 163, 96, 0.25), rgba(224, 163, 96, 0.25)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
@@ -897,7 +902,7 @@
                                 <input type="number" id="crop-left" value="0" min="0">
                             </div>
                             <div class="form-row">
-                                <label for="crop-top">Top</label>
+                                <label interpreter="crop-top">Top</label>
                                 <input type="number" id="crop-top" value="0" min="0">
                             </div>
                         </div>
@@ -1499,6 +1504,87 @@ init_app()
         registerHoverDescription('#jpeg-quality', 'Configure JPG compression ratios from 10 (smallest size) to 100 (crispest features).');
         registerHoverDescription('#download-btn', 'Download the synthesized tile asset to your local hard drive.');
         registerHoverDescription('#countdown-circle', 'Double-click to lock/unlock the top panel from auto-minimizing.');
+
+        // ==========================================================
+        // AUTO-MINIMIZATION & TIMED LOCK CONTROL PIPELINE
+        // ==========================================================
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            if (isPanelLocked) {
+                countdownCircle.innerHTML = "🔒";
+            } else {
+                countdownCircle.innerHTML = countdownVal;
+            }
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    minimizePanel();
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        // Bind interactive event handlers to panel coordinates
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
 
         // Initialize Countdown on load
         startCountdown();
