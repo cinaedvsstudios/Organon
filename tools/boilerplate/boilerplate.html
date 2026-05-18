@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organon Module Starter</title>
+    
+    <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
+    <script>
+        if (window.self === window.top) {
+            window.location.href = '../../index.html';
+        }
+    </script>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap](https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap)" rel="stylesheet">
+    
+    <style>
+        :root {
+            --stone-ochre: #E5A862;
+            --chiseled-bronze: #896B49;
+            --water-blue: #4B84BF;
+            --water-spray: #79B4E3;
+            --alabaster-paper: #F2ECE0;
+            --bg-nightsky: #181919;
+            --bg-card: #292A24;
+            --bg-input: rgba(24, 25, 25, 0.95);
+            --brand-red: #9A2F4F;
+            --slider-track: #61112E;
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            letter-spacing: 0.03em;
+        }
+
+        input, select {
+            background-color: var(--bg-input);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+        input:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        /* Viewport limits */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        /* Top Sticky Panel with blended Light Stone background */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
+            background-size: cover;
+            padding: 24px 16px 16px 16px;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(24, 25, 25, 0.9);
+            color: var(--water-spray);
+            font-family: var(--font-headers);
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        /* Middle Scroll Panel */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 120px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        /* Bottom Sticky Action Panel */
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px;
+            z-index: 110;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
+            background-size: cover;
+            padding: 16px 16px 20px 16px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze);
+            border-top-left-radius: 28px;
+            border-top-right-radius: 28px;
+        }
+
+        .btn-pill {
+            background-color: rgba(24, 25, 25, 0.9);
+            color: var(--water-spray);
+            border: 1px solid var(--chiseled-bronze);
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.25s ease-in-out;
+        }
+        .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95);
+            border-color: var(--water-spray);
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-wrapper">
+        <!-- Panel 1: Top Sticky -->
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>TOOL TITLE</span>
+                </div>
+            </div>
+            <div class="panel-content-hide" style="width:100%;">
+                <input type="text" placeholder="Workspace inputs go here...">
+            </div>
+        </div>
+
+        <!-- Panel 2: Middle Scrollable -->
+        <main class="middle-scroll-panel">
+            <div class="config-card">
+                <h3>Settings Header</h3>
+                <p style="font-size: 0.8rem; opacity:0.8;">Configure parameters here.</p>
+            </div>
+        </main>
+
+        <!-- Panel 3: Bottom Sticky -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill" id="action-btn">EXECUTE MODULE</button>
+        </div>
+    </div>
+
+    <script>
+        // Parent Hub hover synchronization function
+        function registerHoverDescription(selector, descriptionText) {
+            const element = document.querySelector(selector);
+            if (!element) return;
+            element.addEventListener('mouseenter', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'set-status', text: descriptionText }, '*');
+                }
+            });
+            element.addEventListener('mouseleave', () => {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'clear-status' }, '*');
+                }
+            });
+        }
+
+        registerHoverDescription('#action-btn', 'Activate settings parameters to run the workspace script.');
+
+        // Auto collapse logic
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            topStickyPanel.classList.remove("minimized");
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                topStickyPanel.classList.remove("minimized");
+                resetCountdown();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                topStickyPanel.classList.remove("minimized");
+            } else if (!isHoveringPanel) {
+                startCountdown();
+            }
+        });
+
+        startCountdown();
+    </script>
+</body>
+</html>
