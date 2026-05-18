@@ -31,7 +31,7 @@
             --burgundy: #4A1525;
             --brand-red: #9a2f4f;
             --forest-teal: #26615C;
-            --bg-nightsky: #181919;
+            --bg-nightsky: #000000; /* Pure black backdrop */
             --bg-card: #292a24; 
             --bg-input: rgba(24, 25, 25, 0.95);
 
@@ -178,16 +178,17 @@
             background-color: var(--bg-nightsky);
         }
 
+        /* Panel 1: Top Sticky Panel with blended Light Stone Background & Curved Bottom Corners */
         .top-sticky-panel {
             position: sticky;
             top: 0;
             z-index: 100;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../Images/stonetext.jpg');
+            background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            padding: 24px 16px 16px 16px; 
+            padding: 16px 16px 12px 16px; /* Tight padding to match other apps */
             box-sizing: border-box;
             border-bottom: 1px solid var(--chiseled-bronze) !important;
             border-bottom-left-radius: 28px; 
@@ -195,7 +196,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
             transition: padding 0.3s ease-in-out;
         }
 
@@ -207,6 +208,7 @@
             display: none !important;
         }
 
+        /* Absolute Title Pill (Highly Compact Sizing to match) */
         .title-pill {
             display: flex;
             align-items: center;
@@ -214,11 +216,11 @@
             background-color: rgba(24, 25, 25, 0.9);
             color: var(--light-blue);
             font-family: var(--font-headers);
-            font-size: 0.9rem;
+            font-size: 0.75rem; /* Shrunk from 0.9rem */
             font-weight: 700;
-            letter-spacing: 0.15em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            padding: 10px 24px;
+            padding: 8px 20px; /* Compact padding */
             border-radius: 9999px;
             border: 1px solid var(--chiseled-bronze);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
@@ -227,17 +229,18 @@
             width: 100%; 
         }
 
+        /* Tactile Countdown Circle styling (Scaled Down Symmetrically) */
         .countdown-circle-indicator {
-            width: 22px;
-            height: 22px;
+            width: 18px; /* Compact 18px */
+            height: 18px; 
             border-radius: 50%;
             border: 1px solid var(--chiseled-bronze);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
+            font-size: 0.65rem; /* Shrunk to 0.65rem */
             font-family: var(--font-mono);
-            margin-right: 12px;
+            margin-right: 10px; 
             cursor: pointer;
             user-select: none;
             background: rgba(0, 0, 0, 0.6);
@@ -249,6 +252,12 @@
             border-color: var(--water-spray);
             color: var(--water-spray);
             box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
+        }
+
+        #clear-search-btn {
+            padding: 3px 10px !important; 
+            font-size: 0.65rem !important; /* Scaled down */
+            letter-spacing: 0.03em;
         }
 
         .input-card-container {
@@ -573,6 +582,7 @@
             height: 14px;
         }
 
+        /* Panel 3: Bottom Sticky Button Panel (Compact Symmetrically) */
         .bottom-sticky-panel {
             position: fixed;
             bottom: 0;
@@ -582,28 +592,31 @@
             max-width: 540px; 
             z-index: 110;
             background-color: #d79e5c; 
-            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../Images/stonetext.jpg');
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            padding: 16px 16px 20px 16px;
+            padding: 10px 14px 14px 14px; /* Tight padding to match */
             box-sizing: border-box;
             display: flex;
-            gap: 12px;
+            gap: 10px; /* Symmetrical gaps */
             justify-content: center;
             border-top: 1px solid var(--chiseled-bronze) !important;
-            border-top-left-radius: 28px;
-            border-top-right-radius: 28px;
+            border-top-left-radius: 24px; /* Smoother curve transition */
+            border-top-right-radius: 24px;
         }
 
+        /* Bottom Sticky Button styling - tight & elegant */
         .bottom-sticky-panel .btn-pill {
-            flex: 1;
+            flex: 1; 
             background-color: rgba(24, 25, 25, 0.9) !important; 
             color: var(--light-blue) !important;
             border: 1px solid var(--chiseled-bronze) !important;
             box-shadow: none !important;
             text-shadow: none !important;
             width: 100%;
+            padding: 8px 16px !important; /* Shrunk height */
+            font-size: 0.7rem !important; /* Shrunk text size */
         }
 
         .bottom-sticky-panel .btn-pill:hover {
@@ -676,7 +689,7 @@
             width: 100%;
             height: 100%;
             background: rgba(0, 0, 0, 0.85);
-            z-index: 2000; 
+            z-index: 2000; /* Raised high above sticky headers */
             display: flex;
             align-items: center;
             justify-content: center;
@@ -696,7 +709,7 @@
             flex-direction: column;
             gap: 16px;
             box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
-            position: relative; 
+            position: relative; /* Ensure it registers pointer clicks cleanly */
             z-index: 2101;
         }
 
@@ -752,6 +765,238 @@
     </style>
 </head>
 <body>
+
+    <!-- FALLBACK OFFLINE DATABASE SCRIPT TAG -->
+    <script type="application/json" id="char-data-fallback">
+        [
+            { "char": "😀", "name": "grinning face", "category": "emoji", "keywords": "smile happy joy laugh yellow face" },
+            { "char": "😂", "name": "face with tears of joy", "category": "emoji", "keywords": "laugh cry hilarious funny yellow blue tear face" },
+            { "char": "🥰", "name": "smiling face with hearts", "category": "emoji", "keywords": "love happy cute yellow red heart pink face" },
+            { "char": "😎", "name": "smiling face with sunglasses", "category": "emoji", "keywords": "cool rad chill yellow black glasses face" },
+            { "char": "🤔", "name": "thinking face", "category": "emoji", "keywords": "ponder wonder hmm yellow face" },
+            { "char": "😭", "name": "loudly crying face", "category": "emoji", "keywords": "sad tear sob upset yellow blue water face" },
+            { "char": "😡", "name": "pouting face", "category": "emoji", "keywords": "angry mad furious red face" },
+            { "char": "🤬", "name": "face with symbols on mouth", "category": "emoji", "keywords": "swear curse angry mad red face" },
+            { "char": "🤯", "name": "exploding head", "category": "emoji", "keywords": "mind blown shock wow yellow orange face" },
+            { "char": "🥳", "name": "partying face", "category": "emoji", "keywords": "celebration birthday fun yellow hat confetti colorful face" },
+            { "char": "🤡", "name": "clown face", "category": "emoji", "keywords": "funny joke silly white red nose circus face" },
+            { "char": "🤢", "name": "nauseated face", "category": "emoji", "keywords": "sick gross ill green vomit face" },
+            { "char": "🥶", "name": "cold face", "category": "emoji", "keywords": "freezing ice winter blue frost face" },
+            { "char": "😈", "name": "smiling face with horns", "category": "emoji", "keywords": "devil evil naughty purple face" },
+            { "char": "👽", "name": "alien", "category": "emoji", "keywords": "ufo space extraterrestrial grey green face" },
+            { "char": "👻", "name": "ghost", "category": "emoji", "keywords": "spirit boo scary halloween white" },
+            { "char": "💀", "name": "skull", "category": "emoji", "keywords": "dead skeleton danger bone death white historic medieval" },
+            { "char": "💩", "name": "pile of poo", "category": "emoji", "keywords": "poop crap funny brown" },
+            { "char": "❤️", "name": "red heart", "category": "emoji", "keywords": "love passion like favorite red" },
+            { "char": "🧡", "name": "orange heart", "category": "emoji", "keywords": "love passion like favorite orange" },
+            { "char": "💛", "name": "yellow heart", "category": "emoji", "keywords": "love passion like favorite yellow" },
+            { "char": "💚", "name": "green heart", "category": "emoji", "keywords": "love passion like favorite green" },
+            { "char": "💙", "name": "blue heart", "category": "emoji", "keywords": "love passion like favorite blue" },
+            { "char": "💜", "name": "purple heart", "category": "emoji", "keywords": "love passion like favorite purple" },
+            { "char": "🤎", "name": "brown heart", "category": "emoji", "keywords": "love passion like favorite brown" },
+            { "char": "🖤", "name": "black heart", "category": "emoji", "keywords": "love passion like favorite dark black" },
+            { "char": "🤍", "name": "white heart", "category": "emoji", "keywords": "love passion like favorite pure white" },
+            { "char": "💔", "name": "broken heart", "category": "emoji", "keywords": "love sad heartbreak red crack" },
+            { "char": "💖", "name": "sparkling heart", "category": "emoji", "keywords": "love shine magic pink star" },
+            { "char": "💗", "name": "growing heart", "category": "emoji", "keywords": "love beat pulse pink" },
+            { "char": "🔥", "name": "fire", "category": "emoji", "keywords": "hot flame burn trend glow orange red yellow" },
+            { "char": "✨", "name": "sparkles", "category": "emoji", "keywords": "shine glitter magic stars yellow gold" },
+            { "char": "⭐", "name": "star", "category": "emoji", "keywords": "gold yellow rate shine favorite space" },
+            { "char": "👍", "name": "thumbs up", "category": "emoji", "keywords": "yes approve ok correct hand yellow" },
+            { "char": "👎", "name": "thumbs down", "category": "emoji", "keywords": "no reject bad hand yellow" },
+            { "char": "✌️", "name": "peace sign", "category": "emoji", "keywords": "two victory hand yellow" },
+            { "char": "🤞", "name": "crossed fingers", "category": "emoji", "keywords": "luck hope hand yellow" },
+            { "char": "🫶", "name": "heart hands", "category": "emoji", "keywords": "love gesture fingers yellow" },
+            { "char": "💪", "name": "flexed biceps", "category": "emoji", "keywords": "strong muscle workout gym yellow" },
+            { "char": "🙏", "name": "folded hands", "category": "emoji", "keywords": "please pray thanks yellow" },
+            { "char": "👏", "name": "clapping hands", "category": "emoji", "keywords": "applause praise good yellow" },
+            { "char": "🐵", "name": "monkey face", "category": "emoji", "keywords": "animal monkey ape primate funny brown" },
+            { "char": "🐶", "name": "dog face", "category": "emoji", "keywords": "animal pet puppy canine brown" },
+            { "char": "🐱", "name": "cat face", "category": "emoji", "keywords": "animal pet kitten feline yellow orange" },
+            { "char": "🦊", "name": "fox", "category": "emoji", "keywords": "animal wild orange red" },
+            { "char": "🐻", "name": "bear", "category": "emoji", "keywords": "animal wild forest brown" },
+            { "char": "🐼", "name": "panda", "category": "emoji", "keywords": "animal bear bamboo black white" },
+            { "char": "🦁", "name": "lion", "category": "emoji", "keywords": "animal cat wild roar safari yellow orange brown" },
+            { "char": "🐷", "name": "pig face", "category": "emoji", "keywords": "animal farm pork bacon pink" },
+            { "char": "🐸", "name": "frog", "category": "emoji", "keywords": "animal amphibian toad green" },
+            { "char": "🐍", "name": "snake", "category": "emoji", "keywords": "animal reptile slither hiss green" },
+            { "char": "🦖", "name": "t-rex", "category": "emoji", "keywords": "animal dinosaur extinct roar green historic prehistoric" },
+            { "char": "🐳", "name": "spouting whale", "category": "emoji", "keywords": "animal ocean sea water blue" },
+            { "char": "🐙", "name": "octopus", "category": "emoji", "keywords": "animal ocean sea tentacles purple pink red" },
+            { "char": "🦋", "name": "butterfly", "category": "emoji", "keywords": "animal bug insect pretty wing blue" },
+            { "char": "🕷️", "name": "spider", "category": "emoji", "keywords": "animal bug insect web creepy black" },
+            { "char": "🦄", "name": "unicorn", "category": "emoji", "keywords": "animal magic horse fantasy white pink purple historic medieval" },
+            { "char": "🐉", "name": "dragon", "category": "emoji", "keywords": "animal magic fantasy green historic medieval" },
+            { "char": "🌲", "name": "evergreen tree", "category": "emoji", "keywords": "nature plant wood forest green brown" },
+            { "char": "🌳", "name": "deciduous tree", "category": "emoji", "keywords": "nature plant wood forest green brown" },
+            { "char": "🌴", "name": "palm tree", "category": "emoji", "keywords": "nature plant beach tropical green brown" },
+            { "char": "🌵", "name": "cactus", "category": "emoji", "keywords": "nature plant desert dry green" },
+            { "char": "🍁", "name": "maple leaf", "category": "emoji", "keywords": "nature plant fall autumn red orange" },
+            { "char": "🍄", "name": "mushroom", "category": "emoji", "keywords": "nature plant fungi red white" },
+            { "char": "🌹", "name": "rose", "category": "emoji", "keywords": "nature plant flower romance red green" },
+            { "char": "🌻", "name": "sunflower", "category": "emoji", "keywords": "nature plant flower summer yellow green" },
+            { "char": "🍎", "name": "red apple", "category": "emoji", "keywords": "food fruit red healthy" },
+            { "char": "🍏", "name": "green apple", "category": "emoji", "keywords": "food fruit green healthy" },
+            { "char": "🍊", "name": "tangerine", "category": "emoji", "keywords": "food fruit orange healthy" },
+            { "char": "🍋", "name": "lemon", "category": "emoji", "keywords": "food fruit yellow sour" },
+            { "char": "🍌", "name": "banana", "category": "emoji", "keywords": "food fruit yellow" },
+            { "char": "🍉", "name": "watermelon", "category": "emoji", "keywords": "food fruit summer red green" },
+            { "char": "🍇", "name": "grapes", "category": "emoji", "keywords": "food fruit purple" },
+            { "char": "🍓", "name": "strawberry", "category": "emoji", "keywords": "food fruit berry red" },
+            { "char": "🫐", "name": "blueberries", "category": "emoji", "keywords": "food fruit berry blue purple" },
+            { "char": "🥕", "name": "carrot", "category": "emoji", "keywords": "food vegetable orange green" },
+            { "char": "🥦", "name": "broccoli", "category": "emoji", "keywords": "food vegetable green" },
+            { "char": "🍔", "name": "hamburger", "category": "emoji", "keywords": "burger food fastfood meat brown yellow green" },
+            { "char": "🍟", "name": "french fries", "category": "emoji", "keywords": "food fastfood potato red yellow" },
+            { "char": "🍕", "name": "pizza", "category": "emoji", "keywords": "food cheese slice italian red yellow" },
+            { "char": "🌭", "name": "hot dog", "category": "emoji", "keywords": "food meat sausage bread red yellow brown" },
+            { "char": "🌮", "name": "taco", "category": "emoji", "keywords": "food mexican yellow green brown" },
+            { "char": "🍿", "name": "popcorn", "category": "emoji", "keywords": "food snack movie theater red white yellow" },
+            { "char": "🍩", "name": "doughnut", "category": "emoji", "keywords": "food sweet dessert pastry pink brown" },
+            { "char": "☕", "name": "hot beverage", "category": "emoji", "keywords": "drink coffee tea morning brown white" },
+            { "char": "🍺", "name": "beer mug", "category": "emoji", "keywords": "drink alcohol pub bar yellow white historic medieval" },
+            { "char": "🍷", "name": "wine glass", "category": "emoji", "keywords": "drink alcohol fancy red historic medieval" },
+            { "char": "🚗", "name": "car", "category": "emoji", "keywords": "auto drive vehicle transport red" },
+            { "char": "🚕", "name": "taxi", "category": "emoji", "keywords": "cab drive vehicle transport yellow" },
+            { "char": "🚓", "name": "police car", "category": "emoji", "keywords": "cop drive vehicle transport blue white" },
+            { "char": "🚒", "name": "fire engine", "category": "emoji", "keywords": "rescue vehicle transport red" },
+            { "char": "🚑", "name": "ambulance", "category": "emoji", "keywords": "hospital medic vehicle transport white red" },
+            { "char": "🚀", "name": "rocket", "category": "emoji", "keywords": "speed fast launch space ship red white" },
+            { "char": "✈️", "name": "airplane", "category": "emoji", "keywords": "fly travel sky transport white blue" },
+            { "char": "🚁", "name": "helicopter", "category": "emoji", "keywords": "fly travel sky transport red" },
+            { "char": "⛵", "name": "sailboat", "category": "emoji", "keywords": "water ocean sea transport white historic medieval" },
+            { "char": "🚂", "name": "locomotive", "category": "emoji", "keywords": "train track transport steam black historic" },
+            { "char": "🌍", "name": "globe showing Europe-Africa", "category": "emoji", "keywords": "world earth planet map blue green" },
+            { "char": "🗺️", "name": "world map", "category": "emoji", "keywords": "earth geography location paper historic medieval" },
+            { "char": "🧭", "name": "compass", "category": "emoji", "keywords": "navigate direction north map silver historic medieval" },
+            { "char": "🏔️", "name": "snow-capped mountain", "category": "emoji", "keywords": "nature cold peak white grey" },
+            { "char": "🌋", "name": "volcano", "category": "emoji", "keywords": "nature mountain fire lava red grey" },
+            { "char": "🏕️", "name": "camping", "category": "emoji", "keywords": "nature tent outdoor wood green brown historic medieval" },
+            { "char": "🏠", "name": "house", "category": "emoji", "keywords": "home building reside brown red" },
+            { "char": "🏰", "name": "castle", "category": "emoji", "keywords": "building royal fort stone historic medieval grey" },
+            { "char": "🏟️", "name": "stadium", "category": "emoji", "keywords": "building sports arena colosseum historic" },
+            { "char": "⌚", "name": "watch", "category": "emoji", "keywords": "time clock wrist black silver" },
+            { "char": "📱", "name": "mobile phone", "category": "emoji", "keywords": "cell smartphone call text black grey" },
+            { "char": "💻", "name": "laptop", "category": "emoji", "keywords": "computer pc work type grey" },
+            { "char": "📷", "name": "camera", "category": "emoji", "keywords": "photo picture snap lens black grey" },
+            { "char": "📺", "name": "television", "category": "emoji", "keywords": "tv screen watch show black grey" },
+            { "char": "💡", "name": "light bulb", "category": "emoji", "keywords": "idea smart thought glow lamp yellow" },
+            { "char": "🔦", "name": "flashlight", "category": "emoji", "keywords": "light dark beam tool grey yellow" },
+            { "char": "🕯️", "name": "candle", "category": "emoji", "keywords": "light wax fire dark historic medieval yellow white" },
+            { "char": "📖", "name": "open book", "category": "emoji", "keywords": "read learn page story white blue historic medieval" },
+            { "char": "📜", "name": "scroll", "category": "emoji", "keywords": "paper read document map historic medieval yellow brown" },
+            { "char": "💰", "name": "money bag", "category": "emoji", "keywords": "cash coin rich dollar gold yellow brown historic medieval" },
+            { "char": "🪙", "name": "coin", "category": "emoji", "keywords": "money cash rich gold yellow historic medieval" },
+            { "char": "💎", "name": "gem stone", "category": "emoji", "keywords": "diamond jewel rich crystal blue historic medieval" },
+            { "char": "⚖️", "name": "balance scale", "category": "emoji", "keywords": "justice weight measure metal historic medieval gold" },
+            { "char": "🧰", "name": "toolbox", "category": "emoji", "keywords": "fix repair build red grey" },
+            { "char": "🔨", "name": "hammer", "category": "emoji", "keywords": "tool fix build metal wood brown grey historic medieval" },
+            { "char": "🪓", "name": "axe", "category": "emoji", "keywords": "tool chop wood weapon metal historic medieval brown grey" },
+            { "char": "⚔️", "name": "crossed swords", "category": "emoji", "keywords": "weapon attack fight battle metal silver historic medieval" },
+            { "char": "🗡️", "name": "dagger", "category": "emoji", "keywords": "weapon knife attack stab metal silver historic medieval" },
+            { "char": "🛡️", "name": "shield", "category": "emoji", "keywords": "defend armor protection metal historic medieval grey" },
+            { "char": "🏹", "name": "bow and arrow", "category": "emoji", "keywords": "weapon hunt shoot wood historic medieval brown" },
+            { "char": "💣", "name": "bomb", "category": "emoji", "keywords": "explosion blast weapon black historic" },
+            { "char": "🏺", "name": "amphora", "category": "emoji", "keywords": "vase pot clay greek historic medieval brown" },
+            { "char": "🗝️", "name": "old key", "category": "emoji", "keywords": "door lock metal open historic medieval silver gold" },
+            { "char": "⚙️", "name": "gear", "category": "emoji", "keywords": "settings tool machinery options cog grey metal" },
+            { "char": "🔒", "name": "locked", "category": "emoji", "keywords": "security lock closed protection private gold yellow" },
+            { "char": "🔓", "name": "unlocked", "category": "emoji", "keywords": "open access free security public gold silver" },
+            { "char": "🎨", "name": "artist palette", "category": "emoji", "keywords": "color paint art design tool draw brown colorful" },
+            { "char": "📁", "name": "file folder", "category": "emoji", "keywords": "directory open save assets organize yellow" },
+            { "char": "👑", "name": "crown", "category": "emoji", "keywords": "king queen royal prince princess gold yellow historic medieval" },
+            { "char": "⚽", "name": "soccer ball", "category": "emoji", "keywords": "sport play game kick white black" },
+            { "char": "🏀", "name": "basketball", "category": "emoji", "keywords": "sport play game hoop orange" },
+            { "char": "🏈", "name": "american football", "category": "emoji", "keywords": "sport play game throw brown" },
+            { "char": "⚾", "name": "baseball", "category": "emoji", "keywords": "sport play game bat white red" },
+            { "char": "🎾", "name": "tennis", "category": "emoji", "keywords": "sport play game racket green yellow" },
+            { "char": "🎯", "name": "direct hit", "category": "emoji", "keywords": "target sport aim game red white" },
+            { "char": "🎮", "name": "video game", "category": "emoji", "keywords": "play controller console black" },
+            { "char": "🎲", "name": "game die", "category": "emoji", "keywords": "play random casino luck red white" },
+            { "char": "🧩", "name": "puzzle piece", "category": "emoji", "keywords": "play game logic solve green" },
+            { "char": "🎭", "name": "performing arts", "category": "emoji", "keywords": "theater mask drama tragedy comedy historic medieval" },
+            { "char": "🔴", "name": "red circle", "category": "emoji", "keywords": "shape round dot color red" },
+            { "char": "🟠", "name": "orange circle", "category": "emoji", "keywords": "shape round dot color orange" },
+            { "char": "🟡", "name": "yellow circle", "category": "emoji", "keywords": "shape round dot color yellow" },
+            { "char": "🟢", "name": "green circle", "category": "emoji", "keywords": "shape round dot color green" },
+            { "char": "🔵", "name": "blue circle", "category": "emoji", "keywords": "shape round dot color blue" },
+            { "char": "🟣", "name": "purple circle", "category": "emoji", "keywords": "shape round dot color purple" },
+            { "char": "🟤", "name": "brown circle", "category": "emoji", "keywords": "shape round dot color brown" },
+            { "char": "⚫", "name": "black circle", "category": "emoji", "keywords": "shape round dot color dark black" },
+            { "char": "⚪", "name": "white circle", "category": "emoji", "keywords": "shape round dot color pure white" },
+            { "char": "🟥", "name": "red square", "category": "emoji", "keywords": "shape box color red" },
+            { "char": "🟧", "name": "orange square", "category": "emoji", "keywords": "shape box color orange" },
+            { "char": "🟨", "name": "yellow square", "category": "emoji", "keywords": "shape box color yellow" },
+            { "char": "🟩", "name": "green square", "category": "emoji", "keywords": "shape box color green" },
+            { "char": "🟦", "name": "blue square", "category": "emoji", "keywords": "shape box color blue" },
+            { "char": "🟪", "name": "purple square", "category": "emoji", "keywords": "shape box color purple" },
+            { "char": "🟫", "name": "brown square", "category": "emoji", "keywords": "shape box color brown" },
+            { "char": "⬛", "name": "black square", "category": "emoji", "keywords": "shape box color dark black" },
+            { "char": "⬜", "name": "white square", "category": "emoji", "keywords": "shape box color pure white" },
+            { "char": "✅", "name": "check mark button", "category": "emoji", "keywords": "yes correct approve done green" },
+            { "char": "❌", "name": "cross mark", "category": "emoji", "keywords": "no cancel wrong error red" },
+            { "char": "⚠️", "name": "warning", "category": "emoji", "keywords": "alert danger caution yellow black" },
+            { "char": "🛑", "name": "stop sign", "category": "emoji", "keywords": "halt wait warning red octagon" },
+            { "char": "∑", "name": "summation", "category": "math", "latex": "\\sum", "keywords": "sum add math series sigma" },
+            { "char": "∫", "name": "integral", "category": "math", "latex": "\\int", "keywords": "calculus integrate math area" },
+            { "char": "∏", "name": "product", "category": "math", "latex": "\\prod", "keywords": "product multiply series pi math" },
+            { "char": "√", "name": "square root", "category": "math", "latex": "\\sqrt", "keywords": "radical root power algebra" },
+            { "char": "∞", "name": "infinity", "category": "math", "latex": "\\infty", "keywords": "limit endless math bound forever" },
+            { "char": "∂", "name": "partial differential", "category": "math", "latex": "\\partial", "keywords": "calculus delta math derivative" },
+            { "char": "∇", "name": "nabla", "category": "math", "latex": "\\nabla", "keywords": "gradient math vector delta calculus" },
+            { "char": "≈", "name": "almost equal to", "category": "math", "latex": "\\approx", "keywords": "approximate estimation equal" },
+            { "char": "≠", "name": "not equal to", "category": "math", "latex": "\\neq", "keywords": "unequal logic algebra math" },
+            { "char": "≤", "name": "less-than or equal to", "category": "math", "latex": "\\leq", "keywords": "comparison bounds limit algebra" },
+            { "char": "≥", "name": "greater-than or equal to", "category": "math", "latex": "\\geq", "keywords": "comparison bounds limit algebra" },
+            { "char": "±", "name": "plus-minus", "category": "math", "latex": "\\pm", "keywords": "deviation tolerance positive negative" },
+            { "char": "∈", "name": "element of", "category": "math", "latex": "\\in", "keywords": "set theory contains logic member" },
+            { "char": "∉", "name": "not an element of", "category": "math", "latex": "\\notin", "keywords": "set theory logic exclude member" },
+            { "char": "⊂", "name": "subset of", "category": "math", "latex": "\\subset", "keywords": "set theory logic category" },
+            { "char": "∪", "name": "union", "category": "math", "latex": "\\cup", "keywords": "set theory join logical or" },
+            { "char": "∩", "name": "intersection", "category": "math", "latex": "\\cap", "keywords": "set theory overlap logical and" },
+            { "char": "∝", "name": "proportional to", "category": "math", "latex": "\\propto", "keywords": "proportion algebra ratio" },
+            { "char": "∴", "name": "therefore", "category": "math", "latex": "\\therefore", "keywords": "logic proof because" },
+            { "char": "∵", "name": "because", "category": "math", "latex": "\\because", "keywords": "logic proof therefore" },
+            { "char": "α", "name": "alpha", "category": "greek", "latex": "\\alpha", "keywords": "greek math variable first angle constant" },
+            { "char": "β", "name": "beta", "category": "greek", "latex": "\\beta", "keywords": "greek math variable second coefficient angle" },
+            { "char": "γ", "name": "gamma", "category": "greek", "latex": "\\gamma", "keywords": "greek math variable third factor constant" },
+            { "char": "Δ", "name": "Delta", "category": "greek", "latex": "\\Delta", "keywords": "greek math capital change difference" },
+            { "char": "δ", "name": "delta", "category": "greek", "latex": "\\delta", "keywords": "greek math variable error change" },
+            { "char": "θ", "name": "theta", "category": "greek", "latex": "\\theta", "keywords": "greek math variable angle coordinate" },
+            { "char": "λ", "name": "lambda", "category": "greek", "latex": "\\lambda", "keywords": "greek math wavelength variable physics" },
+            { "char": "μ", "name": "mu", "category": "greek", "latex": "\\mu", "keywords": "greek math micro mean factor friction coefficient" },
+            { "char": "π", "name": "pi", "category": "greek", "latex": "\\pi", "keywords": "greek math constant ratio circle geometry" },
+            { "char": "σ", "name": "sigma", "category": "greek", "latex": "\\sigma", "keywords": "greek math variable standard deviation physics" },
+            { "char": "Ω", "name": "Omega", "category": "greek", "latex": "\\Omega", "keywords": "greek math capital resistance ohm physics constant" },
+            { "char": "ω", "name": "omega", "category": "greek", "latex": "\\omega", "keywords": "greek math variable angular frequency" },
+            { "char": "Φ", "name": "Phi", "category": "greek", "latex": "\\Phi", "keywords": "greek math capital flux constant" },
+            { "char": "φ", "name": "phi", "category": "greek", "latex": "\\phi", "keywords": "greek math variable angle phase golden ratio" },
+            { "char": "ρ", "name": "rho", "category": "greek", "latex": "\\rho", "keywords": "greek density physics constant" },
+            { "char": "░", "name": "light shade block", "category": "ascii", "keywords": "shade brick retro ascii screen text texture paint" },
+            { "char": "▒", "name": "medium shade block", "category": "ascii", "keywords": "shade brick retro ascii screen text texture paint" },
+            { "char": "▓", "name": "dark shade block", "category": "ascii", "keywords": "shade brick retro ascii screen text texture paint" },
+            { "char": "█", "name": "full block", "category": "ascii", "keywords": "solid bar box ascii screen texture paint fill" },
+            { "char": "▄", "name": "lower half block", "category": "ascii", "keywords": "bar box bottom screen paint" },
+            { "char": "▀", "name": "upper half block", "category": "ascii", "keywords": "bar box top screen paint" },
+            { "char": "▲", "name": "black up-pointing triangle", "category": "ascii", "keywords": "arrow play up high north increment" },
+            { "char": "▼", "name": "black down-pointing triangle", "category": "ascii", "keywords": "arrow play down low south decrement" },
+            { "char": "◄", "name": "black left-pointing pointer", "category": "ascii", "keywords": "arrow play left west back" },
+            { "char": "►", "name": "black right-pointing pointer", "category": "ascii", "keywords": "arrow play right east forward" },
+            { "char": "★", "name": "solid star", "category": "ascii", "keywords": "gold yellow rate shine favorite" },
+            { "char": "☠", "name": "skull and crossbones", "category": "ascii", "keywords": "danger poison toxic death pirate" },
+            { "char": "☢", "name": "radioactive", "category": "ascii", "keywords": "danger warning toxic radiation" },
+            { "char": "☣", "name": "biohazard", "category": "ascii", "keywords": "danger warning virus toxic infection" },
+            { "char": "♫", "name": "musical eighth note", "category": "ascii", "keywords": "sound music play song instrument" },
+            { "char": "✿", "name": "blossom flower", "category": "ascii", "keywords": "floral spring graphic nature bloom decoration" },
+            { "char": "┌", "name": "box drawings light down and right", "category": "ascii", "keywords": "corner line frame box top left" },
+            { "char": "┐", "name": "box drawings light down and left", "category": "ascii", "keywords": "corner line frame box top right" },
+            { "char": "└", "name": "box drawings light up and right", "category": "ascii", "keywords": "corner line frame box bottom left" },
+            { "char": "┘", "name": "box drawings light up and left", "category": "ascii", "keywords": "corner line frame box bottom right" },
+            { "char": "─", "name": "box drawings light horizontal", "category": "ascii", "keywords": "line frame box dash horizontal" },
+            { "char": "│", "name": "box drawings light vertical", "category": "ascii", "keywords": "line frame box bar vertical" },
+            { "char": "┼", "name": "box drawings cross", "category": "ascii", "keywords": "line frame box intersection plus cross" }
+        ]
+    </script>
 
     <!-- PRE-FLIGHT SYSTEM ENGINE LOADER -->
     <div id="loading-overlay" class="loader-overlay">
@@ -914,41 +1159,40 @@
 
     <!-- CORE EXECUTION SCRIPT -->
     <script>
-        // Use a defensive try/finally block to guarantee the loading screen vanishes
-        // even if an error is encountered during early variable definition.
-        try {
-            // ==========================================================
-            // SAFE LOCAL STORAGE SANDBOX FALLBACK
-            // ==========================================================
-            const safeStorage = {
-                getItem: (key) => {
-                    try {
-                        return window.localStorage.getItem(key);
-                    } catch (e) {
-                        return safeStorage._fallbackStore[key] || null;
-                    }
-                },
-                setItem: (key, value) => {
-                    try {
-                        window.localStorage.setItem(key, value);
-                    } catch (e) {
-                        safeStorage._fallbackStore[key] = String(value);
-                    }
-                },
-                removeItem: (key) => {
-                    try {
-                        window.localStorage.removeItem(key);
-                    } catch (e) {
-                        delete safeStorage._fallbackStore[key];
-                    }
-                },
-                _fallbackStore: {}
-            };
+        // ==========================================================
+        // SAFE LOCAL STORAGE SANDBOX FALLBACK (HOISTED FOR SAFETY)
+        // ==========================================================
+        const safeStorage = {
+            getItem: (key) => {
+                try {
+                    return window.localStorage.getItem(key);
+                } catch (e) {
+                    return safeStorage._fallbackStore[key] || null;
+                }
+            },
+            setItem: (key, value) => {
+                try {
+                    window.localStorage.setItem(key, value);
+                } catch (e) {
+                    safeStorage._fallbackStore[key] = String(value);
+                }
+            },
+            removeItem: (key) => {
+                try {
+                    window.localStorage.removeItem(key);
+                } catch (e) {
+                    delete safeStorage._fallbackStore[key];
+                }
+            },
+            _fallbackStore: {}
+        };
 
+        // Use a defensive try/finally block to guarantee the loading screen vanishes
+        try {
             // ==========================================================
             // DYNAMIC JSON DICTIONARY LOADER
             // ==========================================================
-            let CHAR_DICTIONARY = []; // Will be populated by fetch()
+            let CHAR_DICTIONARY = [];
 
             // UI Bindings
             const globalSearchInput = document.getElementById("global-search-input");
@@ -1281,7 +1525,7 @@
 
                     card.addEventListener("mouseenter", () => {
                         const latexNotice = item.latex ? ` (LaTeX: ${item.latex})` : "";
-                        notifyHubStatus(`Click to select: "${finalChar}" - ${item.name}${latexNotice}`);
+                        notifyHubStatus("Click to select: \"" + finalChar + "\" - " + item.name + latexNotice);
                     });
                     card.addEventListener("mouseleave", clearHubStatus);
 
@@ -1298,7 +1542,7 @@
 
             largePreviewBox.addEventListener("mouseenter", () => {
                 if (selectedCharacter) {
-                    notifyHubStatus(`Click to copy ${selectedCharacter.renderedChar || selectedCharacter.char} to clipboard.`);
+                    notifyHubStatus("Click to copy " + (selectedCharacter.renderedChar || selectedCharacter.char) + " to clipboard.");
                 }
             });
             largePreviewBox.addEventListener("mouseleave", clearHubStatus);
@@ -1364,8 +1608,8 @@
                     const stack = document.getElementById("toast-stack");
                     if (stack) {
                         const toast = document.createElement("div");
-                        toast.className = `toast-notification toast-success`;
-                        toast.innerHTML = `<span>Added "${activeChar}" to active list: ${activeListName}</span>`;
+                        toast.className = "toast-notification toast-success";
+                        toast.innerHTML = "<span>Added \"" + activeChar + "\" to active list: " + activeListName + "</span>";
                         stack.appendChild(toast);
                         setTimeout(() => toast.classList.add("show"), 50);
                         setTimeout(() => {
@@ -1383,7 +1627,7 @@
                 const activeList = favoriteLibrary[activeListName] || [];
 
                 if (activeList.length === 0) {
-                    favoritesShelf.innerHTML = ``;
+                    favoritesShelf.innerHTML = "";
                     return;
                 }
 
@@ -1397,10 +1641,7 @@
                         favPill.classList.add("char-non-emoji");
                     }
 
-                    favPill.innerHTML = `
-                        <span>${finalChar}</span>
-                        <span class="fav-remove" title="Remove">&times;</span>
-                    `;
+                    favPill.innerHTML = "<span>" + finalChar + "</span><span class=\"fav-remove\" title=\"Remove\">&times;</span>";
 
                     favPill.addEventListener("click", (e) => {
                         if (e.target.classList.contains("fav-remove")) {
@@ -1421,7 +1662,7 @@
                     });
 
                     favPill.addEventListener("mouseenter", () => {
-                        notifyHubStatus(`Favorite: "${finalChar}". Click to load into preview, or tap 'x' to remove.`);
+                        notifyHubStatus("Favorite: \"" + finalChar + "\". Click to load into preview, or tap 'x' to remove.");
                     });
                     favPill.addEventListener("mouseleave", clearHubStatus);
 
@@ -1448,7 +1689,7 @@
 
             renameListTrigger.addEventListener("click", () => {
                 currentModalAction = "rename";
-                dialogModalTitle.innerText = `Rename Active List (${activeListName})`;
+                dialogModalTitle.innerText = "Rename Active List (" + activeListName + ")";
                 dialogInputLabel.innerText = "Enter new list name:";
                 dialogInputField.value = activeListName;
                 customDialogModal.classList.remove("hidden");
@@ -1524,8 +1765,8 @@
                 const stack = document.getElementById("toast-stack");
                 if (stack) {
                     const toast = document.createElement("div");
-                    toast.className = `toast-notification toast-success`;
-                    toast.innerHTML = `<span>Copied character: "${text}" to clipboard!</span>`;
+                    toast.className = "toast-notification toast-success";
+                    toast.innerHTML = "<span>Copied character: \"" + text + "\" to clipboard!</span>";
                     stack.appendChild(toast);
                     setTimeout(() => toast.classList.add("show"), 50);
                     setTimeout(() => {
@@ -1656,15 +1897,34 @@
                     renderFavorites();
 
                 } catch (error) {
-                    console.error("Initialization Error:", error);
-                    const container = document.getElementById("char-results-container");
-                    if(container) {
-                        container.innerHTML = `
-                            <div style="grid-column: 1 / -1; color: var(--brand-red); padding: 20px; text-align: center; font-size: 0.85rem;">
-                                <strong>Failed to load Dictionary!</strong><br><br>
-                                Error: ${error.message}<br><br>
-                                <span style="opacity: 0.8; font-size: 0.75rem;">If you are testing this locally without a web server (using file:// protocol), the browser's CORS policy will block the JSON fetch.</span>
-                            </div>`;
+                    console.warn("External fetch failed. Trying embedded fallback dictionary...", error);
+                    try {
+                        const fallbackElement = document.getElementById("char-data-fallback");
+                        if (!fallbackElement) throw new Error("Fallback script tag missing");
+                        
+                        CHAR_DICTIONARY = JSON.parse(fallbackElement.textContent);
+                        
+                        // Sort default view: Emojis first, then the rest
+                        const catOrder = { 'emoji': 1, 'math': 2, 'greek': 3, 'ascii': 4 };
+                        CHAR_DICTIONARY.sort((a, b) => (catOrder[a.category] || 5) - (catOrder[b.category] || 5));
+
+                        // Initialize Search result grids & data lists
+                        renderActiveListSelector();
+                        executeSearch();
+                        renderFavorites();
+                        
+                        notify("Loaded local offline backup.", "success");
+                    } catch (fallbackError) {
+                        console.error("Critical: Fallback also failed.", fallbackError);
+                        const container = document.getElementById("char-results-container");
+                        if(container) {
+                            container.innerHTML = `
+                                <div style="grid-column: 1 / -1; color: var(--brand-red); padding: 20px; text-align: center; font-size: 0.85rem;">
+                                    <strong>Failed to load Dictionary!</strong><br><br>
+                                    Error: ${fallbackError.message}<br><br>
+                                    <span style="opacity: 0.8; font-size: 0.75rem;">Total failure. Both external and internal fallback structures are unreachable.</span>
+                                </div>`;
+                        }
                     }
                 } finally {
                     // Remove loading screen safely
@@ -1689,7 +1949,6 @@
             if(container) {
                 container.innerHTML = `<div style="grid-column: 1 / -1; color: var(--brand-red); padding: 20px; text-align: center;">Script initialization failed: ${error.message}</div>`;
             }
-            // Fallback loader removal in case of total failure
             const overlay = document.getElementById("loading-overlay");
             if (overlay) {
                 overlay.style.opacity = "0";
