@@ -498,7 +498,7 @@
             </div>
             
             <div class="download-wrapper">
-                <button type="button" class="btn-pill" id="btn-download" style="background-color: var(--forest-teal) !important; color: #fff !important; border-color: var(--light-teal) !important; width: 100%;" disabled>DOWNLOAD</button>
+                <button type="button" class="btn-pill" id="btn-download" style="background-color: rgba(137, 107, 73, 0.8) !important; color: #75b2de !important; border-color: var(--chiseled-bronze) !important; width: 100%;" disabled>DOWNLOAD</button>
                 <div class="download-dropdown" id="download-dropdown">
                     <div class="download-option" id="opt-dl-single">Single (Current)</div>
                     <div class="download-option" id="opt-dl-all">All (List)</div>
@@ -639,6 +639,17 @@
             toastTimeout = setTimeout(() => {
                 toastNotice.classList.remove('show');
             }, 3000);
+        }
+
+        // New loading toast function that persists until cleared
+        function showLoadingToast(msg) {
+            toastNotice.innerText = msg;
+            toastNotice.classList.add('show');
+            clearTimeout(toastTimeout);
+        }
+        
+        function hideToast() {
+            toastNotice.classList.remove('show');
         }
 
         // Format time to MM:SS.ms
@@ -873,6 +884,7 @@
             
             btnDownload.innerText = "WORKING...";
             btnDownload.disabled = true;
+            showLoadingToast("Capturing frame...");
 
             canvas.width = videoPlayer.videoWidth;
             canvas.height = videoPlayer.videoHeight;
@@ -908,15 +920,16 @@
             const zip = new JSZip();
             const originalTime = videoPlayer.currentTime; // store to restore later
             
-            showToast(`Processing ${snapshotsData.length} frames...`);
-
             try {
-                for (const snap of snapshotsData) {
+                for (let i = 0; i < snapshotsData.length; i++) {
+                    const snap = snapshotsData[i];
+                    showLoadingToast(`Processing frame ${i + 1} of ${snapshotsData.length}...`);
                     const blob = await generateBlobForTime(snap.timeVal, snap.frameNum);
                     const paddedFrame = String(snap.frameNum).padStart(5, '0');
                     zip.file(`${loadedVideoName}_frame_${paddedFrame}.jpg`, blob);
                 }
 
+                showLoadingToast("Zipping files... This may take a moment.");
                 const zipBlob = await zip.generateAsync({ type: 'blob' });
                 triggerBlobDownload(zipBlob, `${loadedVideoName}_snapshots.zip`);
                 showToast("Batch download complete.");
