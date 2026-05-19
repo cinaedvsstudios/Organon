@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frame Extractor | Organon</title>
+    
+    <!-- Iframe Guard -->
+    <script>
+        // if (window === window.parent) {
+        //     window.location.href = '../../index.html';
+        // }
+    </script>
+
+    <!-- External Engine CDNs for Zip processing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --stone-ochre: #E5A862;
+            --chiseled-bronze: #896b49;
+            --bg-card: #292a24;
+            --bg-input: rgba(24, 25, 25, 0.95);
+            --water-blue: #4B84BF;
+            --water-spray: #79B4E3;
+            --brand-red: #9A2F4F;
+            --slider-track: #61112E;
+            --alabaster-paper: #F2ECE0;
+            --bg-nightsky: #181919;
+            
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            letter-spacing: 0.03em;
+        }
+
+        input[type="text"], input[type="number"], select {
+            background-color: var(--bg-input);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* Hide arrows on number input */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .custom-file-upload {
+            background-color: var(--bg-input);
+            color: var(--water-spray);
+            border: 1px solid var(--chiseled-bronze);
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            box-sizing: border-box;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease-in-out;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+        }
+
+        .custom-file-upload:hover {
+            border-color: var(--water-blue);
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        input:focus, select:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--brand-red);
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: var(--slider-track);
+            border-radius: 2px;
+        }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75));
+            background-size: cover;
+            padding: 16px;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+        
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(24, 25, 25, 0.9);
+            color: #75b2de;
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .countdown-circle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 120px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .video-container {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid var(--chiseled-bronze);
+            background: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            position: relative;
+        }
+
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px;
+            z-index: 110;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75));
+            background-size: cover;
+            padding: 10px 14px 14px 14px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 8px;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--chiseled-bronze);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        .btn-pill {
+            flex: 1;
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            color: #75b2de !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.65rem !important;
+            text-transform: uppercase;
+            padding: 8px 16px !important;
+            border-radius: 9999px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s ease-in-out;
+            white-space: nowrap;
+        }
+        
+        .btn-pill:hover, .btn-pill.active {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+
+        .btn-pill:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .icon-btn-large {
+            background: transparent;
+            border: none;
+            font-size: 2.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            color: inherit;
+            transition: transform 0.15s ease, filter 0.2s ease;
+        }
+        
+        .icon-btn-large:hover:not(:disabled) {
+            transform: scale(1.15);
+            filter: drop-shadow(0 0 8px rgba(121, 180, 227, 0.4));
+        }
+        
+        .icon-btn-large:active:not(:disabled) {
+            transform: scale(0.95);
+        }
+        
+        .icon-btn-large:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        /* Snapshots List Styles */
+        .snapshot-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px;
+            border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--alabaster-paper);
+        }
+        .snapshot-item:last-child {
+            border-bottom: none;
+        }
+        .snapshot-item .bullet {
+            color: var(--stone-ochre);
+            margin-right: 8px;
+        }
+        .snapshot-item .frame-time {
+            color: var(--water-spray);
+            margin-left: 12px;
+            flex: 1;
+        }
+        .snapshot-item .delete-btn {
+            color: var(--brand-red);
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0 8px;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+
+        /* Download Dropdown */
+        .download-wrapper {
+            flex: 1;
+            position: relative;
+            display: flex;
+        }
+        .download-dropdown {
+            display: none;
+            position: absolute;
+            bottom: 110%;
+            left: 0;
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--water-spray);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 -4px 12px rgba(0,0,0,0.5);
+            flex-direction: column;
+            z-index: 120;
+        }
+        .download-dropdown.show {
+            display: flex;
+        }
+        .download-option {
+            padding: 10px;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--alabaster-paper);
+            cursor: pointer;
+            text-transform: uppercase;
+            font-weight: bold;
+            border-bottom: 1px solid rgba(137, 107, 73, 0.3);
+        }
+        .download-option:hover {
+            background-color: rgba(117, 178, 222, 0.2);
+            color: var(--water-spray);
+        }
+        .download-option:last-child {
+            border-bottom: none;
+        }
+
+        /* Glow Keyframes */
+        @keyframes frame-pulse {
+            0% { text-shadow: 0 0 5px var(--water-spray); opacity: 0.8; }
+            50% { text-shadow: 0 0 20px var(--water-spray), 0 0 30px #fff; opacity: 1; color: #fff; }
+            100% { text-shadow: 0 0 5px var(--water-spray); opacity: 0.8; }
+        }
+        .glow-pulse {
+            animation: frame-pulse 1.5s infinite;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--water-blue);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>FRAME EXTRACTOR</span>
+                </div>
+            </div>
+            <div class="panel-content-hide" style="width:100%;">
+                <label for="video-input" class="custom-file-upload">
+                    <span id="file-label">SELECT VIDEO FILE</span>
+                </label>
+                <input type="file" id="video-input" accept="video/mp4,video/webm,video/ogg" style="display: none;">
+            </div>
+        </div>
+
+        <main class="middle-scroll-panel">
+            <!-- Video Player Preview -->
+            <div class="config-card">
+                <div class="video-container">
+                    <span id="empty-state-text" style="color: rgba(242, 236, 224, 0.3); font-family: var(--font-mono); font-size: 0.9rem; letter-spacing: 2px;">NO VIDEO LOADED</span>
+                    <video id="video-player" playsinline style="display: none;"></video>
+                </div>
+                
+                <!-- Custom Timeline Scrub -->
+                <input type="range" id="timeline-slider" min="0" max="100" value="0" style="margin-top: 16px; width: 100%;" disabled>
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--stone-ochre); margin-top: 4px; font-family: var(--font-mono);">
+                    <span id="time-current">00:00.000</span>
+                    <span id="time-total">00:00.000</span>
+                </div>
+            </div>
+            
+            <!-- Controls Card -->
+            <div class="config-card">
+                
+                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 16px;">
+                    <select id="fps-select" style="flex: 1; margin: 0; min-width: 0;">
+                        <option value="23.976">23.976 (Film)</option>
+                        <option value="24">24 FPS</option>
+                        <option value="25">25 (PAL)</option>
+                        <option value="29.97">29.97 (NTSC)</option>
+                        <option value="30" selected>30 FPS</option>
+                        <option value="50">50 FPS</option>
+                        <option value="60">60 FPS</option>
+                    </select>
+                    <button class="icon-btn-large" id="btn-add-snapshot" style="flex: 0 0 auto; padding: 0 12px;" title="Add Frame to List" disabled><span style="display: inline-block; transform: rotate(25deg);">📸</span></button>
+                    <button class="btn-pill" id="btn-clear" style="flex: 1; border-radius: 9999px; min-width: 0;" disabled>CLEAR</button>
+                </div>
+
+                <!-- Frame Stepping Display -->
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 12px 16px; border-radius: 16px; border: 1px solid rgba(137, 107, 73, 0.3);">
+                    <button class="btn-pill" id="btn-prev-frame" style="flex: 0 1 auto; min-width: 60px;" disabled>◄ -1F</button>
+                    
+                    <div style="text-align: center; flex: 1;">
+                        <div style="font-size: 0.7rem; color: var(--stone-ochre); text-transform: uppercase; font-weight: bold; letter-spacing: 0.05em; margin-bottom: 4px;">Current Frame</div>
+                        <div style="color: var(--water-spray); font-family: var(--font-mono); font-size: 1.5rem; font-weight: bold; line-height: 1;" id="current-frame-display">0</div>
+                    </div>
+                    
+                    <button class="btn-pill" id="btn-next-frame" style="flex: 0 1 auto; min-width: 60px;" disabled>+1F ►</button>
+                </div>
+            </div>
+
+            <!-- Snapshots Tracking Card -->
+            <div class="config-card" id="snapshots-card">
+                <div id="snapshots-list">
+                    <div class="snapshot-item" style="color: rgba(242, 236, 224, 0.3); border-bottom: none; justify-content: center; font-family: var(--font-mono); font-size: 1.2rem; letter-spacing: 4px;">
+                        . . .
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="bottom-sticky-panel">
+            <div style="flex: 1; position: relative; display: flex; align-items: center;">
+                <input type="number" id="jump-input" placeholder="Enter Frame #" style="width: 100%; padding-right: 40px;" disabled>
+                <button id="btn-jump" style="position: absolute; right: 12px; background: none; border: none; color: var(--water-spray); font-size: 1.4rem; cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center;" title="Jump to Frame" disabled>🏹</button>
+            </div>
+            
+            <div class="download-wrapper">
+                <button type="button" class="btn-pill" id="btn-download" style="background-color: var(--forest-teal) !important; color: #fff !important; border-color: var(--light-teal) !important; width: 100%;" disabled>DOWNLOAD</button>
+                <div class="download-dropdown" id="download-dropdown">
+                    <div class="download-option" id="opt-dl-single">Single (Current)</div>
+                    <div class="download-option" id="opt-dl-all">All (List)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden canvas for capturing video frames -->
+    <canvas id="capture-canvas" style="display:none;"></canvas>
+
+    <div class="toast" id="toast-notice">Snapshot action!</div>
+
+    <script>
+        // --- BOILERPLATE HANDSHAKE & UI LOGIC --- //
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function minimizePanel() {
+            topStickyPanel.classList.add("minimized");
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+        
+        startCountdown();
+
+        // --- FRAME EXTRACTOR STATE & LOGIC --- //
+        const videoInput = document.getElementById('video-input');
+        const fileLabel = document.getElementById('file-label');
+        const videoPlayer = document.getElementById('video-player');
+        const emptyStateText = document.getElementById('empty-state-text');
+        
+        const timelineSlider = document.getElementById('timeline-slider');
+        const timeCurrent = document.getElementById('time-current');
+        const timeTotal = document.getElementById('time-total');
+        
+        const fpsSelect = document.getElementById('fps-select');
+        const currentFrameDisplay = document.getElementById('current-frame-display');
+        
+        const btnPrevFrame = document.getElementById('btn-prev-frame');
+        const btnNextFrame = document.getElementById('btn-next-frame');
+        const jumpInput = document.getElementById('jump-input');
+        const btnJump = document.getElementById('btn-jump');
+        
+        const btnAddSnapshot = document.getElementById('btn-add-snapshot');
+        const btnClear = document.getElementById('btn-clear');
+        const snapshotsCard = document.getElementById('snapshots-card');
+        const snapshotsList = document.getElementById('snapshots-list');
+        
+        const btnDownload = document.getElementById('btn-download');
+        const downloadDropdown = document.getElementById('download-dropdown');
+        const optDlSingle = document.getElementById('opt-dl-single');
+        const optDlAll = document.getElementById('opt-dl-all');
+        
+        const toastNotice = document.getElementById('toast-notice');
+        const canvas = document.getElementById('capture-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let toastTimeout;
+        let currentFps = 30;
+        let isScrubbing = false;
+        let loadedVideoName = 'frame';
+        let snapshotsData = [];
+
+        // Update FPS when selection changes
+        fpsSelect.addEventListener('change', (e) => {
+            currentFps = parseFloat(e.target.value);
+            updateUI();
+        });
+
+        function showToast(msg) {
+            toastNotice.innerText = msg;
+            toastNotice.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastNotice.classList.remove('show');
+            }, 3000);
+        }
+
+        // Format time to MM:SS.ms
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "00:00.000";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 1000);
+            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+        }
+
+        function calculateCurrentFrame() {
+            return Math.floor(videoPlayer.currentTime * currentFps);
+        }
+
+        function updateUI() {
+            if (!videoPlayer.duration || isNaN(videoPlayer.duration)) return;
+            
+            if (!isScrubbing) {
+                timelineSlider.value = videoPlayer.currentTime;
+            }
+            
+            timeCurrent.innerText = formatTime(videoPlayer.currentTime);
+            currentFrameDisplay.innerText = calculateCurrentFrame();
+        }
+
+        // Load Video
+        videoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const url = URL.createObjectURL(file);
+            
+            // Cleanup previous url
+            if (videoPlayer.src) {
+                URL.revokeObjectURL(videoPlayer.src);
+            }
+            
+            // Extract base name for downloaded files
+            loadedVideoName = file.name.substring(0, file.name.lastIndexOf('.')) || 'video';
+            
+            videoPlayer.src = url;
+            videoPlayer.style.display = 'block';
+            emptyStateText.style.display = 'none';
+            fileLabel.innerText = "LOAD NEW VIDEO";
+            
+            // Enable controls
+            timelineSlider.disabled = false;
+            btnPrevFrame.disabled = false;
+            btnNextFrame.disabled = false;
+            jumpInput.disabled = false;
+            btnJump.disabled = false;
+            btnAddSnapshot.disabled = false;
+            btnClear.disabled = false;
+            btnDownload.disabled = false;
+            
+            snapshotsData = [];
+            renderSnapshots();
+            
+            videoPlayer.load();
+        });
+
+        // Setup Metadata (Duration)
+        videoPlayer.addEventListener('loadedmetadata', () => {
+            timelineSlider.max = videoPlayer.duration;
+            timelineSlider.step = (1 / currentFps).toFixed(4); // allow fine steps
+            timeTotal.innerText = formatTime(videoPlayer.duration);
+            updateUI();
+            
+            // Add pulse on initial load (since it's paused)
+            currentFrameDisplay.classList.add('glow-pulse');
+        });
+
+        videoPlayer.addEventListener('timeupdate', () => {
+            updateUI();
+        });
+
+        // Glow Logic: Pulse when paused or seeked
+        videoPlayer.addEventListener('pause', () => {
+            currentFrameDisplay.classList.add('glow-pulse');
+        });
+        videoPlayer.addEventListener('play', () => {
+            currentFrameDisplay.classList.remove('glow-pulse');
+        });
+        videoPlayer.addEventListener('seeked', () => {
+            if (videoPlayer.paused) {
+                currentFrameDisplay.classList.add('glow-pulse');
+            }
+        });
+
+        // Timeline Scrubbing
+        timelineSlider.addEventListener('mousedown', () => { 
+            isScrubbing = true; 
+            currentFrameDisplay.classList.remove('glow-pulse');
+        });
+        timelineSlider.addEventListener('mouseup', () => { 
+            isScrubbing = false; 
+            if (videoPlayer.paused) currentFrameDisplay.classList.add('glow-pulse');
+        });
+        timelineSlider.addEventListener('input', (e) => {
+            videoPlayer.currentTime = parseFloat(e.target.value);
+            updateUI(); // Immediate update on drag
+        });
+
+        // Frame Stepping
+        function stepFrames(frames) {
+            const timeOffset = frames / currentFps;
+            let targetTime = videoPlayer.currentTime + timeOffset;
+            
+            // Boundary checks
+            if (targetTime < 0) targetTime = 0;
+            if (targetTime > videoPlayer.duration) targetTime = videoPlayer.duration;
+            
+            videoPlayer.currentTime = targetTime;
+        }
+
+        btnPrevFrame.addEventListener('click', () => stepFrames(-1));
+        btnNextFrame.addEventListener('click', () => stepFrames(1));
+
+        // Jump to Frame
+        btnJump.addEventListener('click', () => {
+            const targetFrame = parseInt(jumpInput.value, 10);
+            if (!isNaN(targetFrame) && targetFrame >= 0) {
+                let targetTime = targetFrame / currentFps;
+                if (targetTime > videoPlayer.duration) targetTime = videoPlayer.duration;
+                videoPlayer.currentTime = targetTime;
+                jumpInput.value = ''; // clear after jumping
+                // Glow gets naturally handled by the 'seeked' event listener
+            }
+        });
+
+        // Pressing 'Enter' inside jump input
+        jumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                btnJump.click();
+            }
+        });
+
+        // Snapshots Logic
+        function renderSnapshots() {
+            snapshotsCard.style.display = 'block';
+            
+            if (snapshotsData.length === 0) {
+                btnDownload.innerText = "DOWNLOAD";
+                snapshotsList.innerHTML = '<div class="snapshot-item" style="color: rgba(242, 236, 224, 0.3); border-bottom: none; justify-content: center; font-family: var(--font-mono); font-size: 1.2rem; letter-spacing: 4px;">. . .</div>';
+                return;
+            }
+            
+            btnDownload.innerText = "DOWNLOAD ▼";
+            snapshotsList.innerHTML = '';
+            
+            snapshotsData.forEach((snap) => {
+                const item = document.createElement('div');
+                item.className = 'snapshot-item';
+                
+                const paddedFrame = String(snap.frameNum).padStart(5, '0');
+                
+                item.innerHTML = `
+                    <span class="bullet">*</span>
+                    <span>Frame ${paddedFrame}</span>
+                    <span class="frame-time">${snap.timeStr}</span>
+                    <span class="delete-btn" title="Remove">×</span>
+                `;
+                
+                item.querySelector('.delete-btn').addEventListener('click', () => {
+                    snapshotsData = snapshotsData.filter(s => s.id !== snap.id);
+                    renderSnapshots();
+                });
+                
+                snapshotsList.appendChild(item);
+            });
+        }
+
+        btnAddSnapshot.addEventListener('click', () => {
+            if (!videoPlayer.videoWidth) return;
+            const frameNum = calculateCurrentFrame();
+            const timeStr = formatTime(videoPlayer.currentTime);
+            
+            // Prevent exact duplicates
+            if (snapshotsData.some(s => s.frameNum === frameNum)) {
+                showToast("Frame already added to queue.");
+                return;
+            }
+            
+            snapshotsData.push({
+                id: Date.now(),
+                frameNum: frameNum,
+                timeVal: videoPlayer.currentTime,
+                timeStr: timeStr
+            });
+            
+            // Sort chronologically
+            snapshotsData.sort((a, b) => a.timeVal - b.timeVal);
+            renderSnapshots();
+            showToast("Frame added to Snapshots.");
+        });
+
+        // Download Dropdown Toggle
+        btnDownload.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (snapshotsData.length === 0) {
+                // Instantly execute single download
+                downloadCurrentFrame();
+            } else {
+                downloadDropdown.classList.toggle('show');
+            }
+        });
+
+        document.addEventListener('click', () => {
+            downloadDropdown.classList.remove('show');
+        });
+
+        // Download Executions
+        function generateBlobForTime(timeVal, frameNumStr) {
+            return new Promise((resolve) => {
+                const onSeeked = () => {
+                    videoPlayer.removeEventListener('seeked', onSeeked);
+                    canvas.width = videoPlayer.videoWidth;
+                    canvas.height = videoPlayer.videoHeight;
+                    ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob((blob) => {
+                        resolve(blob);
+                    }, 'image/jpeg', 0.95);
+                };
+                videoPlayer.addEventListener('seeked', onSeeked);
+                videoPlayer.currentTime = timeVal;
+            });
+        }
+
+        async function downloadCurrentFrame() {
+            if (!videoPlayer.videoWidth) return;
+            
+            btnDownload.innerText = "WORKING...";
+            btnDownload.disabled = true;
+
+            canvas.width = videoPlayer.videoWidth;
+            canvas.height = videoPlayer.videoHeight;
+            ctx.drawImage(videoPlayer, 0, 0, canvas.width, canvas.height);
+            
+            const frameNum = calculateCurrentFrame();
+            const paddedFrame = String(frameNum).padStart(5, '0');
+            const exportName = `${loadedVideoName}_frame_${paddedFrame}.jpg`;
+
+            canvas.toBlob((blob) => {
+                triggerBlobDownload(blob, exportName);
+                showToast(`Downloaded: ${exportName}`);
+                btnDownload.innerText = snapshotsData.length > 0 ? "DOWNLOAD ▼" : "DOWNLOAD";
+                btnDownload.disabled = false;
+            }, 'image/jpeg', 0.95);
+        }
+
+        optDlSingle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.remove('show');
+            downloadCurrentFrame();
+        });
+
+        optDlAll.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.remove('show');
+            
+            if (snapshotsData.length === 0) return;
+            
+            btnDownload.innerText = "ZIPPING...";
+            btnDownload.disabled = true;
+
+            const zip = new JSZip();
+            const originalTime = videoPlayer.currentTime; // store to restore later
+            
+            showToast(`Processing ${snapshotsData.length} frames...`);
+
+            try {
+                for (const snap of snapshotsData) {
+                    const blob = await generateBlobForTime(snap.timeVal, snap.frameNum);
+                    const paddedFrame = String(snap.frameNum).padStart(5, '0');
+                    zip.file(`${loadedVideoName}_frame_${paddedFrame}.jpg`, blob);
+                }
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                triggerBlobDownload(zipBlob, `${loadedVideoName}_snapshots.zip`);
+                showToast("Batch download complete.");
+            } catch (err) {
+                showToast("Error processing batch download.");
+            }
+            
+            // Safely restore video state without breaking UI
+            videoPlayer.currentTime = originalTime;
+            
+            btnDownload.innerText = "DOWNLOAD ▼";
+            btnDownload.disabled = false;
+        });
+
+        function triggerBlobDownload(blob, filename) {
+            const downloadUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(downloadUrl);
+        }
+
+        // Clear UI
+        btnClear.addEventListener('click', () => {
+            if (videoPlayer.src) {
+                URL.revokeObjectURL(videoPlayer.src);
+            }
+            videoPlayer.src = '';
+            videoPlayer.style.display = 'none';
+            emptyStateText.style.display = 'block';
+            videoInput.value = '';
+            fileLabel.innerText = "SELECT VIDEO FILE";
+            
+            // Disable controls
+            timelineSlider.disabled = true;
+            timelineSlider.value = 0;
+            btnPrevFrame.disabled = true;
+            btnNextFrame.disabled = true;
+            jumpInput.disabled = true;
+            jumpInput.value = '';
+            btnJump.disabled = true;
+            btnAddSnapshot.disabled = true;
+            btnDownload.disabled = true;
+            btnClear.disabled = true;
+            
+            timeCurrent.innerText = "00:00.000";
+            timeTotal.innerText = "00:00.000";
+            currentFrameDisplay.innerText = "0";
+            currentFrameDisplay.classList.remove('glow-pulse');
+            
+            snapshotsData = [];
+            renderSnapshots();
+            
+            showToast("Video queue cleared.");
+        });
+
+    </script>
+</body>
+</html>
