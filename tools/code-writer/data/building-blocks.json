@@ -1,0 +1,32 @@
+[
+  {
+    "id": "organon-section-card",
+    "name": "Organon section card",
+    "description": "Dark Organon card with heading and paragraph.",
+    "content": "<section class=\"organon-card\">\n    <h2>Section heading</h2>\n    <p>Replace this text with the section content.</p>\n</section>"
+  },
+  {
+    "id": "button-row",
+    "name": "Button row",
+    "description": "Two-button row for links or actions.",
+    "content": "<div class=\"button-row\">\n    <a href=\"#\" class=\"btn\">Primary action</a>\n    <a href=\"#\" class=\"btn secondary\">Secondary action</a>\n</div>"
+  },
+  {
+    "id": "image-figure",
+    "name": "Image figure",
+    "description": "Figure, image, alt text, and caption.",
+    "content": "<figure>\n    <img src=\"../../images/example.jpg\" alt=\"Describe this image\">\n    <figcaption>Caption text</figcaption>\n</figure>"
+  },
+  {
+    "id": "comment-section-divider",
+    "name": "Comment section divider",
+    "description": "Readable HTML section comment divider.",
+    "content": "\n<!-- ======== SECTION NAME ======== -->\n"
+  },
+  {
+    "id": "simple-table",
+    "name": "Simple table",
+    "description": "Small two-column HTML table.",
+    "content": "<table>\n    <thead>\n        <tr>\n            <th>Column A</th>\n            <th>Column B</th>\n        </tr>\n    </thead>\n    <tbody>\n        <tr>\n            <td>Value A</td>\n            <td>Value B</td>\n        </tr>\n    </tbody>\n</table>"
+  }
+]

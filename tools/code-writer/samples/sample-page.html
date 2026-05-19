@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sample Organon Editor Page</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Inter, system-ui, sans-serif;
+            background: #181919;
+            color: #f5f0db;
+        }
+
+        header {
+            padding: 32px;
+            background: #292a24;
+            border-bottom: 2px solid #896b49;
+        }
+
+        h1 {
+            color: #e0a360;
+            margin: 0 0 8px;
+        }
+
+        main {
+            padding: 28px;
+            display: grid;
+            gap: 18px;
+        }
+
+        .card {
+            border: 1px solid #896b49;
+            border-radius: 18px;
+            padding: 18px;
+            background: #292a24;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: 1px solid #896b49;
+            background: #26615c;
+            color: #ffffff;
+            text-decoration: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #896b49;
+            padding: 8px;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #896b49;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header>
+        <h1>Sample Page for Code Writer</h1>
+        <p>Edit this text in Raw View or turn on Visual Edit in the Preview.</p>
+    </header>
+
+    <main>
+        <!-- CARD GRID -->
+        <section class="card">
+            <h2>Testing Area</h2>
+            <p>This page deliberately includes a title tag, cards, a table, an image tag, an hr tag, comments, CSS, and buttons so the first markers can be checked.</p>
+            <div class="button-row">
+                <a href="#one" class="btn">First Button</a>
+                <a href="#two" class="btn">Second Button</a>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Image Reference</h2>
+            <img src="../../images/logoemoji.png" alt="Organon logo placeholder" width="160">
+            <p>The image may only appear when that asset exists in your uploaded Organon folder.</p>
+        </section>
+
+        <section class="card">
+            <h2>Table Reference</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Raw View</td>
+                        <td>Editable</td>
+                    </tr>
+                    <tr>
+                        <td>Preview</td>
+                        <td>Live</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <hr>
+
+        <section class="card">
+            <h2>Intentional Duplicate ID Test</h2>
+            <p id="duplicate-test">First duplicate ID line.</p>
+            <p id="duplicate-test">Second duplicate ID line for Check Code.</p>
+        </section>
+    </main>
+
+    <script>
+        console.log('Sample script marker. Scripts are not executed in the sandboxed preview.');
+    </script>
+</body>
+</html>

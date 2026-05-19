@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organon Code Writer v0.01</title>
+
+    <script>
+        /*
+            Organon iframe guard note:
+            Add ?standalone=1 when testing this file directly outside the hub.
+            Inside the Organon hub this page runs normally inside the tool iframe.
+        */
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            if (window.self === window.top && !params.has('standalone')) {
+                window.__organonDirectOpen = true;
+            }
+        })();
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/code-editor.css">
+</head>
+<body>
+    <div class="app-wrapper" id="app-wrapper">
+        <header class="top-control-panel" id="top-control-panel">
+            <div class="title-pill top-title-pill">
+                <div class="title-left-cluster">
+                    <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the control bar">5</button>
+                    <div>
+                        <div class="tool-title">Code Writer</div>
+                        <div class="tool-subtitle">HTML editor v0.01 · Phase 1 base</div>
+                    </div>
+                </div>
+                <div class="title-right-cluster">
+                    <span id="direct-open-badge" class="mini-badge hidden">standalone test mode</span>
+                    <button type="button" class="small-pill-btn" id="repository-btn" title="Open repository reference">Repository</button>
+                </div>
+            </div>
+
+            <div class="panel-content-hide top-controls-wrap">
+                <section class="project-strip" id="project-strip">
+                    <button type="button" class="project-chip" id="project-chip" title="Right-click project actions will expand in a later Phase 1 build">
+                        <span class="project-color-dot"></span>
+                        <span id="project-name-label">Project 1</span>
+                    </button>
+                    <div class="tab-row" id="tab-row" aria-label="Open file tabs"></div>
+                    <button type="button" class="tab-add-btn" id="new-tab-btn" title="Create a new blank tab">+</button>
+                </section>
+
+                <section class="toolbar-grid" aria-label="Code writer controls">
+                    <div class="toolbar-block counts-block">
+                        <span class="stat-pill" id="line-count-pill">Lines: 0</span>
+                        <span class="stat-pill" id="char-count-pill">Chars: 0</span>
+                        <span class="stat-pill" id="cursor-pill">Ln 1, Col 1</span>
+                    </div>
+
+                    <div class="toolbar-block mode-block">
+                        <button type="button" class="small-pill-btn" id="mobile-view-toggle">Toggle Raw / Preview</button>
+                        <button type="button" class="small-pill-btn" id="toggle-preview-btn">Hide Preview</button>
+                        <button type="button" class="small-pill-btn" id="extended-raw-btn">Extended Raw</button>
+                    </div>
+
+                    <div class="toolbar-block insert-block">
+                        <select id="building-block-select" class="pill-select" title="Insert a reusable building block at the cursor">
+                            <option value="">Building blocks...</option>
+                        </select>
+                        <button type="button" class="small-pill-btn" id="insert-block-btn">Insert</button>
+                        <button type="button" class="small-pill-btn" id="add-bookmark-btn">Bookmark</button>
+                    </div>
+                </section>
+            </div>
+        </header>
+
+        <main class="workspace" id="workspace" data-mobile-view="raw">
+            <section class="pane raw-pane" id="raw-pane" aria-label="Raw View">
+                <div class="pane-header">
+                    <div>
+                        <span class="pane-title">Raw View</span>
+                        <span class="pane-subtitle" id="active-file-label">untitled.html</span>
+                    </div>
+                    <div class="pane-actions">
+                        <button type="button" class="micro-btn" id="find-focus-btn" title="Find/replace arrives in a later Phase 1 build">Find</button>
+                        <button type="button" class="micro-btn" id="select-all-btn">Select all</button>
+                    </div>
+                </div>
+
+                <div class="editor-shell" id="editor-shell">
+                    <div class="marker-gutter-shell" id="marker-gutter-shell">
+                        <div class="marker-gutter" id="marker-gutter"></div>
+                    </div>
+                    <div class="line-number-shell" id="line-number-shell">
+                        <div class="line-numbers" id="line-numbers"></div>
+                    </div>
+                    <textarea id="raw-editor" class="raw-editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Raw HTML editor"></textarea>
+                </div>
+            </section>
+
+            <div class="splitter" id="splitter" title="Drag to resize split view"></div>
+
+            <section class="pane preview-pane" id="preview-pane" aria-label="Preview / WYSIWYG View">
+                <div class="pane-header">
+                    <div>
+                        <span class="pane-title">Preview / WYSIWYG View</span>
+                        <span class="pane-subtitle" id="preview-status-label">live preview</span>
+                    </div>
+                    <div class="pane-actions">
+                        <button type="button" class="micro-btn" id="visual-edit-btn">Visual edit off</button>
+                        <button type="button" class="micro-btn" id="refresh-preview-btn">Refresh</button>
+                    </div>
+                </div>
+                <iframe id="preview-frame" class="preview-frame" title="Rendered HTML preview" sandbox="allow-same-origin allow-forms allow-popups allow-modals"></iframe>
+            </section>
+        </main>
+
+        <aside class="floating-nav" aria-label="Floating navigation controls">
+            <button type="button" class="float-btn" id="page-up-btn" title="Page up, or previous bookmark when bookmark mode is on">▲</button>
+            <button type="button" class="float-btn bookmark-toggle" id="bookmark-mode-btn" title="Toggle bookmark navigation mode">◇</button>
+            <button type="button" class="float-btn" id="page-down-btn" title="Page down, or next bookmark when bookmark mode is on">▼</button>
+        </aside>
+
+        <footer class="bottom-control-panel" id="bottom-control-panel">
+            <button type="button" class="btn-pill" id="load-sample-btn">Load sample</button>
+            <button type="button" class="btn-pill" id="paste-html-btn">Paste HTML</button>
+            <button type="button" class="btn-pill" id="open-file-btn">Open file</button>
+            <button type="button" class="btn-pill" id="source-save-btn">Save</button>
+            <button type="button" class="btn-pill" id="export-html-btn">Export</button>
+            <button type="button" class="btn-pill" id="copy-html-btn">Copy HTML</button>
+            <button type="button" class="btn-pill" id="check-code-btn">Check Code</button>
+            <input type="file" id="file-input" class="hidden" accept=".html,.htm,.txt,.css,.js,.json,.csv,text/html,text/plain">
+        </footer>
+    </div>
+
+    <dialog id="paste-dialog" class="organon-dialog">
+        <form method="dialog" class="dialog-card">
+            <h2>Paste / Import HTML</h2>
+            <p>Paste full HTML or a fragment. This creates a new tab unless you choose to replace the active tab.</p>
+            <textarea id="paste-buffer" class="dialog-textarea" spellcheck="false"></textarea>
+            <div class="dialog-actions">
+                <button type="button" class="small-pill-btn" id="paste-replace-btn">Replace active tab</button>
+                <button type="button" class="small-pill-btn" id="paste-new-tab-btn">Create new tab</button>
+                <button type="submit" class="small-pill-btn muted-btn">Cancel</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog id="check-dialog" class="organon-dialog report-dialog">
+        <form method="dialog" class="dialog-card report-card">
+            <div class="report-header">
+                <div>
+                    <h2>Check Code Report</h2>
+                    <p id="report-summary">No report has been run yet.</p>
+                </div>
+                <button type="submit" class="small-pill-btn muted-btn">Close</button>
+            </div>
+            <div class="report-layout">
+                <div class="report-list" id="report-list"></div>
+                <div class="report-detail" id="report-detail">
+                    Select an issue to jump to its line.
+                </div>
+            </div>
+            <div class="dialog-actions">
+                <button type="button" class="small-pill-btn" id="copy-report-btn">Copy Report</button>
+            </div>
+        </form>
+    </dialog>
+
+    <div id="toast-notice" class="toast">Ready</div>
+
+    <script src="js/state.js"></script>
+    <script src="js/preview.js"></script>
+    <script src="js/files.js"></script>
+    <script src="js/check-code.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/editor.js"></script>
+</body>
+</html>
