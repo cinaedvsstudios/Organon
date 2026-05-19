@@ -25,7 +25,7 @@
     <div class="max-w-[1600px] mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl font-black tracking-tight text-repo-blue mt-1 flex items-center gap-2">UI Repository</h1>
-        <p class="text-sm text-repo-cream/70 mt-0.5">Component glossary, live sandbox library, prompt injector, and UI Builder planning workspace.</p>
+        <p class="text-sm text-repo-cream/70 mt-0.5">Component glossary, live sandbox library, prompt injector, and UI Builder planning workspace. v0.02</p>
       </div>
       <div class="flex items-center gap-3">
         <button id="run-guide-btn" class="px-4 py-2 rounded-lg bg-repo-sand hover:bg-yellow-500 text-xs font-black text-repo-dark shadow-lg flex items-center gap-2 transition">🚀 Run Sandbox Guide</button>
@@ -53,28 +53,27 @@
       <span class="tracking-widest drop-shadow-md">🛠️ UI BUILDER</span>
       <button id="close-builder-btn" class="hover:text-repo-dark transition text-lg leading-none">✕</button>
     </div>
-    <div class="bg-repo-dark p-2 border-b border-repo-blue flex flex-wrap gap-2 text-[10px] select-none shrink-0">
-      <div class="flex gap-1 w-full">
-        <button id="template-btn" class="bg-repo-sand hover:bg-yellow-500 text-repo-dark px-3 py-1 rounded font-bold transition shadow border border-repo-sand">Template</button>
-        <select id="notepad-section" class="bg-[#1a1b1a] text-repo-cream border border-[#444] rounded px-1 py-1.5 flex-1 outline-none font-bold cursor-pointer hover:border-repo-blue transition">
-          <option value="">+ Add Section...</option>
-          <option value="Menu">Menu</option>
-          <option value="Body">Body</option>
-          <option value="Side Panel">Side Panel</option>
-          <option value="Lower Panel">Lower Panel</option>
-          <option value="Desktop Version Only">Desktop Version Only</option>
-          <option value="Mobile Version Only">Mobile Version Only</option>
-          <option value="TOP / UPPER">TOP / UPPER</option>
-          <option value="MIDDLE / CENTER">MIDDLE / CENTER</option>
-          <option value="LOWER / BOTTOM">LOWER / BOTTOM</option>
-        </select>
-        <button id="group-selected-btn" class="bg-repo-teal hover:bg-repo-darkteal text-white px-3 py-1 rounded font-bold transition shadow border border-repo-teal">Group</button>
-      </div>
-      <div class="flex gap-1 w-full justify-between mt-1">
-        <button id="btn-dock" class="bg-[#333] hover:bg-repo-blue hover:border-repo-lightblue text-white px-3 py-1 rounded font-bold transition border border-[#555]">Dock</button>
-        <button id="btn-download" class="bg-[#333] hover:bg-repo-blue hover:border-repo-lightblue text-white px-3 py-1 rounded font-bold transition border border-[#555]">Download</button>
-        <button id="btn-copy-all" class="bg-[#333] hover:bg-repo-blue hover:border-repo-lightblue text-white px-3 py-1 rounded font-bold transition border border-[#555]">Copy All</button>
-        <button id="btn-clear" class="bg-repo-maroon hover:bg-repo-salmon text-white px-3 py-1 rounded font-bold transition border border-repo-salmon/30">Clear</button>
+    <div class="builder-toolbar bg-repo-dark p-2 border-b border-repo-blue flex flex-wrap gap-2 text-[10px] select-none shrink-0">
+      <button id="group-selected-btn" class="builder-tool-btn tool-group">Group</button>
+      <button id="template-btn" class="builder-tool-btn tool-template">Templ</button>
+      <button id="btn-dock" class="builder-tool-btn tool-dock">Dock</button>
+      <button id="btn-download" class="builder-tool-btn tool-download">Dwnld</button>
+      <button id="btn-copy-all" class="builder-tool-btn tool-copy">Copy</button>
+      <button id="btn-clear" class="builder-tool-btn tool-clear">Clear</button>
+      <div class="section-dropdown-wrap">
+        <button id="section-dropdown-btn" class="builder-tool-btn tool-section" type="button">Section</button>
+        <div id="section-dropdown-menu" class="section-dropdown-menu hidden">
+          <button data-section-name="TOP / UPPER">TOP / UPPER</button>
+          <button data-section-name="MID / CENTER">MID / CENTER</button>
+          <button data-section-name="LOWER / BOTTOM">LOWER / BOTTOM</button>
+          <button data-section-name="MENU">MENU</button>
+          <button data-section-name="BODY">BODY</button>
+          <button data-section-name="SIDE PANEL">SIDE PANEL</button>
+          <button data-section-name="LOWER PANEL">LOWER PANEL</button>
+          <button data-section-name="MOBILE VERSION ONLY">MOBILE VERSION ONLY</button>
+          <button data-section-name="DESKTOP VERSION ONLY">DESKTOP VERSION ONLY</button>
+          <button data-section-name="CUSTOM SECTION">CUSTOM SECTION</button>
+        </div>
       </div>
     </div>
     <div id="notepad-list" class="flex-1 overflow-y-auto p-4 flex flex-col items-start bg-black cursor-text pb-32 relative"></div>

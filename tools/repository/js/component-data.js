@@ -798,3 +798,30 @@ window.uiRepositoryComponents = [
       }
 
     ];
+
+// v0.02 content expansion pass: keep original recovered text, but add enough practical context for the repository to work as a training/reference tool.
+(function(){
+  function categoryFor(c) {
+    const id = Number(c.id);
+    if ([1,2,3,4,5,6,7,8,10].includes(id)) return 'input/control pattern';
+    if ([9,11,12,13,14,15,18,19,20,22,23,24,25].includes(id)) return 'logic or layout pattern';
+    if ([16,17,21].includes(id)) return 'state and feedback pattern';
+    if ([26,27,28,29,30,31,32,33,34,35].includes(id)) return 'dynamic interface module';
+    return 'premium interface pattern';
+  }
+  function richerDesc(c) {
+    return `${c.desc || ''} In the UI Repository this should be treated as a reusable ${categoryFor(c)}: it has a visible form, an interaction rule, and a promptable behaviour. When describing it to an AI, mention the trigger, the default state, the active state, what changes visually, and what data or user action it responds to.`;
+  }
+  function richerApps(c) {
+    return `${c.apps || ''} Also useful when building editor panels, control trays, dashboards, import tools, filter systems, preview windows, or mobile/desktop variants where the same interaction needs to be described consistently. In the UI Builder, use this component when that behaviour belongs to a specific group, section, panel, card, or action area.`;
+  }
+  function richerMods(c) {
+    return `${c.mods || ''} Common modifications include changing colour tokens, size, spacing, icon position, hover/focus states, active/disabled states, mobile stacking, desktop split layout, animation timing, persistence, and whether the control opens a popup, updates visible content, or writes into local state. The prompt should say which parts are decorative and which parts are functional.`;
+  }
+  window.uiRepositoryComponents = (window.uiRepositoryComponents || []).map(c => ({
+    ...c,
+    desc: richerDesc(c),
+    apps: richerApps(c),
+    mods: richerMods(c)
+  }));
+})();

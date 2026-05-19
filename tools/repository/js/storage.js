@@ -1,8 +1,8 @@
 (function(){
   const keys = {
-    builder: 'uiRepositoryBuilderState_v001',
-    ui: 'uiRepositoryUiState_v001',
-    dock: 'uiRepositoryDockState_v001'
+    builder: 'uiRepositoryBuilderState_v002',
+    ui: 'uiRepositoryUiState_v002',
+    dock: 'uiRepositoryDockState_v002'
   };
   function readJson(key, fallback) {
     try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch (e) { return fallback; }

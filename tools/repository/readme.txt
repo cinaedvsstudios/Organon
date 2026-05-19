@@ -1,78 +1,90 @@
-UI Repository Reconstruction v0.01
-=================================
+UI Repository Rebuild v0.02
+===========================
 
 Open index.html in a browser.
 
-Purpose
--------
-This package rebuilds the UI Repository and UI Builder from the recovered repository v2.4 file. It splits the app into smaller files, restores missing components, keeps the UI Builder as an in-page floating/dockable panel, and includes the reconstructed requirements document.
+What this tool does
+-------------------
+The UI Repository is a visual catalogue of UI components. You browse the component cards, use their live sandbox examples, copy prompt text, and add selected components into the UI Builder.
 
-File map
---------
+The UI Builder is an in-page floating/dockable workspace. It is not a separate browser window. It lets you collect components as compact pills, add notes, create visual groups and sections, drag pills into containers, and export the build plan as text for Gemini/GPT.
+
+Important v0.02 changes
+-----------------------
+- The UI Builder is draggable when floating.
+- The builder toolbar now follows the compact mockup style.
+- Group creates an empty group card named GROUP 1, GROUP 2, etc.
+- Group names and section names can be renamed by clicking the title pill.
+- Section opens a downward menu with TOP / UPPER, MID / CENTER, LOWER / BOTTOM, MENU, BODY, SIDE PANEL, LOWER PANEL, MOBILE VERSION ONLY, DESKTOP VERSION ONLY, and CUSTOM SECTION.
+- Template is parked for later and shows a Coming soon toast.
+- Free text creates compact grey pills rather than large boxes.
+- Component pills are black with white text.
+- Selected pills turn blue.
+- Pills inside groups/sections tint toward the container colour.
+- Line numbers are on the left and represent visual rows.
+- The red x deletes one pill.
+- The ⛔ button deletes a whole group/section container with an in-app confirmation modal.
+- Clear uses an in-app confirmation modal, not the browser system confirm.
+- Dragging requires clicking/selecting a pill first.
+- Drop targets show a glowing insertion/target indicator.
+
+File guide
+----------
 index.html
-  Main page shell. Loads Tailwind CDN, CSS files, HTML containers, and JavaScript files.
+  Main page shell.
 
 css/base.css
-  Global variables, colours, scrollbars, base styles.
+  Global variables, palette, fonts, base body styles.
 
 css/repository.css
-  Header, sidebar, category index, repository layout.
+  Header, component index, repository layout.
 
 css/component-cards.css
-  Component cards, metadata/sandbox panels, badges, prompt boxes.
+  Component card layout, badges, sandbox panels, prompt boxes.
 
 css/builder.css
-  UI Builder floating/docked panel, pills, groups, sections, line numbers.
+  UI Builder toolbar, floating window, pills, groups, sections, drag/drop visuals, confirmation modal.
 
 css/responsive.css
-  Mobile/desktop layout differences.
+  Mobile/desktop layout adjustments.
 
 js/component-data.js
-  Source of truth for all component records. Restore/edit/add components here.
+  The component database. This is the source of truth for the 45 UI components.
 
 js/repository-render.js
-  Builds the sidebar index and component cards from component-data.js.
+  Builds the component index and component cards from component-data.js.
 
-js/sandbox-engine.js
-  Shared prompt/sandbox support.
-
-js/sandbox-actions.js
-  Live demo helper functions used by component sandboxes.
+js/sandbox-engine.js and js/sandbox-actions.js
+  Live sandbox and demo behaviours.
 
 js/builder-engine.js
-  Main UI Builder actions: open/close, basket mode, add items, template, grouping, clear, docking.
+  Builder state, open/close, group/section creation, free-text pill creation, selection, delete, dock, custom confirmation.
 
 js/builder-render.js
-  Draws the UI Builder pills, groups, section cards, and left-side line numbers.
-
-js/builder-export.js
-  Generates the UI Builder text output, Copy All, and Download TXT.
+  Visual UI Builder display: line rows, compact pills, groups, sections.
 
 js/builder-dragdrop.js
-  Drag/drop reordering and mobile move button fallback.
+  Pill dragging, drop targets, moving items into groups/sections.
+
+js/builder-export.js
+  Copy/download text export.
 
 js/storage.js
-  Versioned localStorage helpers.
+  localStorage keys and helpers.
 
 js/ui-utils.js
-  Toasts, clipboard, download, escape helpers, stars, scrolling.
+  Toasts, clipboard, download, escaping, IDs.
 
 data/builder-default-template.js
-  Default group template inserted by the Template button.
+  Parked for later template logic.
 
 requirements-reconstruction.md
-  Reconstructed requirements document from the recovery process.
+  Requirements and reconstruction notes preserved from the planning document.
 
-How to add a new component
---------------------------
-1. Open js/component-data.js.
-2. Add a new object with id, title, term, desc, apps, wild, mods, risk, riskText, html, and prompt.
-3. The sidebar and component card will generate automatically from that data.
+Testing notes
+-------------
+If the builder looks stale after loading v0.02, clear localStorage for this page or use the Clear button. v0.02 uses new localStorage keys, so old v0.01 data should not normally interfere.
 
-Known notes
------------
-- Tailwind is loaded from CDN because the recovered files used Tailwind heavily. For a fully offline version, replace Tailwind utility usage with compiled/local CSS later.
-- The UI Builder opens empty. Use the Template button to insert the default group structure.
-- Line numbers are on the left side.
-- The UI Builder is an in-page popup, not a separate browser window.
-- The repository itself is intended to open as a standalone/full browser tab from the future HTML Editor.
+Known follow-up area
+--------------------
+The component descriptions have been expanded as a first pass, but a later content pass can still make each of the 45 entries more specific and polished.

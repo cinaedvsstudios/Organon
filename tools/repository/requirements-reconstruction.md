@@ -165,4 +165,46 @@ The final app should not remain one giant HTML file. This package splits the app
 
 ## Current build note
 
-This ZIP is version `0.01` reconstruction. It restores the split architecture, missing components, UI Builder workflow, colour decisions, and export improvements. It should be tested before being treated as final production code.
+This ZIP is version `0.02` reconstruction. It restores the split architecture, missing components, UI Builder workflow, colour decisions, and export improvements. It should be tested before being treated as final production code.
+
+---
+
+## v0.02 update notes
+
+v0.02 applies the UI Builder display changes from the mockup discussion.
+
+### Locked v0.02 behaviour
+
+- UI Builder remains an in-page popup/floating panel.
+- Floating UI Builder can be dragged by the header.
+- Docked UI Builder does not drag.
+- Group button creates an empty group card named GROUP 1, GROUP 2, etc.
+- Group title can be clicked and renamed.
+- Section button opens a downward menu.
+- Section choices: TOP / UPPER, MID / CENTER, LOWER / BOTTOM, MENU, BODY, SIDE PANEL, LOWER PANEL, MOBILE VERSION ONLY, DESKTOP VERSION ONLY, CUSTOM SECTION.
+- Sections are titled boxes and can exist inside or outside groups.
+- Template button stays visible but only shows a Coming soon toast.
+- Component pills are compact black pills with white text.
+- Free text pills are compact grey pills with white text.
+- Selected pills turn blue.
+- Pills inside a group or section tint toward the container colour.
+- The expand icon is only for expanding/collapsing long pill content.
+- Dragging requires selecting/clicking the pill first.
+- Red x deletes a single pill.
+- ⛔ deletes a whole group or section container with an in-app confirmation modal.
+- Clear uses an in-app confirmation modal.
+- Line numbers are on the left and represent visual rows, not individual data items.
+
+### Export reminder
+
+The display UI is card-based, but exported text remains structured with:
+
+`======== GROUP X: NAME ========`
+
+and:
+
+`.......... SECTION NAME ..........`
+
+### Content note
+
+v0.02 includes a first-pass expansion of the component metadata so entries are no longer only short placeholder text. A future content pass can still improve each component individually.
