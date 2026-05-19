@@ -1,0 +1,16 @@
+Organon button patch
+
+Files changed:
+- index.html
+- tools.json
+
+Upload/replace these two files at the Organon site root.
+This patch expects the existing image asset to be present at:
+- images/coderepo.png
+
+Behavior added:
+- MODIFY now includes FRAME EXTRACTOR -> tools/frame-extractor/index.html
+- TOOLS now includes a single split coderepo.png button:
+  - left half -> tools/code-writer/index.html
+  - right half -> tools/repository/index.html
+- TOOLS also includes BULK DOWNLOAD and BULK CONVERT.

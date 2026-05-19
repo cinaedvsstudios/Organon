@@ -4,14 +4,7 @@
     {
       "id": "create",
       "label": "CREATE",
-      "tools": [
-        {
-          "id": "animated-gif",
-          "label": "ANIMATED GIF",
-          "path": "tools/animated-gif/index.html",
-          "description": "Generate or edit animated GIFs from images or video segments."
-        }
-      ]
+      "tools": []
     },
     {
       "id": "modify",
@@ -34,6 +27,12 @@
           "label": "JPEG COMPRESS",
           "path": "tools/jpeg-compress/index.html",
           "description": "Compress JPEG images to optimized files sizes."
+        },
+        {
+          "id": "frame-extractor",
+          "label": "FRAME EXTRACTOR",
+          "path": "tools/frame-extractor/index.html",
+          "description": "Extract still frames from local video files."
         }
       ]
     },
@@ -42,10 +41,36 @@
       "label": "TOOLS",
       "tools": [
         {
+          "id": "code-repo-split",
+          "label": "CODE EDITOR | REPOSITORY",
+          "buttonType": "code-repo-split",
+          "description": "Open the code editor or repository from the split copper button.",
+          "splitTools": [
+            {
+              "id": "code-writer",
+              "label": "CODE EDITOR",
+              "path": "tools/code-writer/index.html",
+              "description": "Open the Organon code editor workspace."
+            },
+            {
+              "id": "repository",
+              "label": "REPOSITORY",
+              "path": "tools/repository/index.html",
+              "description": "Open the Organon UI repository."
+            }
+          ]
+        },
+        {
           "id": "bulk-download",
           "label": "BULK DOWNLOAD",
           "path": "tools/bulk-download/index.html",
           "description": "Download multiple files or assets in batch."
+        },
+        {
+          "id": "bulk-convert",
+          "label": "BULK CONVERT",
+          "path": "tools/bulk-convert/index.html",
+          "description": "Convert multiple local files in batch."
         }
       ]
     },

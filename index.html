@@ -505,6 +505,56 @@
       text-shadow: 0 0 4px #ffffff, 0 0 12px #ff9cb3, 0 0 24px #9a2f4f, 0 0 36px #9a2f4f; /* Ultra-bright glowing red */
     }
 
+
+    /* Special split image button for Code Editor + Repository */
+    .org-btn-code-repo {
+      width: 310px;
+      height: 50px;
+      border: none;
+      background: url('images/coderepo.png') no-repeat center;
+      background-size: 100% 100%;
+      position: relative;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      outline: none;
+      user-select: none;
+      transition: filter 0.25s ease-in-out, opacity 0.25s ease-in-out;
+    }
+
+    .org-btn-code-repo:hover,
+    .org-btn-code-repo.active {
+      filter: drop-shadow(0 0 8px rgba(255, 156, 179, 0.95)) drop-shadow(0 0 16px rgba(154, 47, 79, 0.85));
+    }
+
+    .org-btn-code-repo-zone {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      outline: none;
+    }
+
+    .org-btn-code-repo-zone.left-zone {
+      left: 0;
+      width: 50%;
+    }
+
+    .org-btn-code-repo-zone.right-zone {
+      right: 0;
+      width: 50%;
+    }
+
+    .org-btn-code-repo-zone:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
     /* ==========================================================
        CENTRAL BASIN (THE ACTIVE CONTENT WINDOW)
        ========================================================= */
@@ -1138,6 +1188,26 @@
       }
     });
 
+    function findToolRouteById(toolId) {
+      if (!manifest || !manifest.categories) return null;
+
+      for (const cat of manifest.categories) {
+        for (const tool of cat.tools) {
+          if (tool.id === toolId) {
+            return { category: cat, tool: tool };
+          }
+          if (tool.buttonType === 'code-repo-split' && Array.isArray(tool.splitTools)) {
+            const splitMatch = tool.splitTools.find(splitTool => splitTool.id === toolId);
+            if (splitMatch) {
+              return { category: cat, tool: splitMatch };
+            }
+          }
+        }
+      }
+
+      return null;
+    }
+
     window.onload = async () => {
       try {
         const response = await fetch('tools.json');
@@ -1157,18 +1227,13 @@
           if (initialHash === 'info') {
             loadInfoTool();
           } else {
-            let found = false;
-            manifest.categories.forEach(cat => {
-              const match = cat.tools.find(t => t.id === initialHash);
-              if (match) {
-                activeCategory = cat.id;
-                renderL2Tabs();
-                selectCategory(cat.id, false); // select folder
-                selectTool(match);             // load tool
-                found = true;
-              }
-            });
-            if (!found) {
+            const route = findToolRouteById(initialHash);
+            if (route) {
+              activeCategory = route.category.id;
+              renderL2Tabs();
+              selectCategory(route.category.id, false); // select folder
+              selectTool(route.tool);                   // load tool
+            } else {
               selectCategory(activeCategory, false); // Start blank
             }
           }
@@ -1244,14 +1309,7 @@
           {
             "id": "create",
             "label": "CREATE",
-            "tools": [
-              {
-                "id": "animated-gif",
-                "label": "ANIMATED GIF",
-                "path": "tools/animated-gif/index.html",
-                "description": "Generate or edit animated GIFs from images or video segments."
-              }
-            ]
+            "tools": []
           },
           {
             "id": "modify",
@@ -1274,6 +1332,12 @@
                 "label": "JPEG COMPRESS",
                 "path": "tools/jpeg-compress/index.html",
                 "description": "Compress JPEG images to optimized files sizes."
+              },
+              {
+                "id": "frame-extractor",
+                "label": "FRAME EXTRACTOR",
+                "path": "tools/frame-extractor/index.html",
+                "description": "Extract still frames from local video files."
               }
             ]
           },
@@ -1282,10 +1346,36 @@
             "label": "TOOLS",
             "tools": [
               {
+                "id": "code-repo-split",
+                "label": "CODE EDITOR | REPOSITORY",
+                "buttonType": "code-repo-split",
+                "description": "Open the code editor or repository from the split copper button.",
+                "splitTools": [
+                  {
+                    "id": "code-writer",
+                    "label": "CODE EDITOR",
+                    "path": "tools/code-writer/index.html",
+                    "description": "Open the Organon code editor workspace."
+                  },
+                  {
+                    "id": "repository",
+                    "label": "REPOSITORY",
+                    "path": "tools/repository/index.html",
+                    "description": "Open the Organon UI repository."
+                  }
+                ]
+              },
+              {
                 "id": "bulk-download",
                 "label": "BULK DOWNLOAD",
                 "path": "tools/bulk-download/index.html",
                 "description": "Download multiple files or assets in batch."
+              },
+              {
+                "id": "bulk-convert",
+                "label": "BULK CONVERT",
+                "path": "tools/bulk-convert/index.html",
+                "description": "Convert multiple local files in batch."
               }
             ]
           },
@@ -1353,6 +1443,49 @@
       }
 
       tools.forEach((tool, idx) => {
+        if (tool.buttonType === 'code-repo-split' && Array.isArray(tool.splitTools)) {
+          const splitBtn = document.createElement('div');
+          splitBtn.className = `org-btn-code-repo ${tool.splitTools.some(splitTool => splitTool.id === activeTool) ? 'active' : ''}`;
+          splitBtn.id = `tool-${tool.id}`;
+          splitBtn.setAttribute('aria-label', tool.label);
+          splitBtn.setAttribute('role', 'group');
+
+          const leftTool = tool.splitTools[0];
+          const rightTool = tool.splitTools[1];
+
+          if (leftTool) {
+            const leftZone = document.createElement('button');
+            leftZone.type = 'button';
+            leftZone.className = 'org-btn-code-repo-zone left-zone';
+            leftZone.setAttribute('aria-label', leftTool.label);
+            leftZone.setAttribute('data-split-tool-id', leftTool.id);
+            leftZone.onclick = () => selectTool(leftTool);
+            leftZone.onmouseover = () => setStatusText(leftTool.description || leftTool.label);
+            leftZone.onmouseleave = () => setStatusText("ORGANON ONLINE");
+            splitBtn.appendChild(leftZone);
+          }
+
+          if (rightTool) {
+            const rightZone = document.createElement('button');
+            rightZone.type = 'button';
+            rightZone.className = 'org-btn-code-repo-zone right-zone';
+            rightZone.setAttribute('aria-label', rightTool.label);
+            rightZone.setAttribute('data-split-tool-id', rightTool.id);
+            rightZone.onclick = () => selectTool(rightTool);
+            rightZone.onmouseover = () => setStatusText(rightTool.description || rightTool.label);
+            rightZone.onmouseleave = () => setStatusText("ORGANON ONLINE");
+            splitBtn.appendChild(rightZone);
+          }
+
+          container.appendChild(splitBtn);
+
+          // Auto-select tool in active column only on direct user-click navigations
+          if (idx === 0 && autoLoadFirst && leftTool) {
+            selectTool(leftTool);
+          }
+          return;
+        }
+
         const btn = document.createElement('button');
         btn.className = `org-btn-unified l3-btn ${tool.id === activeTool ? 'active' : ''}`;
         btn.id = `tool-${tool.id}`;
@@ -1375,8 +1508,11 @@
     function selectTool(tool) {
       activeTool = tool.id;
       document.querySelectorAll('.l3-sub-container .org-btn-unified').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.l3-sub-container .org-btn-code-repo').forEach(el => el.classList.remove('active'));
       const activeBtn = document.getElementById('tool-' + tool.id);
       if (activeBtn) activeBtn.classList.add('active');
+      const splitActiveBtn = document.querySelector(`[data-split-tool-id="${tool.id}"]`);
+      if (splitActiveBtn) splitActiveBtn.closest('.org-btn-code-repo').classList.add('active');
 
       const iframe = document.getElementById('basin-frame');
       iframe.src = tool.path;
@@ -1390,15 +1526,13 @@
         if (toolId === 'info') {
           loadInfoTool();
         } else {
-          manifest.categories.forEach(cat => {
-            const match = cat.tools.find(t => t.id === toolId);
-            if (match) {
-              activeCategory = cat.id;
-              renderL2Tabs();
-              selectCategory(cat.id, false);
-              selectTool(match);
-            }
-          });
+          const route = findToolRouteById(toolId);
+          if (route) {
+            activeCategory = route.category.id;
+            renderL2Tabs();
+            selectCategory(route.category.id, false);
+            selectTool(route.tool);
+          }
         }
       }
     });
