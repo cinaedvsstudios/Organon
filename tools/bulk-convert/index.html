@@ -3,19 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File Converter | Organon</title>
+    <title>Image Converter | Organon</title>
     
-    <!-- Iframe Guard: Redirects to the hub if opened directly -->
-    <script>
-        // Modified slightly for Canvas preview to not redirect constantly during testing
-        // if (window === window.parent) {
-        //     window.location.href = '../../index.html';
-        // }
-    </script>
-    
-    <!-- External Engine CDNs for Zip and HEIC processing -->
+    <!-- External Engine CDNs for Zip, HEIC, and Metadata Parsing -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,6 +27,7 @@
             --slider-track: #61112E;
             --alabaster-paper: #F2ECE0;
             --bg-nightsky: #181919;
+            --burgundy: #4A1525;
             
             --font-headers: 'Cinzel', Georgia, serif;
             --font-body: 'Inter', system-ui, -apple-system, sans-serif;
@@ -305,14 +299,19 @@
         .file-list-item {
             display: flex;
             align-items: center;
-            padding: 8px 0;
+            padding: 10px 8px;
             border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
             font-size: 0.8rem;
             transition: background-color 0.2s;
-            border-radius: 4px;
+            border-radius: 12px;
+            cursor: pointer;
         }
         .file-list-item:last-child {
             border-bottom: none;
+        }
+        .file-list-item.selected {
+            background-color: rgba(229, 168, 98, 0.15) !important;
+            border: 1px solid var(--stone-ochre);
         }
         .file-list-item.downloadable {
             cursor: pointer;
@@ -346,6 +345,39 @@
             padding: 6px;
             border-radius: 4px;
             border: 1px solid var(--water-spray);
+        }
+
+        /* Metadata Pill Animations & Styles */
+        @keyframes pulse-burgundy {
+            0% { box-shadow: 0 0 0 0 rgba(154, 47, 79, 0.6); background-color: var(--bg-card); }
+            50% { background-color: rgba(154, 47, 79, 0.25); }
+            70% { box-shadow: 0 0 0 12px rgba(154, 47, 79, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(154, 47, 79, 0); background-color: var(--bg-card); }
+        }
+        .pill-gps-warning {
+            border-color: var(--brand-red) !important;
+            animation: pulse-burgundy 2s infinite;
+        }
+
+        @keyframes pulse-red-dot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(154, 47, 79, 0.8); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(154, 47, 79, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(154, 47, 79, 0); }
+        }
+        .meta-warning-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: var(--brand-red);
+            border: 1px solid #ff4d4d;
+            animation: pulse-red-dot 1.5s infinite;
+        }
+        .static-red-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background-color: var(--slider-track);
+            border: 1px solid var(--chiseled-bronze);
         }
 
         /* Modal Overlay */
@@ -466,6 +498,49 @@
             border-color: #444;
         }
 
+        .toggle-switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 0.75rem;
+            color: var(--alabaster-paper);
+        }
+
+        /* Checkbox styling */
+        .check-pill-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .check-pill {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-input);
+            transition: all 0.2s;
+        }
+        .check-pill.checked {
+            background-color: var(--water-blue);
+            border-color: var(--water-spray);
+        }
+        .check-pill.checked::after {
+            content: "✓";
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
     </style>
 </head>
 <body>
@@ -474,7 +549,7 @@
             <div class="title-pill">
                 <div style="display: flex; align-items: center;">
                     <div id="countdown-circle" class="countdown-circle-indicator">5</div>
-                    <span>FILE CONVERTER</span>
+                    <span>IMAGE CONVERTER</span>
                 </div>
             </div>
             <div class="panel-content-hide" style="width:100%;">
@@ -502,6 +577,50 @@
                         <label style="font-size: 0.75rem; color: var(--water-spray); text-transform: uppercase; font-weight: bold;">Quality (JPEG/WebP)</label>
                         <input type="range" id="quality-slider" min="0.1" max="1.0" step="0.1" value="0.9" style="margin-top: 16px;">
                         <div style="text-align: right; font-family: var(--font-mono); font-size: 0.8rem; color: var(--stone-ochre); margin-top: 4px;" id="quality-val">90%</div>
+                    </div>
+                </div>
+
+                <!-- Toggles for Processing options -->
+                <div class="toggle-switch-container">
+                    <div class="check-pill-container" id="strip-metadata-toggle-container">
+                        <div class="check-pill checked" id="strip-metadata-toggle"></div>
+                        <span>Surgically auto-strip EXIF metadata on conversion</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- UNIVERSAL PRIVACY & METADATA PILL -->
+            <div class="config-card" id="metadata-pill-container" style="padding: 12px 16px; border-radius: 9999px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 1px solid var(--chiseled-bronze);">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="metadata-pill-icon">ℹ️</span>
+                        <span id="metadata-pill-title" style="font-weight: 600; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--stone-ochre);">File Privacy &amp; Metadata</span>
+                    </div>
+                    <span id="metadata-pill-arrow" style="font-size: 0.7rem; color: var(--chiseled-bronze); transition: transform 0.3s;">▼</span>
+                </div>
+                
+                <!-- Expanded Content Dashboard (Hidden by default) -->
+                <div id="metadata-expanded-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, margin-top 0.3s; font-size: 0.75rem; color: var(--alabaster-paper);">
+                    <div style="border-top: 1px dashed rgba(137, 107, 73, 0.3); margin-top: 10px; padding-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <div id="gps-warning-box" class="hidden" style="background-color: var(--burgundy); border: 1px solid var(--brand-red); border-radius: 14px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 8px; color: #FFF; margin-bottom: 4px;">
+                            <span style="font-size: 1rem; line-height:1;">⚠️</span>
+                            <div>
+                                <strong style="display: block; font-size: 0.75rem; color: #F87171;">GPS Coordinates Detected!</strong>
+                                <span style="font-size: 0.65rem; opacity: 0.9;">Posting this file online reveals the exact location where this photo was taken.</span>
+                            </div>
+                        </div>
+
+                        <div id="metadata-details-grid" style="display: grid; grid-template-columns: 1fr; gap: 6px; font-family: var(--font-mono); font-size: 0.7rem;">
+                            <!-- Dynamically loaded -->
+                            <div style="color: rgba(242, 236, 224, 0.4); text-align: center; padding: 8px 0;">No file selected in queue.</div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: center; margin-top: 6px;">
+                            <button type="button" id="btn-strip-only" class="btn-pill" style="padding: 6px 14px; font-size: 0.65rem; background-color: var(--brand-red) !important; width: 100%; border-color: var(--chiseled-bronze);" disabled>
+                                Strip Metadata Only (Preserve Original Pixels)
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -632,8 +751,10 @@
         startCountdown();
 
         // --- FILE CONVERTER STATE & LOGIC --- //
-        let filesData = []; // Store state for all files { fileObj, originalName, newName, blob, status (pending|success|error), errorMsg, bgFillColor }
+        let filesData = []; // Store state for all files { fileObj, originalName, newName, blob, status (pending|success|error), errorMsg, bgFillColor, exifLoaded, exifData }
         let downloadModeOne = false;
+        let selectedFileIndex = null;
+        let isAutoStripChecked = true;
 
         const fileCountLabel = document.getElementById('file-count-label');
         const qualitySlider = document.getElementById('quality-slider');
@@ -700,11 +821,220 @@
             }, 3000);
         }
 
+        // Auto-strip metadata checkbox toggler
+        const stripMetadataToggle = document.getElementById('strip-metadata-toggle');
+        const stripMetadataToggleContainer = document.getElementById('strip-metadata-toggle-container');
+        stripMetadataToggleContainer.addEventListener('click', () => {
+            isAutoStripChecked = !isAutoStripChecked;
+            if (isAutoStripChecked) {
+                stripMetadataToggle.classList.add('checked');
+            } else {
+                stripMetadataToggle.classList.remove('checked');
+            }
+        });
+
+        // Metadata Pill references
+        const metadataPill = document.getElementById('metadata-pill-container');
+        const metadataContent = document.getElementById('metadata-expanded-content');
+        const metadataArrow = document.getElementById('metadata-pill-arrow');
+        const metadataDetailsGrid = document.getElementById('metadata-details-grid');
+        const metadataPillTitle = document.getElementById('metadata-pill-title');
+        const metadataPillIcon = document.getElementById('metadata-pill-icon');
+        const gpsWarningBox = document.getElementById('gps-warning-box');
+        const btnStripOnly = document.getElementById('btn-strip-only');
+
+        // Toggle Metadata Pill
+        metadataPill.addEventListener('click', (e) => {
+            if (e.target.closest('#btn-strip-only')) return;
+            
+            const isCollapsed = metadataContent.style.maxHeight === '0px' || !metadataContent.style.maxHeight;
+            if (isCollapsed) {
+                metadataPill.style.borderRadius = '24px';
+                metadataContent.style.maxHeight = '500px'; 
+                metadataArrow.style.transform = 'rotate(180deg)';
+            } else {
+                metadataContent.style.maxHeight = '0px';
+                metadataArrow.style.transform = 'rotate(0deg)';
+                setTimeout(() => {
+                    metadataPill.style.borderRadius = '9999px';
+                }, 300);
+            }
+        });
+
+        // Native Lossless Binary EXIF Stripper (APP1 Excision)
+        async function stripExifLossless(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const buffer = e.target.result;
+                    const dv = new DataView(buffer);
+                    if (dv.getUint16(0) !== 0xFFD8) {
+                        resolve(blob); // Return unchanged if not JPEG
+                        return;
+                    }
+                    let offset = 2;
+                    const segments = [buffer.slice(0, 2)];
+                    while (offset < buffer.byteLength) {
+                        if (offset + 2 > buffer.byteLength) break;
+                        const marker = dv.getUint16(offset);
+                        if (marker === 0xFFDA) { // SOS (Start of Scan) - rest is entropy data
+                            segments.push(buffer.slice(offset));
+                            break;
+                        }
+                        if (marker === 0xFFD9) { // EOI
+                            segments.push(buffer.slice(offset, offset + 2));
+                            break;
+                        }
+                        if (offset + 4 > buffer.byteLength) break;
+                        const size = dv.getUint16(offset + 2);
+                        if (marker !== 0xFFE1) { // Skip APP1
+                            segments.push(buffer.slice(offset, offset + 2 + size));
+                        }
+                        offset += 2 + size;
+                    }
+                    resolve(new Blob(segments, { type: 'image/jpeg' }));
+                };
+                reader.readAsArrayBuffer(blob);
+            });
+        }
+
+        // Parse and populate Metadata Pill Dashboard
+        function parseExifData(fileItem, index, skipRender = false) {
+            if (fileItem.exifLoaded) {
+                if (!skipRender) displayMetadataInPill(fileItem, index);
+                return;
+            }
+
+            // Fallback for non-EXIF-compatible formats
+            const format = fileItem.fileObj.name.toLowerCase();
+            if (!format.endsWith('.jpg') && !format.endsWith('.jpeg')) {
+                fileItem.exifLoaded = true;
+                fileItem.exifData = { hasGps: false, tags: {} };
+                if (!skipRender) displayMetadataInPill(fileItem, index);
+                renderFileList();
+                return;
+            }
+
+            EXIF.getData(fileItem.fileObj, function() {
+                const tags = EXIF.getAllTags(this);
+                const results = {};
+                let hasGps = false;
+
+                if (tags.Make || tags.Model) results['Camera'] = `${tags.Make || ''} ${tags.Model || ''}`.trim();
+                if (tags.DateTimeOriginal || tags.DateTime) results['Captured'] = tags.DateTimeOriginal || tags.DateTime;
+                if (tags.Software) results['Software'] = tags.Software;
+
+                if (tags.GPSLatitude && tags.GPSLongitude) {
+                    hasGps = true;
+                    const convertDMSToDD = (dms, ref) => {
+                        let dd = dms[0] + dms[1]/60 + dms[2]/3600;
+                        if (ref === "S" || ref === "W") dd = -dd;
+                        return dd;
+                    };
+                    const lat = convertDMSToDD(tags.GPSLatitude, tags.GPSLatitudeRef || "N");
+                    const lon = convertDMSToDD(tags.GPSLongitude, tags.GPSLongitudeRef || "E");
+                    results['GPS Coordinates'] = `${lat.toFixed(5)}°, ${lon.toFixed(5)}° (${tags.GPSLatitudeRef || 'N'}, ${tags.GPSLongitudeRef || 'E'})`;
+                }
+
+                const keys = Object.keys(tags);
+                const hasMetadata = keys.length > 0;
+                
+                // If there are tags but none were recognized explicitly, still flag that metadata exists
+                if (hasMetadata && Object.keys(results).length === 0) {
+                    results['Hidden Data'] = `${keys.length} tag(s) detected`;
+                }
+
+                fileItem.exifLoaded = true;
+                fileItem.exifData = { hasGps, tags: hasMetadata ? results : {} };
+                
+                renderFileList();
+                if (selectedFileIndex === index && !skipRender) {
+                    displayMetadataInPill(fileItem, index);
+                }
+            });
+        }
+
+        function displayMetadataInPill(fileItem, index) {
+            if (selectedFileIndex !== index) return;
+
+            metadataDetailsGrid.innerHTML = '';
+            
+            // Render specific tags
+            const tags = fileItem.exifData ? fileItem.exifData.tags : {};
+            const keys = Object.keys(tags);
+            const hasMetadata = keys.length > 0;
+
+            if (!hasMetadata) {
+                metadataDetailsGrid.innerHTML = `<div style="color: rgba(242, 236, 224, 0.4); text-align: center; padding: 4px 0;">No hidden EXIF tags found in this file.</div>`;
+            } else {
+                keys.forEach(k => {
+                    const row = document.createElement('div');
+                    row.style.display = 'flex';
+                    row.style.justify = 'space-between';
+                    row.style.padding = '4px 0';
+                    row.style.borderBottom = '1px solid rgba(137, 107, 73, 0.15)';
+                    row.innerHTML = `<span style="color: var(--water-spray);">${k}:</span><span style="color: var(--stone-ochre);">${tags[k]}</span>`;
+                    metadataDetailsGrid.appendChild(row);
+                });
+            }
+
+            // Coordinate Warning Trigger
+            if (hasMetadata) {
+                metadataPill.classList.add('pill-gps-warning');
+                metadataPillTitle.style.color = 'var(--brand-red)';
+                
+                if (fileItem.exifData.hasGps) {
+                    gpsWarningBox.classList.remove('hidden');
+                    metadataPillTitle.innerText = "GPS PRIVACY BREACH WARNING";
+                } else {
+                    gpsWarningBox.classList.add('hidden');
+                    metadataPillTitle.innerText = "METADATA DETECTED";
+                }
+                metadataPillIcon.innerText = "⚠️";
+            } else {
+                gpsWarningBox.classList.add('hidden');
+                metadataPill.classList.remove('pill-gps-warning');
+                metadataPillTitle.style.color = 'var(--stone-ochre)';
+                metadataPillTitle.innerText = "File Privacy & Metadata";
+                metadataPillIcon.innerText = "ℹ️";
+            }
+
+            // Expose Stripping Button
+            if (fileItem.originalName.toLowerCase().endsWith('.jpg') || fileItem.originalName.toLowerCase().endsWith('.jpeg')) {
+                btnStripOnly.disabled = false;
+            } else {
+                btnStripOnly.disabled = true;
+            }
+        }
+
+        // Trigger Strip Metadata Only (Bypass Pipeline)
+        btnStripOnly.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (selectedFileIndex === null || !filesData[selectedFileIndex]) return;
+
+            const targetFile = filesData[selectedFileIndex];
+            try {
+                showToast("Surgically removing metadata...");
+                const cleanBlob = await stripExifLossless(targetFile.fileObj);
+                triggerSingleDownload(cleanBlob, `stripped_${targetFile.originalName}`);
+                showToast("Pristine copy downloaded!");
+                
+                // Refresh local tags view
+                targetFile.exifLoaded = false;
+                targetFile.exifData = null;
+                parseExifData(targetFile, selectedFileIndex);
+            } catch (err) {
+                showToast("Excision error occurred.");
+            }
+        });
+
         // Render File List GUI
         function renderFileList() {
             if (filesData.length === 0) {
                 fileListCard.style.display = 'block';
                 fileListContainer.innerHTML = '<div class="file-list-item" style="color: rgba(242, 236, 224, 0.3); border-bottom: none; justify-content: center; padding: 20px 0;"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg></div>';
+                selectedFileIndex = null;
+                updateMetadataPillState();
                 return;
             }
             fileListCard.style.display = 'block';
@@ -713,11 +1043,14 @@
             filesData.forEach((fileItem, index) => {
                 const itemDiv = document.createElement('div');
                 itemDiv.className = 'file-list-item';
+                if (index === selectedFileIndex) {
+                    itemDiv.classList.add('selected');
+                }
                 if (downloadModeOne && fileItem.status === 'success') {
                     itemDiv.classList.add('downloadable');
                 }
 
-                let iconHtml = '🔴'; // Default pending
+                let iconHtml = '<div class="static-red-dot"></div>'; 
                 let clickEvent = '';
                 let isBgToggle = false;
                 
@@ -726,10 +1059,15 @@
                 } else if (fileItem.status === 'error') {
                     iconHtml = '⚠️';
                     clickEvent = `onclick="showToast('${fileItem.errorMsg.replace(/'/g, "\\'")}')"`;
-                } else if (fileItem.status === 'pending' && fileItem.bgFillColor) {
-                    const dotClass = fileItem.bgFillColor === '#000000' ? 'black' : 'white';
-                    iconHtml = `<div class="bg-toggle-dot ${dotClass}" title="Toggle Background (White/Black)"></div>`;
-                    isBgToggle = true;
+                } else if (fileItem.status === 'pending') {
+                    if (fileItem.bgFillColor) {
+                        const dotClass = fileItem.bgFillColor === '#000000' ? 'black' : 'white';
+                        iconHtml = `<div class="bg-toggle-dot ${dotClass}" title="Toggle Background (White/Black)"></div>`;
+                        isBgToggle = true;
+                    } else if (fileItem.exifLoaded && fileItem.exifData && Object.keys(fileItem.exifData.tags).length > 0) {
+                        // Pulse the dot if metadata is detected!
+                        iconHtml = `<div class="meta-warning-dot" title="Metadata Detected"></div>`;
+                    }
                 }
                 
                 itemDiv.innerHTML = `
@@ -746,11 +1084,17 @@
                     });
                 }
 
+                // Selection trigger for Metadata Pill updates
+                itemDiv.addEventListener('click', () => {
+                    selectedFileIndex = index;
+                    renderFileList();
+                    parseExifData(fileItem, index);
+                });
+
                 // Handle single download click
                 if (downloadModeOne && fileItem.status === 'success') {
                     itemDiv.addEventListener('click', () => {
                         triggerSingleDownload(fileItem.blob, fileItem.newName);
-                        // Reset single download mode after a selection
                         downloadModeOne = false;
                         downloadInstruction.style.display = 'none';
                         btnDownload.classList.remove('active');
@@ -760,6 +1104,23 @@
 
                 fileListContainer.appendChild(itemDiv);
             });
+
+            updateMetadataPillState();
+        }
+
+        function updateMetadataPillState() {
+            if (selectedFileIndex === null && filesData.length > 0) {
+                selectedFileIndex = 0;
+                parseExifData(filesData[0], 0);
+            } else if (filesData.length === 0) {
+                metadataDetailsGrid.innerHTML = `<div style="color: rgba(242, 236, 224, 0.4); text-align: center; padding: 8px 0;">No file selected in queue.</div>`;
+                gpsWarningBox.classList.add('hidden');
+                metadataPill.classList.remove('pill-gps-warning');
+                metadataPillTitle.style.color = 'var(--stone-ochre)';
+                metadataPillTitle.innerText = "File Privacy & Metadata";
+                metadataPillIcon.innerText = "ℹ️";
+                btnStripOnly.disabled = true;
+            }
         }
 
         // Shared function to handle file selection/dropping
@@ -773,20 +1134,31 @@
                     blob: null,
                     status: 'pending',
                     errorMsg: '',
-                    bgFillColor: isTransparent ? '#FFFFFF' : null
+                    bgFillColor: isTransparent ? '#FFFFFF' : null,
+                    exifLoaded: false,
+                    exifData: null
                 };
             });
             
             if (files.length > 0) {
                 fileCountLabel.innerText = `${files.length} FILE${files.length !== 1 ? 'S' : ''} SELECTED`;
+                selectedFileIndex = 0;
             } else {
                 fileCountLabel.innerText = "SELECT FILES";
+                selectedFileIndex = null;
             }
             
             downloadModeOne = false;
             downloadInstruction.style.display = 'none';
             btnDownload.classList.remove('active');
+            
             renderFileList();
+
+            // Pre-parse EXIF for all files to illuminate warning dots instantly
+            filesData.forEach((fileItem, index) => {
+                // Fixed: Do not skip rendering for the currently selected file so the pill updates immediately!
+                parseExifData(fileItem, index, index !== selectedFileIndex);
+            });
         }
 
         // Setup File Queue via Input Click
@@ -845,7 +1217,7 @@
                         
                         ctx.drawImage(img, 0, 0);
                         
-                        canvas.toBlob((blob) => {
+                        canvas.toBlob(async (blob) => {
                             URL.revokeObjectURL(url);
                             let ext = format.split('/')[1];
                             if (ext === 'jpeg') ext = 'jpg';
@@ -858,7 +1230,13 @@
                                 fileData.newName = (baseName || fileData.originalName) + '.' + ext;
                             }
                             
-                            fileData.blob = blob;
+                            // EXIF Autostrip Pipeline Tagger
+                            if (isAutoStripChecked && ext === 'jpg') {
+                                fileData.blob = await stripExifLossless(blob);
+                            } else {
+                                fileData.blob = blob;
+                            }
+
                             fileData.status = 'success';
                             resolve();
                         }, format, quality);
@@ -907,7 +1285,7 @@
                 } catch(e) {
                     // Handled inside process function via fileData state
                 }
-                renderFileList(); // Re-render to show ticks/errors as they complete
+                renderFileList(); 
             }
             
             btnProcess.disabled = false;
@@ -1013,6 +1391,7 @@
             downloadModeOne = false;
             downloadInstruction.style.display = 'none';
             btnDownload.classList.remove('active');
+            selectedFileIndex = null;
             renderFileList();
             showToast("Queue cleared.");
         });

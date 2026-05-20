@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>JPEG Compressor & Resizer</title>
+    <title>Img-Up/Dwn Scaler | Organon</title>
     
     <!-- Iframe Guard: Redirects to the hub if opened directly from its subfolder -->
     <script>
@@ -17,55 +17,36 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
     
+    <!-- Metadata extraction and XML Parsing tools -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exif-js/2.3.0/exif.min.js"></script>
+
     <!-- PyScript Assets -->
     <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css">
     <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
 
     <style>
-        /* ==========================================================
-           ORGANON GLOBAL BRAND STYLING TEMPLATE
-           Strict Color Mappings & Total Rounded Pill Realignment
-           ========================================================== */
         :root {
-            /* 1. General Body Text (Alabaster Paper) */
             --alabaster-paper: #F2ECE0;
-
-            /* 2. Classical Headings & Default Menu Text (Warm Stone Ochre) */
             --stone-ochre: #E5A862;
-
-            /* 3. Hover Highlights & Glows (Water Spray Light Blue) */
             --water-spray: #79B4E3;
-
-            /* 4. Selected & Active Focus Elements (Aqueduct Water Blue) */
             --water-blue: #4B84BF;
-
-            /* 5. Inactive / Metadata Labels (Chiseled Bronze) */
-            --chiseled-bronze: #896b49; /* Standardized brand border */
-
-            /* 6. Warnings, Failures & Destructive Logs (Deep Burgundy) */
+            --chiseled-bronze: #896b49; 
             --burgundy: #4A1525;
-
-            /* 7. System Indicators & Directories (Muted Forest Teal) */
             --forest-teal: #26615C;
-
-            /* Core Canvas Settings */
             --bg-nightsky: #000000;
-            --bg-card: #292a24; /* Updated Card Background */
+            --bg-card: #292a24; 
             --bg-input: rgba(24, 25, 25, 0.95);
+            --light-blue: #75b2de;
+            --slider-active: #9a2f4f; 
+            --slider-track: #61112e;  
+            --brand-red: #9A2F4F;
+            --light-blend-stone: #e0a360;
 
-            /* Typography Hierarchies */
             --font-headers: 'Cinzel', 'Playfair Display', Georgia, serif;
             --font-body: 'Inter', 'Geist', system-ui, -apple-system, sans-serif;
             --font-mono: 'Geist Mono', 'Courier New', monospace;
-
-            /* Custom Refined Palette Variable Nodes */
-            --light-blue: #75b2de;
-            --slider-active: #9a2f4f; /* Vibrant Ruby Pink (ON state / thumb) */
-            --slider-track: #61112e;  /* Dark Burgundy (OFF state / right track) */
-            --light-blend-stone: #e0a360;
         }
 
-        /* Global Reset & Core Body Settings */
         body {
             background-color: var(--bg-nightsky);
             color: var(--alabaster-paper);
@@ -80,13 +61,11 @@
             box-sizing: border-box;
         }
 
-        /* Custom Text Highlight Selection */
         ::selection {
             background-color: var(--water-blue);
             color: var(--bg-nightsky);
         }
 
-        /* Classical Serified Headers */
         h1, h2, h3, h4, h5, h6 {
             font-family: var(--font-headers);
             color: var(--stone-ochre);
@@ -96,7 +75,6 @@
             transition: color 0.25s ease, text-shadow 0.25s ease;
         }
 
-        /* Fluid Hover Anchor Links */
         a {
             color: var(--stone-ochre);
             text-decoration: none;
@@ -108,24 +86,16 @@
             text-shadow: 0 0 8px rgba(121, 180, 227, 0.65), 0 0 16px rgba(121, 180, 227, 0.3);
         }
 
-        a:active {
-            color: var(--water-blue);
-            text-shadow: none;
-        }
-
-        /* ==========================================================
-           PILL SELECTORS & INTERACTIVE TEXTBOX INPUTS
-           ========================================================== */
         input, select, textarea {
             background-color: var(--bg-input);
-            color: #f0ebcb !important; /* Harmonized Input Text */
+            color: #f0ebcb !important; 
             border: 1px solid var(--chiseled-bronze) !important;
             font-family: var(--font-body);
             padding: 10px 18px;
-            border-radius: 9999px; /* Complete Pill Shape */
+            border-radius: 9999px; 
             transition: all 0.2s ease-in-out;
             box-sizing: border-box;
-            font-size: 15px; /* Prevents auto-zoom on iOS safari */
+            font-size: 15px; 
             outline: none;
             width: 100%;
         }
@@ -135,56 +105,22 @@
             box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
         }
 
-        /* Remove default spin buttons for number inputs to keep the pill shape absolutely flawless */
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        input[type="number"] {
-            -moz-appearance: textfield;
-            text-align: center;
-        }
-
-        ::placeholder {
-            color: var(--chiseled-bronze);
-            opacity: 0.8;
-        }
-
-        /* Sleek custom arrow reset for dropdown select elements */
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-            background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' fill='%23896b49'><path d='M7 10l5 5 5-5z'/></svg>");
-            background-repeat: no-repeat;
-            background-position: right 18px center;
-            background-size: 16px;
-            padding-right: 46px !important;
-            cursor: pointer;
-        }
-
-        /* Custom Smooth Scrollbar with Water Accents */
+        /* Complete Pill Shape Scrollbars */
         ::-webkit-scrollbar {
             width: 6px;
             height: 6px;
         }
-
         ::-webkit-scrollbar-track {
             background: transparent;
         }
-
         ::-webkit-scrollbar-thumb {
             background: var(--chiseled-bronze);
-            border-radius: 9999px; /* Complete Pill Shape Scrollbars */
+            border-radius: 9999px; 
         }
-
         ::-webkit-scrollbar-thumb:hover {
             background: var(--water-blue);
         }
 
-        /* ==========================================================
-           ROUNDED PILL UTILITY BUTTONS
-           ========================================================== */
         .btn-pill {
             background-color: var(--forest-teal);
             color: var(--alabaster-paper);
@@ -195,7 +131,7 @@
             letter-spacing: 0.05em;
             text-transform: uppercase;
             padding: 12px 24px;
-            border-radius: 9999px; /* Absolute Pill Shape */
+            border-radius: 9999px; 
             cursor: pointer;
             transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             display: inline-flex;
@@ -214,12 +150,6 @@
             transform: translateY(-1px);
             color: var(--alabaster-paper);
             text-shadow: 0 0 6px rgba(242, 236, 224, 0.4);
-        }
-
-        .btn-pill:active {
-            transform: translateY(1px);
-            box-shadow: 0 2px 8px rgba(75, 132, 191, 0.2);
-            background-color: var(--water-blue);
         }
 
         .btn-pill:disabled {
@@ -243,12 +173,9 @@
             box-shadow: 0 0 12px rgba(229, 168, 98, 0.15);
         }
 
-        /* ==========================================================
-           3-PANEL VERTICAL VIEWPORT STRUCTURE (MAX 540PX)
-           ========================================================== */
         .app-wrapper {
             width: 100%;
-            max-width: 540px; /* Constrained strictly to 2 buttons wide */
+            max-width: 540px; 
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -257,20 +184,19 @@
             background-color: var(--bg-nightsky);
         }
 
-        /* Panel 1: Top Sticky Upload Panel with blended Light Stone Background, Fallback & Curved Bottom Corners */
         .top-sticky-panel {
             position: sticky;
             top: 0;
             z-index: 100;
-            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-color: #d79e5c; 
             background-image: linear-gradient(rgba(224, 163, 96, 0.7), rgba(224, 163, 96, 0.7)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;
-            padding: 24px 16px 16px 16px; /* Added extra top padding */
+            padding: 24px 16px 16px 16px; 
             box-sizing: border-box;
             border-bottom: 1px solid var(--chiseled-bronze) !important;
-            border-bottom-left-radius: 28px; /* Elegant bottom curve integration */
+            border-bottom-left-radius: 28px; 
             border-bottom-right-radius: 28px;
             display: flex;
             flex-direction: column;
@@ -279,7 +205,6 @@
             transition: padding 0.3s ease-in-out;
         }
 
-        /* Auto-Minimizing Panel state rules */
         .top-sticky-panel.minimized {
             padding: 8px 16px !important;
             cursor: pointer;
@@ -289,11 +214,10 @@
             display: none !important;
         }
 
-        /* Absolute Title Pill (Left-aligned text inside, stretches all the way across) */
         .title-pill {
             display: flex;
             align-items: center;
-            justify-content: space-between; /* Adjusted to support far-right toggle button placement */
+            justify-content: space-between; 
             background-color: rgba(24, 25, 25, 0.9);
             color: var(--light-blue);
             font-family: var(--font-headers);
@@ -307,11 +231,10 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
             user-select: none;
             box-sizing: border-box;
-            width: 100%; /* Spans all the way across */
+            width: 100%; 
             max-width: 100%;
         }
 
-        /* Tactile Countdown Circle styling */
         .countdown-circle-indicator {
             width: 22px;
             height: 22px;
@@ -336,11 +259,10 @@
             box-shadow: 0 0 6px rgba(121, 180, 227, 0.4);
         }
 
-        /* Drop Zone Styles (Standard Layout - Fitted with a clean narrow width) */
         .upload-container {
             border: 2px dashed var(--chiseled-bronze) !important;
             background-color: var(--bg-card);
-            border-radius: 28px; /* Extra smooth corners */
+            border-radius: 28px; 
             padding: 24px;
             text-align: center;
             cursor: pointer;
@@ -349,14 +271,13 @@
             flex-direction: column;
             align-items: center;
             gap: 12px;
-            width: 340px; /* Constrained fixed width */
-            max-width: 100%; /* Mobile responsivity guard */
+            width: 340px; 
+            max-width: 100%; 
         }
 
-        /* Keeping background solid var(--bg-card) on hover, changing borders/glows to light blue */
         .upload-container:hover, .upload-container.dragover {
             border-color: var(--light-blue) !important;
-            background-color: var(--bg-card) !important; /* Kept solid dark background */
+            background-color: var(--bg-card) !important; 
             box-shadow: 0 0 16px rgba(117, 178, 222, 0.2);
         }
 
@@ -368,30 +289,27 @@
             transition: transform 0.25s ease;
         }
 
-        /* Sync icon color to light blue on container hover */
         .upload-container:hover .upload-icon {
             stroke: var(--light-blue) !important;
             transform: translateY(-4px);
         }
 
-        /* Sync title color to light blue on container hover */
         .upload-container:hover h3 {
             color: var(--light-blue) !important;
             text-shadow: 0 0 8px rgba(117, 178, 222, 0.5);
         }
 
-        /* Compact Loaded Banner (Splits into 2 square thumbnails side-by-side) */
         .compact-upload-bar {
             display: flex;
             flex-direction: column;
             align-items: center;
             background-color: var(--bg-card);
             border: 1px solid var(--chiseled-bronze) !important;
-            border-radius: 24px; /* Curved card style instead of pill shape */
+            border-radius: 24px; 
             padding: 12px 16px;
             box-sizing: border-box;
             gap: 8px;
-            width: 340px; /* Constrained fixed width matching drop zone */
+            width: 340px; 
             max-width: 100%;
         }
 
@@ -422,7 +340,7 @@
 
         .square-label {
             font-size: 0.65rem;
-            color: var(--chiseled-bronze); /* Clean brand dark brown */
+            color: var(--chiseled-bronze); 
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
@@ -440,19 +358,17 @@
             padding-top: 8px;
         }
 
-        /* Panel 2: Middle Scrollable Body (Set to pure Black) */
         .middle-scroll-panel {
             flex: 1;
-            background-color: #000000; /* Pure Black Background */
-            padding: 16px 16px 120px 16px; /* Heavy bottom padding so inputs clear the sticky footer */
+            background-color: #000000; 
+            padding: 16px 16px 120px 16px; 
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             gap: 16px;
-            font-size: 0.8rem; /* Make the text size in the middle panel smaller */
+            font-size: 0.8rem; 
         }
 
-        /* Stats Comparison Card */
         .stats-card {
             background-color: var(--bg-card);
             border: 1px solid var(--chiseled-bronze) !important;
@@ -477,14 +393,12 @@
             font-weight: 500;
         }
 
-        /* Settings grid splitting nicely into direct row layout in Panel 2 */
         .settings-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 14px;
         }
 
-        /* Spans the invisible HR completely across the grid to align adjacent columns */
         .settings-grid .invisible-hr {
             grid-column: 1 / -1;
             visibility: hidden;
@@ -495,22 +409,20 @@
             width: 100%;
         }
 
-        /* Compact Setting Card Groupings */
         .config-card {
-            background-color: var(--bg-card) !important; /* Re-themed `#292a24` background */
+            background-color: var(--bg-card) !important; 
             border: 1px solid var(--chiseled-bronze) !important;
             border-radius: 24px;
             padding: 16px;
             box-sizing: border-box;
         }
 
-        /* Harmonized Section Headings Color Node */
         .group-title, .control-group-title, .preview-card h3, .stats-card h3 {
             color: var(--light-blue) !important;
         }
 
         .control-group-title {
-            font-size: 0.7rem; /* Make section title labels inside middle panel smaller */
+            font-size: 0.7rem; 
             text-transform: uppercase;
             letter-spacing: 0.08em;
             margin-bottom: 12px;
@@ -526,7 +438,6 @@
             height: 14px;
         }
 
-        /* Adjusted label typography size for smaller presentation */
         label {
             font-size: 0.75rem !important;
             color: var(--alabaster-paper);
@@ -534,23 +445,21 @@
             letter-spacing: 0.03em;
         }
 
-        /* Slightly tightened inputs inside middle panel settings */
         .middle-scroll-panel input, 
         .middle-scroll-panel select {
             font-size: 14px !important;
             padding: 8px 14px !important;
         }
 
-        /* Panel 3: Bottom Sticky Button Panel with blended Light Stone Background & Fallback */
         .bottom-sticky-panel {
             position: fixed;
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
             width: 100%;
-            max-width: 540px; /* Clamped tightly to match vertical flow */
+            max-width: 540px; 
             z-index: 110;
-            background-color: #d79e5c; /* Robust Fallback Backup */
+            background-color: #d79e5c; 
             background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../images/stonetext.jpg');
             background-size: cover;
             background-position: center;
@@ -565,11 +474,9 @@
             border-top-right-radius: 28px;
         }
 
-        /* Custom bottom sticky button overrides for light bg panel */
-        /* opacity adjusted to 0.9 to significantly decrease transparency and make button darker */
         .bottom-sticky-panel .btn-pill {
-            flex: 1; /* Split evenly - precisely 2 buttons wide */
-            background-color: rgba(24, 25, 25, 0.9) !important; /* Low transparency, very dark */
+            flex: 1; 
+            background-color: rgba(24, 25, 25, 0.9) !important; 
             color: var(--light-blue) !important;
             border: 1px solid var(--chiseled-bronze) !important;
             box-shadow: none !important;
@@ -583,15 +490,6 @@
             box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
         }
 
-        .bottom-sticky-panel .btn-pill:disabled {
-            background-color: rgba(24, 25, 25, 0.3) !important;
-            color: rgba(137, 107, 73, 0.5) !important;
-            border-color: rgba(137, 107, 73, 0.2) !important;
-            cursor: not-allowed !important;
-            box-shadow: none !important;
-            transform: none !important;
-        }
-
         /* Sliders Layout Configuration */
         .slider-row {
             display: flex;
@@ -600,14 +498,12 @@
             margin-top: 4px;
         }
 
-        /* Customized Slider Track & Thumb Handles (Border Removed) */
-        /* Left inactive track is #61112e, Right active track & thumb is #9a2f4f */
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
             height: 8px;
             border-radius: 9999px;
-            border: none !important; /* Strictly borderless track */
+            border: none !important; 
             padding: 0;
             width: 100%;
             touch-action: none;
@@ -620,30 +516,14 @@
             width: 22px;
             height: 22px;
             border-radius: 50%;
-            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
-            border: none !important; /* Strictly borderless thumb */
+            background: var(--slider-active) !important; 
+            border: none !important; 
             cursor: pointer;
             transition: all 0.15s ease-in-out;
             box-shadow: 0 2px 6px rgba(0,0,0,0.4);
         }
 
         input[type="range"]::-webkit-slider-thumb:hover {
-            background: var(--water-spray) !important;
-            transform: scale(1.15);
-        }
-
-        input[type="range"]::-moz-range-thumb {
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: var(--slider-active) !important; /* Brand Vibrant Ruby/Pink Thumb */
-            border: none !important; /* Strictly borderless thumb */
-            cursor: pointer;
-            transition: all 0.15s ease-in-out;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
-        }
-
-        input[type="range"]::-moz-range-thumb:hover {
             background: var(--water-spray) !important;
             transform: scale(1.15);
         }
@@ -656,7 +536,37 @@
             margin-top: -4px;
         }
 
-        /* Loading Engine Overlay Screen */
+        /* SVG Option Styles */
+        .svg-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 4px 0;
+        }
+        .check-pill {
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-input);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .check-pill.checked {
+            background-color: var(--water-blue);
+            border-color: var(--water-spray);
+        }
+        .check-pill.checked::after {
+            content: "✓";
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+
+        /* System Loader Overlay Screen */
         .loader-overlay {
             position: fixed;
             top: 0;
@@ -698,51 +608,20 @@
             text-align: center;
         }
 
-        /* Custom Popup Overlay Card (Error Summary list details) */
-        .overlay-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 2000; /* Raised high above sticky headers */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            box-sizing: border-box;
+        @keyframes pulse-burgundy {
+            0% { box-shadow: 0 0 0 0 rgba(154, 47, 79, 0.6); }
+            70% { box-shadow: 0 0 0 8px rgba(154, 47, 79, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(154, 47, 79, 0); }
         }
-
-        .modal-body-card {
-            background-color: var(--bg-card);
-            border: 1px solid var(--chiseled-bronze) !important;
-            border-radius: 28px;
-            padding: 24px;
-            width: 100%;
-            max-width: 440px;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
-            position: relative; /* Ensure it registers pointer clicks cleanly */
-            z-index: 2101;
-        }
-
-        .modal-title {
-            margin: 0;
-            color: var(--brand-red) !important;
-            font-size: 1.1rem;
-            border-bottom: 1px dashed rgba(137, 107, 73, 0.3);
-            padding-bottom: 8px;
+        .pill-gps-warning {
+            border-color: var(--brand-red) !important;
+            animation: pulse-burgundy 2.5s infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
 
-        /* Helper Styles */
         .flex-between {
             display: flex;
             justify-content: space-between;
@@ -759,23 +638,58 @@
             font-size: 0.8rem;
         }
 
-        /* Adjust setting grid on ultra-small viewports */
+        /* Toast Notification Container */
+        .toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast-notification {
+            background-color: var(--burgundy);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            padding: 10px 20px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .toast-notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .toast-success {
+            background-color: var(--forest-teal) !important;
+            border-color: var(--water-spray) !important;
+        }
+
         @media (max-width: 480px) {
             .settings-grid {
-                grid-template-columns: 1fr; /* Roll to 1 column on extra narrow phones */
+                grid-template-columns: 1fr; 
             }
             .settings-grid .invisible-hr {
-                display: none; /* Hide multi-column spacer on singular stack */
+                display: none; 
             }
         }
     </style>
 </head>
 <body>
 
-    <!-- PYSCRIPT PRE-FLIGHT SYSTEM ENGINE LOADER -->
+    <!-- SYSTEM ENGINE LOADER -->
     <div id="loading-overlay" class="loader-overlay">
         <div class="loader-spinner"></div>
-        <div class="loader-title">COMPRESSOR ENGINE</div>
+        <div class="loader-title">SCALER ENGINE</div>
         <div class="loader-progress" id="loader-progress-text">
             Mounting Virtual Python Machine & Pillow components... (takes ~5-7s)
         </div>
@@ -786,28 +700,27 @@
         
         <!-- PANEL 1: TOP STICKY UPLOAD BANNER -->
         <div class="top-sticky-panel">
-            <!-- Absolute Title Pill with Far-Right Mode Selector Button -->
             <div class="title-pill" id="title-banner-pill">
                 <div style="display: flex; align-items: center;">
                     <div id="countdown-circle" class="countdown-circle-indicator">5</div>
-                    <span id="app-title-text">JPEG COMPRESSOR</span>
+                    <span id="app-title-text">IMG-UP/DWN SCALER</span>
                 </div>
                 <button type="button" id="mode-toggle-btn" class="btn-pill" style="padding: 4px 14px; font-size: 0.7rem; background-color: rgba(24, 25, 25, 0.6) !important; border: 1px solid var(--chiseled-bronze) !important;">Upscale</button>
             </div>
 
-            <!-- State A: Upload box visible when unpopulated -->
+            <!-- Drag & Drop container -->
             <div id="drop-zone" class="upload-container">
                 <svg class="upload-icon" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
                 </svg>
                 <div style="margin-top: -4px;">
-                    <h3 style="margin-bottom: 2px; font-size: 0.95rem; transition: color 0.25s ease, text-shadow 0.25s ease;">Load Image</h3>
-                    <p style="opacity: 0.7; font-size: 0.75rem; margin: 0;">Drag & drop image or click to browse</p>
+                    <h3 style="margin-bottom: 2px; font-size: 0.95rem;">Load Asset</h3>
+                    <p style="opacity: 0.7; font-size: 0.75rem; margin: 0;">Supports Images or SVGs</p>
                 </div>
-                <input type="file" id="file-input" accept="image/*" class="hidden">
+                <input type="file" id="file-input" accept="image/*,.svg" class="hidden">
             </div>
 
-            <!-- State B: Highly space-efficient capsule with Before/After squares side-by-side -->
+            <!-- Compact Banner -->
             <div id="compact-loaded-banner" class="compact-upload-bar hidden">
                 <div class="squares-container">
                     <div class="square-wrapper">
@@ -815,8 +728,8 @@
                         <div class="square-label">Original</div>
                     </div>
                     <div class="square-wrapper">
-                        <img id="compact-thumb-after" class="square-thumb" src="" alt="Compressed">
-                        <div class="square-label" id="compact-after-label">Compressed</div>
+                        <img id="compact-thumb-after" class="square-thumb" src="" alt="Processed">
+                        <div class="square-label" id="compact-after-label">Processed</div>
                     </div>
                 </div>
                 <div class="compact-actions">
@@ -831,7 +744,42 @@
         <!-- PANEL 2: MIDDLE SCROLLABLE PREVIEW & SETTINGS -->
         <main class="middle-scroll-panel">
             
-            <!-- Realtime Metrics Card (Hidden until image is set) -->
+            <!-- UNIVERSAL PRIVACY & METADATA PILL -->
+            <div class="config-card" id="metadata-pill-container" style="padding: 12px 16px; border-radius: 9999px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 1px solid var(--chiseled-bronze);">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span id="metadata-pill-icon">ℹ️</span>
+                        <span id="metadata-pill-title" style="font-weight: 600; font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--stone-ochre);">File Privacy &amp; Metadata</span>
+                    </div>
+                    <span id="metadata-pill-arrow" style="font-size: 0.7rem; color: var(--chiseled-bronze); transition: transform 0.3s;">▼</span>
+                </div>
+                
+                <!-- Expanded Content Dashboard -->
+                <div id="metadata-expanded-content" style="max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out, margin-top 0.3s; font-size: 0.75rem; color: var(--alabaster-paper);">
+                    <div style="border-top: 1px dashed rgba(137, 107, 73, 0.3); margin-top: 10px; padding-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <div id="gps-warning-box" class="hidden" style="background-color: var(--burgundy); border: 1px solid var(--brand-red); border-radius: 14px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 8px; color: #FFF; margin-bottom: 4px;">
+                            <span style="font-size: 1rem; line-height: 1;">⚠️</span>
+                            <div>
+                                <strong style="display: block; font-size: 0.75rem; color: #F87171;">GPS Coordinates Detected!</strong>
+                                <span style="font-size: 0.65rem; opacity: 0.9;">Posting this file online reveals the exact location where this photo was taken.</span>
+                            </div>
+                        </div>
+
+                        <div id="metadata-details-grid" style="display: grid; grid-template-columns: 1fr; gap: 6px; font-family: var(--font-mono); font-size: 0.7rem;">
+                            <div style="color: rgba(242, 236, 224, 0.4); text-align: center; padding: 8px 0;">No asset loaded yet.</div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: center; margin-top: 6px;">
+                            <button type="button" id="btn-strip-only" class="btn-pill" style="padding: 6px 14px; font-size: 0.65rem; background-color: var(--brand-red) !important; width: 100%; border-color: var(--chiseled-bronze);" disabled>
+                                Strip Metadata Only (Preserve Original Pixels)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Realtime Metrics Card -->
             <div id="metrics-card" class="stats-card hidden">
                 <h3 id="metrics-title" style="font-size: 0.95rem; margin: 0; border-bottom: 1px solid rgba(132, 104, 78, 0.15); padding-bottom: 6px;">Compression Statistics</h3>
                 <div class="stat-row">
@@ -851,7 +799,7 @@
             <!-- Settings Grid Layout -->
             <div class="settings-grid">
                 
-                <!-- 1. Quality Card (Col 1) - ONLY visible in Compress Mode -->
+                <!-- 1. Quality Card -->
                 <div class="config-card" id="card-quality">
                     <div class="control-group-title">
                         <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
@@ -866,7 +814,7 @@
                     </div>
                 </div>
 
-                <!-- 2. Scale Card (Col 2 or full width depending on mode) -->
+                <!-- 2. Scale Card -->
                 <div class="config-card" id="card-scale">
                     <div class="control-group-title" id="scale-card-title">
                         <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-4-4H9v-2h6v2zm0-4H9V9h6v2z"/></svg>
@@ -879,7 +827,6 @@
                         </div>
                         <input type="range" id="compress-scale" min="10" max="100" value="100">
                         
-                        <!-- Target Scaled Dimensions Display (Real-time update on slider dragging) -->
                         <div class="flex-between" style="margin-top: 8px; font-size: 0.75rem; opacity: 0.85;">
                             <span>Target Dims:</span>
                             <span id="target-dims-val" class="metadata-text" style="color: var(--stone-ochre); font-weight: 500;">0 x 0 px</span>
@@ -887,10 +834,36 @@
                     </div>
                 </div>
 
-                <!-- Invisible HR spanning both columns to force aligned layout -->
+                <!-- 3. SVG Vector Optimization Card (Shown instead of Image settings when SVG is parsed) -->
+                <div class="config-card hidden" id="card-svg-opt" style="grid-column: 1 / -1;">
+                    <div class="control-group-title" style="color: var(--water-spray) !important;">
+                        <svg fill="currentColor" viewBox="0 0 24 24" style="width:14px; height:14px; margin-right:6px;"><path d="M4 6H2v14c0 1.1.9 2 2 2h14v-2H4V6zm16-4H8c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H8V4h12v12z"/></svg>
+                        <span>SVG Vector Optimizer Precision</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                        <div class="slider-row">
+                            <div class="flex-between">
+                                <label for="svg-decimal-precision">Decimal Rounding Precision</label>
+                                <span class="slider-val" id="svg-precision-val">1</span>
+                            </div>
+                            <input type="range" id="svg-decimal-precision" min="0" max="5" value="1" style="background: linear-gradient(to right, rgb(154, 47, 79) 20%, rgb(97, 17, 46) 20%);">
+                        </div>
+                        
+                        <div class="svg-toggle-row" id="svg-toggle-metadata-container">
+                            <span>Surgically Excise XML Metadata, Descriptions, and Titles</span>
+                            <div class="check-pill checked" id="svg-toggle-metadata"></div>
+                        </div>
+
+                        <div class="svg-toggle-row" id="svg-toggle-clean-container">
+                            <span>Clean Empty Groups, Editor Namespaces, and IDs</span>
+                            <div class="check-pill checked" id="svg-toggle-clean"></div>
+                        </div>
+                    </div>
+                </div>
+
                 <hr class="invisible-hr" id="settings-divider-hr">
 
-                <!-- 3. AI Detail Enhancer Card (ONLY visible in Upscale Mode) -->
+                <!-- 4. AI Detail Enhancer Card -->
                 <div class="config-card" id="card-ai-enhance">
                     <div class="control-group-title" id="ai-card-title" style="color: var(--water-spray) !important;">
                         <svg viewBox="0 0 24 24" fill="currentColor" style="width:14px; height:14px; margin-right:6px;"><path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7zm2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6C8.25 12.4 7.5 10.75 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.75-.75 3.4-2.15 4.1z"/></svg>
@@ -907,7 +880,6 @@
                             </button>
                         </div>
                         
-                        <!-- AI processing loader container -->
                         <div id="ai-loading-container" class="ai-loading-container hidden" style="width: 100%;">
                             <div class="ai-loading-spinner"></div>
                             <span style="font-size: 0.7rem; font-family: var(--font-mono);">Gemini AI reconstructing crisp details...</span>
@@ -918,7 +890,7 @@
             </div>
         </main>
 
-        <!-- PANEL 3: BOTTOM STICKY PILLED OPTION ACTIONS -->
+        <!-- PANEL 3: BOTTOM ACTIONS -->
         <div class="bottom-sticky-panel">
             <button type="button" class="btn-pill" id="download-btn" disabled>
                 Download
@@ -927,10 +899,8 @@
 
     </div>
 
-    <!-- Hidden native element required by JS pipeline mapping -->
+    <!-- Hidden native elements -->
     <img id="original-display" class="hidden" alt="Original Hidden Source">
-
-    <!-- TOAST NOTIFICATION STACK -->
     <div id="toast-stack" class="toast-container"></div>
 
     <!-- ==========================================================
@@ -942,25 +912,22 @@ import base64
 from PIL import Image
 from pyscript import document, window
 
-# Global reference to source image
 src_pil_img = None
 original_byte_size = 0
 
 def init_app():
-    # Bind directly to window so Javascript can safely invoke them bypassing PyScript SDK changes
+    # Bind directly to window
     window.load_image_from_js = load_image_from_js
     window.compress_and_output = compress_and_output
     window.replace_source_image = replace_source_image
     
-    # Hide the system loading screen and initialize JS listeners
     loading_overlay = document.getElementById("loading-overlay")
     loading_overlay.classList.add("hidden")
-    print("Compressor Backend Pipeline Initialized Successfully.")
+    print("Scaler Backend Pipeline Initialized Successfully.")
 
 def load_image_from_js(base64_data):
     global src_pil_img, original_byte_size
     try:
-        # Convert Base64 back to PIL Image
         img_bytes = base64.b64decode(base64_data.split(",")[1])
         original_byte_size = len(img_bytes)
         src_pil_img = Image.open(io.BytesIO(img_bytes)).convert('RGB')
@@ -986,7 +953,6 @@ def compress_and_output(quality, scale_percent):
         return "", 0.0
         
     try:
-        # Apply scaling
         if scale_percent != 100:
             w, h = src_pil_img.size
             new_w = max(1, int(w * (scale_percent / 100.0)))
@@ -995,15 +961,12 @@ def compress_and_output(quality, scale_percent):
         else:
             resized_img = src_pil_img
             
-        # Compress into in-memory JPEG bytes stream
         out_stream = io.BytesIO()
         resized_img.save(out_stream, format="JPEG", quality=quality, optimize=True)
         compressed_bytes = out_stream.getvalue()
         
-        # Calculate new size in KB
         compressed_kb = float(len(compressed_bytes)) / 1024.0
         
-        # Encode back to base64 data URI
         encoded_bytes = base64.b64encode(compressed_bytes)
         mime = "image/jpeg"
         data_uri = f"data:{mime};base64,{encoded_bytes.decode('utf-8')}"
@@ -1013,14 +976,15 @@ def compress_and_output(quality, scale_percent):
         print(f"Error compressing image: {e}")
         return "", 0.0
 
-# Bind elements to Python environment
 init_app()
 </script>
 
     <!-- FRONTEND JAVASCRIPT LAYER -->
     <script>
-        // Track states
-        let currentMode = 'compress'; // Mode Switcher: 'compress' or 'upscale'
+        let currentMode = 'compress'; 
+        let uploadedFileObj = null;
+        let isSvgFile = false;
+        
         let uploadedImageBase64 = null;
         let outputImageBase64 = null;
         let originalSizeKB = 0.0;
@@ -1028,7 +992,11 @@ init_app()
         let originalHeight = 0;
         let processTimeout = null;
 
-        // Custom UI Control Bindings
+        // SVG Toggles
+        let svgDecimalPrecision = 1;
+        let svgStripMetadata = true;
+        let svgCleanGroups = true;
+
         const dropZone = document.getElementById("drop-zone");
         const compactLoadedBanner = document.getElementById("compact-loaded-banner");
         const compactThumbBefore = document.getElementById("compact-thumb-before");
@@ -1059,6 +1027,16 @@ init_app()
         const aiEnhanceBtn = document.getElementById("ai-enhance-btn");
         const aiLoadingContainer = document.getElementById("ai-loading-container");
 
+        // SVG Cards & Sliders
+        const cardSvgOpt = document.getElementById("card-svg-opt");
+        const svgDecimalPrecisionInput = document.getElementById("svg-decimal-precision");
+        const svgPrecisionVal = document.getElementById("svg-precision-val");
+        
+        const svgToggleMetadataContainer = document.getElementById("svg-toggle-metadata-container");
+        const svgToggleMetadata = document.getElementById("svg-toggle-metadata");
+        const svgToggleCleanContainer = document.getElementById("svg-toggle-clean-container");
+        const svgToggleClean = document.getElementById("svg-toggle-clean");
+
         // Dual-Mode Controls
         const modeToggleBtn = document.getElementById("mode-toggle-btn");
         const appTitleText = document.getElementById("app-title-text");
@@ -1070,7 +1048,35 @@ init_app()
         const aiCardTitleText = document.getElementById("ai-card-title-text");
         const settingsDividerHr = document.getElementById("settings-divider-hr");
 
-        // Helper to update dynamic slider track values (No borders, left active is #9a2f4f, right inactive track is #61112e)
+        // Metadata Pill Elements
+        const metadataPill = document.getElementById('metadata-pill-container');
+        const metadataContent = document.getElementById('metadata-expanded-content');
+        const metadataArrow = document.getElementById('metadata-pill-arrow');
+        const metadataDetailsGrid = document.getElementById('metadata-details-grid');
+        const metadataPillTitle = document.getElementById('metadata-pill-title');
+        const metadataPillIcon = document.getElementById('metadata-pill-icon');
+        const gpsWarningBox = document.getElementById('gps-warning-box');
+        const btnStripOnly = document.getElementById('btn-strip-only');
+
+        // Toggle Metadata Pill
+        metadataPill.addEventListener('click', (e) => {
+            if (e.target.closest('#btn-strip-only')) return;
+            
+            const isCollapsed = metadataContent.style.maxHeight === '0px' || !metadataContent.style.maxHeight;
+            if (isCollapsed) {
+                metadataPill.style.borderRadius = '24px';
+                metadataContent.style.maxHeight = '500px'; 
+                metadataArrow.style.transform = 'rotate(180deg)';
+            } else {
+                metadataContent.style.maxHeight = '0px';
+                metadataArrow.style.transform = 'rotate(0deg)';
+                setTimeout(() => {
+                    metadataPill.style.borderRadius = '9999px';
+                }, 300);
+            }
+        });
+
+        // Dynamic slider background sync
         function syncSliderBackground(slider) {
             const min = parseFloat(slider.min) || 0;
             const max = parseFloat(slider.max) || 100;
@@ -1079,22 +1085,40 @@ init_app()
             slider.style.background = `linear-gradient(to right, #9a2f4f ${percentage}%, #61112e ${percentage}%)`;
         }
 
-        // Initialize and bind slider sync listeners
-        const sliders = [compressQuality, compressScale];
+        const sliders = [compressQuality, compressScale, svgDecimalPrecisionInput];
         sliders.forEach(slider => {
             slider.addEventListener("input", () => syncSliderBackground(slider));
-            syncSliderBackground(slider); // Initialize immediately on page render
+            syncSliderBackground(slider); 
         });
 
-        // Set Text View Updates
         compressQuality.addEventListener("input", () => qualityFactorVal.innerText = compressQuality.value);
         compressScale.addEventListener("input", () => {
             scaleFactorVal.innerText = `${compressScale.value}%`;
             updateTargetDims();
         });
+        svgDecimalPrecisionInput.addEventListener("input", () => {
+            svgPrecisionVal.innerText = svgDecimalPrecisionInput.value;
+            svgDecimalPrecision = parseInt(svgDecimalPrecisionInput.value);
+            triggerAutoProcess();
+        });
 
-        // Calculate and update scaled dimensions in real-time
+        // Toggle custom Checkboxes for SVG Options
+        svgToggleMetadataContainer.addEventListener("click", () => {
+            svgStripMetadata = !svgStripMetadata;
+            svgToggleMetadata.classList.toggle("checked", svgStripMetadata);
+            triggerAutoProcess();
+        });
+        svgToggleCleanContainer.addEventListener("click", () => {
+            svgCleanGroups = !svgCleanGroups;
+            svgToggleClean.classList.toggle("checked", svgCleanGroups);
+            triggerAutoProcess();
+        });
+
         function updateTargetDims() {
+            if (isSvgFile) {
+                targetDimsVal.innerText = "Vector Scalable";
+                return;
+            }
             if (!originalWidth || !originalHeight) {
                 targetDimsVal.innerText = "0 x 0 px";
                 return;
@@ -1105,7 +1129,6 @@ init_app()
             targetDimsVal.innerText = `${targetW} x ${targetH} px`;
         }
 
-        // Custom Interactive Toast Notifications (Replaces alert)
         function notify(message, type = "success") {
             const container = document.getElementById("toast-stack");
             const toast = document.createElement("div");
@@ -1123,6 +1146,232 @@ init_app()
                 toast.classList.remove("show");
                 setTimeout(() => toast.remove(), 300);
             }, 4000);
+        }
+
+        // Lossless Binary JPEG Marker Surgical EXIF Stripper (APP1 Removal Bypass)
+        async function stripExifLossless(blob) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const buffer = e.target.result;
+                    const dv = new DataView(buffer);
+                    if (dv.getUint16(0) !== 0xFFD8) {
+                        resolve(blob); 
+                        return;
+                    }
+                    let offset = 2;
+                    const segments = [buffer.slice(0, 2)];
+                    while (offset < buffer.byteLength) {
+                        if (offset + 2 > buffer.byteLength) break;
+                        const marker = dv.getUint16(offset);
+                        if (marker === 0xFFDA) { 
+                            segments.push(buffer.slice(offset));
+                            break;
+                        }
+                        if (marker === 0xFFD9) { 
+                            segments.push(buffer.slice(offset, offset + 2));
+                            break;
+                        }
+                        if (offset + 4 > buffer.byteLength) break;
+                        const size = dv.getUint16(offset + 2);
+                        if (marker !== 0xFFE1) { // Skip APP1 Segment (Exif)
+                            segments.push(buffer.slice(offset, offset + 2 + size));
+                        }
+                        offset += 2 + size;
+                    }
+                    resolve(new Blob(segments, { type: 'image/jpeg' }));
+                };
+                reader.readAsArrayBuffer(blob);
+            });
+        }
+
+        // Expanded metadata details grid parser
+        function loadMetadataDetails(file) {
+            metadataDetailsGrid.innerHTML = '';
+            
+            if (isSvgFile) {
+                // Show SVG Tag Analytics in Metadata Pill
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(e.target.result, "image/svg+xml");
+                    const pathsCount = doc.getElementsByTagName("path").length;
+                    const groupsCount = doc.getElementsByTagName("g").length;
+                    const hasMetadata = doc.getElementsByTagName("metadata").length > 0;
+                    const width = doc.documentElement.getAttribute("width") || "auto";
+                    const height = doc.documentElement.getAttribute("height") || "auto";
+
+                    const svgDetails = {
+                        "Element Type": "Scalable Vector Graphic (SVG)",
+                        "Path Tags": pathsCount,
+                        "Group Nodes": groupsCount,
+                        "Standard ViewBox": doc.documentElement.getAttribute("viewBox") || "None",
+                        "Inherent Size": `${width} x ${height}`,
+                        "XML Metadata Node": hasMetadata ? "Present ⚠️" : "Clean"
+                    };
+
+                    Object.keys(svgDetails).forEach(k => {
+                        const row = document.createElement('div');
+                        row.style.display = 'flex';
+                        row.style.justify = 'space-between';
+                        row.style.padding = '4px 0';
+                        row.style.borderBottom = '1px solid rgba(137, 107, 73, 0.15)';
+                        row.innerHTML = `<span style="color: var(--water-spray);">${k}:</span><span style="color: var(--stone-ochre);">${svgDetails[k]}</span>`;
+                        metadataDetailsGrid.appendChild(row);
+                    });
+
+                    gpsWarningBox.classList.add('hidden');
+                    metadataPill.classList.remove('pill-gps-warning');
+                    metadataPillTitle.style.color = 'var(--stone-ochre)';
+                    metadataPillTitle.innerText = "File Privacy & Metadata";
+                    metadataPillIcon.innerText = "ℹ️";
+                    btnStripOnly.disabled = false;
+                };
+                reader.readAsText(file);
+                return;
+            }
+
+            const format = file.name.toLowerCase();
+            if (!format.endsWith('.jpg') && !format.endsWith('.jpeg')) {
+                metadataDetailsGrid.innerHTML = `<div style="color: rgba(242, 236, 224, 0.4); text-align: center; padding: 4px 0;">No hidden EXIF tags found in this file type.</div>`;
+                gpsWarningBox.classList.add('hidden');
+                metadataPill.classList.remove('pill-gps-warning');
+                metadataPillTitle.style.color = 'var(--stone-ochre)';
+                metadataPillTitle.innerText = "File Privacy & Metadata";
+                metadataPillIcon.innerText = "ℹ️";
+                btnStripOnly.disabled = true;
+                return;
+            }
+
+            EXIF.getData(file, function() {
+                const tags = EXIF.getAllTags(this);
+                const results = {};
+                let hasGps = false;
+
+                if (tags.Make || tags.Model) results['Camera'] = `${tags.Make || ''} ${tags.Model || ''}`.trim();
+                if (tags.DateTimeOriginal || tags.DateTime) results['Captured'] = tags.DateTimeOriginal || tags.DateTime;
+                if (tags.Software) results['Software'] = tags.Software;
+
+                if (tags.GPSLatitude && tags.GPSLongitude) {
+                    hasGps = true;
+                    const convertDMSToDD = (dms, ref) => {
+                        let dd = dms[0] + dms[1]/60 + dms[2]/3600;
+                        if (ref === "S" || ref === "W") dd = -dd;
+                        return dd;
+                    };
+                    const lat = convertDMSToDD(tags.GPSLatitude, tags.GPSLatitudeRef || "N");
+                    const lon = convertDMSToDD(tags.GPSLongitude, tags.GPSLongitudeRef || "E");
+                    results['GPS Coordinates'] = `${lat.toFixed(5)}°, ${lon.toFixed(5)}° (${tags.GPSLatitudeRef || 'N'}, ${tags.GPSLongitudeRef || 'E'})`;
+                }
+
+                const keys = Object.keys(results);
+                if (keys.length === 0) {
+                    metadataDetailsGrid.innerHTML = `<div style="color: rgba(242, 236, 224, 0.4); text-align: center; padding: 4px 0;">No active EXIF signatures parsed.</div>`;
+                } else {
+                    keys.forEach(k => {
+                        const row = document.createElement('div');
+                        row.style.display = 'flex';
+                        row.style.justify = 'space-between';
+                        row.style.padding = '4px 0';
+                        row.style.borderBottom = '1px solid rgba(137, 107, 73, 0.15)';
+                        row.innerHTML = `<span style="color: var(--water-spray);">${k}:</span><span style="color: var(--stone-ochre);">${results[k]}</span>`;
+                        metadataDetailsGrid.appendChild(row);
+                    });
+                }
+
+                if (hasGps) {
+                    gpsWarningBox.classList.remove('hidden');
+                    metadataPill.classList.add('pill-gps-warning');
+                    metadataPillTitle.style.color = 'var(--brand-red)';
+                    metadataPillTitle.innerText = "GPS PRIVACY BREACH WARNING";
+                    metadataPillIcon.innerText = "⚠️";
+                } else {
+                    gpsWarningBox.classList.add('hidden');
+                    metadataPill.classList.remove('pill-gps-warning');
+                    metadataPillTitle.style.color = 'var(--stone-ochre)';
+                    metadataPillTitle.innerText = "File Privacy & Metadata";
+                    metadataPillIcon.innerText = "ℹ️";
+                }
+
+                btnStripOnly.disabled = false;
+            });
+        }
+
+        // Bypassing normal loop to trigger surgical strip download
+        btnStripOnly.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!uploadedFileObj) return;
+
+            try {
+                if (isSvgFile) {
+                    showToast("Cleaning SVG vector definitions...");
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const cleanSvg = processSVGText(event.target.result, 1, true, false);
+                        const blob = new Blob([cleanSvg], { type: 'image/svg+xml' });
+                        triggerDownload(URL.createObjectURL(blob), `stripped_${uploadedFileObj.name}`);
+                        showToast("Pristine SVG downloaded!");
+                        loadMetadataDetails(uploadedFileObj);
+                    };
+                    reader.readAsText(uploadedFileObj);
+                } else {
+                    showToast("Surgically excising JPEG metadata...");
+                    const response = await fetch(uploadedImageBase64);
+                    const blob = await response.blob();
+                    const cleanBlob = await stripExifLossless(blob);
+                    triggerDownload(URL.createObjectURL(cleanBlob), `stripped_${uploadedFileObj.name}`);
+                    showToast("Pristine copy downloaded!");
+                }
+            } catch (err) {
+                notify("Surgical excision error.", "error");
+            }
+        });
+
+        // Native SVG Optimizer Logic (traverses DOM Nodes entirely client side)
+        function processSVGText(svgText, precision, stripMetadata, cleanEmpty) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, "image/svg+xml");
+            
+            if (stripMetadata) {
+                const elementsToStrip = ['metadata', 'title', 'desc', 'sodipodi:namedview', 'inkscape:grid'];
+                elementsToStrip.forEach(tag => {
+                    const els = doc.getElementsByTagName(tag);
+                    while(els.length > 0) {
+                        els[0].parentNode.removeChild(els[0]);
+                    }
+                });
+                
+                // Strip comments
+                const iterator = doc.createNodeIterator(doc, NodeFilter.SHOW_COMMENT);
+                let comment;
+                while (comment = iterator.nextNode()) {
+                    comment.parentNode.removeChild(comment);
+                }
+            }
+            
+            if (cleanEmpty) {
+                const groups = doc.getElementsByTagName('g');
+                for (let i = groups.length - 1; i >= 0; i--) {
+                    if (groups[i].children.length === 0) {
+                        groups[i].parentNode.removeChild(groups[i]);
+                    }
+                }
+            }
+
+            // Path Coordinate precision rounding
+            const paths = doc.getElementsByTagName('path');
+            for (let path of paths) {
+                let d = path.getAttribute('d');
+                if (d) {
+                    d = d.replace(/[-+]?[0-9]*\.[0-9]+/g, (match) => {
+                        return parseFloat(match).toFixed(precision);
+                    });
+                    path.setAttribute('d', d);
+                }
+            }
+            
+            const serializer = new XMLSerializer();
+            return serializer.serializeToString(doc);
         }
 
         // Drag and Drop Interactions
@@ -1155,50 +1404,99 @@ init_app()
         });
 
         function handleFile(file) {
-            if (!file.type.startsWith("image/")) {
-                notify("Invalid file. Please select an image file format.", "error");
-                return;
-            }
+            uploadedFileObj = file;
+            isSvgFile = file.name.toLowerCase().endsWith(".svg");
 
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                uploadedImageBase64 = event.target.result;
-                originalDisplay.src = uploadedImageBase64;
-                compactThumbBefore.src = uploadedImageBase64;
-                
-                originalDisplay.onload = function() {
-                    originalWidth = originalDisplay.naturalWidth;
-                    originalHeight = originalDisplay.naturalHeight;
-                    originalDims.innerText = `${originalWidth} x ${originalHeight} px`;
+            if (isSvgFile) {
+                // Handle SVG Upload Mode
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    uploadedImageBase64 = event.target.result;
+                    
+                    // Display Vector Thumbnail
+                    const utf8Base64 = btoa(unescape(encodeURIComponent(uploadedImageBase64)));
+                    const dataUri = `data:image/svg+xml;base64,${utf8Base64}`;
+                    compactThumbBefore.src = dataUri;
+                    compactThumbAfter.src = dataUri;
+                    
+                    originalDims.innerText = "Vector Scalable";
+                    originalWidth = 0;
+                    originalHeight = 0;
                     updateTargetDims();
                     
-                    // Call global direct function bound on Python start
-                    if (window.load_image_from_js) {
-                        originalSizeKB = window.load_image_from_js(uploadedImageBase64);
-                        if (originalSizeKB > 0) {
-                            originalSizeVal.innerText = `${originalSizeKB.toFixed(2)} KB`;
-                            notify("Image uploaded successfully.");
-                            
-                            // Swap Drop Zone with Compact Sticky Banner Layout
-                            dropZone.classList.add("hidden");
-                            compactLoadedBanner.classList.remove("hidden");
-                            metricsCard.classList.remove("hidden");
-                            aiEnhanceBtn.disabled = false;
-                            
-                            // Immediately run the live-updating processing engine on load
-                            executeProcessing();
-                        } else {
-                            notify("Error loading image into Python workspace.", "error");
-                        }
-                    } else {
-                        notify("Python kernel is initializing. Please wait...", "error");
-                    }
+                    originalSizeKB = file.size / 1024.0;
+                    originalSizeVal.innerText = `${originalSizeKB.toFixed(2)} KB`;
+                    
+                    // Adapt configuration grid to vector toggles
+                    cardQuality.classList.add("hidden");
+                    cardScale.classList.add("hidden");
+                    cardAiEnhance.classList.add("hidden");
+                    cardSvgOpt.classList.remove("hidden");
+                    
+                    dropZone.classList.add("hidden");
+                    compactLoadedBanner.classList.remove("hidden");
+                    metricsCard.classList.remove("hidden");
+                    aiEnhanceBtn.disabled = true;
+
+                    notify("SVG Vector uploaded successfully.");
+                    loadMetadataDetails(file);
+                    executeProcessing();
                 };
-            };
-            reader.readAsDataURL(file);
+                reader.readAsText(file);
+            } else {
+                // Normal Image Upload Mode
+                if (!file.type.startsWith("image/")) {
+                    notify("Invalid file format selected.", "error");
+                    return;
+                }
+
+                // Restore Standard Controls
+                cardSvgOpt.classList.add("hidden");
+                if (currentMode === 'compress') {
+                    cardQuality.classList.remove("hidden");
+                }
+                cardScale.classList.remove("hidden");
+                if (currentMode === 'upscale') {
+                    cardAiEnhance.classList.remove("hidden");
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    uploadedImageBase64 = event.target.result;
+                    originalDisplay.src = uploadedImageBase64;
+                    compactThumbBefore.src = uploadedImageBase64;
+                    
+                    originalDisplay.onload = function() {
+                        originalWidth = originalDisplay.naturalWidth;
+                        originalHeight = originalDisplay.naturalHeight;
+                        originalDims.innerText = `${originalWidth} x ${originalHeight} px`;
+                        updateTargetDims();
+                        
+                        if (window.load_image_from_js) {
+                            originalSizeKB = window.load_image_from_js(uploadedImageBase64);
+                            if (originalSizeKB > 0) {
+                                originalSizeVal.innerText = `${originalSizeKB.toFixed(2)} KB`;
+                                notify("Image uploaded successfully.");
+                                
+                                dropZone.classList.add("hidden");
+                                compactLoadedBanner.classList.remove("hidden");
+                                metricsCard.classList.remove("hidden");
+                                aiEnhanceBtn.disabled = false;
+                                
+                                loadMetadataDetails(file);
+                                executeProcessing();
+                            } else {
+                                notify("Error loading workspace memory.", "error");
+                            }
+                        } else {
+                            notify("Python engine starting...", "error");
+                        }
+                    };
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
-        // De-bounced Auto-Processing Core (Prevents CPU locks during rapid adjustments)
         function triggerAutoProcess() {
             if (!uploadedImageBase64) return;
             if (processTimeout) clearTimeout(processTimeout);
@@ -1210,8 +1508,26 @@ init_app()
 
         function executeProcessing() {
             try {
+                if (isSvgFile) {
+                    // SVG Optimizing Engine Execution Loop
+                    const cleanSvg = processSVGText(uploadedImageBase64, svgDecimalPrecision, svgStripMetadata, svgCleanGroups);
+                    const optimizedBlob = new Blob([cleanSvg], { type: 'image/svg+xml' });
+                    
+                    const utf8Base64 = btoa(unescape(encodeURIComponent(cleanSvg)));
+                    outputImageBase64 = `data:image/svg+xml;base64,${utf8Base64}`;
+                    compactThumbAfter.src = outputImageBase64;
+                    
+                    const optimizedSizeKB = optimizedBlob.size / 1024.0;
+                    compressedSizeVal.innerText = `${optimizedSizeKB.toFixed(2)} KB`;
+                    
+                    const savings = ((originalSizeKB - optimizedSizeKB) / originalSizeKB) * 100.0;
+                    savingsPctVal.innerText = `${savings > 0 ? (savings).toFixed(1) : 0.0}%`;
+                    
+                    downloadBtn.disabled = false;
+                    return;
+                }
+
                 if (window.compress_and_output) {
-                    // In upscale mode we enforce JPEG quality to 95 to prevent upscale deterioration
                     const quality = currentMode === 'upscale' ? 95 : parseInt(compressQuality.value);
                     const pyResult = window.compress_and_output(
                         quality,
@@ -1223,35 +1539,26 @@ init_app()
 
                     if (result_base64 && result_base64.trim() !== "") {
                         outputImageBase64 = result_base64;
-                        
-                        // Update active "After" thumbnail preview in top panel
                         compactThumbAfter.src = outputImageBase64;
                         
-                        // Calculate metrics
                         compressedSizeVal.innerText = `${compressedSizeKB.toFixed(2)} KB`;
                         const savings = ((originalSizeKB - compressedSizeKB) / originalSizeKB) * 100.0;
                         savingsPctVal.innerText = `${savings > 0 ? (savings).toFixed(1) : 0.0}%`;
                         
-                        // Fully enable download action pill
                         downloadBtn.disabled = false;
-                    } else {
-                        notify("Processing completed with internal error.", "error");
                     }
                 }
             } catch (e) {
                 console.error(e);
-                notify("An error occurred during Python rendering.", "error");
             }
         }
 
         // Gemini AI image-to-image integration block with exponential backoff retry mechanism
         async function fetchGeminiEnhance(base64ImageWithHeader) {
-            const apiKey = ""; // Provided automatically by container at runtime
+            const apiKey = ""; 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
             
-            // Strip the base64 header
             const cleanBase64 = base64ImageWithHeader.split(",")[1];
-            
             const payload = {
                 contents: [{
                     parts: [
@@ -1282,18 +1589,14 @@ init_app()
                             return `data:image/png;base64,${returnedBase64}`;
                         }
                     }
-                } catch (e) {
-                    // Fail silently inside backoff step to align with CSP guidelines
-                }
+                } catch (e) { }
                 
-                // Exponential backoff wait
                 await new Promise(resolve => setTimeout(resolve, delay));
                 delay *= 2;
             }
             throw new Error("Gemini AI was unable to synthesize enhancement after 5 retries.");
         }
 
-        // Action Trigger for Gemini AI Detail Enhancer
         aiEnhanceBtn.addEventListener("click", async () => {
             if (!uploadedImageBase64) return;
 
@@ -1302,15 +1605,12 @@ init_app()
             notify("Connecting to Gemini AI Engine...");
 
             try {
-                // Submit current image state to Gemini
                 const enhancedBase64 = await fetchGeminiEnhance(uploadedImageBase64);
-                
                 if (enhancedBase64) {
                     uploadedImageBase64 = enhancedBase64;
                     compactThumbBefore.src = enhancedBase64;
                     originalDisplay.src = enhancedBase64;
 
-                    // Update local Python memory cache with the new crystal clear high-res AI frame
                     if (window.replace_source_image) {
                         originalSizeKB = window.replace_source_image(enhancedBase64);
                         originalWidth = originalDisplay.naturalWidth;
@@ -1320,12 +1620,10 @@ init_app()
                         updateTargetDims();
                     }
 
-                    // Run final local compression output to match newly gained details
                     executeProcessing();
-                    notify("Gemini AI detailing complete! Swapped with high-res source.");
+                    notify("Gemini AI detailing complete!");
                 }
             } catch (err) {
-                console.error(err);
                 notify("AI Enhance failed. Resorting to high-quality Lanczos rescaling.", "error");
             } finally {
                 aiEnhanceBtn.disabled = false;
@@ -1339,22 +1637,30 @@ init_app()
             input.addEventListener("input", triggerAutoProcess);
         });
 
-        // Trigger Local Browser Download File
-        downloadBtn.addEventListener("click", () => {
-            if (!outputImageBase64) {
-                notify("No compressed image available to download yet.", "error");
-                return;
-            }
+        function triggerDownload(url, filename) {
             const link = document.createElement("a");
-            link.href = outputImageBase64;
-            link.download = currentMode === 'upscale' ? 'upscaled_image.jpg' : 'compressed_image.jpg';
+            link.href = url;
+            link.download = filename;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            notify("Downloading image file...");
+        }
+
+        downloadBtn.addEventListener("click", () => {
+            if (!outputImageBase64) return;
+            
+            if (isSvgFile) {
+                const blob = new Blob([uploadedImageBase64], {type: 'image/svg+xml'});
+                const cleanSvg = processSVGText(uploadedImageBase64, svgDecimalPrecision, svgStripMetadata, svgCleanGroups);
+                const optimizedBlob = new Blob([cleanSvg], { type: 'image/svg+xml' });
+                triggerDownload(URL.createObjectURL(optimizedBlob), 'optimized_vector.svg');
+            } else {
+                triggerDownload(outputImageBase64, currentMode === 'upscale' ? 'upscaled_image.jpg' : 'compressed_image.jpg');
+            }
+            notify("Downloading file...");
         });
 
-        // Helper to broadcast button hover events to the parent Organon Hub Status Window
+        // Helper to broadcast button hover events to status panel
         function registerHoverDescription(selector, descriptionText) {
             const element = document.querySelector(selector);
             if (!element) return;
@@ -1372,11 +1678,10 @@ init_app()
             });
         }
 
-        // Register interactive hovers for seamless Organon Hub unification
-        registerHoverDescription('#title-banner-pill', 'JPEG Compressor & Resizer - optimize sizes or upscale using Lanczos & Gemini.');
+        registerHoverDescription('#title-banner-pill', 'Img-Up/Dwn Scaler - optimize raster dimensions, clean SVG vectors, or upscale with AI.');
         registerHoverDescription('#mode-toggle-btn', 'Click to switch active processing environment between Compressor mode and Upscaler mode.');
-        registerHoverDescription('#drop-zone', 'Drag and drop an image file, or click here to browse local file directories.');
-        registerHoverDescription('#change-asset-btn', 'Discard the current picture and select a new image file to load.');
+        registerHoverDescription('#drop-zone', 'Drag and drop an image or SVG file, or click here to browse.');
+        registerHoverDescription('#change-asset-btn', 'Discard the current file and select a new image file to load.');
         registerHoverDescription('#compress-quality', 'Slide to configure the target output quality (lower factors reduce size).');
         registerHoverDescription('#compress-scale', 'Modify target scaling proportions (downscale to save space, or upscale up to 400%).');
         registerHoverDescription('#ai-enhance-btn', 'Connect to Gemini AI to reconstruct crisp features, clear compression blur, and upscale details.');
@@ -1386,79 +1691,61 @@ init_app()
         // Mode Switching Logic
         modeToggleBtn.addEventListener("click", () => {
             if (currentMode === 'compress') {
-                // Switch to Upscale Mode
                 currentMode = 'upscale';
                 appTitleText.innerText = "IMAGE UPSCALER";
                 modeToggleBtn.innerText = "Compress";
                 
-                // Adjust panel visibilities (Create split 2 columns view)
                 cardQuality.classList.add("hidden");
                 cardAiEnhance.classList.remove("hidden");
-                
-                // Remove full width span from AI card so it takes Col 2
                 cardAiEnhance.style.gridColumn = "auto";
                 
-                // Update Settings Card numbering titles cleanly
                 scaleCardTitleText.innerText = "1. Normal Upscale";
                 aiCardTitleText.innerText = "2. AI Upscale";
-                
                 scaleSliderLabel.innerText = "Upscale Dimensions";
                 
-                // Adjust slider boundaries for Upscale
                 compressScale.min = "100";
                 compressScale.max = "400";
                 if (parseInt(compressScale.value) < 100) {
-                    compressScale.value = "200"; // Default to 2x upscale
+                    compressScale.value = "200"; 
                 }
                 
-                // Update label metrics
                 compactAfterLabel.innerText = "Upscaled";
                 metricsTitle.innerText = "Upscale Statistics";
                 compressedSizeLabel.innerText = "Upscaled Size";
-                savingsPctRow.classList.add("hidden"); // Hide savings percentage when upscaling file size
-                settingsDividerHr.classList.add("hidden"); // Hide full row HR since we are in side-by-side split view
+                savingsPctRow.classList.add("hidden"); 
+                settingsDividerHr.classList.add("hidden"); 
             } else {
-                // Switch back to Compress Mode
                 currentMode = 'compress';
-                appTitleText.innerText = "JPEG COMPRESSOR";
+                appTitleText.innerText = "IMG-UP/DWN SCALER";
                 modeToggleBtn.innerText = "Upscale";
                 
-                // Adjust panel visibilities (Col 1 quality, Col 2 scale)
                 cardQuality.classList.remove("hidden");
                 cardAiEnhance.classList.add("hidden");
-                
-                // Reset AI card span
                 cardAiEnhance.style.gridColumn = "1 / -1";
                 
-                // Restore original titles numbering sequence
                 scaleCardTitleText.innerText = "2. Resize Factor";
                 aiCardTitleText.innerText = "3. AI Super-Resolution Detail Enhancer";
-                
                 scaleSliderLabel.innerText = "Scale Dimensions";
                 
-                // Adjust slider boundaries for Compression
                 compressScale.min = "10";
                 compressScale.max = "100";
                 if (parseInt(compressScale.value) > 100) {
-                    compressScale.value = "100"; // Revert to full dimension limits
+                    compressScale.value = "100"; 
                 }
                 
-                // Update label metrics
                 compactAfterLabel.innerText = "Compressed";
                 metricsTitle.innerText = "Compression Statistics";
                 compressedSizeLabel.innerText = "Compressed Size";
                 savingsPctRow.classList.remove("hidden");
-                settingsDividerHr.classList.remove("hidden"); // Show HR divider for potential full row stacks
+                settingsDividerHr.classList.remove("hidden"); 
             }
             
-            // Sync slider track displays
             sliders.forEach(syncSliderBackground);
             scaleFactorVal.innerText = `${compressScale.value}%`;
             updateTargetDims();
             triggerAutoProcess();
         });
 
-        // Initialize state view limits on cold start
         if (currentMode === 'compress') {
             cardAiEnhance.classList.add("hidden");
             settingsDividerHr.classList.add("hidden");
@@ -1511,7 +1798,6 @@ init_app()
             resetCountdown();
         }
 
-        // Bind interactive event handlers to panel coordinates
         topStickyPanel.addEventListener("mouseenter", () => {
             isHoveringPanel = true;
             maximizePanel();
@@ -1545,7 +1831,6 @@ init_app()
             }
         });
 
-        // Initialize Countdown on load
         startCountdown();
     </script>
 </body>
