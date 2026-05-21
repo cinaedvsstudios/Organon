@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Organon - Animation Maker</title>
+
+    <!-- Typography Links -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- gifshot engine client library loaded over safe CDN framework -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
+
+    <style>
+        /* ==========================================================
+           ORGANON BLUEPRINT BRAND STYLING
+           ========================================================== */
+        :root {
+            --stone-ochre: #e0a360;             
+            --chiseled-bronze: #896b49;         
+            --white-accent: #ffffff;            
+            --water-blue: #4b84bf;              
+            --water-spray: #75b2de;             
+            --forest-teal: #26615c;             
+            --light-teal: #449e92;              
+            --burgundy: #4a1525;                
+            --brand-red: #9a2f4f;               
+            --terracotta-peach: #d27d6c;        
+            --alabaster-paper: #f5f0db;         
+            --bg-nightsky: #1e201c;             
+            --bg-card: #292a24;                 
+            --bg-input: rgba(24, 25, 25, 0.95);  
+
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: #000000;
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Structural 540px Envelope */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+            box-shadow: 0 0 40px rgba(0,0,0,0.8);
+        }
+
+        /* ==========================================================
+           PANEL 1: TOP STICKY SANDSTONE PANEL
+           ========================================================== */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: linear-gradient(135deg, rgba(224, 163, 96, 0.95) 0%, rgba(196, 139, 75, 0.95) 100%);
+            padding: 16px;
+            border-bottom: 2px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+        .top-sticky-panel.minimized { padding: 8px 16px !important; }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: var(--bg-input);
+            color: var(--water-spray);
+            font-family: var(--font-headers);
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.5);
+        }
+
+        .nav-btn-mini {
+            background: var(--burgundy);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            cursor: pointer;
+            margin-left: 12px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .nav-btn-mini:hover {
+            background: var(--brand-red);
+            border-color: var(--water-spray);
+        }
+
+        .countdown-circle-indicator {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: #000000;
+            color: var(--stone-ochre);
+            font-weight: 700;
+            user-select: none;
+            transition: all 0.2s;
+        }
+
+        input[type="file"] { display: none; }
+        .file-upload-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-input);
+            border: 2px dashed var(--chiseled-bronze);
+            border-radius: 16px;
+            padding: 20px;
+            color: var(--water-spray);
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .file-upload-label:hover {
+            border-color: var(--water-spray);
+            background-color: rgba(30, 32, 28, 0.95);
+        }
+
+        /* ==========================================================
+           PANEL 2: MIDDLE SCROLLABLE PURE BLACK CONTEXT PANEL
+           ========================================================== */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 140px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
+        .config-card h3 {
+            font-size: 1rem;
+            margin-bottom: 12px;
+            border-bottom: 1px dashed rgba(137, 107, 73, 0.4);
+            padding-bottom: 8px;
+        }
+
+        /* Queue Thumbnail Grid (Draggable) */
+        .frame-queue-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .frame-thumb-wrapper {
+            position: relative;
+            aspect-ratio: 1;
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 8px;
+            background-color: #141515;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+            cursor: grab;
+            transition: transform 0.15s, border-color 0.15s, opacity 0.15s;
+        }
+        /* Active dragged element style */
+        .frame-thumb-wrapper.dragging {
+            opacity: 0.6;
+            border-color: var(--water-spray);
+            box-shadow: 0 0 15px rgba(117, 178, 222, 0.5);
+            transform: scale(0.92);
+            z-index: 100;
+        }
+        
+        /* Positional insertion blue lines */
+        .frame-thumb-wrapper.drag-over-left::before {
+            content: '';
+            position: absolute;
+            left: -8px; /* Centers the line in the grid gap */
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--water-spray);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--water-spray);
+            z-index: 20;
+        }
+        .frame-thumb-wrapper.drag-over-right::after {
+            content: '';
+            position: absolute;
+            right: -8px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--water-spray);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--water-spray);
+            z-index: 20;
+        }
+
+        .frame-thumb-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            pointer-events: none;
+            border-radius: 7px; /* Matches inner boundary to round corners without overflow:hidden */
+        }
+
+        /* Top-Left Number Index */
+        .frame-index-badge {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            background: rgba(0,0,0,0.85);
+            color: var(--stone-ochre);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 4px;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+            font-weight: bold;
+            pointer-events: none;
+        }
+        /* Delete Button */
+        .frame-delete-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: var(--burgundy);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .frame-delete-btn:hover { background: var(--brand-red); transform: scale(1.1); }
+        
+        /* Bottom-Left Eye (Preview) Button */
+        .frame-preview-btn {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(38, 97, 92, 0.9); /* Forest Teal */
+            color: var(--alabaster-paper);
+            border: 1px solid var(--light-teal);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 10;
+        }
+        .frame-preview-btn:hover { background: var(--water-blue); transform: scale(1.1); }
+
+        /* Tactical Range Sliders */
+        .slider-row {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+            align-items: center;
+        }
+        .slider-row > * {
+            flex: 1;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 12px;
+            margin-bottom: 12px;
+        }
+        .slider-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--stone-ochre);
+        }
+        input[type="range"] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type="range"]:focus { outline: none; }
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px; cursor: pointer;
+            background: var(--burgundy); border-radius: 9999px;
+            border: 1px solid rgba(137, 107, 73, 0.4); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            height: 18px; width: 18px; border-radius: 50%;
+            background: var(--brand-red); cursor: pointer;
+            -webkit-appearance: none; margin-top: -6px;
+            border: 1.5px solid var(--chiseled-bronze); box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.15); background: #b5385e; }
+
+        /* Custom Checkboxes */
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            color: rgba(242, 236, 224, 0.9);
+        }
+        .checkbox-container input { display: none; }
+        .checkmark {
+            width: 18px;
+            height: 18px;
+            background: var(--bg-input);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .checkbox-container input:checked + .checkmark::after {
+            content: '✓';
+            color: var(--water-spray);
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        .chk-subtext {
+            display: block;
+            font-size: 0.7rem;
+            color: rgba(242, 236, 224, 0.6);
+            margin-top: 2px;
+        }
+
+        /* Number Inputs & Selects */
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .input-group label {
+            font-family: var(--font-headers);
+            font-size: 0.85rem;
+            color: var(--stone-ochre);
+            width: 120px;
+        }
+        .input-group input[type="text"], .input-group input[type="number"], .input-group select {
+            flex: 1;
+            background: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--alabaster-paper);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-family: var(--font-body);
+            font-size: 0.85rem;
+            outline: none;
+        }
+        .input-group input[type="color"] {
+            border: 1px solid var(--chiseled-bronze);
+            background: none;
+            cursor: pointer;
+            height: 34px;
+            width: 60px;
+            padding: 0;
+            border-radius: 4px;
+        }
+        
+        /* Play Sequence Button */
+        .play-btn {
+            background: linear-gradient(145deg, rgba(24, 25, 25, 0.95), rgba(30, 32, 28, 0.95));
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 12px;
+            padding: 10px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--stone-ochre);
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            min-width: 90px;
+            margin-left: 12px;
+        }
+        .play-btn:hover {
+            border-color: var(--water-spray);
+            box-shadow: 0 0 15px rgba(117, 178, 222, 0.3);
+            transform: translateY(-2px);
+        }
+        .play-btn .play-icon {
+            font-size: 1.6rem;
+            color: var(--water-spray);
+            line-height: 1;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            margin-left: 4px;
+        }
+
+        /* Overlay for unavailable settings */
+        .unavailable-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(24, 25, 25, 0.75);
+            backdrop-filter: blur(2px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 12px;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--terracotta-peach);
+            font-weight: bold;
+            border: 1px dashed var(--chiseled-bronze);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid rgba(137, 107, 73, 0.3);
+            border-top: 3px solid var(--water-spray);
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Draggable Live Modal Previews */
+        .draggable-modal {
+            position: fixed;
+            top: 25vh; right: 20px; 
+            background: var(--bg-card);
+            border: 2px solid var(--chiseled-bronze);
+            border-radius: 16px;
+            padding: 16px;
+            width: 220px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+            z-index: 2000;
+            cursor: grab;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+        }
+        .draggable-modal:active {
+            cursor: grabbing;
+        }
+        .modal-close {
+            position: absolute;
+            top: -12px; right: -12px;
+            background: var(--burgundy);
+            color: white;
+            border: 2px solid var(--chiseled-bronze);
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-weight: bold;
+            z-index: 2001;
+        }
+        .green-screen-box {
+            background: #00FF00; /* Requested pure green background */
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: 
+                linear-gradient(45deg, #00d900 25%, transparent 25%, transparent 75%, #00d900 75%, #00d900),
+                linear-gradient(45deg, #00d900 25%, transparent 25%, transparent 75%, #00d900 75%, #00d900);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        .green-screen-box img {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        
+        .anim-screen-box {
+            background: #0d0d0d;
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--chiseled-bronze);
+            position: relative;
+        }
+        .anim-screen-box img {
+            max-width: 100%; max-height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+        .anim-loading-text {
+            color: var(--water-spray);
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-align: center;
+            animation: pulse 1s infinite alternate;
+            position: absolute;
+        }
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+
+        /* Result Render Block Frame */
+        .output-viewport {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.6);
+            border: 1px dashed var(--chiseled-bronze);
+            border-radius: 12px;
+            min-height: 200px;
+            padding: 16px;
+            margin-top: 8px;
+            box-shadow: inset 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .output-viewport img {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            border: 2px solid var(--chiseled-bronze);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+
+        /* ==========================================================
+           PANEL 3: BOTTOM FIXED STICKY TRIGGER PANEL
+           ========================================================== */
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px;
+            z-index: 110;
+            background: linear-gradient(135deg, rgba(224, 163, 96, 0.95) 0%, rgba(196, 139, 75, 0.95) 100%);
+            padding: 16px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            border-top: 2px solid var(--chiseled-bronze);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+        }
+
+        .btn-pill-trigger {
+            background-color: var(--bg-input) !important;
+            color: var(--water-spray) !important;
+            border: 1.5px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-headers);
+            font-weight: 700;
+            font-size: 0.85rem !important;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            padding: 12px 24px !important;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s ease-in-out;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        .btn-pill-trigger:hover:not(:disabled) {
+            background-color: var(--bg-card) !important;
+            border-color: var(--water-spray) !important;
+            color: var(--white-accent) !important;
+            box-shadow: 0 0 15px rgba(117, 178, 222, 0.4) !important;
+        }
+        .btn-pill-trigger:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: rgba(137, 107, 73, 0.4) !important;
+            color: rgba(117, 178, 222, 0.5) !important;
+        }
+        
+        /* Frame Skip Special Popup Styling */
+        .frame-skip-box {
+            display: none; 
+            flex-direction: column; 
+            gap: 8px; 
+            border: 1px solid var(--water-spray); 
+            padding: 12px; 
+            border-radius: 8px; 
+            background: rgba(117, 178, 222, 0.05);
+            margin-bottom: 16px;
+            animation: pulse-border 2s infinite alternate;
+        }
+        @keyframes pulse-border {
+            0% { border-color: rgba(117, 178, 222, 0.4); }
+            100% { border-color: rgba(117, 178, 222, 1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app-wrapper">
+        
+        <!-- PANEL 1: STICKY HEADER CAPTURE ENGINE -->
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>ANIMATION MAKER</span>
+                </div>
+                <!-- Convert Movie Trigger -->
+                <button id="btn-convert-movie" class="nav-btn-mini" onclick="document.getElementById('video-picker').click();">CONVERT MOVIE</button>
+            </div>
+            <div class="panel-content-hide" style="width:100%; transition: all 0.3s;">
+                <label for="image-picker" class="file-upload-label" id="upload-label">
+                    🏛️ UPLOAD IMAGES (PNG/JPG)
+                </label>
+                <input type="file" id="image-picker" multiple accept="image/png, image/jpeg, image/jpg">
+                <input type="file" id="video-picker" accept="video/mp4, video/webm, video/quicktime, video/x-m4v">
+            </div>
+        </div>
+
+        <!-- PANEL 2: MIDDLE WORKING CONTENT SCROLL SYSTEM -->
+        <main class="middle-scroll-panel">
+            
+            <!-- Dynamic Frame Queue Track -->
+            <div class="config-card" id="queue-card" style="display: none;">
+                <h3>1. Sequence Grid</h3>
+                
+                <div class="input-group" style="margin-top: 8px; margin-bottom: 12px;">
+                    <label style="width: auto;">Name:</label>
+                    <input type="text" id="seq-name" value="animation-export" placeholder="Filename...">
+                </div>
+
+                <p style="font-size: 0.75rem; color: rgba(242,236,224,0.75); margin-top:-6px; font-family: var(--font-body);">Drag and drop to reorder. Click 👁️ to preview processing.</p>
+                <div class="frame-queue-grid" id="frame-grid"></div>
+            </div>
+
+            <!-- Image Visual Adjustments -->
+            <div class="config-card" id="adjust-card">
+                <h3>2. Visual Adjustments</h3>
+                
+                <div class="slider-row">
+                    <div class="slider-container">
+                        <div class="slider-label-row"><span>Brightness</span> <span id="val-bright">100%</span></div>
+                        <input type="range" id="adj-bright" min="0" max="200" value="100">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label-row"><span>Contrast</span> <span id="val-contrast">100%</span></div>
+                        <input type="range" id="adj-contrast" min="0" max="200" value="100">
+                    </div>
+                </div>
+                
+                <div class="slider-row">
+                    <div class="slider-container">
+                        <div class="slider-label-row"><span>Exposure</span> <span id="val-exp">100%</span></div>
+                        <input type="range" id="adj-exp" min="0" max="200" value="100">
+                    </div>
+                    <div class="slider-container">
+                        <div class="slider-label-row"><span>Saturation</span> <span id="val-sat">100%</span></div>
+                        <input type="range" id="adj-sat" min="0" max="200" value="100">
+                    </div>
+                </div>
+                
+                <hr style="border: 0; border-top: 1px dashed rgba(137, 107, 73, 0.4); margin: 16px 0;">
+
+                <label class="checkbox-container">
+                    <input type="checkbox" id="chk-transparent">
+                    <div class="checkmark"></div>
+                    <div>
+                        Remove Background Color (Chroma Key)
+                        <span class="chk-subtext">Click the 👁️ icon on frames to preview transparency</span>
+                    </div>
+                </label>
+                
+                <div class="slider-row" style="align-items: flex-end;">
+                    <div class="input-group" style="margin: 0; flex: 1;">
+                        <label style="width: auto; flex: 1;">Target Color</label>
+                        <input type="color" id="adj-color" value="#ffffff" style="width: 60px;">
+                    </div>
+                    <div class="slider-container" style="margin: 0; flex: 1;">
+                        <div class="slider-label-row"><span>Tolerance</span> <span id="val-tol">20</span></div>
+                        <input type="range" id="adj-tol" min="0" max="255" value="20">
+                    </div>
+                </div>
+                
+                <div class="slider-row">
+                    <div class="slider-container" style="margin: 0; flex: 1;">
+                        <div class="slider-label-row"><span>Edge Smoothing (Feather)</span> <span id="val-smooth">15</span></div>
+                        <input type="range" id="adj-smooth" min="0" max="100" value="15">
+                    </div>
+                    <div style="flex: 1;"></div> <!-- Spacer -->
+                </div>
+            </div>
+
+            <!-- Parameters Setup Card Configuration -->
+            <div class="config-card" id="settings-card">
+                <h3>3. Animation Settings</h3>
+
+                <!-- Format Toggle Dropdown Defaulting to WebP -->
+                <div class="input-group">
+                    <label>Output Format</label>
+                    <select id="opt-format">
+                        <option value="webp" selected>WebP (Animated)</option>
+                        <option value="gif">GIF (Legacy)</option>
+                    </select>
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed rgba(137, 107, 73, 0.4); margin: 16px 0;">
+                
+                <!-- NEW: Dynamic Frame Skip Slider (Drops Frames) -->
+                <div class="frame-skip-box" id="frame-skip-container">
+                    <div class="slider-label-row">
+                        <span style="color: var(--water-spray); font-weight: bold;">Frame Skip (Drop Frames)</span>
+                        <span id="val-skip" style="color: var(--white-accent);">Keep All</span>
+                    </div>
+                    <input type="range" id="adj-skip" min="1" max="10" step="1" value="1">
+                    <p style="font-size: 0.65rem; color: rgba(242,236,224,0.75); margin-top:4px; margin-bottom:0;">Videos generate many frames. Increase this slider to delete intermediate frames, severely reducing final filesize.</p>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label-row">
+                        <span>Frame Duration (Speed)</span>
+                        <span id="delay-value">200 ms</span>
+                    </div>
+                    <input type="range" id="frame-delay" min="40" max="1000" step="10" value="200">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label-row">
+                        <span>Max Output Dimensions <span id="original-size-label" style="color: var(--water-spray); margin-left: 8px; font-size: 0.65rem;"></span></span>
+                        <span id="dimension-value">480 px</span>
+                    </div>
+                    <input type="range" id="max-dimension" min="160" max="540" step="10" value="480">
+                </div>
+
+                <hr style="border: 0; border-top: 1px dashed rgba(137, 107, 73, 0.4); margin: 16px 0;">
+
+                <div style="display: flex; justify-content: space-between; align-items: stretch; margin-bottom: 12px;">
+                    <div style="flex: 1;">
+                        <label class="checkbox-container">
+                            <input type="checkbox" id="chk-reverse">
+                            <div class="checkmark"></div>
+                            <div>Reverse Sequence</div>
+                        </label>
+
+                        <label class="checkbox-container" style="margin-bottom: 0;">
+                            <input type="checkbox" id="chk-forverse">
+                            <div class="checkmark"></div>
+                            <div>
+                                Forverse
+                                <span class="chk-subtext">Plays forward then backward, making looping less choppy</span>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <!-- Play Simulation Preview Button -->
+                    <button id="btn-play-preview" class="play-btn" onclick="openAnimationPreview()">
+                        <span class="play-icon">▶</span>
+                        <span id="play-btn-text">PLAY WebP</span>
+                    </button>
+                </div>
+
+                <div id="gif-specific-settings" style="position: relative; transition: opacity 0.3s; padding-top: 12px; margin-top: 12px; border-top: 1px dashed rgba(137, 107, 73, 0.4);">
+                    <div id="webp-overlay" class="unavailable-overlay">Not Supported With WebP</div>
+                    <label class="checkbox-container">
+                        <input type="checkbox" id="chk-dithering" checked>
+                        <div class="checkmark"></div>
+                        <div>
+                            Disable Dithering
+                            <span class="chk-subtext">Smaller filesize, but introduces color banding</span>
+                        </div>
+                    </label>
+
+                    <div class="input-group" style="margin-top:16px;">
+                        <label>Play Count</label>
+                        <input type="number" id="play-count" min="0" value="0">
+                    </div>
+                    <p style="font-size: 0.65rem; color: rgba(242,236,224,0.6); margin-top:-8px; margin-bottom:12px;">Number of times to play the gif - 0 means loop forever</p>
+
+                    <div class="slider-row">
+                        <div class="input-group" style="margin: 0; flex: 1; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <label style="width: auto;">Filesize Opt</label>
+                            <select id="opt-size" style="width: 100%;">
+                                <option value="standard">Standard</option>
+                                <option value="advanced">Advanced</option>
+                            </select>
+                        </div>
+    
+                        <div class="input-group" style="margin: 0; flex: 1; flex-direction: column; align-items: flex-start; gap: 4px;">
+                            <label style="width: auto;">Lossy Comp</label>
+                            <select id="opt-lossy" style="width: 100%;">
+                                <option value="none">None</option>
+                                <option value="low">Low</option>
+                                <option value="high">High</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dedicated WebP Advanced Settings Card -->
+            <div class="config-card" id="advanced-webp-card">
+                <h3>4. WebP Advanced Settings</h3>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <label class="checkbox-container" style="margin-bottom: 0;">
+                        <input type="checkbox" id="chk-webp-lossless">
+                        <div class="checkmark"></div>
+                        <div>
+                            Lossless Encoding
+                            <span class="chk-subtext">Larger filesize but perfect pixel quality</span>
+                        </div>
+                    </label>
+                    <span id="est-size" style="color: var(--water-spray); font-family: var(--font-mono); font-size: 0.75rem; font-weight: bold; text-align: right; min-width: 100px;">Est: 0.00 MB</span>
+                </div>
+
+                <div class="slider-row">
+                    <div class="slider-container" id="webp-quality-container" style="margin: 0; flex: 1;">
+                        <div class="slider-label-row"><span>Quality</span> <span id="val-webp-q">80%</span></div>
+                        <input type="range" id="adj-webp-q" min="0" max="100" value="80">
+                    </div>
+                    
+                    <div class="slider-container" style="margin: 0; flex: 1;">
+                        <div class="slider-label-row"><span>Compression Effort</span> <span id="val-webp-effort">4</span></div>
+                        <input type="range" id="adj-webp-effort" min="0" max="6" value="4">
+                    </div>
+                </div>
+                <p style="font-size: 0.65rem; color: rgba(242,236,224,0.6); margin-top:8px; margin-bottom:0; text-align: right;">Higher effort takes longer but yields smaller files.</p>
+            </div>
+
+            <!-- Resulting Canvas Block Wrapper -->
+            <div class="config-card" id="output-card" style="display: none;">
+                <h3>Synthesized Core Output</h3>
+                <div class="output-viewport" id="compiled-viewport"></div>
+                <div style="margin-top: 16px; text-align: center;">
+                    <a id="download-anchor" class="btn-pill-trigger" style="display: inline-block; text-decoration: none; width: auto; padding: 8px 24px !important; font-size: 0.75rem !important;" href="#" download="organon-animation.gif">
+                        📥 SAVE FILE TO DISK
+                    </a>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- PANEL 3: BOTTOM MASTER COMPILER ACTION BAR -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill-trigger" id="compile-btn" disabled>
+                MAKE & SAVE ANIMATION
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Modal 1: Draggable Green Screen Live Preview -->
+    <div id="preview-modal" class="draggable-modal">
+        <button class="modal-close" onclick="closePreviewModal()">×</button>
+        <h3 style="font-size: 0.8rem; margin-bottom:8px; width:100%; text-align:center; pointer-events: none;">Live Preview</h3>
+        <div class="green-screen-box" style="pointer-events: none;">
+            <img id="modal-img">
+        </div>
+    </div>
+
+    <!-- Modal 2: Draggable Animation Sequence Player -->
+    <div id="anim-preview-modal" class="draggable-modal">
+        <button class="modal-close" onclick="closeAnimationPreview()">×</button>
+        <h3 id="anim-modal-title" style="font-size: 0.8rem; margin-bottom:8px; width:100%; text-align:center; pointer-events: none; color: var(--water-spray);">WEBP PREVIEW</h3>
+        <div class="anim-screen-box" style="pointer-events: none;">
+            <div id="anim-loading" class="anim-loading-text" style="display: none;">Synthesizing Array...</div>
+            <img id="anim-modal-img" src="" style="display: none;">
+        </div>
+    </div>
+
+    <script>
+        // PostMessage Status Bar Framework API
+        function setHubStatus(text) {
+            try { if (window.parent && window.parent.postMessage) window.parent.postMessage({ type: 'set-status', text: text }, '*'); } catch (err) {}
+        }
+        function clearHubStatus() {
+            try { if (window.parent && window.parent.postMessage) window.parent.postMessage({ type: 'clear-status' }, '*'); } catch (err) {}
+        }
+
+        // Header Panel Collapse Logic
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+            countdownCircle.style.borderColor = isPanelLocked ? "var(--terracotta-peach)" : "var(--chiseled-bronze)";
+        }
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+        function resetCountdown() { clearInterval(countdownInterval); countdownVal = 5; updateCircleDisplay(); }
+        function maximizePanel() { topStickyPanel.classList.remove("minimized"); resetCountdown(); }
+
+        topStickyPanel.addEventListener("mouseenter", () => { isHoveringPanel = true; maximizePanel(); clearInterval(countdownInterval); });
+        topStickyPanel.addEventListener("mouseleave", () => { isHoveringPanel = false; resetCountdown(); startCountdown(); });
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation(); e.preventDefault();
+            isPanelLocked = !isPanelLocked; updateCircleDisplay();
+            if (isPanelLocked) { clearInterval(countdownInterval); maximizePanel(); } else { if (!isHoveringPanel) startCountdown(); }
+        });
+        startCountdown();
+
+        // Application Data Variables
+        const imagePicker = document.getElementById('image-picker');
+        const videoPicker = document.getElementById('video-picker');
+        const frameGrid = document.getElementById('frame-grid');
+        const queueCard = document.getElementById('queue-card');
+        const compileBtn = document.getElementById('compile-btn');
+        let loadedFrames = []; // Array of { id, base64, w, h }
+
+        // Live Preview Global Tracker
+        let currentPreviewBase64 = null;
+
+        // Visual Display of Dynamic Frame Skip Box
+        function toggleFrameSkipSlider() {
+            const skipContainer = document.getElementById('frame-skip-container');
+            if (loadedFrames.length > 15) {
+                skipContainer.style.display = 'flex';
+            } else {
+                skipContainer.style.display = 'none';
+                document.getElementById('adj-skip').value = 1;
+                document.getElementById('val-skip').innerText = 'Keep All';
+            }
+            updateEstimatedSize();
+        }
+
+        // Estimated File Size Calculator (Now Accounts for Frame Skips)
+        function updateEstimatedSize() {
+            const el = document.getElementById('est-size');
+            if(!el) return;
+            if(loadedFrames.length === 0) {
+                el.innerText = 'Est: 0.00 MB';
+                return;
+            }
+            const skip = parseInt(document.getElementById('adj-skip').value);
+            const activeFrameCount = Math.ceil(loadedFrames.length / skip);
+            
+            const maxDim = parseInt(document.getElementById('max-dimension').value);
+            const format = document.getElementById('opt-format').value;
+            
+            let bytes = 0;
+            if (format === 'webp') {
+                const lossless = document.getElementById('chk-webp-lossless').checked;
+                const q = parseInt(document.getElementById('adj-webp-q').value) / 100;
+                // Approximations for webp bits per pixel per frame
+                const bpp = lossless ? 1.5 : (0.2 + (q * 0.4));
+                bytes = (maxDim * maxDim * activeFrameCount * bpp) / 8;
+            } else {
+                bytes = (maxDim * maxDim * activeFrameCount * 1.0) / 8; // standard GIF approx
+            }
+            
+            let mb = (bytes / (1024 * 1024)).toFixed(2);
+            el.innerText = `Est Size: ~${mb} MB`;
+        }
+
+        // Core Sliders Sync & Live Updates
+        const updateSliderText = (id, suffix) => {
+            const el = document.getElementById(id);
+            const valEl = document.getElementById(id.replace('adj-', 'val-').replace('frame-delay', 'delay-value').replace('max-dimension', 'dimension-value'));
+            if(el) {
+                el.addEventListener('input', (e) => { 
+                    if(valEl) valEl.innerText = `${e.target.value}${suffix}`; 
+                    updateLivePreview(); // Fire live visual updates
+                });
+            }
+        };
+        updateSliderText('adj-exp', '%');
+        updateSliderText('adj-bright', '%');
+        updateSliderText('adj-contrast', '%');
+        updateSliderText('adj-sat', '%');
+        updateSliderText('adj-tol', '');
+        updateSliderText('adj-smooth', '');
+        updateSliderText('frame-delay', ' ms');
+        updateSliderText('max-dimension', ' px');
+        updateSliderText('adj-webp-q', '%');
+        updateSliderText('adj-webp-effort', '');
+
+        // Specialized Listener for the Frame Skip Slider
+        document.getElementById('adj-skip').addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            const text = val === 1 ? 'Keep All' : `Keep 1 in ${val}`;
+            document.getElementById('val-skip').innerText = text;
+            updateEstimatedSize();
+        });
+
+        // WebP / GIF Interface Toggling
+        document.getElementById('opt-format').addEventListener('change', (e) => {
+            const isWebP = e.target.value === 'webp';
+            const webpCard = document.getElementById('advanced-webp-card');
+            const gifSettings = document.getElementById('gif-specific-settings');
+            const webpOverlay = document.getElementById('webp-overlay');
+            const playBtnText = document.getElementById('play-btn-text');
+            
+            if (isWebP) {
+                webpCard.style.display = 'block';
+                gifSettings.style.opacity = '0.3';
+                gifSettings.style.pointerEvents = 'none';
+                webpOverlay.style.display = 'flex';
+                playBtnText.innerText = 'PLAY WebP';
+            } else {
+                webpCard.style.display = 'none';
+                gifSettings.style.opacity = '1';
+                gifSettings.style.pointerEvents = 'auto';
+                webpOverlay.style.display = 'none';
+                playBtnText.innerText = 'PLAY GIF';
+            }
+            updateEstimatedSize();
+        });
+        // Trigger check on load
+        document.getElementById('opt-format').dispatchEvent(new Event('change'));
+
+        // Extra Live Update Bindings
+        document.getElementById('chk-transparent').addEventListener('change', updateLivePreview);
+        document.getElementById('adj-color').addEventListener('input', updateLivePreview);
+        document.getElementById('max-dimension').addEventListener('input', updateEstimatedSize);
+        document.getElementById('chk-webp-lossless').addEventListener('change', updateEstimatedSize);
+        document.getElementById('adj-webp-q').addEventListener('input', updateEstimatedSize);
+
+        // Helper to update the highest original resolution dimensions label and extend slider
+        function updateMaxOriginalSize() {
+            const sizeLabel = document.getElementById('original-size-label');
+            const dimSlider = document.getElementById('max-dimension');
+            const valDisplay = document.getElementById('dimension-value');
+            
+            if (loadedFrames.length === 0) {
+                sizeLabel.innerText = '';
+                dimSlider.max = 540;
+                updateEstimatedSize();
+                return;
+            }
+            let maxWidth = 0;
+            let maxHeight = 0;
+            loadedFrames.forEach(f => {
+                if (f.w > maxWidth) maxWidth = f.w;
+                if (f.h > maxHeight) maxHeight = f.h;
+            });
+            sizeLabel.innerText = `Original size: ${maxWidth}X${maxHeight}`;
+            
+            // Dynamically increase slider max to match original image dimensions
+            const maxOriginal = Math.max(maxWidth, maxHeight);
+            if (maxOriginal > 540) {
+                dimSlider.max = maxOriginal;
+                dimSlider.value = maxOriginal; // Automatically default to full size
+                valDisplay.innerText = `${maxOriginal} px`;
+            } else {
+                dimSlider.max = 540;
+            }
+            updateEstimatedSize();
+        }
+
+        // ==========================================
+        // MODULE: MEDIA EXTRACTORS
+        // ==========================================
+
+        // 1. Image File Uploader
+        imagePicker.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (!files.length) return;
+            
+            if (loadedFrames.length === 0) {
+                const autoName = files[0].name.replace(/\.[^/.]+$/, "");
+                document.getElementById('seq-name').value = autoName || "organon-animation";
+            }
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const base64Data = event.target.result;
+                    const img = new Image();
+                    img.onload = () => {
+                        loadedFrames.push({ 
+                            id: Date.now() + Math.random(), 
+                            base64: base64Data,
+                            w: img.width,
+                            h: img.height
+                        });
+                        updateMaxOriginalSize();
+                        renderFrameGrid();
+                    };
+                    img.src = base64Data;
+                };
+                reader.readAsDataURL(file);
+            });
+            imagePicker.value = ''; 
+        });
+
+        // 2. Video File Uploader & Invisible Extractor
+        videoPicker.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // Auto-name from video
+            const autoName = file.name.replace(/\.[^/.]+$/, "");
+            document.getElementById('seq-name').value = autoName || "organon-movie-convert";
+
+            const url = URL.createObjectURL(file);
+            const video = document.createElement('video');
+            video.src = url;
+            video.muted = true;
+            video.playsInline = true;
+
+            const compiledViewport = document.getElementById('compiled-viewport');
+            const outputCard = document.getElementById('output-card');
+            
+            // Render Extraction Interface
+            compiledViewport.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+                    <div class="loader" style="margin-bottom: 16px;"></div>
+                    <div id="extract-progress" style="color:var(--water-spray); font-family:var(--font-mono); font-size:0.8rem;">Extracting video frames (0%)...</div>
+                </div>
+            `;
+            outputCard.style.display = 'block';
+            outputCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            setHubStatus("Local Video Extraction Engine Running...");
+
+            video.addEventListener('loadeddata', () => {
+                const duration = video.duration;
+                // Standardizing extraction at roughly 12 FPS to protect DOM memory limits
+                const fps = 12; 
+                const totalFrames = Math.floor(duration * fps);
+                let currentFrame = 0;
+                
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                
+                const progressText = document.getElementById('extract-progress');
+
+                video.currentTime = 0;
+
+                // Scrub asynchronously through the hidden video timeline 
+                video.addEventListener('seeked', () => {
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    // We use JPEG for video frames natively to aggressively save browser RAM
+                    loadedFrames.push({ 
+                        id: Date.now() + Math.random(), 
+                        base64: canvas.toDataURL('image/jpeg', 0.85),
+                        w: canvas.width,
+                        h: canvas.height
+                    });
+                    
+                    currentFrame++;
+                    const progress = Math.round((currentFrame / totalFrames) * 100);
+                    if (progressText) progressText.innerText = `Extracting video frames (${progress}%)...`;
+
+                    if (currentFrame < totalFrames) {
+                        video.currentTime = currentFrame / fps;
+                    } else {
+                        // Extraction Complete
+                        URL.revokeObjectURL(url);
+                        updateMaxOriginalSize();
+                        renderFrameGrid();
+                        compiledViewport.innerHTML = '';
+                        outputCard.style.display = 'none';
+                        setHubStatus(`Successfully extracted ${loadedFrames.length} frames.`);
+                        setTimeout(clearHubStatus, 4000);
+                    }
+                });
+            });
+            
+            // Force load pipeline execution for Safari compatibility
+            video.load();
+            videoPicker.value = '';
+        });
+
+        // ==========================================
+        // MODULE: UI AND PIPELINES
+        // ==========================================
+
+        let draggedIndex = null;
+
+        function renderFrameGrid() {
+            frameGrid.innerHTML = '';
+            toggleFrameSkipSlider();
+
+            if (loadedFrames.length === 0) { queueCard.style.display = 'none'; compileBtn.disabled = true; return; }
+            queueCard.style.display = 'block'; compileBtn.disabled = loadedFrames.length < 2;
+
+            loadedFrames.forEach((frameObj, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'frame-thumb-wrapper';
+                wrapper.draggable = true;
+                
+                // HTML5 Drag Events
+                wrapper.addEventListener('dragstart', (e) => {
+                    draggedIndex = index;
+                    // Defer adding class to keep visual attached to mouse pointer
+                    setTimeout(() => wrapper.classList.add('dragging'), 0);
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                
+                wrapper.addEventListener('dragend', () => wrapper.classList.remove('dragging'));
+                
+                wrapper.addEventListener('dragover', (e) => { 
+                    e.preventDefault(); 
+                    if (draggedIndex === index || draggedIndex === null) return;
+                    
+                    const rect = wrapper.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    
+                    // Render insert indicator on Left vs Right bounds
+                    if (x < rect.width / 2) {
+                        wrapper.classList.add('drag-over-left');
+                        wrapper.classList.remove('drag-over-right');
+                    } else {
+                        wrapper.classList.add('drag-over-right');
+                        wrapper.classList.remove('drag-over-left');
+                    }
+                });
+                
+                wrapper.addEventListener('dragleave', () => {
+                    wrapper.classList.remove('drag-over-left', 'drag-over-right');
+                });
+                
+                wrapper.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    wrapper.classList.remove('drag-over-left', 'drag-over-right');
+                    
+                    if (draggedIndex === null || draggedIndex === index) return;
+                    
+                    const rect = wrapper.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const insertAfter = x >= rect.width / 2;
+                    
+                    let newIndex = insertAfter ? index + 1 : index;
+                    
+                    // Shift insertion back if dragging from lower to higher
+                    if (draggedIndex < newIndex) {
+                        newIndex--; 
+                    }
+                    
+                    // Reorder local memory array
+                    const item = loadedFrames.splice(draggedIndex, 1)[0];
+                    loadedFrames.splice(newIndex, 0, item);
+                    renderFrameGrid();
+                });
+
+                const img = document.createElement('img');
+                img.src = frameObj.base64;
+
+                const indexBadge = document.createElement('div');
+                indexBadge.className = 'frame-index-badge';
+                indexBadge.innerText = index + 1;
+
+                const eyeBtn = document.createElement('div');
+                eyeBtn.className = 'frame-preview-btn';
+                eyeBtn.innerText = '👁️';
+                eyeBtn.title = "Preview Filters & Transparency";
+                eyeBtn.onclick = (e) => { e.stopPropagation(); openPreviewModal(frameObj.base64); };
+
+                const delBtn = document.createElement('div');
+                delBtn.className = 'frame-delete-btn';
+                delBtn.innerText = '×';
+                delBtn.onclick = (e) => { 
+                    e.stopPropagation(); 
+                    loadedFrames.splice(index, 1); 
+                    updateMaxOriginalSize();
+                    renderFrameGrid(); 
+                };
+
+                wrapper.appendChild(img);
+                wrapper.appendChild(indexBadge);
+                wrapper.appendChild(eyeBtn);
+                wrapper.appendChild(delBtn);
+                frameGrid.appendChild(wrapper);
+            });
+            updateEstimatedSize();
+        }
+
+        // Image Processing Math (Chroma Key & CSS Filters)
+        function hexToRgb(hex) {
+            const bigint = parseInt(hex.slice(1), 16);
+            return { r: (bigint >> 16) & 255, g: (bigint >> 8) & 255, b: bigint & 255 };
+        }
+
+        function processSingleImage(base64, targetDim, isFinal = false, callback) {
+            const exp = document.getElementById('adj-exp').value;
+            const bright = document.getElementById('adj-bright').value;
+            const contrast = document.getElementById('adj-contrast').value;
+            const sat = document.getElementById('adj-sat').value;
+            const useTrans = document.getElementById('chk-transparent').checked;
+            const targetColor = document.getElementById('adj-color').value;
+            const tol = parseInt(document.getElementById('adj-tol').value);
+            const smooth = parseInt(document.getElementById('adj-smooth').value);
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
+                
+                // Calc scaling
+                let w = img.width, h = img.height;
+                if (w > h && w > targetDim) { h = Math.round((h * targetDim) / w); w = targetDim; }
+                else if (h >= w && h > targetDim) { w = Math.round((w * targetDim) / h); h = targetDim; }
+                
+                canvas.width = targetDim;
+                canvas.height = targetDim;
+
+                // Fill Background
+                if (!useTrans) {
+                    ctx.fillStyle = "#000000";
+                    ctx.fillRect(0, 0, targetDim, targetDim);
+                }
+
+                // Apply adjustments via CSS Filter API (Exposure treated as a chained brightness scale)
+                ctx.filter = `brightness(${exp}%) brightness(${bright}%) contrast(${contrast}%) saturate(${sat}%)`;
+                const offsetX = (targetDim - w) / 2;
+                const offsetY = (targetDim - h) / 2;
+                ctx.drawImage(img, offsetX, offsetY, w, h);
+                ctx.filter = 'none';
+
+                // Advanced Chroma Key Transparency with Edge Feathering
+                if (useTrans) {
+                    const rgb = hexToRgb(targetColor);
+                    const imgData = ctx.getImageData(0, 0, targetDim, targetDim);
+                    const data = imgData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        // Skip fully transparent existing pixels
+                        if (data[i+3] === 0) continue; 
+                        
+                        const r = data[i], g = data[i+1], b = data[i+2];
+                        // Euclidean color distance
+                        const dist = Math.sqrt(Math.pow(r - rgb.r, 2) + Math.pow(g - rgb.g, 2) + Math.pow(b - rgb.b, 2));
+                        
+                        if (dist <= tol) {
+                            data[i+3] = 0; // Absolute Erase
+                        } else if (dist <= tol + smooth && smooth > 0) {
+                            // Smooth Alpha feathering mapped over the smoothing threshold distance
+                            const featherRatio = (dist - tol) / smooth;
+                            data[i+3] = Math.floor(data[i+3] * featherRatio);
+                        }
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                }
+
+                callback(canvas.toDataURL('image/png')); // Must use PNG for transparency buffer mapping
+            };
+            img.src = base64;
+        }
+
+        // Live Floating Modal Logic (1. Green Screen Eye Icon Preview)
+        let livePreviewDebounce;
+        
+        function openPreviewModal(base64) {
+            currentPreviewBase64 = base64;
+            updateLivePreview();
+            document.getElementById('preview-modal').style.display = 'flex';
+        }
+
+        function closePreviewModal() {
+            document.getElementById('preview-modal').style.display = 'none';
+            currentPreviewBase64 = null;
+        }
+
+        function updateLivePreview() {
+            if (!currentPreviewBase64) return;
+            
+            clearTimeout(livePreviewDebounce);
+            livePreviewDebounce = setTimeout(() => {
+                // Pass a static small dimension (220px) to keep live preview processing lightning fast
+                processSingleImage(currentPreviewBase64, 220, false, (processedBase64) => {
+                    document.getElementById('modal-img').src = processedBase64;
+                });
+            }, 30); // Very tiny debounce to allow smooth slider dragging without locking main thread
+        }
+
+        // Draggable Modal Logic setup for both popups
+        function makeModalDraggable(modalId) {
+            const dragModal = document.getElementById(modalId);
+            let isDraggingModal = false, dragOffsetX = 0, dragOffsetY = 0;
+
+            dragModal.addEventListener('mousedown', (e) => {
+                if(e.target.classList.contains('modal-close')) return;
+                isDraggingModal = true;
+                const rect = dragModal.getBoundingClientRect();
+                dragOffsetX = e.clientX - rect.left;
+                dragOffsetY = e.clientY - rect.top;
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDraggingModal) return;
+                e.preventDefault(); // Prevents text selection while dragging
+                dragModal.style.left = (e.clientX - dragOffsetX) + 'px';
+                dragModal.style.top = (e.clientY - dragOffsetY) + 'px';
+                dragModal.style.right = 'auto'; // Break free from css pinning
+            });
+            document.addEventListener('mouseup', () => { isDraggingModal = false; });
+        }
+        
+        makeModalDraggable('preview-modal');
+        makeModalDraggable('anim-preview-modal');
+
+        // NEW: Live Animation Sequence Previewer Logic
+        let animationTimer = null;
+        let isPlayingPreview = false;
+
+        function openAnimationPreview() {
+            if(loadedFrames.length === 0) return;
+            
+            const format = document.getElementById('opt-format').value;
+            const targetDelayMs = parseInt(document.getElementById('frame-delay').value);
+            const isReverse = document.getElementById('chk-reverse').checked;
+            const isForverse = document.getElementById('chk-forverse').checked;
+            const skipValue = parseInt(document.getElementById('adj-skip').value);
+
+            const modal = document.getElementById('anim-preview-modal');
+            const imgDisplay = document.getElementById('anim-modal-img');
+            const titleDisplay = document.getElementById('anim-modal-title');
+            
+            titleDisplay.innerText = `${format.toUpperCase()} SEQUENCE PREVIEW`;
+            modal.style.display = 'flex';
+            
+            imgDisplay.style.display = 'none';
+            document.getElementById('anim-loading').style.display = 'block';
+
+            // Build Timeline Array while respecting Frame Skips
+            let activeFrames = loadedFrames.map(f => f.base64);
+            if (skipValue > 1) {
+                activeFrames = activeFrames.filter((_, i) => i % skipValue === 0);
+            }
+
+            let compilationQueue = [...activeFrames];
+            if (isReverse) compilationQueue.reverse();
+            if (isForverse) {
+                const reverseQueue = [...compilationQueue].reverse();
+                compilationQueue = compilationQueue.concat(reverseQueue);
+            }
+
+            let processedArray = [];
+            let processIndex = 0;
+            isPlayingPreview = true;
+
+            function processNext() {
+                if(!isPlayingPreview) return; // Halt if user closed modal during processing
+                if (processIndex >= compilationQueue.length) {
+                    startPlaybackLoop(processedArray, targetDelayMs);
+                    return;
+                }
+                // Generate smaller 280px buffers for lightning fast playback loops in memory
+                processSingleImage(compilationQueue[processIndex], 280, false, (res) => { 
+                    processedArray.push(res);
+                    processIndex++;
+                    processNext();
+                });
+            }
+            processNext();
+        }
+
+        function startPlaybackLoop(frames, delay) {
+            let currentFrame = 0;
+            const imgDisplay = document.getElementById('anim-modal-img');
+            
+            clearInterval(animationTimer);
+            document.getElementById('anim-loading').style.display = 'none';
+            imgDisplay.style.display = 'block';
+            
+            function tick() {
+                if(!isPlayingPreview) return;
+                imgDisplay.src = frames[currentFrame];
+                currentFrame = (currentFrame + 1) % frames.length;
+            }
+            
+            tick(); // execute immediately for frame 0
+            animationTimer = setInterval(tick, delay);
+        }
+
+        function closeAnimationPreview() {
+            isPlayingPreview = false;
+            clearInterval(animationTimer);
+            document.getElementById('anim-preview-modal').style.display = 'none';
+            document.getElementById('anim-modal-img').src = '';
+        }
+
+        // Final Compilation Pipeline Engine
+        compileBtn.addEventListener('click', () => {
+            if (loadedFrames.length < 2) return;
+
+            compileBtn.disabled = true;
+            compileBtn.innerText = "PROCESSING...";
+            
+            const format = document.getElementById('opt-format').value;
+            setHubStatus(`Synthesizing image frames for ${format.toUpperCase()} wrapper...`);
+            
+            const compiledViewport = document.getElementById('compiled-viewport');
+            const outputCard = document.getElementById('output-card');
+            
+            // Replaced simple text with a visual loading spinner
+            compiledViewport.innerHTML = `
+                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+                    <div class="loader" style="margin-bottom: 16px;"></div>
+                    <div style="color:var(--water-spray); font-family:var(--font-mono); font-size:0.8rem;">Baking visual arrays...</div>
+                </div>
+            `;
+            outputCard.style.display = 'block';
+            outputCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+            const targetDelaySec = parseFloat(document.getElementById('frame-delay').value) / 1000; 
+            const maxDim = parseInt(document.getElementById('max-dimension').value);
+            const isReverse = document.getElementById('chk-reverse').checked;
+            const isForverse = document.getElementById('chk-forverse').checked;
+            const skipValue = parseInt(document.getElementById('adj-skip').value);
+            const lossySelect = document.getElementById('opt-lossy').value;
+
+            let sampleInt = 10;
+            if (lossySelect === 'low') sampleInt = 20;
+            if (lossySelect === 'high') sampleInt = 30;
+
+            // Apply Frame Skip Reductions
+            let activeFrames = loadedFrames.map(f => f.base64);
+            if (skipValue > 1) {
+                activeFrames = activeFrames.filter((_, i) => i % skipValue === 0);
+            }
+            
+            let compilationQueue = [...activeFrames];
+            if (isReverse) compilationQueue.reverse();
+            if (isForverse) {
+                const reverseQueue = [...compilationQueue].reverse();
+                compilationQueue = compilationQueue.concat(reverseQueue);
+            }
+
+            let processedArray = [];
+            let processIndex = 0;
+
+            function processNext() {
+                if (processIndex >= compilationQueue.length) {
+                    
+                    const baseName = document.getElementById('seq-name').value || 'organon-animation';
+                    
+                    if (format === 'webp') {
+                        setHubStatus("Animated WebP client-muxer requires external WASM link. Defaulting execution engine to standard GIF format.");
+                        fireGifShot(processedArray, targetDelaySec, maxDim, sampleInt, baseName + '.gif');
+                    } else {
+                        fireGifShot(processedArray, targetDelaySec, maxDim, sampleInt, baseName + '.gif');
+                    }
+                    return;
+                }
+                processSingleImage(compilationQueue[processIndex], maxDim, true, (res) => {
+                    processedArray.push(res);
+                    processIndex++;
+                    processNext();
+                });
+            }
+            processNext();
+        });
+
+        function fireGifShot(imagesArray, interval, dim, sampleInterval, downloadName) {
+            setHubStatus("Assembling frames into final format envelope...");
+            try {
+                gifshot.createGIF({
+                    images: imagesArray,
+                    interval: interval,
+                    gifWidth: dim,
+                    gifHeight: dim,
+                    sampleInterval: sampleInterval,
+                    numWorkers: 2
+                }, function (obj) {
+                    compileBtn.disabled = false;
+                    compileBtn.innerText = "MAKE & SAVE ANIMATION";
+                    clearHubStatus();
+
+                    if (!obj.error) {
+                        const compiledViewport = document.getElementById('compiled-viewport');
+                        compiledViewport.innerHTML = '';
+                        const resultImage = document.createElement('img');
+                        resultImage.src = obj.image;
+                        compiledViewport.appendChild(resultImage);
+
+                        const anchor = document.getElementById('download-anchor');
+                        anchor.href = obj.image;
+                        anchor.download = downloadName;
+                        
+                        // Fire Auto-Download Action
+                        anchor.click();
+                        
+                        setHubStatus("Sequence generation accomplished cleanly.");
+                        setTimeout(clearHubStatus, 4000);
+                    } else {
+                        document.getElementById('compiled-viewport').innerHTML = '<p style="color: var(--terracotta-peach); font-size: 0.8rem;">ENGINE FAILURE: Unable to compile.</p>';
+                        setHubStatus("Compilation engine failure.");
+                    }
+                });
+            } catch (err) {
+                compileBtn.disabled = false;
+                compileBtn.innerText = "MAKE & SAVE ANIMATION";
+                document.getElementById('compiled-viewport').innerHTML = `<p style="color: var(--terracotta-peach); font-size: 0.8rem;">ERROR: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
