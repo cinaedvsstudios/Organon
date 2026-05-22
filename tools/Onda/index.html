@@ -579,6 +579,135 @@
         #scrollable-tags-bar::-webkit-scrollbar { display: none; }
         #scrollable-tags-bar:active { cursor: grabbing; }
 
+
+
+        /* Visualiser Composer + Library Import/Export */
+        .draggable-popup {
+            width: 430px;
+            max-height: 78vh;
+        }
+        .popup-body {
+            max-height: calc(78vh - 42px);
+            overflow-y: auto;
+        }
+        .visualizer-composer-card,
+        .library-tools-card {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .composer-title-row,
+        .visual-layer-head,
+        .library-title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .composer-title,
+        .library-title {
+            color: var(--water-spray);
+            font-weight: bold;
+            font-size: 0.88rem;
+        }
+        .composer-help,
+        .library-help {
+            color: var(--chiseled-bronze);
+            font-size: 0.72rem;
+            line-height: 1.35;
+        }
+        #visualizer-layer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .visual-layer-card {
+            background: rgba(30, 32, 28, 0.88);
+            border: 1px solid rgba(117, 178, 222, 0.35);
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 9px;
+        }
+        .visual-layer-title {
+            color: var(--stone-ochre);
+            font-weight: bold;
+            font-size: 0.82rem;
+        }
+        .tiny-icon-btn {
+            background: rgba(0, 0, 0, 0.35);
+            color: var(--water-spray);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 999px;
+            min-width: 28px;
+            height: 28px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .tiny-icon-btn:hover {
+            filter: brightness(1.2);
+        }
+        .visual-grid-two {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .visual-field label,
+        .library-tools-card label {
+            display: block;
+            color: var(--water-spray);
+            font-size: 0.72rem;
+            margin-bottom: 4px;
+        }
+        .visual-field input[type="number"],
+        .visual-field select,
+        .library-tools-card input,
+        .library-tools-card select {
+            width: 100%;
+            min-width: 0;
+        }
+        .visual-color-row {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 6px;
+        }
+        .visual-color-row input[type="color"] {
+            width: 100%;
+            height: 30px;
+            padding: 0;
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 7px;
+            background: #000;
+            cursor: pointer;
+        }
+        .visual-layer-footer,
+        .library-action-grid {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .library-action-grid .btn-pill,
+        .visualizer-composer-card .btn-pill {
+            padding: 6px 12px;
+            font-size: 0.74rem;
+        }
+        .report-output {
+            width: 100%;
+            min-height: 220px;
+            max-height: 55vh;
+            resize: vertical;
+            white-space: pre;
+            overflow: auto;
+            font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+            font-size: 0.78rem;
+        }
+
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
             body { padding: 0 15px; }
@@ -638,6 +767,8 @@
                     <button id="btn-repeat-one" class="utility-btn" data-tooltip="Repeat One">♾️</button>
                     <button id="btn-repeat-all" class="utility-btn" data-tooltip="Repeat All">🔁</button>
                     <button id="btn-shuffle" class="utility-btn" data-tooltip="Shuffle">🔀</button>
+                    <button id="btn-playlist" class="utility-btn" data-tooltip="Save to Playlist">📥</button>
+                    <button id="btn-tags" class="utility-btn" data-tooltip="Tags">🏷️</button>
                     <button id="btn-lyrics-modal" class="utility-btn" data-tooltip="Lyrics">🎤</button>
                     <button id="btn-toggle-advanced" class="utility-btn" data-tooltip="Settings & Extras">⚙️</button>
                 </div>
@@ -752,18 +883,35 @@
                 <label style="font-size: 0.85rem; color: var(--water-spray);">Speed Adjust: <span id="speed-readout">1.0x</span></label>
                 <input type="range" id="speed-slider" min="0.5" max="3.0" step="0.1" value="1" style="width: 100%;">
             </div>
-            <div class="control-row">
-                <label style="font-size: 0.85rem; color: var(--water-spray);">Visual Theme:</label>
-                <select id="vis-style-select" style="width: 100%;">
-                    <option value="bars">Classic Columns</option>
-                    <option value="mountain">Smooth Mountain Wave</option>
-                    <option value="led">Retro LED Blocks</option>
-                    <option value="symmetric">Symmetric Pulse Burst</option>
-                </select>
+            <div class="visualizer-composer-card">
+                <div class="composer-title-row">
+                    <span class="composer-title">🌈 Visualiser Composer</span>
+                    <button id="btn-add-visual-layer" class="tiny-icon-btn" title="Duplicate/add another visualiser layer">＋</button>
+                </div>
+                <div class="composer-help">Each card is one visualiser pass. Six colour boxes feed the wave; black boxes are ignored. Lower layer numbers draw underneath higher ones. Blend mixes a layer with whatever is below it.</div>
+                <div class="visual-field">
+                    <label>Saved Custom Stack</label>
+                    <select id="visualizer-preset-select">
+                        <option value="">Load saved custom visualiser...</option>
+                    </select>
+                </div>
+                <div id="visualizer-layer-list"></div>
             </div>
-            <div class="control-row" style="margin-top: 10px; border-top: 1px dashed var(--chiseled-bronze); padding-top: 10px;">
-                <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre); width: 100%;">📥 Import JSON Library</button>
-                <input type="file" id="json-file-input" accept=".json" style="display: none;">
+
+            <div class="library-tools-card">
+                <div class="library-title-row">
+                    <span class="library-title">📚 Library JSON Tools</span>
+                </div>
+                <div class="library-help">Exports save data only: file names, paths/URLs, tags, lyrics, playlists and visualiser presets. No music is stored in the JSON.</div>
+                <label for="library-name-input">Library name</label>
+                <input type="text" id="library-name-input" placeholder="Chris Desktop Library" value="Onda Library">
+                <div class="library-action-grid">
+                    <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre);">📥 Import</button>
+                    <button id="btn-export-library" class="btn-pill">💾 Export Full</button>
+                    <button id="btn-export-streams" class="btn-pill">☁️ Export Streams</button>
+                    <button id="btn-check-library" class="btn-pill">🔎 Check Files</button>
+                    <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
+                </div>
             </div>
         </div>
     </div>
@@ -835,6 +983,23 @@
         </div>
     </div>
 
+
+
+    <!-- Library Check Report Modal -->
+    <div id="modal-library-report" class="organon-modal" style="max-width: 720px;">
+        <div class="modal-header">
+            <span>🔎 Library Check Report</span>
+            <span class="modal-close" onclick="closeModal('modal-library-report')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <textarea id="library-report-output" class="report-output" readonly></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" onclick="copyToClipboard(document.getElementById('library-report-output').value)">Copy Report</button>
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-library-report')">Close</button>
+        </div>
+    </div>
+
     <!-- Toast popup notices -->
     <div id="toast-notice" class="organon-toast">Action Confirmed!</div>
 
@@ -843,6 +1008,9 @@
         // Using two elements solves WebAudio Context blocking CORS streams while preserving local file visualizers
         const localAudio = new Audio();
         const streamAudio = new Audio();
+
+        localAudio.preload = 'metadata';
+        streamAudio.preload = 'metadata';
         
         // Ensure elements exist in the DOM (hidden) to prevent browser pipeline suspension bugs
         localAudio.style.display = 'none';
@@ -852,8 +1020,12 @@
 
         let activeAudio = localAudio;
         
-        let audioCtx, gainNode, analyser, source;
+        let audioCtx = null;
+        let gainNode = null;
+        let analyser = null;
+        let localSource = null;
         let isPlaying = false;
+        let visualizerRunning = false;
         
         // Multi-track Active Playlist queue
         let playlistTracks = [];
@@ -871,6 +1043,10 @@
 
         let lastPrevClickTime = 0;
         let visualizerStyle = "bars";
+        const VISUALIZER_STORAGE_KEY = "ondaVisualizerPresetsV1";
+        const LIBRARY_AUTOSAVE_KEY = "ondaActiveLibraryV1";
+        let visualizerLayers = [createDefaultVisualizerLayer(1)];
+        let savedVisualizerPresets = loadVisualizerPresets();
 
         let isRepeatOne = false;
         let isRepeatAll = false;
@@ -904,28 +1080,493 @@
         const miniMetaBox = document.getElementById('mini-meta-box');
         const miniMetaSize = document.getElementById('mini-meta-size');
         const tagsBar = document.getElementById('scrollable-tags-bar');
-        const visStyleSelect = document.getElementById('vis-style-select');
+        const visualizerLayerList = document.getElementById('visualizer-layer-list');
+        const visualizerPresetSelect = document.getElementById('visualizer-preset-select');
+        const btnAddVisualLayer = document.getElementById('btn-add-visual-layer');
+        const libraryNameInput = document.getElementById('library-name-input');
 
         const overlay = document.getElementById('modal-overlay');
 
+        // --- 0. DATA + VISUALISER COMPOSER HELPERS ---
+        function createDefaultVisualizerLayer(layerNumber = 1) {
+            return {
+                id: 'vis_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+                style: 'bars',
+                layer: layerNumber,
+                blend: 'source-over',
+                colors: ['#75b2de', '#e0a360', '#ff4fa3', '#7a5cff', '#000000', '#000000']
+            };
+        }
+
+        function loadVisualizerPresets() {
+            try {
+                return JSON.parse(localStorage.getItem(VISUALIZER_STORAGE_KEY) || '{}');
+            } catch (err) {
+                console.warn('Could not read visualizer presets:', err);
+                return {};
+            }
+        }
+
+        function saveVisualizerPresets() {
+            localStorage.setItem(VISUALIZER_STORAGE_KEY, JSON.stringify(savedVisualizerPresets));
+        }
+
+        function cloneVisualizerLayer(layer) {
+            return {
+                id: 'vis_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
+                style: layer.style,
+                layer: (parseInt(layer.layer, 10) || 1) + 1,
+                blend: layer.blend || 'source-over',
+                colors: Array.isArray(layer.colors) ? [...layer.colors] : ['#75b2de', '#e0a360', '#000000', '#000000', '#000000', '#000000']
+            };
+        }
+
+        function sanitizeHexColor(value) {
+            return /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : '#000000';
+        }
+
+        function colorIsBlank(value) {
+            const c = sanitizeHexColor(value).toLowerCase();
+            return c === '#000000';
+        }
+
+        function getLayerColors(layer) {
+            const colors = (layer.colors || []).map(sanitizeHexColor).filter(c => !colorIsBlank(c));
+            return colors.length ? colors : ['#75b2de', '#e0a360', '#ff4fa3'];
+        }
+
+        function pickColor(colors, index) {
+            return colors[index % colors.length];
+        }
+
+        function hexToRgba(hex, alpha = 1) {
+            const clean = sanitizeHexColor(hex).slice(1);
+            const r = parseInt(clean.slice(0, 2), 16);
+            const g = parseInt(clean.slice(2, 4), 16);
+            const b = parseInt(clean.slice(4, 6), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        }
+
+        function renderVisualizerPresetSelect() {
+            if (!visualizerPresetSelect) return;
+            const current = visualizerPresetSelect.value;
+            visualizerPresetSelect.innerHTML = '<option value="">Load saved custom visualiser...</option>';
+            Object.keys(savedVisualizerPresets).sort().forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = `⭐ ${name}`;
+                visualizerPresetSelect.appendChild(option);
+            });
+            visualizerPresetSelect.value = current && savedVisualizerPresets[current] ? current : '';
+        }
+
+        function renderVisualizerLayerCards() {
+            if (!visualizerLayerList) return;
+            visualizerLayerList.innerHTML = '';
+            visualizerLayers
+                .slice()
+                .sort((a, b) => (parseInt(a.layer, 10) || 1) - (parseInt(b.layer, 10) || 1))
+                .forEach((layer, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'visual-layer-card';
+                    card.dataset.id = layer.id;
+
+                    const safeColors = [...(layer.colors || [])];
+                    while (safeColors.length < 6) safeColors.push('#000000');
+
+                    card.innerHTML = `
+                        <div class="visual-layer-head">
+                            <span class="visual-layer-title">Equaliser Layer ${index + 1}</span>
+                            <button class="tiny-icon-btn btn-remove-layer" title="Remove this layer">×</button>
+                        </div>
+                        <div class="visual-field">
+                            <label>Wave style</label>
+                            <select class="vis-layer-style">
+                                <option value="bars">Classic Columns Mirror</option>
+                                <option value="mountain">Smooth Mountain Mirror</option>
+                                <option value="led">Retro LED Mirror</option>
+                                <option value="symmetric">Pulse Burst Mirror</option>
+                                <option value="waveline">Neon Waveform Mirror</option>
+                                <option value="orbs">Orb Chain Mirror</option>
+                                <option value="ribbon">Layered Ribbon Mirror</option>
+                                <option value="heartbeat">Heartbeat Line Mirror</option>
+                                <option value="pixelwave">Pixel Matrix Mirror</option>
+                                <option value="islands">Floating Islands Mirror</option>
+                            </select>
+                        </div>
+                        <div>
+                            <div class="composer-help" style="margin-bottom: 4px;">Colours 1–6. Black = ignored / blank.</div>
+                            <div class="visual-color-row">
+                                ${safeColors.slice(0, 6).map((color, i) => `<input type="color" class="vis-layer-color" data-color-index="${i}" value="${sanitizeHexColor(color)}" title="Colour ${i + 1}; black means blank">`).join('')}
+                            </div>
+                        </div>
+                        <div class="visual-grid-two">
+                            <div class="visual-field">
+                                <label>Layer</label>
+                                <input type="number" class="vis-layer-order" min="1" max="99" step="1" value="${parseInt(layer.layer, 10) || 1}">
+                            </div>
+                            <div class="visual-field">
+                                <label>Blend</label>
+                                <select class="vis-layer-blend">
+                                    <option value="source-over">Normal</option>
+                                    <option value="lighter">Add Glow</option>
+                                    <option value="screen">Screen</option>
+                                    <option value="overlay">Overlay</option>
+                                    <option value="soft-light">Soft Light</option>
+                                    <option value="multiply">Multiply</option>
+                                    <option value="color-dodge">Colour Dodge</option>
+                                    <option value="difference">Difference</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="visual-layer-footer">
+                            <button class="tiny-icon-btn btn-duplicate-layer" title="Duplicate this layer below">＋</button>
+                            <button class="tiny-icon-btn btn-save-visual-stack" title="Save current visualiser stack">💾</button>
+                        </div>
+                    `;
+
+                    visualizerLayerList.appendChild(card);
+                    card.querySelector('.vis-layer-style').value = layer.style || 'bars';
+                    card.querySelector('.vis-layer-blend').value = layer.blend || 'source-over';
+                });
+        }
+
+        function syncVisualizerLayerFromCard(card) {
+            const layer = visualizerLayers.find(item => item.id === card.dataset.id);
+            if (!layer) return;
+            layer.style = card.querySelector('.vis-layer-style')?.value || 'bars';
+            layer.layer = Math.max(1, parseInt(card.querySelector('.vis-layer-order')?.value, 10) || 1);
+            layer.blend = card.querySelector('.vis-layer-blend')?.value || 'source-over';
+            layer.colors = Array.from(card.querySelectorAll('.vis-layer-color')).map(input => sanitizeHexColor(input.value));
+            visualizerStyle = layer.style;
+        }
+
+        function saveCurrentVisualizerStack() {
+            const name = prompt('Name this custom visualiser stack:');
+            if (!name || !name.trim()) return;
+            const cleanedName = name.trim();
+            savedVisualizerPresets[cleanedName] = {
+                name: cleanedName,
+                savedAt: new Date().toISOString(),
+                layers: visualizerLayers.map(layer => ({
+                    style: layer.style,
+                    layer: parseInt(layer.layer, 10) || 1,
+                    blend: layer.blend || 'source-over',
+                    colors: (layer.colors || []).map(sanitizeHexColor).slice(0, 6)
+                }))
+            };
+            saveVisualizerPresets();
+            renderVisualizerPresetSelect();
+            showToast(`Saved visualiser: ${cleanedName}`);
+        }
+
+        function loadVisualizerPreset(name) {
+            const preset = savedVisualizerPresets[name];
+            if (!preset || !Array.isArray(preset.layers)) return;
+            visualizerLayers = preset.layers.map((layer, index) => ({
+                id: 'vis_' + Date.now().toString(36) + '_' + index + '_' + Math.random().toString(36).slice(2, 5),
+                style: layer.style || 'bars',
+                layer: parseInt(layer.layer, 10) || index + 1,
+                blend: layer.blend || 'source-over',
+                colors: Array.isArray(layer.colors) ? layer.colors.map(sanitizeHexColor).slice(0, 6) : ['#75b2de', '#e0a360', '#000000', '#000000', '#000000', '#000000']
+            }));
+            if (visualizerLayers.length === 0) visualizerLayers = [createDefaultVisualizerLayer(1)];
+            renderVisualizerLayerCards();
+            showToast(`Loaded visualiser: ${name}`);
+        }
+
+        function initVisualizerComposerUI() {
+            renderVisualizerPresetSelect();
+            renderVisualizerLayerCards();
+
+            if (visualizerLayerList) {
+                visualizerLayerList.addEventListener('input', (e) => {
+                    const card = e.target.closest('.visual-layer-card');
+                    if (card) syncVisualizerLayerFromCard(card);
+                });
+                visualizerLayerList.addEventListener('change', (e) => {
+                    const card = e.target.closest('.visual-layer-card');
+                    if (card) syncVisualizerLayerFromCard(card);
+                });
+                visualizerLayerList.addEventListener('click', (e) => {
+                    const card = e.target.closest('.visual-layer-card');
+                    if (!card) return;
+                    const layer = visualizerLayers.find(item => item.id === card.dataset.id);
+                    if (!layer) return;
+
+                    if (e.target.classList.contains('btn-remove-layer')) {
+                        if (visualizerLayers.length <= 1) {
+                            showToast('Keep at least one visualiser layer.');
+                            return;
+                        }
+                        visualizerLayers = visualizerLayers.filter(item => item.id !== layer.id);
+                        renderVisualizerLayerCards();
+                    }
+
+                    if (e.target.classList.contains('btn-duplicate-layer')) {
+                        syncVisualizerLayerFromCard(card);
+                        visualizerLayers.push(cloneVisualizerLayer(layer));
+                        renderVisualizerLayerCards();
+                    }
+
+                    if (e.target.classList.contains('btn-save-visual-stack')) {
+                        syncVisualizerLayerFromCard(card);
+                        saveCurrentVisualizerStack();
+                    }
+                });
+            }
+
+            if (btnAddVisualLayer) {
+                btnAddVisualLayer.addEventListener('click', () => {
+                    const lastLayer = visualizerLayers[visualizerLayers.length - 1] || createDefaultVisualizerLayer(1);
+                    visualizerLayers.push(cloneVisualizerLayer(lastLayer));
+                    renderVisualizerLayerCards();
+                });
+            }
+
+            if (visualizerPresetSelect) {
+                visualizerPresetSelect.addEventListener('change', (e) => {
+                    if (e.target.value) loadVisualizerPreset(e.target.value);
+                });
+            }
+        }
+
+        function createTrackIdFromParts(parts) {
+            const input = parts.filter(Boolean).join('|');
+            let hash = 2166136261;
+            for (let i = 0; i < input.length; i++) {
+                hash ^= input.charCodeAt(i);
+                hash += (hash << 1) + (hash << 4) + (hash << 7) + (hash << 8) + (hash << 24);
+            }
+            return 'trk_' + (hash >>> 0).toString(36);
+        }
+
+        function createPlayableTrackFromMeta(meta) {
+            return {
+                name: meta.id,
+                libraryId: meta.id,
+                fileName: meta.fileName || meta.title || meta.id,
+                sourceType: meta.sourceType || (meta.streamUrl ? 'stream' : 'local'),
+                streamUrl: meta.streamUrl || null,
+                blobFile: meta.blobFile || null,
+                needsRelink: (meta.sourceType !== 'stream' && !meta.blobFile)
+            };
+        }
+
+        function sanitizeTrackForExport(meta) {
+            const copy = { ...meta };
+            delete copy.blobFile;
+            return copy;
+        }
+
+        function normalisePlaylistToIds(value) {
+            if (Array.isArray(value)) {
+                return value.map(item => typeof item === 'string' ? item : item.name || item.libraryId || item.id).filter(Boolean);
+            }
+            if (value && Array.isArray(value.trackIds)) return value.trackIds.filter(Boolean);
+            if (value && Array.isArray(value.tracks)) return value.tracks.map(item => typeof item === 'string' ? item : item.name || item.libraryId || item.id).filter(Boolean);
+            return [];
+        }
+
+        function playlistIdsToTrackObjects(trackIds) {
+            return trackIds
+                .map(id => virtualLibrary[id] ? createPlayableTrackFromMeta(virtualLibrary[id]) : null)
+                .filter(Boolean);
+        }
+
+        function buildLibraryExport({ streamingOnly = false } = {}) {
+            const allTracks = Object.values(virtualLibrary).map(meta => sanitizeTrackForExport(meta));
+            const filteredTracks = streamingOnly ? allTracks.filter(meta => meta.sourceType === 'stream' || !!meta.streamUrl) : allTracks;
+            const allowedIds = new Set(filteredTracks.map(meta => meta.id));
+            const tracksObject = {};
+            filteredTracks.forEach(meta => { tracksObject[meta.id] = meta; });
+
+            const playlistsObject = {};
+            Object.entries(playlists).forEach(([name, value]) => {
+                const ids = normalisePlaylistToIds(value).filter(id => allowedIds.has(id));
+                if (!streamingOnly || ids.length > 0) {
+                    playlistsObject[name] = {
+                        name,
+                        description: '',
+                        trackIds: ids
+                    };
+                }
+            });
+
+            return {
+                app: 'Onda Media Player',
+                type: 'onda-library',
+                version: 1,
+                libraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
+                libraryKind: streamingOnly ? 'streaming-addon' : 'device-library',
+                exportedAt: new Date().toISOString(),
+                tracks: tracksObject,
+                playlists: playlistsObject,
+                visualizerPresets: savedVisualizerPresets
+            };
+        }
+
+        function downloadJsonFile(filename, data) {
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function slugifyFileName(value) {
+            return (value || 'onda-library').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'onda-library';
+        }
+
+        function importOndaLibrary(data) {
+            if (!data || typeof data !== 'object') throw new Error('JSON is not an object.');
+
+            if (data.type === 'onda-playlist') {
+                const name = data.playlistName || data.name || 'Imported Playlist';
+                playlists[name] = playlistIdsToTrackObjects(data.trackIds || []);
+                renderPlaylistsList();
+                showToast(`Imported playlist: ${name}`);
+                return;
+            }
+
+            if (data.type !== 'onda-library') throw new Error('This is not an Onda library JSON file.');
+
+            if (data.libraryName && libraryNameInput) libraryNameInput.value = data.libraryName;
+
+            const importedTracks = data.tracks || {};
+            Object.entries(importedTracks).forEach(([key, rawMeta]) => {
+                const id = rawMeta.id || key;
+                const existing = virtualLibrary[id] || {};
+                virtualLibrary[id] = {
+                    ...existing,
+                    ...rawMeta,
+                    id,
+                    fileName: rawMeta.fileName || rawMeta.title || existing.fileName || id,
+                    nickname: rawMeta.nickname || existing.nickname || '',
+                    lyrics: rawMeta.lyrics || existing.lyrics || '',
+                    tags: Array.isArray(rawMeta.tags) ? rawMeta.tags : (existing.tags || []),
+                    playlists: Array.isArray(rawMeta.playlists) ? rawMeta.playlists : (existing.playlists || []),
+                    sourceType: rawMeta.sourceType || (rawMeta.streamUrl ? 'stream' : 'local'),
+                    size: rawMeta.size || existing.size || '',
+                    streamUrl: rawMeta.streamUrl || existing.streamUrl || null,
+                    localPath: rawMeta.localPath || existing.localPath || null,
+                    phonePath: rawMeta.phonePath || existing.phonePath || null,
+                    desktopPath: rawMeta.desktopPath || existing.desktopPath || null
+                };
+            });
+
+            if (data.playlists && typeof data.playlists === 'object') {
+                Object.entries(data.playlists).forEach(([name, value]) => {
+                    playlists[name] = playlistIdsToTrackObjects(normalisePlaylistToIds(value));
+                });
+            }
+
+            if (data.visualizerPresets && typeof data.visualizerPresets === 'object') {
+                savedVisualizerPresets = { ...savedVisualizerPresets, ...data.visualizerPresets };
+                saveVisualizerPresets();
+                renderVisualizerPresetSelect();
+            }
+
+            const importedPlayableStreams = Object.values(virtualLibrary)
+                .filter(meta => meta.sourceType === 'stream' && meta.streamUrl)
+                .map(createPlayableTrackFromMeta);
+
+            if (playlistTracks.length === 0 && importedPlayableStreams.length > 0) {
+                playlistTracks = importedPlayableStreams;
+                switchTrack(0);
+            }
+
+            renderPlaylistsList();
+            if (currentFile) updateMetadataUI();
+            showToast(`Imported ${Object.keys(importedTracks).length} library tracks.`);
+        }
+
+        async function probeStreamUrl(url, timeoutMs = 3500) {
+            return new Promise(resolve => {
+                const probe = new Audio();
+                let settled = false;
+                const finish = (status) => {
+                    if (settled) return;
+                    settled = true;
+                    probe.removeAttribute('src');
+                    probe.load();
+                    resolve(status);
+                };
+                const timer = setTimeout(() => finish('UNKNOWN/TIMEOUT'), timeoutMs);
+                probe.addEventListener('canplay', () => { clearTimeout(timer); finish('OK'); }, { once: true });
+                probe.addEventListener('loadedmetadata', () => { clearTimeout(timer); finish('OK'); }, { once: true });
+                probe.addEventListener('error', () => { clearTimeout(timer); finish('ERROR/UNAVAILABLE'); }, { once: true });
+                probe.preload = 'metadata';
+                probe.src = url;
+                probe.load();
+            });
+        }
+
+        async function checkLibraryFiles() {
+            const lines = [];
+            const tracks = Object.values(virtualLibrary);
+            lines.push(`Onda Library Check — ${new Date().toLocaleString()}`);
+            lines.push(`Tracks: ${tracks.length}`);
+            lines.push('');
+
+            for (const meta of tracks) {
+                const label = meta.nickname || meta.fileName || meta.id;
+                if (meta.sourceType === 'stream' && meta.streamUrl) {
+                    const result = await probeStreamUrl(meta.streamUrl);
+                    lines.push(`[STREAM] ${label}`);
+                    lines.push(`  URL: ${meta.streamUrl}`);
+                    lines.push(`  Check: ${result}`);
+                } else {
+                    const hasLoadedFile = !!meta.blobFile;
+                    lines.push(`[LOCAL] ${label}`);
+                    lines.push(`  Recorded path/name: ${meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No path stored'}`);
+                    lines.push(`  Check: ${hasLoadedFile ? 'OK — file is loaded in this session' : 'NEEDS RELINK — browser cannot verify saved local paths without the user selecting the file/folder again'}`);
+                }
+                lines.push('');
+            }
+
+            document.getElementById('library-report-output').value = lines.join('\n');
+            showModal('modal-library-report');
+        }
+
         // --- 1. WEB AUDIO API INIT ---
-        function initAudioEngine() {
+        async function initAudioEngine() {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) {
+                showToast("WebAudio is not supported in this browser.");
+                return null;
+            }
+
             if (!audioCtx) {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
                 audioCtx = new AudioContext();
-                
                 gainNode = audioCtx.createGain();
-                gainNode.gain.value = volSlider.value; 
+                gainNode.gain.value = parseFloat(volSlider.value) || 1;
 
                 analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 256;
+                analyser.fftSize = 512;
+                analyser.smoothingTimeConstant = 0.78;
 
-                source = audioCtx.createMediaElementSource(localAudio);
-                source.connect(gainNode);
+                // IMPORTANT: createMediaElementSource can only be called once per element.
+                // Keep this attached to local files only. Remote streams often cannot be analysed unless CORS allows it.
+                localSource = audioCtx.createMediaElementSource(localAudio);
+                localSource.connect(gainNode);
                 gainNode.connect(analyser);
                 analyser.connect(audioCtx.destination);
             }
-            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            if (audioCtx.state === 'suspended') {
+                try {
+                    await audioCtx.resume();
+                } catch (err) {
+                    console.warn('AudioContext resume failed:', err);
+                }
+            }
+
+            return audioCtx;
         }
 
         // Bind playback timeline events robustly to both dual-engine elements
@@ -966,6 +1607,23 @@
         attachAudioEvents(localAudio);
         attachAudioEvents(streamAudio);
 
+        [localAudio, streamAudio].forEach(audioObj => {
+            audioObj.addEventListener('pause', (e) => {
+                if (e.target === activeAudio) {
+                    isPlaying = false;
+                    btnPlay.innerHTML = '▶️';
+                    btnPlay.classList.remove('active-state');
+                }
+            });
+            audioObj.addEventListener('play', (e) => {
+                if (e.target === activeAudio) {
+                    isPlaying = true;
+                    btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
+                    btnPlay.classList.add('active-state');
+                }
+            });
+        });
+
         // --- 2. MULTI-FILE INTAKE LOADING SYSTEM ---
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
@@ -980,31 +1638,51 @@
         });
 
         function handleUploadedFiles(files) {
-            const newTracks = Array.from(files).filter(file => {
+            const playableFiles = Array.from(files).filter(file => {
                 return file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm)$/i);
             });
 
-            if (newTracks.length === 0) {
+            if (playableFiles.length === 0) {
                 showToast("No playable media files detected.");
                 return;
             }
 
+            const newTracks = playableFiles.map(file => {
+                const id = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
+                const track = {
+                    name: id,
+                    libraryId: id,
+                    fileName: file.name,
+                    sourceType: 'local',
+                    blobFile: file,
+                    sizeBytes: file.size,
+                    localPath: file.webkitRelativePath || file.name
+                };
+
+                const existing = virtualLibrary[id] || {};
+                virtualLibrary[id] = {
+                    ...existing,
+                    id,
+                    fileName: file.name,
+                    title: existing.title || file.name.replace(/\.[^/.]+$/, ''),
+                    nickname: existing.nickname || '',
+                    lyrics: existing.lyrics || '',
+                    tags: Array.isArray(existing.tags) && existing.tags.length ? existing.tags : ['Local File'],
+                    playlists: Array.isArray(existing.playlists) ? existing.playlists : [],
+                    size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
+                    sizeBytes: file.size,
+                    duration: existing.duration || null,
+                    sourceType: 'local',
+                    localPath: file.webkitRelativePath || existing.localPath || file.name,
+                    streamUrl: null,
+                    blobFile: file
+                };
+
+                return track;
+            });
+
             const wasEmpty = playlistTracks.length === 0;
             playlistTracks = [...playlistTracks, ...newTracks];
-            
-            newTracks.forEach(file => {
-                if (!virtualLibrary[file.name]) {
-                    virtualLibrary[file.name] = {
-                        fileName: file.name,
-                        nickname: "",
-                        lyrics: "",
-                        tags: ["Local File"],
-                        playlists: [],
-                        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-                        blobFile: file 
-                    };
-                }
-            });
 
             if (wasEmpty) switchTrack(0);
             else showToast(`Added ${newTracks.length} tracks!`);
@@ -1018,30 +1696,53 @@
 
         function loadTrack(file) {
             currentFile = file;
-            initAudioEngine();
 
             localAudio.pause();
             streamAudio.pause();
 
-            if (!virtualLibrary[file.name]) {
-                virtualLibrary[file.name] = {
-                    fileName: file.name, nickname: "", lyrics: "", tags: ["URL Stream"], playlists: [], size: "URL Stream"
+            const key = file.name || file.libraryId || file.id;
+            if (!virtualLibrary[key]) {
+                virtualLibrary[key] = {
+                    id: key,
+                    fileName: file.fileName || file.name || 'Unknown Track',
+                    nickname: '',
+                    lyrics: '',
+                    tags: file.streamUrl ? ['URL Stream'] : ['Local File'],
+                    playlists: [],
+                    size: file.streamUrl ? 'URL Stream' : '',
+                    sourceType: file.streamUrl ? 'stream' : 'local',
+                    streamUrl: file.streamUrl || null,
+                    localPath: file.localPath || file.fileName || null
                 };
             }
-            
-            if (file.streamUrl) {
-                activeAudio = streamAudio; 
-                activeAudio.src = file.streamUrl;
+
+            const meta = virtualLibrary[key];
+            currentFile.name = key;
+
+            if ((file.streamUrl || meta.streamUrl) && (file.sourceType === 'stream' || meta.sourceType === 'stream')) {
+                activeAudio = streamAudio;
+                activeAudio.src = file.streamUrl || meta.streamUrl;
             } else {
-                activeAudio = localAudio; 
-                const blob = file.blobFile || file;
+                activeAudio = localAudio;
+                const blob = file.blobFile || meta.blobFile;
+                if (!blob) {
+                    updateMetadataUI();
+                    pauseAudio();
+                    startVisualizer();
+                    showToast('Local file metadata loaded, but the actual file must be selected/re-linked before playback.');
+                    return;
+                }
+                if (activeAudio.src && activeAudio.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(activeAudio.src);
+                }
                 activeAudio.src = URL.createObjectURL(blob);
+                initAudioEngine();
             }
-            
+
             activeAudio.playbackRate = parseFloat(speedSlider.value);
             updateMetadataUI();
+            startVisualizer();
             playAudio();
-            drawVisualizer();
         }
 
         function updateMetadataUI() {
@@ -1100,14 +1801,25 @@
         }
 
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
-        function playAudio() {
-            if (activeAudio === localAudio) initAudioEngine();
-            activeAudio.play();
-            isPlaying = true;
-            
-            // Activate Glowing Spinner
-            btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
-            btnPlay.classList.add('active-state');
+        async function playAudio() {
+            if (!currentFile) return;
+
+            if (activeAudio === localAudio) {
+                await initAudioEngine();
+            }
+
+            try {
+                await activeAudio.play();
+                isPlaying = true;
+                btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
+                btnPlay.classList.add('active-state');
+            } catch (err) {
+                isPlaying = false;
+                btnPlay.innerHTML = '▶️';
+                btnPlay.classList.remove('active-state');
+                console.warn('Playback failed:', err);
+                showToast('Playback blocked or failed. Click Play again.');
+            }
         }
 
         function pauseAudio() {
@@ -1296,8 +2008,10 @@
         }
 
         volSlider.addEventListener('input', (e) => {
-            const val = parseFloat(e.target.value);
+            const val = parseFloat(e.target.value) || 1;
             if (gainNode) gainNode.gain.value = val;
+            // Streams are not routed through WebAudio by default, so boost is capped to normal HTMLAudio volume.
+            streamAudio.volume = Math.min(1, Math.max(0, val));
             document.getElementById('vol-readout').innerText = Math.round(val * 100) + "%";
         });
 
@@ -1308,20 +2022,40 @@
             btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
         });
 
-        visStyleSelect.addEventListener('change', (e) => {
-            visualizerStyle = e.target.value;
-            showToast(`Visualizer: ${visStyleSelect.options[visStyleSelect.selectedIndex].text}`);
-        });
+        initVisualizerComposerUI();
 
         document.getElementById('btn-import-json').addEventListener('click', () => {
             document.getElementById('json-file-input').click();
         });
 
-        document.getElementById('json-file-input').addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                showToast(`Selected ${e.target.files[0].name}. Merging logic pending...`);
-                e.target.value = "";
+        document.getElementById('json-file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const raw = await file.text();
+                const data = JSON.parse(raw);
+                importOndaLibrary(data);
+            } catch (err) {
+                console.error(err);
+                showToast('Import failed: invalid or unsupported JSON.');
             }
+            e.target.value = "";
+        });
+
+        document.getElementById('btn-export-library').addEventListener('click', () => {
+            const data = buildLibraryExport({ streamingOnly: false });
+            downloadJsonFile(`${slugifyFileName(data.libraryName)}.json`, data);
+            showToast('Exported full library JSON.');
+        });
+
+        document.getElementById('btn-export-streams').addEventListener('click', () => {
+            const data = buildLibraryExport({ streamingOnly: true });
+            downloadJsonFile(`${slugifyFileName(data.libraryName)}-streams.json`, data);
+            showToast('Exported streaming add-on library JSON.');
+        });
+
+        document.getElementById('btn-check-library').addEventListener('click', () => {
+            checkLibraryFiles();
         });
 
         // --- 6. LOAD FROM URL / GOOGLE DRIVE LINK CONVERTER (TAB 2) ---
@@ -1353,21 +2087,36 @@
                 else if (rawUrl.includes("drive.google.com")) parsedName = "Google Drive Stream File";
             } catch (err) {}
 
+            const id = createTrackIdFromParts(['stream', streamUrl]);
             const newTrackFile = {
-                name: parsedName + "_" + Date.now(),
-                streamUrl: streamUrl
+                name: id,
+                libraryId: id,
+                fileName: parsedName,
+                sourceType: 'stream',
+                streamUrl
             };
 
-            playlistTracks.push(newTrackFile);
-            
-            virtualLibrary[newTrackFile.name] = {
-                fileName: parsedName,
-                nickname: parsedName,
-                lyrics: "",
-                tags: ["URL Stream"],
-                playlists: [],
-                size: "URL Stream"
-            };
+            if (!virtualLibrary[id]) {
+                virtualLibrary[id] = {
+                    id,
+                    fileName: parsedName,
+                    title: parsedName,
+                    nickname: parsedName,
+                    lyrics: "",
+                    tags: ["URL Stream"],
+                    playlists: [],
+                    size: "URL Stream",
+                    sourceType: "stream",
+                    streamUrl,
+                    localPath: null,
+                    phonePath: null,
+                    desktopPath: null
+                };
+                playlistTracks.push(newTrackFile);
+            } else {
+                virtualLibrary[id].streamUrl = streamUrl;
+                if (!playlistTracks.some(track => track.name === id)) playlistTracks.push(newTrackFile);
+            }
 
             urlInputBox.value = "";
             showToast("URL Stream added successfully to queue!");
@@ -1480,7 +2229,10 @@
         function triggerMetaEdit() {
             if (!currentFile) return;
             switchWorkspaceTab('tab-library');
-            document.getElementById('metadata-display-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            const metadataCard = document.getElementById('metadata-display-card') || document.getElementById('tab-library');
+            if (metadataCard) {
+                metadataCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
             activateInlineRename();
         }
 
@@ -1522,6 +2274,17 @@
             }
         });
 
+
+        function safeBind(id, eventName, handler) {
+            const el = document.getElementById(id);
+            if (!el) {
+                console.warn(`Missing element #${id}; skipped ${eventName} binding.`);
+                return null;
+            }
+            el.addEventListener(eventName, handler);
+            return el;
+        }
+
         // --- 10. RE-ROUTING METADATA UTILITY DISPATCH ---
         
         document.getElementById('btn-repeat-one').addEventListener('click', () => {
@@ -1553,7 +2316,7 @@
             showModal('modal-lyrics');
         });
 
-        document.getElementById('btn-playlist').addEventListener('click', () => {
+        safeBind('btn-playlist', 'click', () => {
             if (!currentFile) return;
             playlistChecklistContainer.innerHTML = "";
             Object.keys(playlists).forEach(pl => {
@@ -1566,7 +2329,7 @@
             showModal('modal-playlist');
         });
 
-        document.getElementById('btn-tags').addEventListener('click', () => {
+        safeBind('btn-tags', 'click', () => {
             if (!currentFile) return;
             document.getElementById('input-tags').value = virtualLibrary[currentFile.name].tags.join(', ');
             showModal('modal-tags');
@@ -1641,8 +2404,13 @@
         const canvasCtx = canvas.getContext('2d');
 
         function resizeCanvas() {
-            canvas.width = canvas.parentElement.clientWidth;
-            canvas.height = canvas.parentElement.clientHeight;
+            const rect = canvas.parentElement.getBoundingClientRect();
+            const width = Math.max(1, Math.floor(rect.width));
+            const height = Math.max(1, Math.floor(rect.height));
+            if (canvas.width !== width || canvas.height !== height) {
+                canvas.width = width;
+                canvas.height = height;
+            }
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
@@ -1667,99 +2435,403 @@
             tagsBar.scrollLeft = scrollLeftTags - walk;
         });
 
-        function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
-            
-            if (!analyser || activeAudio === streamAudio) {
-                // Keep solid state background for Remote URLs because WebAudio mutes CORS requests
-                canvasCtx.fillStyle = '#000000';
-                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-                return;
+        function startVisualizer() {
+            if (visualizerRunning) return;
+            visualizerRunning = true;
+            drawVisualizer();
+        }
+
+        function drawIdleOrStreamVisualizer(label = '') {
+            const t = performance.now() / 1000;
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const layer = visualizerLayers[0] || createDefaultVisualizerLayer(1);
+            const colors = getLayerColors(layer);
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const sideCount = 18;
+            const laneWidth = (canvas.width / 2) / sideCount;
+            const pulse = isPlaying ? ((Math.sin(t * 3.2) + 1) * 0.5) : 0.22;
+            const amp = isPlaying ? 10 + (pulse * 22) : 8;
+
+            canvasCtx.shadowBlur = 16;
+            canvasCtx.shadowColor = hexToRgba(pickColor(colors, 0), 0.72);
+            canvasCtx.fillStyle = hexToRgba(pickColor(colors, 0), 0.58);
+
+            for (let i = 0; i < sideCount; i++) {
+                const height = (Math.sin((i * 0.7) + (t * 2.4)) * 0.5 + 0.5) * amp + 4;
+                const slot = laneWidth * 0.58;
+                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - slot) / 2;
+                const rightX = centerX + (i * laneWidth) + (laneWidth - slot) / 2;
+                canvasCtx.fillRect(leftX, centerY - height / 2, slot, height);
+                canvasCtx.fillRect(rightX, centerY - height / 2, slot, height);
             }
 
+            canvasCtx.shadowBlur = 0;
+
+            if (label) {
+                canvasCtx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+                canvasCtx.fillStyle = hexToRgba(pickColor(colors, 1), 0.82);
+                canvasCtx.textAlign = 'right';
+                canvasCtx.fillText(label, canvas.width - 18, canvas.height - 18);
+            }
+        }
+
+        function getFrequencyData() {
+            if (!analyser) return null;
             const bufferLength = analyser.frequencyBinCount;
             const dataArray = new Uint8Array(bufferLength);
             analyser.getByteFrequencyData(dataArray);
-
-            canvasCtx.fillStyle = '#000000';
-            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
-
-            if (visualizerStyle === "bars") {
-                const barWidth = (canvas.width / bufferLength) * 2.5;
-                let barHeight;
-                let x = 0;
-
-                for (let i = 0; i < bufferLength; i++) {
-                    barHeight = dataArray[i] / 2;
-                    canvasCtx.fillStyle = 'rgba(75, 132, 191, 0.4)'; 
-                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
-                    x += barWidth;
-                }
-
-            } else if (visualizerStyle === "mountain") {
-                canvasCtx.beginPath();
-                canvasCtx.moveTo(0, canvas.height);
-                
-                const sliceWidth = canvas.width / bufferLength;
-                let x = 0;
-
-                for (let i = 0; i < bufferLength; i++) {
-                    const v = dataArray[i] / 255;
-                    const y = canvas.height - (v * canvas.height * 0.7);
-                    canvasCtx.lineTo(x, y);
-                    x += sliceWidth;
-                }
-
-                canvasCtx.lineTo(canvas.width, canvas.height);
-                canvasCtx.closePath();
-
-                const grad = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
-                grad.addColorStop(0, 'rgba(117, 178, 222, 0.45)');
-                grad.addColorStop(1, 'rgba(38, 97, 92, 0.1)');
-                
-                canvasCtx.fillStyle = grad;
-                canvasCtx.fill();
-
-            } else if (visualizerStyle === "led") {
-                const columns = Math.min(bufferLength, 45);
-                const colWidth = canvas.width / columns;
-                const blockHeight = 6;
-                const blockGap = 2;
-
-                for (let i = 0; i < columns; i++) {
-                    const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
-                    const blocksCount = Math.floor(barHeight / (blockHeight + blockGap));
-                    const x = i * colWidth;
-
-                    for (let j = 0; j < blocksCount; j++) {
-                        const y = canvas.height - (j * (blockHeight + blockGap));
-                        
-                        if (j > 12) {
-                            canvasCtx.fillStyle = 'rgba(210, 125, 108, 0.5)';
-                        } else if (j > 6) {
-                            canvasCtx.fillStyle = 'rgba(224, 163, 96, 0.4)';
-                        } else {
-                            canvasCtx.fillStyle = 'rgba(68, 158, 146, 0.3)';
-                        }
-                        canvasCtx.fillRect(x + 1, y - blockHeight, colWidth - 2, blockHeight);
-                    }
-                }
-
-            } else if (visualizerStyle === "symmetric") {
-                const centerY = canvas.height / 2;
-                const sliceWidth = canvas.width / bufferLength;
-                let x = 0;
-
-                for (let i = 0; i < bufferLength; i++) {
-                    const amplitude = (dataArray[i] / 255) * canvas.height * 0.4;
-                    canvasCtx.fillStyle = 'rgba(75, 132, 191, 0.45)';
-                    canvasCtx.fillRect(x, centerY - amplitude, sliceWidth - 1, amplitude * 2);
-                    x += sliceWidth;
-                }
-            }
+            return dataArray;
         }
-        
-        drawVisualizer();
+
+        function getMirroredSideSamples(dataArray, sideCount = 32) {
+            const samples = [];
+            if (!dataArray || dataArray.length === 0) return Array(sideCount).fill(0);
+            const maxIndex = Math.max(8, Math.floor(dataArray.length * 0.85));
+            for (let i = 0; i < sideCount; i++) {
+                const pos = i / Math.max(1, sideCount - 1);
+                const idx = Math.min(maxIndex - 1, Math.floor(Math.pow(pos, 1.15) * maxIndex));
+                const normalized = dataArray[idx] / 255;
+                samples.push(Math.pow(normalized, 0.86));
+            }
+            return samples;
+        }
+
+        function buildMirroredLinePoints(sideSamples, totalPoints = 120) {
+            const centerOut = [];
+            for (let i = 0; i < totalPoints / 2; i++) {
+                const idx = Math.min(sideSamples.length - 1, Math.floor((i / Math.max(1, (totalPoints / 2) - 1)) * sideSamples.length));
+                centerOut.push(sideSamples[idx]);
+            }
+            const leftHalf = [...centerOut].reverse();
+            return [...leftHalf, ...centerOut];
+        }
+
+        function setupGlowForLayer(colors, index = 0, alpha = 0.92, blur = 16) {
+            const c = pickColor(colors, index);
+            canvasCtx.shadowBlur = blur;
+            canvasCtx.shadowColor = hexToRgba(c, Math.min(1, alpha));
+            canvasCtx.strokeStyle = hexToRgba(c, alpha);
+            canvasCtx.fillStyle = hexToRgba(c, alpha * 0.78);
+        }
+
+        function drawMirroredBars(sideSamples, colors) {
+            const centerX = canvas.width / 2;
+            const maxBarHeight = canvas.height * 0.80;
+            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const barWidth = Math.max(2, laneWidth * 0.68);
+
+            sideSamples.forEach((sample, i) => {
+                const color = pickColor(colors, i);
+                canvasCtx.shadowBlur = 14;
+                canvasCtx.shadowColor = hexToRgba(color, 0.82);
+                canvasCtx.fillStyle = hexToRgba(color, 0.72);
+                const barHeight = Math.max(5, sample * maxBarHeight);
+                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - barWidth) / 2;
+                const rightX = centerX + (i * laneWidth) + (laneWidth - barWidth) / 2;
+                canvasCtx.fillRect(leftX, canvas.height - barHeight, barWidth, barHeight);
+                canvasCtx.fillRect(rightX, canvas.height - barHeight, barWidth, barHeight);
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawMirroredMountain(sideSamples, colors) {
+            const points = buildMirroredLinePoints(sideSamples, 140);
+            const step = canvas.width / (points.length - 1);
+            const baseY = canvas.height * 0.88;
+            const maxHeight = canvas.height * 0.72;
+
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(0, baseY);
+            for (let i = 0; i < points.length; i++) {
+                const x = i * step;
+                const y = baseY - (points[i] * maxHeight);
+                canvasCtx.lineTo(x, y);
+            }
+            canvasCtx.lineTo(canvas.width, baseY);
+            canvasCtx.closePath();
+
+            const grad = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+            grad.addColorStop(0, hexToRgba(pickColor(colors, 0), 0.86));
+            grad.addColorStop(0.52, hexToRgba(pickColor(colors, 1), 0.58));
+            grad.addColorStop(1, hexToRgba(pickColor(colors, 2), 0.24));
+            canvasCtx.shadowBlur = 18;
+            canvasCtx.shadowColor = hexToRgba(pickColor(colors, 0), 0.72);
+            canvasCtx.fillStyle = grad;
+            canvasCtx.fill();
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawMirroredLed(sideSamples, colors) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const columnWidth = Math.max(3, laneWidth * 0.62);
+            const blockHeight = 6;
+            const blockGap = 2;
+            const halfHeight = canvas.height * 0.34;
+
+            canvasCtx.shadowBlur = 12;
+
+            sideSamples.forEach((sample, i) => {
+                const blocks = Math.max(1, Math.floor((sample * halfHeight) / (blockHeight + blockGap)));
+                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - columnWidth) / 2;
+                const rightX = centerX + (i * laneWidth) + (laneWidth - columnWidth) / 2;
+
+                for (let j = 0; j < blocks; j++) {
+                    const color = pickColor(colors, j > 9 ? 2 : j > 5 ? 1 : 0);
+                    canvasCtx.shadowColor = hexToRgba(color, 0.72);
+                    canvasCtx.fillStyle = hexToRgba(color, 0.76);
+                    const yUp = centerY - ((j + 1) * (blockHeight + blockGap));
+                    const yDown = centerY + (j * (blockHeight + blockGap));
+                    canvasCtx.fillRect(leftX, yUp, columnWidth, blockHeight);
+                    canvasCtx.fillRect(rightX, yUp, columnWidth, blockHeight);
+                    canvasCtx.fillRect(leftX, yDown, columnWidth, blockHeight);
+                    canvasCtx.fillRect(rightX, yDown, columnWidth, blockHeight);
+                }
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawPulseBurst(sideSamples, colors) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const barWidth = Math.max(2, laneWidth * 0.6);
+            const maxAmp = canvas.height * 0.35;
+
+            sideSamples.forEach((sample, i) => {
+                const color = pickColor(colors, i);
+                canvasCtx.shadowBlur = 16;
+                canvasCtx.shadowColor = hexToRgba(color, 0.8);
+                canvasCtx.fillStyle = hexToRgba(color, 0.72);
+                const amplitude = Math.max(4, sample * maxAmp);
+                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - barWidth) / 2;
+                const rightX = centerX + (i * laneWidth) + (laneWidth - barWidth) / 2;
+                canvasCtx.fillRect(leftX, centerY - amplitude, barWidth, amplitude * 2);
+                canvasCtx.fillRect(rightX, centerY - amplitude, barWidth, amplitude * 2);
+            });
+
+            canvasCtx.strokeStyle = hexToRgba(pickColor(colors, 1), 0.82);
+            canvasCtx.lineWidth = 1.4;
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(0, centerY);
+            canvasCtx.lineTo(canvas.width, centerY);
+            canvasCtx.stroke();
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawWaveLine(sideSamples, colors) {
+            const points = buildMirroredLinePoints(sideSamples, 150);
+            const step = canvas.width / (points.length - 1);
+            const centerY = canvas.height / 2;
+            const maxAmp = canvas.height * 0.29;
+
+            setupGlowForLayer(colors, 0, 0.95, 22);
+            canvasCtx.lineWidth = 4;
+            canvasCtx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                const x = i * step;
+                const y = centerY + (Math.sin(i * 0.18) * 0.18 + (points[i] * 2 - 1)) * maxAmp;
+                if (i === 0) canvasCtx.moveTo(x, y);
+                else canvasCtx.lineTo(x, y);
+            }
+            canvasCtx.stroke();
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawOrbChain(sideSamples, colors) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const laneWidth = (canvas.width / 2) / sideSamples.length;
+
+            sideSamples.forEach((sample, i) => {
+                const color = pickColor(colors, i);
+                const radius = Math.max(3, sample * 31);
+                const offset = sample * canvas.height * 0.18;
+                const leftX = centerX - ((i + 0.5) * laneWidth);
+                const rightX = centerX + ((i + 0.5) * laneWidth);
+                canvasCtx.shadowBlur = 17;
+                canvasCtx.shadowColor = hexToRgba(color, 0.78);
+                canvasCtx.fillStyle = hexToRgba(color, 0.78);
+
+                [leftX, rightX].forEach(x => {
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(x, centerY - offset, radius, 0, Math.PI * 2);
+                    canvasCtx.fill();
+                    canvasCtx.beginPath();
+                    canvasCtx.arc(x, centerY + offset, Math.max(2, radius * 0.55), 0, Math.PI * 2);
+                    canvasCtx.fill();
+                });
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawRibbon(sideSamples, colors) {
+            const points = buildMirroredLinePoints(sideSamples, 120);
+            const step = canvas.width / (points.length - 1);
+            const centerY = canvas.height / 2;
+            const maxAmp = canvas.height * 0.24;
+
+            canvasCtx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                const x = i * step;
+                const y = centerY - (points[i] * maxAmp) - (Math.cos(i * 0.22) * 6);
+                if (i === 0) canvasCtx.moveTo(x, y);
+                else canvasCtx.lineTo(x, y);
+            }
+            for (let i = points.length - 1; i >= 0; i--) {
+                const x = i * step;
+                const y = centerY + (points[i] * maxAmp) + (Math.cos(i * 0.22) * 6);
+                canvasCtx.lineTo(x, y);
+            }
+            canvasCtx.closePath();
+
+            const grad = canvasCtx.createLinearGradient(0, 0, canvas.width, 0);
+            grad.addColorStop(0, hexToRgba(pickColor(colors, 0), 0.82));
+            grad.addColorStop(0.5, hexToRgba(pickColor(colors, 1), 0.86));
+            grad.addColorStop(1, hexToRgba(pickColor(colors, 2), 0.82));
+            canvasCtx.shadowBlur = 18;
+            canvasCtx.shadowColor = hexToRgba(pickColor(colors, 1), 0.72);
+            canvasCtx.fillStyle = grad;
+            canvasCtx.fill();
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawHeartbeat(sideSamples, colors) {
+            const points = buildMirroredLinePoints(sideSamples, 96);
+            const step = canvas.width / (points.length - 1);
+            const centerY = canvas.height / 2;
+            const maxAmp = canvas.height * 0.27;
+
+            setupGlowForLayer(colors, 0, 0.98, 20);
+            canvasCtx.lineWidth = 5;
+            canvasCtx.lineJoin = 'round';
+            canvasCtx.lineCap = 'round';
+            canvasCtx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                const x = i * step;
+                const spike = (i % 6 === 0) ? 1.0 : 0.45;
+                const y = centerY - ((points[i] * 2 - 1) * maxAmp * spike);
+                if (i === 0) canvasCtx.moveTo(x, y);
+                else canvasCtx.lineTo(x, y);
+            }
+            canvasCtx.stroke();
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawPixelWave(sideSamples, colors) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const cellSize = Math.max(4, laneWidth * 0.44);
+            const cellGap = 2;
+            const maxRows = Math.max(4, Math.floor((canvas.height * 0.34) / (cellSize + cellGap)));
+
+            sideSamples.forEach((sample, i) => {
+                const rows = Math.max(1, Math.floor(sample * maxRows));
+                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - cellSize) / 2;
+                const rightX = centerX + (i * laneWidth) + (laneWidth - cellSize) / 2;
+                for (let j = 0; j < rows; j++) {
+                    const color = pickColor(colors, i + j);
+                    canvasCtx.shadowBlur = 12;
+                    canvasCtx.shadowColor = hexToRgba(color, 0.7);
+                    canvasCtx.fillStyle = hexToRgba(color, Math.max(0.28, 0.86 - (j * 0.035)));
+                    const yUp = centerY - ((j + 1) * (cellSize + cellGap));
+                    const yDown = centerY + (j * (cellSize + cellGap));
+                    canvasCtx.fillRect(leftX, yUp, cellSize, cellSize);
+                    canvasCtx.fillRect(rightX, yUp, cellSize, cellSize);
+                    canvasCtx.fillRect(leftX, yDown, cellSize, cellSize);
+                    canvasCtx.fillRect(rightX, yDown, cellSize, cellSize);
+                }
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawFloatingIslands(sideSamples, colors) {
+            const points = buildMirroredLinePoints(sideSamples, 110);
+            const step = canvas.width / (points.length - 1);
+            const baseY = canvas.height * 0.86;
+
+            const layers = [
+                { scale: 0.95, color: pickColor(colors, 0), offset: 0, alpha: 0.84 },
+                { scale: 0.62, color: pickColor(colors, 1), offset: 16, alpha: 0.60 },
+                { scale: 0.42, color: pickColor(colors, 2), offset: 28, alpha: 0.48 }
+            ];
+
+            layers.forEach(layer => {
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(0, baseY);
+                for (let i = 0; i < points.length; i++) {
+                    const x = i * step;
+                    const shaped = Math.max(0, points[i] - 0.1);
+                    const y = baseY - (shaped * canvas.height * 0.38 * layer.scale) - layer.offset - Math.sin(i * 0.35) * 2;
+                    canvasCtx.lineTo(x, y);
+                }
+                canvasCtx.lineTo(canvas.width, baseY);
+                canvasCtx.closePath();
+                canvasCtx.shadowBlur = 12;
+                canvasCtx.shadowColor = hexToRgba(layer.color, 0.62);
+                canvasCtx.fillStyle = hexToRgba(layer.color, layer.alpha);
+                canvasCtx.fill();
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawLayerByStyle(style, sideSamples, colors) {
+            if (style === "bars") drawMirroredBars(sideSamples, colors);
+            else if (style === "mountain") drawMirroredMountain(sideSamples, colors);
+            else if (style === "led") drawMirroredLed(sideSamples, colors);
+            else if (style === "symmetric") drawPulseBurst(sideSamples, colors);
+            else if (style === "waveline") drawWaveLine(sideSamples, colors);
+            else if (style === "orbs") drawOrbChain(sideSamples, colors);
+            else if (style === "ribbon") drawRibbon(sideSamples, colors);
+            else if (style === "heartbeat") drawHeartbeat(sideSamples, colors);
+            else if (style === "pixelwave") drawPixelWave(sideSamples, colors);
+            else if (style === "islands") drawFloatingIslands(sideSamples, colors);
+            else drawMirroredBars(sideSamples, colors);
+        }
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            resizeCanvas();
+            canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (activeAudio === streamAudio) {
+                drawIdleOrStreamVisualizer('URL STREAM');
+                return;
+            }
+
+            if (!analyser) {
+                drawIdleOrStreamVisualizer('READY');
+                return;
+            }
+
+            const dataArray = getFrequencyData();
+            const peak = dataArray ? dataArray.reduce((max, value) => Math.max(max, value), 0) : 0;
+            if (!isPlaying || peak < 2) {
+                drawIdleOrStreamVisualizer(isPlaying ? 'LISTENING' : 'PAUSED');
+                return;
+            }
+
+            const sideSamples = getMirroredSideSamples(dataArray, 32);
+            const orderedLayers = visualizerLayers
+                .slice()
+                .sort((a, b) => (parseInt(a.layer, 10) || 1) - (parseInt(b.layer, 10) || 1));
+
+            orderedLayers.forEach(layer => {
+                canvasCtx.save();
+                canvasCtx.globalCompositeOperation = layer.blend || 'source-over';
+                drawLayerByStyle(layer.style || 'bars', sideSamples, getLayerColors(layer));
+                canvasCtx.restore();
+            });
+
+            canvasCtx.globalCompositeOperation = 'source-over';
+            canvasCtx.shadowBlur = 0;
+        }
+
+        startVisualizer();
     </script>
 </body>
 </html>

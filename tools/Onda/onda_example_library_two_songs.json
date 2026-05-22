@@ -1,0 +1,142 @@
+{
+  "app": "Onda Media Player",
+  "type": "onda-library",
+  "version": 1,
+  "libraryName": "Chris Example Library",
+  "libraryKind": "device-library",
+  "deviceProfile": "desktop-example",
+  "exportedAt": "2026-05-22T18:30:00.000Z",
+  "tracks": {
+    "trk_example_neon_tide": {
+      "id": "trk_example_neon_tide",
+      "title": "Neon Tide",
+      "fileName": "neon-tide-demo.mp3",
+      "nickname": "Neon Tide - late night edit",
+      "sourceType": "local",
+      "localPath": "D:/Music/Onda Demo/neon-tide-demo.mp3",
+      "desktopPath": "D:/Music/Onda Demo/neon-tide-demo.mp3",
+      "phonePath": "/storage/emulated/0/Music/Onda Demo/neon-tide-demo.mp3",
+      "streamUrl": null,
+      "size": "7.42 MB",
+      "sizeBytes": 7780432,
+      "duration": 241,
+      "tags": [
+        "synth",
+        "night drive",
+        "focus",
+        "blue visualiser"
+      ],
+      "lyrics": "Made-up demo lyric line one.\nMade-up demo lyric line two.\nMade-up chorus placeholder.",
+      "notes": "Local example track. JSON stores metadata and file location only, not the audio file.",
+      "playlists": [
+        "Late Night Coding",
+        "Visualiser Tests"
+      ],
+      "visualizerPreset": "Pink Blue Mirror Stack"
+    },
+    "trk_example_cloud_ritual": {
+      "id": "trk_example_cloud_ritual",
+      "title": "Cloud Ritual",
+      "fileName": "cloud-ritual-stream.mp3",
+      "nickname": "Cloud Ritual stream test",
+      "sourceType": "stream",
+      "localPath": null,
+      "desktopPath": null,
+      "phonePath": null,
+      "streamUrl": "https://example.com/audio/cloud-ritual-stream.mp3",
+      "size": "URL Stream",
+      "sizeBytes": null,
+      "duration": null,
+      "tags": [
+        "stream",
+        "ritual pop",
+        "online",
+        "test link"
+      ],
+      "lyrics": "Imaginary stream lyric verse.\nImaginary stream lyric chorus.",
+      "notes": "Streaming example. Replace the example.com URL with a real direct audio URL or Google Drive converted stream URL.",
+      "playlists": [
+        "Streaming Add-ons",
+        "Visualiser Tests"
+      ],
+      "visualizerPreset": "Copper Pulse Stack"
+    }
+  },
+  "playlists": {
+    "Late Night Coding": {
+      "name": "Late Night Coding",
+      "description": "Made-up local focus playlist.",
+      "trackIds": [
+        "trk_example_neon_tide"
+      ]
+    },
+    "Streaming Add-ons": {
+      "name": "Streaming Add-ons",
+      "description": "Made-up streaming playlist.",
+      "trackIds": [
+        "trk_example_cloud_ritual"
+      ]
+    },
+    "Visualiser Tests": {
+      "name": "Visualiser Tests",
+      "description": "Both example tracks for testing colours and layers.",
+      "trackIds": [
+        "trk_example_neon_tide",
+        "trk_example_cloud_ritual"
+      ]
+    }
+  },
+  "visualizerPresets": {
+    "Pink Blue Mirror Stack": {
+      "name": "Pink Blue Mirror Stack",
+      "savedAt": "2026-05-22T18:30:00.000Z",
+      "layers": [
+        {
+          "style": "waveline",
+          "layer": 1,
+          "blend": "source-over",
+          "colors": [
+            "#75b2de",
+            "#ff4fa3",
+            "#7a5cff",
+            "#000000",
+            "#000000",
+            "#000000"
+          ]
+        },
+        {
+          "style": "pixelwave",
+          "layer": 2,
+          "blend": "lighter",
+          "colors": [
+            "#e0a360",
+            "#75b2de",
+            "#000000",
+            "#000000",
+            "#000000",
+            "#000000"
+          ]
+        }
+      ]
+    },
+    "Copper Pulse Stack": {
+      "name": "Copper Pulse Stack",
+      "savedAt": "2026-05-22T18:30:00.000Z",
+      "layers": [
+        {
+          "style": "symmetric",
+          "layer": 1,
+          "blend": "screen",
+          "colors": [
+            "#e0a360",
+            "#d27d6c",
+            "#75b2de",
+            "#000000",
+            "#000000",
+            "#000000"
+          ]
+        }
+      ]
+    }
+  }
+}
