@@ -1794,7 +1794,10 @@
             <div class="visualizer-composer-card">
                 <div class="composer-title-row">
                     <span class="composer-title">🌈 Visualiser Composer</span>
-                    <button id="btn-add-visual-layer" class="tiny-icon-btn" title="Duplicate/add another visualiser layer">＋</button>
+                    <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
+                        <button id="btn-save-visual-stack-main" class="btn-pill" title="Save the full current visualiser stack as a custom preset">💾 SAVE STACK</button>
+                        <button id="btn-add-visual-layer" class="tiny-icon-btn" title="Duplicate/add another visualiser layer">＋</button>
+                    </div>
                 </div>
                 <div class="composer-help">Each card is one visualiser pass. Six colour boxes feed the wave; black boxes are ignored. Lower layer numbers draw underneath higher ones. Blend mixes a layer with whatever is below it.</div>
                 <div class="visual-field">
@@ -2074,6 +2077,7 @@
         const visualizerLayerList = document.getElementById('visualizer-layer-list');
         const visualizerPresetSelect = document.getElementById('visualizer-preset-select');
         const btnAddVisualLayer = document.getElementById('btn-add-visual-layer');
+        const btnSaveVisualStackMain = document.getElementById('btn-save-visual-stack-main');
         const libraryNameInput = document.getElementById('library-name-input');
         const libraryDrawer = document.getElementById('library-manager-drawer');
         const btnDatabaseEngine = document.getElementById('btn-database-engine');
@@ -2412,7 +2416,7 @@
                         </div>
                         <div class="visual-layer-footer">
                             <button class="tiny-icon-btn btn-duplicate-layer" title="Duplicate this layer below">＋</button>
-                            <button class="tiny-icon-btn btn-save-visual-stack" title="Save current visualiser stack">⌑</button>
+                            <button class="btn-pill btn-save-visual-stack" title="Save current visualiser stack">💾 Save</button>
                         </div>
                     `;
 
@@ -2568,6 +2572,13 @@
                         syncVisualizerLayerFromCard(card);
                         saveCurrentVisualizerStack();
                     }
+                });
+            }
+
+            if (btnSaveVisualStackMain) {
+                btnSaveVisualStackMain.addEventListener('click', () => {
+                    document.querySelectorAll('.visual-layer-card').forEach(card => syncVisualizerLayerFromCard(card));
+                    saveCurrentVisualizerStack();
                 });
             }
 
