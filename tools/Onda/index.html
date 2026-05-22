@@ -47,7 +47,6 @@
             border-bottom: 2px solid var(--stone-ochre);
             border-left: 2px solid var(--stone-ochre);
             border-right: 2px solid var(--stone-ochre);
-            /* Increased internal padding */
             padding: 20px 40px; 
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             overflow: hidden;
@@ -58,7 +57,6 @@
         #organon-bottom-panel {
             position: fixed;
             bottom: 0;
-            /* Anchored to the padding boundaries set by the body */
             left: 120px; 
             right: 120px;
             width: auto;
@@ -66,7 +64,6 @@
             background-color: var(--stone-ochre);
             background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
             background-size: cover;
-            /* Increased internal padding */
             padding: 15px 20px 20px 20px; 
             box-sizing: border-box;
             display: flex;
@@ -86,7 +83,6 @@
 
         #organon-middle-panel {
             flex-grow: 1;
-            /* Increased internal padding, maintaining bottom offset for sticky footer */
             padding: 20px 40px 140px 40px; 
             overflow-y: auto;
             display: flex;
@@ -127,7 +123,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
 
-        /* Symmetrical elements drop shadows */
         .utility-pill, .mini-meta-box, h2, #track-nickname-label, .seek-container {
             filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.85));
         }
@@ -151,9 +146,24 @@
             background-color: rgba(224, 163, 96, 0.15);
             transform: scale(1.15);
         }
+        
+        /* Glowing Active State for Emojis */
         .utility-btn.active-state {
             color: var(--water-blue);
+            text-shadow: 0 0 10px var(--water-blue), 0 0 20px var(--water-spray);
             filter: drop-shadow(0 0 4px var(--water-spray));
+        }
+
+        /* Dynamic Spinning Play Icon */
+        @keyframes spin-glow {
+            0% { transform: rotate(0deg); text-shadow: 0 0 5px var(--water-blue); }
+            100% { transform: rotate(360deg); text-shadow: 0 0 15px var(--water-spray); }
+        }
+        .playing-spinner {
+            display: inline-block;
+            animation: spin-glow 1.5s linear infinite;
+            color: var(--water-spray) !important;
+            text-shadow: 0 0 10px var(--water-blue);
         }
         
         /* Tooltip utilities */
@@ -188,11 +198,11 @@
             height: 100%;
             z-index: 1;
             pointer-events: none;
-            border-bottom-left-radius: 26px; /* Match inner radius of the panel */
+            border-bottom-left-radius: 26px;
             border-bottom-right-radius: 26px;
         }
 
-        /* Mini Metadata Square Box (Repositioned to FAR LEFT) */
+        /* Mini Metadata Square Box */
         .mini-meta-box {
             width: 38px;
             height: 38px;
@@ -322,7 +332,6 @@
             width: 200px;
         }
 
-        /* Control Rows for Settings and Layouts */
         .control-row {
             display: flex;
             align-items: center;
@@ -374,7 +383,7 @@
             gap: 12px;
         }
 
-        /* MODE SELECTION BAR (All Your Files Action Row) */
+        /* MODE SELECTION BAR */
         .workspace-mode-bar {
             display: flex;
             background-color: rgba(0, 0, 0, 0.4);
@@ -411,7 +420,6 @@
             box-shadow: 0 0 6px rgba(75, 132, 191, 0.5);
         }
 
-        /* Dynamic View Content Cards */
         .viewport-content {
             display: none;
         }
@@ -419,7 +427,6 @@
             display: block;
         }
 
-        /* Drag and drop queue layout */
         .playlist-row {
             display: flex;
             justify-content: space-between;
@@ -461,7 +468,6 @@
             display: inline-block;
         }
 
-        /* Input lines */
         .gdrive-input-row {
             display: flex;
             gap: 10px;
@@ -571,7 +577,7 @@
         #scrollable-tags-bar {
             background-color: rgba(30, 32, 28, 0.9);
             border-bottom: 1.5px solid var(--chiseled-bronze);
-            padding: 6px 40px; /* Aligned with middle panel interior padding */
+            padding: 6px 40px; 
             display: none;
             gap: 10px;
             white-space: nowrap;
@@ -586,30 +592,13 @@
 
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
-            body { 
-                padding: 0 15px; /* Collapse padding on mobile */
-            }
-            #organon-top-panel {
-                padding: 20px 20px;
-            }
-            #organon-bottom-panel {
-                left: 15px;
-                right: 15px;
-                padding: 10px 15px 15px 15px;
-            }
-            #organon-middle-panel {
-                padding: 15px 15px 120px 15px;
-            }
-            #scrollable-tags-bar {
-                padding: 6px 15px;
-            }
-            .primary-controls {
-                flex-wrap: wrap;
-            }
-            .seek-container {
-                order: 3;
-                width: 100%;
-            }
+            body { padding: 0 15px; }
+            #organon-top-panel { padding: 20px 20px; }
+            #organon-bottom-panel { left: 15px; right: 15px; padding: 10px 15px 15px 15px; }
+            #organon-middle-panel { padding: 15px 15px 120px 15px; }
+            #scrollable-tags-bar { padding: 6px 15px; }
+            .primary-controls { flex-wrap: wrap; }
+            .seek-container { order: 3; width: 100%; }
         }
 
         @keyframes pulse {
@@ -625,11 +614,10 @@
         <!-- Ambient background canvas visualizer -->
         <canvas id="audio-visualizer"></canvas>
 
-        <!-- All player controls content raised securely over visualizer canvas -->
         <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
                 <div style="display: flex; align-items: center; gap: 12px; overflow: hidden; width: 100%;">
-                    <!-- Mini Metadata Box (FAR LEFT - Desktop Right-Click, Mobile Long-Press) -->
+                    <!-- Mini Metadata Box -->
                     <div id="mini-meta-box" class="mini-meta-box" title="Click to copy, Right-Click (or Hold) for details">
                         <span class="mini-meta-label">META</span>
                         <span id="mini-meta-size" class="mini-meta-value">0.0M</span>
@@ -645,16 +633,13 @@
             <div class="primary-controls">
                 <!-- Symmetrical Control Pill (Holds Play/Pause & Transport) -->
                 <div class="utility-pill" id="start-controls-pill">
-                    <!-- Previous track -->
                     <button id="btn-prev" class="utility-btn" data-tooltip="Restart / Prev (Double click)">⏮️</button>
-
-                    <!-- Core Play/Pause -->
-                    <button id="btn-play" class="utility-btn" data-tooltip="Play / Pause" style="font-size: 1.45rem;">▶️</button>
-
-                    <!-- Cycle playback multipliers ⚡ -->
+                    <!-- Play triggers the spin-glow when active -->
+                    <button id="btn-play" class="utility-btn" data-tooltip="Play (Hold to Fast Forward)">▶️</button>
+                    <!-- Dedicated Pause/Stop Button -->
+                    <button id="btn-pause" class="utility-btn" data-tooltip="Pause">॥</button>
+                    
                     <button id="btn-speed-cycle" class="utility-btn" data-tooltip="Cycle Speed">⚡</button>
-
-                    <!-- Skip track -->
                     <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭️</button>
                 </div>
 
@@ -665,13 +650,12 @@
                     <span id="time-total">0:00</span>
                 </div>
                 
-                <!-- Right Symmetrical Pill (Holds File-specific options) -->
+                <!-- Right Symmetrical Pill -->
                 <div class="utility-pill" id="end-utilities-pill">
                     <button id="btn-repeat-one" class="utility-btn" data-tooltip="Repeat One">♾️</button>
                     <button id="btn-repeat-all" class="utility-btn" data-tooltip="Repeat All">🔁</button>
                     <button id="btn-shuffle" class="utility-btn" data-tooltip="Shuffle">🔀</button>
-                    <button id="btn-lyrics-modal" class="utility-btn" data-tooltip="Edit Lyrics">🎤</button>
-                    <!-- Settings Cog triggers the fully draggable panel popup -->
+                    <button id="btn-lyrics-modal" class="utility-btn" data-tooltip="Lyrics">🎤</button>
                     <button id="btn-toggle-advanced" class="utility-btn" data-tooltip="Settings & Extras">⚙️</button>
                 </div>
             </div>
@@ -686,7 +670,7 @@
         
         <!-- Workspace Mode Selection Tabs Bar (All Your Files Controllers) -->
         <div class="workspace-mode-bar">
-            <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">📁 Files Queue</button>
+            <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">📁 Files Drop Zone</button>
             <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">🔗 Load URL</button>
             <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">🗂️ Playlists</button>
             <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">🏷️ Library Info</button>
@@ -695,25 +679,16 @@
         <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
         <div id="workspace-viewport" class="organon-card" style="flex-grow: 1; display: flex; flex-direction: column;">
             
-            <!-- Tab 1 View: Files Intake Queue -->
+            <!-- Tab 1 View: Pure Drag and Drop Zone -->
             <div id="tab-files" class="viewport-content active-content">
-                <div id="drop-zone">
-                    <div style="font-size: 1.2rem; margin-bottom: 6px; font-weight: bold;">DRAG & DROP AUDIO FILES HERE</div>
-                    <span style="font-size: 0.8em; color: var(--water-spray);">(Or click to browse Hard Drive)</span>
+                <div id="drop-zone" style="height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                    <div style="font-size: 1.4rem; margin-bottom: 8px; font-weight: bold;">DRAG & DROP AUDIO FILES HERE</div>
+                    <span style="font-size: 0.9em; color: var(--water-spray);">(Or click to browse Hard Drive)</span>
                     <input type="file" id="file-input" accept="audio/*,video/*" multiple style="display: none;">
                 </div>
-
-                <div style="margin-top: 15px;">
-                    <div class="card-header" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0;">
-                        <span class="card-title">📂 Playlist 01 (Active Queue)</span>
-                        <span id="playlist-track-count" style="font-size: 0.8rem; color: var(--stone-ochre); font-weight: bold;">0 Tracks</span>
-                    </div>
-                    <div id="playlist-queue-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
-                        <div style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; padding: 15px 0; font-style: italic;">
-                            Active queue is empty. Drag-and-drop tracks to load them.
-                        </div>
-                    </div>
-                </div>
+                <p style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; margin-top: 15px; font-style: italic;">
+                    Files dropped here are instantly added to your active playlist queue.
+                </p>
             </div>
 
             <!-- Tab 2 View: Play from URL / Google Drive Loader -->
@@ -748,7 +723,6 @@
                     <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
                 </div>
 
-                <!-- Direct inline pencil nickname edit wrapper -->
                 <div style="margin-bottom: 12px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(137,107,73,0.2);">
                     <strong style="color: var(--water-spray);">Display Nickname:</strong> 
                     <span id="nickname-display-mode" style="display: inline-flex; align-items: center;">
@@ -765,7 +739,6 @@
                 <div><strong style="color: var(--water-spray);">Tags (Click 🏷️ on right utility pill to edit):</strong></div>
                 <div id="meta-tags-list" class="tags-container" style="margin-bottom: 15px;"></div>
 
-                <!-- Live lyrics viewer pane inside viewport card -->
                 <div><strong style="color: var(--water-spray);">Lyrics Card:</strong></div>
                 <div id="lyrics-viewer" style="font-size: 0.85rem; line-height: 1.5; color: var(--alabaster-paper); max-height: 100px; overflow-y: auto; text-align: center; white-space: pre-line; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 6px;">
                     No lyrics stored yet. Edit lyrics using the 🎤 icon above.
@@ -809,7 +782,6 @@
                 <button id="btn-ab-loop" class="btn-pill" style="background: var(--water-spray); padding: 6px 12px; font-size: 0.75rem;">SET LOOP A</button>
                 <span id="ab-status" style="color: var(--stone-ochre); font-size: 0.75rem;">Inactive</span>
             </div>
-            <!-- Import JSON Feature -->
             <div class="control-row" style="margin-top: 10px; border-top: 1px dashed var(--chiseled-bronze); padding-top: 10px;">
                 <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre); width: 100%;">📥 Import JSON Library</button>
                 <input type="file" id="json-file-input" accept=".json" style="display: none;">
@@ -888,10 +860,11 @@
     <div id="toast-notice" class="organon-toast">Action Confirmed!</div>
 
     <script>
-        // --- CORE AUDIO ENGINE SETUP ---
-        const audioElement = new Audio();
-        // Prevent strict web-audio blank canvas constraints when streaming URL arrays
-        audioElement.crossOrigin = "anonymous"; 
+        // --- CORE DUAL AUDIO ENGINE SETUP ---
+        // Using two elements solves WebAudio Context blocking CORS streams while preserving local file visualizers
+        const localAudio = new Audio();
+        const streamAudio = new Audio();
+        let activeAudio = localAudio;
         
         let audioCtx, gainNode, analyser, source;
         let isPlaying = false;
@@ -906,27 +879,21 @@
         const speedCycles = [1.0, 1.5, 2.0, 2.5];
         let currentSpeedIdx = 0;
 
-        // Press hold detection states
         let playButtonHoldTimeout;
         let isHoldingPlay = false;
         let preHoldSpeed = 1.0;
 
-        // Click double-click timer
         let lastPrevClickTime = 0;
 
-        // Visualizer settings options
         let visualizerStyle = "bars";
 
-        // A-B Looping points
         let loopA = null;
         let loopB = null;
 
-        // Playlist Loop types
         let isRepeatOne = false;
         let isRepeatAll = false;
         let isShuffle = false;
 
-        // Playlists Data
         let playlists = {
             "Favorites": [],
             "Chill Vocals": [],
@@ -934,13 +901,13 @@
         };
         let activePlaylistView = null;
 
-        // Virtual In-Memory Library Store
         let virtualLibrary = {};
 
         // UI Element mappings
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
         const btnPlay = document.getElementById('btn-play');
+        const btnPause = document.getElementById('btn-pause');
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
         const btnSpeedCycle = document.getElementById('btn-speed-cycle');
@@ -960,7 +927,6 @@
         const tagsBar = document.getElementById('scrollable-tags-bar');
         const visStyleSelect = document.getElementById('vis-style-select');
 
-        // Modal elements
         const overlay = document.getElementById('modal-overlay');
 
         // --- 1. WEB AUDIO API INIT ---
@@ -969,24 +935,57 @@
                 const AudioContext = window.AudioContext || window.webkitAudioContext;
                 audioCtx = new AudioContext();
                 
-                // GainNode for 200% Volume
                 gainNode = audioCtx.createGain();
                 gainNode.gain.value = volSlider.value; 
 
-                // Analyser for Visualizer
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 256;
 
-                // Graph Routing
-                source = audioCtx.createMediaElementSource(audioElement);
+                // Visualizer ONLY binds to local files to avoid cross-origin silence locks
+                source = audioCtx.createMediaElementSource(localAudio);
                 source.connect(gainNode);
                 gainNode.connect(analyser);
                 analyser.connect(audioCtx.destination);
             }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
         }
+
+        // Bind playback timeline events robustly to both dual-engine elements
+        function attachAudioEvents(audioObj) {
+            audioObj.addEventListener('loadedmetadata', (e) => {
+                if (e.target !== activeAudio) return;
+                seekBar.max = audioObj.duration;
+                timeTotal.innerText = formatTime(audioObj.duration);
+            });
+
+            audioObj.addEventListener('timeupdate', (e) => {
+                if (e.target !== activeAudio) return;
+                if (!isSeeking) {
+                    seekBar.value = audioObj.currentTime;
+                    timeCurrent.innerText = formatTime(audioObj.currentTime);
+                }
+                if (loopA !== null && loopB !== null && audioObj.currentTime >= loopB) {
+                    audioObj.currentTime = loopA;
+                }
+            });
+
+            audioObj.addEventListener('ended', (e) => {
+                if (e.target !== activeAudio) return;
+                if (isRepeatOne) {
+                    audioObj.currentTime = 0;
+                    playAudio();
+                } else {
+                    if (currentTrackIndex < playlistTracks.length - 1 || isRepeatAll || isShuffle) {
+                        skipToNextTrack();
+                    } else {
+                        pauseAudio();
+                        audioObj.currentTime = 0;
+                    }
+                }
+            });
+        }
+        attachAudioEvents(localAudio);
+        attachAudioEvents(streamAudio);
 
         // --- 2. MULTI-FILE INTAKE LOADING SYSTEM ---
         dropZone.addEventListener('click', () => fileInput.click());
@@ -1009,9 +1008,7 @@
         });
 
         fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleUploadedFiles(e.target.files);
-            }
+            if (e.target.files.length > 0) handleUploadedFiles(e.target.files);
         });
 
         function handleUploadedFiles(files) {
@@ -1020,21 +1017,18 @@
             });
 
             if (newTracks.length === 0) {
-                showToast("No playable audio files detected.");
+                showToast("No playable media files detected.");
                 return;
             }
 
             const wasEmpty = playlistTracks.length === 0;
-            // Append pure File objects into the active queue
             playlistTracks = [...playlistTracks, ...newTracks];
             
-            // Map defaults
             newTracks.forEach(file => {
                 if (!virtualLibrary[file.name]) {
                     const defaults = ["Local File"];
                     if (file.name.toLowerCase().includes("vibe") || file.name.toLowerCase().includes("chill")) defaults.push("Chill");
                     if (file.name.toLowerCase().includes("synth")) defaults.push("Synthwave");
-                    if (file.size > 12 * 1024 * 1024) defaults.push("Long Play");
 
                     virtualLibrary[file.name] = {
                         fileName: file.name,
@@ -1043,17 +1037,15 @@
                         tags: defaults,
                         playlists: [],
                         size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
-                        blobFile: file // Keep reference to play local
+                        blobFile: file 
                     };
                 }
             });
 
-            updatePlaylistUI();
-
             if (wasEmpty) {
                 switchTrack(0);
             } else {
-                showToast(`Queued ${newTracks.length} tracks into queue list!`);
+                showToast(`Added ${newTracks.length} tracks!`);
             }
         }
 
@@ -1061,34 +1053,36 @@
             if (index < 0 || index >= playlistTracks.length) return;
             currentTrackIndex = index;
             loadTrack(playlistTracks[currentTrackIndex]);
-            updatePlaylistUI();
         }
 
         function loadTrack(file) {
             currentFile = file;
             initAudioEngine();
 
+            localAudio.pause();
+            streamAudio.pause();
+
             if (!virtualLibrary[file.name]) {
                 virtualLibrary[file.name] = {
                     fileName: file.name,
                     nickname: "",
                     lyrics: "",
-                    tags: ["Local File"],
+                    tags: ["URL Stream"],
                     playlists: [],
-                    size: file.size ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "URL Stream"
+                    size: "URL Stream"
                 };
             }
             
-            // Handle URL Stream vs Local Blob File
             if (file.streamUrl) {
-                audioElement.src = file.streamUrl;
-            } else if (file instanceof File || file instanceof Blob) {
-                audioElement.src = URL.createObjectURL(file);
-            } else if (file.blobFile) {
-                audioElement.src = URL.createObjectURL(file.blobFile);
+                activeAudio = streamAudio; // Use pure HTML5 audio object for CORS bypassing
+                activeAudio.src = file.streamUrl;
+            } else {
+                activeAudio = localAudio; // Use WebAudio context object for visualizers
+                const blob = file.blobFile || file;
+                activeAudio.src = URL.createObjectURL(blob);
             }
             
-            audioElement.playbackRate = parseFloat(speedSlider.value);
+            activeAudio.playbackRate = parseFloat(speedSlider.value);
             updateMetadataUI();
             
             loopA = null; loopB = null;
@@ -1117,13 +1111,11 @@
             const sizeInMb = parseFloat(meta.size) || 0.0;
             miniMetaSize.innerText = sizeInMb.toFixed(1) + "M";
 
-            // Update Metadata Workspace viewport Tab items
             document.getElementById('meta-file-size').innerText = meta.size;
             document.getElementById('meta-nickname').innerText = meta.nickname || "No Custom Name Assigned";
             document.getElementById('nickname-display-mode').style.display = "inline-flex";
             document.getElementById('nickname-edit-mode').style.display = "none";
 
-            // Update tab tags list
             const tagContainer = document.getElementById('meta-tags-list');
             tagContainer.innerHTML = "";
             meta.tags.forEach(tag => {
@@ -1133,7 +1125,6 @@
                 tagContainer.appendChild(badge);
             });
 
-            // Update active tags scroll strip
             if (meta.tags && meta.tags.length > 0) {
                 tagsBar.style.display = "flex";
                 tagsBar.innerHTML = "";
@@ -1148,7 +1139,6 @@
                 tagsBar.style.display = "none";
             }
 
-            // Sync Workspace Viewport lyrics preview
             const lyricsViewer = document.getElementById('lyrics-viewer');
             if (meta.lyrics) {
                 lyricsViewer.innerText = meta.lyrics;
@@ -1157,64 +1147,14 @@
             }
         }
 
-        function updatePlaylistUI() {
-            const queueList = document.getElementById('playlist-queue-list');
-            const counter = document.getElementById('playlist-track-count');
-
-            counter.innerText = `${playlistTracks.length} Tracks`;
-
-            if (playlistTracks.length === 0) {
-                queueList.innerHTML = `
-                    <div style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; padding: 15px 0; font-style: italic;">
-                        Active queue is empty. Drag-and-drop tracks to load them.
-                    </div>
-                `;
-                return;
-            }
-
-            queueList.innerHTML = "";
-            playlistTracks.forEach((track, index) => {
-                const meta = virtualLibrary[track.name] || { size: "0.00 MB", nickname: "" };
-                const isCurrent = (index === currentTrackIndex);
-                
-                const itemDiv = document.createElement('div');
-                itemDiv.className = `playlist-row ${isCurrent ? 'active-track' : ''}`;
-                itemDiv.innerHTML = `
-                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 80%;">
-                        <span style="color: ${isCurrent ? 'var(--water-blue)' : 'var(--chiseled-bronze)'}; font-weight: bold; font-size: 0.85rem;">${index + 1}.</span>
-                        <span style="color: ${isCurrent ? 'var(--white-accent)' : 'var(--alabaster-paper)'}; font-size: 0.85rem; text-overflow: ellipsis; overflow: hidden; font-weight: ${isCurrent ? 'bold' : 'normal'};">
-                            ${meta.nickname || track.name}
-                        </span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span style="font-size: 0.75rem; color: var(--chiseled-bronze);">${meta.size}</span>
-                        ${isCurrent ? '<span style="color: var(--water-spray); font-size: 0.75rem; animation: pulse 0.8s infinite alternate;">▶️</span>' : ''}
-                    </div>
-                `;
-
-                itemDiv.addEventListener('click', () => {
-                    switchTrack(index);
-                });
-
-                queueList.appendChild(itemDiv);
-            });
-        }
-
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
         function switchWorkspaceTab(tabId) {
-            // Update active state class on tabs
-            document.querySelectorAll('.mode-tab-btn').forEach(btn => {
-                btn.classList.remove('tab-active');
-            });
-            
+            document.querySelectorAll('.mode-tab-btn').forEach(btn => btn.classList.remove('tab-active'));
             const selectedBtnId = `tab-btn-${tabId.replace('tab-', '')}`;
             const btnEl = document.getElementById(selectedBtnId);
             if (btnEl) btnEl.classList.add('tab-active');
 
-            // Hide/Show correct tab layout contents
-            document.querySelectorAll('.viewport-content').forEach(card => {
-                card.classList.remove('active-content');
-            });
+            document.querySelectorAll('.viewport-content').forEach(card => card.classList.remove('active-content'));
             document.getElementById(tabId).classList.add('active-content');
 
             if (tabId === "tab-playlists") renderPlaylistsList();
@@ -1222,22 +1162,33 @@
 
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
         function playAudio() {
-            initAudioEngine();
-            audioElement.play();
+            if (activeAudio === localAudio) initAudioEngine();
+            activeAudio.play();
             isPlaying = true;
-            btnPlay.innerText = "⏸️";
+            
+            // Activate Glowing Spinner 
+            btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
+            btnPlay.classList.add('active-state');
         }
 
         function pauseAudio() {
-            audioElement.pause();
+            activeAudio.pause();
             isPlaying = false;
-            btnPlay.innerText = "▶️";
+
+            // Revert back to Play Triangle
+            btnPlay.innerHTML = '▶️';
+            btnPlay.classList.remove('active-state');
         }
 
-        function togglePlayPause() {
+        btnPlay.addEventListener('click', () => {
             if (!currentFile) return;
-            isPlaying ? pauseAudio() : playAudio();
-        }
+            playAudio(); // Exclusively plays (or restarts holding logic)
+        });
+
+        btnPause.addEventListener('click', () => {
+            if (!currentFile) return;
+            pauseAudio(); // Exclusively pauses
+        });
 
         // --- PLAY BUTTON HOLD-TO-FAST-FORWARD LOGIC ---
         function startPlayHold() {
@@ -1247,11 +1198,8 @@
             
             playButtonHoldTimeout = setTimeout(() => {
                 isHoldingPlay = true;
-                audioElement.playbackRate = 1.5;
-                btnPlay.style.color = "var(--stone-ochre)";
-                if (!isPlaying) {
-                    audioElement.play();
-                }
+                activeAudio.playbackRate = 1.5;
+                if (!isPlaying) activeAudio.play();
                 showToast("⚡ Fast Forwarding (1.5x) ⚡");
             }, 300);
         }
@@ -1259,22 +1207,15 @@
         function releasePlayHold() {
             clearTimeout(playButtonHoldTimeout);
             if (isHoldingPlay) {
-                audioElement.playbackRate = preHoldSpeed;
-                btnPlay.style.color = "var(--alabaster-paper)";
-                if (!isPlaying) {
-                    audioElement.pause();
-                }
+                activeAudio.playbackRate = preHoldSpeed;
+                if (!isPlaying) activeAudio.pause();
                 isHoldingPlay = false;
-            } else {
-                togglePlayPause();
             }
         }
 
-        // Drag/Hold mouse event registers
         btnPlay.addEventListener('mousedown', startPlayHold);
         btnPlay.addEventListener('mouseup', releasePlayHold);
         btnPlay.addEventListener('mouseleave', () => { if (isHoldingPlay) releasePlayHold(); });
-
         btnPlay.addEventListener('touchstart', (e) => { e.preventDefault(); startPlayHold(); });
         btnPlay.addEventListener('touchend', (e) => { e.preventDefault(); releasePlayHold(); });
 
@@ -1287,8 +1228,8 @@
             if (tapGap < 350) {
                 skipToPreviousTrack();
             } else {
-                if (audioElement.currentTime > 3.0) {
-                    audioElement.currentTime = 0;
+                if (activeAudio.currentTime > 3.0) {
+                    activeAudio.currentTime = 0;
                     showToast("Restarting Track");
                 } else {
                     skipToPreviousTrack();
@@ -1299,7 +1240,7 @@
 
         function skipToPreviousTrack() {
             if (playlistTracks.length <= 1) {
-                audioElement.currentTime = 0;
+                activeAudio.currentTime = 0;
                 return;
             }
             let prevIndex = currentTrackIndex - 1;
@@ -1315,10 +1256,13 @@
         });
 
         function skipToNextTrack() {
-            if (playlistTracks.length <= 1) {
-                audioElement.currentTime = 0;
+            if (playlistTracks.length === 0) return;
+            if (playlistTracks.length === 1 && !isRepeatAll && !isRepeatOne) {
+                activeAudio.currentTime = 0;
+                pauseAudio();
                 return;
             }
+
             let nextIndex = currentTrackIndex + 1;
             if (isShuffle) {
                 nextIndex = Math.floor(Math.random() * playlistTracks.length);
@@ -1333,7 +1277,7 @@
             currentSpeedIdx = (currentSpeedIdx + 1) % speedCycles.length;
             const chosenSpeed = speedCycles[currentSpeedIdx];
             
-            audioElement.playbackRate = chosenSpeed;
+            activeAudio.playbackRate = chosenSpeed;
             speedSlider.value = chosenSpeed;
             document.getElementById('speed-readout').innerText = chosenSpeed.toFixed(1) + "x";
             
@@ -1341,32 +1285,12 @@
             showToast(`Speed set to ${chosenSpeed.toFixed(1)}x`);
         });
 
-        // Formatting Time (Seconds -> M:SS)
         function formatTime(seconds) {
             if (isNaN(seconds)) return "0:00";
             const m = Math.floor(seconds / 60);
             const s = Math.floor(seconds % 60).toString().padStart(2, '0');
             return `${m}:${s}`;
         }
-
-        // Seek Bar Timeline Logic
-        audioElement.addEventListener('loadedmetadata', () => {
-            seekBar.max = audioElement.duration;
-            timeTotal.innerText = formatTime(audioElement.duration);
-        });
-
-        audioElement.addEventListener('timeupdate', () => {
-            if (!isSeeking) {
-                seekBar.value = audioElement.currentTime;
-                timeCurrent.innerText = formatTime(audioElement.currentTime);
-            }
-
-            if (loopA !== null && loopB !== null) {
-                if (audioElement.currentTime >= loopB) {
-                    audioElement.currentTime = loopA;
-                }
-            }
-        });
 
         seekBar.addEventListener('input', () => {
             isSeeking = true;
@@ -1375,45 +1299,10 @@
 
         seekBar.addEventListener('change', () => {
             isSeeking = false;
-            audioElement.currentTime = seekBar.value;
+            activeAudio.currentTime = seekBar.value;
         });
 
-        audioElement.addEventListener('ended', () => {
-            if (isRepeatOne) {
-                audioElement.currentTime = 0;
-                playAudio();
-            } else {
-                if (currentTrackIndex < playlistTracks.length - 1 || isRepeatAll) {
-                    skipToNextTrack();
-                } else {
-                    pauseAudio();
-                    audioElement.currentTime = 0;
-                }
-            }
-        });
-
-        // --- 5. DRAG-AND-DROP WORKSPACE TAB 1 LOGIC ---
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        tagsBar.addEventListener('mousedown', (e) => {
-            isDown = true;
-            tagsBar.style.cursor = 'grabbing';
-            startX = e.pageX - tagsBar.offsetLeft;
-            scrollLeft = tagsBar.scrollLeft;
-        });
-        tagsBar.addEventListener('mouseleave', () => { isDown = false; tagsBar.style.cursor = 'grab'; });
-        tagsBar.addEventListener('mouseup', () => { isDown = false; tagsBar.style.cursor = 'grab'; });
-        tagsBar.addEventListener('mousemove', (e) => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - tagsBar.offsetLeft;
-            const walk = (x - startX) * 2;
-            tagsBar.scrollLeft = scrollLeft - walk;
-        });
-
-        // --- 6. DRAGGABLE SETTINGS POPUP ENGINE LOGIC ---
+        // --- 5. DRAGGABLE SETTINGS POPUP ENGINE LOGIC ---
         let isDraggingPopup = false;
         let dragStartX, dragStartY;
         const dragHandle = document.getElementById('settings-drag-handle');
@@ -1456,30 +1345,6 @@
             document.removeEventListener('mouseup', onPopupDragEnd);
         }
 
-        dragHandle.addEventListener('touchstart', (e) => {
-            isDraggingPopup = true;
-            const touch = e.touches[0];
-            dragStartX = touch.clientX - advancedControls.offsetLeft;
-            dragStartY = touch.clientY - advancedControls.offsetTop;
-            document.addEventListener('touchmove', onPopupTouchMove, { passive: false });
-            document.addEventListener('touchend', onPopupTouchEnd);
-        });
-
-        function onPopupTouchMove(e) {
-            if (!isDraggingPopup) return;
-            e.preventDefault(); 
-            const touch = e.touches[0];
-            advancedControls.style.transform = "none";
-            advancedControls.style.left = (touch.clientX - dragStartX) + "px";
-            advancedControls.style.top = (touch.clientY - dragStartY) + "px";
-        }
-
-        function onPopupTouchEnd() {
-            isDraggingPopup = false;
-            document.removeEventListener('touchmove', onPopupTouchMove);
-            document.removeEventListener('touchend', onPopupTouchEnd);
-        }
-
         volSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             if (gainNode) gainNode.gain.value = val;
@@ -1488,7 +1353,7 @@
 
         speedSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
-            audioElement.playbackRate = val;
+            activeAudio.playbackRate = val;
             document.getElementById('speed-readout').innerText = val.toFixed(1) + "x";
             btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
         });
@@ -1514,13 +1379,13 @@
             if (!currentFile) return;
 
             if (loopA === null) {
-                loopA = audioElement.currentTime;
+                loopA = activeAudio.currentTime;
                 btnAbLoop.innerText = "SET LOOP B";
                 btnAbLoop.classList.add('ab-active');
                 abStatus.innerText = `Point A: ${formatTime(loopA)}`;
             } else if (loopB === null) {
-                if (audioElement.currentTime <= loopA) return;
-                loopB = audioElement.currentTime;
+                if (activeAudio.currentTime <= loopA) return;
+                loopB = activeAudio.currentTime;
                 btnAbLoop.innerText = "CLEAR LOOP";
                 abStatus.innerText = `Looping: ${formatTime(loopA)} - ${formatTime(loopB)}`;
             } else {
@@ -1532,16 +1397,25 @@
             }
         });
 
-        // --- 7. LOAD FROM URL / GOOGLE DRIVE LINK CONVERTER (TAB 2) ---
+        // --- 6. LOAD FROM URL / GOOGLE DRIVE LINK CONVERTER (TAB 2) ---
         const urlInputBox = document.getElementById('url-input-box');
         const btnLoadUrl = document.getElementById('btn-load-url');
 
         function convertDriveLinkToStream(driveUrl) {
+            if (driveUrl.includes('uc?export=download')) return driveUrl;
+
+            // Catch /d/ standard share links
             const regex = /\/d\/([a-zA-Z0-9_-]+)/;
             const match = driveUrl.match(regex);
             if (match && match[1]) {
-                const fileId = match[1];
-                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+                return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+            }
+
+            // Catch ?id= direct queries
+            const idRegex = /[?&]id=([a-zA-Z0-9_-]+)/;
+            const idMatch = driveUrl.match(idRegex);
+            if (idMatch && idMatch[1]) {
+                return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
             }
             return driveUrl; 
         }
@@ -1582,7 +1456,6 @@
                 size: "URL Stream"
             };
 
-            updatePlaylistUI();
             urlInputBox.value = "";
             showToast("URL Stream added successfully to queue!");
 
@@ -1591,7 +1464,7 @@
             }
         });
 
-        // --- 8. VIRTUAL PLAYLIST MANAGEMENT SYSTEM (TAB 3) ---
+        // --- 7. VIRTUAL PLAYLIST MANAGEMENT SYSTEM (TAB 3) ---
         const btnCreatePlaylistTrigger = document.getElementById('btn-create-playlist-trigger');
         const btnDeletePlaylistTrigger = document.getElementById('btn-delete-playlist-trigger');
         const playlistChecklistContainer = document.getElementById('playlists-checklist');
@@ -1619,7 +1492,6 @@
                 row.addEventListener('click', () => {
                     if (activePlaylistView === plName) {
                         activePlaylistView = null; // Close
-                        restoreDefaultPlaylistQueue();
                     } else {
                         activePlaylistView = plName; // Set active playlist view
                         loadPlaylistQueue(plName);
@@ -1641,14 +1513,6 @@
             playlistTracks = tracksInPl;
             switchTrack(0);
             showToast(`Loaded ${playlistName} playlist queue.`);
-        }
-
-        function restoreDefaultPlaylistQueue() {
-            playlistTracks = Object.values(virtualLibrary).map(item => {
-                return item.blobFile ? { name: item.fileName, blobFile: item.blobFile } : { name: item.fileName, streamUrl: item.streamUrl };
-            });
-            updatePlaylistUI();
-            showToast("Restored all master track files view.");
         }
 
         btnCreatePlaylistTrigger.addEventListener('click', () => showModal('modal-playlist-create'));
@@ -1674,12 +1538,11 @@
             }
             delete playlists[activePlaylistView];
             activePlaylistView = null;
-            restoreDefaultPlaylistQueue();
             renderPlaylistsList();
             showToast("Playlist folder deleted.");
         });
 
-        // --- 9. DIRECT INLINE DISPLAY NAME TYPE-OVER (TAB 4) ---
+        // --- 8. DIRECT INLINE DISPLAY NAME TYPE-OVER (TAB 4) ---
         const btnInlineEdit = document.getElementById('btn-inline-nickname-edit');
         const nicknameDisplayMode = document.getElementById('nickname-display-mode');
         const nicknameEditMode = document.getElementById('nickname-edit-mode');
@@ -1710,7 +1573,6 @@
             virtualLibrary[currentFile.name].nickname = newName;
             
             updateMetadataUI();
-            updatePlaylistUI();
             
             nicknameDisplayMode.style.display = "inline-flex";
             nicknameEditMode.style.display = "none";
@@ -1729,9 +1591,7 @@
             activateInlineRename();
         }
 
-        // --- 10. MINI METADATA BOX ACTION ENGINE (Right-click Desktop, Hold Mobile) ---
-        
-        // Desktop Left Click (Copy)
+        // --- 9. MINI METADATA BOX ACTION ENGINE ---
         miniMetaBox.addEventListener('click', (e) => {
             e.preventDefault();
             if (!currentFile) {
@@ -1743,13 +1603,11 @@
             copyToClipboard(cleanMetaString);
         });
 
-        // Desktop Right Click (Edit Meta)
         miniMetaBox.addEventListener('contextmenu', (e) => {
             e.preventDefault(); 
             triggerMetaEdit();
         });
 
-        // Mobile Touch (Long Press)
         let metaTouchTimer;
         let isMetaTouchDragging = false;
 
@@ -1780,7 +1638,32 @@
             }
         });
 
-        // --- 11. RE-ROUTING METADATA UTILITY DISPATCH (🎤, 🏷️, 📥, ✏️) ---
+        // --- 10. RE-ROUTING METADATA UTILITY DISPATCH (🎤, 🏷️, 📥, ✏️) ---
+        
+        // Repeat and Shuffle toggles with Glowing active states
+        document.getElementById('btn-repeat-one').addEventListener('click', () => {
+            isRepeatOne = !isRepeatOne;
+            document.getElementById('btn-repeat-one').classList.toggle('active-state', isRepeatOne);
+            if (isRepeatOne) {
+                isRepeatAll = false;
+                document.getElementById('btn-repeat-all').classList.remove('active-state');
+            }
+        });
+
+        document.getElementById('btn-repeat-all').addEventListener('click', () => {
+            isRepeatAll = !isRepeatAll;
+            document.getElementById('btn-repeat-all').classList.toggle('active-state', isRepeatAll);
+            if (isRepeatAll) {
+                isRepeatOne = false;
+                document.getElementById('btn-repeat-one').classList.remove('active-state');
+            }
+        });
+
+        document.getElementById('btn-shuffle').addEventListener('click', () => {
+            isShuffle = !isShuffle;
+            document.getElementById('btn-shuffle').classList.toggle('active-state', isShuffle);
+        });
+
         document.getElementById('btn-lyrics-modal').addEventListener('click', () => {
             if (!currentFile) return;
             const meta = virtualLibrary[currentFile.name];
@@ -1893,7 +1776,7 @@
             setTimeout(() => { toast.style.display = 'none'; }, 2200);
         }
 
-        // --- 12. DYNAMIC VISUALIZER OPTIONS SYSTEM ---
+        // --- 11. DYNAMIC VISUALIZER OPTIONS SYSTEM ---
         const canvas = document.getElementById('audio-visualizer');
         const canvasCtx = canvas.getContext('2d');
 
@@ -1904,10 +1787,31 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
+        let dragScrollDown = false;
+        let dragScrollStartX;
+        let scrollLeftTags;
+
+        tagsBar.addEventListener('mousedown', (e) => {
+            dragScrollDown = true;
+            tagsBar.style.cursor = 'grabbing';
+            dragScrollStartX = e.pageX - tagsBar.offsetLeft;
+            scrollLeftTags = tagsBar.scrollLeft;
+        });
+        tagsBar.addEventListener('mouseleave', () => { dragScrollDown = false; tagsBar.style.cursor = 'grab'; });
+        tagsBar.addEventListener('mouseup', () => { dragScrollDown = false; tagsBar.style.cursor = 'grab'; });
+        tagsBar.addEventListener('mousemove', (e) => {
+            if (!dragScrollDown) return;
+            e.preventDefault();
+            const x = e.pageX - tagsBar.offsetLeft;
+            const walk = (x - dragScrollStartX) * 2;
+            tagsBar.scrollLeft = scrollLeftTags - walk;
+        });
+
         function drawVisualizer() {
             requestAnimationFrame(drawVisualizer);
             
-            if (!analyser) {
+            if (!analyser || activeAudio === streamAudio) {
+                // Keep solid state background for Remote URLs because WebAudio mutes CORS requests
                 canvasCtx.fillStyle = '#000000';
                 canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
                 return;
