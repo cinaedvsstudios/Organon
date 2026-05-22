@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organon Media Player - Engine</title>
+    <title>Onda Media Player - Engine</title>
     <style>
         /* Organon Blueprint Colors */
         :root {
@@ -24,7 +24,8 @@
 
         body {
             margin: 0;
-            padding: 0;
+            /* Global padding acting as rigid left/right columns for the entire app */
+            padding: 0 120px; 
             background-color: var(--bg-nightsky);
             color: var(--alabaster-paper);
             font-family: system-ui, -apple-system, sans-serif;
@@ -32,9 +33,10 @@
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
+            box-sizing: border-box;
         }
 
-        /* Top Panel - Organon Boilerplate Rounded Square */
+        /* Top Panel - Rounded Square Player */
         #organon-top-panel {
             position: sticky;
             top: 0;
@@ -45,24 +47,27 @@
             border-bottom: 2px solid var(--stone-ochre);
             border-left: 2px solid var(--stone-ochre);
             border-right: 2px solid var(--stone-ochre);
-            padding: 15px 20px;
+            /* Increased internal padding */
+            padding: 20px 40px; 
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             overflow: hidden;
             flex-shrink: 0;
         }
 
-        /* Bottom Panel - Organon Boilerplate Sandstone Textures */
+        /* Bottom Panel - Sandstone Textures */
         #organon-bottom-panel {
             position: fixed;
             bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
+            /* Anchored to the padding boundaries set by the body */
+            left: 120px; 
+            right: 120px;
+            width: auto;
             z-index: 110;
             background-color: var(--stone-ochre);
             background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
             background-size: cover;
-            padding: 10px 14px 14px 14px;
+            /* Increased internal padding */
+            padding: 15px 20px 20px 20px; 
             box-sizing: border-box;
             display: flex;
             gap: 12px;
@@ -81,7 +86,8 @@
 
         #organon-middle-panel {
             flex-grow: 1;
-            padding: 15px 30px 120px 30px; /* Offset to clear the floating bottom panel */
+            /* Increased internal padding, maintaining bottom offset for sticky footer */
+            padding: 20px 40px 140px 40px; 
             overflow-y: auto;
             display: flex;
             flex-direction: column;
@@ -131,7 +137,7 @@
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1.35rem; /* 20% size increase */
+            font-size: 1.35rem; 
             padding: 4px;
             border-radius: 50%;
             transition: all 0.2s ease;
@@ -565,7 +571,7 @@
         #scrollable-tags-bar {
             background-color: rgba(30, 32, 28, 0.9);
             border-bottom: 1.5px solid var(--chiseled-bronze);
-            padding: 6px 20px;
+            padding: 6px 40px; /* Aligned with middle panel interior padding */
             display: none;
             gap: 10px;
             white-space: nowrap;
@@ -577,6 +583,34 @@
         }
         #scrollable-tags-bar::-webkit-scrollbar { display: none; }
         #scrollable-tags-bar:active { cursor: grabbing; }
+
+        /* Responsive Fallbacks */
+        @media (max-width: 768px) {
+            body { 
+                padding: 0 15px; /* Collapse padding on mobile */
+            }
+            #organon-top-panel {
+                padding: 20px 20px;
+            }
+            #organon-bottom-panel {
+                left: 15px;
+                right: 15px;
+                padding: 10px 15px 15px 15px;
+            }
+            #organon-middle-panel {
+                padding: 15px 15px 120px 15px;
+            }
+            #scrollable-tags-bar {
+                padding: 6px 15px;
+            }
+            .primary-controls {
+                flex-wrap: wrap;
+            }
+            .seek-container {
+                order: 3;
+                width: 100%;
+            }
+        }
 
         @keyframes pulse {
             0% { opacity: 0.4; }
@@ -595,8 +629,8 @@
         <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 6px;">
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
                 <div style="display: flex; align-items: center; gap: 12px; overflow: hidden; width: 100%;">
-                    <!-- Mini Metadata Box (FAR LEFT) -->
-                    <div id="mini-meta-box" class="mini-meta-box" title="Tap to copy metadata, Hold to inspect details">
+                    <!-- Mini Metadata Box (FAR LEFT - Desktop Right-Click, Mobile Long-Press) -->
+                    <div id="mini-meta-box" class="mini-meta-box" title="Click to copy, Right-Click (or Hold) for details">
                         <span class="mini-meta-label">META</span>
                         <span id="mini-meta-size" class="mini-meta-value">0.0M</span>
                     </div>
@@ -851,7 +885,7 @@
     </div>
 
     <!-- Toast popup notices -->
-    <div id="toast-notice" class="organon-toast">Copied metadata!</div>
+    <div id="toast-notice" class="organon-toast">Action Confirmed!</div>
 
     <script>
         // --- CORE AUDIO ENGINE SETUP ---
@@ -876,9 +910,6 @@
         let playButtonHoldTimeout;
         let isHoldingPlay = false;
         let preHoldSpeed = 1.0;
-
-        let metaBoxHoldTimeout;
-        let isHoldingMeta = false;
 
         // Click double-click timer
         let lastPrevClickTime = 0;
@@ -1011,7 +1042,8 @@
                         lyrics: "",
                         tags: defaults,
                         playlists: [],
-                        size: (file.size / (1024 * 1024)).toFixed(2) + " MB"
+                        size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
+                        blobFile: file // Keep reference to play local
                     };
                 }
             });
@@ -1047,11 +1079,13 @@
                 };
             }
             
-            // Fix: Check if item is a remote URL stream vs a standard local File blob
+            // Handle URL Stream vs Local Blob File
             if (file.streamUrl) {
                 audioElement.src = file.streamUrl;
             } else if (file instanceof File || file instanceof Blob) {
                 audioElement.src = URL.createObjectURL(file);
+            } else if (file.blobFile) {
+                audioElement.src = URL.createObjectURL(file.blobFile);
             }
             
             audioElement.playbackRate = parseFloat(speedSlider.value);
@@ -1099,7 +1133,7 @@
                 tagContainer.appendChild(badge);
             });
 
-            // Update active tags scroll strip (directly below top sticky player)
+            // Update active tags scroll strip
             if (meta.tags && meta.tags.length > 0) {
                 tagsBar.style.display = "flex";
                 tagsBar.innerHTML = "";
@@ -1183,10 +1217,7 @@
             });
             document.getElementById(tabId).classList.add('active-content');
 
-            // Playlist custom updates
-            if (tabId === "tab-playlists") {
-                renderPlaylistsList();
-            }
+            if (tabId === "tab-playlists") renderPlaylistsList();
         }
 
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
@@ -1297,7 +1328,7 @@
             switchTrack(nextIndex);
         }
 
-        // Speed Cycling (⚡ Button inside Left Symmetrical Pill)
+        // Speed Cycling (⚡ Button)
         btnSpeedCycle.addEventListener('click', () => {
             currentSpeedIdx = (currentSpeedIdx + 1) % speedCycles.length;
             const chosenSpeed = speedCycles[currentSpeedIdx];
@@ -1330,7 +1361,6 @@
                 timeCurrent.innerText = formatTime(audioElement.currentTime);
             }
 
-            // A-B Looping Check
             if (loopA !== null && loopB !== null) {
                 if (audioElement.currentTime >= loopB) {
                     audioElement.currentTime = loopA;
@@ -1393,7 +1423,6 @@
             advancedControls.style.display = isHidden ? "block" : "none";
             btnToggleAdvanced.classList.toggle('active-state', !isHidden);
             
-            // Center modal initially on show
             if (isHidden) {
                 advancedControls.style.left = "50%";
                 advancedControls.style.top = "30%";
@@ -1406,7 +1435,6 @@
             btnToggleAdvanced.classList.remove('active-state');
         });
 
-        // Desktop dragging registration
         dragHandle.addEventListener('mousedown', (e) => {
             isDraggingPopup = true;
             dragStartX = e.clientX - advancedControls.offsetLeft;
@@ -1417,7 +1445,6 @@
 
         function onPopupDragMove(e) {
             if (!isDraggingPopup) return;
-            // Clear baseline offset centering transform once user begins dragging
             advancedControls.style.transform = "none";
             advancedControls.style.left = (e.clientX - dragStartX) + "px";
             advancedControls.style.top = (e.clientY - dragStartY) + "px";
@@ -1429,7 +1456,6 @@
             document.removeEventListener('mouseup', onPopupDragEnd);
         }
 
-        // Mobile touch dragging registration
         dragHandle.addEventListener('touchstart', (e) => {
             isDraggingPopup = true;
             const touch = e.touches[0];
@@ -1441,7 +1467,7 @@
 
         function onPopupTouchMove(e) {
             if (!isDraggingPopup) return;
-            e.preventDefault(); // Prevent background screen scrolling
+            e.preventDefault(); 
             const touch = e.touches[0];
             advancedControls.style.transform = "none";
             advancedControls.style.left = (touch.clientX - dragStartX) + "px";
@@ -1454,7 +1480,6 @@
             document.removeEventListener('touchend', onPopupTouchEnd);
         }
 
-        // Settings actions triggers
         volSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             if (gainNode) gainNode.gain.value = val;
@@ -1473,7 +1498,6 @@
             showToast(`Visualizer: ${visStyleSelect.options[visStyleSelect.selectedIndex].text}`);
         });
 
-        // JSON Import trigger
         document.getElementById('btn-import-json').addEventListener('click', () => {
             document.getElementById('json-file-input').click();
         });
@@ -1482,12 +1506,10 @@
             if (e.target.files.length > 0) {
                 const file = e.target.files[0];
                 showToast(`Selected ${file.name}. Merging logic pending...`);
-                // Clear value so the same file can be selected again if needed
                 e.target.value = "";
             }
         });
 
-        // A-B Loop Logic
         btnAbLoop.addEventListener('click', () => {
             if (!currentFile) return;
 
@@ -1531,10 +1553,7 @@
                 return;
             }
 
-            // Convert Drive or keep raw audio stream
             const streamUrl = convertDriveLinkToStream(rawUrl);
-            
-            // Extract filename from URL
             let parsedName = "Remote Stream";
             try {
                 const urlObj = new URL(rawUrl);
@@ -1619,14 +1638,12 @@
                 return;
             }
             
-            // Lock temporary tracking queue strictly to playlist mappings
             playlistTracks = tracksInPl;
             switchTrack(0);
             showToast(`Loaded ${playlistName} playlist queue.`);
         }
 
         function restoreDefaultPlaylistQueue() {
-            // Restore entire library tracks list
             playlistTracks = Object.values(virtualLibrary).map(item => {
                 return item.blobFile ? { name: item.fileName, blobFile: item.blobFile } : { name: item.fileName, streamUrl: item.streamUrl };
             });
@@ -1634,7 +1651,6 @@
             showToast("Restored all master track files view.");
         }
 
-        // Playlist modal launchers
         btnCreatePlaylistTrigger.addEventListener('click', () => showModal('modal-playlist-create'));
         
         function createPlaylistAction() {
@@ -1706,40 +1722,63 @@
             if (e.key === 'Enter') saveInlineNickname();
         });
 
-        // --- 10. MINI METADATA BOX ACTION ENGINE ---
-        function startMetaPress() {
-            isHoldingMeta = false;
-            metaBoxHoldTimeout = setTimeout(() => {
-                isHoldingMeta = true;
-                if (!currentFile) return;
-                
-                // Scroll down to Tab 4 (Library/Metadata) and open inline pencil type-over
-                switchWorkspaceTab('tab-library');
-                document.getElementById('metadata-display-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                activateInlineRename();
-            }, 400); 
+        function triggerMetaEdit() {
+            if (!currentFile) return;
+            switchWorkspaceTab('tab-library');
+            document.getElementById('metadata-display-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            activateInlineRename();
         }
 
-        function releaseMetaPress() {
-            clearTimeout(metaBoxHoldTimeout);
-            if (!isHoldingMeta) {
+        // --- 10. MINI METADATA BOX ACTION ENGINE (Right-click Desktop, Hold Mobile) ---
+        
+        // Desktop Left Click (Copy)
+        miniMetaBox.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!currentFile) {
+                showToast("No active track loaded to copy metadata.");
+                return;
+            }
+            const meta = virtualLibrary[currentFile.name];
+            const cleanMetaString = `[Onda Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`;
+            copyToClipboard(cleanMetaString);
+        });
+
+        // Desktop Right Click (Edit Meta)
+        miniMetaBox.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); 
+            triggerMetaEdit();
+        });
+
+        // Mobile Touch (Long Press)
+        let metaTouchTimer;
+        let isMetaTouchDragging = false;
+
+        miniMetaBox.addEventListener('touchstart', (e) => {
+            isMetaTouchDragging = false;
+            metaTouchTimer = setTimeout(() => {
+                triggerMetaEdit();
+                isMetaTouchDragging = true; 
+            }, 500); 
+        });
+
+        miniMetaBox.addEventListener('touchmove', () => {
+            clearTimeout(metaTouchTimer);
+            isMetaTouchDragging = true;
+        });
+
+        miniMetaBox.addEventListener('touchend', (e) => {
+            clearTimeout(metaTouchTimer);
+            if (!isMetaTouchDragging) {
+                e.preventDefault(); 
                 if (!currentFile) {
                     showToast("No active track loaded to copy metadata.");
                     return;
                 }
                 const meta = virtualLibrary[currentFile.name];
-                const cleanMetaString = `[Organon Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`;
+                const cleanMetaString = `[Onda Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`;
                 copyToClipboard(cleanMetaString);
             }
-            isHoldingMeta = false;
-        }
-
-        miniMetaBox.addEventListener('mousedown', startMetaPress);
-        miniMetaBox.addEventListener('mouseup', releaseMetaPress);
-        miniMetaBox.addEventListener('mouseleave', () => clearTimeout(metaBoxHoldTimeout));
-
-        miniMetaBox.addEventListener('touchstart', (e) => { e.preventDefault(); startMetaPress(); });
-        miniMetaBox.addEventListener('touchend', (e) => { e.preventDefault(); releaseMetaPress(); });
+        });
 
         // --- 11. RE-ROUTING METADATA UTILITY DISPATCH (🎤, 🏷️, 📥, ✏️) ---
         document.getElementById('btn-lyrics-modal').addEventListener('click', () => {
@@ -1752,7 +1791,6 @@
         document.getElementById('btn-playlist').addEventListener('click', () => {
             if (!currentFile) return;
             
-            // Build checklists based on custom virtual playlist folders
             playlistChecklistContainer.innerHTML = "";
             Object.keys(playlists).forEach(pl => {
                 const isAssigned = playlists[pl].some(track => track.name === currentFile.name);
