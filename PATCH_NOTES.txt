@@ -1,16 +1,16 @@
-Organon button patch
+ORGANON FORCE MOBILE VIEW PATCH
 
 Files changed:
 - index.html
+
+Files included unchanged for convenience:
 - tools.json
 
-Upload/replace these two files at the Organon site root.
-This patch expects the existing image asset to be present at:
-- images/coderepo.png
+Surgical changes made:
+- Added a Force Mobile View row at the top of the existing settings modal.
+- Added localStorage persistence under key organon_force_mobile_view.
+- Added a body.force-mobile-view class toggle.
+- Added CSS so the full hub shell, L1/L2/L3 controls, and basin iframe render at phone-width when enabled.
+- The iframe width is narrowed so loaded mini-apps should hit their mobile layouts even inside desktop-like Android WebViews.
 
-Behavior added:
-- MODIFY now includes FRAME EXTRACTOR -> tools/frame-extractor/index.html
-- TOOLS now includes a single split coderepo.png button:
-  - left half -> tools/code-writer/index.html
-  - right half -> tools/repository/index.html
-- TOOLS also includes BULK DOWNLOAD and BULK CONVERT.
+No tool routes, categories, app links, split-button routing, or existing storage/import/export actions were changed.

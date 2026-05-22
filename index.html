@@ -555,6 +555,103 @@
       background: rgba(255, 255, 255, 0.06);
     }
 
+    /* Standard dual-action split button for iframe + new-tab tool launches */
+    .org-btn-dual-action {
+      width: 230px;
+      height: 30px;
+      border: none;
+      background: none !important;
+      position: relative;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      outline: none;
+      user-select: none;
+      text-transform: uppercase;
+      transition: all 0.25s ease-in-out;
+    }
+
+    .org-btn-dual-action::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('images/button2.png');
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
+      background-position: center;
+      z-index: 1;
+      transition: opacity 0.25s ease-in-out;
+      opacity: 1;
+    }
+
+    .org-btn-dual-action:hover::before,
+    .org-btn-dual-action.active::before {
+      opacity: 0.5;
+    }
+
+    .org-btn-dual-action:hover .dual-label,
+    .org-btn-dual-action.active .dual-label {
+      color: #ffffff;
+      text-shadow: 0 0 4px #ffffff, 0 0 12px #ff9cb3, 0 0 24px #9a2f4f, 0 0 36px #9a2f4f;
+    }
+
+    .org-btn-dual-action .dual-label {
+      position: absolute;
+      z-index: 2;
+      top: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--dark-stone-ink);
+      font-size: 10px;
+      pointer-events: none;
+      transition: color 0.25s ease-in-out, text-shadow 0.25s ease-in-out;
+    }
+
+    .org-btn-dual-action .dual-label-left {
+      left: 0;
+      width: 50%;
+    }
+
+    .org-btn-dual-action .dual-label-right {
+      right: 0;
+      width: 50%;
+    }
+
+    .org-btn-dual-action-zone {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      margin: 0;
+      outline: none;
+      z-index: 3;
+    }
+
+    .org-btn-dual-action-zone.left-zone {
+      left: 0;
+      width: 50%;
+    }
+
+    .org-btn-dual-action-zone.right-zone {
+      right: 0;
+      width: 50%;
+    }
+
+    .org-btn-dual-action-zone:hover {
+      background: rgba(255, 255, 255, 0.06);
+    }
+
     /* ==========================================================
        CENTRAL BASIN (THE ACTIVE CONTENT WINDOW)
        ========================================================= */
@@ -571,6 +668,91 @@
       border: none;
       display: block;
       background-color: #000000; /* Prevents frame background color mismatch */
+    }
+
+    /* Force Mobile View override for Android WebShell / desktop testing */
+    body.force-mobile-view {
+      align-items: center;
+      background-color: #000000;
+    }
+
+    body.force-mobile-view .l1-header,
+    body.force-mobile-view .divider-l1-l2,
+    body.force-mobile-view #l2-wrapper,
+    body.force-mobile-view #l3-wrapper,
+    body.force-mobile-view .basin-content-wrapper {
+      width: min(100vw, 430px);
+      max-width: 430px;
+      align-self: center;
+    }
+
+    body.force-mobile-view .l1-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      row-gap: 8px;
+      column-gap: 12px;
+      padding: 8px 16px;
+    }
+
+    body.force-mobile-view .l1-brand {
+      grid-column: 1;
+      grid-row: 1;
+      min-width: 0;
+    }
+
+    body.force-mobile-view .l1-actions-right {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+    }
+
+    body.force-mobile-view .l1-status-center {
+      grid-column: 1 / span 2;
+      grid-row: 2;
+      width: 100%;
+      max-width: 480px;
+      justify-self: center;
+      padding: 6px 16px;
+      gap: 10px;
+    }
+
+    body.force-mobile-view .l1-status-text {
+      font-size: 11px;
+      letter-spacing: 0.02em;
+      max-width: 100%;
+    }
+
+    body.force-mobile-view .l1-logo {
+      height: 36px;
+    }
+
+    body.force-mobile-view .l1-title-img {
+      height: 26px;
+    }
+
+    body.force-mobile-view .version-pill {
+      font-size: 10px;
+      padding: 2px 8px;
+    }
+
+    body.force-mobile-view .l2-tabs-container,
+    body.force-mobile-view .l3-sub-container {
+      width: 100%;
+    }
+
+    body.force-mobile-view .basin-content-wrapper {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    body.force-mobile-view .basin-iframe {
+      width: 100%;
+      max-width: 430px;
+      height: 100%;
+      margin: 0 auto;
+      box-shadow: 0 0 24px rgba(0, 0, 0, 0.95);
     }
 
     /* ==========================================================
@@ -785,6 +967,15 @@
         <p>This panel synchronizes user data, preferences, and favorites across the entire suite of Organon applications. Individual files are aggregated here into a single, clean system database package.</p>
         
         <div class="settings-actions-group">
+          <!-- Force Mobile View Action Row -->
+          <div class="settings-action-row">
+            <div class="settings-action-desc">
+              <span class="settings-action-title">Force Mobile View</span>
+              <span class="settings-action-sub">Render the full hub and tool iframe at phone width</span>
+            </div>
+            <button class="settings-btn-action" id="force-mobile-button" onclick="toggleForceMobileView()">Off</button>
+          </div>
+
           <!-- Export Action Row -->
           <div class="settings-action-row">
             <div class="settings-action-desc">
@@ -888,6 +1079,38 @@
     // ==========================================================
     // GLOBAL SETTINGS MODAL & SYNC STORAGE LOGIC
     // ==========================================================
+    const FORCE_MOBILE_STORAGE_KEY = 'organon_force_mobile_view';
+
+    function isForceMobileViewEnabled() {
+      return localStorage.getItem(FORCE_MOBILE_STORAGE_KEY) === 'true';
+    }
+
+    function updateForceMobileButton() {
+      const btn = document.getElementById('force-mobile-button');
+      if (!btn) return;
+
+      const enabled = isForceMobileViewEnabled();
+      btn.innerText = enabled ? 'On' : 'Off';
+      btn.style.backgroundColor = enabled ? '#4B84BF' : '';
+      btn.style.color = enabled ? '#ffffff' : '';
+      btn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+    }
+
+    function applyForceMobileViewSetting() {
+      const enabled = isForceMobileViewEnabled();
+      document.body.classList.toggle('force-mobile-view', enabled);
+      updateForceMobileButton();
+    }
+
+    function toggleForceMobileView() {
+      const nextState = !isForceMobileViewEnabled();
+      localStorage.setItem(FORCE_MOBILE_STORAGE_KEY, nextState ? 'true' : 'false');
+      applyForceMobileViewSetting();
+      setStatusText(nextState ? 'Force mobile view enabled' : 'Force mobile view disabled', true);
+    }
+
+    document.addEventListener('DOMContentLoaded', applyForceMobileViewSetting);
+
     function openSettingsModal() {
       const overlay = document.getElementById('settings-overlay');
       overlay.style.display = 'flex';
@@ -1196,7 +1419,7 @@
           if (tool.id === toolId) {
             return { category: cat, tool: tool };
           }
-          if (tool.buttonType === 'code-repo-split' && Array.isArray(tool.splitTools)) {
+          if (Array.isArray(tool.splitTools)) {
             const splitMatch = tool.splitTools.find(splitTool => splitTool.id === toolId);
             if (splitMatch) {
               return { category: cat, tool: splitMatch };
@@ -1209,6 +1432,8 @@
     }
 
     window.onload = async () => {
+      applyForceMobileViewSetting();
+
       try {
         const response = await fetch('tools.json');
         manifest = await response.json();
@@ -1304,94 +1529,121 @@
 
     function useMockData() {
       manifest = {
-        "version": "v1.08-mock",
-        "categories": [
-          {
-            "id": "create",
-            "label": "CREATE",
-            "tools": []
-          },
-          {
-            "id": "modify",
-            "label": "MODIFY",
-            "tools": [
-              {
-                "id": "image-tile",
-                "label": "TILE IMAGE",
-                "path": "tools/image-tile/index.html",
-                "description": "Slice and tile images into precise, custom grid coordinates."
-              },
-              {
-                "id": "img2normal",
-                "label": "IMG2NORMAL",
-                "path": "tools/img2normal/index.html",
-                "description": "Convert images into normal maps for 3D rendering."
-              },
-              {
-                "id": "jpeg-compress",
-                "label": "JPEG COMPRESS",
-                "path": "tools/jpeg-compress/index.html",
-                "description": "Compress JPEG images to optimized files sizes."
-              },
-              {
-                "id": "frame-extractor",
-                "label": "FRAME EXTRACTOR",
-                "path": "tools/frame-extractor/index.html",
-                "description": "Extract still frames from local video files."
-              }
-            ]
-          },
-          {
-            "id": "tools",
-            "label": "TOOLS",
-            "tools": [
-              {
-                "id": "code-repo-split",
-                "label": "CODE EDITOR | REPOSITORY",
-                "buttonType": "code-repo-split",
-                "description": "Open the code editor or repository from the split copper button.",
-                "splitTools": [
-                  {
-                    "id": "code-writer",
-                    "label": "CODE EDITOR",
-                    "path": "tools/code-writer/index.html",
-                    "description": "Open the Organon code editor workspace."
-                  },
-                  {
-                    "id": "repository",
-                    "label": "REPOSITORY",
-                    "path": "tools/repository/index.html",
-                    "description": "Open the Organon UI repository."
-                  }
-                ]
-              },
-              {
-                "id": "bulk-download",
-                "label": "BULK DOWNLOAD",
-                "path": "tools/bulk-download/index.html",
-                "description": "Download multiple files or assets in batch."
-              },
-              {
-                "id": "bulk-convert",
-                "label": "BULK CONVERT",
-                "path": "tools/bulk-convert/index.html",
-                "description": "Convert multiple local files in batch."
-              }
-            ]
-          },
-          {
-            "id": "analyze",
-            "label": "ANALYZE",
-            "tools": [
-              {
-                "id": "character-library",
-                "label": "CHARACTER LIBRARY",
-                "path": "tools/character-library/index.html", // Updated lowercase path target
-                "description": "Browse and manage the global character library sheet metadata."
-              }
-            ]
-          }
-        ]
+              "version": "v1.09-alpha",
+              "categories": [
+                      {
+                              "id": "create",
+                              "label": "CREATE",
+                              "tools": []
+                      },
+                      {
+                              "id": "modify",
+                              "label": "MODIFY",
+                              "tools": [
+                                      {
+                                              "id": "image-tile",
+                                              "label": "TILE IMAGE",
+                                              "path": "tools/image-tile/index.html",
+                                              "description": "Slice and tile images into precise, custom grid coordinates."
+                                      },
+                                      {
+                                              "id": "img2normal",
+                                              "label": "IMG2NORMAL",
+                                              "path": "tools/img2normal/index.html",
+                                              "description": "Convert images into normal maps for 3D rendering."
+                                      },
+                                      {
+                                              "id": "jpeg-compress",
+                                              "label": "JPEG COMPRESS",
+                                              "path": "tools/jpeg-compress/index.html",
+                                              "description": "Compress JPEG images to optimized files sizes."
+                                      },
+                                      {
+                                              "id": "frame-extractor",
+                                              "label": "FRAME EXTRACTOR",
+                                              "path": "tools/frame-extractor/index.html",
+                                              "description": "Extract still frames from local video files."
+                                      },
+                                      {
+                                              "id": "animation-maker",
+                                              "label": "ANIMATION MAKER",
+                                              "path": "tools/animation-maker/index.html",
+                                              "description": "Create and preview animation assets from local media or image sequences."
+                                      }
+                              ]
+                      },
+                      {
+                              "id": "tools",
+                              "label": "TOOLS",
+                              "tools": [
+                                      {
+                                              "id": "code-repo-split",
+                                              "label": "CODE EDITOR | REPOSITORY",
+                                              "buttonType": "code-repo-split",
+                                              "description": "Open the code editor or repository from the split copper button.",
+                                              "splitTools": [
+                                                      {
+                                                              "id": "code-writer",
+                                                              "label": "CODE EDITOR",
+                                                              "path": "tools/code-writer/index.html",
+                                                              "description": "Open the Organon code editor workspace."
+                                                      },
+                                                      {
+                                                              "id": "repository",
+                                                              "label": "REPOSITORY",
+                                                              "path": "tools/repository/index.html",
+                                                              "description": "Open the Organon UI repository."
+                                                      }
+                                              ]
+                                      },
+                                      {
+                                              "id": "bulk-download",
+                                              "label": "BULK DOWNLOAD",
+                                              "path": "tools/bulk-download/index.html",
+                                              "description": "Download multiple files or assets in batch."
+                                      },
+                                      {
+                                              "id": "bulk-convert",
+                                              "label": "BULK CONVERT",
+                                              "path": "tools/bulk-convert/index.html",
+                                              "description": "Convert multiple local files in batch."
+                                      }
+                              ]
+                      },
+                      {
+                              "id": "analyze",
+                              "label": "ANALYZE",
+                              "tools": [
+                                      {
+                                              "id": "character-library",
+                                              "label": "CHARACTER LIBRARY",
+                                              "path": "tools/character-library/index.html",
+                                              "description": "Browse and manage the global character library sheet metadata."
+                                      },
+                                      {
+                                              "id": "onda-split",
+                                              "label": "ONDA | NEW TAB",
+                                              "buttonType": "dual-action-split",
+                                              "description": "Open Onda in the basin iframe or launch Onda in a new browser tab.",
+                                              "splitTools": [
+                                                      {
+                                                              "id": "onda",
+                                                              "label": "ONDA",
+                                                              "path": "tools/Onda/index.html",
+                                                              "description": "Open Onda inside the Organon workspace."
+                                                      },
+                                                      {
+                                                              "id": "onda-new-tab",
+                                                              "label": "NEW TAB",
+                                                              "path": "tools/Onda/index.html",
+                                                              "openMode": "new-tab",
+                                                              "description": "Open Onda in a new browser tab."
+                                                      }
+                                              ]
+                                      }
+                              ]
+                      }
+              ]
       };
       document.getElementById('site-version').innerText = manifest.version;
       renderL2Tabs();
@@ -1459,7 +1711,7 @@
             leftZone.className = 'org-btn-code-repo-zone left-zone';
             leftZone.setAttribute('aria-label', leftTool.label);
             leftZone.setAttribute('data-split-tool-id', leftTool.id);
-            leftZone.onclick = () => selectTool(leftTool);
+            leftZone.onclick = () => openTool(leftTool);
             leftZone.onmouseover = () => setStatusText(leftTool.description || leftTool.label);
             leftZone.onmouseleave = () => setStatusText("ORGANON ONLINE");
             splitBtn.appendChild(leftZone);
@@ -1471,7 +1723,60 @@
             rightZone.className = 'org-btn-code-repo-zone right-zone';
             rightZone.setAttribute('aria-label', rightTool.label);
             rightZone.setAttribute('data-split-tool-id', rightTool.id);
-            rightZone.onclick = () => selectTool(rightTool);
+            rightZone.onclick = () => openTool(rightTool);
+            rightZone.onmouseover = () => setStatusText(rightTool.description || rightTool.label);
+            rightZone.onmouseleave = () => setStatusText("ORGANON ONLINE");
+            splitBtn.appendChild(rightZone);
+          }
+
+          container.appendChild(splitBtn);
+
+          // Auto-select tool in active column only on direct user-click navigations
+          if (idx === 0 && autoLoadFirst && leftTool) {
+            selectTool(leftTool);
+          }
+          return;
+        }
+
+        if (tool.buttonType === 'dual-action-split' && Array.isArray(tool.splitTools)) {
+          const splitBtn = document.createElement('div');
+          splitBtn.className = `org-btn-dual-action ${tool.splitTools.some(splitTool => splitTool.id === activeTool) ? 'active' : ''}`;
+          splitBtn.id = `tool-${tool.id}`;
+          splitBtn.setAttribute('aria-label', tool.label);
+          splitBtn.setAttribute('role', 'group');
+
+          const leftTool = tool.splitTools[0];
+          const rightTool = tool.splitTools[1];
+
+          if (leftTool) {
+            const leftLabel = document.createElement('span');
+            leftLabel.className = 'dual-label dual-label-left';
+            leftLabel.innerText = leftTool.label;
+            splitBtn.appendChild(leftLabel);
+
+            const leftZone = document.createElement('button');
+            leftZone.type = 'button';
+            leftZone.className = 'org-btn-dual-action-zone left-zone';
+            leftZone.setAttribute('aria-label', leftTool.label);
+            leftZone.setAttribute('data-split-tool-id', leftTool.id);
+            leftZone.onclick = () => openTool(leftTool);
+            leftZone.onmouseover = () => setStatusText(leftTool.description || leftTool.label);
+            leftZone.onmouseleave = () => setStatusText("ORGANON ONLINE");
+            splitBtn.appendChild(leftZone);
+          }
+
+          if (rightTool) {
+            const rightLabel = document.createElement('span');
+            rightLabel.className = 'dual-label dual-label-right';
+            rightLabel.innerText = rightTool.label;
+            splitBtn.appendChild(rightLabel);
+
+            const rightZone = document.createElement('button');
+            rightZone.type = 'button';
+            rightZone.className = 'org-btn-dual-action-zone right-zone';
+            rightZone.setAttribute('aria-label', rightTool.label);
+            rightZone.setAttribute('data-split-tool-id', rightTool.id);
+            rightZone.onclick = () => openTool(rightTool);
             rightZone.onmouseover = () => setStatusText(rightTool.description || rightTool.label);
             rightZone.onmouseleave = () => setStatusText("ORGANON ONLINE");
             splitBtn.appendChild(rightZone);
@@ -1505,14 +1810,23 @@
       });
     }
 
+    function openTool(tool) {
+      if (tool.openMode === 'new-tab') {
+        window.open(tool.path, '_blank', 'noopener');
+        setStatusText(tool.description || tool.label, true);
+        return;
+      }
+      selectTool(tool);
+    }
+
     function selectTool(tool) {
       activeTool = tool.id;
       document.querySelectorAll('.l3-sub-container .org-btn-unified').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.l3-sub-container .org-btn-code-repo').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.l3-sub-container .org-btn-code-repo, .l3-sub-container .org-btn-dual-action').forEach(el => el.classList.remove('active'));
       const activeBtn = document.getElementById('tool-' + tool.id);
       if (activeBtn) activeBtn.classList.add('active');
       const splitActiveBtn = document.querySelector(`[data-split-tool-id="${tool.id}"]`);
-      if (splitActiveBtn) splitActiveBtn.closest('.org-btn-code-repo').classList.add('active');
+      if (splitActiveBtn) splitActiveBtn.closest('.org-btn-code-repo, .org-btn-dual-action').classList.add('active');
 
       const iframe = document.getElementById('basin-frame');
       iframe.src = tool.path;

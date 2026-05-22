@@ -1,5 +1,5 @@
 {
-  "version": "v1.08-alpha",
+  "version": "v1.09-alpha",
   "categories": [
     {
       "id": "create",
@@ -33,6 +33,12 @@
           "label": "FRAME EXTRACTOR",
           "path": "tools/frame-extractor/index.html",
           "description": "Extract still frames from local video files."
+        },
+        {
+          "id": "animation-maker",
+          "label": "ANIMATION MAKER",
+          "path": "tools/animation-maker/index.html",
+          "description": "Create and preview animation assets from local media or image sequences."
         }
       ]
     },
@@ -83,6 +89,27 @@
           "label": "CHARACTER LIBRARY",
           "path": "tools/character-library/index.html",
           "description": "Browse and manage the global character library sheet metadata."
+        },
+        {
+          "id": "onda-split",
+          "label": "ONDA | NEW TAB",
+          "buttonType": "dual-action-split",
+          "description": "Open Onda in the basin iframe or launch Onda in a new browser tab.",
+          "splitTools": [
+            {
+              "id": "onda",
+              "label": "ONDA",
+              "path": "tools/Onda/index.html",
+              "description": "Open Onda inside the Organon workspace."
+            },
+            {
+              "id": "onda-new-tab",
+              "label": "NEW TAB",
+              "path": "tools/Onda/index.html",
+              "openMode": "new-tab",
+              "description": "Open Onda in a new browser tab."
+            }
+          ]
         }
       ]
     }
