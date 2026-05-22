@@ -123,42 +123,59 @@
             filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.85));
         }
 
-        /* Deck Button (20% Larger borderless design) */
+        /* Deck Button: true text glyphs, not image/emoji buttons */
         .utility-btn {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 1.35rem; 
-            padding: 4px;
+            font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Symbols", "DejaVu Sans", system-ui, sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            line-height: 1;
+            padding: 4px 5px;
             border-radius: 50%;
             transition: all 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            color: var(--alabaster-paper);
+            color: var(--water-blue);
+            text-shadow: 0 0 8px rgba(75, 132, 191, 0.72), 0 0 16px rgba(117, 178, 222, 0.45);
+            font-variant-emoji: text;
         }
         .utility-btn:hover {
             background-color: rgba(224, 163, 96, 0.15);
             transform: scale(1.15);
+            color: var(--water-spray);
+            text-shadow: 0 0 14px var(--water-spray), 0 0 26px rgba(117, 178, 222, 0.65);
         }
-        
-        /* Glowing Active State for Emojis */
+        .utility-btn.speed-glyph {
+            color: var(--stone-ochre);
+            text-shadow: 0 0 10px rgba(224, 163, 96, 0.85), 0 0 20px rgba(210, 125, 108, 0.55);
+        }
+        .utility-btn.speed-glyph:hover,
+        .utility-btn.speed-glyph.active-state {
+            color: var(--stone-ochre) !important;
+            text-shadow: 0 0 14px var(--stone-ochre), 0 0 28px rgba(224, 163, 96, 0.8);
+        }
         .utility-btn.active-state {
-            color: var(--water-blue);
-            text-shadow: 0 0 12px var(--water-blue), 0 0 20px var(--water-spray);
+            color: var(--water-spray);
+            text-shadow: 0 0 12px var(--water-blue), 0 0 20px var(--water-spray), 0 0 34px rgba(117, 178, 222, 0.45);
             filter: drop-shadow(0 0 4px var(--water-spray));
         }
 
-        /* Dynamic Spinning Play Icon */
+        /* Dynamic Spinning Play Glyph */
         @keyframes spin-glow {
-            0% { transform: rotate(0deg); text-shadow: 0 0 8px var(--water-blue); }
-            100% { transform: rotate(360deg); text-shadow: 0 0 16px var(--water-spray); }
+            0% { transform: rotate(0deg); text-shadow: 0 0 10px var(--water-blue), 0 0 20px rgba(117,178,222,0.5); }
+            100% { transform: rotate(360deg); text-shadow: 0 0 18px var(--water-spray), 0 0 34px rgba(117,178,222,0.85); }
         }
         .playing-spinner {
             display: inline-block;
-            animation: spin-glow 1.5s linear infinite;
+            animation: spin-glow 1.15s linear infinite;
             color: var(--water-spray) !important;
+            font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", "DejaVu Sans", system-ui, sans-serif;
+            font-size: 1.95rem;
+            font-weight: 900;
         }
         
         /* Tooltip utilities */
@@ -708,11 +725,233 @@
             font-size: 0.78rem;
         }
 
+
+
+        /* Database / Library Manager drawer */
+        #library-manager-drawer {
+            position: fixed;
+            left: 140px;
+            right: 140px;
+            bottom: 70px;
+            max-height: min(72vh, 680px);
+            background: rgba(16, 17, 15, 0.97);
+            border: 2px solid var(--stone-ochre);
+            border-bottom: none;
+            border-top-left-radius: 22px;
+            border-top-right-radius: 22px;
+            box-shadow: 0 -12px 35px rgba(0,0,0,0.72), 0 0 28px rgba(75,132,191,0.15);
+            z-index: 109;
+            transform: translateY(calc(100% + 90px));
+            opacity: 0;
+            pointer-events: none;
+            transition: transform 0.28s ease, opacity 0.22s ease;
+            overflow: hidden;
+        }
+        #library-manager-drawer.drawer-open {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .library-drawer-inner {
+            display: grid;
+            grid-template-rows: auto auto 1fr;
+            max-height: min(72vh, 680px);
+        }
+        .library-drawer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 14px 18px 10px;
+            border-bottom: 1px solid rgba(224, 163, 96, 0.35);
+            background: linear-gradient(90deg, rgba(38,97,92,0.25), rgba(0,0,0,0.2));
+        }
+        .library-drawer-title {
+            color: var(--water-spray);
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.92rem;
+        }
+        .library-drawer-subtitle {
+            color: var(--chiseled-bronze);
+            font-size: 0.73rem;
+            margin-top: 2px;
+        }
+        .library-manager-toolbar {
+            display: grid;
+            grid-template-columns: 1.6fr 0.75fr auto;
+            gap: 10px;
+            padding: 12px 18px;
+            align-items: center;
+            border-bottom: 1px solid rgba(117, 178, 222, 0.18);
+        }
+        .library-manager-toolbar input,
+        .library-manager-toolbar select,
+        .inline-meta-editor input,
+        .inline-meta-editor select {
+            background: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 999px;
+            padding: 9px 12px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .library-manager-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+        .library-manager-actions .btn-pill {
+            padding: 7px 11px;
+            font-size: 0.72rem;
+        }
+        .library-manager-content {
+            display: grid;
+            grid-template-columns: 220px 1fr;
+            gap: 14px;
+            overflow: hidden;
+            padding: 14px 18px 18px;
+        }
+        .library-sidebar,
+        .library-results-panel {
+            min-height: 0;
+            overflow: auto;
+            background: rgba(0,0,0,0.22);
+            border: 1px solid rgba(137,107,73,0.35);
+            border-radius: 14px;
+            padding: 12px;
+        }
+        .library-section-label {
+            color: var(--stone-ochre);
+            font-weight: 800;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin: 0 0 8px;
+        }
+        .library-mini-row,
+        .library-result-row {
+            border: 1px solid rgba(117,178,222,0.18);
+            border-radius: 10px;
+            padding: 8px;
+            margin-bottom: 8px;
+            background: rgba(30,32,28,0.72);
+            cursor: pointer;
+        }
+        .library-mini-row:hover,
+        .library-result-row:hover {
+            border-color: rgba(117,178,222,0.58);
+            background: rgba(75,132,191,0.14);
+        }
+        .library-row-main {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            align-items: flex-start;
+        }
+        .library-track-title {
+            color: var(--water-spray);
+            font-size: 0.86rem;
+            font-weight: 800;
+            overflow-wrap: anywhere;
+        }
+        .library-track-meta {
+            color: var(--chiseled-bronze);
+            font-size: 0.72rem;
+            margin-top: 3px;
+            overflow-wrap: anywhere;
+        }
+        .library-row-tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            margin-top: 7px;
+        }
+        .mini-tag {
+            border: 1px solid rgba(224,163,96,0.45);
+            border-radius: 999px;
+            color: var(--stone-ochre);
+            padding: 2px 7px;
+            font-size: 0.68rem;
+            background: rgba(224,163,96,0.08);
+        }
+        .library-row-buttons {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .library-row-buttons .btn-pill {
+            padding: 4px 9px;
+            font-size: 0.68rem;
+        }
+        .inline-meta-editor {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+            margin-top: 8px;
+        }
+        .meta-pill-list {
+            display: flex;
+            gap: 7px;
+            flex-wrap: wrap;
+            margin: 8px 0 12px;
+        }
+        .meta-playlist-checklist {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 8px;
+            margin: 8px 0 12px;
+        }
+        .meta-playlist-checklist label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 9px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(137,107,73,0.35);
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+        .meta-source-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+            margin: 8px 0 12px;
+        }
+        .meta-source-box {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(137,107,73,0.3);
+            border-radius: 8px;
+            padding: 8px;
+            overflow-wrap: anywhere;
+        }
+        .meta-source-label {
+            color: var(--water-spray);
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .meta-source-value {
+            color: var(--alabaster-paper);
+            font-size: 0.78rem;
+            margin-top: 3px;
+        }
+
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
             body { padding: 0 15px; }
             #organon-top-panel { padding: 20px 20px; }
             #organon-bottom-panel { left: 15px; right: 15px; padding: 10px 15px 15px 15px; }
+            #library-manager-drawer { left: 15px; right: 15px; bottom: 62px; }
+            .library-manager-toolbar { grid-template-columns: 1fr; }
+            .library-manager-content { grid-template-columns: 1fr; }
             #organon-middle-panel { padding: 15px 15px 120px 15px; }
             #scrollable-tags-bar { padding: 6px 15px; }
             .primary-controls { flex-wrap: wrap; }
@@ -746,13 +985,13 @@
             <div class="primary-controls">
                 <!-- Symmetrical Control Pill (Holds Play/Pause & Transport) -->
                 <div class="utility-pill" id="start-controls-pill">
-                    <button id="btn-prev" class="utility-btn" data-tooltip="Restart / Prev (Double click)">⏮️</button>
+                    <button id="btn-prev" class="utility-btn" data-tooltip="Restart / Prev (Double click)">⏮</button>
                     <!-- Play triggers the spin-glow when active -->
-                    <button id="btn-play" class="utility-btn" data-tooltip="Play (Hold to Fast Forward)">▶️</button>
+                    <button id="btn-play" class="utility-btn" data-tooltip="Play (Hold to Fast Forward)">▷</button>
                     <!-- Dedicated Pause/Stop Button -->
-                    <button id="btn-pause" class="utility-btn" data-tooltip="Pause / Stop">॥</button>
-                    <button id="btn-speed-cycle" class="utility-btn" data-tooltip="Cycle Speed">⚡</button>
-                    <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭️</button>
+                    <button id="btn-pause" class="utility-btn" data-tooltip="Pause / Stop">⏸</button>
+                    <button id="btn-speed-cycle" class="utility-btn speed-glyph" data-tooltip="Cycle Speed">🗲</button>
+                    <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭</button>
                 </div>
 
                 <!-- Timeline Seek container line -->
@@ -764,13 +1003,13 @@
                 
                 <!-- Right Symmetrical Pill -->
                 <div class="utility-pill" id="end-utilities-pill">
-                    <button id="btn-repeat-one" class="utility-btn" data-tooltip="Repeat One">♾️</button>
-                    <button id="btn-repeat-all" class="utility-btn" data-tooltip="Repeat All">🔁</button>
-                    <button id="btn-shuffle" class="utility-btn" data-tooltip="Shuffle">🔀</button>
-                    <button id="btn-playlist" class="utility-btn" data-tooltip="Save to Playlist">📥</button>
-                    <button id="btn-tags" class="utility-btn" data-tooltip="Tags">🏷️</button>
-                    <button id="btn-lyrics-modal" class="utility-btn" data-tooltip="Lyrics">🎤</button>
-                    <button id="btn-toggle-advanced" class="utility-btn" data-tooltip="Settings & Extras">⚙️</button>
+                    <button id="btn-repeat-one" class="utility-btn" data-tooltip="Repeat One">ᦠ</button>
+                    <button id="btn-repeat-all" class="utility-btn" data-tooltip="Repeat All">♺</button>
+                    <button id="btn-shuffle" class="utility-btn" data-tooltip="Shuffle">⚂</button>
+                    <button id="btn-playlist" class="utility-btn" data-tooltip="Save to Playlist">⊕</button>
+                    <button id="btn-tags" class="utility-btn" data-tooltip="Tags">#</button>
+                    <button id="btn-lyrics-modal" class="utility-btn" data-tooltip="Lyrics">♫</button>
+                    <button id="btn-toggle-advanced" class="utility-btn" data-tooltip="Settings & Extras">☷</button>
                 </div>
             </div>
         </div>
@@ -784,10 +1023,10 @@
         
         <!-- Workspace Mode Selection Tabs Bar -->
         <div class="workspace-mode-bar">
-            <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">📁 Files Drop Zone</button>
-            <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">🔗 Load URL</button>
-            <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">🗂️ Playlists</button>
-            <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">🏷️ Library Info</button>
+            <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">▣ Files Drop Zone</button>
+            <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">↗ Load URL</button>
+            <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">▤ Playlists</button>
+            <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">ⓘ Library Info</button>
         </div>
 
         <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
@@ -820,8 +1059,8 @@
                 <div class="card-header">
                     <span class="card-title">🗂️ Playlist Management</span>
                     <div style="display: flex; gap: 8px;">
-                        <button class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;" id="btn-create-playlist-trigger">➕ Create New</button>
-                        <button class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem; background-color: var(--brand-red); color: white;" id="btn-delete-playlist-trigger">🗑️ Delete Selected</button>
+                        <button class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;" id="btn-create-playlist-trigger">＋ Create New</button>
+                        <button class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem; background-color: var(--brand-red); color: white;" id="btn-delete-playlist-trigger">× Delete Selected</button>
                     </div>
                 </div>
                 <p style="font-size: 0.85rem; color: var(--water-spray);">Assign loaded tracks to custom folders. Switch view below to play target playlists:</p>
@@ -830,48 +1069,113 @@
                 </div>
             </div>
 
-            <!-- Tab 4 View: Virtual Master Library & Tags -->
+            <!-- Tab 4 View: Active Track Library Info -->
             <div id="tab-library" class="viewport-content">
-                <div class="card-header" style="border-bottom: none; margin-bottom: 8px;">
-                    <span class="card-title">🏷️ Active Track Library Info</span>
-                    <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
-                </div>
+                <div id="metadata-display-card">
+                    <div class="card-header" style="border-bottom: none; margin-bottom: 8px;">
+                        <span class="card-title">ⓘ Active Track Library Info</span>
+                        <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
+                    </div>
 
-                <div style="margin-bottom: 12px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(137,107,73,0.2);">
-                    <strong style="color: var(--water-spray);">Display Nickname:</strong> 
-                    <span id="nickname-display-mode" style="display: inline-flex; align-items: center;">
-                        <span id="meta-nickname" style="color: var(--stone-ochre); margin-left: 6px;">No Custom Name</span>
-                        <button id="btn-inline-nickname-edit" class="pencil-btn" title="Type over display name">✏️</button>
-                    </span>
-                    <span id="nickname-edit-mode" style="display: none; align-items: center; gap: 8px; margin-left: 6px;">
-                        <input type="text" id="input-inline-nickname" class="inline-edit-input">
-                        <button id="btn-inline-save" class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;">Save</button>
-                        <button id="btn-inline-cancel" class="pencil-btn" style="font-size: 1.1rem; color: var(--brand-red);">✖</button>
-                    </span>
-                </div>
+                    <div class="meta-source-grid">
+                        <div class="meta-source-box">
+                            <div class="meta-source-label">Source type</div>
+                            <div id="meta-source-type" class="meta-source-value">No active track</div>
+                        </div>
+                        <div class="meta-source-box">
+                            <div class="meta-source-label">Location / URL</div>
+                            <div id="meta-source-detail" class="meta-source-value">No active track loaded.</div>
+                        </div>
+                    </div>
 
-                <div><strong style="color: var(--water-spray);">Tags (Click 🏷️ on right utility pill to edit):</strong></div>
-                <div id="meta-tags-list" class="tags-container" style="margin-bottom: 15px;"></div>
+                    <div style="margin-bottom: 12px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(137,107,73,0.2);">
+                        <strong style="color: var(--water-spray);">Display Nickname:</strong> 
+                        <span id="nickname-display-mode" style="display: inline-flex; align-items: center;">
+                            <span id="meta-nickname" style="color: var(--stone-ochre); margin-left: 6px;">No Custom Name</span>
+                            <button id="btn-inline-nickname-edit" class="pencil-btn" title="Type over display name">✎</button>
+                        </span>
+                        <span id="nickname-edit-mode" style="display: none; align-items: center; gap: 8px; margin-left: 6px;">
+                            <input type="text" id="input-inline-nickname" class="inline-edit-input">
+                            <button id="btn-inline-save" class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;">Save</button>
+                            <button id="btn-inline-cancel" class="pencil-btn" style="font-size: 1.1rem; color: var(--brand-red);">×</button>
+                        </span>
+                    </div>
 
-                <div><strong style="color: var(--water-spray);">Lyrics Card:</strong></div>
-                <div id="lyrics-viewer" style="font-size: 0.85rem; line-height: 1.5; color: var(--alabaster-paper); max-height: 100px; overflow-y: auto; text-align: center; white-space: pre-line; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 6px;">
-                    No lyrics stored yet. Edit lyrics using the 🎤 icon above.
+                    <div><strong style="color: var(--water-spray);">Tags for this track:</strong></div>
+                    <div id="meta-tags-list" class="tags-container" style="margin-bottom: 8px;"></div>
+                    <div class="inline-meta-editor" style="margin-bottom: 14px;">
+                        <input id="input-inline-tags" type="text" placeholder="Comma separated tags for this track...">
+                        <button id="btn-inline-tags-save" class="btn-pill">Save Tags</button>
+                    </div>
+
+                    <div><strong style="color: var(--water-spray);">Playlists containing this track:</strong></div>
+                    <div id="meta-playlist-membership" class="meta-playlist-checklist"></div>
+                    <div class="inline-meta-editor" style="grid-template-columns: 1fr auto auto; margin-bottom: 14px;">
+                        <input id="input-inline-new-playlist" type="text" placeholder="New playlist name...">
+                        <button id="btn-inline-create-playlist" class="btn-pill">Create</button>
+                        <button id="btn-inline-playlists-save" class="btn-pill">Save Playlists</button>
+                    </div>
+
+                    <div><strong style="color: var(--water-spray);">Lyrics Card:</strong></div>
+                    <div id="lyrics-viewer" style="font-size: 0.85rem; line-height: 1.5; color: var(--alabaster-paper); max-height: 100px; overflow-y: auto; text-align: center; white-space: pre-line; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 6px;">
+                        No lyrics stored yet. Edit lyrics using the ♫ icon above.
+                    </div>
                 </div>
             </div>
-
         </div>
 
     </div>
 
     <!-- PANEL 3: Bottom Sticky -->
     <div id="organon-bottom-panel" class="sticky-panel">
-        <button class="btn-pill disabled">DATABASE ENGINE OFFLINE (Phase B)</button>
+        <button id="btn-database-engine" class="btn-pill">DATABASE ENGINE · LIBRARY / PLAYLIST MANAGER</button>
+    </div>
+
+    <!-- UPWARD LIBRARY / PLAYLIST MANAGER DRAWER -->
+    <div id="library-manager-drawer" aria-hidden="true">
+        <div class="library-drawer-inner">
+            <div class="library-drawer-header">
+                <div>
+                    <div class="library-drawer-title">Database Engine</div>
+                    <div class="library-drawer-subtitle">Library catalogue, playlists, JSON import/export, search, recent tracks and missing-file checks.</div>
+                </div>
+                <button id="btn-close-library-manager" class="tiny-icon-btn" title="Close library manager">×</button>
+            </div>
+            <div class="library-manager-toolbar">
+                <input id="db-library-search" type="text" placeholder="Search filename, nickname, tag, playlist, URL or source...">
+                <select id="db-library-filter">
+                    <option value="all">All sources</option>
+                    <option value="local">Local files</option>
+                    <option value="stream">Streams</option>
+                    <option value="missing">Needs relink</option>
+                </select>
+                <div class="library-manager-actions">
+                    <button id="btn-db-import-json" class="btn-pill">Import JSON</button>
+                    <button id="btn-db-export-library" class="btn-pill">Export Full</button>
+                    <button id="btn-db-export-streams" class="btn-pill">Export Streams</button>
+                    <button id="btn-db-export-playlist" class="btn-pill">Export Playlist</button>
+                    <button id="btn-db-check-library" class="btn-pill">Check Files</button>
+                </div>
+            </div>
+            <div class="library-manager-content">
+                <aside class="library-sidebar">
+                    <p class="library-section-label">Recent</p>
+                    <div id="db-recent-list"></div>
+                    <p class="library-section-label" style="margin-top: 14px;">Playlists</p>
+                    <div id="db-playlist-list"></div>
+                </aside>
+                <section class="library-results-panel">
+                    <p class="library-section-label">Library Results</p>
+                    <div id="db-library-results"></div>
+                </section>
+            </div>
+        </div>
     </div>
 
     <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
     <div id="settings-popup" class="draggable-popup">
         <div id="settings-drag-handle" class="popup-drag-handle">
-            <span>⚙️ Settings & Extras</span>
+            <span>☷ Settings & Extras</span>
             <span class="popup-close" id="btn-close-settings">&times;</span>
         </div>
         <div class="popup-body">
@@ -900,16 +1204,16 @@
 
             <div class="library-tools-card">
                 <div class="library-title-row">
-                    <span class="library-title">📚 Library JSON Tools</span>
+                    <span class="library-title">Library JSON Tools</span>
                 </div>
                 <div class="library-help">Exports save data only: file names, paths/URLs, tags, lyrics, playlists and visualiser presets. No music is stored in the JSON.</div>
                 <label for="library-name-input">Library name</label>
                 <input type="text" id="library-name-input" placeholder="Chris Desktop Library" value="Onda Library">
                 <div class="library-action-grid">
-                    <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre);">📥 Import</button>
-                    <button id="btn-export-library" class="btn-pill">💾 Export Full</button>
-                    <button id="btn-export-streams" class="btn-pill">☁️ Export Streams</button>
-                    <button id="btn-check-library" class="btn-pill">🔎 Check Files</button>
+                    <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre);">Import</button>
+                    <button id="btn-export-library" class="btn-pill">Export Full</button>
+                    <button id="btn-export-streams" class="btn-pill">Export Streams</button>
+                    <button id="btn-check-library" class="btn-pill">Check Files</button>
                     <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
                 </div>
             </div>
@@ -1084,6 +1388,15 @@
         const visualizerPresetSelect = document.getElementById('visualizer-preset-select');
         const btnAddVisualLayer = document.getElementById('btn-add-visual-layer');
         const libraryNameInput = document.getElementById('library-name-input');
+        const libraryDrawer = document.getElementById('library-manager-drawer');
+        const btnDatabaseEngine = document.getElementById('btn-database-engine');
+        const btnCloseLibraryManager = document.getElementById('btn-close-library-manager');
+        const dbLibrarySearch = document.getElementById('db-library-search');
+        const dbLibraryFilter = document.getElementById('db-library-filter');
+        const dbLibraryResults = document.getElementById('db-library-results');
+        const dbRecentList = document.getElementById('db-recent-list');
+        const dbPlaylistList = document.getElementById('db-playlist-list');
+        const recentTrackIds = [];
 
         const overlay = document.getElementById('modal-overlay');
 
@@ -1221,7 +1534,7 @@
                         </div>
                         <div class="visual-layer-footer">
                             <button class="tiny-icon-btn btn-duplicate-layer" title="Duplicate this layer below">＋</button>
-                            <button class="tiny-icon-btn btn-save-visual-stack" title="Save current visualiser stack">💾</button>
+                            <button class="tiny-icon-btn btn-save-visual-stack" title="Save current visualiser stack">⌑</button>
                         </div>
                     `;
 
@@ -1374,6 +1687,242 @@
                 .filter(Boolean);
         }
 
+        function getTrackId(trackLike) {
+            return typeof trackLike === 'string' ? trackLike : (trackLike?.name || trackLike?.libraryId || trackLike?.id || null);
+        }
+
+        function getTrackPlaylistNames(trackId) {
+            return Object.entries(playlists)
+                .filter(([, tracks]) => Array.isArray(tracks) && tracks.some(track => getTrackId(track) === trackId))
+                .map(([name]) => name);
+        }
+
+        function syncTrackPlaylistMetadata(trackId) {
+            if (!trackId || !virtualLibrary[trackId]) return;
+            virtualLibrary[trackId].playlists = getTrackPlaylistNames(trackId);
+        }
+
+        function syncAllTrackPlaylistMetadata() {
+            Object.keys(virtualLibrary).forEach(syncTrackPlaylistMetadata);
+        }
+
+        function rememberRecentTrack(trackId) {
+            if (!trackId) return;
+            const existingIndex = recentTrackIds.indexOf(trackId);
+            if (existingIndex !== -1) recentTrackIds.splice(existingIndex, 1);
+            recentTrackIds.unshift(trackId);
+            while (recentTrackIds.length > 12) recentTrackIds.pop();
+        }
+
+        function getDisplayTitle(meta) {
+            return meta?.nickname || meta?.title || meta?.fileName || meta?.id || 'Unknown Track';
+        }
+
+        function sourceStatus(meta) {
+            if (!meta) return 'unknown';
+            if (meta.sourceType === 'stream' || meta.streamUrl) return 'stream';
+            if (meta.blobFile) return 'local ready';
+            return 'needs relink';
+        }
+
+        function addTrackToQueueFromLibrary(trackId, playNow = true) {
+            const meta = virtualLibrary[trackId];
+            if (!meta) return;
+            const track = createPlayableTrackFromMeta(meta);
+            const existingIndex = playlistTracks.findIndex(item => getTrackId(item) === trackId);
+            if (existingIndex === -1) {
+                playlistTracks.push(track);
+                if (playNow) switchTrack(playlistTracks.length - 1);
+            } else if (playNow) {
+                switchTrack(existingIndex);
+            }
+            showToast(`Queued: ${getDisplayTitle(meta)}`);
+        }
+
+        function buildTrackRow(trackId, compact = false) {
+            const meta = virtualLibrary[trackId];
+            if (!meta) return null;
+            const row = document.createElement('div');
+            row.className = compact ? 'library-mini-row' : 'library-result-row';
+            row.dataset.trackId = trackId;
+            const playlistsForTrack = getTrackPlaylistNames(trackId);
+            const tags = Array.isArray(meta.tags) ? meta.tags.slice(0, compact ? 2 : 6) : [];
+            row.innerHTML = `
+                <div class="library-row-main">
+                    <div>
+                        <div class="library-track-title">${escapeHtml(getDisplayTitle(meta))}</div>
+                        <div class="library-track-meta">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
+                        ${compact ? '' : `<div class="library-track-meta">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
+                    </div>
+                    ${compact ? '' : `<div class="library-row-buttons"><button class="btn-pill btn-db-play-track" data-track-id="${trackId}">Play</button><button class="btn-pill btn-db-info-track" data-track-id="${trackId}">Info</button></div>`}
+                </div>
+                ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+            `;
+            return row;
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function renderLibraryManager() {
+            if (!dbLibraryResults) return;
+            syncAllTrackPlaylistMetadata();
+            const search = (dbLibrarySearch?.value || '').trim().toLowerCase();
+            const filter = dbLibraryFilter?.value || 'all';
+            const entries = Object.entries(virtualLibrary)
+                .filter(([id, meta]) => {
+                    const playlistsForTrack = getTrackPlaylistNames(id);
+                    const haystack = [
+                        id,
+                        meta.fileName,
+                        meta.title,
+                        meta.nickname,
+                        meta.sourceType,
+                        meta.streamUrl,
+                        meta.localPath,
+                        meta.phonePath,
+                        meta.desktopPath,
+                        ...(Array.isArray(meta.tags) ? meta.tags : []),
+                        ...playlistsForTrack
+                    ].filter(Boolean).join(' ').toLowerCase();
+                    if (search && !haystack.includes(search)) return false;
+                    if (filter === 'stream') return meta.sourceType === 'stream' || !!meta.streamUrl;
+                    if (filter === 'local') return !(meta.sourceType === 'stream' || meta.streamUrl);
+                    if (filter === 'missing') return !(meta.sourceType === 'stream' || meta.streamUrl) && !meta.blobFile;
+                    return true;
+                })
+                .sort((a, b) => getDisplayTitle(a[1]).localeCompare(getDisplayTitle(b[1])));
+
+            dbLibraryResults.innerHTML = entries.length ? '' : '<div class="library-track-meta">No matching tracks in this library yet.</div>';
+            entries.forEach(([id]) => {
+                const row = buildTrackRow(id, false);
+                if (row) dbLibraryResults.appendChild(row);
+            });
+
+            if (dbRecentList) {
+                dbRecentList.innerHTML = '';
+                const validRecent = recentTrackIds.filter(id => virtualLibrary[id]).slice(0, 6);
+                if (!validRecent.length) dbRecentList.innerHTML = '<div class="library-track-meta">No recent tracks yet.</div>';
+                validRecent.forEach(id => {
+                    const row = buildTrackRow(id, true);
+                    if (row) dbRecentList.appendChild(row);
+                });
+            }
+
+            if (dbPlaylistList) {
+                dbPlaylistList.innerHTML = '';
+                const names = Object.keys(playlists).sort();
+                if (!names.length) dbPlaylistList.innerHTML = '<div class="library-track-meta">No playlists yet.</div>';
+                names.forEach(name => {
+                    const row = document.createElement('div');
+                    row.className = 'library-mini-row';
+                    row.dataset.playlistName = name;
+                    row.innerHTML = `<div class="library-track-title">${escapeHtml(name)}</div><div class="library-track-meta">${(playlists[name] || []).length} tracks</div>`;
+                    dbPlaylistList.appendChild(row);
+                });
+            }
+        }
+
+        function toggleLibraryDrawer(forceOpen = null) {
+            if (!libraryDrawer) return;
+            const shouldOpen = forceOpen === null ? !libraryDrawer.classList.contains('drawer-open') : !!forceOpen;
+            libraryDrawer.classList.toggle('drawer-open', shouldOpen);
+            libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+            if (shouldOpen) renderLibraryManager();
+        }
+
+        function exportPlaylistJson(playlistName) {
+            const name = playlistName || activePlaylistView || prompt('Export which playlist? Type the exact playlist name:');
+            if (!name || !playlists[name]) {
+                showToast('No matching playlist to export.');
+                return;
+            }
+            const trackIds = normalisePlaylistToIds(playlists[name]);
+            const tracks = {};
+            trackIds.forEach(id => {
+                if (virtualLibrary[id]) tracks[id] = sanitizeTrackForExport(virtualLibrary[id]);
+            });
+            const data = {
+                app: 'Onda Media Player',
+                type: 'onda-playlist',
+                version: 1,
+                playlistName: name,
+                requiredLibraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
+                exportedAt: new Date().toISOString(),
+                trackIds,
+                tracks
+            };
+            downloadJsonFile(`${slugifyFileName(name)}-playlist.json`, data);
+            showToast(`Exported playlist JSON: ${name}`);
+        }
+
+        function renderActiveTrackPlaylistEditor() {
+            const container = document.getElementById('meta-playlist-membership');
+            if (!container) return;
+            container.innerHTML = '';
+            if (!currentFile) {
+                container.innerHTML = '<div class="library-track-meta">No active track.</div>';
+                return;
+            }
+            const trackId = currentFile.name;
+            Object.keys(playlists).sort().forEach(name => {
+                const checked = playlists[name].some(track => getTrackId(track) === trackId);
+                const label = document.createElement('label');
+                label.innerHTML = `<input type="checkbox" value="${escapeHtml(name)}" ${checked ? 'checked' : ''}> <span>${escapeHtml(name)}</span>`;
+                container.appendChild(label);
+            });
+            if (!Object.keys(playlists).length) container.innerHTML = '<div class="library-track-meta">No playlists yet. Create one below.</div>';
+        }
+
+        function saveActiveTrackPlaylistMembership() {
+            if (!currentFile) return;
+            const trackId = currentFile.name;
+            const checkboxes = document.querySelectorAll('#meta-playlist-membership input[type="checkbox"]');
+            checkboxes.forEach(cb => {
+                const name = cb.value;
+                if (!playlists[name]) playlists[name] = [];
+                const idx = playlists[name].findIndex(track => getTrackId(track) === trackId);
+                if (cb.checked && idx === -1) playlists[name].push(createPlayableTrackFromMeta(virtualLibrary[trackId]));
+                if (!cb.checked && idx !== -1) playlists[name].splice(idx, 1);
+            });
+            syncTrackPlaylistMetadata(trackId);
+            renderPlaylistsList();
+            renderLibraryManager();
+            updateMetadataUI();
+            showToast('Track playlist membership saved.');
+        }
+
+        function saveActiveTrackInlineTags() {
+            if (!currentFile) return;
+            const input = document.getElementById('input-inline-tags');
+            virtualLibrary[currentFile.name].tags = (input?.value || '').split(',').map(tag => tag.trim()).filter(Boolean);
+            updateMetadataUI();
+            renderLibraryManager();
+            showToast('Tags saved.');
+        }
+
+        function createPlaylistFromActiveTrack() {
+            const input = document.getElementById('input-inline-new-playlist');
+            const name = (input?.value || '').trim();
+            if (!name) return;
+            if (!playlists[name]) playlists[name] = [];
+            if (currentFile && !playlists[name].some(track => getTrackId(track) === currentFile.name)) {
+                playlists[name].push(createPlayableTrackFromMeta(virtualLibrary[currentFile.name]));
+            }
+            if (input) input.value = '';
+            if (currentFile) syncTrackPlaylistMetadata(currentFile.name);
+            renderPlaylistsList();
+            renderLibraryManager();
+            updateMetadataUI();
+            showToast(`Playlist ready: ${name}`);
+        }
+
         function buildLibraryExport({ streamingOnly = false } = {}) {
             const allTracks = Object.values(virtualLibrary).map(meta => sanitizeTrackForExport(meta));
             const filteredTracks = streamingOnly ? allTracks.filter(meta => meta.sourceType === 'stream' || !!meta.streamUrl) : allTracks;
@@ -1426,9 +1975,16 @@
             if (!data || typeof data !== 'object') throw new Error('JSON is not an object.');
 
             if (data.type === 'onda-playlist') {
+                if (data.tracks && typeof data.tracks === 'object') {
+                    Object.entries(data.tracks).forEach(([key, rawMeta]) => {
+                        const id = rawMeta.id || key;
+                        virtualLibrary[id] = { ...(virtualLibrary[id] || {}), ...rawMeta, id };
+                    });
+                }
                 const name = data.playlistName || data.name || 'Imported Playlist';
                 playlists[name] = playlistIdsToTrackObjects(data.trackIds || []);
                 renderPlaylistsList();
+                renderLibraryManager();
                 showToast(`Imported playlist: ${name}`);
                 return;
             }
@@ -1481,6 +2037,7 @@
             }
 
             renderPlaylistsList();
+            renderLibraryManager();
             if (currentFile) updateMetadataUI();
             showToast(`Imported ${Object.keys(importedTracks).length} library tracks.`);
         }
@@ -1611,14 +2168,14 @@
             audioObj.addEventListener('pause', (e) => {
                 if (e.target === activeAudio) {
                     isPlaying = false;
-                    btnPlay.innerHTML = '▶️';
+                    btnPlay.innerHTML = '▷';
                     btnPlay.classList.remove('active-state');
                 }
             });
             audioObj.addEventListener('play', (e) => {
                 if (e.target === activeAudio) {
                     isPlaying = true;
-                    btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
+                    btnPlay.innerHTML = '<span class="playing-spinner">𖦹</span>';
                     btnPlay.classList.add('active-state');
                 }
             });
@@ -1686,6 +2243,7 @@
 
             if (wasEmpty) switchTrack(0);
             else showToast(`Added ${newTracks.length} tracks!`);
+            renderLibraryManager();
         }
 
         function switchTrack(index) {
@@ -1718,6 +2276,7 @@
 
             const meta = virtualLibrary[key];
             currentFile.name = key;
+            rememberRecentTrack(key);
 
             if ((file.streamUrl || meta.streamUrl) && (file.sourceType === 'stream' || meta.sourceType === 'stream')) {
                 activeAudio = streamAudio;
@@ -1748,6 +2307,8 @@
         function updateMetadataUI() {
             if (!currentFile) return;
             const meta = virtualLibrary[currentFile.name];
+            if (!meta) return;
+            syncTrackPlaylistMetadata(currentFile.name);
             
             const displayName = meta.nickname ? meta.nickname : meta.fileName;
             document.getElementById('now-playing').innerText = displayName;
@@ -1756,19 +2317,26 @@
             const sizeInMb = parseFloat(meta.size) || 0.0;
             miniMetaSize.innerText = sizeInMb.toFixed(1) + "M";
 
-            document.getElementById('meta-file-size').innerText = meta.size;
+            document.getElementById('meta-file-size').innerText = meta.size || '';
             document.getElementById('meta-nickname').innerText = meta.nickname || "No Custom Name Assigned";
             document.getElementById('nickname-display-mode').style.display = "inline-flex";
             document.getElementById('nickname-edit-mode').style.display = "none";
 
+            const sourceTypeEl = document.getElementById('meta-source-type');
+            const sourceDetailEl = document.getElementById('meta-source-detail');
+            if (sourceTypeEl) sourceTypeEl.innerText = meta.sourceType === 'stream' || meta.streamUrl ? 'Stream / online source' : 'Local file metadata';
+            if (sourceDetailEl) sourceDetailEl.innerText = meta.streamUrl || meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No location recorded';
+
             const tagContainer = document.getElementById('meta-tags-list');
             tagContainer.innerHTML = "";
-            meta.tags.forEach(tag => {
+            (meta.tags || []).forEach(tag => {
                 const badge = document.createElement('span');
                 badge.className = 'tag-badge';
                 badge.innerText = tag;
                 tagContainer.appendChild(badge);
             });
+            const inlineTags = document.getElementById('input-inline-tags');
+            if (inlineTags) inlineTags.value = (meta.tags || []).join(', ');
 
             if (meta.tags && meta.tags.length > 0) {
                 tagsBar.style.display = "flex";
@@ -1777,15 +2345,18 @@
                     const badge = document.createElement('span');
                     badge.className = 'tag-badge';
                     badge.style.cursor = 'pointer';
-                    badge.innerText = `🏷️ ${tag}`;
+                    badge.innerText = `# ${tag}`;
                     tagsBar.appendChild(badge);
                 });
             } else {
                 tagsBar.style.display = "none";
             }
 
+            renderActiveTrackPlaylistEditor();
+
             const lyricsViewer = document.getElementById('lyrics-viewer');
-            lyricsViewer.innerText = meta.lyrics || "No lyrics stored yet. Click the 🎤 icon on the player utility pill to edit.";
+            lyricsViewer.innerText = meta.lyrics || "No lyrics stored yet. Click the ♫ icon on the player utility pill to edit.";
+            renderLibraryManager();
         }
 
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
@@ -1811,11 +2382,11 @@
             try {
                 await activeAudio.play();
                 isPlaying = true;
-                btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
+                btnPlay.innerHTML = '<span class="playing-spinner">𖦹</span>';
                 btnPlay.classList.add('active-state');
             } catch (err) {
                 isPlaying = false;
-                btnPlay.innerHTML = '▶️';
+                btnPlay.innerHTML = '▷';
                 btnPlay.classList.remove('active-state');
                 console.warn('Playback failed:', err);
                 showToast('Playback blocked or failed. Click Play again.');
@@ -1825,7 +2396,7 @@
         function pauseAudio() {
             activeAudio.pause();
             isPlaying = false;
-            btnPlay.innerHTML = '▶️';
+            btnPlay.innerHTML = '▷';
             btnPlay.classList.remove('active-state');
         }
 
@@ -1849,7 +2420,7 @@
                 isHoldingPlay = true;
                 activeAudio.playbackRate = 1.5;
                 if (!isPlaying) activeAudio.play();
-                showToast("⚡ Fast Forwarding (1.5x) ⚡");
+                showToast("🗲 Fast Forwarding (1.5x) 🗲");
             }, 300);
         }
 
@@ -1868,7 +2439,7 @@
         btnPlay.addEventListener('touchstart', (e) => { e.preventDefault(); startPlayHold(); });
         btnPlay.addEventListener('touchend', (e) => { e.preventDefault(); releasePlayHold(); });
 
-        // --- ⏮️ SKIP / RESTART NAVIGATION ACTION ---
+        // --- ⏮ SKIP / RESTART NAVIGATION ACTION ---
         btnPrev.addEventListener('click', () => {
             if (!currentFile) return;
             const now = Date.now();
@@ -1919,7 +2490,7 @@
             speedSlider.value = chosenSpeed;
             document.getElementById('speed-readout').innerText = chosenSpeed.toFixed(1) + "x";
             
-            btnSpeedCycle.innerText = `⚡${chosenSpeed.toFixed(1).replace('.0', '')}`;
+            btnSpeedCycle.innerText = `🗲${chosenSpeed.toFixed(1).replace('.0', '')}`;
             showToast(`Speed set to ${chosenSpeed.toFixed(1)}x`);
         });
 
@@ -2019,7 +2590,7 @@
             const val = parseFloat(e.target.value);
             activeAudio.playbackRate = val;
             document.getElementById('speed-readout').innerText = val.toFixed(1) + "x";
-            btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
+            btnSpeedCycle.innerText = `🗲${val.toFixed(1).replace('.0', '')}`;
         });
 
         initVisualizerComposerUI();
@@ -2057,6 +2628,57 @@
         document.getElementById('btn-check-library').addEventListener('click', () => {
             checkLibraryFiles();
         });
+
+        safeBind('btn-db-import-json', 'click', () => document.getElementById('json-file-input').click());
+        safeBind('btn-db-export-library', 'click', () => {
+            const data = buildLibraryExport({ streamingOnly: false });
+            downloadJsonFile(`${slugifyFileName(data.libraryName)}.json`, data);
+            showToast('Exported full library JSON.');
+        });
+        safeBind('btn-db-export-streams', 'click', () => {
+            const data = buildLibraryExport({ streamingOnly: true });
+            downloadJsonFile(`${slugifyFileName(data.libraryName)}-streams.json`, data);
+            showToast('Exported streaming add-on library JSON.');
+        });
+        safeBind('btn-db-export-playlist', 'click', () => exportPlaylistJson());
+        safeBind('btn-db-check-library', 'click', () => checkLibraryFiles());
+        safeBind('btn-database-engine', 'click', () => toggleLibraryDrawer());
+        safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
+        if (dbLibrarySearch) dbLibrarySearch.addEventListener('input', renderLibraryManager);
+        if (dbLibraryFilter) dbLibraryFilter.addEventListener('change', renderLibraryManager);
+        if (dbLibraryResults) {
+            dbLibraryResults.addEventListener('click', (e) => {
+                const trackId = e.target.dataset.trackId || e.target.closest('[data-track-id]')?.dataset.trackId || e.target.closest('.library-result-row')?.dataset.trackId;
+                if (!trackId) return;
+                if (e.target.classList.contains('btn-db-info-track')) {
+                    currentFile = createPlayableTrackFromMeta(virtualLibrary[trackId]);
+                    currentFile.name = trackId;
+                    switchWorkspaceTab('tab-library');
+                    updateMetadataUI();
+                    return;
+                }
+                addTrackToQueueFromLibrary(trackId, true);
+            });
+        }
+        if (dbRecentList) {
+            dbRecentList.addEventListener('click', (e) => {
+                const trackId = e.target.closest('.library-mini-row')?.dataset.trackId;
+                if (trackId) addTrackToQueueFromLibrary(trackId, true);
+            });
+        }
+        if (dbPlaylistList) {
+            dbPlaylistList.addEventListener('click', (e) => {
+                const name = e.target.closest('.library-mini-row')?.dataset.playlistName;
+                if (!name) return;
+                activePlaylistView = name;
+                loadPlaylistQueue(name);
+                renderPlaylistsList();
+                renderLibraryManager();
+            });
+        }
+        safeBind('btn-inline-tags-save', 'click', saveActiveTrackInlineTags);
+        safeBind('btn-inline-playlists-save', 'click', saveActiveTrackPlaylistMembership);
+        safeBind('btn-inline-create-playlist', 'click', createPlaylistFromActiveTrack);
 
         // --- 6. LOAD FROM URL / GOOGLE DRIVE LINK CONVERTER (TAB 2) ---
         const urlInputBox = document.getElementById('url-input-box');
@@ -2119,6 +2741,7 @@
             }
 
             urlInputBox.value = "";
+            renderLibraryManager();
             showToast("URL Stream added successfully to queue!");
             if (playlistTracks.length === 1) switchTrack(0);
         });
@@ -2129,7 +2752,9 @@
         const playlistChecklistContainer = document.getElementById('playlists-checklist');
 
         function renderPlaylistsList() {
+            syncAllTrackPlaylistMetadata();
             const container = document.getElementById('playlists-explorer-group');
+            if (!container) return;
             container.innerHTML = "";
 
             Object.keys(playlists).forEach(plName => {
@@ -2140,8 +2765,8 @@
                 
                 row.innerHTML = `
                     <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="color:var(--stone-ochre); font-weight:bold;">🗂️ ${plName}</span>
-                        <span style="font-size:0.75rem; color:var(--chiseled-bronze);">(${playlists[plName].length} tracks)</span>
+                        <span style="color:var(--stone-ochre); font-weight:bold;">▤ ${escapeHtml(plName)}</span>
+                        <span style="font-size:0.75rem; color:var(--chiseled-bronze);">(${(playlists[plName] || []).length} tracks)</span>
                     </div>
                     <button class="btn-pill" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--light-teal)'}">
                         ${activePlaylistView === plName ? 'Close Folder' : 'Open Folder'}
@@ -2159,6 +2784,8 @@
                 });
                 container.appendChild(row);
             });
+            renderActiveTrackPlaylistEditor();
+            renderLibraryManager();
         }
 
         function loadPlaylistQueue(playlistName) {
@@ -2179,6 +2806,7 @@
             closeModal('modal-playlist-create');
             document.getElementById('input-playlist-name').value = "";
             renderPlaylistsList();
+            renderLibraryManager();
             showToast(`Created folder directory: ${plInput}`);
         }
 
@@ -2186,7 +2814,10 @@
             if (!activePlaylistView) { showToast("Please open a playlist folder to delete first."); return; }
             delete playlists[activePlaylistView];
             activePlaylistView = null;
+            syncAllTrackPlaylistMetadata();
             renderPlaylistsList();
+            renderLibraryManager();
+            if (currentFile) updateMetadataUI();
             showToast("Playlist folder deleted.");
         });
 
@@ -2218,6 +2849,7 @@
             if (!currentFile) return;
             virtualLibrary[currentFile.name].nickname = inputInlineNickname.value.trim();
             updateMetadataUI();
+            renderLibraryManager();
             nicknameDisplayMode.style.display = "inline-flex";
             nicknameEditMode.style.display = "none";
             showToast("Nickname saved!");
@@ -2352,6 +2984,7 @@
             if (!currentFile) return;
             virtualLibrary[currentFile.name].lyrics = document.getElementById('input-lyrics').value.trim();
             updateMetadataUI();
+            renderLibraryManager();
             closeModal('modal-lyrics');
             showToast("Lyrics updated.");
         }
@@ -2361,6 +2994,7 @@
             const tagsRaw = document.getElementById('input-tags').value;
             virtualLibrary[currentFile.name].tags = tagsRaw.split(',').map(t => t.trim()).filter(t => t.length > 0);
             updateMetadataUI();
+            renderLibraryManager();
             closeModal('modal-tags');
             showToast("Tags updated.");
         }
@@ -2377,6 +3011,10 @@
                     if (inListIdx !== -1) playlists[plName].splice(inListIdx, 1);
                 }
             });
+            syncTrackPlaylistMetadata(currentFile.name);
+            updateMetadataUI();
+            renderPlaylistsList();
+            renderLibraryManager();
             closeModal('modal-playlist');
             showToast("Saved track playlists mapping.");
         }
