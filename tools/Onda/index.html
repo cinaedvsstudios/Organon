@@ -1,0 +1,1963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organon Media Player - Engine</title>
+    <style>
+        /* Organon Blueprint Colors */
+        :root {
+            --stone-ochre: #e0a360;
+            --chiseled-bronze: #896b49;
+            --white-accent: #ffffff;
+            --water-blue: #4b84bf;
+            --water-spray: #75b2de;
+            --forest-teal: #26615c;
+            --light-teal: #449e92;
+            --burgundy: #4a1525;
+            --brand-red: #9a2f4f;
+            --terracotta-peach: #d27d6c;
+            --alabaster-paper: #f5f0db;
+            --bg-nightsky: #1e201c;
+            --bg-card: #292a24;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Top Panel - Organon Boilerplate Rounded Square */
+        #organon-top-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #000000;
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            border-bottom: 2px solid var(--stone-ochre);
+            border-left: 2px solid var(--stone-ochre);
+            border-right: 2px solid var(--stone-ochre);
+            padding: 15px 20px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.6);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        /* Bottom Panel - Organon Boilerplate Sandstone Textures */
+        #organon-bottom-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            z-index: 110;
+            background-color: var(--stone-ochre);
+            background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            padding: 10px 14px 14px 14px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+        
+        #organon-bottom-panel .btn-pill {
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            color: #75b2de !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            width: 100%;
+        }
+
+        #organon-middle-panel {
+            flex-grow: 1;
+            padding: 15px 30px 120px 30px; /* Offset to clear the floating bottom panel */
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Typography */
+        h2 { margin: 0; font-weight: normal; color: var(--water-blue); font-size: 1.1rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px; }
+        
+        .btn-pill {
+            background-color: var(--light-teal);
+            color: var(--bg-nightsky);
+            border: none;
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+        .btn-pill:hover { filter: brightness(1.2); }
+        .btn-pill:active { transform: scale(0.95); }
+        .btn-pill.disabled { background-color: var(--chiseled-bronze); opacity: 0.5; cursor: not-allowed; }
+
+        /* Symmetrical Pills Layout */
+        .utility-pill {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(0, 0, 0, 0.65);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 50px;
+            padding: 4px 14px;
+            gap: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+
+        /* Symmetrical elements drop shadows */
+        .utility-pill, .mini-meta-box, h2, #track-nickname-label, .seek-container {
+            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.85));
+        }
+
+        /* Deck Button (20% Larger borderless design) */
+        .utility-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.35rem; /* 20% size increase */
+            padding: 4px;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            color: var(--alabaster-paper);
+        }
+        .utility-btn:hover {
+            background-color: rgba(224, 163, 96, 0.15);
+            transform: scale(1.15);
+        }
+        .utility-btn.active-state {
+            color: var(--water-blue);
+            filter: drop-shadow(0 0 4px var(--water-spray));
+        }
+        
+        /* Tooltip utilities */
+        .utility-btn::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-card);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            z-index: 100;
+        }
+        .utility-btn:hover::after {
+            opacity: 1;
+        }
+
+        /* Top Bar Ambient Background Visualizer Canvas */
+        #audio-visualizer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            border-bottom-left-radius: 26px; /* Match inner radius of the panel */
+            border-bottom-right-radius: 26px;
+        }
+
+        /* Mini Metadata Square Box (Repositioned to FAR LEFT) */
+        .mini-meta-box {
+            width: 38px;
+            height: 38px;
+            background-color: #000;
+            border: 1.5px solid var(--water-blue);
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+        .mini-meta-box:hover {
+            border-color: var(--water-spray);
+            background-color: #0b0c0a;
+            transform: scale(1.04);
+        }
+        .mini-meta-box:active {
+            transform: scale(0.93);
+        }
+        .mini-meta-label {
+            font-size: 6px;
+            color: var(--water-spray);
+            font-weight: bold;
+            line-height: 1;
+            letter-spacing: 0.5px;
+        }
+        .mini-meta-value {
+            font-size: 8px;
+            color: var(--stone-ochre);
+            font-weight: bold;
+            line-height: 1;
+            margin-top: 1px;
+        }
+
+        /* Workspace Core Cards styling */
+        .organon-card {
+            background-color: var(--bg-card);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 12px;
+            padding: 16px 20px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            border-bottom: 1.5px solid var(--chiseled-bronze);
+            padding-bottom: 6px;
+        }
+        .card-title {
+            font-weight: bold;
+            color: var(--water-blue);
+            font-size: 1.05rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Primary Controls Player wrapper */
+        .primary-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 10px;
+            flex-wrap: nowrap;
+            justify-content: space-between;
+        }
+
+        .seek-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+            min-width: 120px;
+        }
+
+        input[type="range"] {
+            flex-grow: 1;
+            accent-color: var(--water-blue);
+            cursor: pointer;
+        }
+
+        select {
+            background-color: var(--bg-nightsky);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: inherit;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            outline: none;
+            box-sizing: border-box;
+            cursor: pointer;
+        }
+
+        /* Inline Pencil Editing Elements */
+        .pencil-btn {
+            background: none;
+            border: none;
+            color: var(--stone-ochre);
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 0.9rem;
+            transition: transform 0.2s ease;
+        }
+        .pencil-btn:hover {
+            transform: scale(1.2);
+            color: var(--water-spray);
+        }
+
+        .inline-edit-input {
+            background-color: var(--bg-nightsky);
+            border: 1px solid var(--water-blue);
+            color: var(--alabaster-paper);
+            font-family: inherit;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            outline: none;
+            width: 200px;
+        }
+
+        /* Control Rows for Settings and Layouts */
+        .control-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        .control-row:last-child { margin-bottom: 0; }
+
+        /* DRAGGABLE POPUP SETTINGS SHEET */
+        .draggable-popup {
+            display: none;
+            position: fixed;
+            top: 25%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--bg-card);
+            border: 2px solid var(--chiseled-bronze);
+            border-radius: 12px;
+            z-index: 5000;
+            width: 320px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            overflow: hidden;
+        }
+        .popup-drag-handle {
+            background-color: var(--chiseled-bronze);
+            color: var(--bg-nightsky);
+            padding: 8px 12px;
+            font-weight: bold;
+            font-family: var(--font-headers);
+            font-size: 0.85rem;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .popup-close {
+            cursor: pointer;
+            font-size: 1.1rem;
+            color: var(--burgundy);
+            font-weight: bold;
+        }
+        .popup-body {
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* MODE SELECTION BAR (All Your Files Action Row) */
+        .workspace-mode-bar {
+            display: flex;
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 50px;
+            padding: 4px;
+            gap: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+        .mode-tab-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            color: var(--alabaster-paper);
+            padding: 8px 12px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .mode-tab-btn:hover {
+            background-color: rgba(224, 163, 96, 0.1);
+        }
+        .mode-tab-btn.tab-active {
+            background-color: var(--water-blue);
+            color: var(--white-accent);
+            box-shadow: 0 0 6px rgba(75, 132, 191, 0.5);
+        }
+
+        /* Dynamic View Content Cards */
+        .viewport-content {
+            display: none;
+        }
+        .viewport-content.active-content {
+            display: block;
+        }
+
+        /* Drag and drop queue layout */
+        .playlist-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.15);
+            border: 1.5px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 6px;
+        }
+        .playlist-row:last-child { margin-bottom: 0; }
+        .playlist-row:hover {
+            background: rgba(224, 163, 96, 0.08);
+            border-color: rgba(224, 163, 96, 0.25);
+        }
+        .playlist-row.active-track {
+            background: rgba(75, 132, 191, 0.12);
+            border-color: var(--water-blue);
+        }
+
+        .ab-active { background-color: var(--brand-red) !important; color: white !important; }
+        
+        /* Interactive Tags Display */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .tag-badge {
+            background-color: var(--forest-teal);
+            color: var(--alabaster-paper);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-block;
+        }
+
+        /* Input lines */
+        .gdrive-input-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        .gdrive-input-row input {
+            flex-grow: 1;
+            background-color: var(--bg-nightsky);
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--alabaster-paper);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            outline: none;
+        }
+        .gdrive-input-row input:focus {
+            border-color: var(--water-blue);
+        }
+
+        /* Overlay Modals */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+        }
+
+        .organon-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--bg-card);
+            border: 2px solid var(--chiseled-bronze);
+            border-radius: 12px;
+            padding: 20px;
+            z-index: 10000;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+        }
+
+        .modal-header {
+            font-weight: bold;
+            color: var(--stone-ochre);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--stone-ochre);
+            transition: color 0.2s;
+        }
+        
+        .modal-close:hover {
+            color: var(--brand-red);
+        }
+
+        .modal-body textarea, .modal-body input {
+            width: 100%;
+            background: var(--bg-nightsky);
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--alabaster-paper);
+            padding: 10px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+
+        .modal-actions {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .organon-toast {
+            display: none;
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--light-teal);
+            color: var(--bg-nightsky);
+            padding: 10px 24px;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            border: 2.5px solid var(--chiseled-bronze);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            z-index: 11000;
+        }
+
+        /* Draggable tags scroll ribbon */
+        #scrollable-tags-bar {
+            background-color: rgba(30, 32, 28, 0.9);
+            border-bottom: 1.5px solid var(--chiseled-bronze);
+            padding: 6px 20px;
+            display: none;
+            gap: 10px;
+            white-space: nowrap;
+            overflow-x: auto;
+            scrollbar-width: none;
+            z-index: 5;
+            user-select: none;
+            cursor: grab;
+        }
+        #scrollable-tags-bar::-webkit-scrollbar { display: none; }
+        #scrollable-tags-bar:active { cursor: grabbing; }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            100% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- PANEL 1: Top Rounded Player Box (THIS FILE) -->
+    <div id="organon-top-panel" class="sticky-panel">
+        <!-- Ambient background canvas visualizer -->
+        <canvas id="audio-visualizer"></canvas>
+
+        <!-- All player controls content raised securely over visualizer canvas -->
+        <div style="position: relative; z-index: 2; display: flex; flex-direction: column; gap: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 12px; overflow: hidden; width: 100%;">
+                    <!-- Mini Metadata Box (FAR LEFT) -->
+                    <div id="mini-meta-box" class="mini-meta-box" title="Tap to copy metadata, Hold to inspect details">
+                        <span class="mini-meta-label">META</span>
+                        <span id="mini-meta-size" class="mini-meta-value">0.0M</span>
+                    </div>
+
+                    <div style="overflow: hidden;">
+                        <h2 id="now-playing">No Track Loaded</h2>
+                        <div id="track-nickname-label" style="font-size: 0.8rem; color: var(--stone-ochre); margin-top: 2px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="primary-controls">
+                <!-- Symmetrical Control Pill (Holds Play/Pause & Transport) -->
+                <div class="utility-pill" id="start-controls-pill">
+                    <!-- Previous track -->
+                    <button id="btn-prev" class="utility-btn" data-tooltip="Restart / Prev (Double click)">⏮️</button>
+
+                    <!-- Core Play/Pause -->
+                    <button id="btn-play" class="utility-btn" data-tooltip="Play / Pause" style="font-size: 1.45rem;">▶️</button>
+
+                    <!-- Cycle playback multipliers ⚡ -->
+                    <button id="btn-speed-cycle" class="utility-btn" data-tooltip="Cycle Speed">⚡</button>
+
+                    <!-- Skip track -->
+                    <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭️</button>
+                </div>
+
+                <!-- Timeline Seek container line -->
+                <div class="seek-container">
+                    <span id="time-current">0:00</span>
+                    <input type="range" id="seek-bar" value="0" min="0" max="100" step="0.1">
+                    <span id="time-total">0:00</span>
+                </div>
+                
+                <!-- Right Symmetrical Pill (Holds File-specific options) -->
+                <div class="utility-pill" id="end-utilities-pill">
+                    <button id="btn-repeat-one" class="utility-btn" data-tooltip="Repeat One">♾️</button>
+                    <button id="btn-repeat-all" class="utility-btn" data-tooltip="Repeat All">🔁</button>
+                    <button id="btn-shuffle" class="utility-btn" data-tooltip="Shuffle">🔀</button>
+                    <button id="btn-lyrics-modal" class="utility-btn" data-tooltip="Edit Lyrics">🎤</button>
+                    <!-- Settings Cog triggers the fully draggable panel popup -->
+                    <button id="btn-toggle-advanced" class="utility-btn" data-tooltip="Settings & Extras">⚙️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scrollable Horizontal Drag-To-Scroll Tags Ribbon (This file's tags) -->
+    <div id="scrollable-tags-bar"></div>
+
+    <!-- PANEL 2: Middle Workspace (ALL YOUR FILES) -->
+    <div id="organon-middle-panel">
+        
+        <!-- Workspace Mode Selection Tabs Bar (All Your Files Controllers) -->
+        <div class="workspace-mode-bar">
+            <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">📁 Files Queue</button>
+            <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">🔗 Load URL</button>
+            <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">🗂️ Playlists</button>
+            <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">🏷️ Library Info</button>
+        </div>
+
+        <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
+        <div id="workspace-viewport" class="organon-card" style="flex-grow: 1; display: flex; flex-direction: column;">
+            
+            <!-- Tab 1 View: Files Intake Queue -->
+            <div id="tab-files" class="viewport-content active-content">
+                <div id="drop-zone">
+                    <div style="font-size: 1.2rem; margin-bottom: 6px; font-weight: bold;">DRAG & DROP AUDIO FILES HERE</div>
+                    <span style="font-size: 0.8em; color: var(--water-spray);">(Or click to browse Hard Drive)</span>
+                    <input type="file" id="file-input" accept="audio/*,video/*" multiple style="display: none;">
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div class="card-header" style="border-bottom: none; margin-bottom: 6px; padding-bottom: 0;">
+                        <span class="card-title">📂 Playlist 01 (Active Queue)</span>
+                        <span id="playlist-track-count" style="font-size: 0.8rem; color: var(--stone-ochre); font-weight: bold;">0 Tracks</span>
+                    </div>
+                    <div id="playlist-queue-list" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+                        <div style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; padding: 15px 0; font-style: italic;">
+                            Active queue is empty. Drag-and-drop tracks to load them.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2 View: Play from URL / Google Drive Loader -->
+            <div id="tab-url" class="viewport-content">
+                <h3 style="margin-top: 0; color: var(--water-blue);">🔗 Steam Media Stream from URL</h3>
+                <p style="font-size: 0.85rem; color: var(--alabaster-paper);">Paste standard sound streams or Google Drive share links ("Anyone with link can view") to load them directly into your virtual queue.</p>
+                <div class="gdrive-input-row">
+                    <input type="text" id="url-input-box" placeholder="Paste direct stream URL or Google Drive sharing link...">
+                    <button class="btn-pill" id="btn-load-url" style="flex-shrink: 0;">LOAD STREAM</button>
+                </div>
+            </div>
+
+            <!-- Tab 3 View: Playlists Manager Workspace -->
+            <div id="tab-playlists" class="viewport-content">
+                <div class="card-header">
+                    <span class="card-title">🗂️ Playlist Management</span>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;" id="btn-create-playlist-trigger">➕ Create New</button>
+                        <button class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem; background-color: var(--brand-red); color: white;" id="btn-delete-playlist-trigger">🗑️ Delete Selected</button>
+                    </div>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--water-spray);">Assign loaded tracks to custom folders. Switch view below to play target playlists:</p>
+                <div id="playlists-explorer-group" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                    <!-- Playlists categories list dynamically rendered -->
+                </div>
+            </div>
+
+            <!-- Tab 4 View: Virtual Master Library & Tags -->
+            <div id="tab-library" class="viewport-content">
+                <div class="card-header" style="border-bottom: none; margin-bottom: 8px;">
+                    <span class="card-title">🏷️ Active Track Library Info</span>
+                    <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
+                </div>
+
+                <!-- Direct inline pencil nickname edit wrapper -->
+                <div style="margin-bottom: 12px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(137,107,73,0.2);">
+                    <strong style="color: var(--water-spray);">Display Nickname:</strong> 
+                    <span id="nickname-display-mode" style="display: inline-flex; align-items: center;">
+                        <span id="meta-nickname" style="color: var(--stone-ochre); margin-left: 6px;">No Custom Name</span>
+                        <button id="btn-inline-nickname-edit" class="pencil-btn" title="Type over display name">✏️</button>
+                    </span>
+                    <span id="nickname-edit-mode" style="display: none; align-items: center; gap: 8px; margin-left: 6px;">
+                        <input type="text" id="input-inline-nickname" class="inline-edit-input">
+                        <button id="btn-inline-save" class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;">Save</button>
+                        <button id="btn-inline-cancel" class="pencil-btn" style="font-size: 1.1rem; color: var(--brand-red);">✖</button>
+                    </span>
+                </div>
+
+                <div><strong style="color: var(--water-spray);">Tags (Click 🏷️ on right utility pill to edit):</strong></div>
+                <div id="meta-tags-list" class="tags-container" style="margin-bottom: 15px;"></div>
+
+                <!-- Live lyrics viewer pane inside viewport card -->
+                <div><strong style="color: var(--water-spray);">Lyrics Card:</strong></div>
+                <div id="lyrics-viewer" style="font-size: 0.85rem; line-height: 1.5; color: var(--alabaster-paper); max-height: 100px; overflow-y: auto; text-align: center; white-space: pre-line; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 6px;">
+                    No lyrics stored yet. Edit lyrics using the 🎤 icon above.
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- PANEL 3: Bottom Sticky -->
+    <div id="organon-bottom-panel" class="sticky-panel">
+        <button class="btn-pill disabled">DATABASE ENGINE OFFLINE (Phase B)</button>
+    </div>
+
+    <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
+    <div id="settings-popup" class="draggable-popup">
+        <div id="settings-drag-handle" class="popup-drag-handle">
+            <span>⚙️ Settings & Extras</span>
+            <span class="popup-close" id="btn-close-settings">&times;</span>
+        </div>
+        <div class="popup-body">
+            <div class="control-row">
+                <label style="font-size: 0.85rem; color: var(--water-spray);">Volume Boost: <span id="vol-readout">100%</span></label>
+                <input type="range" id="vol-slider" min="0" max="2" step="0.05" value="1" style="width: 100%;">
+            </div>
+            <div class="control-row">
+                <label style="font-size: 0.85rem; color: var(--water-spray);">Speed Adjust: <span id="speed-readout">1.0x</span></label>
+                <input type="range" id="speed-slider" min="0.5" max="3.0" step="0.1" value="1" style="width: 100%;">
+            </div>
+            <div class="control-row">
+                <label style="font-size: 0.85rem; color: var(--water-spray);">Visual Theme:</label>
+                <select id="vis-style-select" style="width: 100%;">
+                    <option value="bars">Classic Columns</option>
+                    <option value="mountain">Smooth Mountain Wave</option>
+                    <option value="led">Retro LED Blocks</option>
+                    <option value="symmetric">Symmetric Pulse Burst</option>
+                </select>
+            </div>
+            <div class="control-row" style="margin-top: 10px; border-top: 1px dashed var(--chiseled-bronze); padding-top: 10px;">
+                <button id="btn-ab-loop" class="btn-pill" style="background: var(--water-spray); padding: 6px 12px; font-size: 0.75rem;">SET LOOP A</button>
+                <span id="ab-status" style="color: var(--stone-ochre); font-size: 0.75rem;">Inactive</span>
+            </div>
+            <!-- Import JSON Feature -->
+            <div class="control-row" style="margin-top: 10px; border-top: 1px dashed var(--chiseled-bronze); padding-top: 10px;">
+                <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre); width: 100%;">📥 Import JSON Library</button>
+                <input type="file" id="json-file-input" accept=".json" style="display: none;">
+            </div>
+        </div>
+    </div>
+
+    <!-- OVERLAYS / MODALS FOR METADATA UTILITIES -->
+    <div id="modal-overlay" class="modal-overlay" onclick="closeAllModals()"></div>
+
+    <!-- New Playlist Name Modal -->
+    <div id="modal-playlist-create" class="organon-modal">
+        <div class="modal-header">
+            <span>➕ Create Virtual Playlist</span>
+            <span class="modal-close" onclick="closeModal('modal-playlist-create')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="text" id="input-playlist-name" placeholder="E.g. Synthwave Mix, Focus Sessions...">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-playlist-create')">Cancel</button>
+            <button class="btn-pill" onclick="createPlaylistAction()">Create</button>
+        </div>
+    </div>
+
+    <!-- Lyrics Modal -->
+    <div id="modal-lyrics" class="organon-modal" style="max-width: 550px;">
+        <div class="modal-header">
+            <span>🎤 Edit Track Lyrics</span>
+            <span class="modal-close" onclick="closeModal('modal-lyrics')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <textarea id="input-lyrics" rows="10" placeholder="Type or paste track lyrics here..." style="resize: vertical;"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-lyrics')">Close</button>
+            <button class="btn-pill" onclick="saveLyrics()">Save Lyrics</button>
+        </div>
+    </div>
+
+    <!-- Tags Modal -->
+    <div id="modal-tags" class="organon-modal">
+        <div class="modal-header">
+            <span>🏷️ See / Edit Tags</span>
+            <span class="modal-close" onclick="closeModal('modal-tags')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.85rem; color: var(--water-spray); margin: 0 0 10px 0;">Separate tags using commas (e.g. Focus, Vocal, Acoustic)</p>
+            <input type="text" id="input-tags" placeholder="Focus, Chill, Podcast...">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-tags')">Cancel</button>
+            <button class="btn-pill" onclick="saveTags()">Update Tags</button>
+        </div>
+    </div>
+
+    <!-- Playlist Assignment Selection Modal -->
+    <div id="modal-playlist" class="organon-modal">
+        <div class="modal-header">
+            <span>📥 Save to Playlist</span>
+            <span class="modal-close" onclick="closeModal('modal-playlist')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 0.85rem; color: var(--alabaster-paper);">Assign to Playlists:</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;" id="playlists-checklist">
+                <!-- Checkboxes populated dynamically -->
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-playlist')">Cancel</button>
+            <button class="btn-pill" onclick="savePlaylists()">Save Assignments</button>
+        </div>
+    </div>
+
+    <!-- Toast popup notices -->
+    <div id="toast-notice" class="organon-toast">Copied metadata!</div>
+
+    <script>
+        // --- CORE AUDIO ENGINE SETUP ---
+        const audioElement = new Audio();
+        // Prevent strict web-audio blank canvas constraints when streaming URL arrays
+        audioElement.crossOrigin = "anonymous"; 
+        
+        let audioCtx, gainNode, analyser, source;
+        let isPlaying = false;
+        
+        // Multi-track Active Playlist queue
+        let playlistTracks = [];
+        let currentTrackIndex = -1;
+        let currentFile = null;
+        let isSeeking = false;
+
+        // Custom Play Speed cycles ⚡
+        const speedCycles = [1.0, 1.5, 2.0, 2.5];
+        let currentSpeedIdx = 0;
+
+        // Press hold detection states
+        let playButtonHoldTimeout;
+        let isHoldingPlay = false;
+        let preHoldSpeed = 1.0;
+
+        let metaBoxHoldTimeout;
+        let isHoldingMeta = false;
+
+        // Click double-click timer
+        let lastPrevClickTime = 0;
+
+        // Visualizer settings options
+        let visualizerStyle = "bars";
+
+        // A-B Looping points
+        let loopA = null;
+        let loopB = null;
+
+        // Playlist Loop types
+        let isRepeatOne = false;
+        let isRepeatAll = false;
+        let isShuffle = false;
+
+        // Playlists Data
+        let playlists = {
+            "Favorites": [],
+            "Chill Vocals": [],
+            "Work Focus": []
+        };
+        let activePlaylistView = null;
+
+        // Virtual In-Memory Library Store
+        let virtualLibrary = {};
+
+        // UI Element mappings
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const btnPlay = document.getElementById('btn-play');
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnSpeedCycle = document.getElementById('btn-speed-cycle');
+        const seekBar = document.getElementById('seek-bar');
+        const timeCurrent = document.getElementById('time-current');
+        const timeTotal = document.getElementById('time-total');
+        
+        const volSlider = document.getElementById('vol-slider');
+        const speedSlider = document.getElementById('speed-slider');
+        const btnToggleAdvanced = document.getElementById('btn-toggle-advanced');
+        const advancedControls = document.getElementById('settings-popup');
+        const btnCloseSettings = document.getElementById('btn-close-settings');
+        const btnAbLoop = document.getElementById('btn-ab-loop');
+        const abStatus = document.getElementById('ab-status');
+        const miniMetaBox = document.getElementById('mini-meta-box');
+        const miniMetaSize = document.getElementById('mini-meta-size');
+        const tagsBar = document.getElementById('scrollable-tags-bar');
+        const visStyleSelect = document.getElementById('vis-style-select');
+
+        // Modal elements
+        const overlay = document.getElementById('modal-overlay');
+
+        // --- 1. WEB AUDIO API INIT ---
+        function initAudioEngine() {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+                
+                // GainNode for 200% Volume
+                gainNode = audioCtx.createGain();
+                gainNode.gain.value = volSlider.value; 
+
+                // Analyser for Visualizer
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 256;
+
+                // Graph Routing
+                source = audioCtx.createMediaElementSource(audioElement);
+                source.connect(gainNode);
+                gainNode.connect(analyser);
+                analyser.connect(audioCtx.destination);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // --- 2. MULTI-FILE INTAKE LOADING SYSTEM ---
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleUploadedFiles(e.dataTransfer.files);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleUploadedFiles(e.target.files);
+            }
+        });
+
+        function handleUploadedFiles(files) {
+            const newTracks = Array.from(files).filter(file => {
+                return file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm)$/i);
+            });
+
+            if (newTracks.length === 0) {
+                showToast("No playable audio files detected.");
+                return;
+            }
+
+            const wasEmpty = playlistTracks.length === 0;
+            // Append pure File objects into the active queue
+            playlistTracks = [...playlistTracks, ...newTracks];
+            
+            // Map defaults
+            newTracks.forEach(file => {
+                if (!virtualLibrary[file.name]) {
+                    const defaults = ["Local File"];
+                    if (file.name.toLowerCase().includes("vibe") || file.name.toLowerCase().includes("chill")) defaults.push("Chill");
+                    if (file.name.toLowerCase().includes("synth")) defaults.push("Synthwave");
+                    if (file.size > 12 * 1024 * 1024) defaults.push("Long Play");
+
+                    virtualLibrary[file.name] = {
+                        fileName: file.name,
+                        nickname: "",
+                        lyrics: "",
+                        tags: defaults,
+                        playlists: [],
+                        size: (file.size / (1024 * 1024)).toFixed(2) + " MB"
+                    };
+                }
+            });
+
+            updatePlaylistUI();
+
+            if (wasEmpty) {
+                switchTrack(0);
+            } else {
+                showToast(`Queued ${newTracks.length} tracks into queue list!`);
+            }
+        }
+
+        function switchTrack(index) {
+            if (index < 0 || index >= playlistTracks.length) return;
+            currentTrackIndex = index;
+            loadTrack(playlistTracks[currentTrackIndex]);
+            updatePlaylistUI();
+        }
+
+        function loadTrack(file) {
+            currentFile = file;
+            initAudioEngine();
+
+            if (!virtualLibrary[file.name]) {
+                virtualLibrary[file.name] = {
+                    fileName: file.name,
+                    nickname: "",
+                    lyrics: "",
+                    tags: ["Local File"],
+                    playlists: [],
+                    size: file.size ? (file.size / (1024 * 1024)).toFixed(2) + " MB" : "URL Stream"
+                };
+            }
+            
+            // Fix: Check if item is a remote URL stream vs a standard local File blob
+            if (file.streamUrl) {
+                audioElement.src = file.streamUrl;
+            } else if (file instanceof File || file instanceof Blob) {
+                audioElement.src = URL.createObjectURL(file);
+            }
+            
+            audioElement.playbackRate = parseFloat(speedSlider.value);
+            updateMetadataUI();
+            
+            loopA = null; loopB = null;
+            btnAbLoop.innerText = "SET LOOP A";
+            btnAbLoop.classList.remove('ab-active');
+            abStatus.innerText = "Inactive";
+            
+            playAudio();
+            drawVisualizer();
+        }
+
+        function updateMetadataUI() {
+            if (!currentFile) return;
+            const meta = virtualLibrary[currentFile.name];
+            
+            const displayName = meta.nickname ? meta.nickname : meta.fileName;
+            document.getElementById('now-playing').innerText = displayName;
+            
+            const nickLabel = document.getElementById('track-nickname-label');
+            if (meta.nickname) {
+                nickLabel.innerText = `Original: ${meta.fileName}`;
+            } else {
+                nickLabel.innerText = "";
+            }
+
+            const sizeInMb = parseFloat(meta.size) || 0.0;
+            miniMetaSize.innerText = sizeInMb.toFixed(1) + "M";
+
+            // Update Metadata Workspace viewport Tab items
+            document.getElementById('meta-file-size').innerText = meta.size;
+            document.getElementById('meta-nickname').innerText = meta.nickname || "No Custom Name Assigned";
+            document.getElementById('nickname-display-mode').style.display = "inline-flex";
+            document.getElementById('nickname-edit-mode').style.display = "none";
+
+            // Update tab tags list
+            const tagContainer = document.getElementById('meta-tags-list');
+            tagContainer.innerHTML = "";
+            meta.tags.forEach(tag => {
+                const badge = document.createElement('span');
+                badge.className = 'tag-badge';
+                badge.innerText = tag;
+                tagContainer.appendChild(badge);
+            });
+
+            // Update active tags scroll strip (directly below top sticky player)
+            if (meta.tags && meta.tags.length > 0) {
+                tagsBar.style.display = "flex";
+                tagsBar.innerHTML = "";
+                meta.tags.forEach(tag => {
+                    const badge = document.createElement('span');
+                    badge.className = 'tag-badge';
+                    badge.style.cursor = 'pointer';
+                    badge.innerText = `🏷️ ${tag}`;
+                    tagsBar.appendChild(badge);
+                });
+            } else {
+                tagsBar.style.display = "none";
+            }
+
+            // Sync Workspace Viewport lyrics preview
+            const lyricsViewer = document.getElementById('lyrics-viewer');
+            if (meta.lyrics) {
+                lyricsViewer.innerText = meta.lyrics;
+            } else {
+                lyricsViewer.innerText = "No lyrics stored yet. Click the 🎤 icon on the player utility pill to edit.";
+            }
+        }
+
+        function updatePlaylistUI() {
+            const queueList = document.getElementById('playlist-queue-list');
+            const counter = document.getElementById('playlist-track-count');
+
+            counter.innerText = `${playlistTracks.length} Tracks`;
+
+            if (playlistTracks.length === 0) {
+                queueList.innerHTML = `
+                    <div style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; padding: 15px 0; font-style: italic;">
+                        Active queue is empty. Drag-and-drop tracks to load them.
+                    </div>
+                `;
+                return;
+            }
+
+            queueList.innerHTML = "";
+            playlistTracks.forEach((track, index) => {
+                const meta = virtualLibrary[track.name] || { size: "0.00 MB", nickname: "" };
+                const isCurrent = (index === currentTrackIndex);
+                
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `playlist-row ${isCurrent ? 'active-track' : ''}`;
+                itemDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; max-width: 80%;">
+                        <span style="color: ${isCurrent ? 'var(--water-blue)' : 'var(--chiseled-bronze)'}; font-weight: bold; font-size: 0.85rem;">${index + 1}.</span>
+                        <span style="color: ${isCurrent ? 'var(--white-accent)' : 'var(--alabaster-paper)'}; font-size: 0.85rem; text-overflow: ellipsis; overflow: hidden; font-weight: ${isCurrent ? 'bold' : 'normal'};">
+                            ${meta.nickname || track.name}
+                        </span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.75rem; color: var(--chiseled-bronze);">${meta.size}</span>
+                        ${isCurrent ? '<span style="color: var(--water-spray); font-size: 0.75rem; animation: pulse 0.8s infinite alternate;">▶️</span>' : ''}
+                    </div>
+                `;
+
+                itemDiv.addEventListener('click', () => {
+                    switchTrack(index);
+                });
+
+                queueList.appendChild(itemDiv);
+            });
+        }
+
+        // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
+        function switchWorkspaceTab(tabId) {
+            // Update active state class on tabs
+            document.querySelectorAll('.mode-tab-btn').forEach(btn => {
+                btn.classList.remove('tab-active');
+            });
+            
+            const selectedBtnId = `tab-btn-${tabId.replace('tab-', '')}`;
+            const btnEl = document.getElementById(selectedBtnId);
+            if (btnEl) btnEl.classList.add('tab-active');
+
+            // Hide/Show correct tab layout contents
+            document.querySelectorAll('.viewport-content').forEach(card => {
+                card.classList.remove('active-content');
+            });
+            document.getElementById(tabId).classList.add('active-content');
+
+            // Playlist custom updates
+            if (tabId === "tab-playlists") {
+                renderPlaylistsList();
+            }
+        }
+
+        // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
+        function playAudio() {
+            initAudioEngine();
+            audioElement.play();
+            isPlaying = true;
+            btnPlay.innerText = "⏸️";
+        }
+
+        function pauseAudio() {
+            audioElement.pause();
+            isPlaying = false;
+            btnPlay.innerText = "▶️";
+        }
+
+        function togglePlayPause() {
+            if (!currentFile) return;
+            isPlaying ? pauseAudio() : playAudio();
+        }
+
+        // --- PLAY BUTTON HOLD-TO-FAST-FORWARD LOGIC ---
+        function startPlayHold() {
+            if (!currentFile) return;
+            isHoldingPlay = false;
+            preHoldSpeed = parseFloat(speedSlider.value);
+            
+            playButtonHoldTimeout = setTimeout(() => {
+                isHoldingPlay = true;
+                audioElement.playbackRate = 1.5;
+                btnPlay.style.color = "var(--stone-ochre)";
+                if (!isPlaying) {
+                    audioElement.play();
+                }
+                showToast("⚡ Fast Forwarding (1.5x) ⚡");
+            }, 300);
+        }
+
+        function releasePlayHold() {
+            clearTimeout(playButtonHoldTimeout);
+            if (isHoldingPlay) {
+                audioElement.playbackRate = preHoldSpeed;
+                btnPlay.style.color = "var(--alabaster-paper)";
+                if (!isPlaying) {
+                    audioElement.pause();
+                }
+                isHoldingPlay = false;
+            } else {
+                togglePlayPause();
+            }
+        }
+
+        // Drag/Hold mouse event registers
+        btnPlay.addEventListener('mousedown', startPlayHold);
+        btnPlay.addEventListener('mouseup', releasePlayHold);
+        btnPlay.addEventListener('mouseleave', () => { if (isHoldingPlay) releasePlayHold(); });
+
+        btnPlay.addEventListener('touchstart', (e) => { e.preventDefault(); startPlayHold(); });
+        btnPlay.addEventListener('touchend', (e) => { e.preventDefault(); releasePlayHold(); });
+
+        // --- ⏮️ SKIP / RESTART NAVIGATION ACTION ---
+        btnPrev.addEventListener('click', () => {
+            if (!currentFile) return;
+            const now = Date.now();
+            const tapGap = now - lastPrevClickTime;
+            
+            if (tapGap < 350) {
+                skipToPreviousTrack();
+            } else {
+                if (audioElement.currentTime > 3.0) {
+                    audioElement.currentTime = 0;
+                    showToast("Restarting Track");
+                } else {
+                    skipToPreviousTrack();
+                }
+            }
+            lastPrevClickTime = now;
+        });
+
+        function skipToPreviousTrack() {
+            if (playlistTracks.length <= 1) {
+                audioElement.currentTime = 0;
+                return;
+            }
+            let prevIndex = currentTrackIndex - 1;
+            if (prevIndex < 0) {
+                prevIndex = isRepeatAll ? playlistTracks.length - 1 : 0;
+            }
+            switchTrack(prevIndex);
+        }
+
+        // --- ⏭️ SKIP NEXT NAVIGATION ACTION ---
+        btnNext.addEventListener('click', () => {
+            skipToNextTrack();
+        });
+
+        function skipToNextTrack() {
+            if (playlistTracks.length <= 1) {
+                audioElement.currentTime = 0;
+                return;
+            }
+            let nextIndex = currentTrackIndex + 1;
+            if (isShuffle) {
+                nextIndex = Math.floor(Math.random() * playlistTracks.length);
+            } else if (nextIndex >= playlistTracks.length) {
+                nextIndex = isRepeatAll ? 0 : playlistTracks.length - 1;
+            }
+            switchTrack(nextIndex);
+        }
+
+        // Speed Cycling (⚡ Button inside Left Symmetrical Pill)
+        btnSpeedCycle.addEventListener('click', () => {
+            currentSpeedIdx = (currentSpeedIdx + 1) % speedCycles.length;
+            const chosenSpeed = speedCycles[currentSpeedIdx];
+            
+            audioElement.playbackRate = chosenSpeed;
+            speedSlider.value = chosenSpeed;
+            document.getElementById('speed-readout').innerText = chosenSpeed.toFixed(1) + "x";
+            
+            btnSpeedCycle.innerText = `⚡${chosenSpeed.toFixed(1).replace('.0', '')}`;
+            showToast(`Speed set to ${chosenSpeed.toFixed(1)}x`);
+        });
+
+        // Formatting Time (Seconds -> M:SS)
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60).toString().padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        // Seek Bar Timeline Logic
+        audioElement.addEventListener('loadedmetadata', () => {
+            seekBar.max = audioElement.duration;
+            timeTotal.innerText = formatTime(audioElement.duration);
+        });
+
+        audioElement.addEventListener('timeupdate', () => {
+            if (!isSeeking) {
+                seekBar.value = audioElement.currentTime;
+                timeCurrent.innerText = formatTime(audioElement.currentTime);
+            }
+
+            // A-B Looping Check
+            if (loopA !== null && loopB !== null) {
+                if (audioElement.currentTime >= loopB) {
+                    audioElement.currentTime = loopA;
+                }
+            }
+        });
+
+        seekBar.addEventListener('input', () => {
+            isSeeking = true;
+            timeCurrent.innerText = formatTime(seekBar.value);
+        });
+
+        seekBar.addEventListener('change', () => {
+            isSeeking = false;
+            audioElement.currentTime = seekBar.value;
+        });
+
+        audioElement.addEventListener('ended', () => {
+            if (isRepeatOne) {
+                audioElement.currentTime = 0;
+                playAudio();
+            } else {
+                if (currentTrackIndex < playlistTracks.length - 1 || isRepeatAll) {
+                    skipToNextTrack();
+                } else {
+                    pauseAudio();
+                    audioElement.currentTime = 0;
+                }
+            }
+        });
+
+        // --- 5. DRAG-AND-DROP WORKSPACE TAB 1 LOGIC ---
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        tagsBar.addEventListener('mousedown', (e) => {
+            isDown = true;
+            tagsBar.style.cursor = 'grabbing';
+            startX = e.pageX - tagsBar.offsetLeft;
+            scrollLeft = tagsBar.scrollLeft;
+        });
+        tagsBar.addEventListener('mouseleave', () => { isDown = false; tagsBar.style.cursor = 'grab'; });
+        tagsBar.addEventListener('mouseup', () => { isDown = false; tagsBar.style.cursor = 'grab'; });
+        tagsBar.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - tagsBar.offsetLeft;
+            const walk = (x - startX) * 2;
+            tagsBar.scrollLeft = scrollLeft - walk;
+        });
+
+        // --- 6. DRAGGABLE SETTINGS POPUP ENGINE LOGIC ---
+        let isDraggingPopup = false;
+        let dragStartX, dragStartY;
+        const dragHandle = document.getElementById('settings-drag-handle');
+
+        btnToggleAdvanced.addEventListener('click', () => {
+            const isHidden = advancedControls.style.display === "none" || advancedControls.style.display === "";
+            advancedControls.style.display = isHidden ? "block" : "none";
+            btnToggleAdvanced.classList.toggle('active-state', !isHidden);
+            
+            // Center modal initially on show
+            if (isHidden) {
+                advancedControls.style.left = "50%";
+                advancedControls.style.top = "30%";
+                advancedControls.style.transform = "translate(-50%, -30%)";
+            }
+        });
+
+        btnCloseSettings.addEventListener('click', () => {
+            advancedControls.style.display = "none";
+            btnToggleAdvanced.classList.remove('active-state');
+        });
+
+        // Desktop dragging registration
+        dragHandle.addEventListener('mousedown', (e) => {
+            isDraggingPopup = true;
+            dragStartX = e.clientX - advancedControls.offsetLeft;
+            dragStartY = e.clientY - advancedControls.offsetTop;
+            document.addEventListener('mousemove', onPopupDragMove);
+            document.addEventListener('mouseup', onPopupDragEnd);
+        });
+
+        function onPopupDragMove(e) {
+            if (!isDraggingPopup) return;
+            // Clear baseline offset centering transform once user begins dragging
+            advancedControls.style.transform = "none";
+            advancedControls.style.left = (e.clientX - dragStartX) + "px";
+            advancedControls.style.top = (e.clientY - dragStartY) + "px";
+        }
+
+        function onPopupDragEnd() {
+            isDraggingPopup = false;
+            document.removeEventListener('mousemove', onPopupDragMove);
+            document.removeEventListener('mouseup', onPopupDragEnd);
+        }
+
+        // Mobile touch dragging registration
+        dragHandle.addEventListener('touchstart', (e) => {
+            isDraggingPopup = true;
+            const touch = e.touches[0];
+            dragStartX = touch.clientX - advancedControls.offsetLeft;
+            dragStartY = touch.clientY - advancedControls.offsetTop;
+            document.addEventListener('touchmove', onPopupTouchMove, { passive: false });
+            document.addEventListener('touchend', onPopupTouchEnd);
+        });
+
+        function onPopupTouchMove(e) {
+            if (!isDraggingPopup) return;
+            e.preventDefault(); // Prevent background screen scrolling
+            const touch = e.touches[0];
+            advancedControls.style.transform = "none";
+            advancedControls.style.left = (touch.clientX - dragStartX) + "px";
+            advancedControls.style.top = (touch.clientY - dragStartY) + "px";
+        }
+
+        function onPopupTouchEnd() {
+            isDraggingPopup = false;
+            document.removeEventListener('touchmove', onPopupTouchMove);
+            document.removeEventListener('touchend', onPopupTouchEnd);
+        }
+
+        // Settings actions triggers
+        volSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            if (gainNode) gainNode.gain.value = val;
+            document.getElementById('vol-readout').innerText = Math.round(val * 100) + "%";
+        });
+
+        speedSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            audioElement.playbackRate = val;
+            document.getElementById('speed-readout').innerText = val.toFixed(1) + "x";
+            btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
+        });
+
+        visStyleSelect.addEventListener('change', (e) => {
+            visualizerStyle = e.target.value;
+            showToast(`Visualizer: ${visStyleSelect.options[visStyleSelect.selectedIndex].text}`);
+        });
+
+        // JSON Import trigger
+        document.getElementById('btn-import-json').addEventListener('click', () => {
+            document.getElementById('json-file-input').click();
+        });
+
+        document.getElementById('json-file-input').addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const file = e.target.files[0];
+                showToast(`Selected ${file.name}. Merging logic pending...`);
+                // Clear value so the same file can be selected again if needed
+                e.target.value = "";
+            }
+        });
+
+        // A-B Loop Logic
+        btnAbLoop.addEventListener('click', () => {
+            if (!currentFile) return;
+
+            if (loopA === null) {
+                loopA = audioElement.currentTime;
+                btnAbLoop.innerText = "SET LOOP B";
+                btnAbLoop.classList.add('ab-active');
+                abStatus.innerText = `Point A: ${formatTime(loopA)}`;
+            } else if (loopB === null) {
+                if (audioElement.currentTime <= loopA) return;
+                loopB = audioElement.currentTime;
+                btnAbLoop.innerText = "CLEAR LOOP";
+                abStatus.innerText = `Looping: ${formatTime(loopA)} - ${formatTime(loopB)}`;
+            } else {
+                loopA = null;
+                loopB = null;
+                btnAbLoop.innerText = "SET LOOP A";
+                btnAbLoop.classList.remove('ab-active');
+                abStatus.innerText = "Inactive";
+            }
+        });
+
+        // --- 7. LOAD FROM URL / GOOGLE DRIVE LINK CONVERTER (TAB 2) ---
+        const urlInputBox = document.getElementById('url-input-box');
+        const btnLoadUrl = document.getElementById('btn-load-url');
+
+        function convertDriveLinkToStream(driveUrl) {
+            const regex = /\/d\/([a-zA-Z0-9_-]+)/;
+            const match = driveUrl.match(regex);
+            if (match && match[1]) {
+                const fileId = match[1];
+                return `https://drive.google.com/uc?export=download&id=${fileId}`;
+            }
+            return driveUrl; 
+        }
+
+        btnLoadUrl.addEventListener('click', () => {
+            const rawUrl = urlInputBox.value.trim();
+            if (!rawUrl) {
+                showToast("Please enter a valid URL stream!");
+                return;
+            }
+
+            // Convert Drive or keep raw audio stream
+            const streamUrl = convertDriveLinkToStream(rawUrl);
+            
+            // Extract filename from URL
+            let parsedName = "Remote Stream";
+            try {
+                const urlObj = new URL(rawUrl);
+                const pathParts = urlObj.pathname.split('/');
+                const lastPart = pathParts[pathParts.length - 1];
+                if (lastPart && lastPart.includes('.')) {
+                    parsedName = decodeURIComponent(lastPart);
+                } else if (rawUrl.includes("drive.google.com")) {
+                    parsedName = "Google Drive Stream File";
+                }
+            } catch (err) {}
+
+            const newTrackFile = {
+                name: parsedName + "_" + Date.now(),
+                streamUrl: streamUrl
+            };
+
+            playlistTracks.push(newTrackFile);
+            
+            virtualLibrary[newTrackFile.name] = {
+                fileName: parsedName,
+                nickname: parsedName,
+                lyrics: "",
+                tags: ["URL Stream"],
+                playlists: [],
+                size: "URL Stream"
+            };
+
+            updatePlaylistUI();
+            urlInputBox.value = "";
+            showToast("URL Stream added successfully to queue!");
+
+            if (playlistTracks.length === 1) {
+                switchTrack(0);
+            }
+        });
+
+        // --- 8. VIRTUAL PLAYLIST MANAGEMENT SYSTEM (TAB 3) ---
+        const btnCreatePlaylistTrigger = document.getElementById('btn-create-playlist-trigger');
+        const btnDeletePlaylistTrigger = document.getElementById('btn-delete-playlist-trigger');
+        const playlistChecklistContainer = document.getElementById('playlists-checklist');
+
+        function renderPlaylistsList() {
+            const container = document.getElementById('playlists-explorer-group');
+            container.innerHTML = "";
+
+            Object.keys(playlists).forEach(plName => {
+                const row = document.createElement('div');
+                row.className = "playlist-row";
+                row.style.background = activePlaylistView === plName ? "rgba(75, 132, 191, 0.15)" : "rgba(0,0,0,0.15)";
+                row.style.borderColor = activePlaylistView === plName ? "var(--water-blue)" : "transparent";
+                
+                row.innerHTML = `
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="color:var(--stone-ochre); font-weight:bold;">🗂️ ${plName}</span>
+                        <span style="font-size:0.75rem; color:var(--chiseled-bronze);">(${playlists[plName].length} tracks)</span>
+                    </div>
+                    <button class="btn-pill" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--light-teal)'}">
+                        ${activePlaylistView === plName ? 'Close Folder' : 'Open Folder'}
+                    </button>
+                `;
+
+                row.addEventListener('click', () => {
+                    if (activePlaylistView === plName) {
+                        activePlaylistView = null; // Close
+                        restoreDefaultPlaylistQueue();
+                    } else {
+                        activePlaylistView = plName; // Set active playlist view
+                        loadPlaylistQueue(plName);
+                    }
+                    renderPlaylistsList();
+                });
+
+                container.appendChild(row);
+            });
+        }
+
+        function loadPlaylistQueue(playlistName) {
+            const tracksInPl = playlists[playlistName];
+            if (tracksInPl.length === 0) {
+                showToast(`Playlist ${playlistName} is empty!`);
+                return;
+            }
+            
+            // Lock temporary tracking queue strictly to playlist mappings
+            playlistTracks = tracksInPl;
+            switchTrack(0);
+            showToast(`Loaded ${playlistName} playlist queue.`);
+        }
+
+        function restoreDefaultPlaylistQueue() {
+            // Restore entire library tracks list
+            playlistTracks = Object.values(virtualLibrary).map(item => {
+                return item.blobFile ? { name: item.fileName, blobFile: item.blobFile } : { name: item.fileName, streamUrl: item.streamUrl };
+            });
+            updatePlaylistUI();
+            showToast("Restored all master track files view.");
+        }
+
+        // Playlist modal launchers
+        btnCreatePlaylistTrigger.addEventListener('click', () => showModal('modal-playlist-create'));
+        
+        function createPlaylistAction() {
+            const plInput = document.getElementById('input-playlist-name').value.trim();
+            if (!plInput) return;
+            if (playlists[plInput]) {
+                showToast("Playlist folder already exists!");
+                return;
+            }
+            playlists[plInput] = [];
+            closeModal('modal-playlist-create');
+            document.getElementById('input-playlist-name').value = "";
+            renderPlaylistsList();
+            showToast(`Created folder directory: ${plInput}`);
+        }
+
+        btnDeletePlaylistTrigger.addEventListener('click', () => {
+            if (!activePlaylistView) {
+                showToast("Please open a playlist folder to delete first.");
+                return;
+            }
+            delete playlists[activePlaylistView];
+            activePlaylistView = null;
+            restoreDefaultPlaylistQueue();
+            renderPlaylistsList();
+            showToast("Playlist folder deleted.");
+        });
+
+        // --- 9. DIRECT INLINE DISPLAY NAME TYPE-OVER (TAB 4) ---
+        const btnInlineEdit = document.getElementById('btn-inline-nickname-edit');
+        const nicknameDisplayMode = document.getElementById('nickname-display-mode');
+        const nicknameEditMode = document.getElementById('nickname-edit-mode');
+        const inputInlineNickname = document.getElementById('input-inline-nickname');
+        const btnInlineSave = document.getElementById('btn-inline-save');
+        const btnInlineCancel = document.getElementById('btn-inline-cancel');
+
+        function activateInlineRename() {
+            if (!currentFile) return;
+            const meta = virtualLibrary[currentFile.name];
+            inputInlineNickname.value = meta.nickname || "";
+            
+            nicknameDisplayMode.style.display = "none";
+            nicknameEditMode.style.display = "inline-flex";
+            inputInlineNickname.focus();
+        }
+
+        btnInlineEdit.addEventListener('click', activateInlineRename);
+
+        btnInlineCancel.addEventListener('click', () => {
+            nicknameDisplayMode.style.display = "inline-flex";
+            nicknameEditMode.style.display = "none";
+        });
+
+        function saveInlineNickname() {
+            if (!currentFile) return;
+            const newName = inputInlineNickname.value.trim();
+            virtualLibrary[currentFile.name].nickname = newName;
+            
+            updateMetadataUI();
+            updatePlaylistUI();
+            
+            nicknameDisplayMode.style.display = "inline-flex";
+            nicknameEditMode.style.display = "none";
+            showToast("Nickname saved!");
+        }
+
+        btnInlineSave.addEventListener('click', saveInlineNickname);
+        inputInlineNickname.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') saveInlineNickname();
+        });
+
+        // --- 10. MINI METADATA BOX ACTION ENGINE ---
+        function startMetaPress() {
+            isHoldingMeta = false;
+            metaBoxHoldTimeout = setTimeout(() => {
+                isHoldingMeta = true;
+                if (!currentFile) return;
+                
+                // Scroll down to Tab 4 (Library/Metadata) and open inline pencil type-over
+                switchWorkspaceTab('tab-library');
+                document.getElementById('metadata-display-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                activateInlineRename();
+            }, 400); 
+        }
+
+        function releaseMetaPress() {
+            clearTimeout(metaBoxHoldTimeout);
+            if (!isHoldingMeta) {
+                if (!currentFile) {
+                    showToast("No active track loaded to copy metadata.");
+                    return;
+                }
+                const meta = virtualLibrary[currentFile.name];
+                const cleanMetaString = `[Organon Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`;
+                copyToClipboard(cleanMetaString);
+            }
+            isHoldingMeta = false;
+        }
+
+        miniMetaBox.addEventListener('mousedown', startMetaPress);
+        miniMetaBox.addEventListener('mouseup', releaseMetaPress);
+        miniMetaBox.addEventListener('mouseleave', () => clearTimeout(metaBoxHoldTimeout));
+
+        miniMetaBox.addEventListener('touchstart', (e) => { e.preventDefault(); startMetaPress(); });
+        miniMetaBox.addEventListener('touchend', (e) => { e.preventDefault(); releaseMetaPress(); });
+
+        // --- 11. RE-ROUTING METADATA UTILITY DISPATCH (🎤, 🏷️, 📥, ✏️) ---
+        document.getElementById('btn-lyrics-modal').addEventListener('click', () => {
+            if (!currentFile) return;
+            const meta = virtualLibrary[currentFile.name];
+            document.getElementById('input-lyrics').value = meta.lyrics || "";
+            showModal('modal-lyrics');
+        });
+
+        document.getElementById('btn-playlist').addEventListener('click', () => {
+            if (!currentFile) return;
+            
+            // Build checklists based on custom virtual playlist folders
+            playlistChecklistContainer.innerHTML = "";
+            Object.keys(playlists).forEach(pl => {
+                const isAssigned = playlists[pl].some(track => track.name === currentFile.name);
+                
+                const label = document.createElement('label');
+                label.style.display = "flex";
+                label.style.alignItems = "center";
+                label.style.gap = "8px";
+                label.innerHTML = `<input type="checkbox" value="${pl}" ${isAssigned ? 'checked' : ''} style="width: auto;"> ⭐ ${pl}`;
+                
+                playlistChecklistContainer.appendChild(label);
+            });
+            
+            showModal('modal-playlist');
+        });
+
+        document.getElementById('btn-tags').addEventListener('click', () => {
+            if (!currentFile) return;
+            const meta = virtualLibrary[currentFile.name];
+            document.getElementById('input-tags').value = meta.tags.join(', ');
+            showModal('modal-tags');
+        });
+
+        // Modal triggers
+        function showModal(id) {
+            overlay.style.display = 'block';
+            document.getElementById(id).style.display = 'block';
+        }
+
+        function closeModal(id) {
+            overlay.style.display = 'none';
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function closeAllModals() {
+            document.querySelectorAll('.organon-modal').forEach(m => m.style.display = 'none');
+            overlay.style.display = 'none';
+        }
+
+        function saveLyrics() {
+            if (!currentFile) return;
+            const lyrics = document.getElementById('input-lyrics').value.trim();
+            virtualLibrary[currentFile.name].lyrics = lyrics;
+            updateMetadataUI();
+            closeModal('modal-lyrics');
+            showToast("Lyrics updated.");
+        }
+
+        function saveTags() {
+            if (!currentFile) return;
+            const tagsRaw = document.getElementById('input-tags').value;
+            const tagsArray = tagsRaw.split(',').map(t => t.trim()).filter(t => t.length > 0);
+            virtualLibrary[currentFile.name].tags = tagsArray;
+            updateMetadataUI();
+            closeModal('modal-tags');
+            showToast("Tags updated.");
+        }
+
+        function savePlaylists() {
+            if (!currentFile) return;
+            const checkBoxes = playlistChecklistContainer.querySelectorAll('input[type="checkbox"]');
+            
+            checkBoxes.forEach(cb => {
+                const plName = cb.value;
+                const inListIdx = playlists[plName].findIndex(track => track.name === currentFile.name);
+                
+                if (cb.checked) {
+                    if (inListIdx === -1) {
+                        playlists[plName].push(currentFile);
+                    }
+                } else {
+                    if (inListIdx !== -1) {
+                        playlists[plName].splice(inListIdx, 1);
+                    }
+                }
+            });
+            
+            closeModal('modal-playlist');
+            showToast("Saved track playlists mapping.");
+        }
+
+        function copyToClipboard(text) {
+            const clipboardArea = document.createElement('textarea');
+            clipboardArea.value = text;
+            clipboardArea.style.position = 'absolute';
+            clipboardArea.style.left = '-9999px';
+            document.body.appendChild(clipboardArea);
+            clipboardArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("Copied to clipboard!");
+            } catch (err) {}
+            document.body.removeChild(clipboardArea);
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast-notice');
+            toast.innerText = message;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2200);
+        }
+
+        // --- 12. DYNAMIC VISUALIZER OPTIONS SYSTEM ---
+        const canvas = document.getElementById('audio-visualizer');
+        const canvasCtx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawVisualizer() {
+            requestAnimationFrame(drawVisualizer);
+            
+            if (!analyser) {
+                canvasCtx.fillStyle = '#000000';
+                canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+                return;
+            }
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            canvasCtx.fillStyle = '#000000';
+            canvasCtx.fillRect(0, 0, canvas.width, canvas.height);
+
+            if (visualizerStyle === "bars") {
+                const barWidth = (canvas.width / bufferLength) * 2.5;
+                let barHeight;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    barHeight = dataArray[i] / 2;
+                    canvasCtx.fillStyle = 'rgba(75, 132, 191, 0.4)'; 
+                    canvasCtx.fillRect(x, canvas.height - barHeight, barWidth - 1, barHeight);
+                    x += barWidth;
+                }
+
+            } else if (visualizerStyle === "mountain") {
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(0, canvas.height);
+                
+                const sliceWidth = canvas.width / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const v = dataArray[i] / 255;
+                    const y = canvas.height - (v * canvas.height * 0.7);
+                    canvasCtx.lineTo(x, y);
+                    x += sliceWidth;
+                }
+
+                canvasCtx.lineTo(canvas.width, canvas.height);
+                canvasCtx.closePath();
+
+                const grad = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+                grad.addColorStop(0, 'rgba(117, 178, 222, 0.45)');
+                grad.addColorStop(1, 'rgba(38, 97, 92, 0.1)');
+                
+                canvasCtx.fillStyle = grad;
+                canvasCtx.fill();
+
+            } else if (visualizerStyle === "led") {
+                const columns = Math.min(bufferLength, 45);
+                const colWidth = canvas.width / columns;
+                const blockHeight = 6;
+                const blockGap = 2;
+
+                for (let i = 0; i < columns; i++) {
+                    const barHeight = (dataArray[i] / 255) * canvas.height * 0.8;
+                    const blocksCount = Math.floor(barHeight / (blockHeight + blockGap));
+                    const x = i * colWidth;
+
+                    for (let j = 0; j < blocksCount; j++) {
+                        const y = canvas.height - (j * (blockHeight + blockGap));
+                        
+                        if (j > 12) {
+                            canvasCtx.fillStyle = 'rgba(210, 125, 108, 0.5)';
+                        } else if (j > 6) {
+                            canvasCtx.fillStyle = 'rgba(224, 163, 96, 0.4)';
+                        } else {
+                            canvasCtx.fillStyle = 'rgba(68, 158, 146, 0.3)';
+                        }
+                        canvasCtx.fillRect(x + 1, y - blockHeight, colWidth - 2, blockHeight);
+                    }
+                }
+
+            } else if (visualizerStyle === "symmetric") {
+                const centerY = canvas.height / 2;
+                const sliceWidth = canvas.width / bufferLength;
+                let x = 0;
+
+                for (let i = 0; i < bufferLength; i++) {
+                    const amplitude = (dataArray[i] / 255) * canvas.height * 0.4;
+                    canvasCtx.fillStyle = 'rgba(75, 132, 191, 0.45)';
+                    canvasCtx.fillRect(x, centerY - amplitude, sliceWidth - 1, amplitude * 2);
+                    x += sliceWidth;
+                }
+            }
+        }
+        
+        drawVisualizer();
+    </script>
+</body>
+</html>
