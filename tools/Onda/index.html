@@ -24,7 +24,6 @@
 
         body {
             margin: 0;
-            /* Global padding acting as rigid left/right columns for the entire app */
             padding: 0 120px; 
             background-color: var(--bg-nightsky);
             color: var(--alabaster-paper);
@@ -42,11 +41,9 @@
             top: 0;
             z-index: 100;
             background-color: #000000;
-            border-bottom-left-radius: 28px;
-            border-bottom-right-radius: 28px;
-            border-bottom: 2px solid var(--stone-ochre);
-            border-left: 2px solid var(--stone-ochre);
-            border-right: 2px solid var(--stone-ochre);
+            border-radius: 24px;
+            border: 2px solid var(--stone-ochre);
+            margin-top: 15px; /* Floats it off the very top edge */
             padding: 20px 40px; 
             box-shadow: 0 6px 15px rgba(0,0,0,0.6);
             overflow: hidden;
@@ -108,7 +105,6 @@
         }
         .btn-pill:hover { filter: brightness(1.2); }
         .btn-pill:active { transform: scale(0.95); }
-        .btn-pill.disabled { background-color: var(--chiseled-bronze); opacity: 0.5; cursor: not-allowed; }
 
         /* Symmetrical Pills Layout */
         .utility-pill {
@@ -150,20 +146,19 @@
         /* Glowing Active State for Emojis */
         .utility-btn.active-state {
             color: var(--water-blue);
-            text-shadow: 0 0 10px var(--water-blue), 0 0 20px var(--water-spray);
+            text-shadow: 0 0 12px var(--water-blue), 0 0 20px var(--water-spray);
             filter: drop-shadow(0 0 4px var(--water-spray));
         }
 
         /* Dynamic Spinning Play Icon */
         @keyframes spin-glow {
-            0% { transform: rotate(0deg); text-shadow: 0 0 5px var(--water-blue); }
-            100% { transform: rotate(360deg); text-shadow: 0 0 15px var(--water-spray); }
+            0% { transform: rotate(0deg); text-shadow: 0 0 8px var(--water-blue); }
+            100% { transform: rotate(360deg); text-shadow: 0 0 16px var(--water-spray); }
         }
         .playing-spinner {
             display: inline-block;
             animation: spin-glow 1.5s linear infinite;
             color: var(--water-spray) !important;
-            text-shadow: 0 0 10px var(--water-blue);
         }
         
         /* Tooltip utilities */
@@ -198,11 +193,10 @@
             height: 100%;
             z-index: 1;
             pointer-events: none;
-            border-bottom-left-radius: 26px;
-            border-bottom-right-radius: 26px;
+            border-radius: 22px; /* Match inner radius of the panel */
         }
 
-        /* Mini Metadata Square Box */
+        /* Mini Metadata Square Box (Repositioned to FAR LEFT) */
         .mini-meta-box {
             width: 38px;
             height: 38px;
@@ -449,8 +443,6 @@
             border-color: var(--water-blue);
         }
 
-        .ab-active { background-color: var(--brand-red) !important; color: white !important; }
-        
         /* Interactive Tags Display */
         .tags-container {
             display: flex;
@@ -533,10 +525,7 @@
             color: var(--stone-ochre);
             transition: color 0.2s;
         }
-        
-        .modal-close:hover {
-            color: var(--brand-red);
-        }
+        .modal-close:hover { color: var(--brand-red); }
 
         .modal-body textarea, .modal-body input {
             width: 100%;
@@ -600,16 +589,11 @@
             .primary-controls { flex-wrap: wrap; }
             .seek-container { order: 3; width: 100%; }
         }
-
-        @keyframes pulse {
-            0% { opacity: 0.4; }
-            100% { opacity: 1; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- PANEL 1: Top Rounded Player Box (THIS FILE) -->
+    <!-- PANEL 1: Top Rounded Player Box -->
     <div id="organon-top-panel" class="sticky-panel">
         <!-- Ambient background canvas visualizer -->
         <canvas id="audio-visualizer"></canvas>
@@ -637,8 +621,7 @@
                     <!-- Play triggers the spin-glow when active -->
                     <button id="btn-play" class="utility-btn" data-tooltip="Play (Hold to Fast Forward)">▶️</button>
                     <!-- Dedicated Pause/Stop Button -->
-                    <button id="btn-pause" class="utility-btn" data-tooltip="Pause">॥</button>
-                    
+                    <button id="btn-pause" class="utility-btn" data-tooltip="Pause / Stop">॥</button>
                     <button id="btn-speed-cycle" class="utility-btn" data-tooltip="Cycle Speed">⚡</button>
                     <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭️</button>
                 </div>
@@ -662,13 +645,13 @@
         </div>
     </div>
 
-    <!-- Scrollable Horizontal Drag-To-Scroll Tags Ribbon (This file's tags) -->
+    <!-- Scrollable Horizontal Drag-To-Scroll Tags Ribbon -->
     <div id="scrollable-tags-bar"></div>
 
-    <!-- PANEL 2: Middle Workspace (ALL YOUR FILES) -->
+    <!-- PANEL 2: Middle Workspace -->
     <div id="organon-middle-panel">
         
-        <!-- Workspace Mode Selection Tabs Bar (All Your Files Controllers) -->
+        <!-- Workspace Mode Selection Tabs Bar -->
         <div class="workspace-mode-bar">
             <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">📁 Files Drop Zone</button>
             <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">🔗 Load URL</button>
@@ -779,10 +762,6 @@
                 </select>
             </div>
             <div class="control-row" style="margin-top: 10px; border-top: 1px dashed var(--chiseled-bronze); padding-top: 10px;">
-                <button id="btn-ab-loop" class="btn-pill" style="background: var(--water-spray); padding: 6px 12px; font-size: 0.75rem;">SET LOOP A</button>
-                <span id="ab-status" style="color: var(--stone-ochre); font-size: 0.75rem;">Inactive</span>
-            </div>
-            <div class="control-row" style="margin-top: 10px; border-top: 1px dashed var(--chiseled-bronze); padding-top: 10px;">
                 <button id="btn-import-json" class="btn-pill" style="background: var(--stone-ochre); width: 100%;">📥 Import JSON Library</button>
                 <input type="file" id="json-file-input" accept=".json" style="display: none;">
             </div>
@@ -864,6 +843,13 @@
         // Using two elements solves WebAudio Context blocking CORS streams while preserving local file visualizers
         const localAudio = new Audio();
         const streamAudio = new Audio();
+        
+        // Ensure elements exist in the DOM (hidden) to prevent browser pipeline suspension bugs
+        localAudio.style.display = 'none';
+        streamAudio.style.display = 'none';
+        document.body.appendChild(localAudio);
+        document.body.appendChild(streamAudio);
+
         let activeAudio = localAudio;
         
         let audioCtx, gainNode, analyser, source;
@@ -884,11 +870,7 @@
         let preHoldSpeed = 1.0;
 
         let lastPrevClickTime = 0;
-
         let visualizerStyle = "bars";
-
-        let loopA = null;
-        let loopB = null;
 
         let isRepeatOne = false;
         let isRepeatAll = false;
@@ -900,7 +882,6 @@
             "Work Focus": []
         };
         let activePlaylistView = null;
-
         let virtualLibrary = {};
 
         // UI Element mappings
@@ -920,8 +901,6 @@
         const btnToggleAdvanced = document.getElementById('btn-toggle-advanced');
         const advancedControls = document.getElementById('settings-popup');
         const btnCloseSettings = document.getElementById('btn-close-settings');
-        const btnAbLoop = document.getElementById('btn-ab-loop');
-        const abStatus = document.getElementById('ab-status');
         const miniMetaBox = document.getElementById('mini-meta-box');
         const miniMetaSize = document.getElementById('mini-meta-size');
         const tagsBar = document.getElementById('scrollable-tags-bar');
@@ -941,7 +920,6 @@
                 analyser = audioCtx.createAnalyser();
                 analyser.fftSize = 256;
 
-                // Visualizer ONLY binds to local files to avoid cross-origin silence locks
                 source = audioCtx.createMediaElementSource(localAudio);
                 source.connect(gainNode);
                 gainNode.connect(analyser);
@@ -964,9 +942,6 @@
                     seekBar.value = audioObj.currentTime;
                     timeCurrent.innerText = formatTime(audioObj.currentTime);
                 }
-                if (loopA !== null && loopB !== null && audioObj.currentTime >= loopB) {
-                    audioObj.currentTime = loopA;
-                }
             });
 
             audioObj.addEventListener('ended', (e) => {
@@ -975,8 +950,12 @@
                     audioObj.currentTime = 0;
                     playAudio();
                 } else {
-                    if (currentTrackIndex < playlistTracks.length - 1 || isRepeatAll || isShuffle) {
-                        skipToNextTrack();
+                    if (isShuffle) {
+                        switchTrack(Math.floor(Math.random() * playlistTracks.length));
+                    } else if (currentTrackIndex < playlistTracks.length - 1) {
+                        switchTrack(currentTrackIndex + 1);
+                    } else if (isRepeatAll) {
+                        switchTrack(0);
                     } else {
                         pauseAudio();
                         audioObj.currentTime = 0;
@@ -989,24 +968,13 @@
 
         // --- 2. MULTI-FILE INTAKE LOADING SYSTEM ---
         dropZone.addEventListener('click', () => fileInput.click());
-
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('dragover');
-        });
-
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                handleUploadedFiles(e.dataTransfer.files);
-            }
+            if (e.dataTransfer.files.length > 0) handleUploadedFiles(e.dataTransfer.files);
         });
-
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleUploadedFiles(e.target.files);
         });
@@ -1026,15 +994,11 @@
             
             newTracks.forEach(file => {
                 if (!virtualLibrary[file.name]) {
-                    const defaults = ["Local File"];
-                    if (file.name.toLowerCase().includes("vibe") || file.name.toLowerCase().includes("chill")) defaults.push("Chill");
-                    if (file.name.toLowerCase().includes("synth")) defaults.push("Synthwave");
-
                     virtualLibrary[file.name] = {
                         fileName: file.name,
                         nickname: "",
                         lyrics: "",
-                        tags: defaults,
+                        tags: ["Local File"],
                         playlists: [],
                         size: (file.size / (1024 * 1024)).toFixed(2) + " MB",
                         blobFile: file 
@@ -1042,11 +1006,8 @@
                 }
             });
 
-            if (wasEmpty) {
-                switchTrack(0);
-            } else {
-                showToast(`Added ${newTracks.length} tracks!`);
-            }
+            if (wasEmpty) switchTrack(0);
+            else showToast(`Added ${newTracks.length} tracks!`);
         }
 
         function switchTrack(index) {
@@ -1064,32 +1025,21 @@
 
             if (!virtualLibrary[file.name]) {
                 virtualLibrary[file.name] = {
-                    fileName: file.name,
-                    nickname: "",
-                    lyrics: "",
-                    tags: ["URL Stream"],
-                    playlists: [],
-                    size: "URL Stream"
+                    fileName: file.name, nickname: "", lyrics: "", tags: ["URL Stream"], playlists: [], size: "URL Stream"
                 };
             }
             
             if (file.streamUrl) {
-                activeAudio = streamAudio; // Use pure HTML5 audio object for CORS bypassing
+                activeAudio = streamAudio; 
                 activeAudio.src = file.streamUrl;
             } else {
-                activeAudio = localAudio; // Use WebAudio context object for visualizers
+                activeAudio = localAudio; 
                 const blob = file.blobFile || file;
                 activeAudio.src = URL.createObjectURL(blob);
             }
             
             activeAudio.playbackRate = parseFloat(speedSlider.value);
             updateMetadataUI();
-            
-            loopA = null; loopB = null;
-            btnAbLoop.innerText = "SET LOOP A";
-            btnAbLoop.classList.remove('ab-active');
-            abStatus.innerText = "Inactive";
-            
             playAudio();
             drawVisualizer();
         }
@@ -1100,13 +1050,7 @@
             
             const displayName = meta.nickname ? meta.nickname : meta.fileName;
             document.getElementById('now-playing').innerText = displayName;
-            
-            const nickLabel = document.getElementById('track-nickname-label');
-            if (meta.nickname) {
-                nickLabel.innerText = `Original: ${meta.fileName}`;
-            } else {
-                nickLabel.innerText = "";
-            }
+            document.getElementById('track-nickname-label').innerText = meta.nickname ? `Original: ${meta.fileName}` : "";
 
             const sizeInMb = parseFloat(meta.size) || 0.0;
             miniMetaSize.innerText = sizeInMb.toFixed(1) + "M";
@@ -1140,18 +1084,13 @@
             }
 
             const lyricsViewer = document.getElementById('lyrics-viewer');
-            if (meta.lyrics) {
-                lyricsViewer.innerText = meta.lyrics;
-            } else {
-                lyricsViewer.innerText = "No lyrics stored yet. Click the 🎤 icon on the player utility pill to edit.";
-            }
+            lyricsViewer.innerText = meta.lyrics || "No lyrics stored yet. Click the 🎤 icon on the player utility pill to edit.";
         }
 
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
         function switchWorkspaceTab(tabId) {
             document.querySelectorAll('.mode-tab-btn').forEach(btn => btn.classList.remove('tab-active'));
-            const selectedBtnId = `tab-btn-${tabId.replace('tab-', '')}`;
-            const btnEl = document.getElementById(selectedBtnId);
+            const btnEl = document.getElementById(`tab-btn-${tabId.replace('tab-', '')}`);
             if (btnEl) btnEl.classList.add('tab-active');
 
             document.querySelectorAll('.viewport-content').forEach(card => card.classList.remove('active-content'));
@@ -1166,7 +1105,7 @@
             activeAudio.play();
             isPlaying = true;
             
-            // Activate Glowing Spinner 
+            // Activate Glowing Spinner
             btnPlay.innerHTML = '<span class="playing-spinner">↻</span>';
             btnPlay.classList.add('active-state');
         }
@@ -1174,20 +1113,18 @@
         function pauseAudio() {
             activeAudio.pause();
             isPlaying = false;
-
-            // Revert back to Play Triangle
             btnPlay.innerHTML = '▶️';
             btnPlay.classList.remove('active-state');
         }
 
         btnPlay.addEventListener('click', () => {
             if (!currentFile) return;
-            playAudio(); // Exclusively plays (or restarts holding logic)
+            playAudio();
         });
 
         btnPause.addEventListener('click', () => {
             if (!currentFile) return;
-            pauseAudio(); // Exclusively pauses
+            pauseAudio();
         });
 
         // --- PLAY BUTTON HOLD-TO-FAST-FORWARD LOGIC ---
@@ -1223,9 +1160,7 @@
         btnPrev.addEventListener('click', () => {
             if (!currentFile) return;
             const now = Date.now();
-            const tapGap = now - lastPrevClickTime;
-            
-            if (tapGap < 350) {
+            if (now - lastPrevClickTime < 350) {
                 skipToPreviousTrack();
             } else {
                 if (activeAudio.currentTime > 3.0) {
@@ -1239,21 +1174,13 @@
         });
 
         function skipToPreviousTrack() {
-            if (playlistTracks.length <= 1) {
-                activeAudio.currentTime = 0;
-                return;
-            }
+            if (playlistTracks.length <= 1) { activeAudio.currentTime = 0; return; }
             let prevIndex = currentTrackIndex - 1;
-            if (prevIndex < 0) {
-                prevIndex = isRepeatAll ? playlistTracks.length - 1 : 0;
-            }
+            if (prevIndex < 0) prevIndex = isRepeatAll ? playlistTracks.length - 1 : 0;
             switchTrack(prevIndex);
         }
 
-        // --- ⏭️ SKIP NEXT NAVIGATION ACTION ---
-        btnNext.addEventListener('click', () => {
-            skipToNextTrack();
-        });
+        btnNext.addEventListener('click', skipToNextTrack);
 
         function skipToNextTrack() {
             if (playlistTracks.length === 0) return;
@@ -1272,7 +1199,6 @@
             switchTrack(nextIndex);
         }
 
-        // Speed Cycling (⚡ Button)
         btnSpeedCycle.addEventListener('click', () => {
             currentSpeedIdx = (currentSpeedIdx + 1) % speedCycles.length;
             const chosenSpeed = speedCycles[currentSpeedIdx];
@@ -1345,6 +1271,30 @@
             document.removeEventListener('mouseup', onPopupDragEnd);
         }
 
+        dragHandle.addEventListener('touchstart', (e) => {
+            isDraggingPopup = true;
+            const touch = e.touches[0];
+            dragStartX = touch.clientX - advancedControls.offsetLeft;
+            dragStartY = touch.clientY - advancedControls.offsetTop;
+            document.addEventListener('touchmove', onPopupTouchMove, { passive: false });
+            document.addEventListener('touchend', onPopupTouchEnd);
+        });
+
+        function onPopupTouchMove(e) {
+            if (!isDraggingPopup) return;
+            e.preventDefault(); 
+            const touch = e.touches[0];
+            advancedControls.style.transform = "none";
+            advancedControls.style.left = (touch.clientX - dragStartX) + "px";
+            advancedControls.style.top = (touch.clientY - dragStartY) + "px";
+        }
+
+        function onPopupTouchEnd() {
+            isDraggingPopup = false;
+            document.removeEventListener('touchmove', onPopupTouchMove);
+            document.removeEventListener('touchend', onPopupTouchEnd);
+        }
+
         volSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             if (gainNode) gainNode.gain.value = val;
@@ -1369,31 +1319,8 @@
 
         document.getElementById('json-file-input').addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
-                const file = e.target.files[0];
-                showToast(`Selected ${file.name}. Merging logic pending...`);
+                showToast(`Selected ${e.target.files[0].name}. Merging logic pending...`);
                 e.target.value = "";
-            }
-        });
-
-        btnAbLoop.addEventListener('click', () => {
-            if (!currentFile) return;
-
-            if (loopA === null) {
-                loopA = activeAudio.currentTime;
-                btnAbLoop.innerText = "SET LOOP B";
-                btnAbLoop.classList.add('ab-active');
-                abStatus.innerText = `Point A: ${formatTime(loopA)}`;
-            } else if (loopB === null) {
-                if (activeAudio.currentTime <= loopA) return;
-                loopB = activeAudio.currentTime;
-                btnAbLoop.innerText = "CLEAR LOOP";
-                abStatus.innerText = `Looping: ${formatTime(loopA)} - ${formatTime(loopB)}`;
-            } else {
-                loopA = null;
-                loopB = null;
-                btnAbLoop.innerText = "SET LOOP A";
-                btnAbLoop.classList.remove('ab-active');
-                abStatus.innerText = "Inactive";
             }
         });
 
@@ -1403,29 +1330,18 @@
 
         function convertDriveLinkToStream(driveUrl) {
             if (driveUrl.includes('uc?export=download')) return driveUrl;
-
-            // Catch /d/ standard share links
             const regex = /\/d\/([a-zA-Z0-9_-]+)/;
             const match = driveUrl.match(regex);
-            if (match && match[1]) {
-                return `https://drive.google.com/uc?export=download&id=${match[1]}`;
-            }
-
-            // Catch ?id= direct queries
+            if (match && match[1]) return `https://drive.google.com/uc?export=download&id=${match[1]}`;
             const idRegex = /[?&]id=([a-zA-Z0-9_-]+)/;
             const idMatch = driveUrl.match(idRegex);
-            if (idMatch && idMatch[1]) {
-                return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
-            }
+            if (idMatch && idMatch[1]) return `https://drive.google.com/uc?export=download&id=${idMatch[1]}`;
             return driveUrl; 
         }
 
         btnLoadUrl.addEventListener('click', () => {
             const rawUrl = urlInputBox.value.trim();
-            if (!rawUrl) {
-                showToast("Please enter a valid URL stream!");
-                return;
-            }
+            if (!rawUrl) { showToast("Please enter a valid URL stream!"); return; }
 
             const streamUrl = convertDriveLinkToStream(rawUrl);
             let parsedName = "Remote Stream";
@@ -1433,11 +1349,8 @@
                 const urlObj = new URL(rawUrl);
                 const pathParts = urlObj.pathname.split('/');
                 const lastPart = pathParts[pathParts.length - 1];
-                if (lastPart && lastPart.includes('.')) {
-                    parsedName = decodeURIComponent(lastPart);
-                } else if (rawUrl.includes("drive.google.com")) {
-                    parsedName = "Google Drive Stream File";
-                }
+                if (lastPart && lastPart.includes('.')) parsedName = decodeURIComponent(lastPart);
+                else if (rawUrl.includes("drive.google.com")) parsedName = "Google Drive Stream File";
             } catch (err) {}
 
             const newTrackFile = {
@@ -1458,10 +1371,7 @@
 
             urlInputBox.value = "";
             showToast("URL Stream added successfully to queue!");
-
-            if (playlistTracks.length === 1) {
-                switchTrack(0);
-            }
+            if (playlistTracks.length === 1) switchTrack(0);
         });
 
         // --- 7. VIRTUAL PLAYLIST MANAGEMENT SYSTEM (TAB 3) ---
@@ -1491,25 +1401,20 @@
 
                 row.addEventListener('click', () => {
                     if (activePlaylistView === plName) {
-                        activePlaylistView = null; // Close
+                        activePlaylistView = null;
                     } else {
-                        activePlaylistView = plName; // Set active playlist view
+                        activePlaylistView = plName;
                         loadPlaylistQueue(plName);
                     }
                     renderPlaylistsList();
                 });
-
                 container.appendChild(row);
             });
         }
 
         function loadPlaylistQueue(playlistName) {
             const tracksInPl = playlists[playlistName];
-            if (tracksInPl.length === 0) {
-                showToast(`Playlist ${playlistName} is empty!`);
-                return;
-            }
-            
+            if (tracksInPl.length === 0) { showToast(`Playlist ${playlistName} is empty!`); return; }
             playlistTracks = tracksInPl;
             switchTrack(0);
             showToast(`Loaded ${playlistName} playlist queue.`);
@@ -1520,10 +1425,7 @@
         function createPlaylistAction() {
             const plInput = document.getElementById('input-playlist-name').value.trim();
             if (!plInput) return;
-            if (playlists[plInput]) {
-                showToast("Playlist folder already exists!");
-                return;
-            }
+            if (playlists[plInput]) { showToast("Playlist folder already exists!"); return; }
             playlists[plInput] = [];
             closeModal('modal-playlist-create');
             document.getElementById('input-playlist-name').value = "";
@@ -1532,10 +1434,7 @@
         }
 
         btnDeletePlaylistTrigger.addEventListener('click', () => {
-            if (!activePlaylistView) {
-                showToast("Please open a playlist folder to delete first.");
-                return;
-            }
+            if (!activePlaylistView) { showToast("Please open a playlist folder to delete first."); return; }
             delete playlists[activePlaylistView];
             activePlaylistView = null;
             renderPlaylistsList();
@@ -1554,7 +1453,6 @@
             if (!currentFile) return;
             const meta = virtualLibrary[currentFile.name];
             inputInlineNickname.value = meta.nickname || "";
-            
             nicknameDisplayMode.style.display = "none";
             nicknameEditMode.style.display = "inline-flex";
             inputInlineNickname.focus();
@@ -1569,20 +1467,15 @@
 
         function saveInlineNickname() {
             if (!currentFile) return;
-            const newName = inputInlineNickname.value.trim();
-            virtualLibrary[currentFile.name].nickname = newName;
-            
+            virtualLibrary[currentFile.name].nickname = inputInlineNickname.value.trim();
             updateMetadataUI();
-            
             nicknameDisplayMode.style.display = "inline-flex";
             nicknameEditMode.style.display = "none";
             showToast("Nickname saved!");
         }
 
         btnInlineSave.addEventListener('click', saveInlineNickname);
-        inputInlineNickname.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') saveInlineNickname();
-        });
+        inputInlineNickname.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveInlineNickname(); });
 
         function triggerMetaEdit() {
             if (!currentFile) return;
@@ -1594,10 +1487,7 @@
         // --- 9. MINI METADATA BOX ACTION ENGINE ---
         miniMetaBox.addEventListener('click', (e) => {
             e.preventDefault();
-            if (!currentFile) {
-                showToast("No active track loaded to copy metadata.");
-                return;
-            }
+            if (!currentFile) { showToast("No active track loaded to copy metadata."); return; }
             const meta = virtualLibrary[currentFile.name];
             const cleanMetaString = `[Onda Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`;
             copyToClipboard(cleanMetaString);
@@ -1618,29 +1508,22 @@
                 isMetaTouchDragging = true; 
             }, 500); 
         });
-
         miniMetaBox.addEventListener('touchmove', () => {
             clearTimeout(metaTouchTimer);
             isMetaTouchDragging = true;
         });
-
         miniMetaBox.addEventListener('touchend', (e) => {
             clearTimeout(metaTouchTimer);
             if (!isMetaTouchDragging) {
                 e.preventDefault(); 
-                if (!currentFile) {
-                    showToast("No active track loaded to copy metadata.");
-                    return;
-                }
+                if (!currentFile) { showToast("No active track loaded to copy metadata."); return; }
                 const meta = virtualLibrary[currentFile.name];
-                const cleanMetaString = `[Onda Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`;
-                copyToClipboard(cleanMetaString);
+                copyToClipboard(`[Onda Player Metadata]\nFilename: ${meta.fileName}\nNickname: ${meta.nickname || 'None'}\nTrack Size: ${meta.size}\nTags: ${meta.tags.join(', ')}\nPlaylists: ${meta.playlists.join(', ') || 'None'}`);
             }
         });
 
-        // --- 10. RE-ROUTING METADATA UTILITY DISPATCH (🎤, 🏷️, 📥, ✏️) ---
+        // --- 10. RE-ROUTING METADATA UTILITY DISPATCH ---
         
-        // Repeat and Shuffle toggles with Glowing active states
         document.getElementById('btn-repeat-one').addEventListener('click', () => {
             isRepeatOne = !isRepeatOne;
             document.getElementById('btn-repeat-one').classList.toggle('active-state', isRepeatOne);
@@ -1666,48 +1549,37 @@
 
         document.getElementById('btn-lyrics-modal').addEventListener('click', () => {
             if (!currentFile) return;
-            const meta = virtualLibrary[currentFile.name];
-            document.getElementById('input-lyrics').value = meta.lyrics || "";
+            document.getElementById('input-lyrics').value = virtualLibrary[currentFile.name].lyrics || "";
             showModal('modal-lyrics');
         });
 
         document.getElementById('btn-playlist').addEventListener('click', () => {
             if (!currentFile) return;
-            
             playlistChecklistContainer.innerHTML = "";
             Object.keys(playlists).forEach(pl => {
                 const isAssigned = playlists[pl].some(track => track.name === currentFile.name);
-                
                 const label = document.createElement('label');
-                label.style.display = "flex";
-                label.style.alignItems = "center";
-                label.style.gap = "8px";
+                label.style.display = "flex"; label.style.alignItems = "center"; label.style.gap = "8px";
                 label.innerHTML = `<input type="checkbox" value="${pl}" ${isAssigned ? 'checked' : ''} style="width: auto;"> ⭐ ${pl}`;
-                
                 playlistChecklistContainer.appendChild(label);
             });
-            
             showModal('modal-playlist');
         });
 
         document.getElementById('btn-tags').addEventListener('click', () => {
             if (!currentFile) return;
-            const meta = virtualLibrary[currentFile.name];
-            document.getElementById('input-tags').value = meta.tags.join(', ');
+            document.getElementById('input-tags').value = virtualLibrary[currentFile.name].tags.join(', ');
             showModal('modal-tags');
         });
 
-        // Modal triggers
         function showModal(id) {
             overlay.style.display = 'block';
             document.getElementById(id).style.display = 'block';
         }
-
         function closeModal(id) {
             overlay.style.display = 'none';
             document.getElementById(id).style.display = 'none';
         }
-
         function closeAllModals() {
             document.querySelectorAll('.organon-modal').forEach(m => m.style.display = 'none');
             overlay.style.display = 'none';
@@ -1715,8 +1587,7 @@
 
         function saveLyrics() {
             if (!currentFile) return;
-            const lyrics = document.getElementById('input-lyrics').value.trim();
-            virtualLibrary[currentFile.name].lyrics = lyrics;
+            virtualLibrary[currentFile.name].lyrics = document.getElementById('input-lyrics').value.trim();
             updateMetadataUI();
             closeModal('modal-lyrics');
             showToast("Lyrics updated.");
@@ -1725,8 +1596,7 @@
         function saveTags() {
             if (!currentFile) return;
             const tagsRaw = document.getElementById('input-tags').value;
-            const tagsArray = tagsRaw.split(',').map(t => t.trim()).filter(t => t.length > 0);
-            virtualLibrary[currentFile.name].tags = tagsArray;
+            virtualLibrary[currentFile.name].tags = tagsRaw.split(',').map(t => t.trim()).filter(t => t.length > 0);
             updateMetadataUI();
             closeModal('modal-tags');
             showToast("Tags updated.");
@@ -1735,22 +1605,15 @@
         function savePlaylists() {
             if (!currentFile) return;
             const checkBoxes = playlistChecklistContainer.querySelectorAll('input[type="checkbox"]');
-            
             checkBoxes.forEach(cb => {
                 const plName = cb.value;
                 const inListIdx = playlists[plName].findIndex(track => track.name === currentFile.name);
-                
                 if (cb.checked) {
-                    if (inListIdx === -1) {
-                        playlists[plName].push(currentFile);
-                    }
+                    if (inListIdx === -1) playlists[plName].push(currentFile);
                 } else {
-                    if (inListIdx !== -1) {
-                        playlists[plName].splice(inListIdx, 1);
-                    }
+                    if (inListIdx !== -1) playlists[plName].splice(inListIdx, 1);
                 }
             });
-            
             closeModal('modal-playlist');
             showToast("Saved track playlists mapping.");
         }
@@ -1762,10 +1625,7 @@
             clipboardArea.style.left = '-9999px';
             document.body.appendChild(clipboardArea);
             clipboardArea.select();
-            try {
-                document.execCommand('copy');
-                showToast("Copied to clipboard!");
-            } catch (err) {}
+            try { document.execCommand('copy'); showToast("Copied to clipboard!"); } catch (err) {}
             document.body.removeChild(clipboardArea);
         }
 
