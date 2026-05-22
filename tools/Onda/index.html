@@ -674,6 +674,38 @@
             grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
+        .visual-grid-three {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .visual-check-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 12px;
+            align-items: center;
+            color: var(--water-spray);
+            font-size: 0.72rem;
+        }
+        .visual-check-row label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            margin: 0;
+            cursor: pointer;
+        }
+        .visual-range-row {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            gap: 8px;
+        }
+        .visual-range-readout {
+            color: var(--stone-ochre);
+            font-size: 0.72rem;
+            min-width: 34px;
+            text-align: right;
+        }
         .visual-field label,
         .library-tools-card label {
             display: block;
@@ -1407,6 +1439,14 @@
                 style: 'bars',
                 layer: layerNumber,
                 blend: 'source-over',
+                gradient: 'horizontal',
+                align: 'center',
+                amplitude: 1,
+                rotate: 0,
+                flipH: false,
+                flipV: false,
+                mirror: true,
+                drawMode: 'fill',
                 colors: ['#75b2de', '#e0a360', '#ff4fa3', '#7a5cff', '#000000', '#000000']
             };
         }
@@ -1425,12 +1465,41 @@
         }
 
         function cloneVisualizerLayer(layer) {
+            const normalized = normalizeVisualizerLayer(layer, (parseInt(layer.layer, 10) || 1) + 1);
             return {
+                ...normalized,
                 id: 'vis_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
-                style: layer.style,
                 layer: (parseInt(layer.layer, 10) || 1) + 1,
-                blend: layer.blend || 'source-over',
-                colors: Array.isArray(layer.colors) ? [...layer.colors] : ['#75b2de', '#e0a360', '#000000', '#000000', '#000000', '#000000']
+                colors: Array.isArray(layer.colors) ? [...layer.colors].slice(0, 6) : ['#75b2de', '#e0a360', '#000000', '#000000', '#000000', '#000000']
+            };
+        }
+
+        function clampNumber(value, min, max, fallback = min) {
+            const number = Number(value);
+            if (!Number.isFinite(number)) return fallback;
+            return Math.min(max, Math.max(min, number));
+        }
+
+        function normalizeVisualizerLayer(layer = {}, fallbackLayerNumber = 1) {
+            const base = createDefaultVisualizerLayer(fallbackLayerNumber);
+            const colors = Array.isArray(layer.colors) ? layer.colors.map(sanitizeHexColor).slice(0, 6) : base.colors;
+            while (colors.length < 6) colors.push('#000000');
+            return {
+                ...base,
+                ...layer,
+                id: layer.id || base.id,
+                style: layer.style || base.style,
+                layer: Math.max(1, parseInt(layer.layer, 10) || fallbackLayerNumber),
+                blend: layer.blend || base.blend,
+                gradient: ['horizontal', 'vertical', 'radial', 'random'].includes(layer.gradient) ? layer.gradient : base.gradient,
+                align: ['left', 'center', 'right'].includes(layer.align) ? layer.align : base.align,
+                amplitude: clampNumber(layer.amplitude, 0.25, 5, 1),
+                rotate: [0, 90, 180, 270].includes(parseInt(layer.rotate, 10)) ? parseInt(layer.rotate, 10) : 0,
+                flipH: Boolean(layer.flipH),
+                flipV: Boolean(layer.flipV),
+                mirror: layer.mirror === false ? false : true,
+                drawMode: ['fill', 'outline', 'line'].includes(layer.drawMode) ? layer.drawMode : base.drawMode,
+                colors
             };
         }
 
@@ -1448,8 +1517,26 @@
             return colors.length ? colors : ['#75b2de', '#e0a360', '#ff4fa3'];
         }
 
-        function pickColor(colors, index) {
-            return colors[index % colors.length];
+        let activeVisualLayerForDraw = null;
+
+        function pickColor(colors, index, sample = null) {
+            if (!colors || colors.length === 0) return '#75b2de';
+            const layer = activeVisualLayerForDraw;
+            const mode = layer?.gradient || 'horizontal';
+            let pickedIndex = index;
+
+            if (mode === 'vertical') {
+                const level = sample === null ? (index % colors.length) / Math.max(1, colors.length - 1) : clampNumber(sample, 0, 1, 0);
+                pickedIndex = Math.floor(level * Math.max(0, colors.length - 1));
+            } else if (mode === 'radial') {
+                const waveCount = 32;
+                const distance = Math.abs((index % waveCount) - (waveCount / 2)) / (waveCount / 2);
+                pickedIndex = Math.floor(distance * Math.max(0, colors.length - 1));
+            } else if (mode === 'random') {
+                pickedIndex = Math.abs(Math.floor(Math.sin((index + 1) * 91.345) * 10000));
+            }
+
+            return colors[Math.abs(pickedIndex) % colors.length];
         }
 
         function hexToRgba(hex, alpha = 1) {
@@ -1476,6 +1563,7 @@
         function renderVisualizerLayerCards() {
             if (!visualizerLayerList) return;
             visualizerLayerList.innerHTML = '';
+            visualizerLayers = visualizerLayers.map((layer, index) => normalizeVisualizerLayer(layer, index + 1));
             visualizerLayers
                 .slice()
                 .sort((a, b) => (parseInt(a.layer, 10) || 1) - (parseInt(b.layer, 10) || 1))
@@ -1495,16 +1583,19 @@
                         <div class="visual-field">
                             <label>Wave style</label>
                             <select class="vis-layer-style">
-                                <option value="bars">Classic Columns Mirror</option>
-                                <option value="mountain">Smooth Mountain Mirror</option>
-                                <option value="led">Retro LED Mirror</option>
-                                <option value="symmetric">Pulse Burst Mirror</option>
-                                <option value="waveline">Neon Waveform Mirror</option>
-                                <option value="orbs">Orb Chain Mirror</option>
-                                <option value="ribbon">Layered Ribbon Mirror</option>
-                                <option value="heartbeat">Heartbeat Line Mirror</option>
-                                <option value="pixelwave">Pixel Matrix Mirror</option>
-                                <option value="islands">Floating Islands Mirror</option>
+                                <option value="bars">Classic Columns</option>
+                                <option value="mountain">Smooth Mountain</option>
+                                <option value="led">Retro LED Blocks</option>
+                                <option value="symmetric">Pulse Burst</option>
+                                <option value="waveline">Neon Waveform</option>
+                                <option value="orbs">Orb Chain</option>
+                                <option value="ribbon">Layered Ribbon</option>
+                                <option value="heartbeat">Heartbeat Line</option>
+                                <option value="pixelwave">Pixel Matrix</option>
+                                <option value="islands">Floating Islands</option>
+                                <option value="matrixcode">Matrix Code Rain</option>
+                                <option value="comb">Comb Teeth Lines</option>
+                                <option value="gridwarp">Warped Audio Grid</option>
                             </select>
                         </div>
                         <div>
@@ -1532,6 +1623,56 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="visual-grid-two">
+                            <div class="visual-field">
+                                <label>Colour blend direction</label>
+                                <select class="vis-layer-gradient">
+                                    <option value="horizontal">Horizontal</option>
+                                    <option value="vertical">Vertical / height</option>
+                                    <option value="radial">Radial / centre</option>
+                                    <option value="random">Random sparkle</option>
+                                </select>
+                            </div>
+                            <div class="visual-field">
+                                <label>Align wave</label>
+                                <select class="vis-layer-align">
+                                    <option value="left">Left</option>
+                                    <option value="center">Centre</option>
+                                    <option value="right">Right</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="visual-grid-two">
+                            <div class="visual-field">
+                                <label>Rotate</label>
+                                <select class="vis-layer-rotate">
+                                    <option value="0">0°</option>
+                                    <option value="90">90°</option>
+                                    <option value="180">180°</option>
+                                    <option value="270">270°</option>
+                                </select>
+                            </div>
+                            <div class="visual-field">
+                                <label>Draw mode</label>
+                                <select class="vis-layer-drawmode">
+                                    <option value="fill">Solid fill</option>
+                                    <option value="outline">Outline only</option>
+                                    <option value="line">Thin line / comb</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="visual-field">
+                            <label>Amplitude multiplier</label>
+                            <div class="visual-range-row">
+                                <input type="range" class="vis-layer-amplitude" min="0.25" max="5" step="0.05" value="${clampNumber(layer.amplitude, 0.25, 5, 1)}">
+                                <span class="visual-range-readout">${clampNumber(layer.amplitude, 0.25, 5, 1).toFixed(2)}×</span>
+                            </div>
+                        </div>
+                        <div class="visual-check-row">
+                            <label><input type="checkbox" class="vis-layer-mirror" ${layer.mirror !== false ? 'checked' : ''}> Mirror</label>
+                            <label><input type="checkbox" class="vis-layer-fliph" ${layer.flipH ? 'checked' : ''}> Flip H</label>
+                            <label><input type="checkbox" class="vis-layer-flipv" ${layer.flipV ? 'checked' : ''}> Flip V</label>
+                        </div>
                         <div class="visual-layer-footer">
                             <button class="tiny-icon-btn btn-duplicate-layer" title="Duplicate this layer below">＋</button>
                             <button class="tiny-icon-btn btn-save-visual-stack" title="Save current visualiser stack">⌑</button>
@@ -1541,6 +1682,10 @@
                     visualizerLayerList.appendChild(card);
                     card.querySelector('.vis-layer-style').value = layer.style || 'bars';
                     card.querySelector('.vis-layer-blend').value = layer.blend || 'source-over';
+                    card.querySelector('.vis-layer-gradient').value = layer.gradient || 'horizontal';
+                    card.querySelector('.vis-layer-align').value = layer.align || 'center';
+                    card.querySelector('.vis-layer-rotate').value = String(layer.rotate || 0);
+                    card.querySelector('.vis-layer-drawmode').value = layer.drawMode || 'fill';
                 });
         }
 
@@ -1550,7 +1695,17 @@
             layer.style = card.querySelector('.vis-layer-style')?.value || 'bars';
             layer.layer = Math.max(1, parseInt(card.querySelector('.vis-layer-order')?.value, 10) || 1);
             layer.blend = card.querySelector('.vis-layer-blend')?.value || 'source-over';
+            layer.gradient = card.querySelector('.vis-layer-gradient')?.value || 'horizontal';
+            layer.align = card.querySelector('.vis-layer-align')?.value || 'center';
+            layer.rotate = parseInt(card.querySelector('.vis-layer-rotate')?.value, 10) || 0;
+            layer.drawMode = card.querySelector('.vis-layer-drawmode')?.value || 'fill';
+            layer.amplitude = clampNumber(card.querySelector('.vis-layer-amplitude')?.value, 0.25, 5, 1);
+            layer.mirror = Boolean(card.querySelector('.vis-layer-mirror')?.checked);
+            layer.flipH = Boolean(card.querySelector('.vis-layer-fliph')?.checked);
+            layer.flipV = Boolean(card.querySelector('.vis-layer-flipv')?.checked);
             layer.colors = Array.from(card.querySelectorAll('.vis-layer-color')).map(input => sanitizeHexColor(input.value));
+            const readout = card.querySelector('.visual-range-readout');
+            if (readout) readout.textContent = `${layer.amplitude.toFixed(2)}×`;
             visualizerStyle = layer.style;
         }
 
@@ -1561,12 +1716,23 @@
             savedVisualizerPresets[cleanedName] = {
                 name: cleanedName,
                 savedAt: new Date().toISOString(),
-                layers: visualizerLayers.map(layer => ({
-                    style: layer.style,
-                    layer: parseInt(layer.layer, 10) || 1,
-                    blend: layer.blend || 'source-over',
-                    colors: (layer.colors || []).map(sanitizeHexColor).slice(0, 6)
-                }))
+                layers: visualizerLayers.map((layer, index) => {
+                    const normal = normalizeVisualizerLayer(layer, index + 1);
+                    return {
+                        style: normal.style,
+                        layer: normal.layer,
+                        blend: normal.blend,
+                        gradient: normal.gradient,
+                        align: normal.align,
+                        amplitude: normal.amplitude,
+                        rotate: normal.rotate,
+                        flipH: normal.flipH,
+                        flipV: normal.flipV,
+                        mirror: normal.mirror,
+                        drawMode: normal.drawMode,
+                        colors: (normal.colors || []).map(sanitizeHexColor).slice(0, 6)
+                    };
+                })
             };
             saveVisualizerPresets();
             renderVisualizerPresetSelect();
@@ -1577,11 +1743,8 @@
             const preset = savedVisualizerPresets[name];
             if (!preset || !Array.isArray(preset.layers)) return;
             visualizerLayers = preset.layers.map((layer, index) => ({
-                id: 'vis_' + Date.now().toString(36) + '_' + index + '_' + Math.random().toString(36).slice(2, 5),
-                style: layer.style || 'bars',
-                layer: parseInt(layer.layer, 10) || index + 1,
-                blend: layer.blend || 'source-over',
-                colors: Array.isArray(layer.colors) ? layer.colors.map(sanitizeHexColor).slice(0, 6) : ['#75b2de', '#e0a360', '#000000', '#000000', '#000000', '#000000']
+                ...normalizeVisualizerLayer(layer, index + 1),
+                id: 'vis_' + Date.now().toString(36) + '_' + index + '_' + Math.random().toString(36).slice(2, 5)
             }));
             if (visualizerLayers.length === 0) visualizerLayers = [createDefaultVisualizerLayer(1)];
             renderVisualizerLayerCards();
@@ -3146,36 +3309,118 @@
             return [...leftHalf, ...centerOut];
         }
 
-        function setupGlowForLayer(colors, index = 0, alpha = 0.92, blur = 16) {
-            const c = pickColor(colors, index);
+        function applyAmplitudeToSamples(samples, layer) {
+            const amp = clampNumber(layer?.amplitude, 0.25, 5, 1);
+            return samples.map(value => Math.max(0, value * amp));
+        }
+
+        function buildMirroredSamples(samples, totalPoints = 120, mirror = true) {
+            if (!mirror) {
+                const points = [];
+                for (let i = 0; i < totalPoints; i++) {
+                    const idx = Math.min(samples.length - 1, Math.floor((i / Math.max(1, totalPoints - 1)) * samples.length));
+                    points.push(samples[idx] || 0);
+                }
+                return points;
+            }
+            return buildMirroredLinePoints(samples, totalPoints);
+        }
+
+        function setupGlowForLayer(colors, index = 0, alpha = 0.92, blur = 16, sample = null) {
+            const c = pickColor(colors, index, sample);
             canvasCtx.shadowBlur = blur;
             canvasCtx.shadowColor = hexToRgba(c, Math.min(1, alpha));
             canvasCtx.strokeStyle = hexToRgba(c, alpha);
             canvasCtx.fillStyle = hexToRgba(c, alpha * 0.78);
         }
 
+        function applyLayerCanvasTransform(layer) {
+            const w = canvas.width;
+            const h = canvas.height;
+            const align = layer?.align || 'center';
+            if (align === 'left') canvasCtx.translate(-w * 0.16, 0);
+            if (align === 'right') canvasCtx.translate(w * 0.16, 0);
+
+            canvasCtx.translate(w / 2, h / 2);
+            const rotate = parseInt(layer?.rotate, 10) || 0;
+            if (rotate) canvasCtx.rotate((rotate * Math.PI) / 180);
+            if (rotate === 90 || rotate === 270) {
+                const ratio = Math.min(1.65, Math.max(0.55, h / Math.max(1, w)));
+                canvasCtx.scale(ratio, 1 / ratio);
+            }
+            canvasCtx.scale(layer?.flipH ? -1 : 1, layer?.flipV ? -1 : 1);
+            canvasCtx.translate(-w / 2, -h / 2);
+        }
+
+        function drawVisualRect(x, y, w, h) {
+            const mode = activeVisualLayerForDraw?.drawMode || 'fill';
+            if (mode === 'outline') {
+                canvasCtx.lineWidth = Math.max(1.2, Math.min(3, Math.abs(w) * 0.16));
+                canvasCtx.strokeRect(x, y, w, h);
+            } else if (mode === 'line') {
+                canvasCtx.lineWidth = 1.4;
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(x + w / 2, y);
+                canvasCtx.lineTo(x + w / 2, y + h);
+                canvasCtx.stroke();
+            } else {
+                canvasCtx.fillRect(x, y, w, h);
+            }
+        }
+
+        function drawVisualPath() {
+            const mode = activeVisualLayerForDraw?.drawMode || 'fill';
+            if (mode === 'outline' || mode === 'line') {
+                canvasCtx.lineWidth = mode === 'line' ? 1.4 : 2.2;
+                canvasCtx.stroke();
+            } else {
+                canvasCtx.fill();
+            }
+        }
+
+        function drawVisualCircle(x, y, radius) {
+            const mode = activeVisualLayerForDraw?.drawMode || 'fill';
+            canvasCtx.beginPath();
+            canvasCtx.arc(x, y, radius, 0, Math.PI * 2);
+            if (mode === 'outline' || mode === 'line') {
+                canvasCtx.lineWidth = mode === 'line' ? 1.2 : 2;
+                canvasCtx.stroke();
+            } else {
+                canvasCtx.fill();
+            }
+        }
+
         function drawMirroredBars(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
             const centerX = canvas.width / 2;
             const maxBarHeight = canvas.height * 0.80;
-            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
             const barWidth = Math.max(2, laneWidth * 0.68);
 
             sideSamples.forEach((sample, i) => {
-                const color = pickColor(colors, i);
+                const color = pickColor(colors, i, Math.min(1, sample));
                 canvasCtx.shadowBlur = 14;
                 canvasCtx.shadowColor = hexToRgba(color, 0.82);
                 canvasCtx.fillStyle = hexToRgba(color, 0.72);
+                canvasCtx.strokeStyle = hexToRgba(color, 0.9);
                 const barHeight = Math.max(5, sample * maxBarHeight);
-                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - barWidth) / 2;
-                const rightX = centerX + (i * laneWidth) + (laneWidth - barWidth) / 2;
-                canvasCtx.fillRect(leftX, canvas.height - barHeight, barWidth, barHeight);
-                canvasCtx.fillRect(rightX, canvas.height - barHeight, barWidth, barHeight);
+                if (mirror) {
+                    const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - barWidth) / 2;
+                    const rightX = centerX + (i * laneWidth) + (laneWidth - barWidth) / 2;
+                    drawVisualRect(leftX, canvas.height - barHeight, barWidth, barHeight);
+                    drawVisualRect(rightX, canvas.height - barHeight, barWidth, barHeight);
+                } else {
+                    const x = (i * laneWidth) + (laneWidth - barWidth) / 2;
+                    drawVisualRect(x, canvas.height - barHeight, barWidth, barHeight);
+                }
             });
             canvasCtx.shadowBlur = 0;
         }
 
         function drawMirroredMountain(sideSamples, colors) {
-            const points = buildMirroredLinePoints(sideSamples, 140);
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const points = buildMirroredSamples(sideSamples, 140, mirror);
             const step = canvas.width / (points.length - 1);
             const baseY = canvas.height * 0.88;
             const maxHeight = canvas.height * 0.72;
@@ -3190,23 +3435,45 @@
             canvasCtx.lineTo(canvas.width, baseY);
             canvasCtx.closePath();
 
-            const grad = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
-            grad.addColorStop(0, hexToRgba(pickColor(colors, 0), 0.86));
-            grad.addColorStop(0.52, hexToRgba(pickColor(colors, 1), 0.58));
-            grad.addColorStop(1, hexToRgba(pickColor(colors, 2), 0.24));
+            const grad = createVisualizerGradient(colors, activeVisualLayerForDraw, 0.86, 0.24);
             canvasCtx.shadowBlur = 18;
             canvasCtx.shadowColor = hexToRgba(pickColor(colors, 0), 0.72);
             canvasCtx.fillStyle = grad;
-            canvasCtx.fill();
+            canvasCtx.strokeStyle = hexToRgba(pickColor(colors, 0), 0.92);
+            drawVisualPath();
             canvasCtx.shadowBlur = 0;
         }
 
+        function createVisualizerGradient(colors, layer, alphaTop = 0.86, alphaBottom = 0.28) {
+            let grad;
+            const direction = layer?.gradient || 'horizontal';
+            if (direction === 'vertical') grad = canvasCtx.createLinearGradient(0, 0, 0, canvas.height);
+            else if (direction === 'radial') grad = canvasCtx.createRadialGradient(canvas.width / 2, canvas.height / 2, 4, canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.55);
+            else grad = canvasCtx.createLinearGradient(0, 0, canvas.width, 0);
+
+            if (direction === 'random') {
+                colors.forEach((color, i) => grad.addColorStop(i / Math.max(1, colors.length - 1), hexToRgba(color, i % 2 ? alphaBottom : alphaTop)));
+            } else if (colors.length === 1) {
+                grad.addColorStop(0, hexToRgba(colors[0], alphaTop));
+                grad.addColorStop(1, hexToRgba(colors[0], alphaBottom));
+            } else {
+                colors.forEach((color, i) => {
+                    const t = i / Math.max(1, colors.length - 1);
+                    const alpha = alphaTop - ((alphaTop - alphaBottom) * t);
+                    grad.addColorStop(t, hexToRgba(color, alpha));
+                });
+            }
+            return grad;
+        }
+
         function drawMirroredLed(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
             const columnWidth = Math.max(3, laneWidth * 0.62);
-            const blockHeight = 6;
+            const blockHeight = activeVisualLayerForDraw?.drawMode === 'line' ? 3 : 6;
             const blockGap = 2;
             const halfHeight = canvas.height * 0.34;
 
@@ -3216,39 +3483,53 @@
                 const blocks = Math.max(1, Math.floor((sample * halfHeight) / (blockHeight + blockGap)));
                 const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - columnWidth) / 2;
                 const rightX = centerX + (i * laneWidth) + (laneWidth - columnWidth) / 2;
+                const singleX = (i * laneWidth) + (laneWidth - columnWidth) / 2;
 
                 for (let j = 0; j < blocks; j++) {
-                    const color = pickColor(colors, j > 9 ? 2 : j > 5 ? 1 : 0);
+                    const color = pickColor(colors, j > 9 ? 2 : j > 5 ? 1 : 0, sample);
                     canvasCtx.shadowColor = hexToRgba(color, 0.72);
                     canvasCtx.fillStyle = hexToRgba(color, 0.76);
+                    canvasCtx.strokeStyle = hexToRgba(color, 0.92);
                     const yUp = centerY - ((j + 1) * (blockHeight + blockGap));
                     const yDown = centerY + (j * (blockHeight + blockGap));
-                    canvasCtx.fillRect(leftX, yUp, columnWidth, blockHeight);
-                    canvasCtx.fillRect(rightX, yUp, columnWidth, blockHeight);
-                    canvasCtx.fillRect(leftX, yDown, columnWidth, blockHeight);
-                    canvasCtx.fillRect(rightX, yDown, columnWidth, blockHeight);
+                    if (mirror) {
+                        drawVisualRect(leftX, yUp, columnWidth, blockHeight);
+                        drawVisualRect(rightX, yUp, columnWidth, blockHeight);
+                        drawVisualRect(leftX, yDown, columnWidth, blockHeight);
+                        drawVisualRect(rightX, yDown, columnWidth, blockHeight);
+                    } else {
+                        drawVisualRect(singleX, canvas.height - ((j + 1) * (blockHeight + blockGap)), columnWidth, blockHeight);
+                    }
                 }
             });
             canvasCtx.shadowBlur = 0;
         }
 
         function drawPulseBurst(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
             const barWidth = Math.max(2, laneWidth * 0.6);
             const maxAmp = canvas.height * 0.35;
 
             sideSamples.forEach((sample, i) => {
-                const color = pickColor(colors, i);
+                const color = pickColor(colors, i, sample);
                 canvasCtx.shadowBlur = 16;
                 canvasCtx.shadowColor = hexToRgba(color, 0.8);
                 canvasCtx.fillStyle = hexToRgba(color, 0.72);
+                canvasCtx.strokeStyle = hexToRgba(color, 0.95);
                 const amplitude = Math.max(4, sample * maxAmp);
-                const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - barWidth) / 2;
-                const rightX = centerX + (i * laneWidth) + (laneWidth - barWidth) / 2;
-                canvasCtx.fillRect(leftX, centerY - amplitude, barWidth, amplitude * 2);
-                canvasCtx.fillRect(rightX, centerY - amplitude, barWidth, amplitude * 2);
+                if (mirror) {
+                    const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - barWidth) / 2;
+                    const rightX = centerX + (i * laneWidth) + (laneWidth - barWidth) / 2;
+                    drawVisualRect(leftX, centerY - amplitude, barWidth, amplitude * 2);
+                    drawVisualRect(rightX, centerY - amplitude, barWidth, amplitude * 2);
+                } else {
+                    const x = (i * laneWidth) + (laneWidth - barWidth) / 2;
+                    drawVisualRect(x, centerY - amplitude, barWidth, amplitude * 2);
+                }
             });
 
             canvasCtx.strokeStyle = hexToRgba(pickColor(colors, 1), 0.82);
@@ -3261,13 +3542,14 @@
         }
 
         function drawWaveLine(sideSamples, colors) {
-            const points = buildMirroredLinePoints(sideSamples, 150);
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const points = buildMirroredSamples(sideSamples, 150, mirror);
             const step = canvas.width / (points.length - 1);
             const centerY = canvas.height / 2;
             const maxAmp = canvas.height * 0.29;
 
             setupGlowForLayer(colors, 0, 0.95, 22);
-            canvasCtx.lineWidth = 4;
+            canvasCtx.lineWidth = activeVisualLayerForDraw?.drawMode === 'line' ? 1.5 : 4;
             canvasCtx.beginPath();
             for (let i = 0; i < points.length; i++) {
                 const x = i * step;
@@ -3280,34 +3562,36 @@
         }
 
         function drawOrbChain(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
 
             sideSamples.forEach((sample, i) => {
-                const color = pickColor(colors, i);
+                const color = pickColor(colors, i, sample);
                 const radius = Math.max(3, sample * 31);
                 const offset = sample * canvas.height * 0.18;
                 const leftX = centerX - ((i + 0.5) * laneWidth);
                 const rightX = centerX + ((i + 0.5) * laneWidth);
+                const singleX = (i + 0.5) * laneWidth;
                 canvasCtx.shadowBlur = 17;
                 canvasCtx.shadowColor = hexToRgba(color, 0.78);
                 canvasCtx.fillStyle = hexToRgba(color, 0.78);
+                canvasCtx.strokeStyle = hexToRgba(color, 0.95);
 
-                [leftX, rightX].forEach(x => {
-                    canvasCtx.beginPath();
-                    canvasCtx.arc(x, centerY - offset, radius, 0, Math.PI * 2);
-                    canvasCtx.fill();
-                    canvasCtx.beginPath();
-                    canvasCtx.arc(x, centerY + offset, Math.max(2, radius * 0.55), 0, Math.PI * 2);
-                    canvasCtx.fill();
+                const xs = mirror ? [leftX, rightX] : [singleX];
+                xs.forEach(x => {
+                    drawVisualCircle(x, centerY - offset, radius);
+                    drawVisualCircle(x, centerY + offset, Math.max(2, radius * 0.55));
                 });
             });
             canvasCtx.shadowBlur = 0;
         }
 
         function drawRibbon(sideSamples, colors) {
-            const points = buildMirroredLinePoints(sideSamples, 120);
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const points = buildMirroredSamples(sideSamples, 120, mirror);
             const step = canvas.width / (points.length - 1);
             const centerY = canvas.height / 2;
             const maxAmp = canvas.height * 0.24;
@@ -3326,25 +3610,24 @@
             }
             canvasCtx.closePath();
 
-            const grad = canvasCtx.createLinearGradient(0, 0, canvas.width, 0);
-            grad.addColorStop(0, hexToRgba(pickColor(colors, 0), 0.82));
-            grad.addColorStop(0.5, hexToRgba(pickColor(colors, 1), 0.86));
-            grad.addColorStop(1, hexToRgba(pickColor(colors, 2), 0.82));
+            const grad = createVisualizerGradient(colors, activeVisualLayerForDraw, 0.88, 0.46);
             canvasCtx.shadowBlur = 18;
             canvasCtx.shadowColor = hexToRgba(pickColor(colors, 1), 0.72);
             canvasCtx.fillStyle = grad;
-            canvasCtx.fill();
+            canvasCtx.strokeStyle = hexToRgba(pickColor(colors, 0), 0.95);
+            drawVisualPath();
             canvasCtx.shadowBlur = 0;
         }
 
         function drawHeartbeat(sideSamples, colors) {
-            const points = buildMirroredLinePoints(sideSamples, 96);
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const points = buildMirroredSamples(sideSamples, 96, mirror);
             const step = canvas.width / (points.length - 1);
             const centerY = canvas.height / 2;
             const maxAmp = canvas.height * 0.27;
 
             setupGlowForLayer(colors, 0, 0.98, 20);
-            canvasCtx.lineWidth = 5;
+            canvasCtx.lineWidth = activeVisualLayerForDraw?.drawMode === 'line' ? 1.5 : 5;
             canvasCtx.lineJoin = 'round';
             canvasCtx.lineCap = 'round';
             canvasCtx.beginPath();
@@ -3360,9 +3643,11 @@
         }
 
         function drawPixelWave(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
             const centerX = canvas.width / 2;
             const centerY = canvas.height / 2;
-            const laneWidth = (canvas.width / 2) / sideSamples.length;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
             const cellSize = Math.max(4, laneWidth * 0.44);
             const cellGap = 2;
             const maxRows = Math.max(4, Math.floor((canvas.height * 0.34) / (cellSize + cellGap)));
@@ -3371,24 +3656,32 @@
                 const rows = Math.max(1, Math.floor(sample * maxRows));
                 const leftX = centerX - ((i + 1) * laneWidth) + (laneWidth - cellSize) / 2;
                 const rightX = centerX + (i * laneWidth) + (laneWidth - cellSize) / 2;
+                const singleX = (i * laneWidth) + (laneWidth - cellSize) / 2;
                 for (let j = 0; j < rows; j++) {
-                    const color = pickColor(colors, i + j);
+                    const color = pickColor(colors, i + j, sample);
                     canvasCtx.shadowBlur = 12;
                     canvasCtx.shadowColor = hexToRgba(color, 0.7);
                     canvasCtx.fillStyle = hexToRgba(color, Math.max(0.28, 0.86 - (j * 0.035)));
-                    const yUp = centerY - ((j + 1) * (cellSize + cellGap));
-                    const yDown = centerY + (j * (cellSize + cellGap));
-                    canvasCtx.fillRect(leftX, yUp, cellSize, cellSize);
-                    canvasCtx.fillRect(rightX, yUp, cellSize, cellSize);
-                    canvasCtx.fillRect(leftX, yDown, cellSize, cellSize);
-                    canvasCtx.fillRect(rightX, yDown, cellSize, cellSize);
+                    canvasCtx.strokeStyle = hexToRgba(color, 0.92);
+                    if (mirror) {
+                        const yUp = centerY - ((j + 1) * (cellSize + cellGap));
+                        const yDown = centerY + (j * (cellSize + cellGap));
+                        drawVisualRect(leftX, yUp, cellSize, cellSize);
+                        drawVisualRect(rightX, yUp, cellSize, cellSize);
+                        drawVisualRect(leftX, yDown, cellSize, cellSize);
+                        drawVisualRect(rightX, yDown, cellSize, cellSize);
+                    } else {
+                        const y = canvas.height - ((j + 1) * (cellSize + cellGap));
+                        drawVisualRect(singleX, y, cellSize, cellSize);
+                    }
                 }
             });
             canvasCtx.shadowBlur = 0;
         }
 
         function drawFloatingIslands(sideSamples, colors) {
-            const points = buildMirroredLinePoints(sideSamples, 110);
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const points = buildMirroredSamples(sideSamples, 110, mirror);
             const step = canvas.width / (points.length - 1);
             const baseY = canvas.height * 0.86;
 
@@ -3412,23 +3705,136 @@
                 canvasCtx.shadowBlur = 12;
                 canvasCtx.shadowColor = hexToRgba(layer.color, 0.62);
                 canvasCtx.fillStyle = hexToRgba(layer.color, layer.alpha);
-                canvasCtx.fill();
+                canvasCtx.strokeStyle = hexToRgba(layer.color, 0.82);
+                drawVisualPath();
             });
             canvasCtx.shadowBlur = 0;
         }
 
-        function drawLayerByStyle(style, sideSamples, colors) {
-            if (style === "bars") drawMirroredBars(sideSamples, colors);
-            else if (style === "mountain") drawMirroredMountain(sideSamples, colors);
-            else if (style === "led") drawMirroredLed(sideSamples, colors);
-            else if (style === "symmetric") drawPulseBurst(sideSamples, colors);
-            else if (style === "waveline") drawWaveLine(sideSamples, colors);
-            else if (style === "orbs") drawOrbChain(sideSamples, colors);
-            else if (style === "ribbon") drawRibbon(sideSamples, colors);
-            else if (style === "heartbeat") drawHeartbeat(sideSamples, colors);
-            else if (style === "pixelwave") drawPixelWave(sideSamples, colors);
-            else if (style === "islands") drawFloatingIslands(sideSamples, colors);
-            else drawMirroredBars(sideSamples, colors);
+        function drawMatrixCode(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const glyphs = ['0', '1', '/', '<', '>', '{', '}', '[', ']', '|', '-', '+'];
+            const centerX = canvas.width / 2;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
+            const fontSize = Math.max(8, Math.min(18, laneWidth * 1.3));
+            const rowStep = fontSize * 1.05;
+            canvasCtx.font = `900 ${fontSize}px ui-monospace, SFMono-Regular, Consolas, monospace`;
+            canvasCtx.textAlign = 'center';
+            canvasCtx.textBaseline = 'middle';
+            sideSamples.forEach((sample, i) => {
+                const rows = Math.max(1, Math.floor(sample * canvas.height * 0.86 / rowStep));
+                const xs = mirror
+                    ? [centerX - ((i + 0.5) * laneWidth), centerX + ((i + 0.5) * laneWidth)]
+                    : [(i + 0.5) * laneWidth];
+                for (let j = 0; j < rows; j++) {
+                    const color = pickColor(colors, i + j, sample);
+                    canvasCtx.shadowBlur = 10;
+                    canvasCtx.shadowColor = hexToRgba(color, 0.85);
+                    canvasCtx.fillStyle = hexToRgba(color, Math.max(0.25, 0.92 - j * 0.035));
+                    canvasCtx.strokeStyle = hexToRgba(color, 0.8);
+                    const char = glyphs[Math.abs((i * 7 + j * 3 + Math.floor(performance.now() / 120)) % glyphs.length)];
+                    xs.forEach(x => {
+                        const y = canvas.height - (j + 1) * rowStep;
+                        if (activeVisualLayerForDraw?.drawMode === 'outline') canvasCtx.strokeText(char, x, y);
+                        else canvasCtx.fillText(char, x, y);
+                    });
+                }
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawCombTeeth(sideSamples, colors) {
+            const mirror = activeVisualLayerForDraw?.mirror !== false;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const totalWidth = mirror ? canvas.width / 2 : canvas.width;
+            const laneWidth = totalWidth / sideSamples.length;
+            const toothGap = Math.max(3, laneWidth * 0.45);
+            sideSamples.forEach((sample, i) => {
+                const color = pickColor(colors, i, sample);
+                const height = Math.max(6, sample * canvas.height * 0.82);
+                const xs = mirror
+                    ? [centerX - ((i + 0.5) * laneWidth), centerX + ((i + 0.5) * laneWidth)]
+                    : [(i + 0.5) * laneWidth];
+                canvasCtx.shadowBlur = 10;
+                canvasCtx.shadowColor = hexToRgba(color, 0.78);
+                canvasCtx.strokeStyle = hexToRgba(color, 0.88);
+                canvasCtx.lineWidth = activeVisualLayerForDraw?.drawMode === 'outline' ? 2.2 : 1.2;
+                xs.forEach(x => {
+                    canvasCtx.beginPath();
+                    for (let y = canvas.height - height; y < canvas.height; y += toothGap) {
+                        canvasCtx.moveTo(x, y);
+                        canvasCtx.lineTo(x, y + toothGap * 0.55);
+                    }
+                    if (mirror) {
+                        for (let y = centerY - height / 2; y < centerY + height / 2; y += toothGap) {
+                            canvasCtx.moveTo(x + laneWidth * 0.2, y);
+                            canvasCtx.lineTo(x + laneWidth * 0.2, y + toothGap * 0.5);
+                        }
+                    }
+                    canvasCtx.stroke();
+                });
+            });
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawWarpedGrid(sideSamples, colors) {
+            const points = buildMirroredSamples(sideSamples, 80, activeVisualLayerForDraw?.mirror !== false);
+            const cols = 22;
+            const rows = 12;
+            const cellW = canvas.width / cols;
+            const cellH = canvas.height / rows;
+            canvasCtx.shadowBlur = 8;
+            canvasCtx.lineWidth = activeVisualLayerForDraw?.drawMode === 'line' ? 0.8 : 1.4;
+            for (let r = 0; r <= rows; r++) {
+                const color = pickColor(colors, r, r / rows);
+                canvasCtx.strokeStyle = hexToRgba(color, 0.55);
+                canvasCtx.shadowColor = hexToRgba(color, 0.5);
+                canvasCtx.beginPath();
+                for (let c = 0; c <= cols; c++) {
+                    const idx = Math.min(points.length - 1, Math.floor((c / cols) * points.length));
+                    const bend = (points[idx] || 0) * canvas.height * 0.14 * Math.sin((r / rows) * Math.PI);
+                    const x = c * cellW;
+                    const y = r * cellH + Math.sin(c * 0.7 + performance.now() / 340) * bend;
+                    if (c === 0) canvasCtx.moveTo(x, y);
+                    else canvasCtx.lineTo(x, y);
+                }
+                canvasCtx.stroke();
+            }
+            for (let c = 0; c <= cols; c++) {
+                const color = pickColor(colors, c, c / cols);
+                canvasCtx.strokeStyle = hexToRgba(color, 0.45);
+                canvasCtx.beginPath();
+                for (let r = 0; r <= rows; r++) {
+                    const idx = Math.min(points.length - 1, Math.floor((c / cols) * points.length));
+                    const bend = (points[idx] || 0) * canvas.width * 0.055 * Math.cos((r / rows) * Math.PI);
+                    const x = c * cellW + bend;
+                    const y = r * cellH;
+                    if (r === 0) canvasCtx.moveTo(x, y);
+                    else canvasCtx.lineTo(x, y);
+                }
+                canvasCtx.stroke();
+            }
+            canvasCtx.shadowBlur = 0;
+        }
+
+        function drawLayerByStyle(style, sideSamples, colors, layer) {
+            const amplifiedSamples = applyAmplitudeToSamples(sideSamples, layer);
+            if (style === "bars") drawMirroredBars(amplifiedSamples, colors);
+            else if (style === "mountain") drawMirroredMountain(amplifiedSamples, colors);
+            else if (style === "led") drawMirroredLed(amplifiedSamples, colors);
+            else if (style === "symmetric") drawPulseBurst(amplifiedSamples, colors);
+            else if (style === "waveline") drawWaveLine(amplifiedSamples, colors);
+            else if (style === "orbs") drawOrbChain(amplifiedSamples, colors);
+            else if (style === "ribbon") drawRibbon(amplifiedSamples, colors);
+            else if (style === "heartbeat") drawHeartbeat(amplifiedSamples, colors);
+            else if (style === "pixelwave") drawPixelWave(amplifiedSamples, colors);
+            else if (style === "islands") drawFloatingIslands(amplifiedSamples, colors);
+            else if (style === "matrixcode") drawMatrixCode(amplifiedSamples, colors);
+            else if (style === "comb") drawCombTeeth(amplifiedSamples, colors);
+            else if (style === "gridwarp") drawWarpedGrid(amplifiedSamples, colors);
+            else drawMirroredBars(amplifiedSamples, colors);
         }
 
         function drawVisualizer() {
@@ -3455,18 +3861,22 @@
 
             const sideSamples = getMirroredSideSamples(dataArray, 32);
             const orderedLayers = visualizerLayers
-                .slice()
+                .map((layer, index) => normalizeVisualizerLayer(layer, index + 1))
                 .sort((a, b) => (parseInt(a.layer, 10) || 1) - (parseInt(b.layer, 10) || 1));
 
             orderedLayers.forEach(layer => {
                 canvasCtx.save();
+                applyLayerCanvasTransform(layer);
                 canvasCtx.globalCompositeOperation = layer.blend || 'source-over';
-                drawLayerByStyle(layer.style || 'bars', sideSamples, getLayerColors(layer));
+                activeVisualLayerForDraw = layer;
+                drawLayerByStyle(layer.style || 'bars', sideSamples, getLayerColors(layer), layer);
+                activeVisualLayerForDraw = null;
                 canvasCtx.restore();
             });
 
             canvasCtx.globalCompositeOperation = 'source-over';
             canvasCtx.shadowBlur = 0;
+            activeVisualLayerForDraw = null;
         }
 
         startVisualizer();
