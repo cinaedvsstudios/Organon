@@ -730,14 +730,75 @@
             grid-template-columns: repeat(6, 1fr);
             gap: 6px;
         }
-        .visual-color-row input[type="color"] {
+        .vis-color-chip {
             width: 100%;
-            height: 30px;
+            height: 34px;
             padding: 0;
-            border: 1px solid var(--chiseled-bronze);
-            border-radius: 7px;
+            border: 1px solid rgba(117, 178, 222, 0.65);
+            border-radius: 8px;
             background: #000;
             cursor: pointer;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), 0 0 8px rgba(117,178,222,0.18);
+        }
+        .vis-color-chip[data-color="#000000"] {
+            background-image: linear-gradient(135deg, transparent 0 43%, rgba(117,178,222,.65) 43% 48%, transparent 48% 100%);
+        }
+        .visual-color-palette {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 5px;
+            padding: 8px;
+            border: 1px solid rgba(117, 178, 222, 0.35);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.42);
+        }
+        .visual-color-palette[hidden] { display: none; }
+        .vis-palette-swatch {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            min-height: 25px;
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.42);
+        }
+        .vis-palette-swatch.blank-swatch {
+            background: #000;
+            background-image: linear-gradient(135deg, transparent 0 43%, rgba(117,178,222,.85) 43% 50%, transparent 50% 100%);
+        }
+        .visual-custom-color-row {
+            grid-column: 1 / -1;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px;
+            align-items: center;
+            color: var(--water-spray);
+            font-size: 0.72rem;
+            margin-top: 2px;
+        }
+        .visual-custom-color-row input[type="color"] {
+            width: 46px;
+            height: 30px;
+            padding: 0;
+            border-radius: 8px;
+            border: 1px solid rgba(117, 178, 222, 0.65);
+            background: #000;
+        }
+        .visual-layer-card.is-hidden {
+            opacity: 0.58;
+            filter: grayscale(1);
+            border-color: rgba(128,128,128,0.5);
+        }
+        .visual-layer-card.is-hidden .visual-layer-title,
+        .visual-layer-card.is-hidden label,
+        .visual-layer-card.is-hidden .composer-help,
+        .visual-layer-card.is-hidden .visual-range-readout {
+            color: #8d9297 !important;
+        }
+        .visual-layer-actions {
+            display: flex;
+            gap: 6px;
+            align-items: center;
         }
         .visual-layer-footer,
         .library-action-grid {
@@ -1258,6 +1319,65 @@
         }
 
 
+
+        .search-input-wrap {
+            position: relative;
+            width: 100%;
+        }
+        .search-input-wrap input {
+            width: 100%;
+            padding-right: 36px;
+        }
+        .search-clear-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(117, 178, 222, 0.55);
+            background: rgba(0,0,0,0.25);
+            color: var(--water-spray);
+            font-weight: 900;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .search-clear-btn:hover {
+            background: rgba(75, 132, 191, 0.18);
+            color: var(--alabaster-paper);
+        }
+        .mobile-library-header-actions {
+            display: none;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 6px;
+        }
+        .mobile-db-icon-btn {
+            min-width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: 1px solid rgba(117, 178, 222, 0.75);
+            background: rgba(0,0,0,0.24);
+            color: var(--water-spray);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.08), 0 0 10px rgba(75,132,191,0.12);
+        }
+        .mobile-db-icon-btn.active-mobile-view,
+        .mobile-db-icon-btn:hover {
+            background: rgba(75, 132, 191, 0.22);
+            color: var(--alabaster-paper);
+            box-shadow: 0 0 14px rgba(117,178,222,0.28);
+        }
+
+
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
             body { padding: 0 15px; }
@@ -1274,8 +1394,56 @@
                 max-height: 100%;
                 height: 100%;
             }
-            .library-manager-toolbar { grid-template-columns: 1fr; }
-            .library-manager-content { grid-template-columns: 1fr; }
+            .library-drawer-header {
+                align-items: flex-start;
+                padding: 10px 12px 8px;
+                gap: 8px;
+            }
+            .library-drawer-subtitle { display: none; }
+            .mobile-library-header-actions { display: flex; }
+            .mobile-db-icon-btn { font-size: 0.96rem; }
+            .library-manager-toolbar {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding: 8px 12px;
+            }
+            .library-manager-toolbar .library-manager-actions { display: none; }
+            .library-manager-toolbar input,
+            .library-manager-toolbar select {
+                min-width: 0;
+                width: 100%;
+                font-size: 0.82rem;
+                padding: 8px 10px;
+            }
+            .search-input-wrap input { padding-right: 32px; }
+            .search-clear-btn { width: 22px; height: 22px; right: 6px; }
+            .library-manager-content {
+                grid-template-columns: 1fr;
+                overflow: auto;
+            }
+            .library-manager-content .library-sidebar,
+            .library-manager-content .library-results-panel {
+                min-height: 0;
+            }
+            #library-manager-drawer[data-mobile-view="results"] #db-recent-label,
+            #library-manager-drawer[data-mobile-view="results"] #db-recent-list,
+            #library-manager-drawer[data-mobile-view="results"] #db-playlist-label,
+            #library-manager-drawer[data-mobile-view="results"] #db-playlist-list {
+                display: none;
+            }
+            #library-manager-drawer[data-mobile-view="results"] .library-sidebar:not(:has(.bulk-open)) {
+                display: none;
+            }
+            #library-manager-drawer[data-mobile-view="recents"] #db-playlist-label,
+            #library-manager-drawer[data-mobile-view="recents"] #db-playlist-list,
+            #library-manager-drawer[data-mobile-view="recents"] .library-results-panel {
+                display: none;
+            }
+            #library-manager-drawer[data-mobile-view="playlists"] #db-recent-label,
+            #library-manager-drawer[data-mobile-view="playlists"] #db-recent-list,
+            #library-manager-drawer[data-mobile-view="playlists"] .library-results-panel {
+                display: none;
+            }
             #organon-middle-panel { padding: 15px 15px 120px 15px; }
             #scrollable-tags-bar { padding: 6px 15px; }
 
@@ -1310,6 +1478,11 @@
             .utility-btn {
                 font-size: 1.45rem;
                 padding: 3px 4px;
+            }
+            .utility-btn.speed-glyph {
+                font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
+                font-variant-emoji: emoji;
+                font-size: 1.35rem;
             }
             .playing-spinner { font-size: 1.55rem; }
         }
@@ -1346,7 +1519,7 @@
                     <button id="btn-play" class="utility-btn" data-tooltip="Play (Hold to Fast Forward)">▷</button>
                     <!-- Dedicated Pause/Stop Button -->
                     <button id="btn-pause" class="utility-btn" data-tooltip="Pause / Stop">⏸</button>
-                    <button id="btn-speed-cycle" class="utility-btn speed-glyph" data-tooltip="Cycle Speed">🗲</button>
+                    <button id="btn-speed-cycle" class="utility-btn speed-glyph" data-tooltip="Cycle Speed">⚡</button>
                     <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭</button>
                 </div>
 
@@ -1533,17 +1706,32 @@
     </div>
 
     <!-- UPWARD LIBRARY / PLAYLIST MANAGER DRAWER -->
-    <div id="library-manager-drawer" aria-hidden="true">
+    <div id="library-manager-drawer" aria-hidden="true" data-mobile-view="results">
         <div class="library-drawer-inner">
             <div class="library-drawer-header">
                 <div>
                     <div class="library-drawer-title">Database Engine</div>
                     <div class="library-drawer-subtitle">Library catalogue, playlists, JSON import/export, search, recent tracks and missing-file checks.</div>
+                    <div class="mobile-library-header-actions" aria-label="Mobile library controls">
+                        <button class="mobile-db-icon-btn active-mobile-view" data-mobile-view="results" title="Results">🔎</button>
+                        <button class="mobile-db-icon-btn" data-mobile-view="recents" title="Recents">🕘</button>
+                        <button class="mobile-db-icon-btn" data-mobile-view="playlists" title="Playlists">📜</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-select-mode" title="Select multiple">☑️</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-add-folder" title="Add folder">📁</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-import-json" title="Import JSON">📥</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-library" title="Export full library">📤</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-streams" title="Export streams">☁️</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-playlist" title="Export playlist">🧾</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-check-library" title="Check files">✅</button>
+                    </div>
                 </div>
                 <button id="btn-close-library-manager" class="tiny-icon-btn" title="Close library manager">×</button>
             </div>
             <div class="library-manager-toolbar">
-                <input id="db-library-search" type="text" placeholder="Search filename, nickname, tag, playlist, URL or source...">
+                <div class="search-input-wrap">
+                    <input id="db-library-search" type="text" placeholder="Search filename, nickname, tag, playlist, URL or source..." title="Hold to adjust fuzzy search">
+                    <button id="btn-db-clear-search" class="search-clear-btn" title="Clear search" aria-label="Clear search">×</button>
+                </div>
                 <select id="db-library-filter">
                     <option value="all">All sources</option>
                     <option value="local">Local files</option>
@@ -1575,9 +1763,9 @@
                             <button id="btn-db-bulk-delete" class="btn-pill" style="background: var(--brand-red); color: white;">Delete from Library</button>
                         </div>
                     </div>
-                    <p class="library-section-label">Recent</p>
+                    <p id="db-recent-label" class="library-section-label">Recent</p>
                     <div id="db-recent-list"></div>
-                    <p class="library-section-label" style="margin-top: 14px;">Playlists</p>
+                    <p id="db-playlist-label" class="library-section-label" style="margin-top: 14px;">Playlists</p>
                     <div id="db-playlist-list"></div>
                 </aside>
                 <section class="library-results-panel">
@@ -1857,6 +2045,10 @@
         let isLibrarySelectMode = false;
         let selectedLibraryIds = new Set();
         let visibleLibraryIds = [];
+        const FUZZY_SEARCH_STORAGE_KEY = "ondaLibraryFuzzySearchV1";
+        let librarySearchFuzziness = Math.max(0, Math.min(4, parseInt(localStorage.getItem(FUZZY_SEARCH_STORAGE_KEY) || "1", 10) || 0));
+        let searchHoldTimer = null;
+        let searchHoldTriggered = false;
 
         // UI Element mappings
         const dropZone = document.getElementById('drop-zone');
@@ -1887,6 +2079,7 @@
         const btnDatabaseEngine = document.getElementById('btn-database-engine');
         const btnCloseLibraryManager = document.getElementById('btn-close-library-manager');
         const dbLibrarySearch = document.getElementById('db-library-search');
+        const dbClearSearch = document.getElementById('btn-db-clear-search');
         const dbLibraryFilter = document.getElementById('db-library-filter');
         const dbLibraryResults = document.getElementById('db-library-results');
         const dbRecentList = document.getElementById('db-recent-list');
@@ -1910,13 +2103,18 @@
                 blend: 'source-over',
                 gradient: 'horizontal',
                 align: 'center',
+                hPosition: 0,
+                vPosition: 0,
                 amplitude: 1,
+                spacing: 0,
                 rotate: 0,
                 flipH: false,
                 flipV: false,
+                randomize: false,
                 mirror: true,
+                hidden: false,
                 drawMode: 'fill',
-                colors: ['#75b2de', '#e0a360', '#ff4fa3', '#7a5cff', '#000000', '#000000']
+                colors: ['#00d8ff', '#75b2de', '#ff4fa3', '#ffb84d', '#000000', '#000000']
             };
         }
 
@@ -1939,7 +2137,7 @@
                 ...normalized,
                 id: 'vis_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7),
                 layer: (parseInt(layer.layer, 10) || 1) + 1,
-                colors: Array.isArray(layer.colors) ? [...layer.colors].slice(0, 6) : ['#75b2de', '#e0a360', '#000000', '#000000', '#000000', '#000000']
+                colors: Array.isArray(layer.colors) ? [...layer.colors].slice(0, 6) : ['#00d8ff', '#75b2de', '#000000', '#000000', '#000000', '#000000']
             };
         }
 
@@ -1962,11 +2160,16 @@
                 blend: layer.blend || base.blend,
                 gradient: ['horizontal', 'vertical', 'radial', 'random'].includes(layer.gradient) ? layer.gradient : base.gradient,
                 align: ['left', 'center', 'right'].includes(layer.align) ? layer.align : base.align,
+                hPosition: clampNumber(layer.hPosition ?? layer.positionH, -5, 5, 0),
+                vPosition: clampNumber(layer.vPosition ?? layer.positionV, -5, 5, 0),
                 amplitude: clampNumber(layer.amplitude, 0.25, 5, 1),
+                spacing: clampNumber(layer.spacing, 0, 3, 0),
                 rotate: [0, 90, 180, 270].includes(parseInt(layer.rotate, 10)) ? parseInt(layer.rotate, 10) : 0,
                 flipH: Boolean(layer.flipH),
                 flipV: Boolean(layer.flipV),
+                randomize: Boolean(layer.randomize || layer.randomise || layer.randomizePoints),
                 mirror: layer.mirror === false ? false : true,
+                hidden: Boolean(layer.hidden),
                 drawMode: ['fill', 'outline', 'line'].includes(layer.drawMode) ? layer.drawMode : base.drawMode,
                 colors
             };
@@ -1979,6 +2182,48 @@
         function colorIsBlank(value) {
             const c = sanitizeHexColor(value).toLowerCase();
             return c === '#000000';
+        }
+
+
+        const VISUAL_COLOR_PALETTE_GROUPS = [
+            ['#d8a8cc', '#af63a5', '#a80084', '#79005b', '#50002f'],
+            ['#d7a4b1', '#b05d78', '#a7002a', '#760016', '#520007'],
+            ['#d8bea8', '#b37e62', '#a33f00', '#783d00', '#513000'],
+            ['#e7d99a', '#c2a146', '#c38200', '#8b7800', '#585500'],
+            ['#d0d9a8', '#a5ad63', '#78a000', '#446f00', '#234700'],
+            ['#a8c8d9', '#6399ad', '#00669c', '#00436f', '#00264f'],
+            ['#bca8d8', '#7c62ad', '#4b00a0', '#3d006f', '#2d004f']
+        ];
+
+        function buildVisualPaletteHtml(currentColor = '#00d8ff') {
+            const swatches = [];
+            swatches.push(`<button type="button" class="vis-palette-swatch blank-swatch" data-color="#000000" title="Blank / ignore this colour"></button>`);
+            VISUAL_COLOR_PALETTE_GROUPS.forEach(group => {
+                group.forEach(color => swatches.push(`<button type="button" class="vis-palette-swatch" data-color="${color}" style="background:${color}" title="${color}"></button>`));
+            });
+            return `${swatches.join('')}<div class="visual-custom-color-row"><span>Custom colour</span><input type="color" class="vis-custom-color-input" value="${sanitizeHexColor(currentColor) === '#000000' ? '#00d8ff' : sanitizeHexColor(currentColor)}"></div>`;
+        }
+
+        function setVisualColorChip(chip, color) {
+            const safe = sanitizeHexColor(color);
+            chip.dataset.color = safe;
+            chip.style.background = safe;
+            chip.setAttribute('data-color', safe);
+            chip.title = safe === '#000000' ? 'Blank / ignored' : safe;
+        }
+
+        function openVisualColorPalette(card, chip) {
+            const palette = card.querySelector('.visual-color-palette');
+            if (!palette || !chip) return;
+            const wasOpenForSame = palette.dataset.colorIndex === chip.dataset.colorIndex && !palette.hidden;
+            if (wasOpenForSame) {
+                palette.hidden = true;
+                palette.dataset.colorIndex = '';
+                return;
+            }
+            palette.dataset.colorIndex = chip.dataset.colorIndex;
+            palette.innerHTML = buildVisualPaletteHtml(chip.dataset.color || '#00d8ff');
+            palette.hidden = false;
         }
 
         function getLayerColors(layer) {
@@ -2039,6 +2284,7 @@
                 .forEach((layer, index) => {
                     const card = document.createElement('div');
                     card.className = 'visual-layer-card';
+                    if (layer.hidden) card.classList.add('is-hidden');
                     card.dataset.id = layer.id;
 
                     const safeColors = [...(layer.colors || [])];
@@ -2046,8 +2292,11 @@
 
                     card.innerHTML = `
                         <div class="visual-layer-head">
-                            <span class="visual-layer-title">Equaliser Layer ${index + 1}</span>
-                            <button class="tiny-icon-btn btn-remove-layer" title="Remove this layer">×</button>
+                            <span class="visual-layer-title">Equaliser Layer ${index + 1}${layer.hidden ? ' · hidden' : ''}</span>
+                            <div class="visual-layer-actions">
+                                <button class="tiny-icon-btn btn-hide-layer" title="Show/hide this layer">${layer.hidden ? '◎' : '◉'}</button>
+                                <button class="tiny-icon-btn btn-remove-layer" title="Remove this layer">×</button>
+                            </div>
                         </div>
                         <div class="visual-field">
                             <label>Wave style</label>
@@ -2070,8 +2319,9 @@
                         <div>
                             <div class="composer-help" style="margin-bottom: 4px;">Colours 1–6. Black = ignored / blank.</div>
                             <div class="visual-color-row">
-                                ${safeColors.slice(0, 6).map((color, i) => `<input type="color" class="vis-layer-color" data-color-index="${i}" value="${sanitizeHexColor(color)}" title="Colour ${i + 1}; black means blank">`).join('')}
+                                ${safeColors.slice(0, 6).map((color, i) => `<button type="button" class="vis-color-chip vis-layer-color" data-color-index="${i}" data-color="${sanitizeHexColor(color)}" style="background:${sanitizeHexColor(color)}" title="Colour ${i + 1}; black means blank"></button>`).join('')}
                             </div>
+                            <div class="visual-color-palette" hidden></div>
                         </div>
                         <div class="visual-grid-two">
                             <div class="visual-field">
@@ -2113,6 +2363,16 @@
                         </div>
                         <div class="visual-grid-two">
                             <div class="visual-field">
+                                <label>Position H</label>
+                                <input type="number" class="vis-layer-hpos" min="-5" max="5" step="1" value="${clampNumber(layer.hPosition, -5, 5, 0)}">
+                            </div>
+                            <div class="visual-field">
+                                <label>Position V</label>
+                                <input type="number" class="vis-layer-vpos" min="-5" max="5" step="1" value="${clampNumber(layer.vPosition, -5, 5, 0)}">
+                            </div>
+                        </div>
+                        <div class="visual-grid-two">
+                            <div class="visual-field">
                                 <label>Rotate</label>
                                 <select class="vis-layer-rotate">
                                     <option value="0">0°</option>
@@ -2134,13 +2394,21 @@
                             <label>Amplitude multiplier</label>
                             <div class="visual-range-row">
                                 <input type="range" class="vis-layer-amplitude" min="0.25" max="5" step="0.05" value="${clampNumber(layer.amplitude, 0.25, 5, 1)}">
-                                <span class="visual-range-readout">${clampNumber(layer.amplitude, 0.25, 5, 1).toFixed(2)}×</span>
+                                <span class="visual-range-readout vis-layer-amplitude-readout">${clampNumber(layer.amplitude, 0.25, 5, 1).toFixed(2)}×</span>
+                            </div>
+                        </div>
+                        <div class="visual-field">
+                            <label>Spacing</label>
+                            <div class="visual-range-row">
+                                <input type="range" class="vis-layer-spacing" min="0" max="3" step="0.1" value="${clampNumber(layer.spacing, 0, 3, 0)}">
+                                <span class="visual-range-readout vis-layer-spacing-readout">${clampNumber(layer.spacing, 0, 3, 0).toFixed(1)}</span>
                             </div>
                         </div>
                         <div class="visual-check-row">
                             <label><input type="checkbox" class="vis-layer-mirror" ${layer.mirror !== false ? 'checked' : ''}> Mirror</label>
                             <label><input type="checkbox" class="vis-layer-fliph" ${layer.flipH ? 'checked' : ''}> Flip H</label>
                             <label><input type="checkbox" class="vis-layer-flipv" ${layer.flipV ? 'checked' : ''}> Flip V</label>
+                            <label><input type="checkbox" class="vis-layer-randomize" ${layer.randomize ? 'checked' : ''}> Randomise</label>
                         </div>
                         <div class="visual-layer-footer">
                             <button class="tiny-icon-btn btn-duplicate-layer" title="Duplicate this layer below">＋</button>
@@ -2166,15 +2434,21 @@
             layer.blend = card.querySelector('.vis-layer-blend')?.value || 'source-over';
             layer.gradient = card.querySelector('.vis-layer-gradient')?.value || 'horizontal';
             layer.align = card.querySelector('.vis-layer-align')?.value || 'center';
+            layer.hPosition = clampNumber(card.querySelector('.vis-layer-hpos')?.value, -5, 5, 0);
+            layer.vPosition = clampNumber(card.querySelector('.vis-layer-vpos')?.value, -5, 5, 0);
             layer.rotate = parseInt(card.querySelector('.vis-layer-rotate')?.value, 10) || 0;
             layer.drawMode = card.querySelector('.vis-layer-drawmode')?.value || 'fill';
             layer.amplitude = clampNumber(card.querySelector('.vis-layer-amplitude')?.value, 0.25, 5, 1);
+            layer.spacing = clampNumber(card.querySelector('.vis-layer-spacing')?.value, 0, 3, 0);
             layer.mirror = Boolean(card.querySelector('.vis-layer-mirror')?.checked);
             layer.flipH = Boolean(card.querySelector('.vis-layer-fliph')?.checked);
             layer.flipV = Boolean(card.querySelector('.vis-layer-flipv')?.checked);
-            layer.colors = Array.from(card.querySelectorAll('.vis-layer-color')).map(input => sanitizeHexColor(input.value));
-            const readout = card.querySelector('.visual-range-readout');
-            if (readout) readout.textContent = `${layer.amplitude.toFixed(2)}×`;
+            layer.randomize = Boolean(card.querySelector('.vis-layer-randomize')?.checked);
+            layer.colors = Array.from(card.querySelectorAll('.vis-layer-color')).map(chip => sanitizeHexColor(chip.dataset.color || chip.value));
+            const ampReadout = card.querySelector('.vis-layer-amplitude-readout');
+            if (ampReadout) ampReadout.textContent = `${layer.amplitude.toFixed(2)}×`;
+            const spacingReadout = card.querySelector('.vis-layer-spacing-readout');
+            if (spacingReadout) spacingReadout.textContent = `${layer.spacing.toFixed(1)}`;
             visualizerStyle = layer.style;
         }
 
@@ -2193,11 +2467,16 @@
                         blend: normal.blend,
                         gradient: normal.gradient,
                         align: normal.align,
+                        hPosition: normal.hPosition,
+                        vPosition: normal.vPosition,
                         amplitude: normal.amplitude,
+                        spacing: normal.spacing,
                         rotate: normal.rotate,
                         flipH: normal.flipH,
                         flipV: normal.flipV,
+                        randomize: normal.randomize,
                         mirror: normal.mirror,
+                        hidden: normal.hidden,
                         drawMode: normal.drawMode,
                         colors: (normal.colors || []).map(sanitizeHexColor).slice(0, 6)
                     };
@@ -2227,7 +2506,13 @@
             if (visualizerLayerList) {
                 visualizerLayerList.addEventListener('input', (e) => {
                     const card = e.target.closest('.visual-layer-card');
-                    if (card) syncVisualizerLayerFromCard(card);
+                    if (!card) return;
+                    if (e.target.classList.contains('vis-custom-color-input')) {
+                        const palette = e.target.closest('.visual-color-palette');
+                        const chip = card.querySelector(`.vis-color-chip[data-color-index="${palette?.dataset.colorIndex}"]`);
+                        if (chip) setVisualColorChip(chip, e.target.value || '#00d8ff');
+                    }
+                    syncVisualizerLayerFromCard(card);
                 });
                 visualizerLayerList.addEventListener('change', (e) => {
                     const card = e.target.closest('.visual-layer-card');
@@ -2238,6 +2523,31 @@
                     if (!card) return;
                     const layer = visualizerLayers.find(item => item.id === card.dataset.id);
                     if (!layer) return;
+
+                    if (e.target.classList.contains('vis-color-chip')) {
+                        e.preventDefault();
+                        openVisualColorPalette(card, e.target);
+                        return;
+                    }
+
+                    if (e.target.classList.contains('vis-palette-swatch')) {
+                        e.preventDefault();
+                        const palette = e.target.closest('.visual-color-palette');
+                        const chip = card.querySelector(`.vis-color-chip[data-color-index="${palette?.dataset.colorIndex}"]`);
+                        if (chip) {
+                            setVisualColorChip(chip, e.target.dataset.color || '#000000');
+                            syncVisualizerLayerFromCard(card);
+                        }
+                        if (palette) palette.hidden = true;
+                        return;
+                    }
+
+                    if (e.target.classList.contains('btn-hide-layer')) {
+                        syncVisualizerLayerFromCard(card);
+                        layer.hidden = !layer.hidden;
+                        renderVisualizerLayerCards();
+                        return;
+                    }
 
                     if (e.target.classList.contains('btn-remove-layer')) {
                         if (visualizerLayers.length <= 1) {
@@ -2740,6 +3050,63 @@
             showToast('Selected library listing(s) removed.');
         }
 
+        function levenshteinDistance(a, b, limit = 2) {
+            if (a === b) return 0;
+            if (!a || !b) return Math.max(a.length, b.length);
+            if (Math.abs(a.length - b.length) > limit) return limit + 1;
+            let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+            for (let i = 1; i <= a.length; i++) {
+                const curr = [i];
+                let rowMin = curr[0];
+                for (let j = 1; j <= b.length; j++) {
+                    const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+                    const val = Math.min(prev[j] + 1, curr[j - 1] + 1, prev[j - 1] + cost);
+                    curr[j] = val;
+                    rowMin = Math.min(rowMin, val);
+                }
+                if (rowMin > limit) return limit + 1;
+                prev = curr;
+            }
+            return prev[b.length];
+        }
+
+        function matchesLibrarySearch(haystack, search) {
+            if (!search) return true;
+            if (haystack.includes(search)) return true;
+            const fuzz = Math.max(0, Math.min(4, librarySearchFuzziness || 0));
+            if (!fuzz) return false;
+            const hayTokens = haystack.split(/[^a-z0-9]+/i).filter(Boolean);
+            const terms = search.split(/\s+/).filter(Boolean);
+            return terms.every(term => {
+                if (term.length <= 2) return haystack.includes(term);
+                return hayTokens.some(token => {
+                    if (token.includes(term) || term.includes(token)) return true;
+                    if (Math.abs(token.length - term.length) > fuzz) return false;
+                    return levenshteinDistance(token, term, fuzz) <= fuzz;
+                });
+            });
+        }
+
+        function setMobileLibraryView(view = 'results') {
+            if (!libraryDrawer) return;
+            const safeView = ['results', 'recents', 'playlists'].includes(view) ? view : 'results';
+            libraryDrawer.dataset.mobileView = safeView;
+            document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
+                btn.classList.toggle('active-mobile-view', btn.dataset.mobileView === safeView);
+            });
+        }
+
+        function promptSearchFuzziness() {
+            const current = Math.max(0, Math.min(4, librarySearchFuzziness || 0));
+            const raw = prompt('Fuzzy search tolerance: 0 = exact, 1 = small typos, 2+ = looser matches.', String(current));
+            if (raw === null) return;
+            const next = Math.max(0, Math.min(4, parseInt(raw, 10) || 0));
+            librarySearchFuzziness = next;
+            localStorage.setItem(FUZZY_SEARCH_STORAGE_KEY, String(next));
+            showToast(`Fuzzy search set to ±${next}.`);
+            renderLibraryManager();
+        }
+
         function renderLibraryManager() {
             if (!dbLibraryResults) return;
             syncAllTrackPlaylistMetadata();
@@ -2762,7 +3129,7 @@
                         ...(Array.isArray(meta.tags) ? meta.tags : []),
                         ...playlistsForTrack
                     ].filter(Boolean).join(' ').toLowerCase();
-                    if (search && !haystack.includes(search)) return false;
+                    if (search && !matchesLibrarySearch(haystack, search)) return false;
                     if (filter === 'stream') return meta.sourceType === 'stream' || !!meta.streamUrl;
                     if (filter === 'local') return !(meta.sourceType === 'stream' || meta.streamUrl);
                     if (filter === 'missing') return !(meta.sourceType === 'stream' || meta.streamUrl) && !meta.blobFile;
@@ -2837,7 +3204,10 @@
             if (shouldOpen) syncMobileLibraryDrawerBounds();
             libraryDrawer.classList.toggle('drawer-open', shouldOpen);
             libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
-            if (shouldOpen) renderLibraryManager();
+            if (shouldOpen) {
+                setMobileLibraryView(libraryDrawer.dataset.mobileView || 'results');
+                renderLibraryManager();
+            }
         }
 
         function exportPlaylistJson(playlistName) {
@@ -3477,7 +3847,7 @@
                 isHoldingPlay = true;
                 activeAudio.playbackRate = 1.5;
                 if (!isPlaying) activeAudio.play();
-                showToast("🗲 Fast Forwarding (1.5x) 🗲");
+                showToast("⚡ Fast Forwarding (1.5x) ⚡");
             }, 300);
         }
 
@@ -3547,7 +3917,7 @@
             speedSlider.value = chosenSpeed;
             document.getElementById('speed-readout').innerText = chosenSpeed.toFixed(1) + "x";
             
-            btnSpeedCycle.innerText = `🗲${chosenSpeed.toFixed(1).replace('.0', '')}`;
+            btnSpeedCycle.innerText = `⚡${chosenSpeed.toFixed(1).replace('.0', '')}`;
             showToast(`Speed set to ${chosenSpeed.toFixed(1)}x`);
         });
 
@@ -3647,7 +4017,7 @@
             const val = parseFloat(e.target.value);
             activeAudio.playbackRate = val;
             document.getElementById('speed-readout').innerText = val.toFixed(1) + "x";
-            btnSpeedCycle.innerText = `🗲${val.toFixed(1).replace('.0', '')}`;
+            btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
         });
 
         initVisualizerComposerUI();
@@ -3708,6 +4078,39 @@
         safeBind('btn-db-check-library', 'click', () => checkLibraryFiles());
         safeBind('btn-database-engine', 'click', () => toggleLibraryDrawer());
         safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
+
+        safeBind('btn-db-clear-search', 'click', () => {
+            if (!dbLibrarySearch) return;
+            dbLibrarySearch.value = '';
+            renderLibraryManager();
+            dbLibrarySearch.focus();
+        });
+        document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
+            btn.addEventListener('click', () => setMobileLibraryView(btn.dataset.mobileView || 'results'));
+        });
+        document.querySelectorAll('.mobile-db-icon-btn[data-proxy-click]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.proxyClick);
+                if (target) target.click();
+            });
+        });
+        if (dbLibrarySearch) {
+            const startSearchHold = () => {
+                searchHoldTriggered = false;
+                clearTimeout(searchHoldTimer);
+                searchHoldTimer = setTimeout(() => {
+                    searchHoldTriggered = true;
+                    promptSearchFuzziness();
+                }, 650);
+            };
+            const cancelSearchHold = () => clearTimeout(searchHoldTimer);
+            dbLibrarySearch.addEventListener('touchstart', startSearchHold, { passive: true });
+            dbLibrarySearch.addEventListener('mousedown', startSearchHold);
+            ['touchend', 'touchcancel', 'mouseup', 'mouseleave', 'blur'].forEach(evt => dbLibrarySearch.addEventListener(evt, cancelSearchHold));
+            dbLibrarySearch.addEventListener('contextmenu', (e) => {
+                if (searchHoldTriggered) e.preventDefault();
+            });
+        }
         safeBind('btn-db-select-mode', 'click', () => toggleLibrarySelectMode());
         safeBind('btn-db-select-visible', 'click', () => {
             visibleLibraryIds.forEach(id => selectedLibraryIds.add(id));
@@ -4360,6 +4763,9 @@
             const align = layer?.align || 'center';
             if (align === 'left') canvasCtx.translate(-w * 0.16, 0);
             if (align === 'right') canvasCtx.translate(w * 0.16, 0);
+            const hPos = clampNumber(layer?.hPosition, -5, 5, 0);
+            const vPos = clampNumber(layer?.vPosition, -5, 5, 0);
+            canvasCtx.translate(hPos * w * 0.055, vPos * h * 0.055);
 
             canvasCtx.translate(w / 2, h / 2);
             const rotate = parseInt(layer?.rotate, 10) || 0;
@@ -4416,7 +4822,8 @@
             const maxBarHeight = canvas.height * 0.80;
             const totalWidth = mirror ? canvas.width / 2 : canvas.width;
             const laneWidth = totalWidth / sideSamples.length;
-            const barWidth = Math.max(2, laneWidth * 0.68);
+            const spacing = getVisualSpacing(activeVisualLayerForDraw);
+            const barWidth = Math.max(1.5, laneWidth * Math.max(0.16, 0.68 - spacing * 0.14));
 
             sideSamples.forEach((sample, i) => {
                 const color = pickColor(colors, i, Math.min(1, sample));
@@ -4839,22 +5246,55 @@
             canvasCtx.shadowBlur = 0;
         }
 
+        function getVisualSpacing(layer) {
+            return clampNumber(layer?.spacing, 0, 3, 0);
+        }
+
+        function applySpacingToSamples(samples, layer) {
+            const spacing = getVisualSpacing(layer);
+            if (spacing <= 0.02 || !samples || samples.length < 8) return samples;
+            const targetLen = Math.max(6, Math.round(samples.length / (1 + spacing * 0.32)));
+            const spaced = [];
+            for (let i = 0; i < targetLen; i++) {
+                const idx = Math.min(samples.length - 1, Math.round((i / Math.max(1, targetLen - 1)) * (samples.length - 1)));
+                spaced.push(samples[idx]);
+            }
+            return spaced;
+        }
+
+        function applyRandomizeToSamples(samples, layer) {
+            if (!layer?.randomize || !samples || samples.length < 2) return samples;
+            const t = Math.floor(performance.now() / 135);
+            return samples.map((value, i) => {
+                const noise = Math.sin((i + 1) * 12.9898 + t * 0.73) * 43758.5453;
+                const pick = Math.abs(Math.floor(noise)) % samples.length;
+                const jitter = (Math.abs(noise) % 1) * 0.28;
+                return Math.max(0, Math.min(5, (value * 0.58) + ((samples[pick] || 0) * 0.34) + jitter));
+            });
+        }
+
+        function processLayerSamples(sideSamples, layer) {
+            const amplified = applyAmplitudeToSamples(sideSamples, layer);
+            const randomized = applyRandomizeToSamples(amplified, layer);
+            return applySpacingToSamples(randomized, layer);
+        }
+
         function drawLayerByStyle(style, sideSamples, colors, layer) {
-            const amplifiedSamples = applyAmplitudeToSamples(sideSamples, layer);
-            if (style === "bars") drawMirroredBars(amplifiedSamples, colors);
-            else if (style === "mountain") drawMirroredMountain(amplifiedSamples, colors);
-            else if (style === "led") drawMirroredLed(amplifiedSamples, colors);
-            else if (style === "symmetric") drawPulseBurst(amplifiedSamples, colors);
-            else if (style === "waveline") drawWaveLine(amplifiedSamples, colors);
-            else if (style === "orbs") drawOrbChain(amplifiedSamples, colors);
-            else if (style === "ribbon") drawRibbon(amplifiedSamples, colors);
-            else if (style === "heartbeat") drawHeartbeat(amplifiedSamples, colors);
-            else if (style === "pixelwave") drawPixelWave(amplifiedSamples, colors);
-            else if (style === "islands") drawFloatingIslands(amplifiedSamples, colors);
-            else if (style === "matrixcode") drawMatrixCode(amplifiedSamples, colors);
-            else if (style === "comb") drawCombTeeth(amplifiedSamples, colors);
-            else if (style === "gridwarp") drawWarpedGrid(amplifiedSamples, colors);
-            else drawMirroredBars(amplifiedSamples, colors);
+            const processedSamples = processLayerSamples(sideSamples, layer);
+            if (style === "bars") drawMirroredBars(processedSamples, colors);
+            else if (style === "mountain") drawMirroredMountain(processedSamples, colors);
+            else if (style === "led") drawMirroredLed(processedSamples, colors);
+            else if (style === "symmetric") drawPulseBurst(processedSamples, colors);
+            else if (style === "waveline") drawWaveLine(processedSamples, colors);
+            else if (style === "orbs") drawOrbChain(processedSamples, colors);
+            else if (style === "ribbon") drawRibbon(processedSamples, colors);
+            else if (style === "heartbeat") drawHeartbeat(processedSamples, colors);
+            else if (style === "pixelwave") drawPixelWave(processedSamples, colors);
+            else if (style === "islands") drawFloatingIslands(processedSamples, colors);
+            else if (style === "matrixcode") drawMatrixCode(processedSamples, colors);
+            else if (style === "comb") drawCombTeeth(processedSamples, colors);
+            else if (style === "gridwarp") drawWarpedGrid(processedSamples, colors);
+            else drawMirroredBars(processedSamples, colors);
         }
 
         function drawVisualizer() {
@@ -4882,6 +5322,7 @@
             const sideSamples = getMirroredSideSamples(dataArray, 32);
             const orderedLayers = visualizerLayers
                 .map((layer, index) => normalizeVisualizerLayer(layer, index + 1))
+                .filter(layer => !layer.hidden)
                 .sort((a, b) => (parseInt(a.layer, 10) || 1) - (parseInt(b.layer, 10) || 1));
 
             orderedLayers.forEach(layer => {
