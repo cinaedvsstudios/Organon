@@ -93,17 +93,22 @@
         h2 { margin: 0; font-weight: normal; color: var(--water-blue); font-size: 1.1rem; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; max-width: 250px; }
         
         .btn-pill {
-            background-color: var(--light-teal);
-            color: var(--bg-nightsky);
-            border: none;
+            background-color: transparent;
+            color: var(--water-spray);
+            border: 1px solid var(--water-blue);
             padding: 8px 20px;
             border-radius: 50px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease;
             font-size: 0.85rem;
+            box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.12), 0 0 10px rgba(75, 132, 191, 0.08);
         }
-        .btn-pill:hover { filter: brightness(1.2); }
+        .btn-pill:hover {
+            filter: brightness(1.15);
+            background-color: rgba(75, 132, 191, 0.12);
+            box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.32), 0 0 14px rgba(75, 132, 191, 0.22);
+        }
         .btn-pill:active { transform: scale(0.95); }
 
         /* Symmetrical Pills Layout */
@@ -1230,7 +1235,9 @@
         .playlist-edit-mini {
             padding: 3px 8px !important;
             font-size: 0.68rem !important;
-            background: var(--light-teal) !important;
+            background: transparent !important;
+            color: var(--water-spray) !important;
+            border-color: var(--water-blue) !important;
         }
         .playlist-image-preview {
             height: 110px;
@@ -1254,15 +1261,57 @@
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
             body { padding: 0 15px; }
-            #organon-top-panel { padding: 20px 20px; }
+            #organon-top-panel { padding: 18px 14px; }
             #organon-bottom-panel { left: 15px; right: 15px; padding: 10px 15px 15px 15px; }
-            #library-manager-drawer { left: 15px; right: 15px; bottom: 62px; }
+            #library-manager-drawer {
+                left: 15px;
+                right: 15px;
+                bottom: 62px;
+                top: var(--mobile-library-drawer-top, 178px);
+                max-height: none;
+            }
+            #library-manager-drawer .library-drawer-inner {
+                max-height: 100%;
+                height: 100%;
+            }
             .library-manager-toolbar { grid-template-columns: 1fr; }
             .library-manager-content { grid-template-columns: 1fr; }
             #organon-middle-panel { padding: 15px 15px 120px 15px; }
             #scrollable-tags-bar { padding: 6px 15px; }
-            .primary-controls { flex-wrap: wrap; }
-            .seek-container { order: 3; width: 100%; }
+
+            /* Mobile-only player controls: control bar, timeline, control bar */
+            .primary-controls {
+                flex-direction: column;
+                flex-wrap: nowrap;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+                margin-top: 12px;
+            }
+            #start-controls-pill { order: 1; }
+            .seek-container {
+                order: 2;
+                width: min(100%, 360px);
+                max-width: 360px;
+                flex-grow: 0;
+                justify-content: center;
+                margin: 2px 0;
+            }
+            #end-utilities-pill { order: 3; }
+            #start-controls-pill,
+            #end-utilities-pill {
+                width: fit-content;
+                max-width: 100%;
+                justify-content: center;
+                gap: 8px;
+                padding: 5px 10px;
+                margin-inline: auto;
+            }
+            .utility-btn {
+                font-size: 1.45rem;
+                padding: 3px 4px;
+            }
+            .playing-spinner { font-size: 1.55rem; }
         }
     </style>
 </head>
@@ -1503,6 +1552,8 @@
                 </select>
                 <div class="library-manager-actions">
                     <button id="btn-db-select-mode" class="btn-pill">Select Multiple</button>
+                    <button id="btn-db-add-folder" class="btn-pill">Add Folder</button>
+                    <input type="file" id="folder-input" accept="audio/*,video/*" multiple webkitdirectory directory style="display:none;">
                     <button id="btn-db-import-json" class="btn-pill">Import JSON</button>
                     <button id="btn-db-export-library" class="btn-pill">Export Full</button>
                     <button id="btn-db-export-streams" class="btn-pill">Export Streams</button>
@@ -1810,6 +1861,7 @@
         // UI Element mappings
         const dropZone = document.getElementById('drop-zone');
         const fileInput = document.getElementById('file-input');
+        const folderInput = document.getElementById('folder-input');
         const btnPlay = document.getElementById('btn-play');
         const btnPause = document.getElementById('btn-pause');
         const btnPrev = document.getElementById('btn-prev');
@@ -2764,9 +2816,25 @@
             renderHistoryTab();
         }
 
+        function syncMobileLibraryDrawerBounds() {
+            if (!libraryDrawer) return;
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            if (!isMobile) {
+                document.documentElement.style.removeProperty('--mobile-library-drawer-top');
+                return;
+            }
+            const topPanel = document.getElementById('organon-top-panel');
+            const bottomPanel = document.getElementById('organon-bottom-panel');
+            const topEdge = topPanel ? Math.ceil(topPanel.getBoundingClientRect().bottom + 10) : 178;
+            const bottomEdge = bottomPanel ? Math.ceil(window.innerHeight - bottomPanel.getBoundingClientRect().top + 8) : 62;
+            document.documentElement.style.setProperty('--mobile-library-drawer-top', `${topEdge}px`);
+            libraryDrawer.style.bottom = `${bottomEdge}px`;
+        }
+
         function toggleLibraryDrawer(forceOpen = null) {
             if (!libraryDrawer) return;
             const shouldOpen = forceOpen === null ? !libraryDrawer.classList.contains('drawer-open') : !!forceOpen;
+            if (shouldOpen) syncMobileLibraryDrawerBounds();
             libraryDrawer.classList.toggle('drawer-open', shouldOpen);
             libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
             if (shouldOpen) renderLibraryManager();
@@ -3147,6 +3215,16 @@
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleUploadedFiles(e.target.files);
         });
+        if (folderInput) {
+            folderInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files || []);
+                if (files.length > 0) {
+                    handleUploadedFiles(files);
+                    showToast(`Scanned folder and added playable media files.`);
+                }
+                folderInput.value = '';
+            });
+        }
 
         function handleUploadedFiles(files) {
             const playableFiles = Array.from(files).filter(file => {
@@ -3608,6 +3686,13 @@
             checkLibraryFiles();
         });
 
+        safeBind('btn-db-add-folder', 'click', () => {
+            if (!folderInput) {
+                showToast('Folder picker is not available in this browser.');
+                return;
+            }
+            folderInput.click();
+        });
         safeBind('btn-db-import-json', 'click', () => document.getElementById('json-file-input').click());
         safeBind('btn-db-export-library', 'click', () => {
             const data = buildLibraryExport({ streamingOnly: false });
@@ -3856,7 +3941,7 @@
                     </div>
                     <div class="playlist-row-tools">
                         <button class="btn-pill playlist-edit-mini btn-edit-playlist" data-playlist-name="${escapeHtml(plName)}">Edit</button>
-                        <button class="btn-pill btn-open-playlist" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--light-teal)'}">
+                        <button class="btn-pill btn-open-playlist" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'transparent'}; color:${activePlaylistView === plName ? 'white' : 'var(--water-spray)'}; border-color:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--water-blue)'}">
                             ${activePlaylistView === plName ? 'Close Folder' : 'Open Folder'}
                         </button>
                     </div>
@@ -4815,6 +4900,15 @@
         }
 
         startVisualizer();
+
+        window.addEventListener('resize', () => {
+            if (libraryDrawer?.classList.contains('drawer-open')) syncMobileLibraryDrawerBounds();
+        });
+        window.addEventListener('orientationchange', () => {
+            setTimeout(() => {
+                if (libraryDrawer?.classList.contains('drawer-open')) syncMobileLibraryDrawerBounds();
+            }, 180);
+        });
     </script>
 </body>
 </html>
