@@ -1068,6 +1068,189 @@
             margin-top: 3px;
         }
 
+        /* Playlist artwork, Now Playing panel, and library multi-select */
+        .now-playing-layout {
+            display: grid;
+            grid-template-columns: minmax(150px, 220px) 1fr;
+            gap: 16px;
+            align-items: stretch;
+        }
+        .now-playing-art {
+            min-height: 170px;
+            border-radius: 16px;
+            border: 1px solid rgba(224,163,96,0.36);
+            background: radial-gradient(circle at 30% 20%, rgba(117,178,222,0.18), rgba(0,0,0,0.36)), rgba(0,0,0,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--chiseled-bronze);
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-align: center;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        .now-playing-art img,
+        .playlist-thumb img,
+        .playlist-thumb-large img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .playlist-thumb {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            border: 1px solid rgba(224,163,96,0.35);
+            background: rgba(0,0,0,0.28);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--stone-ochre);
+            font-size: 0.82rem;
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+        .playlist-thumb-large {
+            width: 68px;
+            height: 68px;
+            border-radius: 14px;
+            border: 1px solid rgba(224,163,96,0.38);
+            background: rgba(0,0,0,0.28);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--stone-ochre);
+            font-weight: 900;
+            flex-shrink: 0;
+        }
+        .playlist-row-content {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .playlist-row-tools {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .now-playing-data-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 8px;
+        }
+        .now-playing-edit-panel {
+            display: none;
+            margin-top: 14px;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px dashed rgba(224,163,96,0.38);
+            background: rgba(0,0,0,0.20);
+        }
+        .now-playing-edit-panel.edit-open { display: block; }
+        .now-playing-edit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 10px;
+            align-items: end;
+        }
+        .now-playing-edit-grid label,
+        .modal-field-label {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            color: var(--water-spray);
+            font-size: 0.76rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .now-playing-edit-grid input,
+        .now-playing-edit-grid textarea,
+        .organon-modal input,
+        .organon-modal textarea,
+        .organon-modal select {
+            background: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 10px;
+            padding: 9px 10px;
+            box-sizing: border-box;
+            font-family: inherit;
+        }
+        .library-result-row.selected {
+            border-color: var(--stone-ochre);
+            background: rgba(224,163,96,0.14);
+            box-shadow: inset 0 0 0 1px rgba(224,163,96,0.2), 0 0 16px rgba(224,163,96,0.08);
+        }
+        .selection-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 999px;
+            border: 1px solid rgba(224,163,96,0.6);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--stone-ochre);
+            font-weight: 900;
+            flex-shrink: 0;
+            margin-right: 8px;
+        }
+        .bulk-select-panel {
+            display: none;
+            margin-bottom: 14px;
+            padding: 10px;
+            border-radius: 12px;
+            border: 1px solid rgba(224,163,96,0.38);
+            background: rgba(224,163,96,0.08);
+        }
+        .bulk-select-panel.bulk-open { display: block; }
+        .bulk-actions-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .bulk-actions-stack .btn-pill {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+        .bulk-selection-summary {
+            color: var(--water-spray);
+            font-size: 0.78rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+        .playlist-edit-mini {
+            padding: 3px 8px !important;
+            font-size: 0.68rem !important;
+            background: var(--light-teal) !important;
+        }
+        .playlist-image-preview {
+            height: 110px;
+            border-radius: 12px;
+            border: 1px solid rgba(224,163,96,0.32);
+            background: rgba(0,0,0,0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            color: var(--chiseled-bronze);
+            font-size: 0.8rem;
+        }
+        .playlist-image-preview img { width: 100%; height: 100%; object-fit: cover; }
+        @media (max-width: 760px) {
+            .now-playing-layout { grid-template-columns: 1fr; }
+            .now-playing-art { min-height: 150px; }
+        }
+
+
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
             body { padding: 0 15px; }
@@ -1151,7 +1334,7 @@
             <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">↗ Load URL</button>
             <button id="tab-btn-history" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-history')">◷ History</button>
             <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">▤ Playlists</button>
-            <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">ⓘ Library Info</button>
+            <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">◉ Now Playing</button>
         </div>
 
         <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
@@ -1213,56 +1396,81 @@
                 </div>
             </div>
 
-            <!-- Tab 5 View: Active Track Library Info -->
+            <!-- Tab 5 View: Now Playing / Active Track File Info -->
             <div id="tab-library" class="viewport-content">
                 <div id="metadata-display-card">
-                    <div class="card-header" style="border-bottom: none; margin-bottom: 8px;">
-                        <span class="card-title">ⓘ Active Track Library Info</span>
-                        <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
-                    </div>
-
-                    <div class="meta-source-grid">
-                        <div class="meta-source-box">
-                            <div class="meta-source-label">Source type</div>
-                            <div id="meta-source-type" class="meta-source-value">No active track</div>
-                        </div>
-                        <div class="meta-source-box">
-                            <div class="meta-source-label">Location / URL</div>
-                            <div id="meta-source-detail" class="meta-source-value">No active track loaded.</div>
+                    <div class="card-header" style="border-bottom: none; margin-bottom: 10px;">
+                        <span class="card-title">◉ Now Playing</span>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
+                            <button id="btn-now-playing-edit" class="pencil-btn" title="Edit this track's library info">✎</button>
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 12px; padding: 10px; background-color: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid rgba(137,107,73,0.2);">
-                        <strong style="color: var(--water-spray);">Display Nickname:</strong> 
-                        <span id="nickname-display-mode" style="display: inline-flex; align-items: center;">
-                            <span id="meta-nickname" style="color: var(--stone-ochre); margin-left: 6px;">No Custom Name</span>
-                            <button id="btn-inline-nickname-edit" class="pencil-btn" title="Type over display name">✎</button>
-                        </span>
-                        <span id="nickname-edit-mode" style="display: none; align-items: center; gap: 8px; margin-left: 6px;">
-                            <input type="text" id="input-inline-nickname" class="inline-edit-input">
-                            <button id="btn-inline-save" class="btn-pill" style="padding: 4px 12px; font-size: 0.75rem;">Save</button>
-                            <button id="btn-inline-cancel" class="pencil-btn" style="font-size: 1.1rem; color: var(--brand-red);">×</button>
-                        </span>
+                    <div class="now-playing-layout">
+                        <div id="now-playing-art" class="now-playing-art">NO IMAGE</div>
+                        <div>
+                            <div class="now-playing-data-grid">
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">Display name</div>
+                                    <div id="meta-nickname" class="meta-source-value">No active track</div>
+                                </div>
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">Original file</div>
+                                    <div id="meta-original-file" class="meta-source-value">No active track loaded.</div>
+                                </div>
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">Source type</div>
+                                    <div id="meta-source-type" class="meta-source-value">No active track</div>
+                                </div>
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">Location / URL</div>
+                                    <div id="meta-source-detail" class="meta-source-value">No active track loaded.</div>
+                                </div>
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">Playlists</div>
+                                    <div id="meta-playlists-display" class="meta-source-value">No playlists assigned.</div>
+                                </div>
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">Tags</div>
+                                    <div id="meta-tags-list" class="meta-pill-list" style="margin-bottom: 0;"></div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top: 12px;"><strong style="color: var(--water-spray);">Lyrics Card:</strong></div>
+                            <div id="lyrics-viewer" style="font-size: 0.85rem; line-height: 1.5; color: var(--alabaster-paper); max-height: 110px; overflow-y: auto; text-align: center; white-space: pre-line; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 6px;">
+                                No lyrics stored yet. Edit lyrics using the ♫ icon above.
+                            </div>
+                        </div>
                     </div>
 
-                    <div><strong style="color: var(--water-spray);">Tags for this track:</strong></div>
-                    <div id="meta-tags-list" class="tags-container" style="margin-bottom: 8px;"></div>
-                    <div class="inline-meta-editor" style="margin-bottom: 14px;">
-                        <input id="input-inline-tags" type="text" placeholder="Comma separated tags for this track...">
-                        <button id="btn-inline-tags-save" class="btn-pill">Save Tags</button>
-                    </div>
-
-                    <div><strong style="color: var(--water-spray);">Playlists containing this track:</strong></div>
-                    <div id="meta-playlist-membership" class="meta-playlist-checklist"></div>
-                    <div class="inline-meta-editor" style="grid-template-columns: 1fr auto auto; margin-bottom: 14px;">
-                        <input id="input-inline-new-playlist" type="text" placeholder="New playlist name...">
-                        <button id="btn-inline-create-playlist" class="btn-pill">Create</button>
-                        <button id="btn-inline-playlists-save" class="btn-pill">Save Playlists</button>
-                    </div>
-
-                    <div><strong style="color: var(--water-spray);">Lyrics Card:</strong></div>
-                    <div id="lyrics-viewer" style="font-size: 0.85rem; line-height: 1.5; color: var(--alabaster-paper); max-height: 100px; overflow-y: auto; text-align: center; white-space: pre-line; background-color: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; margin-top: 6px;">
-                        No lyrics stored yet. Edit lyrics using the ♫ icon above.
+                    <div id="now-playing-edit-panel" class="now-playing-edit-panel">
+                        <div class="library-section-label">Edit this track</div>
+                        <div id="nickname-display-mode" style="display:none;"></div>
+                        <div id="nickname-edit-mode" style="display:none;"></div>
+                        <div class="now-playing-edit-grid">
+                            <label>Nickname
+                                <input type="text" id="input-inline-nickname" placeholder="Display name for this file...">
+                            </label>
+                            <label>Track image URL
+                                <input type="text" id="input-track-image-url" placeholder="Optional artwork URL for this track...">
+                            </label>
+                            <label>Tags
+                                <input id="input-inline-tags" type="text" placeholder="Comma separated tags for this track...">
+                            </label>
+                            <label>New playlist
+                                <input id="input-inline-new-playlist" type="text" placeholder="New playlist name...">
+                            </label>
+                        </div>
+                        <div style="margin-top: 12px;"><strong style="color: var(--water-spray);">Playlists containing this track:</strong></div>
+                        <div id="meta-playlist-membership" class="meta-playlist-checklist"></div>
+                        <div class="library-manager-actions" style="justify-content:flex-start; margin-top: 10px;">
+                            <button id="btn-inline-save" class="btn-pill">Save Track Info</button>
+                            <button id="btn-inline-tags-save" class="btn-pill" style="display:none;">Save Tags</button>
+                            <button id="btn-inline-create-playlist" class="btn-pill">Create Playlist + Add</button>
+                            <button id="btn-inline-playlists-save" class="btn-pill">Save Playlist Membership</button>
+                            <button id="btn-inline-cancel" class="btn-pill" style="background: var(--chiseled-bronze);">Close Edit</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1294,6 +1502,7 @@
                     <option value="missing">Needs relink</option>
                 </select>
                 <div class="library-manager-actions">
+                    <button id="btn-db-select-mode" class="btn-pill">Select Multiple</button>
                     <button id="btn-db-import-json" class="btn-pill">Import JSON</button>
                     <button id="btn-db-export-library" class="btn-pill">Export Full</button>
                     <button id="btn-db-export-streams" class="btn-pill">Export Streams</button>
@@ -1303,6 +1512,18 @@
             </div>
             <div class="library-manager-content">
                 <aside class="library-sidebar">
+                    <div id="db-bulk-actions" class="bulk-select-panel">
+                        <div id="db-selection-summary" class="bulk-selection-summary">0 selected</div>
+                        <div class="bulk-actions-stack">
+                            <button id="btn-db-select-visible" class="btn-pill">Select Visible</button>
+                            <button id="btn-db-clear-selection" class="btn-pill" style="background: var(--chiseled-bronze);">Clear Selection</button>
+                            <button id="btn-db-bulk-add-playlist" class="btn-pill">Add to Playlist</button>
+                            <button id="btn-db-bulk-create-playlist" class="btn-pill">Create New Playlist</button>
+                            <button id="btn-db-bulk-attributes" class="btn-pill">Change Attributes</button>
+                            <button id="btn-db-bulk-export" class="btn-pill">Export Selected</button>
+                            <button id="btn-db-bulk-delete" class="btn-pill" style="background: var(--brand-red); color: white;">Delete from Library</button>
+                        </div>
+                    </div>
                     <p class="library-section-label">Recent</p>
                     <div id="db-recent-list"></div>
                     <p class="library-section-label" style="margin-top: 14px;">Playlists</p>
@@ -1431,6 +1652,74 @@
         </div>
     </div>
 
+    <!-- Playlist Edit Modal -->
+    <div id="modal-playlist-edit" class="organon-modal" style="max-width: 560px;">
+        <div class="modal-header">
+            <span>✎ Edit Playlist</span>
+            <span class="modal-close" onclick="closeModal('modal-playlist-edit')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="input-playlist-edit-original-name">
+            <label class="modal-field-label">Playlist name
+                <input type="text" id="input-playlist-edit-name" placeholder="Playlist name...">
+            </label>
+            <label class="modal-field-label" style="margin-top:10px;">Image URL
+                <input type="text" id="input-playlist-image-url" placeholder="https://...">
+            </label>
+            <label class="modal-field-label" style="margin-top:10px;">Or choose local image file
+                <input type="file" id="input-playlist-image-file" accept="image/*">
+            </label>
+            <div id="playlist-image-preview" class="playlist-image-preview" style="margin-top:10px;">No playlist image</div>
+            <p style="font-size:0.76rem; color:var(--chiseled-bronze); margin:8px 0 0;">Local playlist images are saved into the exported JSON as image data. Do not use massive images unless you want a massive JSON file.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-playlist-edit')">Cancel</button>
+            <button id="btn-save-playlist-edit" class="btn-pill">Save Playlist</button>
+        </div>
+    </div>
+
+    <!-- Bulk Add to Playlist Modal -->
+    <div id="modal-bulk-add-playlist" class="organon-modal" style="max-width: 560px;">
+        <div class="modal-header">
+            <span>＋ Add Selected Tracks to Playlist</span>
+            <span class="modal-close" onclick="closeModal('modal-bulk-add-playlist')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="bulk-add-count" style="font-size:0.85rem; color:var(--water-spray); margin-top:0;">0 tracks selected.</p>
+            <div id="bulk-playlist-checklist" class="meta-playlist-checklist"></div>
+            <label class="modal-field-label" style="margin-top:10px;">Or create new playlist
+                <input type="text" id="input-bulk-new-playlist" placeholder="New playlist name...">
+            </label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-bulk-add-playlist')">Cancel</button>
+            <button id="btn-apply-bulk-playlists" class="btn-pill">Apply</button>
+        </div>
+    </div>
+
+    <!-- Bulk Attribute Change Modal -->
+    <div id="modal-bulk-attributes" class="organon-modal" style="max-width: 560px;">
+        <div class="modal-header">
+            <span>✎ Change Attributes for Selected Tracks</span>
+            <span class="modal-close" onclick="closeModal('modal-bulk-attributes')">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p id="bulk-attribute-count" style="font-size:0.85rem; color:var(--water-spray); margin-top:0;">0 tracks selected.</p>
+            <label class="modal-field-label">Add tags to all selected
+                <input type="text" id="input-bulk-add-tags" placeholder="Comma separated tags to add...">
+            </label>
+            <label class="modal-field-label" style="margin-top:10px;">Remove tags from all selected
+                <input type="text" id="input-bulk-remove-tags" placeholder="Comma separated tags to remove...">
+            </label>
+            <p style="font-size:0.76rem; color:var(--chiseled-bronze); margin:10px 0 0;">Bulk editing is deliberately limited to safe metadata. Source paths, URLs, file names and IDs are not bulk-editable here because one mistake can break the library.</p>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-bulk-attributes')">Cancel</button>
+            <button id="btn-apply-bulk-attributes" class="btn-pill">Apply Changes</button>
+        </div>
+    </div>
+
+
 
 
     <!-- Library Check Report Modal -->
@@ -1505,8 +1794,18 @@
             "Chill Vocals": [],
             "Work Focus": []
         };
+        let playlistMeta = {
+            "Favorites": { imageUrl: "", imageData: "", description: "" },
+            "Chill Vocals": { imageUrl: "", imageData: "", description: "" },
+            "Work Focus": { imageUrl: "", imageData: "", description: "" }
+        };
         let activePlaylistView = null;
+        let editingPlaylistName = null;
         let virtualLibrary = {};
+        let nowPlayingEditMode = false;
+        let isLibrarySelectMode = false;
+        let selectedLibraryIds = new Set();
+        let visibleLibraryIds = [];
 
         // UI Element mappings
         const dropZone = document.getElementById('drop-zone');
@@ -1540,6 +1839,9 @@
         const dbLibraryResults = document.getElementById('db-library-results');
         const dbRecentList = document.getElementById('db-recent-list');
         const dbPlaylistList = document.getElementById('db-playlist-list');
+        const dbBulkActions = document.getElementById('db-bulk-actions');
+        const dbSelectionSummary = document.getElementById('db-selection-summary');
+        const btnDbSelectMode = document.getElementById('btn-db-select-mode');
         const historyCardGrid = document.getElementById('history-card-grid');
         const historyList = document.getElementById('history-list');
         const HISTORY_STORAGE_KEY = "ondaTrackHistoryV1";
@@ -1975,6 +2277,48 @@
                 .map(([name]) => name);
         }
 
+        function ensurePlaylistMeta(name) {
+            if (!playlistMeta[name]) playlistMeta[name] = { imageUrl: '', imageData: '', description: '' };
+            return playlistMeta[name];
+        }
+
+        function getPlaylistArtwork(name) {
+            const meta = ensurePlaylistMeta(name);
+            return meta.imageData || meta.imageUrl || '';
+        }
+
+        function playlistThumbHtml(name, large = false) {
+            const art = getPlaylistArtwork(name);
+            const initials = (name || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || '▤';
+            const className = large ? 'playlist-thumb-large' : 'playlist-thumb';
+            return `<div class="${className}">${art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(name)} artwork">` : escapeHtml(initials)}</div>`;
+        }
+
+        function getTrackArtwork(meta) {
+            if (!meta) return '';
+            if (meta.imageData || meta.imageUrl) return meta.imageData || meta.imageUrl;
+            const firstPlaylist = getTrackPlaylistNames(meta.id)[0];
+            return firstPlaylist ? getPlaylistArtwork(firstPlaylist) : '';
+        }
+
+        function addTrackIdToPlaylist(trackId, playlistName) {
+            if (!trackId || !virtualLibrary[trackId] || !playlistName) return false;
+            if (!playlists[playlistName]) playlists[playlistName] = [];
+            ensurePlaylistMeta(playlistName);
+            const exists = playlists[playlistName].some(track => getTrackId(track) === trackId);
+            if (!exists) playlists[playlistName].push(createPlayableTrackFromMeta(virtualLibrary[trackId]));
+            syncTrackPlaylistMetadata(trackId);
+            return !exists;
+        }
+
+        function removeTrackIdFromAllPlaylists(trackId) {
+            Object.keys(playlists).forEach(name => {
+                playlists[name] = normalisePlaylistToIds(playlists[name])
+                    .filter(id => id !== trackId)
+                    .map(id => virtualLibrary[id] ? createPlayableTrackFromMeta(virtualLibrary[id]) : id);
+            });
+        }
+
         function syncTrackPlaylistMetadata(trackId) {
             if (!trackId || !virtualLibrary[trackId]) return;
             virtualLibrary[trackId].playlists = getTrackPlaylistNames(trackId);
@@ -2042,17 +2386,24 @@
             if (!meta) return null;
             const row = document.createElement('div');
             row.className = compact ? 'library-mini-row' : 'library-result-row';
+            if (!compact && isLibrarySelectMode && selectedLibraryIds.has(trackId)) row.classList.add('selected');
             row.dataset.trackId = trackId;
             const playlistsForTrack = getTrackPlaylistNames(trackId);
             const tags = Array.isArray(meta.tags) ? meta.tags.slice(0, compact ? 2 : 6) : [];
+            const selectIndicator = (!compact && isLibrarySelectMode)
+                ? `<span class="selection-indicator">${selectedLibraryIds.has(trackId) ? '✓' : ''}</span>`
+                : '';
             row.innerHTML = `
                 <div class="library-row-main">
-                    <div>
-                        <div class="library-track-title">${escapeHtml(getDisplayTitle(meta))}</div>
-                        <div class="library-track-meta">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
-                        ${compact ? '' : `<div class="library-track-meta">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
+                    <div class="library-row-main" style="justify-content:flex-start; min-width:0;">
+                        ${selectIndicator}
+                        <div>
+                            <div class="library-track-title">${escapeHtml(getDisplayTitle(meta))}</div>
+                            <div class="library-track-meta">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
+                            ${compact ? '' : `<div class="library-track-meta">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
+                        </div>
                     </div>
-                    ${compact ? '' : `<div class="library-row-buttons"><button class="btn-pill btn-db-play-track" data-track-id="${trackId}">Play</button><button class="btn-pill btn-db-info-track" data-track-id="${trackId}">Info</button></div>`}
+                    ${compact || isLibrarySelectMode ? '' : `<div class="library-row-buttons"><button class="btn-pill btn-db-play-track" data-track-id="${trackId}">Play</button><button class="btn-pill btn-db-info-track" data-track-id="${trackId}">Info</button></div>`}
                 </div>
                 ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             `;
@@ -2156,9 +2507,191 @@
             addTrackToQueueFromLibrary(trackId, true);
         }
 
+        function updateBulkActionUI() {
+            if (btnDbSelectMode) btnDbSelectMode.textContent = isLibrarySelectMode ? 'Exit Select' : 'Select Multiple';
+            if (dbBulkActions) dbBulkActions.classList.toggle('bulk-open', isLibrarySelectMode);
+            if (dbSelectionSummary) dbSelectionSummary.textContent = `${selectedLibraryIds.size} selected`;
+        }
+
+        function toggleLibrarySelectMode(force = null) {
+            isLibrarySelectMode = force === null ? !isLibrarySelectMode : !!force;
+            if (!isLibrarySelectMode) selectedLibraryIds.clear();
+            updateBulkActionUI();
+            renderLibraryManager();
+        }
+
+        function toggleSelectedTrack(trackId) {
+            if (!trackId || !virtualLibrary[trackId]) return;
+            if (selectedLibraryIds.has(trackId)) selectedLibraryIds.delete(trackId);
+            else selectedLibraryIds.add(trackId);
+            updateBulkActionUI();
+            renderLibraryManager();
+        }
+
+        function getSelectedTrackIds() {
+            return Array.from(selectedLibraryIds).filter(id => virtualLibrary[id]);
+        }
+
+        function requireSelection() {
+            const ids = getSelectedTrackIds();
+            if (!ids.length) {
+                showToast('Select at least one library item first.');
+                return [];
+            }
+            return ids;
+        }
+
+        function exportSelectedLibraryJson() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const tracks = {};
+            ids.forEach(id => { tracks[id] = sanitizeTrackForExport(virtualLibrary[id]); });
+            const idSet = new Set(ids);
+            const selectedPlaylists = {};
+            Object.entries(playlists).forEach(([name, value]) => {
+                const contained = normalisePlaylistToIds(value).filter(id => idSet.has(id));
+                if (contained.length) {
+                    selectedPlaylists[name] = { name, ...(playlistMeta[name] || {}), trackIds: contained };
+                }
+            });
+            const data = {
+                app: 'Onda Media Player',
+                type: 'onda-library',
+                version: 1,
+                libraryName: `${(libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library'} — selected`,
+                libraryKind: 'selected-export',
+                exportedAt: new Date().toISOString(),
+                tracks,
+                playlists: selectedPlaylists,
+                playlistMeta,
+                visualizerPresets: savedVisualizerPresets
+            };
+            downloadJsonFile(`${slugifyFileName(data.libraryName)}.json`, data);
+            showToast(`Exported ${ids.length} selected tracks.`);
+        }
+
+        function openBulkAddPlaylistModal() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const count = document.getElementById('bulk-add-count');
+            const list = document.getElementById('bulk-playlist-checklist');
+            const newInput = document.getElementById('input-bulk-new-playlist');
+            if (count) count.textContent = `${ids.length} tracks selected.`;
+            if (newInput) newInput.value = '';
+            if (list) {
+                list.innerHTML = '';
+                Object.keys(playlists).sort().forEach(name => {
+                    const label = document.createElement('label');
+                    label.innerHTML = `<input type="checkbox" value="${escapeHtml(name)}"> <span>${escapeHtml(name)}</span>`;
+                    list.appendChild(label);
+                });
+                if (!Object.keys(playlists).length) list.innerHTML = '<div class="library-track-meta">No playlists yet. Type a new one below.</div>';
+            }
+            showModal('modal-bulk-add-playlist');
+        }
+
+        function applyBulkPlaylistAdd() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const checked = Array.from(document.querySelectorAll('#bulk-playlist-checklist input[type="checkbox"]:checked')).map(cb => cb.value);
+            const newName = (document.getElementById('input-bulk-new-playlist')?.value || '').trim();
+            const targets = [...checked];
+            if (newName) {
+                if (!playlists[newName]) playlists[newName] = [];
+                ensurePlaylistMeta(newName);
+                targets.push(newName);
+            }
+            if (!targets.length) { showToast('Choose or create a playlist first.'); return; }
+            let added = 0;
+            ids.forEach(id => targets.forEach(name => { if (addTrackIdToPlaylist(id, name)) added++; }));
+            syncAllTrackPlaylistMetadata();
+            closeModal('modal-bulk-add-playlist');
+            renderPlaylistsList();
+            renderLibraryManager();
+            if (currentFile) updateMetadataUI();
+            showToast(`Added ${ids.length} tracks to ${targets.length} playlist(s).`);
+        }
+
+        function createPlaylistForSelected() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const name = prompt('New playlist name:');
+            if (!name || !name.trim()) return;
+            const clean = name.trim();
+            if (!playlists[clean]) playlists[clean] = [];
+            ensurePlaylistMeta(clean);
+            ids.forEach(id => addTrackIdToPlaylist(id, clean));
+            renderPlaylistsList();
+            renderLibraryManager();
+            if (currentFile) updateMetadataUI();
+            showToast(`Created playlist and added ${ids.length} tracks: ${clean}`);
+        }
+
+        function openBulkAttributesModal() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const count = document.getElementById('bulk-attribute-count');
+            if (count) count.textContent = `${ids.length} tracks selected.`;
+            const addInput = document.getElementById('input-bulk-add-tags');
+            const removeInput = document.getElementById('input-bulk-remove-tags');
+            if (addInput) addInput.value = '';
+            if (removeInput) removeInput.value = '';
+            showModal('modal-bulk-attributes');
+        }
+
+        function parseCommaTags(value) {
+            return (value || '').split(',').map(tag => tag.trim()).filter(Boolean);
+        }
+
+        function applyBulkAttributes() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const addTags = parseCommaTags(document.getElementById('input-bulk-add-tags')?.value || '');
+            const removeTags = parseCommaTags(document.getElementById('input-bulk-remove-tags')?.value || '').map(t => t.toLowerCase());
+            if (!addTags.length && !removeTags.length) { showToast('No tag changes entered.'); return; }
+            ids.forEach(id => {
+                const meta = virtualLibrary[id];
+                const current = Array.isArray(meta.tags) ? meta.tags.slice() : [];
+                const lowerSet = new Set(current.map(tag => tag.toLowerCase()));
+                addTags.forEach(tag => { if (!lowerSet.has(tag.toLowerCase())) current.push(tag); });
+                const filtered = current.filter(tag => !removeTags.includes(tag.toLowerCase()));
+                meta.tags = filtered;
+            });
+            closeModal('modal-bulk-attributes');
+            renderLibraryManager();
+            if (currentFile) updateMetadataUI();
+            showToast(`Updated tags on ${ids.length} tracks.`);
+        }
+
+        function deleteSelectedFromLibrary() {
+            const ids = requireSelection();
+            if (!ids.length) return;
+            const ok = confirm(`Remove ${ids.length} selected track listing(s) from the library JSON? This does not delete actual music files.`);
+            if (!ok) return;
+            ids.forEach(id => {
+                delete virtualLibrary[id];
+                removeTrackIdFromAllPlaylists(id);
+            });
+            playlistTracks = playlistTracks.filter(track => !selectedLibraryIds.has(getTrackId(track)));
+            recentTrackIds = recentTrackIds.filter(id => !selectedLibraryIds.has(id));
+            if (currentFile && selectedLibraryIds.has(currentFile.name)) {
+                pauseAudio();
+                currentFile = null;
+                document.getElementById('now-playing').innerText = 'No Track Loaded';
+                document.getElementById('track-nickname-label').innerText = '';
+            }
+            selectedLibraryIds.clear();
+            updateBulkActionUI();
+            renderPlaylistsList();
+            renderLibraryManager();
+            renderHistoryTab();
+            showToast('Selected library listing(s) removed.');
+        }
+
         function renderLibraryManager() {
             if (!dbLibraryResults) return;
             syncAllTrackPlaylistMetadata();
+            updateBulkActionUI();
             const search = (dbLibrarySearch?.value || '').trim().toLowerCase();
             const filter = dbLibraryFilter?.value || 'all';
             const entries = Object.entries(virtualLibrary)
@@ -2185,6 +2718,10 @@
                 })
                 .sort((a, b) => getDisplayTitle(a[1]).localeCompare(getDisplayTitle(b[1])));
 
+            visibleLibraryIds = entries.map(([id]) => id);
+            selectedLibraryIds = new Set(Array.from(selectedLibraryIds).filter(id => virtualLibrary[id]));
+            if (dbSelectionSummary) dbSelectionSummary.textContent = `${selectedLibraryIds.size} selected`;
+
             dbLibraryResults.innerHTML = entries.length ? '' : '<div class="library-track-meta">No matching tracks in this library yet.</div>';
             entries.forEach(([id]) => {
                 const row = buildTrackRow(id, false);
@@ -2206,10 +2743,21 @@
                 const names = Object.keys(playlists).sort();
                 if (!names.length) dbPlaylistList.innerHTML = '<div class="library-track-meta">No playlists yet.</div>';
                 names.forEach(name => {
+                    ensurePlaylistMeta(name);
                     const row = document.createElement('div');
                     row.className = 'library-mini-row';
                     row.dataset.playlistName = name;
-                    row.innerHTML = `<div class="library-track-title">${escapeHtml(name)}</div><div class="library-track-meta">${(playlists[name] || []).length} tracks</div>`;
+                    row.innerHTML = `
+                        <div class="library-row-main">
+                            <div class="playlist-row-content">
+                                ${playlistThumbHtml(name, false)}
+                                <div>
+                                    <div class="library-track-title">${escapeHtml(name)}</div>
+                                    <div class="library-track-meta">${(playlists[name] || []).length} tracks</div>
+                                </div>
+                            </div>
+                            <button class="btn-pill playlist-edit-mini btn-db-edit-playlist" data-playlist-name="${escapeHtml(name)}">Edit</button>
+                        </div>`;
                     dbPlaylistList.appendChild(row);
                 });
             }
@@ -2243,7 +2791,8 @@
                 requiredLibraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
                 exportedAt: new Date().toISOString(),
                 trackIds,
-                tracks
+                tracks,
+                ...(playlistMeta[name] || {})
             };
             downloadJsonFile(`${slugifyFileName(name)}-playlist.json`, data);
             showToast(`Exported playlist JSON: ${name}`);
@@ -2274,6 +2823,7 @@
             checkboxes.forEach(cb => {
                 const name = cb.value;
                 if (!playlists[name]) playlists[name] = [];
+            ensurePlaylistMeta(name);
                 const idx = playlists[name].findIndex(track => getTrackId(track) === trackId);
                 if (cb.checked && idx === -1) playlists[name].push(createPlayableTrackFromMeta(virtualLibrary[trackId]));
                 if (!cb.checked && idx !== -1) playlists[name].splice(idx, 1);
@@ -2323,7 +2873,7 @@
                 if (!streamingOnly || ids.length > 0) {
                     playlistsObject[name] = {
                         name,
-                        description: '',
+                        ...(playlistMeta[name] || {}),
                         trackIds: ids
                     };
                 }
@@ -2338,6 +2888,7 @@
                 exportedAt: new Date().toISOString(),
                 tracks: tracksObject,
                 playlists: playlistsObject,
+                playlistMeta,
                 visualizerPresets: savedVisualizerPresets
             };
         }
@@ -2370,6 +2921,7 @@
                 }
                 const name = data.playlistName || data.name || 'Imported Playlist';
                 playlists[name] = playlistIdsToTrackObjects(data.trackIds || []);
+                playlistMeta[name] = { ...(playlistMeta[name] || {}), imageUrl: data.imageUrl || '', imageData: data.imageData || '', description: data.description || '' };
                 renderPlaylistsList();
                 renderLibraryManager();
                 showToast(`Imported playlist: ${name}`);
@@ -2398,14 +2950,29 @@
                     streamUrl: rawMeta.streamUrl || existing.streamUrl || null,
                     localPath: rawMeta.localPath || existing.localPath || null,
                     phonePath: rawMeta.phonePath || existing.phonePath || null,
-                    desktopPath: rawMeta.desktopPath || existing.desktopPath || null
+                    desktopPath: rawMeta.desktopPath || existing.desktopPath || null,
+                    imageUrl: rawMeta.imageUrl || existing.imageUrl || null,
+                    imageData: rawMeta.imageData || existing.imageData || null,
+                    notes: rawMeta.notes || existing.notes || ''
                 };
             });
 
             if (data.playlists && typeof data.playlists === 'object') {
                 Object.entries(data.playlists).forEach(([name, value]) => {
                     playlists[name] = playlistIdsToTrackObjects(normalisePlaylistToIds(value));
+                    playlistMeta[name] = {
+                        ...(playlistMeta[name] || {}),
+                        ...(value && typeof value === 'object' ? {
+                            imageUrl: value.imageUrl || '',
+                            imageData: value.imageData || '',
+                            description: value.description || ''
+                        } : {})
+                    };
                 });
+            }
+
+            if (data.playlistMeta && typeof data.playlistMeta === 'object') {
+                playlistMeta = { ...playlistMeta, ...data.playlistMeta };
             }
 
             if (data.visualizerPresets && typeof data.visualizerPresets === 'object') {
@@ -2691,12 +3258,20 @@
             playAudio();
         }
 
+        function setNowPlayingEditMode(on) {
+            nowPlayingEditMode = !!on;
+            const panel = document.getElementById('now-playing-edit-panel');
+            const btn = document.getElementById('btn-now-playing-edit');
+            if (panel) panel.classList.toggle('edit-open', nowPlayingEditMode);
+            if (btn) btn.textContent = nowPlayingEditMode ? '×' : '✎';
+        }
+
         function updateMetadataUI() {
             if (!currentFile) return;
             const meta = virtualLibrary[currentFile.name];
             if (!meta) return;
             syncTrackPlaylistMetadata(currentFile.name);
-            
+            const playlistNames = getTrackPlaylistNames(currentFile.name);
             const displayName = meta.nickname ? meta.nickname : meta.fileName;
             document.getElementById('now-playing').innerText = displayName;
             document.getElementById('track-nickname-label').innerText = meta.nickname ? `Original: ${meta.fileName}` : "";
@@ -2705,25 +3280,41 @@
             miniMetaSize.innerText = sizeInMb.toFixed(1) + "M";
 
             document.getElementById('meta-file-size').innerText = meta.size || '';
-            document.getElementById('meta-nickname').innerText = meta.nickname || "No Custom Name Assigned";
-            document.getElementById('nickname-display-mode').style.display = "inline-flex";
-            document.getElementById('nickname-edit-mode').style.display = "none";
+            document.getElementById('meta-nickname').innerText = meta.nickname || meta.title || meta.fileName || "No Custom Name Assigned";
+            const originalFile = document.getElementById('meta-original-file');
+            if (originalFile) originalFile.innerText = meta.fileName || meta.id || '';
+
+            const artBox = document.getElementById('now-playing-art');
+            if (artBox) {
+                const art = getTrackArtwork(meta);
+                artBox.innerHTML = art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(displayName)} artwork">` : 'NO IMAGE';
+            }
 
             const sourceTypeEl = document.getElementById('meta-source-type');
             const sourceDetailEl = document.getElementById('meta-source-detail');
             if (sourceTypeEl) sourceTypeEl.innerText = meta.sourceType === 'stream' || meta.streamUrl ? 'Stream / online source' : 'Local file metadata';
             if (sourceDetailEl) sourceDetailEl.innerText = meta.streamUrl || meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No location recorded';
+            const playlistsDisplay = document.getElementById('meta-playlists-display');
+            if (playlistsDisplay) playlistsDisplay.innerText = playlistNames.length ? playlistNames.join(' / ') : 'No playlists assigned.';
 
             const tagContainer = document.getElementById('meta-tags-list');
             tagContainer.innerHTML = "";
-            (meta.tags || []).forEach(tag => {
-                const badge = document.createElement('span');
-                badge.className = 'tag-badge';
-                badge.innerText = tag;
-                tagContainer.appendChild(badge);
-            });
+            if (meta.tags && meta.tags.length) {
+                (meta.tags || []).forEach(tag => {
+                    const badge = document.createElement('span');
+                    badge.className = 'tag-badge';
+                    badge.innerText = tag;
+                    tagContainer.appendChild(badge);
+                });
+            } else {
+                tagContainer.innerHTML = '<span class="library-track-meta">No tags.</span>';
+            }
             const inlineTags = document.getElementById('input-inline-tags');
             if (inlineTags) inlineTags.value = (meta.tags || []).join(', ');
+            const inlineName = document.getElementById('input-inline-nickname');
+            if (inlineName) inlineName.value = meta.nickname || '';
+            const trackImage = document.getElementById('input-track-image-url');
+            if (trackImage) trackImage.value = meta.imageUrl || '';
 
             if (meta.tags && meta.tags.length > 0) {
                 tagsBar.style.display = "flex";
@@ -3032,12 +3623,47 @@
         safeBind('btn-db-check-library', 'click', () => checkLibraryFiles());
         safeBind('btn-database-engine', 'click', () => toggleLibraryDrawer());
         safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
+        safeBind('btn-db-select-mode', 'click', () => toggleLibrarySelectMode());
+        safeBind('btn-db-select-visible', 'click', () => {
+            visibleLibraryIds.forEach(id => selectedLibraryIds.add(id));
+            updateBulkActionUI();
+            renderLibraryManager();
+        });
+        safeBind('btn-db-clear-selection', 'click', () => {
+            selectedLibraryIds.clear();
+            updateBulkActionUI();
+            renderLibraryManager();
+        });
+        safeBind('btn-db-bulk-add-playlist', 'click', openBulkAddPlaylistModal);
+        safeBind('btn-db-bulk-create-playlist', 'click', createPlaylistForSelected);
+        safeBind('btn-db-bulk-attributes', 'click', openBulkAttributesModal);
+        safeBind('btn-db-bulk-export', 'click', exportSelectedLibraryJson);
+        safeBind('btn-db-bulk-delete', 'click', deleteSelectedFromLibrary);
+        safeBind('btn-apply-bulk-playlists', 'click', applyBulkPlaylistAdd);
+        safeBind('btn-apply-bulk-attributes', 'click', applyBulkAttributes);
+        safeBind('btn-save-playlist-edit', 'click', savePlaylistEdit);
+        const playlistImageFileInput = document.getElementById('input-playlist-image-file');
+        if (playlistImageFileInput) {
+            playlistImageFileInput.addEventListener('change', () => {
+                const file = playlistImageFileInput.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => updatePlaylistImagePreview(reader.result);
+                reader.readAsDataURL(file);
+            });
+        }
+        const playlistImageUrlInput = document.getElementById('input-playlist-image-url');
+        if (playlistImageUrlInput) playlistImageUrlInput.addEventListener('input', () => updatePlaylistImagePreview(playlistImageUrlInput.value.trim()));
         if (dbLibrarySearch) dbLibrarySearch.addEventListener('input', renderLibraryManager);
         if (dbLibraryFilter) dbLibraryFilter.addEventListener('change', renderLibraryManager);
         if (dbLibraryResults) {
             dbLibraryResults.addEventListener('click', (e) => {
                 const trackId = e.target.dataset.trackId || e.target.closest('[data-track-id]')?.dataset.trackId || e.target.closest('.library-result-row')?.dataset.trackId;
                 if (!trackId) return;
+                if (isLibrarySelectMode) {
+                    toggleSelectedTrack(trackId);
+                    return;
+                }
                 if (e.target.classList.contains('btn-db-info-track')) {
                     currentFile = createPlayableTrackFromMeta(virtualLibrary[trackId]);
                     currentFile.name = trackId;
@@ -3058,6 +3684,11 @@
         if (historyList) historyList.addEventListener('click', handleHistoryTrackClick);
         if (dbPlaylistList) {
             dbPlaylistList.addEventListener('click', (e) => {
+                const editBtn = e.target.closest('.btn-db-edit-playlist');
+                if (editBtn) {
+                    openPlaylistEditModal(editBtn.dataset.playlistName);
+                    return;
+                }
                 const name = e.target.closest('.library-mini-row')?.dataset.playlistName;
                 if (!name) return;
                 activePlaylistView = name;
@@ -3122,7 +3753,9 @@
                     streamUrl,
                     localPath: null,
                     phonePath: null,
-                    desktopPath: null
+                    desktopPath: null,
+                    imageUrl: null,
+                    imageData: null
                 };
                 playlistTracks.push(newTrackFile);
             } else {
@@ -3141,29 +3774,99 @@
         const btnDeletePlaylistTrigger = document.getElementById('btn-delete-playlist-trigger');
         const playlistChecklistContainer = document.getElementById('playlists-checklist');
 
+        function updatePlaylistImagePreview(src = '') {
+            const preview = document.getElementById('playlist-image-preview');
+            if (!preview) return;
+            preview.innerHTML = src ? `<img src="${escapeHtml(src)}" alt="Playlist preview">` : 'No playlist image';
+        }
+
+        function openPlaylistEditModal(name) {
+            if (!name || !playlists[name]) return;
+            editingPlaylistName = name;
+            const meta = ensurePlaylistMeta(name);
+            document.getElementById('input-playlist-edit-original-name').value = name;
+            document.getElementById('input-playlist-edit-name').value = name;
+            document.getElementById('input-playlist-image-url').value = meta.imageUrl || '';
+            document.getElementById('input-playlist-image-file').value = '';
+            updatePlaylistImagePreview(meta.imageData || meta.imageUrl || '');
+            showModal('modal-playlist-edit');
+        }
+
+        function savePlaylistEdit() {
+            const original = document.getElementById('input-playlist-edit-original-name')?.value || editingPlaylistName;
+            const newName = (document.getElementById('input-playlist-edit-name')?.value || '').trim();
+            if (!original || !playlists[original]) { showToast('Playlist not found.'); return; }
+            if (!newName) { showToast('Playlist name cannot be blank.'); return; }
+            if (newName !== original && playlists[newName]) { showToast('A playlist with that name already exists.'); return; }
+            const oldMeta = ensurePlaylistMeta(original);
+            const imageUrl = (document.getElementById('input-playlist-image-url')?.value || '').trim();
+            const fileInput = document.getElementById('input-playlist-image-file');
+            const commit = (imageDataValue = oldMeta.imageData || '') => {
+                const newMeta = { ...oldMeta, imageUrl, imageData: imageDataValue };
+                if (newName !== original) {
+                    playlists[newName] = playlists[original];
+                    delete playlists[original];
+                    playlistMeta[newName] = newMeta;
+                    delete playlistMeta[original];
+                    Object.values(virtualLibrary).forEach(track => {
+                        if (Array.isArray(track.playlists)) track.playlists = track.playlists.map(n => n === original ? newName : n);
+                    });
+                    if (activePlaylistView === original) activePlaylistView = newName;
+                } else {
+                    playlistMeta[original] = newMeta;
+                }
+                closeModal('modal-playlist-edit');
+                editingPlaylistName = null;
+                renderPlaylistsList();
+                renderLibraryManager();
+                if (currentFile) updateMetadataUI();
+                showToast('Playlist updated.');
+            };
+            const file = fileInput?.files?.[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = () => commit(reader.result);
+                reader.onerror = () => { showToast('Could not read playlist image.'); };
+                reader.readAsDataURL(file);
+            } else {
+                commit(oldMeta.imageData || '');
+            }
+        }
+
         function renderPlaylistsList() {
             syncAllTrackPlaylistMetadata();
             const container = document.getElementById('playlists-explorer-group');
             if (!container) return;
             container.innerHTML = "";
 
-            Object.keys(playlists).forEach(plName => {
+            Object.keys(playlists).sort().forEach(plName => {
+                ensurePlaylistMeta(plName);
                 const row = document.createElement('div');
                 row.className = "playlist-row";
                 row.style.background = activePlaylistView === plName ? "rgba(75, 132, 191, 0.15)" : "rgba(0,0,0,0.15)";
                 row.style.borderColor = activePlaylistView === plName ? "var(--water-blue)" : "transparent";
-                
+                row.dataset.playlistName = plName;
                 row.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="color:var(--stone-ochre); font-weight:bold;">▤ ${escapeHtml(plName)}</span>
-                        <span style="font-size:0.75rem; color:var(--chiseled-bronze);">(${(playlists[plName] || []).length} tracks)</span>
+                    <div class="playlist-row-content">
+                        ${playlistThumbHtml(plName, false)}
+                        <div>
+                            <div style="color:var(--stone-ochre); font-weight:bold;">▤ ${escapeHtml(plName)}</div>
+                            <div style="font-size:0.75rem; color:var(--chiseled-bronze);">${(playlists[plName] || []).length} tracks</div>
+                        </div>
                     </div>
-                    <button class="btn-pill" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--light-teal)'}">
-                        ${activePlaylistView === plName ? 'Close Folder' : 'Open Folder'}
-                    </button>
+                    <div class="playlist-row-tools">
+                        <button class="btn-pill playlist-edit-mini btn-edit-playlist" data-playlist-name="${escapeHtml(plName)}">Edit</button>
+                        <button class="btn-pill btn-open-playlist" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--light-teal)'}">
+                            ${activePlaylistView === plName ? 'Close Folder' : 'Open Folder'}
+                        </button>
+                    </div>
                 `;
 
-                row.addEventListener('click', () => {
+                row.addEventListener('click', (e) => {
+                    if (e.target.closest('.btn-edit-playlist')) {
+                        openPlaylistEditModal(plName);
+                        return;
+                    }
                     if (activePlaylistView === plName) {
                         activePlaylistView = null;
                     } else {
@@ -3193,6 +3896,7 @@
             if (!plInput) return;
             if (playlists[plInput]) { showToast("Playlist folder already exists!"); return; }
             playlists[plInput] = [];
+            ensurePlaylistMeta(plInput);
             closeModal('modal-playlist-create');
             document.getElementById('input-playlist-name').value = "";
             renderPlaylistsList();
@@ -3203,6 +3907,7 @@
         btnDeletePlaylistTrigger.addEventListener('click', () => {
             if (!activePlaylistView) { showToast("Please open a playlist folder to delete first."); return; }
             delete playlists[activePlaylistView];
+            delete playlistMeta[activePlaylistView];
             activePlaylistView = null;
             syncAllTrackPlaylistMetadata();
             renderPlaylistsList();
@@ -3221,32 +3926,35 @@
 
         function activateInlineRename() {
             if (!currentFile) return;
-            const meta = virtualLibrary[currentFile.name];
-            inputInlineNickname.value = meta.nickname || "";
-            nicknameDisplayMode.style.display = "none";
-            nicknameEditMode.style.display = "inline-flex";
+            setNowPlayingEditMode(true);
+            inputInlineNickname.value = virtualLibrary[currentFile.name].nickname || "";
             inputInlineNickname.focus();
         }
 
-        btnInlineEdit.addEventListener('click', activateInlineRename);
+        if (btnInlineEdit) btnInlineEdit.addEventListener('click', activateInlineRename);
 
-        btnInlineCancel.addEventListener('click', () => {
-            nicknameDisplayMode.style.display = "inline-flex";
-            nicknameEditMode.style.display = "none";
-        });
+        btnInlineCancel.addEventListener('click', () => setNowPlayingEditMode(false));
 
         function saveInlineNickname() {
             if (!currentFile) return;
-            virtualLibrary[currentFile.name].nickname = inputInlineNickname.value.trim();
+            const meta = virtualLibrary[currentFile.name];
+            meta.nickname = inputInlineNickname.value.trim();
+            const trackImageInput = document.getElementById('input-track-image-url');
+            if (trackImageInput) meta.imageUrl = trackImageInput.value.trim();
+            const inlineTags = document.getElementById('input-inline-tags');
+            if (inlineTags) meta.tags = parseCommaTags(inlineTags.value);
+            saveActiveTrackPlaylistMembership();
             updateMetadataUI();
             renderLibraryManager();
-            nicknameDisplayMode.style.display = "inline-flex";
-            nicknameEditMode.style.display = "none";
-            showToast("Nickname saved!");
+            showToast("Track info saved!");
         }
 
         btnInlineSave.addEventListener('click', saveInlineNickname);
         inputInlineNickname.addEventListener('keypress', (e) => { if (e.key === 'Enter') saveInlineNickname(); });
+        safeBind('btn-now-playing-edit', 'click', () => {
+            if (!currentFile) { showToast('No active track to edit.'); return; }
+            setNowPlayingEditMode(!nowPlayingEditMode);
+        });
 
         function triggerMetaEdit() {
             if (!currentFile) return;
