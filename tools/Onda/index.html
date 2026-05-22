@@ -613,7 +613,8 @@
             overflow-y: auto;
         }
         .visualizer-composer-card,
-        .library-tools-card {
+        .library-tools-card,
+        .settings-json-tools-card {
             background: rgba(0, 0, 0, 0.25);
             border: 1.5px solid var(--chiseled-bronze);
             border-radius: 12px;
@@ -1376,6 +1377,81 @@
             color: var(--alabaster-paper);
             box-shadow: 0 0 14px rgba(117,178,222,0.28);
         }
+        .mobile-icon-help-panel {
+            display: none;
+            padding: 14px;
+            overflow: auto;
+        }
+        .mobile-icon-help-title {
+            color: var(--gold-highlight);
+            font-family: var(--font-title);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin: 0 0 6px 0;
+            font-size: 0.96rem;
+        }
+        .mobile-icon-help-note {
+            color: var(--alabaster-paper);
+            opacity: 0.82;
+            font-size: 0.8rem;
+            line-height: 1.35;
+            margin: 0 0 12px 0;
+        }
+        .mobile-icon-help-list {
+            display: grid;
+            gap: 8px;
+        }
+        .mobile-icon-help-row {
+            display: grid;
+            grid-template-columns: 46px minmax(0, 1fr) 74px;
+            gap: 8px;
+            align-items: center;
+            padding: 8px;
+            border: 1px solid rgba(117,178,222,0.26);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.20);
+        }
+        .mobile-icon-help-preview {
+            width: 36px;
+            height: 36px;
+            border-radius: 999px;
+            border: 1px solid rgba(117,178,222,0.65);
+            color: var(--water-spray);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.25);
+            font-size: 1rem;
+        }
+        .mobile-icon-help-name {
+            color: var(--alabaster-paper);
+            font-weight: 800;
+            font-size: 0.82rem;
+        }
+        .mobile-icon-help-desc {
+            color: rgba(255,255,255,0.62);
+            font-size: 0.72rem;
+            line-height: 1.25;
+            margin-top: 2px;
+        }
+        .mobile-icon-edit-input {
+            width: 100%;
+            border-radius: 999px;
+            text-align: center;
+            padding: 7px 6px;
+            border: 1px solid rgba(117,178,222,0.45);
+            background: rgba(0,0,0,0.22);
+            color: var(--water-spray);
+            font-weight: 900;
+            font-size: 1rem;
+        }
+        .mobile-icon-help-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
 
 
         /* Responsive Fallbacks */
@@ -1443,6 +1519,13 @@
             #library-manager-drawer[data-mobile-view="playlists"] #db-recent-list,
             #library-manager-drawer[data-mobile-view="playlists"] .library-results-panel {
                 display: none;
+            }
+            #library-manager-drawer[data-mobile-view="help"] .library-sidebar,
+            #library-manager-drawer[data-mobile-view="help"] .library-results-panel {
+                display: none;
+            }
+            #library-manager-drawer[data-mobile-view="help"] .mobile-icon-help-panel {
+                display: block;
             }
             #organon-middle-panel { padding: 15px 15px 120px 15px; }
             #scrollable-tags-bar { padding: 6px 15px; }
@@ -1713,16 +1796,17 @@
                     <div class="library-drawer-title">Database Engine</div>
                     <div class="library-drawer-subtitle">Library catalogue, playlists, JSON import/export, search, recent tracks and missing-file checks.</div>
                     <div class="mobile-library-header-actions" aria-label="Mobile library controls">
-                        <button class="mobile-db-icon-btn active-mobile-view" data-mobile-view="results" title="Results">🔎</button>
-                        <button class="mobile-db-icon-btn" data-mobile-view="recents" title="Recents">🕘</button>
-                        <button class="mobile-db-icon-btn" data-mobile-view="playlists" title="Playlists">📜</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-select-mode" title="Select multiple">☑️</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-add-folder" title="Add folder">📁</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-import-json" title="Import JSON">📥</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-library" title="Export full library">📤</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-streams" title="Export streams">☁️</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-playlist" title="Export playlist">🧾</button>
-                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-check-library" title="Check files">✅</button>
+                        <button class="mobile-db-icon-btn active-mobile-view" data-mobile-view="results" data-mobile-icon-key="results" title="Results">🔎</button>
+                        <button class="mobile-db-icon-btn" data-mobile-view="recents" data-mobile-icon-key="recents" title="Recents">🕘</button>
+                        <button class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists">📜</button>
+                        <button class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Icon help and display settings">?</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-select-mode" data-mobile-icon-key="select" title="Select multiple">☑️</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-add-folder" data-mobile-icon-key="folder" title="Add folder">📁</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-import-json" data-mobile-icon-key="import" title="Import JSON">📥</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-library" data-mobile-icon-key="export" title="Export full library">📤</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-streams" data-mobile-icon-key="streams" title="Export streams">☁️</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-playlist" data-mobile-icon-key="playlistExport" title="Export playlist">🧾</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-check-library" data-mobile-icon-key="check" title="Check files">✅</button>
                     </div>
                 </div>
                 <button id="btn-close-library-manager" class="tiny-icon-btn" title="Close library manager">×</button>
@@ -1772,6 +1856,14 @@
                     <p class="library-section-label">Library Results</p>
                     <div id="db-library-results"></div>
                 </section>
+                <section id="mobile-icon-help-panel" class="mobile-icon-help-panel" aria-label="Mobile library icon help and settings">
+                    <p class="mobile-icon-help-title">Mobile Icon Guide</p>
+                    <p class="mobile-icon-help-note">These are the compact buttons in the mobile Library drawer. Change the symbol in the right-hand field to customise what appears in the top control strip. The meaning/action stays the same.</p>
+                    <div id="mobile-icon-help-list" class="mobile-icon-help-list"></div>
+                    <div class="mobile-icon-help-actions">
+                        <button id="btn-reset-mobile-icons" class="btn-pill">Reset Icons</button>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -1787,9 +1879,20 @@
                 <label style="font-size: 0.85rem; color: var(--water-spray);">Volume Boost: <span id="vol-readout">100%</span></label>
                 <input type="range" id="vol-slider" min="0" max="2" step="0.05" value="1" style="width: 100%;">
             </div>
-            <div class="control-row">
-                <label style="font-size: 0.85rem; color: var(--water-spray);">Speed Adjust: <span id="speed-readout">1.0x</span></label>
-                <input type="range" id="speed-slider" min="0.5" max="3.0" step="0.1" value="1" style="width: 100%;">
+            <input type="hidden" id="speed-slider" value="1">
+            <span id="speed-readout" style="display:none;">1.0x</span>
+
+            <div class="library-tools-card settings-json-tools-card">
+                <div class="library-title-row">
+                    <span class="library-title">Settings Backup</span>
+                </div>
+                <div class="library-help">Save or restore app settings, visualiser stacks, mobile icon labels, and optional playlists. This does not save actual music files.</div>
+                <div class="library-action-grid">
+                    <button id="btn-export-settings-json" class="btn-pill" title="Export settings, visualiser presets, icon display settings and UI preferences">Import/Export Settings JSON</button>
+                    <button id="btn-backup-settings-playlists" class="btn-pill" title="Export settings plus playlist lists and playlist artwork metadata">Backup Settings + Playlists</button>
+                    <button id="btn-import-settings-json" class="btn-pill" title="Import an Onda settings or settings+playlists backup JSON">Import</button>
+                    <input type="file" id="settings-json-file-input" accept=".json,application/json" style="display:none;">
+                </div>
             </div>
             <div class="visualizer-composer-card">
                 <div class="composer-title-row">
@@ -2023,8 +2126,13 @@
         let lastPrevClickTime = 0;
         let visualizerStyle = "bars";
         const VISUALIZER_STORAGE_KEY = "ondaVisualizerPresetsV1";
+        const VISUALIZER_ACTIVE_STACK_KEY = "ondaActiveVisualizerStackV1";
+        const ACTIVE_WORKSPACE_TAB_KEY = "ondaActiveWorkspaceTabV1";
+        const LIBRARY_MOBILE_VIEW_KEY = "ondaLibraryMobileViewV1";
+        const MOBILE_DB_ICON_STORAGE_KEY = "ondaMobileLibraryIconDisplayV1";
+        const LOCAL_UI_SAVE_EVENT_KEY = "ondaLastLocalUiSaveV1";
         const LIBRARY_AUTOSAVE_KEY = "ondaActiveLibraryV1";
-        let visualizerLayers = [createDefaultVisualizerLayer(1)];
+        let visualizerLayers = loadActiveVisualizerStack();
         let savedVisualizerPresets = loadVisualizerPresets();
 
         let isRepeatOne = false;
@@ -2091,6 +2199,8 @@
         const dbBulkActions = document.getElementById('db-bulk-actions');
         const dbSelectionSummary = document.getElementById('db-selection-summary');
         const btnDbSelectMode = document.getElementById('btn-db-select-mode');
+        const mobileIconHelpList = document.getElementById('mobile-icon-help-list');
+        const btnResetMobileIcons = document.getElementById('btn-reset-mobile-icons');
         const historyCardGrid = document.getElementById('history-card-grid');
         const historyList = document.getElementById('history-list');
         const HISTORY_STORAGE_KEY = "ondaTrackHistoryV1";
@@ -2133,6 +2243,104 @@
 
         function saveVisualizerPresets() {
             localStorage.setItem(VISUALIZER_STORAGE_KEY, JSON.stringify(savedVisualizerPresets));
+        }
+
+        function loadActiveVisualizerStack() {
+            try {
+                const raw = localStorage.getItem(VISUALIZER_ACTIVE_STACK_KEY);
+                if (!raw) return [createDefaultVisualizerLayer(1)];
+                const parsed = JSON.parse(raw);
+                const storedLayers = Array.isArray(parsed) ? parsed : parsed.layers;
+                if (!Array.isArray(storedLayers) || storedLayers.length === 0) return [createDefaultVisualizerLayer(1)];
+                return storedLayers.map((layer, index) => ({
+                    ...normalizeVisualizerLayer(layer, index + 1),
+                    id: 'vis_' + Date.now().toString(36) + '_' + index + '_' + Math.random().toString(36).slice(2, 5)
+                }));
+            } catch (err) {
+                console.warn('Could not read active visualizer stack:', err);
+                return [createDefaultVisualizerLayer(1)];
+            }
+        }
+
+        function saveActiveVisualizerStack() {
+            try {
+                const payload = {
+                    app: 'Onda Media Player',
+                    type: 'onda-active-visualizer-stack',
+                    version: 1,
+                    savedAt: new Date().toISOString(),
+                    layers: visualizerLayers.map((layer, index) => {
+                        const normal = normalizeVisualizerLayer(layer, index + 1);
+                        return {
+                            style: normal.style,
+                            layer: normal.layer,
+                            blend: normal.blend,
+                            gradient: normal.gradient,
+                            align: normal.align,
+                            hPosition: normal.hPosition,
+                            vPosition: normal.vPosition,
+                            amplitude: normal.amplitude,
+                            spacing: normal.spacing,
+                            rotate: normal.rotate,
+                            flipH: normal.flipH,
+                            flipV: normal.flipV,
+                            randomize: normal.randomize,
+                            mirror: normal.mirror,
+                            hidden: normal.hidden,
+                            drawMode: normal.drawMode,
+                            colors: (normal.colors || []).map(sanitizeHexColor).slice(0, 6)
+                        };
+                    })
+                };
+                localStorage.setItem(VISUALIZER_ACTIVE_STACK_KEY, JSON.stringify(payload));
+            } catch (err) {
+                console.warn('Could not save active visualizer stack:', err);
+                showToast('Could not save visualiser settings. Browser storage may be blocked.');
+            }
+        }
+
+        function syncVisibleVisualizerCardsToState() {
+            document.querySelectorAll('.visual-layer-card').forEach(card => {
+                try {
+                    syncVisualizerLayerFromCard(card);
+                } catch (err) {
+                    console.warn('Could not sync visualiser layer before local save:', err);
+                }
+            });
+        }
+
+        function saveLocalUiStateCheckpoint(reason = 'checkpoint') {
+            try {
+                syncVisibleVisualizerCardsToState();
+                saveActiveVisualizerStack();
+
+                const activeTab = document.querySelector('.viewport-content.active-content')?.id;
+                if (activeTab) localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, activeTab);
+                if (libraryDrawer) localStorage.setItem(LIBRARY_MOBILE_VIEW_KEY, libraryDrawer.dataset.mobileView || 'results');
+
+                localStorage.setItem(LOCAL_UI_SAVE_EVENT_KEY, JSON.stringify({
+                    reason,
+                    savedAt: new Date().toISOString()
+                }));
+            } catch (err) {
+                console.warn('Could not save local UI checkpoint:', err);
+            }
+        }
+
+        function restoreLocalUiScreen() {
+            try {
+                const savedMobileView = localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY);
+                if (savedMobileView && ['results', 'recents', 'playlists', 'help'].includes(savedMobileView)) {
+                    setMobileLibraryView(savedMobileView);
+                }
+
+                const savedTab = localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY);
+                if (savedTab && document.getElementById(savedTab)) {
+                    switchWorkspaceTab(savedTab);
+                }
+            } catch (err) {
+                console.warn('Could not restore local UI screen:', err);
+            }
         }
 
         function cloneVisualizerLayer(layer) {
@@ -2454,6 +2662,7 @@
             const spacingReadout = card.querySelector('.vis-layer-spacing-readout');
             if (spacingReadout) spacingReadout.textContent = `${layer.spacing.toFixed(1)}`;
             visualizerStyle = layer.style;
+            saveActiveVisualizerStack();
         }
 
         function saveCurrentVisualizerStack() {
@@ -2487,6 +2696,7 @@
                 })
             };
             saveVisualizerPresets();
+            saveActiveVisualizerStack();
             renderVisualizerPresetSelect();
             showToast(`Saved visualiser: ${cleanedName}`);
         }
@@ -2500,6 +2710,7 @@
             }));
             if (visualizerLayers.length === 0) visualizerLayers = [createDefaultVisualizerLayer(1)];
             renderVisualizerLayerCards();
+            saveActiveVisualizerStack();
             showToast(`Loaded visualiser: ${name}`);
         }
 
@@ -2521,6 +2732,12 @@
                 visualizerLayerList.addEventListener('change', (e) => {
                     const card = e.target.closest('.visual-layer-card');
                     if (card) syncVisualizerLayerFromCard(card);
+                    saveLocalUiStateCheckpoint('visualiser-field-change');
+                });
+                visualizerLayerList.addEventListener('focusout', (e) => {
+                    const card = e.target.closest('.visual-layer-card');
+                    if (card) syncVisualizerLayerFromCard(card);
+                    saveLocalUiStateCheckpoint('visualiser-field-blur');
                 });
                 visualizerLayerList.addEventListener('click', (e) => {
                     const card = e.target.closest('.visual-layer-card');
@@ -2549,6 +2766,7 @@
                     if (e.target.classList.contains('btn-hide-layer')) {
                         syncVisualizerLayerFromCard(card);
                         layer.hidden = !layer.hidden;
+                        saveActiveVisualizerStack();
                         renderVisualizerLayerCards();
                         return;
                     }
@@ -2559,12 +2777,14 @@
                             return;
                         }
                         visualizerLayers = visualizerLayers.filter(item => item.id !== layer.id);
+                        saveActiveVisualizerStack();
                         renderVisualizerLayerCards();
                     }
 
                     if (e.target.classList.contains('btn-duplicate-layer')) {
                         syncVisualizerLayerFromCard(card);
                         visualizerLayers.push(cloneVisualizerLayer(layer));
+                        saveActiveVisualizerStack();
                         renderVisualizerLayerCards();
                     }
 
@@ -2586,6 +2806,7 @@
                 btnAddVisualLayer.addEventListener('click', () => {
                     const lastLayer = visualizerLayers[visualizerLayers.length - 1] || createDefaultVisualizerLayer(1);
                     visualizerLayers.push(cloneVisualizerLayer(lastLayer));
+                    saveActiveVisualizerStack();
                     renderVisualizerLayerCards();
                 });
             }
@@ -3098,13 +3319,108 @@
             });
         }
 
+        const MOBILE_DB_ICON_DEFINITIONS = [
+            { key: 'results', icon: '🔎', label: 'Results', description: 'Shows the current library search results.' },
+            { key: 'recents', icon: '🕘', label: 'Recents', description: 'Shows the most recently played or loaded tracks.' },
+            { key: 'playlists', icon: '📜', label: 'Playlists', description: 'Shows saved playlists and playlist edit controls.' },
+            { key: 'help', icon: '?', label: 'Icon Guide', description: 'Explains these mobile buttons and lets you change their display symbols.' },
+            { key: 'select', icon: '☑️', label: 'Select Multiple', description: 'Turns on multi-select for bulk playlist/tag/library actions.' },
+            { key: 'folder', icon: '📁', label: 'Add Folder', description: 'Adds all playable media files from a selected local folder.' },
+            { key: 'import', icon: '📥', label: 'Import JSON', description: 'Imports an Onda library, stream add-on, playlist, or presets JSON.' },
+            { key: 'export', icon: '📤', label: 'Export Full', description: 'Exports the current full library JSON.' },
+            { key: 'streams', icon: '☁️', label: 'Export Streams', description: 'Exports only online stream records as an add-on library.' },
+            { key: 'playlistExport', icon: '🧾', label: 'Export Playlist', description: 'Exports a selected playlist JSON.' },
+            { key: 'check', icon: '✅', label: 'Check Files', description: 'Checks streams and reports which local files need relinking.' }
+        ];
+
+        function getMobileIconDefaults() {
+            return Object.fromEntries(MOBILE_DB_ICON_DEFINITIONS.map(item => [item.key, item.icon]));
+        }
+
+        function loadMobileIconSettings() {
+            try {
+                const parsed = JSON.parse(localStorage.getItem(MOBILE_DB_ICON_STORAGE_KEY) || '{}');
+                return { ...getMobileIconDefaults(), ...(parsed && typeof parsed === 'object' ? parsed : {}) };
+            } catch (err) {
+                console.warn('Could not read mobile library icon settings:', err);
+                return getMobileIconDefaults();
+            }
+        }
+
+        function saveMobileIconSettings(settings) {
+            try {
+                localStorage.setItem(MOBILE_DB_ICON_STORAGE_KEY, JSON.stringify(settings || getMobileIconDefaults()));
+                saveLocalUiStateCheckpoint('mobile-icon-settings-save');
+            } catch (err) {
+                console.warn('Could not save mobile library icon settings:', err);
+                showToast('Could not save mobile icon settings.');
+            }
+        }
+
+        function normalizeMobileIconValue(value, fallback) {
+            const clean = String(value || '').trim();
+            return clean ? clean.slice(0, 8) : fallback;
+        }
+
+        function applyMobileIconSettings() {
+            const settings = loadMobileIconSettings();
+            MOBILE_DB_ICON_DEFINITIONS.forEach(def => {
+                const btn = document.querySelector(`.mobile-db-icon-btn[data-mobile-icon-key="${def.key}"]`);
+                if (!btn) return;
+                btn.textContent = normalizeMobileIconValue(settings[def.key], def.icon);
+                btn.title = `${def.label}: ${def.description}`;
+            });
+            renderMobileIconHelpPanel(settings);
+        }
+
+        function renderMobileIconHelpPanel(settings = loadMobileIconSettings()) {
+            if (!mobileIconHelpList) return;
+            mobileIconHelpList.innerHTML = '';
+            MOBILE_DB_ICON_DEFINITIONS.forEach(def => {
+                const value = normalizeMobileIconValue(settings[def.key], def.icon);
+                const row = document.createElement('div');
+                row.className = 'mobile-icon-help-row';
+                row.innerHTML = `
+                    <div class="mobile-icon-help-preview" data-icon-preview-key="${def.key}">${escapeHtml(value)}</div>
+                    <div>
+                        <div class="mobile-icon-help-name">${escapeHtml(def.label)}</div>
+                        <div class="mobile-icon-help-desc">${escapeHtml(def.description)}</div>
+                    </div>
+                    <input class="mobile-icon-edit-input" data-icon-edit-key="${def.key}" value="${escapeHtml(value)}" maxlength="8" inputmode="text" aria-label="Change ${escapeHtml(def.label)} icon">
+                `;
+                mobileIconHelpList.appendChild(row);
+            });
+        }
+
+        function updateMobileIconSetting(key, value) {
+            const def = MOBILE_DB_ICON_DEFINITIONS.find(item => item.key === key);
+            if (!def) return;
+            const settings = loadMobileIconSettings();
+            settings[key] = normalizeMobileIconValue(value, def.icon);
+            saveMobileIconSettings(settings);
+            applyMobileIconSettings();
+            showToast(`${def.label} icon updated.`);
+        }
+
+        function resetMobileIconSettings() {
+            saveMobileIconSettings(getMobileIconDefaults());
+            applyMobileIconSettings();
+            showToast('Mobile library icons reset.');
+        }
+
         function setMobileLibraryView(view = 'results') {
             if (!libraryDrawer) return;
-            const safeView = ['results', 'recents', 'playlists'].includes(view) ? view : 'results';
+            const safeView = ['results', 'recents', 'playlists', 'help'].includes(view) ? view : 'results';
             libraryDrawer.dataset.mobileView = safeView;
             document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
                 btn.classList.toggle('active-mobile-view', btn.dataset.mobileView === safeView);
             });
+            try {
+                localStorage.setItem(LIBRARY_MOBILE_VIEW_KEY, safeView);
+                saveLocalUiStateCheckpoint(`mobile-library-view:${safeView}`);
+            } catch (err) {
+                console.warn('Could not save mobile library view:', err);
+            }
         }
 
         function promptSearchFuzziness() {
@@ -3211,14 +3527,17 @@
 
         function toggleLibraryDrawer(forceOpen = null) {
             if (!libraryDrawer) return;
-            const shouldOpen = forceOpen === null ? !libraryDrawer.classList.contains('drawer-open') : !!forceOpen;
+            const wasOpen = libraryDrawer.classList.contains('drawer-open');
+            const shouldOpen = forceOpen === null ? !wasOpen : !!forceOpen;
+            if (wasOpen && !shouldOpen) saveLocalUiStateCheckpoint('library-drawer-close');
             if (shouldOpen) syncMobileLibraryDrawerBounds();
             libraryDrawer.classList.toggle('drawer-open', shouldOpen);
             libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
             if (shouldOpen) {
-                setMobileLibraryView(libraryDrawer.dataset.mobileView || 'results');
+                setMobileLibraryView(libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results');
                 renderLibraryManager();
             }
+            saveLocalUiStateCheckpoint(shouldOpen ? 'library-drawer-open' : 'library-drawer-closed');
         }
 
         function exportPlaylistJson(playlistName) {
@@ -3356,6 +3675,154 @@
 
         function slugifyFileName(value) {
             return (value || 'onda-library').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'onda-library';
+        }
+
+        function serializeVisualizerLayersForJson() {
+            return visualizerLayers.map((layer, index) => {
+                const normal = normalizeVisualizerLayer(layer, index + 1);
+                return {
+                    style: normal.style,
+                    layer: normal.layer,
+                    blend: normal.blend,
+                    gradient: normal.gradient,
+                    align: normal.align,
+                    hPosition: normal.hPosition,
+                    vPosition: normal.vPosition,
+                    amplitude: normal.amplitude,
+                    spacing: normal.spacing,
+                    rotate: normal.rotate,
+                    flipH: normal.flipH,
+                    flipV: normal.flipV,
+                    randomize: normal.randomize,
+                    mirror: normal.mirror,
+                    hidden: normal.hidden,
+                    drawMode: normal.drawMode,
+                    colors: (normal.colors || []).map(sanitizeHexColor).slice(0, 6)
+                };
+            });
+        }
+
+        function buildSettingsExport({ includePlaylists = false } = {}) {
+            saveLocalUiStateCheckpoint(includePlaylists ? 'settings-playlists-backup-export' : 'settings-export');
+
+            const settings = {
+                libraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
+                volumeBoost: parseFloat(volSlider?.value || '1') || 1,
+                playbackSpeed: parseFloat(speedSlider?.value || activeAudio?.playbackRate || '1') || 1,
+                speedCycleIndex: currentSpeedIdx || 0,
+                activeWorkspaceTab: document.querySelector('.viewport-content.active-content')?.id || localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY) || 'tab-files',
+                mobileLibraryView: libraryDrawer?.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results',
+                libraryFuzzySearch: librarySearchFuzziness,
+                mobileLibraryIcons: loadMobileIconSettings()
+            };
+
+            const payload = {
+                app: 'Onda Media Player',
+                type: includePlaylists ? 'onda-settings-playlists-backup' : 'onda-settings',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                settings,
+                visualizer: {
+                    activeStack: serializeVisualizerLayersForJson(),
+                    presets: savedVisualizerPresets || {}
+                }
+            };
+
+            if (includePlaylists) {
+                payload.playlists = playlists || {};
+                payload.playlistMeta = playlistMeta || {};
+            }
+
+            return payload;
+        }
+
+        function applyImportedSettingsJson(data) {
+            if (!data || typeof data !== 'object') {
+                showToast('Import failed: invalid settings JSON.');
+                return;
+            }
+
+            if (data.type === 'onda-library' || data.tracks) {
+                importOndaLibrary(data);
+                return;
+            }
+
+            const settings = data.settings || {};
+            if (settings.libraryName && libraryNameInput) libraryNameInput.value = settings.libraryName;
+
+            if (typeof settings.volumeBoost !== 'undefined' && volSlider) {
+                const val = Math.max(0, Math.min(2, parseFloat(settings.volumeBoost) || 1));
+                volSlider.value = String(val);
+                if (gainNode) gainNode.gain.value = val;
+                streamAudio.volume = Math.min(1, Math.max(0, val));
+                const volReadout = document.getElementById('vol-readout');
+                if (volReadout) volReadout.innerText = Math.round(val * 100) + '%';
+            }
+
+            if (typeof settings.playbackSpeed !== 'undefined' && speedSlider) {
+                const speed = Math.max(0.5, Math.min(3, parseFloat(settings.playbackSpeed) || 1));
+                speedSlider.value = String(speed);
+                if (activeAudio) activeAudio.playbackRate = speed;
+                const speedReadout = document.getElementById('speed-readout');
+                if (speedReadout) speedReadout.innerText = speed.toFixed(1) + 'x';
+                if (btnSpeedCycle) btnSpeedCycle.innerText = `⚡${speed.toFixed(1).replace('.0', '')}`;
+            }
+
+            if (Number.isInteger(settings.speedCycleIndex)) {
+                currentSpeedIdx = Math.max(0, Math.min(speedCycles.length - 1, settings.speedCycleIndex));
+            }
+
+            if (settings.activeWorkspaceTab) localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, settings.activeWorkspaceTab);
+            if (settings.mobileLibraryView) localStorage.setItem(LIBRARY_MOBILE_VIEW_KEY, settings.mobileLibraryView);
+
+            if (typeof settings.libraryFuzzySearch !== 'undefined') {
+                librarySearchFuzziness = Math.max(0, Math.min(4, parseInt(settings.libraryFuzzySearch, 10) || 0));
+                localStorage.setItem(FUZZY_SEARCH_STORAGE_KEY, String(librarySearchFuzziness));
+            }
+
+            if (settings.mobileLibraryIcons && typeof settings.mobileLibraryIcons === 'object') {
+                saveMobileIconSettings({ ...getMobileIconDefaults(), ...settings.mobileLibraryIcons });
+            }
+
+            const incomingPresets = data.visualizer?.presets || data.visualizerPresets;
+            if (incomingPresets && typeof incomingPresets === 'object') {
+                savedVisualizerPresets = { ...savedVisualizerPresets, ...incomingPresets };
+                saveVisualizerPresets();
+                renderVisualizerPresetSelect();
+            }
+
+            const incomingStack = data.visualizer?.activeStack || data.activeStack || data.layers;
+            if (Array.isArray(incomingStack) && incomingStack.length) {
+                visualizerLayers = incomingStack.map((layer, index) => ({
+                    ...normalizeVisualizerLayer(layer, index + 1),
+                    id: 'vis_' + Date.now().toString(36) + '_' + index + '_' + Math.random().toString(36).slice(2, 5)
+                }));
+                saveActiveVisualizerStack();
+                renderVisualizerLayerCards();
+            }
+
+            if (data.playlists && typeof data.playlists === 'object') {
+                Object.entries(data.playlists).forEach(([name, value]) => {
+                    const trackIds = Array.isArray(value) ? value : (Array.isArray(value?.trackIds) ? value.trackIds : []);
+                    playlists[name] = [...new Set(trackIds.filter(Boolean))];
+
+                    const inlineMeta = (!Array.isArray(value) && typeof value === 'object') ? { ...value } : {};
+                    delete inlineMeta.trackIds;
+                    delete inlineMeta.name;
+                    playlistMeta[name] = {
+                        ...(playlistMeta[name] || {}),
+                        ...(data.playlistMeta?.[name] || {}),
+                        ...inlineMeta
+                    };
+                });
+                renderPlaylistsList();
+                renderLibraryManager();
+            }
+
+            applyMobileIconSettings();
+            restoreLocalUiScreen();
+            saveLocalUiStateCheckpoint('settings-json-import');
+            showToast(data.playlists ? 'Imported settings and playlists backup.' : 'Imported settings JSON.');
         }
 
         function importOndaLibrary(data) {
@@ -3798,15 +4265,27 @@
 
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
         function switchWorkspaceTab(tabId) {
+            saveLocalUiStateCheckpoint(`screen-change-before:${tabId}`);
+
+            const targetTab = document.getElementById(tabId);
+            if (!targetTab) return;
+
             document.querySelectorAll('.mode-tab-btn').forEach(btn => btn.classList.remove('tab-active'));
             const btnEl = document.getElementById(`tab-btn-${tabId.replace('tab-', '')}`);
             if (btnEl) btnEl.classList.add('tab-active');
 
             document.querySelectorAll('.viewport-content').forEach(card => card.classList.remove('active-content'));
-            document.getElementById(tabId).classList.add('active-content');
+            targetTab.classList.add('active-content');
 
             if (tabId === "tab-playlists") renderPlaylistsList();
             if (tabId === "tab-history") renderHistoryTab();
+
+            try {
+                localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, tabId);
+            } catch (err) {
+                console.warn('Could not save active workspace tab:', err);
+            }
+            saveLocalUiStateCheckpoint(`screen-change-after:${tabId}`);
         }
 
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
@@ -4024,14 +4503,46 @@
             document.getElementById('vol-readout').innerText = Math.round(val * 100) + "%";
         });
 
-        speedSlider.addEventListener('input', (e) => {
+        if (speedSlider) speedSlider.addEventListener('input', (e) => {
             const val = parseFloat(e.target.value);
             activeAudio.playbackRate = val;
-            document.getElementById('speed-readout').innerText = val.toFixed(1) + "x";
-            btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
+            const speedReadout = document.getElementById('speed-readout');
+            if (speedReadout) speedReadout.innerText = val.toFixed(1) + "x";
+            if (btnSpeedCycle) btnSpeedCycle.innerText = `⚡${val.toFixed(1).replace('.0', '')}`;
         });
 
         initVisualizerComposerUI();
+        restoreLocalUiScreen();
+
+        safeBind('btn-export-settings-json', 'click', () => {
+            const data = buildSettingsExport({ includePlaylists: false });
+            downloadJsonFile(`${slugifyFileName(data.settings?.libraryName || 'onda-settings')}-settings.json`, data);
+            showToast('Exported settings JSON.');
+        });
+
+        safeBind('btn-backup-settings-playlists', 'click', () => {
+            const data = buildSettingsExport({ includePlaylists: true });
+            downloadJsonFile(`${slugifyFileName(data.settings?.libraryName || 'onda')}-settings-playlists-backup.json`, data);
+            showToast('Exported settings + playlists backup.');
+        });
+
+        safeBind('btn-import-settings-json', 'click', () => {
+            document.getElementById('settings-json-file-input')?.click();
+        });
+
+        document.getElementById('settings-json-file-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const raw = await file.text();
+                const data = JSON.parse(raw);
+                applyImportedSettingsJson(data);
+            } catch (err) {
+                console.error(err);
+                showToast('Import failed: invalid settings/backup JSON.');
+            }
+            e.target.value = '';
+        });
 
         document.getElementById('btn-import-json').addEventListener('click', () => {
             document.getElementById('json-file-input').click();
@@ -4105,6 +4616,22 @@
                 if (target) target.click();
             });
         });
+        if (mobileIconHelpList) {
+            mobileIconHelpList.addEventListener('change', (e) => {
+                if (!e.target.matches('.mobile-icon-edit-input')) return;
+                updateMobileIconSetting(e.target.dataset.iconEditKey, e.target.value);
+            });
+            mobileIconHelpList.addEventListener('keydown', (e) => {
+                if (!e.target.matches('.mobile-icon-edit-input')) return;
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateMobileIconSetting(e.target.dataset.iconEditKey, e.target.value);
+                    e.target.blur();
+                }
+            });
+        }
+        safeBind('btn-reset-mobile-icons', 'click', resetMobileIconSettings);
+        applyMobileIconSettings();
         if (dbLibrarySearch) {
             const startSearchHold = () => {
                 searchHoldTriggered = false;
@@ -4569,12 +5096,17 @@
             document.getElementById(id).style.display = 'block';
         }
         function closeModal(id) {
+            saveLocalUiStateCheckpoint(`modal-close:${id}`);
             overlay.style.display = 'none';
-            document.getElementById(id).style.display = 'none';
+            const modal = document.getElementById(id);
+            if (modal) modal.style.display = 'none';
+            saveLocalUiStateCheckpoint(`modal-closed:${id}`);
         }
         function closeAllModals() {
+            saveLocalUiStateCheckpoint('modal-close-all');
             document.querySelectorAll('.organon-modal').forEach(m => m.style.display = 'none');
             overlay.style.display = 'none';
+            saveLocalUiStateCheckpoint('modal-closed-all');
         }
 
         function saveLyrics() {
@@ -5354,12 +5886,20 @@
         startVisualizer();
 
         window.addEventListener('resize', () => {
+            saveLocalUiStateCheckpoint('screen-resize');
             if (libraryDrawer?.classList.contains('drawer-open')) syncMobileLibraryDrawerBounds();
         });
         window.addEventListener('orientationchange', () => {
+            saveLocalUiStateCheckpoint('screen-orientation-change');
             setTimeout(() => {
                 if (libraryDrawer?.classList.contains('drawer-open')) syncMobileLibraryDrawerBounds();
+                saveLocalUiStateCheckpoint('screen-orientation-change-settled');
             }, 180);
+        });
+        window.addEventListener('pagehide', () => saveLocalUiStateCheckpoint('pagehide'));
+        window.addEventListener('beforeunload', () => saveLocalUiStateCheckpoint('beforeunload'));
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') saveLocalUiStateCheckpoint('visibility-hidden');
         });
     </script>
 </body>
