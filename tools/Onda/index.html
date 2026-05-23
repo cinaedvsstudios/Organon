@@ -130,8 +130,8 @@
         .utility-pill {
             display: inline-flex;
             align-items: center;
-            background-color: rgba(0, 0, 0, 0.65);
-            border: 1.5px solid var(--chiseled-bronze);
+            background-color: rgba(0, 0, 0, 0.38);
+            border: 1.5px solid rgba(137, 107, 73, 0.78);
             border-radius: 50px;
             padding: 4px 14px;
             gap: 14px;
@@ -1489,9 +1489,32 @@
             filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.95));
         }
         #organon-top-panel .utility-pill {
-            background-color: rgba(0, 0, 0, 0.78);
+            background-color: rgba(0, 0, 0, 0.42);
             box-shadow: 0 5px 14px rgba(0,0,0,0.82), inset 0 0 0 1px rgba(117,178,222,0.11);
         }
+        #end-utilities-pill .utility-btn.active-state,
+        #btn-repeat-one.active-state,
+        #btn-repeat-all.active-state,
+        #btn-shuffle.active-state {
+            background: rgba(75, 132, 191, 0.22);
+            color: var(--water-spray) !important;
+            box-shadow: inset 0 0 0 1px rgba(117,178,222,0.62), 0 0 16px rgba(117,178,222,0.55), 0 0 26px rgba(75,132,191,0.34);
+            text-shadow: 0 0 12px var(--water-blue), 0 0 22px var(--water-spray), 0 0 36px rgba(117,178,222,0.75) !important;
+        }
+        .matrix-extra-settings {
+            display: none;
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(117,178,222,0.24);
+            background: rgba(0,0,0,0.18);
+        }
+        .visual-layer-card.matrix-active .matrix-extra-settings {
+            display: block;
+        }
+        .matrix-spawn-row {
+            margin-top: 8px;
+        }
+
 
         /* Flexible library toolbar + bottom-right resize grip */
         .library-manager-toolbar {
@@ -1603,6 +1626,46 @@
             .youtube-frame-wrap, #youtube-frame { min-height: 320px; }
         }
 
+
+        /* Mobile horizontal pill-row cleanup */
+
+        @media (max-width: 768px) {
+            .settings-tab-row,
+            .now-playing-mode-pills,
+            .playlist-detail-meta-row,
+            .library-action-grid,
+            .library-manager-actions,
+            .mobile-library-header-actions,
+            .visual-layer-footer,
+            .streaming-provider-row,
+            .history-mode-pills {
+                flex-wrap: nowrap !important;
+                overflow-x: auto;
+                overflow-y: hidden;
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                justify-content: flex-start !important;
+            }
+            .settings-tab-row::-webkit-scrollbar,
+            .now-playing-mode-pills::-webkit-scrollbar,
+            .playlist-detail-meta-row::-webkit-scrollbar,
+            .library-action-grid::-webkit-scrollbar,
+            .library-manager-actions::-webkit-scrollbar,
+            .mobile-library-header-actions::-webkit-scrollbar,
+            .visual-layer-footer::-webkit-scrollbar,
+            .streaming-provider-row::-webkit-scrollbar,
+            .history-mode-pills::-webkit-scrollbar { display: none; }
+            .settings-tab-row > *,
+            .now-playing-mode-pills > *,
+            .playlist-detail-meta-row > *,
+            .library-action-grid > *,
+            .library-manager-actions > *,
+            .mobile-library-header-actions > *,
+            .visual-layer-footer > *,
+            .streaming-provider-row > *,
+            .history-mode-pills > * { flex: 0 0 auto !important; }
+        }
 
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
@@ -1875,8 +1938,6 @@
                     <button id="btn-prev" class="utility-btn" data-tooltip="Restart / Prev (Double click)">⏮</button>
                     <!-- Play triggers the spin-glow when active -->
                     <button id="btn-play" class="utility-btn" data-tooltip="Play (Hold to Fast Forward)">▷</button>
-                    <!-- Dedicated Pause/Stop Button -->
-                    <button id="btn-pause" class="utility-btn" data-tooltip="Pause / Stop">⏸</button>
                     <button id="btn-speed-cycle" class="utility-btn speed-glyph" data-tooltip="Cycle Speed">⚡</button>
                     <button id="btn-next" class="utility-btn" data-tooltip="Next Track">⏭</button>
                 </div>
@@ -1983,7 +2044,6 @@
                             </div>
                         </div>
                         <div style="display:flex; align-items:center; gap:10px;">
-                            <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
                             <button id="btn-now-playing-edit" class="pencil-btn" title="Edit this track's library info">✎</button>
                         </div>
                     </div>
@@ -2003,6 +2063,10 @@
                                 <div class="meta-source-box">
                                     <div class="meta-source-label">Source type</div>
                                     <div id="meta-source-type" class="meta-source-value">No active track</div>
+                                </div>
+                                <div class="meta-source-box">
+                                    <div class="meta-source-label">File size</div>
+                                    <div id="meta-file-size" class="meta-source-value">0.00 MB</div>
                                 </div>
                                 <div class="meta-source-box">
                                     <div class="meta-source-label">Location / URL</div>
@@ -2530,6 +2594,7 @@
         let playButtonHoldTimeout;
         let isHoldingPlay = false;
         let preHoldSpeed = 1.0;
+        let ignoreNextPlayClick = false;
 
         let lastPrevClickTime = 0;
         let visualizerStyle = "bars";
@@ -2656,6 +2721,8 @@
                 mirror: true,
                 hidden: false,
                 drawMode: 'fill',
+                matrixCharacters: 'japanese',
+                matrixSpawn: 'default',
                 colors: ['#00d8ff', '#75b2de', '#ff4fa3', '#ffb84d', '#000000', '#000000']
             };
         }
@@ -2716,6 +2783,8 @@
                             mirror: normal.mirror,
                             hidden: normal.hidden,
                             drawMode: normal.drawMode,
+                            matrixCharacters: normal.matrixCharacters,
+                            matrixSpawn: normal.matrixSpawn,
                             colors: (normal.colors || []).map(sanitizeHexColor).slice(0, 6)
                         };
                     })
@@ -2812,6 +2881,8 @@
                 mirror: layer.mirror === false ? false : true,
                 hidden: Boolean(layer.hidden),
                 drawMode: ['fill', 'outline', 'line'].includes(layer.drawMode) ? layer.drawMode : base.drawMode,
+                matrixCharacters: ['japanese', 'runes', 'alien'].includes(layer.matrixCharacters) ? layer.matrixCharacters : (layer.characterSet === 'runes' ? 'runes' : (layer.characterSet === 'alien' ? 'alien' : 'japanese')),
+                matrixSpawn: ['default', 'center', 'semi', 'random'].includes(layer.matrixSpawn) ? layer.matrixSpawn : (layer.spawnPoint || 'default'),
                 colors
             };
         }
@@ -2825,6 +2896,13 @@
             return c === '#000000';
         }
 
+
+
+        const MATRIX_CHARACTER_SETS = {
+            japanese: 'ｦ ｧ ｨ ｩ ｪ ｫ ｬ ｭ ｮ ｯ ｱ ｲ ｳ ｴ ｵ ｶ ｷ ｸ ｹ ｺ ｻ ｼ ｽ ｾ ｿ'.split(/\s+/),
+            runes: 'ᚠ ᚥ ᚦ ᚨ ᚩ ᚬ ᚱ ᚲ ᚷ ᚹ ᚺ ᚼ ᚾ ᛁ ᛃ ᛅ ᛇ ᛈ ᛉ ᛊ ᛏ ᛒ ᛖ ᛗ ᛟ'.split(/\s+/),
+            alien: '∀ ∁ ∂ ∃ ∄ ∅ ∇ ∈ ∉ ∋ ∌ ∏ ∐ ∑ ∝ ∞ ∟ ∠ ∡ ∢ ∧ ∨ ∩ ∪ ∫'.split(/\s+/)
+        };
 
         const VISUAL_COLOR_PALETTE_GROUPS = [
             ['#d8a8cc', '#af63a5', '#a80084', '#79005b', '#50002f'],
@@ -3031,6 +3109,23 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="matrix-extra-settings">
+                            <div class="visual-field">
+                                <label>Characters</label>
+                                <select class="vis-layer-matrix-chars">
+                                    <option value="japanese">Japanese</option>
+                                    <option value="runes">Runes</option>
+                                    <option value="alien">Alien</option>
+                                </select>
+                            </div>
+                            <div class="visual-check-row matrix-spawn-row">
+                                <span style="color:var(--water-spray); font-weight:800; margin-right:4px;">Spawn point</span>
+                                <label><input type="radio" class="vis-layer-matrix-spawn" name="matrix-spawn-${layer.id}" value="default" ${layer.matrixSpawn === 'default' ? 'checked' : ''}> Default</label>
+                                <label><input type="radio" class="vis-layer-matrix-spawn" name="matrix-spawn-${layer.id}" value="center" ${layer.matrixSpawn === 'center' ? 'checked' : ''}> Center Circle</label>
+                                <label><input type="radio" class="vis-layer-matrix-spawn" name="matrix-spawn-${layer.id}" value="semi" ${layer.matrixSpawn === 'semi' ? 'checked' : ''}> Semi Circle</label>
+                                <label><input type="radio" class="vis-layer-matrix-spawn" name="matrix-spawn-${layer.id}" value="random" ${layer.matrixSpawn === 'random' ? 'checked' : ''}> Random</label>
+                            </div>
+                        </div>
                         <div class="visual-field">
                             <label>Amplitude multiplier</label>
                             <div class="visual-range-row">
@@ -3064,7 +3159,15 @@
                     card.querySelector('.vis-layer-align').value = layer.align || 'center';
                     card.querySelector('.vis-layer-rotate').value = String(layer.rotate || 0);
                     card.querySelector('.vis-layer-drawmode').value = layer.drawMode || 'fill';
+                    card.querySelector('.vis-layer-matrix-chars').value = layer.matrixCharacters || 'japanese';
+                    updateMatrixExtraVisibility(card);
                 });
+        }
+
+
+        function updateMatrixExtraVisibility(card) {
+            const style = card?.querySelector('.vis-layer-style')?.value || '';
+            if (card) card.classList.toggle('matrix-active', style === 'matrixcode');
         }
 
         function syncVisualizerLayerFromCard(card) {
@@ -3079,6 +3182,9 @@
             layer.vPosition = clampNumber(card.querySelector('.vis-layer-vpos')?.value, -5, 5, 0);
             layer.rotate = parseInt(card.querySelector('.vis-layer-rotate')?.value, 10) || 0;
             layer.drawMode = card.querySelector('.vis-layer-drawmode')?.value || 'fill';
+            layer.matrixCharacters = card.querySelector('.vis-layer-matrix-chars')?.value || 'japanese';
+            layer.matrixSpawn = card.querySelector('.vis-layer-matrix-spawn:checked')?.value || 'default';
+            updateMatrixExtraVisibility(card);
             layer.amplitude = clampNumber(card.querySelector('.vis-layer-amplitude')?.value, 0.25, 5, 1);
             layer.spacing = clampNumber(card.querySelector('.vis-layer-spacing')?.value, 0, 3, 0);
             layer.mirror = Boolean(card.querySelector('.vis-layer-mirror')?.checked);
@@ -3120,6 +3226,8 @@
                         mirror: normal.mirror,
                         hidden: normal.hidden,
                         drawMode: normal.drawMode,
+                        matrixCharacters: normal.matrixCharacters,
+                        matrixSpawn: normal.matrixSpawn,
                         colors: (normal.colors || []).map(sanitizeHexColor).slice(0, 6)
                     };
                 })
@@ -3325,6 +3433,17 @@
         }
 
 
+
+        function getDefaultArtworkSrc() {
+            return 'placeholder.jpg';
+        }
+
+        function imageHtmlOrFallback(src, altText = 'Artwork') {
+            const safeSrc = escapeHtml(src || getDefaultArtworkSrc());
+            const safeAlt = escapeHtml(altText || 'Artwork');
+            return `<img src="${safeSrc}" alt="${safeAlt}" onerror="this.onerror=null;this.parentElement.textContent='NO IMAGE';">`;
+        }
+
         function getPlaylistArtwork(name) {
             const meta = ensurePlaylistMeta(name);
             return meta.imageData || meta.imageUrl || '';
@@ -3334,7 +3453,7 @@
             const art = getPlaylistArtwork(name);
             const initials = (name || '?').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || '▤';
             const className = large ? 'playlist-thumb-large' : 'playlist-thumb';
-            return `<div class="${className}">${art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(name)} artwork">` : escapeHtml(initials)}</div>`;
+            return `<div class="${className}">${imageHtmlOrFallback(art || getDefaultArtworkSrc(), `${name} artwork`) }</div>`;
         }
 
         function getTrackArtwork(meta) {
@@ -5539,7 +5658,7 @@
             panel.innerHTML = `
                 <hr class="now-playing-divider">
                 <div class="playlist-detail-header" style="grid-template-columns:70px minmax(0,1fr) auto;">
-                    <div class="playlist-detail-art" style="width:70px;height:70px;border-radius:12px;">${art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(name)} artwork">` : '▤'}</div>
+                    <div class="playlist-detail-art" style="width:70px;height:70px;border-radius:12px;">${imageHtmlOrFallback(art || getDefaultArtworkSrc(), `${name} artwork`) }</div>
                     <div>
                         <div class="playlist-detail-title">${escapeHtml(name)}</div>
                         <div class="playlist-detail-meta-row" style="margin-top:7px;">
@@ -5604,7 +5723,7 @@
             const artBox = document.getElementById('now-playing-art');
             if (artBox) {
                 const art = getTrackArtwork(meta);
-                artBox.innerHTML = art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(displayName)} artwork">` : 'NO IMAGE';
+                artBox.innerHTML = imageHtmlOrFallback(art || getDefaultArtworkSrc(), `${displayName} artwork`);
             }
 
             const sourceTypeEl = document.getElementById('meta-source-type');
@@ -5715,13 +5834,20 @@
 
         btnPlay.addEventListener('click', () => {
             if (!currentFile) return;
-            playAudio();
+            if (ignoreNextPlayClick) {
+                ignoreNextPlayClick = false;
+                return;
+            }
+            if (isPlaying && !activeAudio.paused) pauseAudio();
+            else playAudio();
         });
 
-        btnPause.addEventListener('click', () => {
-            if (!currentFile) return;
-            pauseAudio();
-        });
+        if (btnPause) {
+            btnPause.addEventListener('click', () => {
+                if (!currentFile) return;
+                pauseAudio();
+            });
+        }
 
         // --- PLAY BUTTON HOLD-TO-FAST-FORWARD LOGIC ---
         function startPlayHold() {
@@ -5743,6 +5869,8 @@
                 activeAudio.playbackRate = preHoldSpeed;
                 if (!isPlaying) activeAudio.pause();
                 isHoldingPlay = false;
+                ignoreNextPlayClick = true;
+                setTimeout(() => { ignoreNextPlayClick = false; }, 350);
             }
         }
 
@@ -6697,7 +6825,7 @@
             panel.style.display = 'block';
             panel.innerHTML = `
                 <div class="playlist-detail-header">
-                    <div class="playlist-detail-art">${art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(name)} artwork">` : escapeHtml(initials)}</div>
+                    <div class="playlist-detail-art">${imageHtmlOrFallback(art || getDefaultArtworkSrc(), `${name} artwork`) }</div>
                     <div>
                         <div class="playlist-detail-title">${escapeHtml(name)}</div>
                         <div class="playlist-detail-meta-row" style="margin-top:8px;">
@@ -7549,17 +7677,73 @@
             canvasCtx.shadowBlur = 0;
         }
 
+        function getMatrixGlyphs(layer) {
+            const key = layer?.matrixCharacters || 'japanese';
+            return MATRIX_CHARACTER_SETS[key] || MATRIX_CHARACTER_SETS.japanese;
+        }
+
+        function drawMatrixGlyph(char, x, y, color, alpha = 0.9) {
+            canvasCtx.shadowBlur = 10;
+            canvasCtx.shadowColor = hexToRgba(color, 0.85);
+            canvasCtx.fillStyle = hexToRgba(color, Math.max(0.18, alpha));
+            canvasCtx.strokeStyle = hexToRgba(color, 0.82);
+            if (activeVisualLayerForDraw?.drawMode === 'outline') canvasCtx.strokeText(char, x, y);
+            else canvasCtx.fillText(char, x, y);
+        }
+
         function drawMatrixCode(sideSamples, colors) {
-            const mirror = activeVisualLayerForDraw?.mirror !== false;
-            const glyphs = ['0', '1', '/', '<', '>', '{', '}', '[', ']', '|', '-', '+'];
+            const layer = activeVisualLayerForDraw || {};
+            const mirror = layer.mirror !== false;
+            const glyphs = getMatrixGlyphs(layer);
+            const spawn = layer.matrixSpawn || 'default';
             const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
             const totalWidth = mirror ? canvas.width / 2 : canvas.width;
-            const laneWidth = totalWidth / sideSamples.length;
+            const laneWidth = totalWidth / Math.max(1, sideSamples.length);
             const fontSize = Math.max(8, Math.min(18, laneWidth * 1.3));
             const rowStep = fontSize * 1.05;
+            const t = Math.floor(performance.now() / 120);
             canvasCtx.font = `900 ${fontSize}px ui-monospace, SFMono-Regular, Consolas, monospace`;
             canvasCtx.textAlign = 'center';
             canvasCtx.textBaseline = 'middle';
+
+            if (spawn === 'center' || spawn === 'semi' || spawn === 'random') {
+                sideSamples.forEach((sample, i) => {
+                    const bursts = Math.max(1, Math.floor(1 + sample * 9));
+                    for (let j = 0; j < bursts; j++) {
+                        const color = pickColor(colors, i + j, sample);
+                        const char = glyphs[Math.abs((i * 7 + j * 5 + t) % glyphs.length)];
+                        let x = centerX;
+                        let y = centerY;
+                        const scalar = (j + 1) / Math.max(1, bursts);
+                        const radius = Math.max(10, sample * scalar * Math.min(canvas.width, canvas.height) * 0.62);
+
+                        if (spawn === 'center') {
+                            const angle = ((i / Math.max(1, sideSamples.length)) * Math.PI * 2) + (j * 0.41) + (t * 0.025);
+                            x = centerX + Math.cos(angle) * radius;
+                            y = centerY + Math.sin(angle) * radius;
+                        } else if (spawn === 'semi') {
+                            const angle = Math.PI + ((i / Math.max(1, sideSamples.length - 1)) * Math.PI) + (j * 0.08);
+                            x = centerX + Math.cos(angle) * radius;
+                            y = canvas.height - 18 + Math.sin(angle) * radius;
+                        } else {
+                            const edge = Math.abs((i + j + t) % 4);
+                            const drift = sample * Math.max(canvas.width, canvas.height) * (0.18 + scalar * 0.62);
+                            const pos = ((i * 37 + j * 19 + t * 3) % 1000) / 1000;
+                            if (edge === 0) { x = pos * canvas.width; y = -fontSize + drift; }
+                            if (edge === 1) { x = canvas.width + fontSize - drift; y = pos * canvas.height; }
+                            if (edge === 2) { x = pos * canvas.width; y = canvas.height + fontSize - drift; }
+                            if (edge === 3) { x = -fontSize + drift; y = pos * canvas.height; }
+                        }
+                        if (x > -fontSize && x < canvas.width + fontSize && y > -fontSize && y < canvas.height + fontSize) {
+                            drawMatrixGlyph(char, x, y, color, Math.max(0.24, 0.96 - j * 0.055));
+                        }
+                    }
+                });
+                canvasCtx.shadowBlur = 0;
+                return;
+            }
+
             sideSamples.forEach((sample, i) => {
                 const rows = Math.max(1, Math.floor(sample * canvas.height * 0.86 / rowStep));
                 const xs = mirror
@@ -7567,15 +7751,10 @@
                     : [(i + 0.5) * laneWidth];
                 for (let j = 0; j < rows; j++) {
                     const color = pickColor(colors, i + j, sample);
-                    canvasCtx.shadowBlur = 10;
-                    canvasCtx.shadowColor = hexToRgba(color, 0.85);
-                    canvasCtx.fillStyle = hexToRgba(color, Math.max(0.25, 0.92 - j * 0.035));
-                    canvasCtx.strokeStyle = hexToRgba(color, 0.8);
-                    const char = glyphs[Math.abs((i * 7 + j * 3 + Math.floor(performance.now() / 120)) % glyphs.length)];
+                    const char = glyphs[Math.abs((i * 7 + j * 3 + t) % glyphs.length)];
                     xs.forEach(x => {
                         const y = canvas.height - (j + 1) * rowStep;
-                        if (activeVisualLayerForDraw?.drawMode === 'outline') canvasCtx.strokeText(char, x, y);
-                        else canvasCtx.fillText(char, x, y);
+                        drawMatrixGlyph(char, x, y, color, Math.max(0.25, 0.92 - j * 0.035));
                     });
                 }
             });
