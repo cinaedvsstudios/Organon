@@ -1801,6 +1801,8 @@
                         <button class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists">📜</button>
                         <button class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Icon help and display settings">?</button>
                         <button class="mobile-db-icon-btn" data-proxy-click="btn-db-select-mode" data-mobile-icon-key="select" title="Select multiple">☑️</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-save-local-now" data-mobile-icon-key="saveLocal" title="Save Local Now">💾</button>
+                        <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-everything" data-mobile-icon-key="exportEverything" title="Export Everything">🧰</button>
                         <button class="mobile-db-icon-btn" data-proxy-click="btn-db-add-folder" data-mobile-icon-key="folder" title="Add folder">📁</button>
                         <button class="mobile-db-icon-btn" data-proxy-click="btn-db-import-json" data-mobile-icon-key="import" title="Import JSON">📥</button>
                         <button class="mobile-db-icon-btn" data-proxy-click="btn-db-export-library" data-mobile-icon-key="export" title="Export full library">📤</button>
@@ -1824,6 +1826,8 @@
                 </select>
                 <div class="library-manager-actions">
                     <button id="btn-db-select-mode" class="btn-pill">Select Multiple</button>
+                    <button id="btn-db-save-local-now" class="btn-pill">Save Local</button>
+                    <button id="btn-db-export-everything" class="btn-pill">Export Everything</button>
                     <button id="btn-db-add-folder" class="btn-pill">Add Folder</button>
                     <input type="file" id="folder-input" accept="audio/*,video/*" multiple webkitdirectory directory style="display:none;">
                     <button id="btn-db-import-json" class="btn-pill">Import JSON</button>
@@ -2085,6 +2089,29 @@
         </div>
     </div>
 
+    <!-- Startup Library Recovery Modal -->
+    <div id="modal-startup-recovery" class="organon-modal" style="max-width: 620px;">
+        <div class="modal-header">
+            <span>⚠ Library / Settings Not Found</span>
+            <span class="modal-close" id="btn-startup-recovery-close">&times;</span>
+        </div>
+        <div class="modal-body">
+            <p style="font-size:0.88rem; color:var(--alabaster-paper); line-height:1.45; margin-top:0;">
+                Onda could not restore a usable local library from this browser. This can happen if Chrome cleared storage, the app opened from a different URL/origin, or storage was blocked/interrupted.
+            </p>
+            <div id="startup-recovery-detail" class="library-track-meta" style="padding:10px; border-radius:10px; background:rgba(0,0,0,0.22); border:1px solid rgba(117,178,222,0.25); margin-bottom:12px;">Checking storage…</div>
+            <label class="modal-field-label">Use online streaming/library JSON URL
+                <input type="text" id="startup-online-library-url" placeholder="Paste raw GitHub JSON URL or GitHub blob URL...">
+            </label>
+            <input type="file" id="startup-backup-file-input" accept=".json,application/json" style="display:none;">
+        </div>
+        <div class="modal-actions" style="justify-content:space-between; flex-wrap:wrap;">
+            <button id="btn-startup-upload-backup" class="btn-pill">Upload Backup JSON</button>
+            <button id="btn-startup-use-online" class="btn-pill">Use Online Library</button>
+            <button id="btn-startup-continue-empty" class="btn-pill" style="background:var(--chiseled-bronze);">Continue Empty</button>
+        </div>
+    </div>
+
     <!-- Toast popup notices -->
     <div id="toast-notice" class="organon-toast">Action Confirmed!</div>
 
@@ -2135,6 +2162,9 @@
         const MOBILE_DB_ICON_STORAGE_KEY = "ondaMobileLibraryIconDisplayV1";
         const LOCAL_UI_SAVE_EVENT_KEY = "ondaLastLocalUiSaveV1";
         const LIBRARY_AUTOSAVE_KEY = "ondaActiveLibraryV1";
+        const LIBRARY_AUTOSAVE_BACKUP_KEY = "ondaActiveLibraryBackupV1";
+        const LIBRARY_LAST_GOOD_KEY = "ondaLastGoodLibraryV1";
+        const LIBRARY_RESTORE_REPORT_KEY = "ondaLibraryRestoreReportV1";
         const ONDA_IDB_NAME = "OndaMediaPlayerPersistentDB";
         const ONDA_IDB_VERSION = 2;
         const ONDA_IDB_STORE = "state";
@@ -3340,6 +3370,8 @@
             { key: 'playlists', icon: '📜', label: 'Playlists', description: 'Shows saved playlists and playlist edit controls.' },
             { key: 'help', icon: '?', label: 'Icon Guide', description: 'Explains these mobile buttons and lets you change their display symbols.' },
             { key: 'select', icon: '☑️', label: 'Select Multiple', description: 'Turns on multi-select for bulk playlist/tag/library actions.' },
+            { key: 'saveLocal', icon: '💾', label: 'Save Local Now', description: 'Force-saves the current library catalogue and settings to browser storage.' },
+            { key: 'exportEverything', icon: '🧰', label: 'Export Everything', description: 'Exports one full backup JSON with library, playlists, history, settings and visualisers.' },
             { key: 'folder', icon: '📁', label: 'Add Folder', description: 'Adds all playable media files from a selected local folder.' },
             { key: 'import', icon: '📥', label: 'Import JSON', description: 'Imports an Onda library, stream add-on, playlist, or presets JSON.' },
             { key: 'export', icon: '📤', label: 'Export Full', description: 'Exports the current full library JSON.' },
@@ -4024,6 +4056,112 @@
             updateLibrarySaveStatusLine(status);
         }
 
+        function safeSetLocalStorage(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (err) {
+                console.warn(`Could not write ${key} to localStorage:`, err);
+                return false;
+            }
+        }
+
+        function safeGetLocalStorageJson(key) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : null;
+            } catch (err) {
+                console.warn(`Could not parse ${key} from localStorage:`, err);
+                return null;
+            }
+        }
+
+        function getLibraryPayloadObject(candidate) {
+            if (!candidate || typeof candidate !== 'object') return null;
+            if (candidate.type === 'onda-active-library-autosave' && candidate.library?.type === 'onda-library') return candidate;
+            if (candidate.type === 'onda-full-backup' && candidate.library?.type === 'onda-library') {
+                return {
+                    app: 'Onda Media Player',
+                    type: 'onda-active-library-autosave',
+                    version: 2,
+                    savedAt: candidate.exportedAt || new Date().toISOString(),
+                    reason: 'recovered-from-full-backup',
+                    library: candidate.library,
+                    queueIds: candidate.queue?.trackIds || [],
+                    currentTrackId: candidate.queue?.currentTrackId || null,
+                    activePlaylistView: candidate.queue?.activePlaylistView || null,
+                    recentTrackIds: candidate.history?.recentTrackIds || []
+                };
+            }
+            if (candidate.type === 'onda-library' && candidate.tracks) {
+                return {
+                    app: 'Onda Media Player',
+                    type: 'onda-active-library-autosave',
+                    version: 2,
+                    savedAt: candidate.exportedAt || new Date().toISOString(),
+                    reason: 'recovered-from-library-json',
+                    library: candidate,
+                    queueIds: [],
+                    currentTrackId: null,
+                    activePlaylistView: null,
+                    recentTrackIds: []
+                };
+            }
+            return null;
+        }
+
+        function findBestLocalStorageLibraryCandidate() {
+            const candidates = [];
+            const priorityKeys = [LIBRARY_AUTOSAVE_KEY, LIBRARY_AUTOSAVE_BACKUP_KEY, LIBRARY_LAST_GOOD_KEY];
+
+            priorityKeys.forEach((key, index) => {
+                const candidate = getLibraryPayloadObject(safeGetLocalStorageJson(key));
+                if (candidate) candidates.push({ key, payload: candidate, priority: 100 - index });
+            });
+
+            try {
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!key || !key.toLowerCase().includes('onda')) continue;
+                    if (priorityKeys.includes(key)) continue;
+                    const candidate = getLibraryPayloadObject(safeGetLocalStorageJson(key));
+                    if (candidate) candidates.push({ key, payload: candidate, priority: 0 });
+                }
+            } catch (err) {
+                console.warn('Could not scan localStorage for Onda library candidates:', err);
+            }
+
+            const withTracks = candidates
+                .map(item => ({ ...item, trackCount: getPayloadTrackCount(item.payload), savedAt: getPayloadSavedAtMs(item.payload) }))
+                .filter(item => item.trackCount > 0)
+                .sort((a, b) => (b.trackCount - a.trackCount) || (b.savedAt - a.savedAt) || (b.priority - a.priority));
+
+            return withTracks[0] || null;
+        }
+
+        function writeActiveLibraryPayloadEverywhere(payload, payloadText) {
+            let localOk = false;
+            localOk = safeSetLocalStorage(LIBRARY_AUTOSAVE_KEY, payloadText) || localOk;
+            localOk = safeSetLocalStorage(LIBRARY_AUTOSAVE_BACKUP_KEY, payloadText) || localOk;
+            if (getPayloadTrackCount(payload) > 0) {
+                localOk = safeSetLocalStorage(LIBRARY_LAST_GOOD_KEY, payloadText) || localOk;
+            }
+            return localOk;
+        }
+
+        function describeStartupStorageState() {
+            const primary = safeGetLocalStorageJson(LIBRARY_AUTOSAVE_KEY);
+            const backup = safeGetLocalStorageJson(LIBRARY_AUTOSAVE_BACKUP_KEY);
+            const lastGood = safeGetLocalStorageJson(LIBRARY_LAST_GOOD_KEY);
+            return {
+                checkedAt: new Date().toISOString(),
+                localStoragePrimaryTracks: getPayloadTrackCount(primary),
+                localStorageBackupTracks: getPayloadTrackCount(backup),
+                localStorageLastGoodTracks: getPayloadTrackCount(lastGood),
+                restoredTracks: getCurrentTrackCountForStorage()
+            };
+        }
+
         function openOndaIndexedDb() {
             return new Promise((resolve, reject) => {
                 if (!('indexedDB' in window)) {
@@ -4186,19 +4324,19 @@
                 const payloadText = JSON.stringify(payload);
                 lastActiveLibrarySavePayload = payload;
 
-                try {
-                    localStorage.setItem(LIBRARY_AUTOSAVE_KEY, payloadText);
-                    recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false });
-                } catch (localErr) {
-                    console.warn('Could not save library to localStorage:', localErr);
-                    recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false, warning: 'localStorage failed; trying IndexedDB' });
-                }
+                const localOk = writeActiveLibraryPayloadEverywhere(payload, payloadText);
+                recordLibrarySaveStatus({
+                    reason,
+                    payloadText,
+                    indexedDbSaved: false,
+                    warning: localOk ? '' : 'localStorage failed; trying IndexedDB'
+                });
 
                 if (pendingActiveLibrarySaveTimer) clearTimeout(pendingActiveLibrarySaveTimer);
                 pendingActiveLibrarySaveTimer = setTimeout(() => {
                     mirrorActiveLibraryPayloadToIndexedDb(payload, payloadText, reason);
                     pendingActiveLibrarySaveTimer = null;
-                }, 80);
+                }, 20);
 
                 return true;
             } catch (err) {
@@ -4211,7 +4349,7 @@
         async function flushActiveLibraryState(reason = 'flush-library-autosave') {
             const payload = lastActiveLibrarySavePayload || buildActiveLibraryAutosavePayload(reason);
             const payloadText = JSON.stringify(payload);
-            try { localStorage.setItem(LIBRARY_AUTOSAVE_KEY, payloadText); } catch (err) { console.warn('Local flush failed:', err); }
+            writeActiveLibraryPayloadEverywhere(payload, payloadText);
             try { await idbSetState(ONDA_IDB_ACTIVE_LIBRARY_KEY, payload); recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: true }); } catch (err) { console.warn('IndexedDB flush failed:', err); recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false, warning: 'IndexedDB flush failed' }); }
         }
 
@@ -4288,10 +4426,15 @@
 
         function restoreActiveLibraryState() {
             try {
-                const raw = localStorage.getItem(LIBRARY_AUTOSAVE_KEY);
-                if (!raw) return false;
-                const saved = JSON.parse(raw);
-                return applyActiveLibraryPayload(saved, 'localStorage');
+                const best = findBestLocalStorageLibraryCandidate();
+                if (!best) return false;
+                const didRestore = applyActiveLibraryPayload(best.payload, `localStorage:${best.key}`);
+                if (didRestore) {
+                    const text = JSON.stringify(best.payload);
+                    writeActiveLibraryPayloadEverywhere(best.payload, text);
+                    recordLibrarySaveStatus({ reason: `restore:${best.key}`, payloadText: text, indexedDbSaved: false });
+                }
+                return didRestore;
             } catch (err) {
                 console.warn('Could not restore autosaved library catalogue from localStorage:', err);
                 return false;
@@ -4313,7 +4456,7 @@
                 if (storedCount > 0 && (currentCount === 0 || idbSavedAt >= localSavedAt)) {
                     const didRestore = applyActiveLibraryPayload(saved, 'IndexedDB');
                     if (didRestore) {
-                        try { localStorage.setItem(LIBRARY_AUTOSAVE_KEY, JSON.stringify(saved)); } catch (err) {}
+                        writeActiveLibraryPayloadEverywhere(saved, JSON.stringify(saved));
                     }
                     return didRestore;
                 }
@@ -4324,6 +4467,67 @@
             }
         }
 
+        function normaliseGithubJsonUrl(url) {
+            const clean = String(url || '').trim();
+            if (!clean) return '';
+            const blobMatch = clean.match(/^https:\/\/github\.com\/([^/]+)\/([^/]+)\/blob\/([^/]+)\/(.+)$/i);
+            if (blobMatch) {
+                return `https://raw.githubusercontent.com/${blobMatch[1]}/${blobMatch[2]}/${blobMatch[3]}/${blobMatch[4]}`;
+            }
+            return clean;
+        }
+
+        function openStartupRecoveryModal(message = '') {
+            const detail = document.getElementById('startup-recovery-detail');
+            if (detail) {
+                const state = describeStartupStorageState();
+                detail.textContent = message || `Primary localStorage: ${state.localStoragePrimaryTracks} tracks · Backup key: ${state.localStorageBackupTracks} tracks · Last good key: ${state.localStorageLastGoodTracks} tracks · Restored now: ${state.restoredTracks} tracks`;
+            }
+            showModal('modal-startup-recovery');
+        }
+
+        function closeStartupRecoveryModal() {
+            closeModal('modal-startup-recovery');
+        }
+
+        async function importOndaJsonFromUrl(url) {
+            const fetchUrl = normaliseGithubJsonUrl(url);
+            if (!fetchUrl) {
+                showToast('Paste a JSON URL first.');
+                return false;
+            }
+            try {
+                const response = await fetch(fetchUrl, { cache: 'no-store' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+                applyImportedSettingsJson(data);
+                await flushActiveLibraryState('startup-online-json-import');
+                closeStartupRecoveryModal();
+                showToast('Imported online Onda JSON.');
+                return true;
+            } catch (err) {
+                console.error('Online library import failed:', err);
+                showToast('Could not load online JSON. Use a raw/public JSON URL.');
+                return false;
+            }
+        }
+
+        function shouldShowStartupRecovery(restoredFromLocal, restoredFromIdb) {
+            if (getCurrentTrackCountForStorage() > 0) return false;
+            const hasSomeSettings = [
+                VISUALIZER_STORAGE_KEY,
+                VISUALIZER_ACTIVE_STACK_KEY,
+                ACTIVE_WORKSPACE_TAB_KEY,
+                LIBRARY_MOBILE_VIEW_KEY,
+                MOBILE_DB_ICON_STORAGE_KEY,
+                LOCAL_UI_SAVE_EVENT_KEY,
+                ONDA_LAST_LIBRARY_SAVE_KEY
+            ].some(key => {
+                try { return !!localStorage.getItem(key); } catch (err) { return false; }
+            });
+            return !(restoredFromLocal || restoredFromIdb) || !hasSomeSettings;
+        }
+
         async function initialisePersistentLibraryStorage() {
             libraryRestorePending = true;
             const restoredFromLocal = restoreActiveLibraryState();
@@ -4332,12 +4536,21 @@
             libraryRestorePending = false;
             updateLibrarySaveStatusLine();
 
+            const report = {
+                ...describeStartupStorageState(),
+                restoredFromLocal,
+                restoredFromIdb
+            };
+            try { localStorage.setItem(LIBRARY_RESTORE_REPORT_KEY, JSON.stringify(report)); } catch (err) {}
+
             if ((restoredFromLocal || restoredFromIdb) && getCurrentTrackCountForStorage() > 0) {
                 saveActiveLibraryState('post-restore-confirmation');
+            } else if (shouldShowStartupRecovery(restoredFromLocal, restoredFromIdb)) {
+                setTimeout(() => openStartupRecoveryModal(), 350);
             }
         }
 
-        initialisePersistentLibraryStorage();
+        const persistentLibraryReady = initialisePersistentLibraryStorage();
 
         async function probeStreamUrl(url, timeoutMs = 3500) {
             return new Promise(resolve => {
@@ -4548,16 +4761,28 @@
             const wasEmpty = playlistTracks.length === 0;
             playlistTracks = [...playlistTracks, ...newTracks];
 
-            const cacheResult = await persistLocalAudioFilesToIndexedDb(newTracks);
-            if (cacheResult.failed > 0) {
-                showToast(`Added ${newTracks.length} tracks, but ${cacheResult.failed} audio files could not be cached for refresh playback.`);
-            } else if (!wasEmpty) {
-                showToast(`Added ${newTracks.length} tracks and cached them for refresh playback.`);
-            }
+            // Save the catalogue immediately before attempting heavier audio-file caching.
+            // On mobile Chrome, backgrounding the page while caching a whole folder can interrupt the async work;
+            // this ensures at least the library listing is already stored.
+            renderLibraryManager();
+            saveActiveLibraryState('add-local-files-immediate');
+
+            persistLocalAudioFilesToIndexedDb(newTracks).then(cacheResult => {
+                if (cacheResult.failed > 0) {
+                    showToast(`Added ${newTracks.length} tracks, but ${cacheResult.failed} audio files could not be cached for refresh playback.`);
+                } else if (!wasEmpty) {
+                    showToast(`Added ${newTracks.length} tracks and cached them for refresh playback.`);
+                }
+                saveActiveLibraryState('add-local-files-cache-complete');
+            }).catch(err => {
+                console.warn('Folder/audio cache failed after library metadata save:', err);
+                showToast(`Added ${newTracks.length} tracks. Audio cache failed, but the library listing was saved.`);
+                saveActiveLibraryState('add-local-files-cache-failed');
+            });
 
             if (wasEmpty) switchTrack(0);
             renderLibraryManager();
-            saveActiveLibraryState('add-local-files');
+            saveActiveLibraryState('add-local-files-final');
         }
 
         function switchTrack(index) {
@@ -4890,6 +5115,8 @@
         btnCloseSettings.addEventListener('click', () => {
             advancedControls.style.display = "none";
             btnToggleAdvanced.classList.remove('active-state');
+            saveLocalUiStateCheckpoint('settings-popup-close');
+            flushActiveLibraryState('settings-popup-close-flush');
         });
 
         dragHandle.addEventListener('mousedown', (e) => {
@@ -4962,6 +5189,11 @@
             showToast('Exported everything backup JSON.');
         });
 
+        safeBind('btn-save-local-now', 'click', async () => {
+            await flushActiveLibraryState('manual-settings-save-local-now');
+            showToast('Saved local library now.');
+        });
+
         safeBind('btn-export-settings-json', 'click', () => {
             const data = buildSettingsExport({ includePlaylists: false });
             downloadJsonFile(`${slugifyFileName(data.settings?.libraryName || 'onda-settings')}-settings.json`, data);
@@ -4988,6 +5220,31 @@
             } catch (err) {
                 console.error(err);
                 showToast('Import failed: invalid settings/backup JSON.');
+            }
+            e.target.value = '';
+        });
+
+        safeBind('btn-startup-upload-backup', 'click', () => document.getElementById('startup-backup-file-input')?.click());
+        safeBind('btn-startup-use-online', 'click', () => importOndaJsonFromUrl(document.getElementById('startup-online-library-url')?.value || ''));
+        safeBind('btn-startup-continue-empty', 'click', () => {
+            closeStartupRecoveryModal();
+            saveActiveLibraryState('startup-continue-empty');
+        });
+        safeBind('btn-startup-recovery-close', 'click', closeStartupRecoveryModal);
+
+        document.getElementById('startup-backup-file-input')?.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            try {
+                const raw = await file.text();
+                const data = JSON.parse(raw);
+                applyImportedSettingsJson(data);
+                await flushActiveLibraryState('startup-backup-json-import');
+                closeStartupRecoveryModal();
+                showToast('Imported backup JSON.');
+            } catch (err) {
+                console.error(err);
+                showToast('Import failed: invalid backup JSON.');
             }
             e.target.value = '';
         });
@@ -5032,6 +5289,15 @@
                 return;
             }
             folderInput.click();
+        });
+        safeBind('btn-db-save-local-now', 'click', async () => {
+            await flushActiveLibraryState('manual-library-drawer-save');
+            showToast('Saved local library now.');
+        });
+        safeBind('btn-db-export-everything', 'click', () => {
+            const data = buildEverythingExport();
+            downloadJsonFile(`${slugifyFileName(data.settings?.libraryName || 'onda')}-everything-backup.json`, data);
+            showToast('Exported everything backup JSON.');
         });
         safeBind('btn-db-import-json', 'click', () => document.getElementById('json-file-input').click());
         safeBind('btn-db-export-library', 'click', () => {
