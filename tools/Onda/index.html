@@ -1886,11 +1886,14 @@
                 <div class="library-title-row">
                     <span class="library-title">Settings Backup</span>
                 </div>
-                <div class="library-help">Save or restore app settings, visualiser stacks, mobile icon labels, and optional playlists. This does not save actual music files.</div>
+                <div class="library-help">Save or restore app settings, visualiser stacks, mobile icon labels, playlists, and the current library catalogue. This does not save actual music files.</div>
+                <div id="library-save-status-line" class="library-track-meta" style="margin: 8px 0; color: var(--water-spray);">Last local save: checking…</div>
                 <div class="library-action-grid">
+                    <button id="btn-export-everything-json" class="btn-pill" title="Export every saved thing in the app: library catalogue, playlists, history, settings, visualisers and mobile labels">Export Everything</button>
+                    <button id="btn-save-local-now" class="btn-pill" title="Force-save the current library catalogue to browser storage now">Save Local Now</button>
                     <button id="btn-export-settings-json" class="btn-pill" title="Export settings, visualiser presets, icon display settings and UI preferences">Import/Export Settings JSON</button>
                     <button id="btn-backup-settings-playlists" class="btn-pill" title="Export settings plus playlist lists and playlist artwork metadata">Backup Settings + Playlists</button>
-                    <button id="btn-import-settings-json" class="btn-pill" title="Import an Onda settings or settings+playlists backup JSON">Import</button>
+                    <button id="btn-import-settings-json" class="btn-pill" title="Import an Onda settings, full backup, settings+playlists backup, or library JSON">Import</button>
                     <input type="file" id="settings-json-file-input" accept=".json,application/json" style="display:none;">
                 </div>
             </div>
@@ -2132,6 +2135,15 @@
         const MOBILE_DB_ICON_STORAGE_KEY = "ondaMobileLibraryIconDisplayV1";
         const LOCAL_UI_SAVE_EVENT_KEY = "ondaLastLocalUiSaveV1";
         const LIBRARY_AUTOSAVE_KEY = "ondaActiveLibraryV1";
+        const ONDA_IDB_NAME = "OndaMediaPlayerPersistentDB";
+        const ONDA_IDB_VERSION = 1;
+        const ONDA_IDB_STORE = "state";
+        const ONDA_IDB_ACTIVE_LIBRARY_KEY = "activeLibrary";
+        const ONDA_LAST_LIBRARY_SAVE_KEY = "ondaLastLibrarySaveStatusV1";
+        let libraryStorageReady = false;
+        let libraryRestorePending = true;
+        let lastActiveLibrarySavePayload = null;
+        let pendingActiveLibrarySaveTimer = null;
         let visualizerLayers = loadActiveVisualizerStack();
         let savedVisualizerPresets = loadVisualizerPresets();
 
@@ -2313,6 +2325,7 @@
             try {
                 syncVisibleVisualizerCardsToState();
                 saveActiveVisualizerStack();
+                if (typeof saveActiveLibraryState === 'function') saveActiveLibraryState(`ui:${reason}`);
 
                 const activeTab = document.querySelector('.viewport-content.active-content')?.id;
                 if (activeTab) localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, activeTab);
@@ -2935,6 +2948,7 @@
         function saveRecentTrackIds() {
             try {
                 localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(recentTrackIds.slice(0, 20)));
+                if (typeof saveActiveLibraryState === 'function') saveActiveLibraryState('history-update');
             } catch (err) {
                 console.warn('Could not save Onda history:', err);
             }
@@ -3600,6 +3614,7 @@
             renderPlaylistsList();
             renderLibraryManager();
             updateMetadataUI();
+            saveActiveLibraryState('track-playlist-membership');
             showToast('Track playlist membership saved.');
         }
 
@@ -3609,6 +3624,7 @@
             virtualLibrary[currentFile.name].tags = (input?.value || '').split(',').map(tag => tag.trim()).filter(Boolean);
             updateMetadataUI();
             renderLibraryManager();
+            saveActiveLibraryState('track-tags-save');
             showToast('Tags saved.');
         }
 
@@ -3625,6 +3641,7 @@
             renderPlaylistsList();
             renderLibraryManager();
             updateMetadataUI();
+            saveActiveLibraryState('create-playlist-from-track');
             showToast(`Playlist ready: ${name}`);
         }
 
@@ -3736,13 +3753,51 @@
             return payload;
         }
 
+        function buildEverythingExport() {
+            saveLocalUiStateCheckpoint('export-everything');
+            syncAllTrackPlaylistMetadata();
+            const settingsBackup = buildSettingsExport({ includePlaylists: true });
+            const libraryBackup = buildLibraryExport({ streamingOnly: false });
+            return {
+                app: 'Onda Media Player',
+                type: 'onda-full-backup',
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                note: 'This file saves app data only. It does not contain actual audio/music file data.',
+                settings: settingsBackup.settings,
+                visualizer: settingsBackup.visualizer,
+                library: libraryBackup,
+                playlists: libraryBackup.playlists,
+                playlistMeta: playlistMeta || {},
+                history: { recentTrackIds: recentTrackIds || [] },
+                queue: {
+                    trackIds: playlistTracks.map(getTrackId).filter(Boolean),
+                    currentTrackId: currentFile?.name || null,
+                    activePlaylistView: activePlaylistView || null
+                },
+                mobileLibraryIcons: loadMobileIconSettings()
+            };
+        }
+
         function applyImportedSettingsJson(data) {
             if (!data || typeof data !== 'object') {
                 showToast('Import failed: invalid settings JSON.');
                 return;
             }
 
-            if (data.type === 'onda-library' || data.tracks) {
+            if (data.type === 'onda-full-backup' && data.library) {
+                importOndaLibrary(data.library);
+                if (data.history && Array.isArray(data.history.recentTrackIds)) {
+                    recentTrackIds = data.history.recentTrackIds.filter(id => data.library?.tracks?.[id]).slice(0, 20);
+                    saveRecentTrackIds();
+                }
+                if (data.queue && Array.isArray(data.queue.trackIds)) {
+                    playlistTracks = data.queue.trackIds
+                        .map(id => virtualLibrary[id] ? createPlayableTrackFromMeta(virtualLibrary[id]) : null)
+                        .filter(Boolean);
+                    activePlaylistView = data.queue.activePlaylistView || activePlaylistView;
+                }
+            } else if (data.type === 'onda-library' || data.tracks) {
                 importOndaLibrary(data);
                 return;
             }
@@ -3822,7 +3877,8 @@
             applyMobileIconSettings();
             restoreLocalUiScreen();
             saveLocalUiStateCheckpoint('settings-json-import');
-            showToast(data.playlists ? 'Imported settings and playlists backup.' : 'Imported settings JSON.');
+            saveActiveLibraryState('settings-json-import');
+            showToast(data.type === 'onda-full-backup' ? 'Imported full Onda backup.' : (data.playlists ? 'Imported settings and playlists backup.' : 'Imported settings JSON.'));
         }
 
         function importOndaLibrary(data) {
@@ -3840,6 +3896,7 @@
                 playlistMeta[name] = { ...(playlistMeta[name] || {}), imageUrl: data.imageUrl || '', imageData: data.imageData || '', description: data.description || '' };
                 renderPlaylistsList();
                 renderLibraryManager();
+                saveActiveLibraryState('import-playlist-json');
                 showToast(`Imported playlist: ${name}`);
                 return;
             }
@@ -3909,8 +3966,294 @@
             renderPlaylistsList();
             renderLibraryManager();
             if (currentFile) updateMetadataUI();
+            saveActiveLibraryState('import-library-json');
             showToast(`Imported ${Object.keys(importedTracks).length} library tracks.`);
         }
+
+        function getCurrentTrackCountForStorage() {
+            return Object.keys(virtualLibrary || {}).length;
+        }
+
+        function getPayloadTrackCount(payload) {
+            const data = payload?.library || payload;
+            return data?.tracks && typeof data.tracks === 'object' ? Object.keys(data.tracks).length : 0;
+        }
+
+        function getPayloadSavedAtMs(payload) {
+            const stamp = payload?.savedAt || payload?.library?.exportedAt || payload?.exportedAt || '';
+            const ms = Date.parse(stamp);
+            return Number.isFinite(ms) ? ms : 0;
+        }
+
+        function formatBytes(bytes) {
+            if (!Number.isFinite(bytes)) return 'unknown size';
+            if (bytes < 1024) return `${bytes} B`;
+            if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+            return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+        }
+
+        function updateLibrarySaveStatusLine(status = null) {
+            const line = document.getElementById('library-save-status-line');
+            if (!line) return;
+            let data = status;
+            if (!data) {
+                try { data = JSON.parse(localStorage.getItem(ONDA_LAST_LIBRARY_SAVE_KEY) || 'null'); } catch (err) { data = null; }
+            }
+            if (!data) {
+                line.textContent = 'Last local save: not yet saved in this browser.';
+                return;
+            }
+            const savedAt = data.savedAt ? new Date(data.savedAt) : null;
+            const dateLabel = savedAt && !Number.isNaN(savedAt.getTime()) ? savedAt.toLocaleString() : 'unknown time';
+            const idbLabel = data.indexedDbSaved ? 'IndexedDB + localStorage' : 'localStorage only';
+            const warning = data.warning ? ` · ${data.warning}` : '';
+            line.textContent = `Last local save: ${dateLabel} · ${data.trackCount || 0} tracks · ${formatBytes(data.bytes || 0)} · ${idbLabel}${warning}`;
+        }
+
+        function recordLibrarySaveStatus({ reason, payloadText = '', indexedDbSaved = false, warning = '' } = {}) {
+            const status = {
+                reason: reason || 'library-save',
+                savedAt: new Date().toISOString(),
+                trackCount: getCurrentTrackCountForStorage(),
+                bytes: payloadText ? new Blob([payloadText]).size : 0,
+                indexedDbSaved,
+                warning
+            };
+            try { localStorage.setItem(ONDA_LAST_LIBRARY_SAVE_KEY, JSON.stringify(status)); } catch (err) {}
+            updateLibrarySaveStatusLine(status);
+        }
+
+        function openOndaIndexedDb() {
+            return new Promise((resolve, reject) => {
+                if (!('indexedDB' in window)) {
+                    reject(new Error('IndexedDB is not available in this browser/context.'));
+                    return;
+                }
+                const request = indexedDB.open(ONDA_IDB_NAME, ONDA_IDB_VERSION);
+                request.onupgradeneeded = () => {
+                    const db = request.result;
+                    if (!db.objectStoreNames.contains(ONDA_IDB_STORE)) db.createObjectStore(ONDA_IDB_STORE);
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error || new Error('IndexedDB open failed.'));
+                request.onblocked = () => reject(new Error('IndexedDB open was blocked by another tab.'));
+            });
+        }
+
+        async function idbSetState(key, value) {
+            const db = await openOndaIndexedDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(ONDA_IDB_STORE, 'readwrite');
+                tx.objectStore(ONDA_IDB_STORE).put(value, key);
+                tx.oncomplete = () => { db.close(); resolve(true); };
+                tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB write failed.')); };
+            });
+        }
+
+        async function idbGetState(key) {
+            const db = await openOndaIndexedDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(ONDA_IDB_STORE, 'readonly');
+                const request = tx.objectStore(ONDA_IDB_STORE).get(key);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('IndexedDB read failed.'));
+                tx.oncomplete = () => db.close();
+                tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB transaction failed.')); };
+            });
+        }
+
+        function buildActiveLibraryAutosavePayload(reason = 'library-autosave') {
+            syncAllTrackPlaylistMetadata();
+            return {
+                app: 'Onda Media Player',
+                type: 'onda-active-library-autosave',
+                version: 2,
+                savedAt: new Date().toISOString(),
+                reason,
+                library: buildLibraryExport({ streamingOnly: false }),
+                queueIds: playlistTracks.map(getTrackId).filter(Boolean),
+                currentTrackId: currentFile?.name || null,
+                activePlaylistView: activePlaylistView || null,
+                recentTrackIds: recentTrackIds || []
+            };
+        }
+
+        async function mirrorActiveLibraryPayloadToIndexedDb(payload, payloadText, reason) {
+            try {
+                await idbSetState(ONDA_IDB_ACTIVE_LIBRARY_KEY, payload);
+                recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: true });
+                return true;
+            } catch (err) {
+                console.warn('Could not mirror active library to IndexedDB:', err);
+                recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false, warning: 'IndexedDB mirror failed' });
+                return false;
+            }
+        }
+
+        function saveActiveLibraryState(reason = 'library-autosave') {
+            try {
+                const isUserLibraryAction = /add|import|playlist|track|tag|lyrics|delete|bulk|folder|stream|manual|export|settings-json-import|modal-tags-save/i.test(reason || '');
+                if (libraryRestorePending && !isUserLibraryAction && getCurrentTrackCountForStorage() === 0) {
+                    console.warn('Skipped empty library autosave while restore was still pending:', reason);
+                    return false;
+                }
+
+                const payload = buildActiveLibraryAutosavePayload(reason);
+                const payloadText = JSON.stringify(payload);
+                lastActiveLibrarySavePayload = payload;
+
+                try {
+                    localStorage.setItem(LIBRARY_AUTOSAVE_KEY, payloadText);
+                    recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false });
+                } catch (localErr) {
+                    console.warn('Could not save library to localStorage:', localErr);
+                    recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false, warning: 'localStorage failed; trying IndexedDB' });
+                }
+
+                if (pendingActiveLibrarySaveTimer) clearTimeout(pendingActiveLibrarySaveTimer);
+                pendingActiveLibrarySaveTimer = setTimeout(() => {
+                    mirrorActiveLibraryPayloadToIndexedDb(payload, payloadText, reason);
+                    pendingActiveLibrarySaveTimer = null;
+                }, 80);
+
+                return true;
+            } catch (err) {
+                console.warn('Could not autosave library catalogue:', err);
+                recordLibrarySaveStatus({ reason, warning: 'autosave failed before payload was created' });
+                return false;
+            }
+        }
+
+        async function flushActiveLibraryState(reason = 'flush-library-autosave') {
+            const payload = lastActiveLibrarySavePayload || buildActiveLibraryAutosavePayload(reason);
+            const payloadText = JSON.stringify(payload);
+            try { localStorage.setItem(LIBRARY_AUTOSAVE_KEY, payloadText); } catch (err) { console.warn('Local flush failed:', err); }
+            try { await idbSetState(ONDA_IDB_ACTIVE_LIBRARY_KEY, payload); recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: true }); } catch (err) { console.warn('IndexedDB flush failed:', err); recordLibrarySaveStatus({ reason, payloadText, indexedDbSaved: false, warning: 'IndexedDB flush failed' }); }
+        }
+
+        function applyActiveLibraryPayload(saved, source = 'unknown') {
+            const data = saved?.library || saved;
+            if (!data || data.type !== 'onda-library') return false;
+
+            if (data.libraryName && libraryNameInput) libraryNameInput.value = data.libraryName;
+
+            Object.entries(data.tracks || {}).forEach(([key, rawMeta]) => {
+                if (!rawMeta || typeof rawMeta !== 'object') return;
+                const id = rawMeta.id || key;
+                const existing = virtualLibrary[id] || {};
+                virtualLibrary[id] = {
+                    ...existing,
+                    ...rawMeta,
+                    id,
+                    fileName: rawMeta.fileName || rawMeta.title || existing.fileName || id,
+                    nickname: rawMeta.nickname || existing.nickname || '',
+                    lyrics: rawMeta.lyrics || existing.lyrics || '',
+                    tags: Array.isArray(rawMeta.tags) ? rawMeta.tags : (existing.tags || []),
+                    playlists: Array.isArray(rawMeta.playlists) ? rawMeta.playlists : (existing.playlists || []),
+                    sourceType: rawMeta.sourceType || (rawMeta.streamUrl ? 'stream' : 'local'),
+                    size: rawMeta.size || existing.size || '',
+                    streamUrl: rawMeta.streamUrl || existing.streamUrl || null,
+                    localPath: rawMeta.localPath || existing.localPath || null,
+                    phonePath: rawMeta.phonePath || existing.phonePath || null,
+                    desktopPath: rawMeta.desktopPath || existing.desktopPath || null,
+                    imageUrl: rawMeta.imageUrl || existing.imageUrl || null,
+                    imageData: rawMeta.imageData || existing.imageData || null,
+                    notes: rawMeta.notes || existing.notes || '',
+                    stats: rawMeta.stats || existing.stats || {}
+                };
+                delete virtualLibrary[id].blobFile;
+            });
+
+            if (data.playlists && typeof data.playlists === 'object') {
+                Object.entries(data.playlists).forEach(([name, value]) => {
+                    playlists[name] = playlistIdsToTrackObjects(normalisePlaylistToIds(value));
+                    if (value && typeof value === 'object') {
+                        playlistMeta[name] = {
+                            ...(playlistMeta[name] || {}),
+                            imageUrl: value.imageUrl || playlistMeta[name]?.imageUrl || '',
+                            imageData: value.imageData || playlistMeta[name]?.imageData || '',
+                            description: value.description || playlistMeta[name]?.description || ''
+                        };
+                    }
+                });
+            }
+
+            if (data.playlistMeta && typeof data.playlistMeta === 'object') {
+                playlistMeta = { ...playlistMeta, ...data.playlistMeta };
+            }
+
+            if (Array.isArray(saved.recentTrackIds)) {
+                recentTrackIds = saved.recentTrackIds.filter(id => virtualLibrary[id]).slice(0, 20);
+            }
+
+            if (Array.isArray(saved.queueIds)) {
+                playlistTracks = saved.queueIds
+                    .map(id => virtualLibrary[id] ? createPlayableTrackFromMeta(virtualLibrary[id]) : null)
+                    .filter(Boolean);
+            }
+
+            activePlaylistView = saved.activePlaylistView || activePlaylistView;
+            syncAllTrackPlaylistMetadata();
+            renderPlaylistsList();
+            renderLibraryManager();
+            if (typeof renderHistoryTab === 'function') renderHistoryTab();
+            updateLibrarySaveStatusLine();
+            console.info(`Restored Onda library from ${source}: ${getPayloadTrackCount(saved)} tracks.`);
+            return true;
+        }
+
+        function restoreActiveLibraryState() {
+            try {
+                const raw = localStorage.getItem(LIBRARY_AUTOSAVE_KEY);
+                if (!raw) return false;
+                const saved = JSON.parse(raw);
+                return applyActiveLibraryPayload(saved, 'localStorage');
+            } catch (err) {
+                console.warn('Could not restore autosaved library catalogue from localStorage:', err);
+                return false;
+            }
+        }
+
+        async function restoreActiveLibraryStateFromIndexedDb() {
+            try {
+                const saved = await idbGetState(ONDA_IDB_ACTIVE_LIBRARY_KEY);
+                if (!saved) return false;
+
+                const currentCount = getCurrentTrackCountForStorage();
+                const storedCount = getPayloadTrackCount(saved);
+                const currentLocalRaw = localStorage.getItem(LIBRARY_AUTOSAVE_KEY);
+                let localSavedAt = 0;
+                try { localSavedAt = currentLocalRaw ? getPayloadSavedAtMs(JSON.parse(currentLocalRaw)) : 0; } catch (err) {}
+                const idbSavedAt = getPayloadSavedAtMs(saved);
+
+                if (storedCount > 0 && (currentCount === 0 || idbSavedAt >= localSavedAt)) {
+                    const didRestore = applyActiveLibraryPayload(saved, 'IndexedDB');
+                    if (didRestore) {
+                        try { localStorage.setItem(LIBRARY_AUTOSAVE_KEY, JSON.stringify(saved)); } catch (err) {}
+                    }
+                    return didRestore;
+                }
+                return false;
+            } catch (err) {
+                console.warn('Could not restore autosaved library catalogue from IndexedDB:', err);
+                return false;
+            }
+        }
+
+        async function initialisePersistentLibraryStorage() {
+            libraryRestorePending = true;
+            const restoredFromLocal = restoreActiveLibraryState();
+            const restoredFromIdb = await restoreActiveLibraryStateFromIndexedDb();
+            libraryStorageReady = true;
+            libraryRestorePending = false;
+            updateLibrarySaveStatusLine();
+
+            if ((restoredFromLocal || restoredFromIdb) && getCurrentTrackCountForStorage() > 0) {
+                saveActiveLibraryState('post-restore-confirmation');
+            }
+        }
+
+        initialisePersistentLibraryStorage();
 
         async function probeStreamUrl(url, timeoutMs = 3500) {
             return new Promise(resolve => {
@@ -4124,6 +4467,7 @@
             if (wasEmpty) switchTrack(0);
             else showToast(`Added ${newTracks.length} tracks!`);
             renderLibraryManager();
+            saveActiveLibraryState('add-local-files');
         }
 
         function switchTrack(index) {
@@ -4514,6 +4858,12 @@
         initVisualizerComposerUI();
         restoreLocalUiScreen();
 
+        safeBind('btn-export-everything-json', 'click', () => {
+            const data = buildEverythingExport();
+            downloadJsonFile(`${slugifyFileName(data.settings?.libraryName || 'onda')}-everything-backup.json`, data);
+            showToast('Exported everything backup JSON.');
+        });
+
         safeBind('btn-export-settings-json', 'click', () => {
             const data = buildSettingsExport({ includePlaylists: false });
             downloadJsonFile(`${slugifyFileName(data.settings?.libraryName || 'onda-settings')}-settings.json`, data);
@@ -4791,6 +5141,7 @@
 
             urlInputBox.value = "";
             renderLibraryManager();
+            saveActiveLibraryState('add-url-stream');
             showToast("URL Stream added successfully to queue!");
             if (playlistTracks.length === 1) switchTrack(0);
         });
@@ -4972,6 +5323,7 @@
             saveActiveTrackPlaylistMembership();
             updateMetadataUI();
             renderLibraryManager();
+            saveActiveLibraryState('track-info-save');
             showToast("Track info saved!");
         }
 
@@ -5125,6 +5477,7 @@
             updateMetadataUI();
             renderLibraryManager();
             closeModal('modal-tags');
+            saveActiveLibraryState('modal-tags-save');
             showToast("Tags updated.");
         }
 
@@ -5896,10 +6249,19 @@
                 saveLocalUiStateCheckpoint('screen-orientation-change-settled');
             }, 180);
         });
-        window.addEventListener('pagehide', () => saveLocalUiStateCheckpoint('pagehide'));
-        window.addEventListener('beforeunload', () => saveLocalUiStateCheckpoint('beforeunload'));
+        window.addEventListener('pagehide', () => {
+            saveLocalUiStateCheckpoint('pagehide');
+            flushActiveLibraryState('pagehide-flush');
+        });
+        window.addEventListener('beforeunload', () => {
+            saveLocalUiStateCheckpoint('beforeunload');
+            flushActiveLibraryState('beforeunload-flush');
+        });
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'hidden') saveLocalUiStateCheckpoint('visibility-hidden');
+            if (document.visibilityState === 'hidden') {
+                saveLocalUiStateCheckpoint('visibility-hidden');
+                flushActiveLibraryState('visibility-hidden-flush');
+            }
         });
     </script>
 </body>
