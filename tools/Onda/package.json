@@ -1,0 +1,10 @@
+{
+  "name": "onda-player-netlify-sync",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Onda Media Player with Netlify Blobs device sync",
+  "type": "commonjs",
+  "dependencies": {
+    "@netlify/blobs": "^9.1.0"
+  }
+}
