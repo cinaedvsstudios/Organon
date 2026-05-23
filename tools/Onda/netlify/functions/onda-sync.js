@@ -40,7 +40,25 @@ function getTrackCountFromBackup(data) {
 
 async function getBlobStore() {
   const { getStore } = await import('@netlify/blobs');
-  return getStore(STORE_NAME);
+
+  // Netlify normally injects the Blobs site context automatically for Functions.
+  // Some monorepo/manual-upgrade deployments do not expose that context, which causes:
+  // "The environment has not been configured to use Netlify Blobs... supply siteID, token".
+  // These optional environment variables let Onda fall back to explicit server-side credentials.
+  const siteID = process.env.ONDA_NETLIFY_SITE_ID || process.env.NETLIFY_SITE_ID || process.env.SITE_ID || '';
+  const token = process.env.ONDA_NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN || '';
+
+  if (siteID && token) {
+    return getStore({ name: STORE_NAME, siteID, token });
+  }
+
+  try {
+    return getStore(STORE_NAME);
+  } catch (error) {
+    const hint = 'Automatic Netlify Blobs context was not available. Add ONDA_NETLIFY_SITE_ID and ONDA_NETLIFY_TOKEN as environment variables, then redeploy.';
+    error.message = `${error.message} ${hint}`;
+    throw error;
+  }
 }
 
 async function getJson(store, key, fallback = null) {
