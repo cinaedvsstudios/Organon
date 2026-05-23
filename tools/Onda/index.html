@@ -2136,8 +2136,9 @@
         const LOCAL_UI_SAVE_EVENT_KEY = "ondaLastLocalUiSaveV1";
         const LIBRARY_AUTOSAVE_KEY = "ondaActiveLibraryV1";
         const ONDA_IDB_NAME = "OndaMediaPlayerPersistentDB";
-        const ONDA_IDB_VERSION = 1;
+        const ONDA_IDB_VERSION = 2;
         const ONDA_IDB_STORE = "state";
+        const ONDA_IDB_AUDIO_STORE = "audioFiles";
         const ONDA_IDB_ACTIVE_LIBRARY_KEY = "activeLibrary";
         const ONDA_LAST_LIBRARY_SAVE_KEY = "ondaLastLibrarySaveStatusV1";
         let libraryStorageReady = false;
@@ -4033,6 +4034,7 @@
                 request.onupgradeneeded = () => {
                     const db = request.result;
                     if (!db.objectStoreNames.contains(ONDA_IDB_STORE)) db.createObjectStore(ONDA_IDB_STORE);
+                    if (!db.objectStoreNames.contains(ONDA_IDB_AUDIO_STORE)) db.createObjectStore(ONDA_IDB_AUDIO_STORE);
                 };
                 request.onsuccess = () => resolve(request.result);
                 request.onerror = () => reject(request.error || new Error('IndexedDB open failed.'));
@@ -4060,6 +4062,88 @@
                 tx.oncomplete = () => db.close();
                 tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB transaction failed.')); };
             });
+        }
+
+        async function idbSetAudioFile(trackId, file, meta = {}) {
+            if (!trackId || !file) return false;
+            const db = await openOndaIndexedDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(ONDA_IDB_AUDIO_STORE, 'readwrite');
+                tx.objectStore(ONDA_IDB_AUDIO_STORE).put({
+                    trackId,
+                    file,
+                    savedAt: new Date().toISOString(),
+                    fileName: meta.fileName || file.name || trackId,
+                    localPath: meta.localPath || file.webkitRelativePath || file.name || '',
+                    sizeBytes: meta.sizeBytes || file.size || 0,
+                    lastModified: file.lastModified || null,
+                    type: file.type || ''
+                }, trackId);
+                tx.oncomplete = () => { db.close(); resolve(true); };
+                tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB audio write failed.')); };
+            });
+        }
+
+        async function idbGetAudioFile(trackId) {
+            if (!trackId) return null;
+            const db = await openOndaIndexedDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(ONDA_IDB_AUDIO_STORE, 'readonly');
+                const request = tx.objectStore(ONDA_IDB_AUDIO_STORE).get(trackId);
+                request.onsuccess = () => resolve(request.result || null);
+                request.onerror = () => reject(request.error || new Error('IndexedDB audio read failed.'));
+                tx.oncomplete = () => db.close();
+                tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB audio transaction failed.')); };
+            });
+        }
+
+        async function idbDeleteAudioFile(trackId) {
+            if (!trackId) return false;
+            const db = await openOndaIndexedDb();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(ONDA_IDB_AUDIO_STORE, 'readwrite');
+                tx.objectStore(ONDA_IDB_AUDIO_STORE).delete(trackId);
+                tx.oncomplete = () => { db.close(); resolve(true); };
+                tx.onerror = () => { db.close(); reject(tx.error || new Error('IndexedDB audio delete failed.')); };
+            });
+        }
+
+        async function persistLocalAudioFilesToIndexedDb(tracks) {
+            const localTracks = (tracks || []).filter(track => track && track.blobFile && (track.sourceType || 'local') !== 'stream');
+            if (!localTracks.length) return { saved: 0, failed: 0 };
+            let saved = 0;
+            let failed = 0;
+            for (const track of localTracks) {
+                const trackId = getTrackId(track);
+                const meta = virtualLibrary[trackId] || track;
+                try {
+                    await idbSetAudioFile(trackId, track.blobFile, meta);
+                    saved += 1;
+                } catch (err) {
+                    failed += 1;
+                    console.warn('Could not persist audio file to IndexedDB:', track.fileName || trackId, err);
+                }
+            }
+            return { saved, failed };
+        }
+
+        async function hydrateLocalAudioBlob(trackId) {
+            const meta = virtualLibrary[trackId];
+            if (!meta || meta.sourceType === 'stream' || meta.streamUrl) return null;
+            if (meta.blobFile) return meta.blobFile;
+            try {
+                const record = await idbGetAudioFile(trackId);
+                const file = record?.file || record?.blob || null;
+                if (file) {
+                    meta.blobFile = file;
+                    meta.needsRelink = false;
+                    meta.localPath = meta.localPath || record.localPath || record.fileName || meta.fileName || trackId;
+                    return file;
+                }
+            } catch (err) {
+                console.warn('Could not hydrate local audio file from IndexedDB:', trackId, err);
+            }
+            return null;
         }
 
         function buildActiveLibraryAutosavePayload(reason = 'library-autosave') {
@@ -4417,7 +4501,7 @@
             });
         }
 
-        function handleUploadedFiles(files) {
+        async function handleUploadedFiles(files) {
             const playableFiles = Array.from(files).filter(file => {
                 return file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm)$/i);
             });
@@ -4464,8 +4548,14 @@
             const wasEmpty = playlistTracks.length === 0;
             playlistTracks = [...playlistTracks, ...newTracks];
 
+            const cacheResult = await persistLocalAudioFilesToIndexedDb(newTracks);
+            if (cacheResult.failed > 0) {
+                showToast(`Added ${newTracks.length} tracks, but ${cacheResult.failed} audio files could not be cached for refresh playback.`);
+            } else if (!wasEmpty) {
+                showToast(`Added ${newTracks.length} tracks and cached them for refresh playback.`);
+            }
+
             if (wasEmpty) switchTrack(0);
-            else showToast(`Added ${newTracks.length} tracks!`);
             renderLibraryManager();
             saveActiveLibraryState('add-local-files');
         }
@@ -4476,7 +4566,7 @@
             loadTrack(playlistTracks[currentTrackIndex]);
         }
 
-        function loadTrack(file) {
+        async function loadTrack(file) {
             currentFile = file;
 
             localAudio.pause();
@@ -4507,12 +4597,20 @@
                 activeAudio.src = file.streamUrl || meta.streamUrl;
             } else {
                 activeAudio = localAudio;
-                const blob = file.blobFile || meta.blobFile;
+                let blob = file.blobFile || meta.blobFile;
+                if (!blob) {
+                    showToast('Restoring cached local audio...');
+                    blob = await hydrateLocalAudioBlob(key);
+                    if (blob) {
+                        file.blobFile = blob;
+                        meta.blobFile = blob;
+                    }
+                }
                 if (!blob) {
                     updateMetadataUI();
                     pauseAudio();
                     startVisualizer();
-                    showToast('Local file metadata loaded, but the actual file must be selected/re-linked before playback.');
+                    showToast('Local file metadata is saved, but Chrome no longer has the audio file. Use Add Folder / Relink Folder to play it again.');
                     return;
                 }
                 if (activeAudio.src && activeAudio.src.startsWith('blob:')) {
