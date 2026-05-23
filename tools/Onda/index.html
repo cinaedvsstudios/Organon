@@ -2023,6 +2023,21 @@
             </label>
             <div id="playlist-image-preview" class="playlist-image-preview" style="margin-top:10px;">No playlist image</div>
             <p style="font-size:0.76rem; color:var(--chiseled-bronze); margin:8px 0 0;">Local playlist images are saved into the exported JSON as image data. Do not use massive images unless you want a massive JSON file.</p>
+
+            <div style="margin-top:16px; padding-top:12px; border-top:1px solid rgba(224,163,96,0.28);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                    <span class="library-section-label" style="margin:0;">Tracks in this playlist</span>
+                    <span id="playlist-edit-track-count" class="library-track-meta">0 tracks</span>
+                </div>
+                <div class="library-manager-actions" style="justify-content:flex-start; margin:8px 0 10px;">
+                    <button id="btn-playlist-remove-selected" type="button" class="btn-pill">Remove Selected</button>
+                    <button id="btn-playlist-clear-tracks" type="button" class="btn-pill" style="background: var(--brand-red); color: white;">Clear Tracks · Keep Playlist</button>
+                </div>
+                <div id="playlist-edit-track-list" style="max-height:220px; overflow:auto; border:1px solid rgba(137,107,73,0.35); border-radius:12px; padding:8px; background:rgba(0,0,0,0.18);">
+                    <div class="library-track-meta">No tracks in this playlist.</div>
+                </div>
+                <p style="font-size:0.76rem; color:var(--chiseled-bronze); margin:8px 0 0;">Removing tracks here only removes them from this playlist. It does not delete the song from the library.</p>
+            </div>
         </div>
         <div class="modal-actions">
             <button class="btn-pill" style="background: var(--chiseled-bronze);" onclick="closeModal('modal-playlist-edit')">Cancel</button>
@@ -5382,6 +5397,30 @@
         safeBind('btn-apply-bulk-playlists', 'click', applyBulkPlaylistAdd);
         safeBind('btn-apply-bulk-attributes', 'click', applyBulkAttributes);
         safeBind('btn-save-playlist-edit', 'click', savePlaylistEdit);
+        safeBind('btn-playlist-remove-selected', 'click', removeSelectedTracksFromEditingPlaylist);
+        safeBind('btn-playlist-clear-tracks', 'click', clearEditingPlaylistTracks);
+        const playlistEditTrackList = document.getElementById('playlist-edit-track-list');
+        if (playlistEditTrackList) {
+            playlistEditTrackList.addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.btn-playlist-edit-remove');
+                if (removeBtn) {
+                    const id = removeBtn.dataset.trackId;
+                    if (removeTrackIdFromPlaylistOnly(editingPlaylistName, id)) {
+                        renderPlaylistEditTracks(editingPlaylistName);
+                        renderPlaylistsList();
+                        renderLibraryManager();
+                        if (currentFile) updateMetadataUI();
+                        saveActiveLibraryState('playlist-edit-remove-one');
+                        showToast('Track removed from playlist.');
+                    }
+                    return;
+                }
+                const playBtn = e.target.closest('.btn-playlist-edit-play');
+                if (playBtn) {
+                    addTrackToQueueFromLibrary(playBtn.dataset.trackId, true);
+                }
+            });
+        }
         const playlistImageFileInput = document.getElementById('input-playlist-image-file');
         if (playlistImageFileInput) {
             playlistImageFileInput.addEventListener('change', () => {
@@ -5530,7 +5569,92 @@
             document.getElementById('input-playlist-image-url').value = meta.imageUrl || '';
             document.getElementById('input-playlist-image-file').value = '';
             updatePlaylistImagePreview(meta.imageData || meta.imageUrl || '');
+            renderPlaylistEditTracks(name);
             showModal('modal-playlist-edit');
+        }
+
+        function renderPlaylistEditTracks(name = editingPlaylistName) {
+            const list = document.getElementById('playlist-edit-track-list');
+            const count = document.getElementById('playlist-edit-track-count');
+            if (!list || !count) return;
+            if (!name || !playlists[name]) {
+                count.textContent = '0 tracks';
+                list.innerHTML = '<div class="library-track-meta">Playlist not found.</div>';
+                return;
+            }
+            const ids = normalisePlaylistToIds(playlists[name]).filter(Boolean);
+            count.textContent = `${ids.length} track${ids.length === 1 ? '' : 's'}`;
+            if (!ids.length) {
+                list.innerHTML = '<div class="library-track-meta">No tracks in this playlist.</div>';
+                return;
+            }
+            list.innerHTML = '';
+            ids.forEach((trackId, index) => {
+                const meta = virtualLibrary[trackId];
+                const row = document.createElement('div');
+                row.className = 'library-result-row';
+                row.style.marginBottom = '8px';
+                row.dataset.trackId = trackId;
+                row.innerHTML = `
+                    <div class="library-row-main">
+                        <div class="library-row-main" style="justify-content:flex-start; min-width:0;">
+                            <input type="checkbox" class="playlist-edit-track-check" data-track-id="${escapeHtml(trackId)}" style="margin-right:10px;">
+                            <div>
+                                <div class="library-track-title">${index + 1}. ${escapeHtml(meta ? getDisplayTitle(meta) : trackId)}</div>
+                                <div class="library-track-meta">${escapeHtml(meta?.fileName || 'Missing library record')} · ${escapeHtml(meta ? sourceStatus(meta) : 'missing')}</div>
+                            </div>
+                        </div>
+                        <div class="library-row-buttons">
+                            ${meta ? `<button type="button" class="btn-pill btn-playlist-edit-play" data-track-id="${escapeHtml(trackId)}">Play</button>` : ''}
+                            <button type="button" class="btn-pill btn-playlist-edit-remove" data-track-id="${escapeHtml(trackId)}" style="background: var(--brand-red); color:white;">Remove</button>
+                        </div>
+                    </div>`;
+                list.appendChild(row);
+            });
+        }
+
+        function removeTrackIdFromPlaylistOnly(playlistName, trackId) {
+            if (!playlistName || !playlists[playlistName] || !trackId) return false;
+            const before = normalisePlaylistToIds(playlists[playlistName]);
+            const after = before.filter(id => id !== trackId);
+            playlists[playlistName] = after.map(id => virtualLibrary[id] ? createPlayableTrackFromMeta(virtualLibrary[id]) : id);
+            if (virtualLibrary[trackId]) syncTrackPlaylistMetadata(trackId);
+            return after.length !== before.length;
+        }
+
+        function removeSelectedTracksFromEditingPlaylist() {
+            if (!editingPlaylistName || !playlists[editingPlaylistName]) return;
+            const selected = Array.from(document.querySelectorAll('#playlist-edit-track-list .playlist-edit-track-check:checked')).map(cb => cb.dataset.trackId).filter(Boolean);
+            if (!selected.length) {
+                showToast('Select playlist tracks to remove first.');
+                return;
+            }
+            selected.forEach(id => removeTrackIdFromPlaylistOnly(editingPlaylistName, id));
+            renderPlaylistEditTracks(editingPlaylistName);
+            renderPlaylistsList();
+            renderLibraryManager();
+            if (currentFile) updateMetadataUI();
+            saveActiveLibraryState('playlist-edit-remove-selected');
+            showToast(`Removed ${selected.length} track${selected.length === 1 ? '' : 's'} from ${editingPlaylistName}.`);
+        }
+
+        function clearEditingPlaylistTracks() {
+            if (!editingPlaylistName || !playlists[editingPlaylistName]) return;
+            const ids = normalisePlaylistToIds(playlists[editingPlaylistName]);
+            if (!ids.length) {
+                showToast('This playlist is already empty.');
+                return;
+            }
+            const ok = confirm(`Remove all ${ids.length} track${ids.length === 1 ? '' : 's'} from "${editingPlaylistName}"? The playlist itself and the library tracks will stay.`);
+            if (!ok) return;
+            playlists[editingPlaylistName] = [];
+            ids.forEach(id => { if (virtualLibrary[id]) syncTrackPlaylistMetadata(id); });
+            renderPlaylistEditTracks(editingPlaylistName);
+            renderPlaylistsList();
+            renderLibraryManager();
+            if (currentFile) updateMetadataUI();
+            saveActiveLibraryState('playlist-edit-clear-tracks');
+            showToast(`Cleared tracks from ${editingPlaylistName}.`);
         }
 
         function savePlaylistEdit() {
