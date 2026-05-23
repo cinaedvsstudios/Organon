@@ -2197,16 +2197,10 @@
         let isRepeatAll = false;
         let isShuffle = false;
 
-        let playlists = {
-            "Favorites": [],
-            "Chill Vocals": [],
-            "Work Focus": []
-        };
-        let playlistMeta = {
-            "Favorites": { imageUrl: "", imageData: "", description: "" },
-            "Chill Vocals": { imageUrl: "", imageData: "", description: "" },
-            "Work Focus": { imageUrl: "", imageData: "", description: "" }
-        };
+        // Start with no hardcoded playlists.
+        // User-created/imported playlists should be the only playlists shown.
+        let playlists = {};
+        let playlistMeta = {};
         let activePlaylistView = null;
         let editingPlaylistName = null;
         let virtualLibrary = {};
@@ -2934,6 +2928,25 @@
             if (!playlistMeta[name]) playlistMeta[name] = { imageUrl: '', imageData: '', description: '' };
             return playlistMeta[name];
         }
+        const STARTER_PLAYLIST_NAMES_TO_PURGE = new Set(['Favorites', 'Favourites', 'Chill Vocals', 'Work Focus']);
+
+        function purgeEmptyStarterPlaylists() {
+            let changed = false;
+            STARTER_PLAYLIST_NAMES_TO_PURGE.forEach(name => {
+                if (!Object.prototype.hasOwnProperty.call(playlists, name)) return;
+                const trackIds = normalisePlaylistToIds(playlists[name]);
+                const meta = playlistMeta[name] || {};
+                const hasCustomMeta = Boolean(meta.imageUrl || meta.imageData || meta.description);
+                if (trackIds.length === 0 && !hasCustomMeta) {
+                    delete playlists[name];
+                    delete playlistMeta[name];
+                    if (activePlaylistView === name) activePlaylistView = null;
+                    changed = true;
+                }
+            });
+            return changed;
+        }
+
 
         function getPlaylistArtwork(name) {
             const meta = ensurePlaylistMeta(name);
@@ -3996,6 +4009,8 @@
                 playlistMeta = { ...playlistMeta, ...data.playlistMeta };
             }
 
+            purgeEmptyStarterPlaylists();
+
             if (data.visualizerPresets && typeof data.visualizerPresets === 'object') {
                 savedVisualizerPresets = { ...savedVisualizerPresets, ...data.visualizerPresets };
                 saveVisualizerPresets();
@@ -4418,6 +4433,8 @@
             if (data.playlistMeta && typeof data.playlistMeta === 'object') {
                 playlistMeta = { ...playlistMeta, ...data.playlistMeta };
             }
+
+            purgeEmptyStarterPlaylists();
 
             if (Array.isArray(saved.recentTrackIds)) {
                 recentTrackIds = saved.recentTrackIds.filter(id => virtualLibrary[id]).slice(0, 20);
@@ -5700,6 +5717,10 @@
 
         function renderPlaylistsList() {
             syncAllTrackPlaylistMetadata();
+            const removedStarterPlaylists = purgeEmptyStarterPlaylists();
+            if (removedStarterPlaylists && typeof saveActiveLibraryState === 'function') {
+                saveActiveLibraryState('purge-empty-starter-playlists');
+            }
             const container = document.getElementById('playlists-explorer-group');
             if (!container) return;
             container.innerHTML = "";
