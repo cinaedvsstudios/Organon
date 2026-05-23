@@ -77,6 +77,21 @@
             border: 1px solid var(--chiseled-bronze) !important;
             width: 100%;
         }
+        #btn-database-engine {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        #btn-database-engine.drawer-resize-ready {
+            cursor: ns-resize;
+            box-shadow: 0 0 14px rgba(117, 178, 222, 0.28), inset 0 0 0 1px rgba(117, 178, 222, 0.22);
+        }
+        body.is-resizing-library-drawer,
+        body.is-resizing-library-drawer * {
+            cursor: ns-resize !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
 
         #organon-middle-panel {
             flex-grow: 1;
@@ -924,7 +939,8 @@
             left: 140px;
             right: 140px;
             bottom: 70px;
-            max-height: min(72vh, 680px);
+            height: var(--library-drawer-height, min(72vh, 680px));
+            max-height: var(--library-drawer-height, min(72vh, 680px));
             background: rgba(16, 17, 15, 0.97);
             border: 2px solid var(--stone-ochre);
             border-bottom: none;
@@ -946,7 +962,8 @@
         .library-drawer-inner {
             display: grid;
             grid-template-rows: auto auto 1fr;
-            max-height: min(72vh, 680px);
+            height: 100%;
+            max-height: 100%;
         }
         .library-drawer-header {
             display: flex;
@@ -1454,6 +1471,133 @@
         }
 
 
+
+
+        /* Player readability over active VEQ canvas */
+        #organon-top-panel,
+        #organon-top-panel h2,
+        #organon-top-panel span,
+        #organon-top-panel button,
+        #organon-top-panel .seek-container,
+        #organon-top-panel .mini-meta-box,
+        #organon-top-panel .utility-pill,
+        #organon-top-panel .utility-btn {
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.98), 0 0 10px rgba(0, 0, 0, 0.92), 0 0 18px rgba(0, 0, 0, 0.78);
+            filter: drop-shadow(0 3px 7px rgba(0, 0, 0, 0.96));
+        }
+        #organon-top-panel .seek-container input[type="range"] {
+            filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.95));
+        }
+        #organon-top-panel .utility-pill {
+            background-color: rgba(0, 0, 0, 0.78);
+            box-shadow: 0 5px 14px rgba(0,0,0,0.82), inset 0 0 0 1px rgba(117,178,222,0.11);
+        }
+
+        /* Flexible library toolbar + bottom-right resize grip */
+        .library-manager-toolbar {
+            grid-template-columns: minmax(220px, 1fr) minmax(150px, 0.36fr) minmax(520px, 2fr);
+        }
+        .library-manager-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+            align-items: center;
+        }
+        .library-manager-actions .btn-pill {
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+        .library-drawer-resize-corner {
+            position: absolute;
+            right: 12px;
+            bottom: 12px;
+            width: 25px;
+            height: 25px;
+            z-index: 20;
+            cursor: nwse-resize;
+            border-right: 2px solid rgba(117, 178, 222, 0.9);
+            border-bottom: 2px solid rgba(117, 178, 222, 0.9);
+            border-radius: 0 0 8px 0;
+            opacity: 0.85;
+            background: linear-gradient(135deg, transparent 0 46%, rgba(117,178,222,0.22) 47% 50%, transparent 51% 100%);
+            filter: drop-shadow(0 0 8px rgba(0,0,0,0.95));
+        }
+        .library-drawer-resize-corner::before,
+        .library-drawer-resize-corner::after {
+            content: "";
+            position: absolute;
+            right: 3px;
+            bottom: 3px;
+            width: 14px;
+            height: 14px;
+            border-right: 1px solid rgba(224,163,96,0.72);
+            border-bottom: 1px solid rgba(224,163,96,0.72);
+        }
+        .library-drawer-resize-corner::after {
+            right: 8px;
+            bottom: 8px;
+            width: 7px;
+            height: 7px;
+        }
+        body.is-resizing-library-drawer-corner,
+        body.is-resizing-library-drawer-corner * {
+            cursor: nwse-resize !important;
+            user-select: none !important;
+            -webkit-user-select: none !important;
+        }
+
+        .file-drop-stream-section {
+            margin-top: 16px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(137,107,73,0.42);
+        }
+        .file-drop-stream-section h3,
+        .youtube-search-panel h3 {
+            margin: 0 0 6px 0;
+            color: var(--water-blue);
+            letter-spacing: 0.05em;
+        }
+        .youtube-layout {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 14px;
+            align-items: stretch;
+        }
+        .youtube-frame-wrap {
+            min-height: 430px;
+            border: 1.5px solid rgba(224,163,96,0.38);
+            border-radius: 16px;
+            overflow: hidden;
+            background: rgba(0,0,0,0.35);
+            box-shadow: inset 0 0 0 1px rgba(117,178,222,0.08), 0 8px 20px rgba(0,0,0,0.35);
+        }
+        #youtube-frame {
+            width: 100%;
+            height: 100%;
+            min-height: 430px;
+            border: none;
+            background: #000;
+        }
+        .youtube-tools-card {
+            background: rgba(0,0,0,0.20);
+            border: 1px solid rgba(137,107,73,0.35);
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .youtube-note {
+            color: var(--chiseled-bronze);
+            font-size: 0.78rem;
+            line-height: 1.35;
+        }
+        @media (max-width: 900px) {
+            .youtube-layout { grid-template-columns: 1fr; }
+            .youtube-frame-wrap, #youtube-frame { min-height: 320px; }
+        }
+
+
         /* Responsive Fallbacks */
         @media (max-width: 768px) {
             body { padding: 0 15px; }
@@ -1464,6 +1608,7 @@
                 right: 15px;
                 bottom: 62px;
                 top: var(--mobile-library-drawer-top, 178px);
+                height: auto;
                 max-height: none;
             }
             #library-manager-drawer .library-drawer-inner {
@@ -1567,8 +1712,126 @@
                 font-variant-emoji: emoji;
                 font-size: 1.35rem;
             }
+            .library-manager-toolbar { grid-template-columns: 1fr 1fr; }
+            .library-drawer-resize-corner { width: 22px; height: 22px; right: 8px; bottom: 8px; }
             .playing-spinner { font-size: 1.55rem; }
         }
+
+
+        /* Playlist detail / Now Playing refinement patch */
+        #modal-playlist-edit {
+            max-height: min(78vh, 720px) !important;
+            overflow: hidden !important;
+        }
+        #modal-playlist-edit .modal-body {
+            max-height: calc(min(78vh, 720px) - 136px);
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+        #modal-playlist-edit .modal-actions {
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(to top, var(--bg-card) 72%, rgba(41,42,36,0.78));
+            padding-top: 10px;
+            margin-top: 8px;
+        }
+        .playlist-detail-panel {
+            margin-top: 14px;
+            border: 1.5px solid rgba(224,163,96,0.35);
+            border-radius: 16px;
+            background: rgba(0,0,0,0.18);
+            padding: 14px;
+        }
+        .playlist-detail-header {
+            display: grid;
+            grid-template-columns: 96px minmax(0, 1fr) auto;
+            gap: 14px;
+            align-items: center;
+        }
+        .playlist-detail-art {
+            width: 96px;
+            height: 96px;
+            border-radius: 16px;
+            border: 1px solid rgba(224,163,96,0.35);
+            background: rgba(0,0,0,0.28);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--stone-ochre);
+            font-weight: 900;
+        }
+        .playlist-detail-art img { width: 100%; height: 100%; object-fit: cover; }
+        .playlist-detail-title {
+            color: var(--water-spray);
+            font-weight: 900;
+            font-size: 1.05rem;
+            overflow-wrap: anywhere;
+        }
+        .playlist-detail-meta-row,
+        .now-playing-mode-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+        .playlist-detail-track-list {
+            margin-top: 12px;
+            max-height: 260px;
+            overflow: auto;
+            border: 1px solid rgba(137,107,73,0.32);
+            border-radius: 12px;
+            padding: 8px;
+            background: rgba(0,0,0,0.16);
+        }
+        .playlist-now-playing-label {
+            color: var(--brand-red);
+            font-weight: 900;
+            margin-left: 8px;
+        }
+        .now-playing-mode-pills .btn-pill {
+            padding: 4px 10px;
+            font-size: 0.70rem;
+        }
+        .now-playing-mode-pills .active-now-mode {
+            background: rgba(75,132,191,0.24);
+            color: var(--alabaster-paper);
+            border-color: var(--water-spray);
+        }
+        .now-playing-divider {
+            margin: 14px 0 12px;
+            border: none;
+            border-top: 1px solid rgba(224,163,96,0.32);
+        }
+        .now-playing-playlist-panel {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(224,163,96,0.32);
+            background: rgba(0,0,0,0.16);
+        }
+        .now-playing-playlist-panel[hidden] { display: none !important; }
+        .now-playing-basic .meta-source-box:not(.display-name-box),
+        .now-playing-song-only .now-playing-playlist-panel,
+        .now-playing-playlist-only .now-playing-layout {
+            display: none !important;
+        }
+        .now-playing-basic #lyrics-viewer {
+            max-height: 32px !important;
+            overflow: hidden !important;
+        }
+        .lyrics-collapsed #lyrics-viewer {
+            max-height: 32px !important;
+            overflow: hidden !important;
+            white-space: nowrap !important;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 760px) {
+            .playlist-detail-header { grid-template-columns: 70px minmax(0, 1fr); }
+            .playlist-detail-art { width: 70px; height: 70px; }
+            .playlist-detail-header .playlist-row-tools { grid-column: 1 / -1; justify-content: flex-start; }
+        }
+
     </style>
 </head>
 <body>
@@ -1636,10 +1899,10 @@
         <!-- Workspace Mode Selection Tabs Bar -->
         <div class="workspace-mode-bar">
             <button id="tab-btn-files" class="mode-tab-btn tab-active" onclick="switchWorkspaceTab('tab-files')">▣ Files Drop Zone</button>
-            <button id="tab-btn-url" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-url')">↗ Load URL</button>
             <button id="tab-btn-history" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-history')">◷ History</button>
             <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">▤ Playlists</button>
             <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">◉ Now Playing</button>
+            <button id="tab-btn-youtube" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-youtube')">▶ YouTube</button>
         </div>
 
         <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
@@ -1655,19 +1918,17 @@
                 <p style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; margin-top: 15px; font-style: italic;">
                     Files dropped here are instantly added to your active playlist queue.
                 </p>
-            </div>
-
-            <!-- Tab 2 View: Play from URL / Google Drive Loader -->
-            <div id="tab-url" class="viewport-content">
-                <h3 style="margin-top: 0; color: var(--water-blue);">🔗 Steam Media Stream from URL</h3>
-                <p style="font-size: 0.85rem; color: var(--alabaster-paper);">Paste standard sound streams or Google Drive share links ("Anyone with link can view") to load them directly into your virtual queue.</p>
-                <div class="gdrive-input-row">
-                    <input type="text" id="url-input-box" placeholder="Paste direct stream URL or Google Drive sharing link...">
-                    <button class="btn-pill" id="btn-load-url" style="flex-shrink: 0;">LOAD STREAM</button>
+                <div class="file-drop-stream-section">
+                    <h3>↗ Add Stream / URL</h3>
+                    <p style="font-size: 0.85rem; color: var(--alabaster-paper); margin: 0 0 8px 0;">Paste a direct audio/video stream URL or Google Drive share link. It will be added to the library and queue as a stream record.</p>
+                    <div class="gdrive-input-row">
+                        <input type="text" id="url-input-box" placeholder="Paste direct stream URL or Google Drive sharing link...">
+                        <button class="btn-pill" id="btn-load-url" style="flex-shrink: 0;">LOAD STREAM</button>
+                    </div>
                 </div>
             </div>
 
-            <!-- Tab 3 View: Listening History -->
+            <!-- Tab 2 View: Listening History -->
             <div id="tab-history" class="viewport-content">
                 <div class="history-panel-shell">
                     <div class="card-header">
@@ -1699,13 +1960,22 @@
                 <div id="playlists-explorer-group" style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
                     <!-- Playlists categories list dynamically rendered -->
                 </div>
+                <div id="playlist-detail-panel" class="playlist-detail-panel" style="display:none;"></div>
             </div>
 
             <!-- Tab 5 View: Now Playing / Active Track File Info -->
             <div id="tab-library" class="viewport-content">
                 <div id="metadata-display-card">
-                    <div class="card-header" style="border-bottom: none; margin-bottom: 10px;">
-                        <span class="card-title">◉ Now Playing</span>
+                    <div class="card-header" style="border-bottom: none; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <span class="card-title">◉ Now Playing</span>
+                            <div id="now-playing-mode-pills" class="now-playing-mode-pills" style="display:none;">
+                                <button type="button" class="btn-pill" data-now-mode="song">Show song only</button>
+                                <button type="button" class="btn-pill" data-now-mode="playlist">Show playlist only</button>
+                                <button type="button" class="btn-pill" data-now-mode="jump">Jump to playing song</button>
+                                <button type="button" class="btn-pill" data-now-mode="basic">Basic view</button>
+                            </div>
+                        </div>
                         <div style="display:flex; align-items:center; gap:10px;">
                             <span id="meta-file-size" style="font-size: 0.8rem; color: var(--chiseled-bronze); font-weight: bold;">0.00 MB</span>
                             <button id="btn-now-playing-edit" class="pencil-btn" title="Edit this track's library info">✎</button>
@@ -1716,7 +1986,7 @@
                         <div id="now-playing-art" class="now-playing-art">NO IMAGE</div>
                         <div>
                             <div class="now-playing-data-grid">
-                                <div class="meta-source-box">
+                                <div class="meta-source-box display-name-box">
                                     <div class="meta-source-label">Display name</div>
                                     <div id="meta-nickname" class="meta-source-value">No active track</div>
                                 </div>
@@ -1749,6 +2019,8 @@
                         </div>
                     </div>
 
+                    <div id="now-playing-playlist-panel" class="now-playing-playlist-panel" hidden></div>
+
                     <div id="now-playing-edit-panel" class="now-playing-edit-panel">
                         <div class="library-section-label">Edit this track</div>
                         <div id="nickname-display-mode" style="display:none;"></div>
@@ -1775,6 +2047,37 @@
                             <button id="btn-inline-create-playlist" class="btn-pill">Create Playlist + Add</button>
                             <button id="btn-inline-playlists-save" class="btn-pill">Save Playlist Membership</button>
                             <button id="btn-inline-cancel" class="btn-pill" style="background: var(--chiseled-bronze);">Close Edit</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Tab 6 View: YouTube Search / Embed Player -->
+            <div id="tab-youtube" class="viewport-content">
+                <div class="youtube-search-panel">
+                    <div class="card-header">
+                        <span class="card-title">▶ YouTube Search</span>
+                        <span style="font-size: 0.76rem; color: var(--chiseled-bronze); font-weight: bold;">Search, open results, or paste a YouTube URL to play embedded video.</span>
+                    </div>
+                    <div class="youtube-layout">
+                        <div class="youtube-frame-wrap">
+                            <iframe id="youtube-frame" title="YouTube player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                        </div>
+                        <div class="youtube-tools-card">
+                            <h3>Search YouTube</h3>
+                            <div class="gdrive-input-row" style="margin-top:0;">
+                                <input type="text" id="youtube-search-box" placeholder="Search YouTube...">
+                                <button class="btn-pill" id="btn-youtube-search" style="flex-shrink:0;">SEARCH</button>
+                            </div>
+                            <button class="btn-pill" id="btn-youtube-open-results">Open Results in YouTube</button>
+                            <div class="youtube-note">The embedded search player uses YouTube's public embed behaviour. If a specific video refuses to play embedded, use the open-results button or paste the video URL below.</div>
+                            <h3>Play YouTube URL</h3>
+                            <div class="gdrive-input-row" style="margin-top:0;">
+                                <input type="text" id="youtube-url-box" placeholder="Paste youtube.com/watch, youtu.be, shorts, or embed URL...">
+                                <button class="btn-pill" id="btn-youtube-load-url" style="flex-shrink:0;">PLAY</button>
+                            </div>
+                            <button class="btn-pill" id="btn-youtube-clear">Clear YouTube Player</button>
                         </div>
                     </div>
                 </div>
@@ -1870,6 +2173,7 @@
                 </section>
             </div>
         </div>
+        <div id="library-drawer-resize-corner" class="library-drawer-resize-corner" title="Drag to resize library window"></div>
     </div>
 
     <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
@@ -2177,6 +2481,8 @@
         const MOBILE_DB_ICON_STORAGE_KEY = "ondaMobileLibraryIconDisplayV1";
         const LOCAL_UI_SAVE_EVENT_KEY = "ondaLastLocalUiSaveV1";
         const LIBRARY_AUTOSAVE_KEY = "ondaActiveLibraryV1";
+        const LIBRARY_DRAWER_HEIGHT_KEY = "ondaLibraryDrawerHeightV1";
+        const LIBRARY_DRAWER_WIDTH_KEY = "ondaLibraryDrawerWidthV1";
         const LIBRARY_AUTOSAVE_BACKUP_KEY = "ondaActiveLibraryBackupV1";
         const LIBRARY_LAST_GOOD_KEY = "ondaLastGoodLibraryV1";
         const LIBRARY_RESTORE_REPORT_KEY = "ondaLibraryRestoreReportV1";
@@ -2202,6 +2508,9 @@
         let playlists = {};
         let playlistMeta = {};
         let activePlaylistView = null;
+        let currentPlaybackPlaylistName = null;
+        const NOW_PLAYING_MODE_KEY = "ondaNowPlayingViewModeV1";
+        let nowPlayingViewMode = localStorage.getItem(NOW_PLAYING_MODE_KEY) || "both";
         let editingPlaylistName = null;
         let virtualLibrary = {};
         let nowPlayingEditMode = false;
@@ -2242,6 +2551,13 @@
         const libraryDrawer = document.getElementById('library-manager-drawer');
         const btnDatabaseEngine = document.getElementById('btn-database-engine');
         const btnCloseLibraryManager = document.getElementById('btn-close-library-manager');
+        let isLibraryDrawerResizing = false;
+        let libraryDrawerResizeStartY = 0;
+        let libraryDrawerResizeStartHeight = 0;
+        let isLibraryDrawerCornerResizing = false;
+        let libraryDrawerResizeStartX = 0;
+        let libraryDrawerResizeStartWidth = 0;
+        let suppressLibraryDrawerToggleClick = false;
         const dbLibrarySearch = document.getElementById('db-library-search');
         const dbClearSearch = document.getElementById('btn-db-clear-search');
         const dbLibraryFilter = document.getElementById('db-library-filter');
@@ -2925,7 +3241,8 @@
         }
 
         function ensurePlaylistMeta(name) {
-            if (!playlistMeta[name]) playlistMeta[name] = { imageUrl: '', imageData: '', description: '' };
+            if (!playlistMeta[name]) playlistMeta[name] = { imageUrl: '', imageData: '', description: '', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+            if (!playlistMeta[name].createdAt) playlistMeta[name].createdAt = new Date().toISOString();
             return playlistMeta[name];
         }
         const STARTER_PLAYLIST_NAMES_TO_PURGE = new Set(['Favorites', 'Favourites', 'Chill Vocals', 'Work Focus']);
@@ -3585,19 +3902,203 @@
             renderHistoryTab();
         }
 
+        function getLibraryDrawerSavedHeight() {
+            try {
+                const raw = parseInt(localStorage.getItem(LIBRARY_DRAWER_HEIGHT_KEY) || '', 10);
+                return Number.isFinite(raw) && raw > 0 ? raw : null;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function getLibraryDrawerBottomOffset() {
+            const bottomPanel = document.getElementById('organon-bottom-panel');
+            if (!bottomPanel) return window.matchMedia('(max-width: 768px)').matches ? 62 : 70;
+            return Math.max(48, Math.ceil(window.innerHeight - bottomPanel.getBoundingClientRect().top + 8));
+        }
+
+        function getLibraryDrawerMinimumTop() {
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const topPanel = document.getElementById('organon-top-panel');
+            if (!isMobile) return Math.max(28, Math.round(window.innerHeight * 0.08));
+            return topPanel ? Math.ceil(topPanel.getBoundingClientRect().bottom + 10) : 178;
+        }
+
+        function clampLibraryDrawerHeight(value) {
+            const bottomOffset = getLibraryDrawerBottomOffset();
+            const minTop = getLibraryDrawerMinimumTop();
+            const maxHeight = Math.max(260, window.innerHeight - bottomOffset - minTop);
+            const minHeight = Math.min(320, Math.max(220, Math.round(window.innerHeight * 0.28)));
+            const fallback = Math.min(Math.round(window.innerHeight * 0.72), 680);
+            const raw = Number.isFinite(Number(value)) ? Number(value) : fallback;
+            return Math.round(Math.max(minHeight, Math.min(maxHeight, raw)));
+        }
+
+        function getCurrentLibraryDrawerHeight() {
+            if (!libraryDrawer) return Math.min(Math.round(window.innerHeight * 0.72), 680);
+            const rect = libraryDrawer.getBoundingClientRect();
+            if (rect.height > 0) return rect.height;
+            const saved = getLibraryDrawerSavedHeight();
+            return saved || Math.min(Math.round(window.innerHeight * 0.72), 680);
+        }
+
+        function getLibraryDrawerSavedWidth() {
+            try {
+                const raw = parseInt(localStorage.getItem(LIBRARY_DRAWER_WIDTH_KEY) || '', 10);
+                return Number.isFinite(raw) && raw > 0 ? raw : null;
+            } catch (err) {
+                return null;
+            }
+        }
+
+        function clampLibraryDrawerWidth(value) {
+            const minWidth = Math.min(640, Math.max(340, Math.round(window.innerWidth * 0.52)));
+            const maxWidth = Math.max(minWidth, window.innerWidth - 80);
+            const fallback = Math.min(1320, Math.max(minWidth, window.innerWidth - 280));
+            const raw = Number.isFinite(Number(value)) ? Number(value) : fallback;
+            return Math.round(Math.max(minWidth, Math.min(maxWidth, raw)));
+        }
+
+        function getCurrentLibraryDrawerWidth() {
+            if (!libraryDrawer) return Math.min(1320, window.innerWidth - 280);
+            const rect = libraryDrawer.getBoundingClientRect();
+            if (rect.width > 0) return rect.width;
+            const saved = getLibraryDrawerSavedWidth();
+            return saved || Math.min(1320, window.innerWidth - 280);
+        }
+
+        function applyLibraryDrawerWidth(width, { persist = false } = {}) {
+            if (!libraryDrawer) return;
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            if (isMobile) {
+                libraryDrawer.style.width = '';
+                libraryDrawer.style.left = '';
+                libraryDrawer.style.right = '';
+                libraryDrawer.style.transform = '';
+                return;
+            }
+            const safeWidth = clampLibraryDrawerWidth(width);
+            libraryDrawer.style.width = `${safeWidth}px`;
+            libraryDrawer.style.left = `${Math.round((window.innerWidth - safeWidth) / 2)}px`;
+            libraryDrawer.style.right = 'auto';
+            if (persist) {
+                try { localStorage.setItem(LIBRARY_DRAWER_WIDTH_KEY, String(safeWidth)); } catch (err) {}
+                saveLocalUiStateCheckpoint('library-drawer-corner-resize');
+            }
+        }
+
+        function applyLibraryDrawerHeight(height, { persist = false } = {}) {
+            if (!libraryDrawer) return;
+            const safeHeight = clampLibraryDrawerHeight(height);
+            const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            document.documentElement.style.setProperty('--library-drawer-height', `${safeHeight}px`);
+
+            if (isMobile) {
+                const bottomOffset = getLibraryDrawerBottomOffset();
+                const minTop = getLibraryDrawerMinimumTop();
+                const topEdge = Math.max(minTop, window.innerHeight - bottomOffset - safeHeight);
+                document.documentElement.style.setProperty('--mobile-library-drawer-top', `${Math.ceil(topEdge)}px`);
+                libraryDrawer.style.bottom = `${bottomOffset}px`;
+            }
+
+            if (persist) {
+                try { localStorage.setItem(LIBRARY_DRAWER_HEIGHT_KEY, String(safeHeight)); } catch (err) {}
+                saveLocalUiStateCheckpoint('library-drawer-resize');
+            }
+        }
+
         function syncMobileLibraryDrawerBounds() {
             if (!libraryDrawer) return;
             const isMobile = window.matchMedia('(max-width: 768px)').matches;
+            const savedHeight = getLibraryDrawerSavedHeight();
+
             if (!isMobile) {
                 document.documentElement.style.removeProperty('--mobile-library-drawer-top');
+                libraryDrawer.style.bottom = '';
+                const savedWidth = getLibraryDrawerSavedWidth();
+                if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
+                if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
                 return;
             }
+
+            if (savedHeight) {
+                applyLibraryDrawerHeight(savedHeight, { persist: false });
+                return;
+            }
+
             const topPanel = document.getElementById('organon-top-panel');
-            const bottomPanel = document.getElementById('organon-bottom-panel');
+            const bottomEdge = getLibraryDrawerBottomOffset();
             const topEdge = topPanel ? Math.ceil(topPanel.getBoundingClientRect().bottom + 10) : 178;
-            const bottomEdge = bottomPanel ? Math.ceil(window.innerHeight - bottomPanel.getBoundingClientRect().top + 8) : 62;
             document.documentElement.style.setProperty('--mobile-library-drawer-top', `${topEdge}px`);
             libraryDrawer.style.bottom = `${bottomEdge}px`;
+        }
+
+        function startLibraryDrawerResize(e) {
+            if (!libraryDrawer || !libraryDrawer.classList.contains('drawer-open')) return;
+            if (e.button !== undefined && e.button !== 0) return;
+            isLibraryDrawerResizing = true;
+            suppressLibraryDrawerToggleClick = false;
+            libraryDrawerResizeStartY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+            libraryDrawerResizeStartHeight = getCurrentLibraryDrawerHeight();
+            document.body.classList.add('is-resizing-library-drawer');
+            try { btnDatabaseEngine?.setPointerCapture?.(e.pointerId); } catch (err) {}
+            e.preventDefault();
+        }
+
+        function moveLibraryDrawerResize(e) {
+            if (!isLibraryDrawerResizing) return;
+            const currentY = e.clientY || (e.touches && e.touches[0]?.clientY) || libraryDrawerResizeStartY;
+            const distance = libraryDrawerResizeStartY - currentY;
+            if (Math.abs(distance) > 4) suppressLibraryDrawerToggleClick = true;
+            applyLibraryDrawerHeight(libraryDrawerResizeStartHeight + distance, { persist: false });
+            e.preventDefault();
+        }
+
+        function endLibraryDrawerResize(e) {
+            if (!isLibraryDrawerResizing) return;
+            isLibraryDrawerResizing = false;
+            document.body.classList.remove('is-resizing-library-drawer');
+            applyLibraryDrawerHeight(getCurrentLibraryDrawerHeight(), { persist: true });
+            try { btnDatabaseEngine?.releasePointerCapture?.(e.pointerId); } catch (err) {}
+            if (suppressLibraryDrawerToggleClick) {
+                setTimeout(() => { suppressLibraryDrawerToggleClick = false; }, 80);
+            }
+        }
+
+        function startLibraryDrawerCornerResize(e) {
+            if (!libraryDrawer || !libraryDrawer.classList.contains('drawer-open')) return;
+            if (e.button !== undefined && e.button !== 0) return;
+            isLibraryDrawerCornerResizing = true;
+            suppressLibraryDrawerToggleClick = true;
+            libraryDrawerResizeStartX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
+            libraryDrawerResizeStartY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
+            libraryDrawerResizeStartWidth = getCurrentLibraryDrawerWidth();
+            libraryDrawerResizeStartHeight = getCurrentLibraryDrawerHeight();
+            document.body.classList.add('is-resizing-library-drawer-corner');
+            try { e.currentTarget?.setPointerCapture?.(e.pointerId); } catch (err) {}
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        function moveLibraryDrawerCornerResize(e) {
+            if (!isLibraryDrawerCornerResizing) return;
+            const currentX = e.clientX || (e.touches && e.touches[0]?.clientX) || libraryDrawerResizeStartX;
+            const currentY = e.clientY || (e.touches && e.touches[0]?.clientY) || libraryDrawerResizeStartY;
+            const dx = currentX - libraryDrawerResizeStartX;
+            const dy = libraryDrawerResizeStartY - currentY;
+            applyLibraryDrawerWidth(libraryDrawerResizeStartWidth + (dx * 2), { persist: false });
+            applyLibraryDrawerHeight(libraryDrawerResizeStartHeight + dy, { persist: false });
+            e.preventDefault();
+        }
+
+        function endLibraryDrawerCornerResize(e) {
+            if (!isLibraryDrawerCornerResizing) return;
+            isLibraryDrawerCornerResizing = false;
+            document.body.classList.remove('is-resizing-library-drawer-corner');
+            applyLibraryDrawerWidth(getCurrentLibraryDrawerWidth(), { persist: true });
+            applyLibraryDrawerHeight(getCurrentLibraryDrawerHeight(), { persist: true });
+            try { e.currentTarget?.releasePointerCapture?.(e.pointerId); } catch (err) {}
+            setTimeout(() => { suppressLibraryDrawerToggleClick = false; }, 120);
         }
 
         function toggleLibraryDrawer(forceOpen = null) {
@@ -3608,7 +4109,12 @@
             if (shouldOpen) syncMobileLibraryDrawerBounds();
             libraryDrawer.classList.toggle('drawer-open', shouldOpen);
             libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
+            if (btnDatabaseEngine) btnDatabaseEngine.classList.toggle('drawer-resize-ready', shouldOpen);
             if (shouldOpen) {
+                const savedHeight = getLibraryDrawerSavedHeight();
+                const savedWidth = getLibraryDrawerSavedWidth();
+                if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
+                if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
                 setMobileLibraryView(libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results');
                 renderLibraryManager();
             }
@@ -4883,6 +5389,85 @@
             playAudio();
         }
 
+        function getCurrentPlaybackPlaylistName() {
+            if (!currentPlaybackPlaylistName || !playlists[currentPlaybackPlaylistName] || !currentFile) return '';
+            const ids = normalisePlaylistToIds(playlists[currentPlaybackPlaylistName] || []);
+            return ids.includes(currentFile.name) ? currentPlaybackPlaylistName : '';
+        }
+
+        function setNowPlayingMode(mode = 'both') {
+            if (mode === 'jump') {
+                jumpToPlayingSongInPlaylist();
+                return;
+            }
+            nowPlayingViewMode = ['both', 'song', 'playlist', 'basic'].includes(mode) ? mode : 'both';
+            try { localStorage.setItem(NOW_PLAYING_MODE_KEY, nowPlayingViewMode); } catch (err) {}
+            updateNowPlayingPlaylistPanel();
+        }
+
+        function jumpToPlayingSongInPlaylist() {
+            const name = getCurrentPlaybackPlaylistName();
+            if (!name || !currentFile) {
+                showToast('No active playlist track to jump to.');
+                return;
+            }
+            activePlaylistView = name;
+            switchWorkspaceTab('tab-playlists');
+            renderPlaylistsList();
+            setTimeout(() => {
+                const row = Array.from(document.querySelectorAll('#playlist-detail-track-list [data-track-id]')).find(el => el.dataset.trackId === currentFile.name);
+                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 60);
+        }
+
+        function updateNowPlayingPlaylistPanel() {
+            const card = document.getElementById('metadata-display-card');
+            const panel = document.getElementById('now-playing-playlist-panel');
+            const pills = document.getElementById('now-playing-mode-pills');
+            const lyricsViewer = document.getElementById('lyrics-viewer');
+            const name = getCurrentPlaybackPlaylistName();
+            if (!card || !panel) return;
+            card.classList.remove('now-playing-song-only', 'now-playing-playlist-only', 'now-playing-basic', 'lyrics-collapsed');
+            if (!name) {
+                panel.hidden = true;
+                if (pills) pills.style.display = 'none';
+                if (lyricsViewer) lyricsViewer.style.maxHeight = '110px';
+                return;
+            }
+            if (pills) {
+                pills.style.display = 'flex';
+                pills.querySelectorAll('[data-now-mode]').forEach(btn => btn.classList.toggle('active-now-mode', btn.dataset.nowMode === nowPlayingViewMode));
+            }
+            if (nowPlayingViewMode === 'song') card.classList.add('now-playing-song-only');
+            if (nowPlayingViewMode === 'playlist') card.classList.add('now-playing-playlist-only');
+            if (nowPlayingViewMode === 'basic') card.classList.add('now-playing-basic');
+            if (nowPlayingViewMode !== 'song') card.classList.add('lyrics-collapsed');
+            const ids = normalisePlaylistToIds(playlists[name] || []);
+            const index = currentFile ? ids.indexOf(currentFile.name) : -1;
+            const meta = playlistMeta[name] || {};
+            const art = getPlaylistArtwork(name);
+            panel.hidden = false;
+            panel.innerHTML = `
+                <hr class="now-playing-divider">
+                <div class="playlist-detail-header" style="grid-template-columns:70px minmax(0,1fr) auto;">
+                    <div class="playlist-detail-art" style="width:70px;height:70px;border-radius:12px;">${art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(name)} artwork">` : '▤'}</div>
+                    <div>
+                        <div class="playlist-detail-title">${escapeHtml(name)}</div>
+                        <div class="playlist-detail-meta-row" style="margin-top:7px;">
+                            <span class="mini-tag">Track ${index >= 0 ? index + 1 : '?'} of ${ids.length}</span>
+                            <span class="mini-tag">Created: ${escapeHtml(getPlaylistCreatedLabel(name))}</span>
+                            <span class="mini-tag">Updated: ${escapeHtml(getPlaylistUpdatedLabel(name))}</span>
+                        </div>
+                        ${meta.description ? `<div class="library-track-meta" style="margin-top:6px;">${escapeHtml(meta.description)}</div>` : ''}
+                    </div>
+                    <div class="playlist-row-tools">
+                        <button type="button" class="btn-pill" onclick="jumpToPlayingSongInPlaylist()">Jump to playing song</button>
+                        <button type="button" class="btn-pill" onclick="openPlaylistEditModal('${escapeHtml(name).replace(/'/g, "\\'")}')">Edit Playlist</button>
+                    </div>
+                </div>
+            `;
+        }
+
         function setNowPlayingEditMode(on) {
             nowPlayingEditMode = !!on;
             const panel = document.getElementById('now-playing-edit-panel');
@@ -4898,7 +5483,11 @@
             syncTrackPlaylistMetadata(currentFile.name);
             const playlistNames = getTrackPlaylistNames(currentFile.name);
             const displayName = meta.nickname ? meta.nickname : meta.fileName;
-            document.getElementById('now-playing').innerText = displayName;
+            const nowPlayingTitle = document.getElementById('now-playing');
+            const activePlName = getCurrentPlaybackPlaylistName();
+            if (nowPlayingTitle) {
+                nowPlayingTitle.innerHTML = `${escapeHtml(displayName)}${activePlName ? ` <span class="playlist-now-playing-label">| ${escapeHtml(activePlName)}</span>` : ''}`;
+            }
             document.getElementById('track-nickname-label').innerText = meta.nickname ? `Original: ${meta.fileName}` : "";
 
             const sizeInMb = parseFloat(meta.size) || 0.0;
@@ -4959,6 +5548,7 @@
 
             const lyricsViewer = document.getElementById('lyrics-viewer');
             lyricsViewer.innerText = meta.lyrics || "No lyrics stored yet. Click the ♫ icon on the player utility pill to edit.";
+            updateNowPlayingPlaylistPanel();
             renderLibraryManager();
         }
 
@@ -5344,7 +5934,23 @@
         });
         safeBind('btn-db-export-playlist', 'click', () => exportPlaylistJson());
         safeBind('btn-db-check-library', 'click', () => checkLibraryFiles());
-        safeBind('btn-database-engine', 'click', () => toggleLibraryDrawer());
+        safeBind('btn-database-engine', 'click', () => {
+            if (suppressLibraryDrawerToggleClick) return;
+            toggleLibraryDrawer();
+        });
+        if (btnDatabaseEngine) {
+            btnDatabaseEngine.addEventListener('pointerdown', startLibraryDrawerResize);
+            window.addEventListener('pointermove', moveLibraryDrawerResize, { passive: false });
+            window.addEventListener('pointerup', endLibraryDrawerResize);
+            window.addEventListener('pointercancel', endLibraryDrawerResize);
+        }
+        const libraryDrawerResizeCorner = document.getElementById('library-drawer-resize-corner');
+        if (libraryDrawerResizeCorner) {
+            libraryDrawerResizeCorner.addEventListener('pointerdown', startLibraryDrawerCornerResize);
+            window.addEventListener('pointermove', moveLibraryDrawerCornerResize, { passive: false });
+            window.addEventListener('pointerup', endLibraryDrawerCornerResize);
+            window.addEventListener('pointercancel', endLibraryDrawerCornerResize);
+        }
         safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
 
         safeBind('btn-db-clear-search', 'click', () => {
@@ -5488,7 +6094,7 @@
                 const name = e.target.closest('.library-mini-row')?.dataset.playlistName;
                 if (!name) return;
                 activePlaylistView = name;
-                loadPlaylistQueue(name);
+                switchWorkspaceTab('tab-playlists');
                 renderPlaylistsList();
                 renderLibraryManager();
             });
@@ -5496,6 +6102,27 @@
         safeBind('btn-inline-tags-save', 'click', saveActiveTrackInlineTags);
         safeBind('btn-inline-playlists-save', 'click', saveActiveTrackPlaylistMembership);
         safeBind('btn-inline-create-playlist', 'click', createPlaylistFromActiveTrack);
+
+        const nowPlayingModePills = document.getElementById('now-playing-mode-pills');
+        if (nowPlayingModePills) {
+            nowPlayingModePills.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-now-mode]');
+                if (!btn) return;
+                setNowPlayingMode(btn.dataset.nowMode);
+            });
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAllModals();
+        });
+
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.organon-modal .btn-pill');
+            if (!btn) return;
+            if ((btn.textContent || '').trim().toLowerCase() === 'cancel') {
+                closeAllModals();
+            }
+        }, true);
 
         // --- 6. LOAD FROM URL / GOOGLE DRIVE LINK CONVERTER (TAB 2) ---
         const urlInputBox = document.getElementById('url-input-box');
@@ -5512,7 +6139,7 @@
             return driveUrl; 
         }
 
-        btnLoadUrl.addEventListener('click', () => {
+        if (btnLoadUrl) btnLoadUrl.addEventListener('click', () => {
             const rawUrl = urlInputBox.value.trim();
             if (!rawUrl) { showToast("Please enter a valid URL stream!"); return; }
 
@@ -5565,6 +6192,69 @@
             showToast("URL Stream added successfully to queue!");
             if (playlistTracks.length === 1) switchTrack(0);
         });
+
+
+
+        // --- 6B. SIMPLE YOUTUBE SEARCH / EMBED PANEL ---
+        const youtubeSearchBox = document.getElementById('youtube-search-box');
+        const youtubeUrlBox = document.getElementById('youtube-url-box');
+        const youtubeFrame = document.getElementById('youtube-frame');
+
+        function extractYouTubeVideoId(value = '') {
+            try {
+                const url = new URL(value.trim());
+                if (url.hostname.includes('youtu.be')) return url.pathname.split('/').filter(Boolean)[0] || '';
+                if (url.searchParams.get('v')) return url.searchParams.get('v');
+                const parts = url.pathname.split('/').filter(Boolean);
+                const embedIndex = parts.indexOf('embed');
+                if (embedIndex !== -1 && parts[embedIndex + 1]) return parts[embedIndex + 1];
+                const shortsIndex = parts.indexOf('shorts');
+                if (shortsIndex !== -1 && parts[shortsIndex + 1]) return parts[shortsIndex + 1];
+                const liveIndex = parts.indexOf('live');
+                if (liveIndex !== -1 && parts[liveIndex + 1]) return parts[liveIndex + 1];
+            } catch (err) {}
+            return '';
+        }
+
+        function setYouTubeFrame(src) {
+            if (!youtubeFrame) return;
+            youtubeFrame.src = src || 'about:blank';
+        }
+
+        function searchYouTubeInPanel() {
+            const query = (youtubeSearchBox?.value || '').trim();
+            if (!query) { showToast('Type a YouTube search first.'); return; }
+            setYouTubeFrame(`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}`);
+            showToast('Loaded YouTube search player. Use Open Results if YouTube blocks the embed.');
+        }
+
+        function openYouTubeResults() {
+            const query = (youtubeSearchBox?.value || '').trim();
+            if (!query) { showToast('Type a YouTube search first.'); return; }
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank', 'noopener');
+        }
+
+        function playYouTubeUrlInPanel() {
+            const raw = (youtubeUrlBox?.value || '').trim();
+            const id = extractYouTubeVideoId(raw);
+            if (!id) { showToast('Paste a valid YouTube video URL.'); return; }
+            setYouTubeFrame(`https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1`);
+        }
+
+        safeBind('btn-youtube-search', 'click', searchYouTubeInPanel);
+        safeBind('btn-youtube-open-results', 'click', openYouTubeResults);
+        safeBind('btn-youtube-load-url', 'click', playYouTubeUrlInPanel);
+        safeBind('btn-youtube-clear', 'click', () => setYouTubeFrame('about:blank'));
+        if (youtubeSearchBox) {
+            youtubeSearchBox.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') searchYouTubeInPanel();
+            });
+        }
+        if (youtubeUrlBox) {
+            youtubeUrlBox.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') playYouTubeUrlInPanel();
+            });
+        }
 
         // --- 7. VIRTUAL PLAYLIST MANAGEMENT SYSTEM (TAB 3) ---
         const btnCreatePlaylistTrigger = document.getElementById('btn-create-playlist-trigger');
@@ -5665,6 +6355,7 @@
             const ok = confirm(`Remove all ${ids.length} track${ids.length === 1 ? '' : 's'} from "${editingPlaylistName}"? The playlist itself and the library tracks will stay.`);
             if (!ok) return;
             playlists[editingPlaylistName] = [];
+            ensurePlaylistMeta(editingPlaylistName).updatedAt = new Date().toISOString();
             ids.forEach(id => { if (virtualLibrary[id]) syncTrackPlaylistMetadata(id); });
             renderPlaylistEditTracks(editingPlaylistName);
             renderPlaylistsList();
@@ -5684,7 +6375,7 @@
             const imageUrl = (document.getElementById('input-playlist-image-url')?.value || '').trim();
             const fileInput = document.getElementById('input-playlist-image-file');
             const commit = (imageDataValue = oldMeta.imageData || '') => {
-                const newMeta = { ...oldMeta, imageUrl, imageData: imageDataValue };
+                const newMeta = { ...oldMeta, imageUrl, imageData: imageDataValue, updatedAt: new Date().toISOString() };
                 if (newName !== original) {
                     playlists[newName] = playlists[original];
                     delete playlists[original];
@@ -5737,13 +6428,14 @@
                         ${playlistThumbHtml(plName, false)}
                         <div>
                             <div style="color:var(--stone-ochre); font-weight:bold;">▤ ${escapeHtml(plName)}</div>
-                            <div style="font-size:0.75rem; color:var(--chiseled-bronze);">${(playlists[plName] || []).length} tracks</div>
+                            <div style="font-size:0.75rem; color:var(--chiseled-bronze);">${normalisePlaylistToIds(playlists[plName] || []).length} tracks</div>
                         </div>
                     </div>
                     <div class="playlist-row-tools">
-                        <button class="btn-pill playlist-edit-mini btn-edit-playlist" data-playlist-name="${escapeHtml(plName)}">Edit</button>
-                        <button class="btn-pill btn-open-playlist" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'transparent'}; color:${activePlaylistView === plName ? 'white' : 'var(--water-spray)'}; border-color:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--water-blue)'}">
-                            ${activePlaylistView === plName ? 'Close Folder' : 'Open Folder'}
+                        <button type="button" class="btn-pill btn-play-playlist" data-playlist-name="${escapeHtml(plName)}" style="padding: 2px 10px; font-size:0.7rem;">Play</button>
+                        <button type="button" class="btn-pill playlist-edit-mini btn-edit-playlist" data-playlist-name="${escapeHtml(plName)}">Edit</button>
+                        <button type="button" class="btn-pill btn-view-playlist" style="padding: 2px 10px; font-size:0.7rem; background:${activePlaylistView === plName ? 'var(--brand-red)' : 'transparent'}; color:${activePlaylistView === plName ? 'white' : 'var(--water-spray)'}; border-color:${activePlaylistView === plName ? 'var(--brand-red)' : 'var(--water-blue)'}">
+                            ${activePlaylistView === plName ? 'Viewing' : 'View'}
                         </button>
                     </div>
                 `;
@@ -5753,25 +6445,130 @@
                         openPlaylistEditModal(plName);
                         return;
                     }
-                    if (activePlaylistView === plName) {
-                        activePlaylistView = null;
-                    } else {
-                        activePlaylistView = plName;
+                    if (e.target.closest('.btn-play-playlist')) {
                         loadPlaylistQueue(plName);
+                        renderPlaylistsList();
+                        return;
                     }
+                    activePlaylistView = plName;
                     renderPlaylistsList();
                 });
                 container.appendChild(row);
             });
+            renderPlaylistDetailPanel();
             renderActiveTrackPlaylistEditor();
             renderLibraryManager();
         }
 
+        function getPlaylistCreatedLabel(name) {
+            const meta = ensurePlaylistMeta(name);
+            return meta.createdAt ? new Date(meta.createdAt).toLocaleString() : 'Not stored yet';
+        }
+
+        function getPlaylistUpdatedLabel(name) {
+            const meta = ensurePlaylistMeta(name);
+            return meta.updatedAt ? new Date(meta.updatedAt).toLocaleString() : 'Not stored yet';
+        }
+
+        function getPlaylistTotalDurationLabel(name) {
+            const ids = normalisePlaylistToIds(playlists[name] || []);
+            const totalSeconds = ids.reduce((sum, id) => sum + (Number(virtualLibrary[id]?.duration) || 0), 0);
+            return totalSeconds > 0 ? formatTime(totalSeconds) : 'Unknown';
+        }
+
+        function renderPlaylistDetailPanel() {
+            const panel = document.getElementById('playlist-detail-panel');
+            if (!panel) return;
+            const name = activePlaylistView;
+            if (!name || !playlists[name]) {
+                panel.style.display = 'none';
+                panel.innerHTML = '';
+                return;
+            }
+            ensurePlaylistMeta(name);
+            const ids = normalisePlaylistToIds(playlists[name] || []);
+            const meta = playlistMeta[name] || {};
+            const art = getPlaylistArtwork(name);
+            const initials = name.split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || '▤';
+            panel.style.display = 'block';
+            panel.innerHTML = `
+                <div class="playlist-detail-header">
+                    <div class="playlist-detail-art">${art ? `<img src="${escapeHtml(art)}" alt="${escapeHtml(name)} artwork">` : escapeHtml(initials)}</div>
+                    <div>
+                        <div class="playlist-detail-title">${escapeHtml(name)}</div>
+                        <div class="playlist-detail-meta-row" style="margin-top:8px;">
+                            <span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'}</span>
+                            <span class="mini-tag">Created: ${escapeHtml(getPlaylistCreatedLabel(name))}</span>
+                            <span class="mini-tag">Updated: ${escapeHtml(getPlaylistUpdatedLabel(name))}</span>
+                            <span class="mini-tag">Duration: ${escapeHtml(getPlaylistTotalDurationLabel(name))}</span>
+                        </div>
+                        ${meta.description ? `<div class="library-track-meta" style="margin-top:8px;">${escapeHtml(meta.description)}</div>` : ''}
+                    </div>
+                    <div class="playlist-row-tools">
+                        <button type="button" class="btn-pill" id="btn-detail-play-playlist">Play</button>
+                        <button type="button" class="btn-pill" id="btn-detail-shuffle-playlist">Shuffle</button>
+                        <button type="button" class="btn-pill" id="btn-detail-edit-playlist">Edit</button>
+                    </div>
+                </div>
+                <div class="playlist-detail-track-list" id="playlist-detail-track-list">
+                    ${ids.length ? ids.map((id, index) => {
+                        const track = virtualLibrary[id];
+                        const isCurrent = currentFile?.name === id;
+                        return `<div class="library-result-row${isCurrent ? ' active-track' : ''}" data-track-id="${escapeHtml(id)}" style="margin-bottom:8px;">
+                            <div class="library-row-main">
+                                <div>
+                                    <div class="library-track-title">${isCurrent ? '▶ ' : ''}${index + 1}. ${escapeHtml(track ? getDisplayTitle(track) : id)}</div>
+                                    <div class="library-track-meta">${escapeHtml(track?.fileName || 'Missing library record')} · ${escapeHtml(track ? sourceStatus(track) : 'missing')}</div>
+                                </div>
+                                <div class="library-row-buttons">
+                                    ${track ? `<button type="button" class="btn-pill btn-detail-play-track" data-track-id="${escapeHtml(id)}">Play</button>` : ''}
+                                    <button type="button" class="btn-pill btn-detail-info-track" data-track-id="${escapeHtml(id)}">Info</button>
+                                </div>
+                            </div>
+                        </div>`;
+                    }).join('') : '<div class="library-track-meta">This playlist has no tracks yet.</div>'}
+                </div>
+            `;
+            const playBtn = document.getElementById('btn-detail-play-playlist');
+            if (playBtn) playBtn.addEventListener('click', () => loadPlaylistQueue(name));
+            const shuffleBtn = document.getElementById('btn-detail-shuffle-playlist');
+            if (shuffleBtn) shuffleBtn.addEventListener('click', () => {
+                isShuffle = true;
+                loadPlaylistQueue(name);
+                showToast(`Shuffle play: ${name}`);
+            });
+            const editBtn = document.getElementById('btn-detail-edit-playlist');
+            if (editBtn) editBtn.addEventListener('click', () => openPlaylistEditModal(name));
+            const list = document.getElementById('playlist-detail-track-list');
+            if (list) list.addEventListener('click', (e) => {
+                const id = e.target.dataset.trackId || e.target.closest('[data-track-id]')?.dataset.trackId;
+                if (!id) return;
+                if (e.target.classList.contains('btn-detail-info-track')) {
+                    currentFile = createPlayableTrackFromMeta(virtualLibrary[id] || { id, fileName: id });
+                    currentFile.name = id;
+                    switchWorkspaceTab('tab-library');
+                    updateMetadataUI();
+                    return;
+                }
+                if (e.target.classList.contains('btn-detail-play-track')) {
+                    const ids = normalisePlaylistToIds(playlists[name] || []);
+                    playlistTracks = ids.map(trackId => virtualLibrary[trackId] ? createPlayableTrackFromMeta(virtualLibrary[trackId]) : null).filter(Boolean);
+                    currentPlaybackPlaylistName = name;
+                    const targetIndex = playlistTracks.findIndex(track => getTrackId(track) === id);
+                    switchTrack(targetIndex >= 0 ? targetIndex : 0);
+                }
+            });
+        }
+
         function loadPlaylistQueue(playlistName) {
-            const tracksInPl = playlists[playlistName];
-            if (tracksInPl.length === 0) { showToast(`Playlist ${playlistName} is empty!`); return; }
+            const ids = normalisePlaylistToIds(playlists[playlistName] || []);
+            const tracksInPl = ids.map(id => virtualLibrary[id] ? createPlayableTrackFromMeta(virtualLibrary[id]) : null).filter(Boolean);
+            if (tracksInPl.length === 0) { showToast(`Playlist ${playlistName} is empty or needs relink!`); return; }
+            activePlaylistView = playlistName;
+            currentPlaybackPlaylistName = playlistName;
             playlistTracks = tracksInPl;
             switchTrack(0);
+            renderPlaylistDetailPanel();
             showToast(`Loaded ${playlistName} playlist queue.`);
         }
 
@@ -5954,7 +6751,12 @@
 
         function showModal(id) {
             overlay.style.display = 'block';
-            document.getElementById(id).style.display = 'block';
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.style.display = 'block';
+                const body = modal.querySelector('.modal-body');
+                if (body) body.scrollTop = 0;
+            }
         }
         function closeModal(id) {
             saveLocalUiStateCheckpoint(`modal-close:${id}`);
