@@ -1507,38 +1507,44 @@
             text-align: center;
             justify-content: center;
         }
-        .library-drawer-resize-corner {
+        .library-drawer-resize-handle {
             position: absolute;
-            right: 12px;
-            bottom: 12px;
-            width: 25px;
-            height: 25px;
-            z-index: 20;
-            cursor: nwse-resize;
-            border-right: 2px solid rgba(117, 178, 222, 0.9);
-            border-bottom: 2px solid rgba(117, 178, 222, 0.9);
-            border-radius: 0 0 8px 0;
-            opacity: 0.85;
-            background: linear-gradient(135deg, transparent 0 46%, rgba(117,178,222,0.22) 47% 50%, transparent 51% 100%);
+            top: 8px;
+            width: 34px;
+            height: 24px;
+            z-index: 25;
+            opacity: 0.9;
+            background: rgba(0,0,0,0.24);
+            border-top: 2px solid rgba(117, 178, 222, 0.95);
             filter: drop-shadow(0 0 8px rgba(0,0,0,0.95));
+            touch-action: none;
         }
-        .library-drawer-resize-corner::before,
-        .library-drawer-resize-corner::after {
+        .library-drawer-resize-handle::before,
+        .library-drawer-resize-handle::after {
             content: "";
             position: absolute;
-            right: 3px;
-            bottom: 3px;
-            width: 14px;
-            height: 14px;
-            border-right: 1px solid rgba(224,163,96,0.72);
-            border-bottom: 1px solid rgba(224,163,96,0.72);
+            top: 5px;
+            width: 16px;
+            height: 1px;
+            background: rgba(224,163,96,0.78);
+            box-shadow: 0 5px 0 rgba(224,163,96,0.55), 0 10px 0 rgba(224,163,96,0.36);
         }
-        .library-drawer-resize-corner::after {
-            right: 8px;
-            bottom: 8px;
-            width: 7px;
-            height: 7px;
+        .library-drawer-resize-handle.left {
+            left: 10px;
+            cursor: nesw-resize;
+            border-left: 2px solid rgba(117, 178, 222, 0.95);
+            border-radius: 12px 0 0 0;
         }
+        .library-drawer-resize-handle.left::before,
+        .library-drawer-resize-handle.left::after { left: 7px; }
+        .library-drawer-resize-handle.right {
+            right: 10px;
+            cursor: nwse-resize;
+            border-right: 2px solid rgba(117, 178, 222, 0.95);
+            border-radius: 0 12px 0 0;
+        }
+        .library-drawer-resize-handle.right::before,
+        .library-drawer-resize-handle.right::after { right: 7px; }
         body.is-resizing-library-drawer-corner,
         body.is-resizing-library-drawer-corner * {
             cursor: nwse-resize !important;
@@ -1713,7 +1719,9 @@
                 font-size: 1.35rem;
             }
             .library-manager-toolbar { grid-template-columns: 1fr 1fr; }
-            .library-drawer-resize-corner { width: 22px; height: 22px; right: 8px; bottom: 8px; }
+            .library-drawer-resize-handle { top: 7px; width: 30px; height: 22px; }
+            .library-drawer-resize-handle.left { left: 8px; }
+            .library-drawer-resize-handle.right { right: 8px; }
             .playing-spinner { font-size: 1.55rem; }
         }
 
@@ -1826,6 +1834,10 @@
             white-space: nowrap !important;
             text-overflow: ellipsis;
         }
+        .jump-focus-pulse {
+            box-shadow: 0 0 0 2px rgba(117,178,222,0.75), 0 0 22px rgba(117,178,222,0.45) !important;
+            transition: box-shadow 0.18s ease;
+        }
         @media (max-width: 760px) {
             .playlist-detail-header { grid-template-columns: 70px minmax(0, 1fr); }
             .playlist-detail-art { width: 70px; height: 70px; }
@@ -1902,7 +1914,7 @@
             <button id="tab-btn-history" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-history')">◷ History</button>
             <button id="tab-btn-playlists" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-playlists')">▤ Playlists</button>
             <button id="tab-btn-library" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-library')">◉ Now Playing</button>
-            <button id="tab-btn-youtube" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-youtube')">▶ YouTube</button>
+            <button id="tab-btn-youtube" class="mode-tab-btn" onclick="switchWorkspaceTab('tab-youtube')">▣ Streaming</button>
         </div>
 
         <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
@@ -1918,14 +1930,7 @@
                 <p style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; margin-top: 15px; font-style: italic;">
                     Files dropped here are instantly added to your active playlist queue.
                 </p>
-                <div class="file-drop-stream-section">
-                    <h3>↗ Add Stream / URL</h3>
-                    <p style="font-size: 0.85rem; color: var(--alabaster-paper); margin: 0 0 8px 0;">Paste a direct audio/video stream URL or Google Drive share link. It will be added to the library and queue as a stream record.</p>
-                    <div class="gdrive-input-row">
-                        <input type="text" id="url-input-box" placeholder="Paste direct stream URL or Google Drive sharing link...">
-                        <button class="btn-pill" id="btn-load-url" style="flex-shrink: 0;">LOAD STREAM</button>
-                    </div>
-                </div>
+
             </div>
 
             <!-- Tab 2 View: Listening History -->
@@ -1970,6 +1975,7 @@
                         <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                             <span class="card-title">◉ Now Playing</span>
                             <div id="now-playing-mode-pills" class="now-playing-mode-pills" style="display:none;">
+                                <button type="button" class="btn-pill" data-now-mode="both">Default view</button>
                                 <button type="button" class="btn-pill" data-now-mode="song">Show song only</button>
                                 <button type="button" class="btn-pill" data-now-mode="playlist">Show playlist only</button>
                                 <button type="button" class="btn-pill" data-now-mode="jump">Jump to playing song</button>
@@ -2053,31 +2059,64 @@
             </div>
 
 
-            <!-- Tab 6 View: YouTube Search / Embed Player -->
+            <!-- Tab 6 View: Streaming / Provider Player -->
             <div id="tab-youtube" class="viewport-content">
                 <div class="youtube-search-panel">
                     <div class="card-header">
-                        <span class="card-title">▶ YouTube Search</span>
-                        <span style="font-size: 0.76rem; color: var(--chiseled-bronze); font-weight: bold;">Search, open results, or paste a YouTube URL to play embedded video.</span>
+                        <span class="card-title">▣ Streaming</span>
+                        <span style="font-size: 0.76rem; color: var(--chiseled-bronze); font-weight: bold;">Direct audio works inside Onda. Other providers use embeds, external search, or saved references.</span>
+                    </div>
+                    <div class="streaming-provider-row">
+                        <label>Streaming provider
+                            <select id="streaming-provider-select">
+                                <option value="direct">Direct Audio URL · plays in Onda</option>
+                                <option value="soundcloud">SoundCloud · embedded player</option>
+                                <option value="youtube">YouTube / YouTube Music · embed or external search</option>
+                                <option value="spotify">Spotify · embed / Premium playback later</option>
+                                <option value="apple">Apple Music · MusicKit/account later</option>
+                            </select>
+                        </label>
+                        <div id="streaming-provider-status" class="streaming-provider-status">Playable in Onda when the URL is a direct audio file or stream.</div>
                     </div>
                     <div class="youtube-layout">
                         <div class="youtube-frame-wrap">
-                            <iframe id="youtube-frame" title="YouTube player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+                            <iframe id="youtube-frame" title="Streaming preview player" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
                         </div>
                         <div class="youtube-tools-card">
-                            <h3>Search YouTube</h3>
-                            <div class="gdrive-input-row" style="margin-top:0;">
-                                <input type="text" id="youtube-search-box" placeholder="Search YouTube...">
-                                <button class="btn-pill" id="btn-youtube-search" style="flex-shrink:0;">SEARCH</button>
-                            </div>
-                            <button class="btn-pill" id="btn-youtube-open-results">Open Results in YouTube</button>
-                            <div class="youtube-note">The embedded search player uses YouTube's public embed behaviour. If a specific video refuses to play embedded, use the open-results button or paste the video URL below.</div>
-                            <h3>Play YouTube URL</h3>
-                            <div class="gdrive-input-row" style="margin-top:0;">
-                                <input type="text" id="youtube-url-box" placeholder="Paste youtube.com/watch, youtu.be, shorts, or embed URL...">
-                                <button class="btn-pill" id="btn-youtube-load-url" style="flex-shrink:0;">PLAY</button>
-                            </div>
-                            <button class="btn-pill" id="btn-youtube-clear">Clear YouTube Player</button>
+                            <section class="streaming-provider-card active" data-stream-provider="direct">
+                                <h3>Direct Audio URL</h3>
+                                <div class="streaming-message">Best option: paste a direct mp3, wav, ogg, m4a, stream URL, or Google Drive direct/download link. Preview plays through Onda. Add to Library is manual so random pasted URLs do not pollute your catalogue.</div>
+                                <div class="gdrive-input-row" style="margin-top:0;"><input type="text" id="url-input-box" placeholder="Paste direct stream URL or Google Drive sharing link..."></div>
+                                <div class="library-action-grid" style="margin-top:10px;"><button class="btn-pill" id="btn-stream-preview-url">Play Preview</button><button class="btn-pill" id="btn-load-url">Add to Library</button></div>
+                            </section>
+                            <section class="streaming-provider-card" data-stream-provider="soundcloud">
+                                <h3>SoundCloud</h3>
+                                <div class="streaming-message">SoundCloud supports embedded playback through its official widget. Onda can save the link/reference; direct downloading only exists where SoundCloud itself exposes a download action.</div>
+                                <div class="gdrive-input-row" style="margin-top:0;"><input type="text" id="soundcloud-url-box" placeholder="Paste SoundCloud track/playlist URL..."><button class="btn-pill" id="btn-soundcloud-embed" style="flex-shrink:0;">EMBED</button></div>
+                                <button class="btn-pill" id="btn-soundcloud-add-reference">Add Reference to Library</button>
+                            </section>
+                            <section class="streaming-provider-card" data-stream-provider="youtube">
+                                <h3>Search YouTube</h3>
+                                <div class="gdrive-input-row" style="margin-top:0;"><input type="text" id="youtube-search-box" placeholder="Search YouTube..."><button class="btn-pill" id="btn-youtube-search" style="flex-shrink:0;">SEARCH</button></div>
+                                <button class="btn-pill" id="btn-youtube-open-results">Open Results in YouTube</button>
+                                <div class="youtube-note">YouTube search opens external results. Specific video links can be embedded only when the video allows embedding.</div>
+                                <h3>Play YouTube URL</h3>
+                                <div class="gdrive-input-row" style="margin-top:0;"><input type="text" id="youtube-url-box" placeholder="Paste youtube.com/watch, youtu.be, shorts, or embed URL..."><button class="btn-pill" id="btn-youtube-load-url" style="flex-shrink:0;">PLAY</button></div>
+                                <button class="btn-pill" id="btn-youtube-add-reference">Add Reference to Library</button>
+                            </section>
+                            <section class="streaming-provider-card" data-stream-provider="spotify">
+                                <h3>Spotify</h3>
+                                <div class="streaming-message">Spotify can be embedded as a preview/reference. Full web playback requires Spotify account features, and proper browser playback generally requires Spotify Premium. This does not download MP3 files.</div>
+                                <div class="gdrive-input-row" style="margin-top:0;"><input type="text" id="spotify-url-box" placeholder="Paste Spotify track/album/playlist URL..."><button class="btn-pill" id="btn-spotify-embed" style="flex-shrink:0;">EMBED</button></div>
+                                <button class="btn-pill" id="btn-spotify-add-reference">Add Reference to Library</button>
+                            </section>
+                            <section class="streaming-provider-card" data-stream-provider="apple">
+                                <h3>Apple Music</h3>
+                                <div class="streaming-message">Apple Music links can be saved as references. Full playback needs MusicKit/account/developer-token work later, so this provider is reference-first for now.</div>
+                                <div class="gdrive-input-row" style="margin-top:0;"><input type="text" id="apple-url-box" placeholder="Paste Apple Music URL..."><button class="btn-pill" id="btn-apple-open" style="flex-shrink:0;">OPEN</button></div>
+                                <button class="btn-pill" id="btn-apple-add-reference">Add Reference to Library</button>
+                            </section>
+                            <button class="btn-pill" id="btn-youtube-clear" style="margin-top:12px;">Clear Streaming Player</button>
                         </div>
                     </div>
                 </div>
@@ -2127,17 +2166,13 @@
                     <option value="stream">Streams</option>
                     <option value="missing">Needs relink</option>
                 </select>
-                <div class="library-manager-actions">
-                    <button id="btn-db-select-mode" class="btn-pill">Select Multiple</button>
-                    <button id="btn-db-save-local-now" class="btn-pill">Save Local</button>
-                    <button id="btn-db-export-everything" class="btn-pill">Export Everything</button>
-                    <button id="btn-db-add-folder" class="btn-pill">Add Folder</button>
+                <div class="library-manager-actions library-actions-menu">
+                    <details class="library-action-group"><summary>Select</summary><div class="library-action-menu-panel"><button id="btn-db-select-mode" class="btn-pill">Select Multiple</button></div></details>
+                    <details class="library-action-group"><summary>Add</summary><div class="library-action-menu-panel"><button id="btn-db-add-folder" class="btn-pill">Add Folder</button><button id="btn-db-import-json" class="btn-pill">Import JSON</button></div></details>
                     <input type="file" id="folder-input" accept="audio/*,video/*" multiple webkitdirectory directory style="display:none;">
-                    <button id="btn-db-import-json" class="btn-pill">Import JSON</button>
-                    <button id="btn-db-export-library" class="btn-pill">Export Full</button>
-                    <button id="btn-db-export-streams" class="btn-pill">Export Streams</button>
-                    <button id="btn-db-export-playlist" class="btn-pill">Export Playlist</button>
-                    <button id="btn-db-check-library" class="btn-pill">Check Files</button>
+                    <details class="library-action-group"><summary>Export</summary><div class="library-action-menu-panel"><button id="btn-db-export-everything" class="btn-pill">Export Everything</button><button id="btn-db-export-library" class="btn-pill">Export Full</button><button id="btn-db-export-streams" class="btn-pill">Export Streams</button><button id="btn-db-export-playlist" class="btn-pill">Export Playlist</button><button id="btn-db-export-missing-info" class="btn-pill">Export Missing Info</button></div></details>
+                    <details class="library-action-group"><summary>Repair</summary><div class="library-action-menu-panel"><button id="btn-db-save-local-now" class="btn-pill">Save Local</button><button id="btn-db-check-library" class="btn-pill">Check Files</button><button id="btn-db-import-metadata-overlay" class="btn-pill">Import Metadata Overlay</button></div></details>
+                    <input type="file" id="metadata-overlay-file-input" accept=".json,application/json" style="display:none;">
                 </div>
             </div>
             <div class="library-manager-content">
@@ -2173,7 +2208,8 @@
                 </section>
             </div>
         </div>
-        <div id="library-drawer-resize-corner" class="library-drawer-resize-corner" title="Drag to resize library window"></div>
+        <div class="library-drawer-resize-handle left" data-resize-corner="left" title="Drag to resize library window"></div>
+        <div class="library-drawer-resize-handle right" data-resize-corner="right" title="Drag to resize library window"></div>
     </div>
 
     <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
@@ -2183,29 +2219,40 @@
             <span class="popup-close" id="btn-close-settings">&times;</span>
         </div>
         <div class="popup-body">
-            <div class="control-row">
+            <div class="settings-tab-row" id="settings-tab-row">
+                <button type="button" class="settings-tab-btn active" data-settings-tab="audio">Audio</button>
+                <button type="button" class="settings-tab-btn" data-settings-tab="visualiser">Visualiser</button>
+                <button type="button" class="settings-tab-btn" data-settings-tab="storage">Storage Health</button>
+                <button type="button" class="settings-tab-btn" data-settings-tab="library">Library Tools</button>
+                <button type="button" class="settings-tab-btn" data-settings-tab="cloud">Cloud Sync</button>
+                <button type="button" class="settings-tab-btn" data-settings-tab="interface">Interface</button>
+            </div>
+            <div class="control-row settings-card active" data-settings-card="audio">
                 <label style="font-size: 0.85rem; color: var(--water-spray);">Volume Boost: <span id="vol-readout">100%</span></label>
                 <input type="range" id="vol-slider" min="0" max="2" step="0.05" value="1" style="width: 100%;">
             </div>
             <input type="hidden" id="speed-slider" value="1">
             <span id="speed-readout" style="display:none;">1.0x</span>
 
-            <div class="library-tools-card settings-json-tools-card">
+            <div class="library-tools-card settings-json-tools-card settings-card" data-settings-card="storage">
                 <div class="library-title-row">
                     <span class="library-title">Settings Backup</span>
                 </div>
                 <div class="library-help">Save or restore app settings, visualiser stacks, mobile icon labels, playlists, and the current library catalogue. This does not save actual music files.</div>
                 <div id="library-save-status-line" class="library-track-meta" style="margin: 8px 0; color: var(--water-spray);">Last local save: checking…</div>
+                <div id="settings-health-grid" class="settings-health-grid"></div>
                 <div class="library-action-grid">
                     <button id="btn-export-everything-json" class="btn-pill" title="Export every saved thing in the app: library catalogue, playlists, history, settings, visualisers and mobile labels">Export Everything</button>
                     <button id="btn-save-local-now" class="btn-pill" title="Force-save the current library catalogue to browser storage now">Save Local Now</button>
                     <button id="btn-export-settings-json" class="btn-pill" title="Export settings, visualiser presets, icon display settings and UI preferences">Import/Export Settings JSON</button>
                     <button id="btn-backup-settings-playlists" class="btn-pill" title="Export settings plus playlist lists and playlist artwork metadata">Backup Settings + Playlists</button>
                     <button id="btn-import-settings-json" class="btn-pill" title="Import an Onda settings, full backup, settings+playlists backup, or library JSON">Import</button>
+                    <button id="btn-export-missing-info" class="btn-pill" title="Export a compact JSON of tracks missing metadata for AI/MusicBrainz research">Export Missing Info</button>
+                    <button id="btn-import-metadata-overlay-settings" class="btn-pill" title="Import a metadata overlay JSON generated by ChatGPT/Gemini or another source">Import Metadata Overlay</button>
                     <input type="file" id="settings-json-file-input" accept=".json,application/json" style="display:none;">
                 </div>
             </div>
-            <div class="visualizer-composer-card">
+            <div class="visualizer-composer-card settings-card" data-settings-card="visualiser">
                 <div class="composer-title-row">
                     <span class="composer-title">🌈 Visualiser Composer</span>
                     <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end;">
@@ -2223,7 +2270,7 @@
                 <div id="visualizer-layer-list"></div>
             </div>
 
-            <div class="library-tools-card">
+            <div class="library-tools-card settings-card" data-settings-card="library">
                 <div class="library-title-row">
                     <span class="library-title">Library JSON Tools</span>
                 </div>
@@ -2237,6 +2284,18 @@
                     <button id="btn-check-library" class="btn-pill">Check Files</button>
                     <input type="file" id="json-file-input" accept=".json,application/json" style="display: none;">
                 </div>
+            </div>
+
+            <div class="library-tools-card settings-card" data-settings-card="cloud">
+                <div class="library-title-row"><span class="library-title">Cloud Sync</span></div>
+                <div class="library-help">Cloud sync is device-specific. Use this to reopen the setup wizard, check the current browser profile, or save after a clean import.</div>
+                <div id="settings-cloud-status" class="library-track-meta" style="margin:8px 0;color:var(--water-spray);">Cloud status: checking…</div>
+                <div class="library-action-grid"><button id="btn-open-cloud-setup-from-settings" class="btn-pill">Open Cloud Setup</button><button id="btn-settings-cloud-save" class="btn-pill">Save Current to Cloud</button></div>
+            </div>
+            <div class="library-tools-card settings-card" data-settings-card="interface">
+                <div class="library-title-row"><span class="library-title">Interface</span></div>
+                <div class="library-help">Mobile icon labels and view state live here for now. More display preferences can move into this card later.</div>
+                <div class="library-action-grid"><button class="btn-pill" onclick="setMobileLibraryView('help')">Edit Mobile Icons</button><button class="btn-pill" onclick="saveLocalUiStateCheckpoint('settings-interface-save')">Save UI State</button></div>
             </div>
         </div>
     </div>
@@ -2557,6 +2616,7 @@
         let isLibraryDrawerCornerResizing = false;
         let libraryDrawerResizeStartX = 0;
         let libraryDrawerResizeStartWidth = 0;
+        let libraryDrawerCornerResizeSide = "right";
         let suppressLibraryDrawerToggleClick = false;
         const dbLibrarySearch = document.getElementById('db-library-search');
         const dbClearSearch = document.getElementById('btn-db-clear-search');
@@ -4070,6 +4130,7 @@
             if (e.button !== undefined && e.button !== 0) return;
             isLibraryDrawerCornerResizing = true;
             suppressLibraryDrawerToggleClick = true;
+            libraryDrawerCornerResizeSide = e.currentTarget?.dataset?.resizeCorner === 'left' ? 'left' : 'right';
             libraryDrawerResizeStartX = e.clientX || (e.touches && e.touches[0]?.clientX) || 0;
             libraryDrawerResizeStartY = e.clientY || (e.touches && e.touches[0]?.clientY) || 0;
             libraryDrawerResizeStartWidth = getCurrentLibraryDrawerWidth();
@@ -4086,7 +4147,8 @@
             const currentY = e.clientY || (e.touches && e.touches[0]?.clientY) || libraryDrawerResizeStartY;
             const dx = currentX - libraryDrawerResizeStartX;
             const dy = libraryDrawerResizeStartY - currentY;
-            applyLibraryDrawerWidth(libraryDrawerResizeStartWidth + (dx * 2), { persist: false });
+            const widthDelta = libraryDrawerCornerResizeSide === 'left' ? (-dx * 2) : (dx * 2);
+            applyLibraryDrawerWidth(libraryDrawerResizeStartWidth + widthDelta, { persist: false });
             applyLibraryDrawerHeight(libraryDrawerResizeStartHeight + dy, { persist: false });
             e.preventDefault();
         }
@@ -5246,7 +5308,6 @@
                 const files = Array.from(e.target.files || []);
                 if (files.length > 0) {
                     handleUploadedFiles(files);
-                    showToast(`Scanned folder and added playable media files.`);
                 }
                 folderInput.value = '';
             });
@@ -5262,8 +5323,18 @@
                 return;
             }
 
-            const newTracks = playableFiles.map(file => {
-                const id = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
+            const newTracks = [];
+            const refreshedTracks = [];
+            let queueDuplicates = 0;
+
+            playableFiles.forEach(file => {
+                const relativePath = file.webkitRelativePath || file.name;
+                const nextId = createTrackIdFromParts(['local', relativePath, file.name, file.size, file.lastModified || '']);
+                const legacyId = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
+                const id = virtualLibrary[nextId] ? nextId : (virtualLibrary[legacyId] ? legacyId : nextId);
+                const alreadyInLibrary = Boolean(virtualLibrary[id]);
+                const existing = virtualLibrary[id] || {};
+
                 const track = {
                     name: id,
                     libraryId: id,
@@ -5271,10 +5342,9 @@
                     sourceType: 'local',
                     blobFile: file,
                     sizeBytes: file.size,
-                    localPath: file.webkitRelativePath || file.name
+                    localPath: relativePath
                 };
 
-                const existing = virtualLibrary[id] || {};
                 virtualLibrary[id] = {
                     ...existing,
                     id,
@@ -5288,37 +5358,47 @@
                     sizeBytes: file.size,
                     duration: existing.duration || null,
                     sourceType: 'local',
-                    localPath: file.webkitRelativePath || existing.localPath || file.name,
+                    localPath: relativePath || existing.localPath || file.name,
                     streamUrl: null,
                     blobFile: file
                 };
 
-                return track;
+                if (alreadyInLibrary) refreshedTracks.push(track);
+                else newTracks.push(track);
             });
 
             const wasEmpty = playlistTracks.length === 0;
-            playlistTracks = [...playlistTracks, ...newTracks];
+            const allIncomingTracks = [...newTracks, ...refreshedTracks];
+            const queuedIds = new Set(playlistTracks.map(getTrackId).filter(Boolean));
+            const tracksToQueue = [];
+            allIncomingTracks.forEach(track => {
+                const trackId = getTrackId(track);
+                if (queuedIds.has(trackId)) {
+                    queueDuplicates += 1;
+                    return;
+                }
+                queuedIds.add(trackId);
+                tracksToQueue.push(track);
+            });
+            playlistTracks = [...playlistTracks, ...tracksToQueue];
 
-            // Save the catalogue immediately before attempting heavier audio-file caching.
-            // On mobile Chrome, backgrounding the page while caching a whole folder can interrupt the async work;
-            // this ensures at least the library listing is already stored.
+            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${refreshedTracks.length} refreshed${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
             renderLibraryManager();
             saveActiveLibraryState('add-local-files-immediate');
+            showToast(summary);
 
-            persistLocalAudioFilesToIndexedDb(newTracks).then(cacheResult => {
+            persistLocalAudioFilesToIndexedDb(allIncomingTracks).then(cacheResult => {
                 if (cacheResult.failed > 0) {
-                    showToast(`Added ${newTracks.length} tracks, but ${cacheResult.failed} audio files could not be cached for refresh playback.`);
-                } else if (!wasEmpty) {
-                    showToast(`Added ${newTracks.length} tracks and cached them for refresh playback.`);
+                    showToast(`${summary} · ${cacheResult.failed} audio cache failures`);
                 }
                 saveActiveLibraryState('add-local-files-cache-complete');
             }).catch(err => {
                 console.warn('Folder/audio cache failed after library metadata save:', err);
-                showToast(`Added ${newTracks.length} tracks. Audio cache failed, but the library listing was saved.`);
+                showToast(`${summary} · audio cache failed, catalogue saved`);
                 saveActiveLibraryState('add-local-files-cache-failed');
             });
 
-            if (wasEmpty) switchTrack(0);
+            if (wasEmpty && playlistTracks.length) switchTrack(0);
             renderLibraryManager();
             saveActiveLibraryState('add-local-files-final');
         }
@@ -5411,13 +5491,22 @@
                 showToast('No active playlist track to jump to.');
                 return;
             }
-            activePlaylistView = name;
-            switchWorkspaceTab('tab-playlists');
-            renderPlaylistsList();
+            if (nowPlayingViewMode === 'song') {
+                nowPlayingViewMode = 'both';
+                try { localStorage.setItem(NOW_PLAYING_MODE_KEY, nowPlayingViewMode); } catch (err) {}
+                updateNowPlayingPlaylistPanel();
+            }
+            const activeTab = document.querySelector('.viewport-content.active-content')?.id;
+            if (activeTab !== 'tab-library') switchWorkspaceTab('tab-library');
             setTimeout(() => {
-                const row = Array.from(document.querySelectorAll('#playlist-detail-track-list [data-track-id]')).find(el => el.dataset.trackId === currentFile.name);
-                if (row) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 60);
+                const row = document.querySelector(`#now-playing-playlist-panel [data-track-id="${CSS.escape(currentFile.name)}"]`);
+                const target = row || document.getElementById('now-playing-playlist-panel');
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    target.classList.add('jump-focus-pulse');
+                    setTimeout(() => target.classList.remove('jump-focus-pulse'), 1100);
+                }
+            }, 80);
         }
 
         function updateNowPlayingPlaylistPanel() {
@@ -5464,6 +5553,20 @@
                         <button type="button" class="btn-pill" onclick="jumpToPlayingSongInPlaylist()">Jump to playing song</button>
                         <button type="button" class="btn-pill" onclick="openPlaylistEditModal('${escapeHtml(name).replace(/'/g, "\\'")}')">Edit Playlist</button>
                     </div>
+                </div>
+                            <div id="now-playing-playlist-track-list" class="playlist-detail-track-list" style="max-height:190px;">
+                    ${ids.map((id, idx) => {
+                        const trackMeta = virtualLibrary[id];
+                        if (!trackMeta) return `<div class="library-track-meta" data-track-id="${escapeHtml(id)}">${idx + 1}. Missing track record: ${escapeHtml(id)}</div>`;
+                        const active = currentFile && id === currentFile.name;
+                        return `<div class="playlist-detail-track-row ${active ? 'active-track' : ''}" data-track-id="${escapeHtml(id)}" style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:9px;align-items:center;${active ? 'box-shadow:0 0 0 1px rgba(117,178,222,0.7),0 0 18px rgba(117,178,222,0.35);border-color:var(--water-spray);' : ''}">
+                            <div class="history-list-number">${idx + 1}</div>
+                            <div>
+                                <div class="library-track-title">${escapeHtml(getDisplayTitle(trackMeta))}</div>
+                                <div class="library-track-meta">${escapeHtml(trackMeta.fileName || trackMeta.id)} · ${escapeHtml(sourceStatus(trackMeta))}</div>
+                            </div>
+                        </div>`;
+                    }).join('')}
                 </div>
             `;
         }
@@ -5558,6 +5661,10 @@
 
             const targetTab = document.getElementById(tabId);
             if (!targetTab) return;
+
+            if (libraryDrawer && libraryDrawer.classList.contains('drawer-open')) {
+                toggleLibraryDrawer(false);
+            }
 
             document.querySelectorAll('.mode-tab-btn').forEach(btn => btn.classList.remove('tab-active'));
             const btnEl = document.getElementById(`tab-btn-${tabId.replace('tab-', '')}`);
@@ -5811,6 +5918,53 @@
             showToast('Exported everything backup JSON.');
         });
 
+
+
+        // --- 5D. MISSING INFO EXPORT / METADATA OVERLAY MERGE ---
+        function hasMissingMetadata(meta = {}) { return (!meta.artist && !meta.album && !meta.genre && !meta.year) || (!meta.bpm && !meta.key) || !meta.lyrics; }
+        function buildMissingInfoExport() {
+            const tracks = Object.values(virtualLibrary || {}).filter(Boolean).filter(hasMissingMetadata).map(meta => ({ id: meta.id || '', fileName: meta.fileName || '', title: meta.title || meta.nickname || meta.fileName || '', nickname: meta.nickname || '', sourceType: meta.sourceType || '', streamUrl: meta.streamUrl || '', referenceUrl: meta.referenceUrl || '', provider: meta.provider || '', duration: meta.duration || '', size: meta.size || '', currentTags: meta.tags || [], missing: { artist: !meta.artist, album: !meta.album, genre: !meta.genre, year: !meta.year, bpm: !meta.bpm, key: !meta.key, lyrics: !meta.lyrics } }));
+            return { app: 'Onda Media Player', type: 'onda-missing-info-request', version: 1, exportedAt: new Date().toISOString(), instructions: 'Use this to research/fill missing metadata. Return an onda-metadata-overlay JSON. Do not change local paths, stream URLs, play stats, or playlist membership unless explicitly requested.', tracks };
+        }
+        function normaliseMatchText(value = '') { return String(value || '').trim().toLowerCase().replace(/\s+/g, ' '); }
+        function findTrackForOverlayRecord(record = {}) {
+            const match = record.match || record;
+            const directIds = [match.id, match.trackId, record.id, record.trackId].filter(Boolean);
+            for (const id of directIds) if (virtualLibrary[id]) return id;
+            const fileName = normaliseMatchText(match.fileName || record.fileName || '');
+            const title = normaliseMatchText(match.title || record.title || '');
+            const artist = normaliseMatchText(match.artist || record.artist || '');
+            const entries = Object.entries(virtualLibrary || {});
+            if (fileName) { const found = entries.find(([, meta]) => normaliseMatchText(meta.fileName) === fileName || normaliseMatchText(meta.localPath).endsWith(fileName)); if (found) return found[0]; }
+            if (title) { const found = entries.find(([, meta]) => { const metaTitle = normaliseMatchText(meta.title || meta.nickname || meta.fileName); const metaArtist = normaliseMatchText(meta.artist || ''); return metaTitle === title && (!artist || metaArtist === artist || !metaArtist); }); if (found) return found[0]; }
+            return '';
+        }
+        function mergeMetadataOverlay(data = {}) {
+            const records = Array.isArray(data.tracks) ? data.tracks : Array.isArray(data.items) ? data.items : [];
+            let matched = 0, unmatched = 0;
+            const safeScalarFields = ['artist','album','albumArtist','genre','year','bpm','key','mood','energy','rating','notes','lyrics','imageUrl','visualizerPreset','composer','isrc','musicbrainzId'];
+            records.forEach(record => { const id = findTrackForOverlayRecord(record); if (!id || !virtualLibrary[id]) { unmatched++; return; } const details = record.details || record.metadata || record; const meta = virtualLibrary[id]; safeScalarFields.forEach(field => { if (typeof details[field] !== 'undefined' && details[field] !== null && details[field] !== '') meta[field] = details[field]; }); if (Array.isArray(details.tags)) meta.tags = Array.from(new Set([...(meta.tags || []), ...details.tags])); if (Array.isArray(details.moods)) meta.moods = Array.from(new Set([...(meta.moods || []), ...details.moods])); meta.updatedAt = new Date().toISOString(); matched++; });
+            syncAllTrackPlaylistMetadata(); renderLibraryManager(); updateMetadataUI(); saveActiveLibraryState('metadata-overlay-import'); showToast(`Metadata overlay merged: ${matched} matched, ${unmatched} unmatched.`);
+        }
+        function importMetadataOverlayFile(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { try { mergeMetadataOverlay(JSON.parse(reader.result)); } catch (err) { showToast('Metadata overlay import failed: invalid JSON.'); } }; reader.readAsText(file); }
+        function updateSettingsHealthPanel() {
+            const grid = document.getElementById('settings-health-grid'); if (!grid) return;
+            const trackCount = Object.keys(virtualLibrary || {}).length;
+            const playlistCount = Object.keys(playlists || {}).length;
+            const missingRelink = Object.values(virtualLibrary || {}).filter(meta => meta && meta.sourceType !== 'stream' && meta.sourceType !== 'reference' && !meta.blobFile).length;
+            const noLyrics = Object.values(virtualLibrary || {}).filter(meta => meta && !meta.lyrics).length;
+            const noTags = Object.values(virtualLibrary || {}).filter(meta => meta && (!meta.tags || !meta.tags.length)).length;
+            const device = localStorage.getItem('ondaCloudDeviceIdV1') || localStorage.getItem('onda-cloud-device-id') || 'not set';
+            const lastCloud = localStorage.getItem('ondaCloudLastSyncV1') || 'not recorded';
+            grid.innerHTML = [['Tracks',trackCount],['Playlists',playlistCount],['Needs relink',missingRelink],['Missing lyrics',noLyrics],['No tags',noTags],['Device profile',device],['Last cloud sync',lastCloud]].map(([label,value]) => `<div class="settings-health-item"><div class="settings-health-label">${escapeHtml(label)}</div><div class="settings-health-value">${escapeHtml(value)}</div></div>`).join('');
+        }
+        function exportMissingInfoJson() { const data = buildMissingInfoExport(); downloadJsonFile(`onda-missing-info-${new Date().toISOString().slice(0,10)}.json`, data); showToast(`Exported ${data.tracks.length} tracks with missing info.`); }
+        safeBind('btn-export-missing-info','click',exportMissingInfoJson);
+        safeBind('btn-db-export-missing-info','click',exportMissingInfoJson);
+        safeBind('btn-import-metadata-overlay-settings','click',() => document.getElementById('metadata-overlay-file-input')?.click());
+        safeBind('btn-db-import-metadata-overlay','click',() => document.getElementById('metadata-overlay-file-input')?.click());
+        document.getElementById('metadata-overlay-file-input')?.addEventListener('change', e => { importMetadataOverlayFile(e.target.files?.[0]); e.target.value = ''; });
+
         safeBind('btn-save-local-now', 'click', async () => {
             await flushActiveLibraryState('manual-settings-save-local-now');
             showToast('Saved local library now.');
@@ -5944,13 +6098,12 @@
             window.addEventListener('pointerup', endLibraryDrawerResize);
             window.addEventListener('pointercancel', endLibraryDrawerResize);
         }
-        const libraryDrawerResizeCorner = document.getElementById('library-drawer-resize-corner');
-        if (libraryDrawerResizeCorner) {
-            libraryDrawerResizeCorner.addEventListener('pointerdown', startLibraryDrawerCornerResize);
-            window.addEventListener('pointermove', moveLibraryDrawerCornerResize, { passive: false });
-            window.addEventListener('pointerup', endLibraryDrawerCornerResize);
-            window.addEventListener('pointercancel', endLibraryDrawerCornerResize);
-        }
+        document.querySelectorAll('.library-drawer-resize-handle').forEach(handle => {
+            handle.addEventListener('pointerdown', startLibraryDrawerCornerResize);
+        });
+        window.addEventListener('pointermove', moveLibraryDrawerCornerResize, { passive: false });
+        window.addEventListener('pointerup', endLibraryDrawerCornerResize);
+        window.addEventListener('pointercancel', endLibraryDrawerCornerResize);
         safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
 
         safeBind('btn-db-clear-search', 'click', () => {
@@ -6189,7 +6342,7 @@
             urlInputBox.value = "";
             renderLibraryManager();
             saveActiveLibraryState('add-url-stream');
-            showToast("URL Stream added successfully to queue!");
+            showToast("Direct URL saved to library.");
             if (playlistTracks.length === 1) switchTrack(0);
         });
 
@@ -6224,8 +6377,8 @@
         function searchYouTubeInPanel() {
             const query = (youtubeSearchBox?.value || '').trim();
             if (!query) { showToast('Type a YouTube search first.'); return; }
-            setYouTubeFrame(`https://www.youtube.com/embed?listType=search&list=${encodeURIComponent(query)}`);
-            showToast('Loaded YouTube search player. Use Open Results if YouTube blocks the embed.');
+            window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank', 'noopener');
+            showToast('Opened YouTube search results. Paste a specific video URL to embed it.');
         }
 
         function openYouTubeResults() {
@@ -6245,6 +6398,57 @@
         safeBind('btn-youtube-open-results', 'click', openYouTubeResults);
         safeBind('btn-youtube-load-url', 'click', playYouTubeUrlInPanel);
         safeBind('btn-youtube-clear', 'click', () => setYouTubeFrame('about:blank'));
+
+
+        // --- 6C. STREAMING PROVIDER CLEANUP / DIRECT URL / REFERENCES ---
+        const streamingProviderSelect = document.getElementById('streaming-provider-select');
+        const streamingProviderStatus = document.getElementById('streaming-provider-status');
+        const streamingProviderMessages = {
+            direct: 'Playable in Onda when the URL is a direct audio file or stream.',
+            soundcloud: 'Embedded player. Save as a library reference; SoundCloud controls playback inside its own widget.',
+            youtube: 'Search opens YouTube results. Specific videos embed only if the uploader allows embedding.',
+            spotify: 'Embed/reference only for now. Full browser playback requires Spotify account/Premium work later.',
+            apple: 'Reference only for now. Full playback needs MusicKit/account/developer-token work later.'
+        };
+        function setStreamingProvider(provider = 'direct') {
+            document.querySelectorAll('.streaming-provider-card').forEach(card => card.classList.toggle('active', card.dataset.streamProvider === provider));
+            if (streamingProviderStatus) streamingProviderStatus.textContent = streamingProviderMessages[provider] || '';
+        }
+        function normaliseStreamingReferenceTitle(url, fallback = 'Streaming Reference') {
+            try { const u = new URL(url); const last = decodeURIComponent((u.pathname.split('/').filter(Boolean).pop() || '').replace(/[-_]+/g, ' ')); return last || u.hostname || fallback; } catch (err) { return fallback; }
+        }
+        function addReferenceToLibrary(provider, url, title = '') {
+            const cleanUrl = (url || '').trim();
+            if (!cleanUrl) { showToast('Paste a URL first.'); return; }
+            const id = createTrackIdFromParts(['reference', provider, cleanUrl]);
+            const displayTitle = title || normaliseStreamingReferenceTitle(cleanUrl, `${provider} reference`);
+            virtualLibrary[id] = { ...(virtualLibrary[id] || {}), id, fileName: displayTitle, title: displayTitle, nickname: displayTitle, lyrics: virtualLibrary[id]?.lyrics || '', tags: Array.from(new Set([...(virtualLibrary[id]?.tags || []), 'Streaming Reference', provider])), playlists: virtualLibrary[id]?.playlists || [], size: 'Reference only', sourceType: 'reference', streamUrl: null, referenceUrl: cleanUrl, provider, localPath: null, phonePath: null, desktopPath: null, imageUrl: virtualLibrary[id]?.imageUrl || null, imageData: virtualLibrary[id]?.imageData || null, updatedAt: new Date().toISOString() };
+            if (!playlistTracks.some(track => track.name === id)) playlistTracks.push({ name: id, libraryId: id, fileName: displayTitle, sourceType: 'reference', referenceUrl: cleanUrl });
+            renderLibraryManager(); saveActiveLibraryState(`add-${provider}-reference`); showToast(`Saved ${provider} reference to library.`);
+        }
+        function previewDirectStreamUrl() {
+            const rawUrl = (urlInputBox?.value || '').trim();
+            if (!rawUrl) { showToast('Paste a direct audio URL first.'); return; }
+            const streamUrl = convertDriveLinkToStream(rawUrl);
+            activeAudio = streamAudio; streamAudio.pause(); streamAudio.src = streamUrl;
+            currentFile = { name: '__preview_stream__', fileName: normaliseStreamingReferenceTitle(rawUrl, 'Direct URL Preview'), sourceType: 'stream', streamUrl };
+            updateMetadataUI(); startVisualizer(); playAudio(); showToast('Previewing direct URL. Use Add to Library to save it.');
+        }
+        function embedSoundCloudUrl() { const url = (document.getElementById('soundcloud-url-box')?.value || '').trim(); if (!url) { showToast('Paste a SoundCloud URL first.'); return; } setYouTubeFrame(`https://w.soundcloud.com/player/?url=${encodeURIComponent(url)}&auto_play=true&show_teaser=false`); }
+        function spotifyEmbedUrl(url = '') { try { const u = new URL(url.trim()); if (!u.hostname.includes('spotify.com')) return ''; const parts = u.pathname.split('/').filter(Boolean); const type = parts[0]; const id = parts[1]; if (!type || !id) return ''; return `https://open.spotify.com/embed/${encodeURIComponent(type)}/${encodeURIComponent(id)}`; } catch (err) { return ''; } }
+        function embedSpotifyUrl() { const url = (document.getElementById('spotify-url-box')?.value || '').trim(); const embed = spotifyEmbedUrl(url); if (!embed) { showToast('Paste a valid Spotify URL.'); return; } setYouTubeFrame(embed); }
+        function openAppleMusicUrl() { const url = (document.getElementById('apple-url-box')?.value || '').trim(); if (!url) { showToast('Paste an Apple Music URL first.'); return; } window.open(url, '_blank', 'noopener'); }
+        streamingProviderSelect?.addEventListener('change', () => setStreamingProvider(streamingProviderSelect.value));
+        safeBind('btn-stream-preview-url', 'click', previewDirectStreamUrl);
+        safeBind('btn-soundcloud-embed', 'click', embedSoundCloudUrl);
+        safeBind('btn-soundcloud-add-reference', 'click', () => addReferenceToLibrary('soundcloud', document.getElementById('soundcloud-url-box')?.value || ''));
+        safeBind('btn-youtube-add-reference', 'click', () => addReferenceToLibrary('youtube', document.getElementById('youtube-url-box')?.value || document.getElementById('youtube-search-box')?.value || ''));
+        safeBind('btn-spotify-embed', 'click', embedSpotifyUrl);
+        safeBind('btn-spotify-add-reference', 'click', () => addReferenceToLibrary('spotify', document.getElementById('spotify-url-box')?.value || ''));
+        safeBind('btn-apple-open', 'click', openAppleMusicUrl);
+        safeBind('btn-apple-add-reference', 'click', () => addReferenceToLibrary('apple', document.getElementById('apple-url-box')?.value || ''));
+        setStreamingProvider('direct');
+
         if (youtubeSearchBox) {
             youtubeSearchBox.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') searchYouTubeInPanel();
@@ -7548,6 +7752,20 @@
         }
 
         startVisualizer();
+
+
+
+        // --- 8B. SETTINGS TABS / MENU HOUSEKEEPING ---
+        function setSettingsTab(tab = 'audio') {
+            document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.settingsTab === tab));
+            document.querySelectorAll('[data-settings-card]').forEach(card => card.classList.toggle('active', card.dataset.settingsCard === tab));
+            if (tab === 'storage') updateSettingsHealthPanel();
+        }
+        document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.addEventListener('click', () => setSettingsTab(btn.dataset.settingsTab || 'audio')));
+        setSettingsTab('audio');
+        document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
+        safeBind('btn-open-cloud-setup-from-settings', 'click', () => { if (typeof openOndaCloudSetup === 'function') openOndaCloudSetup(false); else document.getElementById('onda-cloud-setup-modal')?.classList.add('open'); });
+        safeBind('btn-settings-cloud-save', 'click', () => { const btn = document.getElementById('onda-cloud-save-current'); if (btn) btn.click(); else showToast('Cloud setup is not ready yet.'); });
 
         window.addEventListener('resize', () => {
             saveLocalUiStateCheckpoint('screen-resize');
