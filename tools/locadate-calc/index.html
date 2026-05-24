@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocaDate Calculator</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* ==========================================================
+           ORGANON COMPLIANCE BRAND STYLING & DESIGN TOKENS
+           ========================================================== */
+        :root {
+            --stone-ochre: #e0a360;             /* [Color #1] Warm Sandstone */
+            --chiseled-bronze: #896b49;         /* [Color #2] Border Bronze */
+            --white-accent: #ffffff;            /* [Color #3] Pure White */
+            --water-blue: #4b84bf;              /* [Color #4] Flowing Blue Accent */
+            --water-spray: #75b2de;             /* [Color #5] Sky Blue Accent */
+            --forest-teal: #26615c;             /* [Color #6] Deep Forest Teal */
+            --light-teal: #449e92;              /* [Color #7] Spliced Active Teal */
+            --burgundy: #4a1525;                /* [Color #8] Warning Deep Burgundy */
+            --brand-red: #9a2f4f;               /* [Color #9] Active Element Ruby Red */
+            --terracotta-peach: #d27d6c;        /* [Color #10] Soft Terracotta/Peach */
+            --alabaster-paper: #f5f0db;         /* [Color #11] Pure Primary Copy */
+            --bg-nightsky: #1e201c;             /* [Color #12] Deep Space Black backdrop */
+            --bg-card: #292a24;                 /* Fallback Charcoal Stone Card */
+            --bg-input: rgba(20, 21, 18, 0.95); /* Deep tactile structural inputs */
+
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        /* Tactile Rounded Pill Form Elements */
+        input, select, button {
+            background-color: var(--bg-input);
+            color: #fcf9ea !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input[type="date"] {
+            border-color: var(--water-blue) !important;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b84bf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='4' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Cline x1='16' y1='2' x2='16' y2='6'%3E%3C/line%3E%3Cline x1='8' y1='2' x2='8' y2='6'%3E%3C/line%3E%3Cline x1='3' y1='10' x2='21' y2='10'%3E%3C/line%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 36px;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            opacity: 0;
+            cursor: pointer;
+            width: 24px;
+            height: 24px;
+        }
+
+        .pill-nav-fixed {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .pill-btn {
+            flex: 1;
+            cursor: pointer;
+            font-family: var(--font-headers);
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            text-align: center;
+            padding: 10px 4px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            transition: all 0.2s ease;
+            user-select: none;
+            color: var(--stone-ochre);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .pill-btn.active {
+            background-color: var(--water-blue);
+            color: var(--white-accent) !important;
+            border-color: var(--water-spray) !important;
+        }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: #000000;
+        }
+
+        /* PANEL 1: STICKY ACCORDION SANDSTONE HEADER */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            padding: 14px;
+            border-bottom: 2px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .top-sticky-panel.minimized { padding: 6px 14px !important; }
+        .top-sticky-panel.minimized .panel-content-hide { display: none !important; }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(20, 21, 18, 0.95);
+            color: var(--stone-ochre);
+            font-family: var(--font-headers);
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+        }
+
+        .countdown-circle-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            cursor: pointer;
+            background: #000000;
+            color: var(--stone-ochre);
+            font-weight: 700;
+            user-select: none;
+        }
+
+        /* PANEL 2: MAIN MIDDLE SCROLL CANVAS */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 12px 130px 12px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .stone-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 16px;
+            padding: 14px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+
+        .card-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .card-header-row h3 { margin-bottom: 0; font-size: 0.85rem; }
+
+        .header-icons {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* DYNAMIC 36-HOUR EXTENDED TIMELINE RANGE SLIDER */
+        .multi-slider-container {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--chiseled-bronze);
+            margin-bottom: 14px;
+            position: relative;
+        }
+        .slider-track-line {
+            height: 12px;
+            background: var(--water-blue); 
+            border-radius: 6px;
+            position: relative;
+            margin: 25px 12px 15px 12px;
+            overflow: visible;
+        }
+        .slider-fills-wrapper {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .track-segment-unit {
+            flex: 1;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .seg-sleep { background-color: var(--brand-red); }
+        .seg-work { background-color: var(--forest-teal); }
+        .seg-border { background-color: var(--water-blue); }
+
+        .slider-pin-thumb {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 26px;
+            height: 26px;
+            cursor: grab;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            z-index: 5;
+        }
+        .slider-pin-label {
+            position: absolute;
+            top: -22px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+            color: var(--white-accent);
+            white-space: nowrap;
+            background: #000;
+            padding: 1px 4px;
+            border-radius: 3px;
+            border: 1px solid var(--chiseled-bronze);
+            font-weight: bold;
+        }
+
+        .matrix-scroll-container {
+            overflow-x: auto;
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 12px;
+            background: rgba(20, 21, 18, 0.6);
+        }
+        
+        .matrix-scroll-container::-webkit-scrollbar { height: 6px; background-color: var(--bg-input); }
+        .matrix-scroll-container::-webkit-scrollbar-thumb { background-color: var(--brand-red); border-radius: 9999px; }
+
+        .timezone-matrix {
+            display: flex;
+            flex-direction: column;
+            width: max-content;
+            padding: 0;
+        }
+        .matrix-row {
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(137, 107, 73, 0.2);
+        }
+        .matrix-row:last-child { border-bottom: none; }
+        
+        /* Frozen Left Sticky Location Column Labels */
+        .member-info {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background-color: var(--bg-card);
+            width: 130px;
+            min-width: 130px;
+            padding: 8px;
+            font-family: var(--font-body);
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--white-accent);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border-right: 2px solid var(--chiseled-bronze);
+            box-shadow: 3px 0 6px rgba(0,0,0,0.3);
+            user-select: none;
+            cursor: pointer;
+        }
+        .member-subtext {
+            font-size: 0.6rem;
+            color: var(--water-spray);
+            display: block;
+            font-family: var(--font-mono);
+            margin-top: 1px;
+        }
+
+        .hours-container { display: flex; }
+        .hour-block {
+            width: 28px;
+            min-width: 28px;
+            height: 28px;
+            text-align: center;
+            line-height: 26px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            user-select: none;
+            cursor: pointer;
+            box-sizing: border-box;
+        }
+        
+        /* Grid Block Highlights Mapping Rules */
+        .hour-sleep { background-color: var(--brand-red); color: #f3a3b5; }
+        .hour-border { background-color: var(--water-blue); color: #fff; } 
+        .hour-work { background-color: var(--forest-teal); color: #a1ebd0; }
+        .hour-focus-intercept { background-color: var(--stone-ochre) !important; color: #000 !important; font-weight: 700; }
+
+        /* Dynamic Day Boundaries Borders */
+        .day-yesterday { border: 1px solid var(--brand-red) !important; }
+        .day-today { border: 1px solid var(--white-accent) !important; }
+        .day-tomorrow { border: 1px solid var(--light-teal) !important; }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+        }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-sample { width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* COMPACT PIPELINE STRUCTURES */
+        .inline-settings-bar {
+            display: grid;
+            grid-template-columns: 1.25fr 1.75fr;
+            gap: 8px;
+            background: rgba(0,0,0,0.3);
+            padding: 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(137, 107, 73, 0.25);
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        .inline-settings-bar .input-group { margin-bottom: 0; }
+        .inline-settings-bar input { padding: 6px 10px; font-size: 0.75rem; }
+
+        .combined-duration-pill {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 9999px;
+            padding: 2px 4px;
+            align-items: center;
+        }
+        .combined-duration-pill input { border: none !important; width: 45px; background: transparent; text-align: center; padding: 4px; }
+        .combined-duration-pill select { border: none !important; background: transparent; padding: 4px; width: auto; color: var(--water-spray) !important; font-size: 0.75rem; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .stat-node {
+            background-color: rgba(0, 0, 0, 0.4);
+            border: 1px dashed var(--chiseled-bronze);
+            border-radius: 8px;
+            padding: 6px;
+            text-align: center;
+        }
+        .stat-val { font-family: var(--font-mono); font-size: 0.95rem; color: var(--water-spray); font-weight: 700; }
+        .stat-lbl { font-size: 0.55rem; text-transform: uppercase; font-family: var(--font-headers); color: var(--stone-ochre); margin-top: 1px; }
+        
+        .wide-display-node {
+            grid-column: 1 / span 2;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            border: 1px solid rgba(137, 107, 73, 0.25);
+            padding: 6px 10px;
+            font-size: 0.65rem;
+            font-family: var(--font-mono);
+        }
+
+        .notes-wide { border-left: 3px solid var(--water-blue); background-color: rgba(75, 132, 191, 0.08); font-size: 0.65rem; text-align: left; padding: 6px 10px; }
+
+        /* GLOBAL REGIONAL INFORMATION PANEL */
+        .geo-dashboard-box {
+            grid-column: 1 / span 2;
+            background: rgba(224, 163, 96, 0.04);
+            border: 1px solid rgba(137, 107, 73, 0.4);
+            border-radius: 10px;
+            padding: 8px;
+            margin-top: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.65rem;
+        }
+        .geo-row { display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 2px; }
+        .geo-row:last-child { border-bottom: none; }
+        .geo-label { color: var(--stone-ochre); text-transform: uppercase; font-size: 0.6rem; }
+        .geo-value { color: var(--white-accent); }
+        .geo-link { color: var(--water-spray); text-decoration: underline; cursor: pointer; }
+
+        .holiday-ledger { display: flex; flex-direction: column; gap: 4px; margin-top: 6px; }
+        .holiday-pill-node {
+            background: rgba(154, 47, 79, 0.08); border: 1px solid rgba(154, 47, 79, 0.35);
+            padding: 4px 8px; border-radius: 6px; font-size: 0.65rem;
+            display: flex; justify-content: space-between; align-items: center; font-family: var(--font-mono);
+        }
+
+        /* DETACHED FLOATING WINDOW CANVAS SHEETS */
+        .floating-pane {
+            position: fixed; top: 140px; left: 30px; width: 345px; height: auto;
+            z-index: 1000; background-color: var(--bg-card);
+            border: 2px solid var(--water-blue); border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            display: flex; flex-direction: column; overflow: hidden;
+        }
+        .pane-header {
+            background-color: var(--bg-input); padding: 8px 12px;
+            cursor: move; user-select: none; border-bottom: 1px solid rgba(75, 132, 191, 0.3);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .pane-header h4 { margin: 0; font-size: 0.75rem; color: var(--water-spray); }
+        .pane-content { padding: 10px; box-sizing: border-box; background: #000; max-height: 480px; overflow-y: auto; }
+
+        /* MODAL LIST OPTION STYLES */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.85); z-index: 2000;
+            display: flex; justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+        }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-box {
+            background-color: var(--bg-card); border: 2px solid var(--stone-ochre);
+            border-radius: 16px; padding: 16px; width: 90%; max-width: 340px;
+        }
+        .choices-pane-box {
+            max-height: 180px; overflow-y: auto; margin-top: 10px;
+            display: flex; flex-direction: column; gap: 6px;
+        }
+        .choice-btn-link {
+            background: var(--bg-input); color: var(--white-accent);
+            border: 1px solid var(--chiseled-bronze); padding: 8px;
+            border-radius: 6px; text-align: left; cursor: pointer; font-size: 0.75rem;
+        }
+        .choice-btn-link:hover { border-color: var(--water-spray); background: #000; }
+
+        /* PANEL 3: BOTTOM MASTER ACTION BAR */
+        .bottom-sticky-panel {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 540px; z-index: 110;
+            background-color: rgba(41, 42, 36, 0.96); padding: 14px; box-sizing: border-box;
+            border-top: 1px solid var(--chiseled-bronze); border-top-left-radius: 20px; border-top-right-radius: 20px;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.6); display: flex; justify-content: center;
+        }
+        .action-btn-pill {
+            background-color: var(--bg-input) !important; color: var(--water-spray) !important;
+            font-family: var(--font-headers); font-weight: 700; font-size: 0.8rem !important;
+            text-transform: uppercase; letter-spacing: 0.08em; cursor: pointer; border-radius: 9999px;
+        }
+
+        /* CUSTOM VISUAL TOAST NOTICE ELEMENT STYLE */
+        .toast-notice {
+            position: fixed;
+            bottom: 85px;
+            left: 50%;
+            transform: translate(-50%, 20px);
+            background: rgba(38, 97, 92, 0.96);
+            color: var(--white-accent);
+            border: 1px solid var(--light-teal);
+            padding: 10px 28px;
+            border-radius: 9999px;
+            font-family: var(--font-headers);
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 9999;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .toast-notice.show {
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="toast-notice-container" class="toast-notice">Saved!</div>
+
+    <div class="app-wrapper">
+        
+        <header class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span style="margin-left: 10px; font-weight: bold; letter-spacing: 0.05em;">LocaDate Calculator</span>
+                </div>
+                <span style="font-size: 0.7rem; opacity: 0.65; font-family: var(--font-mono);">v2.1</span>
+            </div>
+            
+            <div class="panel-content-hide">
+                <div class="pill-nav-fixed">
+                    <div id="tab-planner" class="pill-btn active" onclick="switchControlView('planner')">Time Comparison Matrix</div>
+                    <div id="tab-calculator" class="pill-btn" onclick="switchControlView('calculator')">Advanced Date Planner</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="middle-scroll-panel">
+            
+            <div id="view-planner" class="workspace-view">
+                <div class="stone-card">
+                    <div class="card-header-row">
+                        <h3>World Clock Grid Matrix</h3>
+                        <div class="add-emoji-btn" onclick="openLocationSearchModalForElement('add-clock', null)" style="cursor:pointer; font-size:1.1rem;">➕</div>
+                    </div>
+                    
+                    <p style="font-size: 0.65rem; opacity: 0.7; margin: -6px 0 12px 0; font-style: italic; color: #f0ebcb;">💡 Click any cell block directly to set the active focus hour view. Right-click any location column label on the left to swap cities instantly.</p>
+
+                    <div class="multi-slider-container">
+                        <div class="slider-track-line" id="multi-slider-track">
+                            <div class="slider-fills-wrapper" id="slider-fills-container"></div>
+                            <div class="slider-pin-thumb" id="pin-work-start" data-hour="9">💼<div class="slider-pin-label" id="lbl-work-start">09:00</div></div>
+                            <div class="slider-pin-thumb" id="pin-work-end" data-hour="17">💼<div class="slider-pin-label" id="lbl-work-end">17:00</div></div>
+                            <div class="slider-pin-thumb" id="pin-sleep-start" data-hour="22">🛏️<div class="slider-pin-label" id="lbl-sleep-start">22:00</div></div>
+                            <div class="slider-pin-thumb" id="pin-sleep-end" data-hour="7">🛏️<div class="slider-pin-label" id="lbl-sleep-end">07:00</div></div>
+                        </div>
+                    </div>
+
+                    <div class="input-group" style="margin-bottom:12px;">
+                        <div id="hour-readout-pill" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--water-spray); background: var(--bg-input); padding: 6px; border-radius: 9999px; text-align: center; border: 1px solid var(--chiseled-bronze); font-weight:bold;">Focus Timeline Intercept: 12:00</div>
+                    </div>
+
+                    <div class="matrix-scroll-container">
+                        <div class="timezone-matrix" id="matrix-output-viewport"></div>
+                    </div>
+                </div>
+
+                <div class="stone-card" style="margin-top: 12px; padding: 12px;">
+                    <h4>Color Interpretation Key</h4>
+                    <div class="legend-grid">
+                        <div class="legend-item"><div class="legend-sample hour-work"></div>Working Hours</div>
+                        <div class="legend-item"><div class="legend-sample hour-border"></div>After Hours</div>
+                        <div class="legend-item"><div class="legend-sample hour-sleep"></div>Sleep</div>
+                        <div class="legend-item"><div class="legend-sample hour-focus-intercept"></div>Selected Focus Hour</div>
+                        <div class="legend-item"><div class="legend-sample" style="border:1px solid var(--white-accent);"></div>Matches Local Today</div>
+                        <div class="legend-item"><div class="legend-sample" style="border:1px solid var(--brand-red);"></div>Matches Local Yesterday</div>
+                        <div class="legend-item"><div class="legend-sample" style="border:1px solid var(--light-teal);"></div>Matches Local Tomorrow</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-calculator" class="workspace-view" style="display: none;">
+                <div class="stone-card" style="margin-bottom: 12px; padding: 8px; text-align: center;">
+                    <button type="button" onclick="spawnNewDatePipelineWindow()" style="background: var(--chiseled-bronze); color:#fff!important; border-radius:8px; padding:6px; font-weight:600; cursor:pointer;">➕ Spawn New Date Calculation Card</button>
+                </div>
+
+                <div id="pipelines-dynamic-zone"></div>
+            </div>
+
+        </main>
+
+        <footer class="bottom-sticky-panel">
+            <button type="button" class="action-btn-pill" id="master-action-trigger" onclick="saveActiveConfigurationsAsDefaults()">Save as Default</button>
+        </footer>
+
+    </div>
+
+    <div class="modal-overlay" id="search-modal-prompt">
+        <div class="modal-box">
+            <h3 id="modal-title" style="font-size:0.9rem; margin-top:0;">Search Location Profiles</h3>
+            
+            <div id="modal-input-group-pane">
+                <div class="input-group" style="margin: 12px 0;">
+                    <label class="input-label" id="modal-field-lbl">Target City Name</label>
+                    <input type="text" id="modal-text-input" placeholder="e.g., Tokyo, London, Berlin...">
+                </div>
+                <div style="display:flex; gap:8px; justify-content:flex-end;">
+                    <button type="button" onclick="closePromptModal()" style="width:auto; background:transparent; border:none!important; color:var(--stone-ochre)!important; cursor:pointer;">Cancel</button>
+                    <button type="button" onclick="submitPromptModalSearchQuery()" style="width:auto; background:var(--chiseled-bronze); color:white!important; cursor:pointer;">Search Size</button>
+                </div>
+            </div>
+
+            <div id="modal-choices-list-pane" style="display:none; margin-top:10px;">
+                <p style="font-size:0.7rem; color:var(--stone-ochre); margin-bottom:8px; font-style:italic;">⚠️ Multiple locations found. Select the correct destination zone:</p>
+                <div class="choices-pane-box" id="modal-choices-container"></div>
+                <button type="button" onclick="resetModalInputPaneView()" style="background:transparent; font-size:0.7rem; color:var(--water-spray); border:none; margin-top:10px; cursor:pointer; text-decoration:underline;">← Back to Search</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ----------------------------------------------------------
+           FALLBACK COUNTRY GEOGRAPHY COMPREHENSIVE DATA ATLAS 
+           ---------------------------------------------------------- */
+        const countryDataRegistry = {
+            "US": { currency: "USD", rate: 1.00, transit: "https://www.amtrak.com", plugs: "Type A & B (120V)", road: "Right Hand Side", emergency: "Dial 911", label: "United States (US)" },
+            "GB": { currency: "GBP", rate: 0.80, transit: "https://tfl.gov.uk", plugs: "Type G (230V)", road: "Left Hand Side", emergency: "Dial 999 / 112", label: "United Kingdom (GB)" },
+            "DE": { currency: "EUR", rate: 0.92, transit: "https://www.bahn.de", plugs: "Type C & F (230V)", road: "Right Hand Side", emergency: "Dial 112", label: "Germany (DE)" },
+            "FR": { currency: "EUR", rate: 0.92, transit: "https://www.ratp.fr", plugs: "Type C & E (230V)", road: "Right Hand Side", emergency: "Dial 112", label: "France (FR)" },
+            "JP": { currency: "JPY", rate: 156.0, transit: "https://www.tokyometro.jp", plugs: "Type A & B (100V)", road: "Left Hand Side", emergency: "Dial 119", label: "Japan (JP)" },
+            "IL": { currency: "ILS", rate: 3.70, transit: "https://www.rail.co.il", plugs: "Type C & H (230V)", road: "Right Hand Side", emergency: "Dial 101", label: "Israel (IL)" },
+            "CA": { currency: "CAD", rate: 1.37, transit: "https://www.viarail.ca", plugs: "Type A & B (120V)", road: "Right Hand Side", emergency: "Dial 911", label: "Canada (CA)" },
+            "AU": { currency: "AUD", rate: 1.50, transit: "https://transportnsw.info", plugs: "Type I (230V)", road: "Left Hand Side", emergency: "Dial 000", label: "Australia (AU)" },
+            "KP": { currency: "KPW", rate: 900.0, transit: "https://google.com/search?q=pyongyang+metro", plugs: "Type A & C (220V)", road: "Right Hand Side", emergency: "Dial 112", label: "North Korea (KP)" },
+            "CD": { currency: "CDF", rate: 2800.0, transit: "https://google.com/search?q=kinshasa+transit", plugs: "Type C & D (220V)", road: "Right Hand Side", emergency: "Dial 112", label: "DR Congo (CD)" },
+            "AO": { currency: "AOA", rate: 850.0, transit: "https://google.com/search?q=luanda+transit", plugs: "Type C (220V)", road: "Right Hand Side", emergency: "Dial 113", label: "Angola (AO)" },
+            "ML": { currency: "XOF", rate: 600.0, transit: "https://google.com/search?q=bamako+transit", plugs: "Type C & E (220V)", road: "Right Hand Side", emergency: "Dial 112", label: "Mali (ML)" },
+            "YE": { currency: "YER", rate: 250.0, transit: "https://google.com/search?q=sanaa+transit", plugs: "Type G (230V)", road: "Right Hand Side", emergency: "Dial 199", label: "Yemen (YE)" },
+            "SY": { currency: "SYP", rate: 13000.0, transit: "https://google.com/search?q=damascus+transit", plugs: "Type C & E (220V)", road: "Right Hand Side", emergency: "Dial 112", label: "Syria (SY)" },
+            "VA": { currency: "EUR", rate: 0.92, transit: "https://vatican.va", plugs: "Type C & L (230V)", road: "Right Hand Side", emergency: "Dial 112", label: "Vatican City (VA)" }
+        };
+
+        const citySpecificOverrideDatabase = {
+            "berlin": { airports: "Berlin Brandenburg (BER)", transit: "https://bvg.de" },
+            "cologne": { airports: "Cologne Bonn Airport (CGN)", transit: "https://www.kvb.koeln" },
+            "hamburg": { airports: "Hamburg Airport (HAM)", transit: "https://www.hvv.de" },
+            "london": { airports: "Heathrow (LHR), Gatwick (LGW)", transit: "https://tfl.gov.uk" },
+            "new york": { airports: "JFK, LGA, Newark (EWR)", transit: "https://mta.info" },
+            "los angeles": { airports: "Los Angeles Intl (LAX)", transit: "https://metro.net" },
+            "tokyo": { airports: "Haneda (HND), Narita (NRT)", transit: "https://www.tokyometro.jp" },
+            "pyongyang": { airports: "Sunan International (FNJ)", transit: "https://google.com/search?q=pyongyang+metro" },
+            "kinshasa": { airports: "N'djili Airport (FIH)", transit: "https://google.com/search?q=kinshasa+transit" },
+            "luanda": { airports: "Quatro de Fevereiro (LAD)", transit: "https://google.com/search?q=luanda+transit" },
+            "bamako": { airports: "Modibo Keita Intl (BKO)", transit: "https://google.com/search?q=bamako+transit" },
+            "sana'a": { airports: "Sana'a International (SAH)", transit: "https://google.com/search?q=sanaa+transit" },
+            "damascus": { airports: "Damascus International (DAM)", transit: "https://google.com/search?q=damascus+transit" },
+            "vatican city": { airports: "Rome Ciampino (CIA) / Fiumicino (FCO)", transit: "https://vatican.va" },
+            "san juan": { airports: "Luis Muñoz Marín Intl (SJU)", transit: "https://google.com/search?q=san+juan+transit" },
+            "pierre": { airports: "Pierre Regional (PIR)", transit: "https://google.com/search?q=pierre+transit" },
+            "montpelier": { airports: "Edward F. Knapp State (MPV)", transit: "https://google.com/search?q=montpelier+transit" },
+            "cheyenne": { airports: "Cheyenne Regional (CYS)", transit: "https://cheyennetransit.org" }
+        };
+
+        const localityNotesLookup = {
+            "DE": "💡 Germany Note: Most retail establishments and supermarkets are strictly closed on Sundays by national law.",
+            "IL": "💡 Israel Note: The standard work week runs Sunday through Thursday. Friday and Saturday form the official weekend break.",
+            "US": "💡 US Note: Cross-state public holiday definition rules vary by individual state jurisdiction frameworks.",
+            "GB": "💡 UK Note: Statutory closures carry distinct banking liquidity processing adjustments.",
+            "KP": "🛑 Black Hole Warning: Complete digital isolation. No official transit schedules exist or are indexed.",
+            "CD": "🛑 Informal Transit Gaps: Public transit consists overwhelmingly of unmapped minibuses (fula-fula). No official URL available.",
+            "AO": "🛑 Informal Transit Gaps: Local transport is informal (candongueiros) and completely unindexed by digital networks.",
+            "ML": "🛑 Informal Transit Gaps: Transit infrastructure is decentralized and carries no web indexing layers.",
+            "YE": "🛑 Infrastructure Collapse: Digital scheduling matrix nodes have failed completely due to local geopolitical conflict variables.",
+            "SY": "🛑 Infrastructure Collapse: Digital scheduling matrix nodes have failed completely due to local geopolitical conflict variables.",
+            "VA": "💡 Microstate Alert: Pedestrian micro-jurisdiction. Vatican City contains no domestic mass transit lines.",
+            "PR": "⚠️ US Territory Exception: Default public holiday channels report standard federal markers but local territory days like Emancipation are skipped by APIs.",
+            "SD": "⚠️ Small-Town Gaps: Pierre, SD public transit metrics use dial-a-ride local request vans rather than global GTFS databases.",
+            "VT": "⚠️ Small-Town Gaps: Montpelier, VT public transit metrics use dial-a-ride local request vans rather than global GTFS databases.",
+            "WY": "⚠️ Small-Town Gaps: Cheyenne, WY public transit metrics use dial-a-ride local request vans rather than global GTFS databases."
+        };
+
+        let activeViewMode = "planner";
+        let globalFocusHourInt = 12; 
+        let activeModalIntentType = "add-clock";
+        let selectedTargetIndexReference = null;
+        let pendingAPIResultsBuffer = [];
+
+        let hourWorkStart = 9;
+        let hourWorkEnd = 17;
+        let hourSleepStart = 22;
+        let hourSleepEnd = 7;
+
+        let clockCollection = [
+            { name: "Local Time (You)", tz: Intl.DateTimeFormat().resolvedOptions().timeZone },
+            { name: "Universal Time (UTC)", tz: "UTC" },
+            { name: "West Coast (PST)", tz: "America/Los_Angeles" },
+            { name: "London Node (GMT)", tz: "Europe/London" }
+        ];
+
+        let pipelineCollection = [
+            { id: 0, origin: new Date().toISOString().substring(0,10), duration: 45, unit: "days", countryISO: "US", countryLbl: "New York (US)", lat: 40.7128, lon: -74.0060, southern: false, isCollapsed: false, isPopped: false }
+        ];
+
+        let calculatedHomeCurrencyCode = "USD";
+        try {
+            let resolvedLocalZoneStr = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            if(resolvedLocalZoneStr.includes("Europe/Berlin") || resolvedLocalZoneStr.includes("Europe/Paris")) calculatedHomeCurrencyCode = "EUR";
+            else if(resolvedLocalZoneStr.includes("Europe/London")) calculatedHomeCurrencyCode = "GBP";
+            else if(resolvedLocalZoneStr.includes("Asia/Jerusalem")) calculatedHomeCurrencyCode = "ILS";
+            else if(resolvedLocalZoneStr.includes("Asia/Tokyo")) calculatedHomeCurrencyCode = "JPY";
+            else if(resolvedLocalZoneStr.includes("Australia")) calculatedHomeCurrencyCode = "AUD";
+        } catch(e){}
+
+        // RESTORE WORKSPACE LOG VALUES FROM MEMORY AT INITIAL REBOOT ENGINE
+        if (localStorage.getItem('locadate_work_start')) hourWorkStart = parseInt(localStorage.getItem('locadate_work_start'), 10);
+        if (localStorage.getItem('locadate_work_end')) hourWorkEnd = parseInt(localStorage.getItem('locadate_work_end'), 10);
+        if (localStorage.getItem('locadate_sleep_start')) hourSleepStart = parseInt(localStorage.getItem('locadate_sleep_start'), 10);
+        if (localStorage.getItem('locadate_sleep_end')) hourSleepEnd = parseInt(localStorage.getItem('locadate_sleep_end'), 10);
+        if (localStorage.getItem('locadate_focus_hour')) globalFocusHourInt = parseInt(localStorage.getItem('locadate_focus_hour'), 10);
+
+        if (localStorage.getItem('locadate_clocks')) {
+            try { clockCollection = JSON.parse(localStorage.getItem('locadate_clocks')); } catch(e){}
+        }
+        if (localStorage.getItem('locadate_pipelines')) {
+            try { pipelineCollection = JSON.parse(localStorage.getItem('locadate_pipelines')); } catch(e){}
+        }
+
+        function dispatchStatusMessage(txt) {
+            try { if(window.parent && window.parent.postMessage) window.parent.postMessage({type:'set-status', text:txt}, '*'); } catch(e){}
+        }
+
+        function switchControlView(targetView) {
+            activeViewMode = targetView;
+            document.querySelectorAll('.pill-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.workspace-view').forEach(v => v.style.display = 'none');
+            document.getElementById(`tab-${targetView}`).classList.add('active');
+            document.getElementById(`view-${targetView}`).style.display = 'block';
+            
+            if (targetView === 'planner') compileClockGridMatrix();
+            else renderPipelinesFlowContainerCanvas();
+        }
+
+        /* ----------------------------------------------------------
+           36-HOUR TIMELINE MULTI SLIDER DRAG HANDLERS
+           ---------------------------------------------------------- */
+        function initMultiSliderEngine() {
+            const pins = ['pin-work-start', 'pin-work-end', 'pin-sleep-start', 'pin-sleep-end'];
+            pins.forEach(id => {
+                const pinEl = document.getElementById(id);
+                setupPinDrag(pinEl);
+            });
+            updateSliderGraphicPlacements();
+        }
+
+        function setupPinDrag(el) {
+            el.onmousedown = function(e) {
+                e.preventDefault();
+                document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+                document.onmousemove = (ev) => {
+                    const track = document.getElementById('multi-slider-track');
+                    const rect = track.getBoundingClientRect();
+                    let pct = (ev.clientX - rect.left) / rect.width;
+                    if(pct < 0) pct = 0; if(pct > 1) pct = 1;
+                    let hour = Math.round(pct * 35); 
+                    
+                    el.setAttribute('data-hour', hour);
+                    const formattedHourStr = `${(hour % 24).toString().padStart(2, '0')}:00`;
+
+                    if(el.id === 'pin-work-start') { hourWorkStart = hour; document.getElementById('lbl-work-start').innerText = formattedHourStr; }
+                    if(el.id === 'pin-work-end') { hourWorkEnd = hour; document.getElementById('lbl-work-end').innerText = formattedHourStr; }
+                    if(el.id === 'pin-sleep-start') { hourSleepStart = hour; document.getElementById('lbl-sleep-start').innerText = formattedHourStr; }
+                    if(el.id === 'pin-sleep-end') { hourSleepEnd = hour; document.getElementById('lbl-sleep-end').innerText = formattedHourStr; }
+
+                    updateSliderGraphicPlacements();
+                    compileClockGridMatrix();
+                };
+            };
+        }
+
+        function updateSliderGraphicPlacements() {
+            document.getElementById('pin-work-start').style.left = `${(hourWorkStart/35)*100}%`;
+            document.getElementById('pin-work-end').style.left = `${(hourWorkEnd/35)*100}%`;
+            document.getElementById('pin-sleep-start').style.left = `${(hourSleepStart/35)*100}%`;
+            document.getElementById('pin-sleep-end').style.left = `${(hourSleepEnd/35)*100}%`;
+
+            document.getElementById('lbl-work-start').innerText = `${(hourWorkStart % 24).toString().padStart(2, '0')}:00`;
+            document.getElementById('lbl-work-end').innerText = `${(hourWorkEnd % 24).toString().padStart(2, '0')}:00`;
+            document.getElementById('lbl-sleep-start').innerText = `${(hourSleepStart % 24).toString().padStart(2, '0')}:00`;
+            document.getElementById('lbl-sleep-end').innerText = `${(hourSleepEnd % 24).toString().padStart(2, '0')}:00`;
+
+            const container = document.getElementById('slider-fills-container');
+            if(!container) return; container.innerHTML = '';
+            for(let h=0; h<36; h++) {
+                const chunk = document.createElement('div');
+                chunk.className = "track-segment-unit";
+                
+                let normHour = h % 24;
+                let isSleep = false;
+                if(hourSleepStart > hourSleepEnd) { if(h >= hourSleepStart || h < hourSleepEnd) isSleep = true; }
+                else { if(h >= hourSleepStart && h < hourSleepEnd) isSleep = true; }
+
+                let isWork = false;
+                if(hourWorkEnd >= hourWorkStart) { if(h >= hourWorkStart && h < hourWorkEnd) isWork = true; }
+
+                if(isSleep) chunk.classList.add('seg-sleep');
+                else if(isWork) chunk.classList.add('seg-work');
+                else chunk.classList.add('seg-border');
+
+                container.appendChild(chunk);
+            }
+        }
+
+        /* ----------------------------------------------------------
+           MODULE A DRIVER: TIME ZONE GRID COMPILER
+           ---------------------------------------------------------- */
+        function compileClockGridMatrix() {
+            const viewport = document.getElementById('matrix-output-viewport');
+            if(!viewport) return; viewport.innerHTML = '';
+            
+            const todayAnchorSystemTimeObj = new Date();
+            const anchorDateStr = todayAnchorSystemTimeObj.toLocaleDateString('en-US');
+
+            document.getElementById('hour-readout-pill').innerText = `Focus Timeline Intercept: ${globalFocusHourInt.toString().padStart(2, '0')}:00`;
+
+            clockCollection.forEach((clock, index) => {
+                const rowElement = document.createElement('div');
+                rowElement.className = 'matrix-row';
+
+                const labelColumnNode = document.createElement('div');
+                labelColumnNode.className = 'member-info'; labelColumnNode.innerText = clock.name;
+                
+                labelColumnNode.addEventListener('contextmenu', (event) => {
+                    event.preventDefault(); openLocationSearchModalForElement('edit-clock', index);
+                });
+
+                let localHourReader = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: clock.tz, hour: 'numeric', hour12: false }).formatToParts(todayAnchorSystemTimeObj).find(p => p.type==='hour').value, 10);
+                if (localHourReader === 24) localHourReader = 0;
+                
+                const subLabelSpan = document.createElement('span');
+                subLabelSpan.className = 'member-subtext'; subLabelSpan.innerText = `Current: ${localHourReader.toString().padStart(2,'0')}:00`;
+                labelColumnNode.appendChild(subLabelSpan);
+                rowElement.appendChild(labelColumnNode);
+
+                const hoursWrapperNode = document.createElement('div');
+                hoursWrapperNode.className = 'hours-container';
+
+                for (let h = 0; h < 24; h++) {
+                    const block = document.createElement('div'); block.className = 'hour-block';
+
+                    let blockDateEvaluationObj = new Date(todayAnchorSystemTimeObj.getFullYear(), todayAnchorSystemTimeObj.getMonth(), todayAnchorSystemTimeObj.getDate(), h, 0, 0);
+                    let formatterInstance = new Intl.DateTimeFormat('en-US', { timeZone: clock.tz, hour: 'numeric', hour12: false, year: 'numeric', month: 'numeric', day: 'numeric' });
+                    let formattedParts = formatterInstance.formatToParts(blockDateEvaluationObj);
+                    
+                    let computedHour = parseInt(formattedParts.find(p => p.type==='hour').value, 10);
+                    if (computedHour === 24) computedHour = 0;
+                    
+                    let cM = formattedParts.find(p => p.type==='month').value;
+                    let cD = formattedParts.find(p => p.type==='day').value;
+                    let cY = formattedParts.find(p => p.type==='year').value;
+                    let evaluatedLocalDateStringNode = `${cM}/${cD}/${cY}`;
+
+                    block.innerText = computedHour;
+
+                    let isSleep = false;
+                    if(hourSleepStart > hourSleepEnd) { if(h >= hourSleepStart || h < hourSleepEnd) isSleep = true; } 
+                    else { if(h >= hourSleepStart && h < hourSleepEnd) isSleep = true; }
+
+                    let isWork = false;
+                    if(hourWorkEnd >= hourWorkStart) { if(h >= hourWorkStart && h < hourWorkEnd) isWork = true; }
+
+                    if (isSleep) block.classList.add('hour-sleep');
+                    else if (isWork) block.classList.add('hour-work');
+                    else block.classList.add('hour-border');
+
+                    let baselineDiffObj1 = new Date(evaluatedLocalDateStringNode);
+                    let baselineDiffObj2 = new Date(anchorDateStr);
+                    let dayDifferenceSpan = Math.round((baselineDiffObj1 - baselineDiffObj2) / (1000 * 60 * 60 * 24));
+
+                    if (dayDifferenceSpan < 0) block.classList.add('day-yesterday');
+                    else if (dayDifferenceSpan > 0) block.classList.add('day-tomorrow');
+                    else block.classList.add('day-today');
+
+                    if (h === globalFocusHourInt) block.classList.add('hour-focus-intercept');
+
+                    block.addEventListener('click', () => { globalFocusHourInt = h; compileClockGridMatrix(); });
+                    hoursWrapperNode.appendChild(block);
+                }
+                rowElement.appendChild(hoursWrapperNode); viewport.appendChild(rowElement);
+            });
+        }
+
+        /* ----------------------------------------------------------
+           MODULE B DRIVER: DYNAMIC PIPELINES SYSTEM
+           ---------------------------------------------------------- */
+        function renderPipelinesFlowContainerCanvas() {
+            const zone = document.getElementById('pipelines-dynamic-zone');
+            if(!zone) return; zone.innerHTML = '';
+
+            pipelineCollection.forEach((pipe, idx) => {
+                if (pipe.isPopped) { createOrUpdateFloatingWindowPane(idx, pipe); return; }
+
+                const cardElement = document.createElement('div');
+                cardElement.className = 'stone-card'; cardElement.style.marginBottom = '14px';
+                cardElement.setAttribute('id', `inline_pipe_wrapper_${idx}`);
+                
+                cardElement.innerHTML = `
+                    <div class="card-header-row">
+                        <h3>Date Pipeline Card #${idx + 1}</h3>
+                        <div class="header-icons">
+                            <div class="header-icon" onclick="popOutPipelineWindowInstance(${idx})">📺</div>
+                            <div class="header-icon" onclick="togglePipelineUIVisibilityState(${idx})">👁️</div>
+                            <div class="header-icon" style="color:var(--brand-red);" onclick="removePipelineInstanceNode(${idx})">❌</div>
+                        </div>
+                    </div>
+                    <div id="pipe_body_flow_${idx}" style="display: ${pipe.isCollapsed ? 'none' : 'block'};">
+                        ${createPipelineFormTemplateHTMLString(idx, pipe)}
+                    </div>
+                `;
+                zone.appendChild(cardElement);
+                evaluatePipelineCalculationsLogicNode(idx);
+            });
+        }
+
+        function createPipelineFormTemplateHTMLString(idx, pipe) {
+            let monthEstimateStr = (pipe.unit==='months') ? ` (${pipe.duration} Months)` : ` (${(pipe.duration/30).toFixed(1)} Months)`;
+            return `
+                <div class="inline-settings-bar">
+                    <div class="input-group">
+                        <label class="input-label" style="color: var(--water-blue); font-weight:bold;">Start Date</label>
+                        <input type="date" id="p_start_${idx}" value="${pipe.origin}" onchange="syncPipeInputValues(${idx})">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Period Length</label>
+                        <div class="combined-duration-pill">
+                            <input type="number" id="p_dur_${idx}" value="${pipe.duration}" min="1" oninput="syncPipeInputValues(${idx})">
+                            <select id="p_unit_${idx}" onchange="syncPipeInputValues(${idx})">
+                                <option value="days" ${pipe.unit==='days'?'selected':''}>Days After</option>
+                                <option value="months" ${pipe.unit==='months'?'selected':''}>Months After</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="wide-display-node" style="text-align:center; font-weight:600; color:var(--stone-ochre); background:rgba(0,0,0,0.4); font-size:0.65rem;">
+                        Date Range: <span id="p_range_lbl_${idx}">-</span>
+                    </div>
+                    <div class="stat-node"><div class="stat-val" id="p_days_${idx}">-</div><div class="stat-lbl">Duration Result${monthEstimateStr}</div></div>
+                    <div class="stat-node"><div class="stat-val" id="p_weeks_${idx}">-</div><div class="stat-lbl">Exact Weeks</div></div>
+                    <div class="stat-node"><div class="stat-val" id="p_work_${idx}">-</div><div class="stat-lbl">Business Days</div></div>
+                    <div class="stat-node"><div class="stat-val" id="p_ends_${idx}">-</div><div class="stat-lbl">Weekend Days</div></div>
+
+                    <div class="stat-node" style="border-color: var(--brand-red); background-color: rgba(154, 47, 79, 0.05);">
+                        <div class="stat-val" id="p_sleep_breakdown_${idx}">-</div><div class="stat-lbl">Sleep (Hours | Days | Weeks)</div>
+                    </div>
+                    <div class="stat-node" style="border-color: var(--forest-teal); background-color: rgba(38, 97, 92, 0.05);">
+                        <div class="stat-val" id="p_work_breakdown_${idx}">-</div><div class="stat-lbl">Work (Hours | Days | Weeks)</div>
+                    </div>
+                    <div class="wide-display-node" style="text-align:center; background-color: rgba(75, 132, 191, 0.05); border-color: var(--water-blue); font-size:0.7rem;">
+                        Free Time Metrics: <span id="p_free_breakdown_${idx}" style="font-weight:700; color: var(--water-spray);">-</span>
+                    </div>
+
+                    <div class="wide-display-node" style="background-color:rgba(68,158,146,0.12); border-color:var(--light-teal); text-align:center; font-size:0.6rem;">
+                        Computed Season: <span id="p_season_${idx}" style="font-weight:700; color:var(--water-spray);">-</span>
+                    </div>
+                    <div class="wide-display-node notes-wide" id="p_notes_wrap_${idx}" style="display:none;">
+                        <span id="p_notes_txt_${idx}"></span>
+                    </div>
+
+                    <div class="geo-dashboard-box" id="p_geo_box_${idx}">
+                        <div class="geo-row"><span class="geo-label">Target Location Info</span><span class="geo-value" id="geo_lbl_${idx}">-</span></div>
+                        <div class="geo-row"><span class="geo-label">Currency Code</span><span class="geo-value" id="geo_curr_${idx}">-</span></div>
+                        <div class="geo-row"><span class="geo-label">Currency Conversion</span><span class="geo-value" id="geo_conv_${idx}">-</span></div>
+                        <div class="geo-row"><span class="geo-label">Major Airports (Proximity Engine)</span><span class="geo-value" id="geo_air_${idx}">Searching Wikidata...</span></div>
+                        <div class="geo-row"><span class="geo-label">Power Outlets / Voltage</span><span class="geo-value" id="geo_plug_${idx}">-</span></div>
+                        <div class="geo-row"><span class="geo-label">Road Driving Side</span><span class="geo-value" id="geo_road_${idx}">-</span></div>
+                        <div class="geo-row"><span class="geo-label">Emergency Help Service</span><span class="geo-value" id="geo_emer_${idx}">-</span></div>
+                        <div class="geo-row"><span class="geo-label">Local Transport</span><span class="geo-value"><a id="geo_link_${idx}" class="geo-link" target="_blank" href="#">Transit Site ↗</a></span></div>
+                    </div>
+                </div>
+
+                <h4 style="margin-top:12px; font-size:0.75rem; color:var(--water-spray); border-bottom:1px solid rgba(137,107,73,0.3); padding-bottom:4px;">
+                    Boundary Public Holidays <span style="color:var(--stone-ochre); cursor:pointer; text-decoration:underline;" onclick="openLocationSearchModalForElement('pipeline-holiday', ${idx})">in ${pipe.countryLbl} ▾</span>
+                </h4>
+                <div class="holiday-ledger" id="p_holidays_viewport_${idx}"></div>
+            `;
+        }
+
+        function spawnNewDatePipelineWindow() {
+            pipelineCollection.push({ id: pipelineCollection.length, origin: new Date().toISOString().substring(0,10), duration: 30, unit: "days", countryISO: "US", countryLbl: "New York (US)", lat: 40.7128, lon: -74.0060, southern: false, isCollapsed: false, isPopped: false });
+            renderPipelinesFlowContainerCanvas();
+        }
+
+        function removePipelineInstanceNode(idx) {
+            pipelineCollection.splice(idx, 1); if(pipelineCollection.length === 0) spawnNewDatePipelineWindow();
+            renderPipelinesFlowContainerCanvas();
+        }
+
+        function togglePipelineUIVisibilityState(idx) { pipelineCollection[idx].isCollapsed = !pipelineCollection[idx].isCollapsed; renderPipelinesFlowContainerCanvas(); }
+
+        function syncPipeInputValues(idx) {
+            const pipe = pipelineCollection[idx];
+            pipe.origin = document.getElementById(`p_start_${idx}`).value;
+            pipe.duration = parseInt(document.getElementById(`p_dur_${idx}`).value, 10) || 1;
+            pipe.unit = document.getElementById(`p_unit_${idx}`).value;
+            evaluatePipelineCalculationsLogicNode(idx);
+        }
+
+        function formatFormattedResultString(date) {
+            const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+            return `${days[date.getDay()]} ${date.getDate().toString().padStart(2,'0')} ${(date.getMonth()+1).toString().padStart(2,'0')} ${date.getFullYear()}`;
+        }
+
+        async function evaluatePipelineCalculationsLogicNode(idx) {
+            const pipe = pipelineCollection[idx]; if (!pipe.origin) return;
+
+            let start = new Date(pipe.origin + 'T00:00:00'); 
+            let end = new Date(start);
+            
+            if (pipe.unit === 'days') {
+                end.setDate(end.getDate() + pipe.duration);
+            } else if (pipe.unit === 'months') {
+                end.setMonth(end.getMonth() + pipe.duration); 
+            }
+
+            if(start > end) { let temp=start; start=end; end=temp; }
+
+            const rangeLbl = document.getElementById(`p_range_lbl_${idx}`);
+            if(rangeLbl) rangeLbl.innerText = `${formatFormattedResultString(start)} -> ${formatFormattedResultString(end)}`;
+
+            const elapsedSpanDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+            
+            let combinedTextResult = `${elapsedSpanDays} Days`;
+            if(elapsedSpanDays >= 30) combinedTextResult += ` (${(elapsedSpanDays/30).toFixed(1)} Months)`;
+
+            const daysEl = document.getElementById(`p_days_${idx}`); if(daysEl) daysEl.innerText = combinedTextResult;
+            const weeksEl = document.getElementById(`p_weeks_${idx}`); if(weeksEl) weeksEl.innerText = (elapsedSpanDays / 7).toFixed(1);
+
+            let workDaysCount = 0; let endsDaysCount = 0; let iter = new Date(start);
+            while(iter <= end) {
+                let day = iter.getDay(); if(day === 0 || day === 6) endsDaysCount++; else workDaysCount++;
+                iter.setDate(iter.getDate() + 1);
+            }
+            const workEl = document.getElementById(`p_work_${idx}`); if(workEl) workEl.innerText = workDaysCount;
+            const endsEl = document.getElementById(`p_ends_${idx}`); if(endsEl) endsEl.innerText = endsDaysCount;
+
+            /* ----------------------------------------------------------
+               CALCULATE SLIDER VALUE BREAKDOWNS (HOURS, DAYS, WEEKS)
+               ---------------------------------------------------------- */
+            let dailySleepCount = 0;
+            let dailyWorkCount = 0;
+            for(let h=0; h<24; h++) {
+                let isSleep = false;
+                if(hourSleepStart > hourSleepEnd) { if(h >= hourSleepStart || h < hourSleepEnd) isSleep = true; }
+                else { if(h >= hourSleepStart && h < hourSleepEnd) isSleep = true; }
+
+                let isWork = false;
+                if(hourWorkEnd >= hourWorkStart) { if(h >= hourWorkStart && h < hourWorkEnd) isWork = true; }
+
+                if (isSleep) dailySleepCount++;
+                else if (isWork) dailyWorkCount++;
+            }
+            let dailyFreeCount = 24 - dailySleepCount - dailyWorkCount;
+            if(dailyFreeCount < 0) dailyFreeCount = 0;
+
+            let totalSleepHours = dailySleepCount * elapsedSpanDays;
+            let totalWorkHours = dailyWorkCount * elapsedSpanDays;
+            let totalFreeHours = dailyFreeCount * elapsedSpanDays;
+
+            const sleepBox = document.getElementById(`p_sleep_breakdown_${idx}`);
+            if(sleepBox) {
+                sleepBox.innerText = `${totalSleepHours}h | ${(totalSleepHours/24).toFixed(1)}d | ${(totalSleepHours/168).toFixed(1)}w`;
+                document.getElementById(`p_work_breakdown_${idx}`).innerText = `${totalWorkHours}h | ${(totalWorkHours/24).toFixed(1)}d | ${(totalWorkHours/168).toFixed(1)}w`;
+                document.getElementById(`p_free_breakdown_${idx}`).innerText = `${totalFreeHours} Hours | ${(totalFreeHours/24).toFixed(1)} Days | ${(totalFreeHours/168).toFixed(1)} Weeks`;
+            }
+
+            const m = start.getMonth(); let phase = "Summer Peak";
+            if(pipe.southern) {
+                if(m >= 2 && m <= 4) phase = "Autumn Fall";
+                else if(m >= 5 && m <= 7) phase = "Winter Deep";
+                else if(m >= 8 && m <= 10) phase = "Spring Rise";
+            } else {
+                if(m >= 2 && m <= 4) phase = "Spring Rise";
+                else if(m >= 5 && m <= 7) phase = "Summer Peak";
+                else if(m >= 8 && m <= 10) phase = "Autumn Fall";
+                else phase = "Winter Deep";
+            }
+            const seasonEl = document.getElementById(`p_season_${idx}`); if(seasonEl) seasonEl.innerText = phase;
+
+            const notesWrap = document.getElementById(`p_notes_wrap_${idx}`);
+            const notesTxt = document.getElementById(`p_notes_txt_${idx}`);
+            if(notesWrap && notesTxt) {
+                if(localityNotesLookup[pipe.countryISO]) { notesWrap.style.display = 'block'; notesTxt.innerText = localityNotesLookup[pipe.countryISO]; } 
+                else { notesWrap.style.display = 'none'; }
+            }
+
+            const lookupInfo = countryDataRegistry[pipe.countryISO] || { currency: "USD", rate: 1.0, transit: "https://google.com", airports: "Regional Airport Hub", plugs: "Type A & B (120V)", road: "Right Hand Side", emergency: "Dial 911", label: pipe.countryLbl };
+            const lowerCityKey = pipe.countryLbl.split(" ")[0].toLowerCase();
+            const citySpecificData = citySpecificOverrideDatabase[lowerCityKey] || null;
+
+            const geoLbl = document.getElementById(`geo_lbl_${idx}`);
+            if(geoLbl) {
+                geoLbl.innerText = pipe.countryLbl;
+                document.getElementById(`geo_curr_${idx}`).innerText = lookupInfo.currency || "USD";
+                document.getElementById(`geo_conv_${idx}`).innerText = `1 ${calculatedHomeCurrencyCode} = ${(lookupInfo.rate).toFixed(2)} ${lookupInfo.currency}`;
+                document.getElementById(`geo_plug_${idx}`).innerText = lookupInfo.plugs;
+                document.getElementById(`geo_road_${idx}`).innerText = lookupInfo.road;
+                document.getElementById(`geo_emer_${idx}`).innerText = lookupInfo.emergency;
+                
+                const link = document.getElementById(`geo_link_${idx}`);
+                link.href = citySpecificData ? citySpecificData.transit : lookupInfo.transit; 
+                link.innerText = `Open Transit Provider Site ↗`;
+            }
+
+            if(pipe.lat && pipe.lon) {
+                executeWikidataAirportsQueryNode(idx, pipe.lat, pipe.lon);
+            }
+
+            await fetchPipelineHolidayRecordsNodePayloadStream(idx, start, end);
+        }
+
+        /* ----------------------------------------------------------
+           LIVE WIKIDATA SPARQL AIRPORT LOOKUP
+           ---------------------------------------------------------- */
+        async function executeWikidataAirportsQueryNode(idx, lat, lon, radius = 50) {
+            const airFieldDisplayElement = document.getElementById(`geo_air_${idx}`);
+            if(!airFieldDisplayElement) return;
+
+            const sparqlQueryString = `
+                SELECT ?iata ?distance WHERE {
+                  SERVICE wikibase:around {
+                    ?airport wdt:P625 ?location .
+                    bd:serviceParam wikibase:center "Point(${lon} ${lat})"^^geo:wktLiteral .
+                    bd:serviceParam wikibase:radius "${radius}" .
+                    bd:serviceParam wikibase:distance ?distance .
+                  }
+                  ?airport wdt:P31/wdt:P279* wd:Q1248784 . 
+                  ?airport wdt:P238 ?iata .                  
+                }
+                ORDER BY ?distance
+                LIMIT 5
+            `;
+
+            const queryEndpointUrl = "https://query.wikidata.org/sparql?query=" + encodeURIComponent(sparqlQueryString) + "&format=json";
+
+            try {
+                let response = await fetch(queryEndpointUrl, { headers: { 'Accept': 'application/json' } });
+                if(response.ok) {
+                    let payload = await response.json();
+                    let bindings = payload.results.bindings || [];
+                    if(bindings.length > 0) {
+                        let codes = bindings.map(item => item.iata.value);
+                        airFieldDisplayElement.innerText = codes.join(", ");
+                    } else {
+                        if(radius === 50) {
+                            executeWikidataAirportsQueryNode(idx, lat, lon, 100);
+                        } else {
+                            airFieldDisplayElement.innerText = "None Found Within 100km";
+                        }
+                    }
+                } else {
+                    airFieldDisplayElement.innerText = "Airfield Index Offline";
+                }
+            } catch(e) {
+                airFieldDisplayElement.innerText = "None Found";
+            }
+        }
+
+        async function fetchPipelineHolidayRecordsNodePayloadStream(idx, start, end) {
+            const pipe = pipelineCollection[idx]; const viewport = document.getElementById(`p_holidays_viewport_${idx}`);
+            if(!viewport) return; viewport.innerHTML = '<div style="font-size:0.65rem; opacity:0.5; font-style:italic;">Querying holiday calendars...</div>';
+
+            try {
+                let accumulated = [];
+                for(let y = start.getFullYear(); y <= end.getFullYear(); y++) {
+                    let res = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${y}/${pipe.countryISO}`);
+                    if(res.ok) accumulated = accumulated.concat(await res.json());
+                }
+
+                let matches = accumulated.filter(h => { let d = new Date(h.date + 'T00:00:00'); return d >= start && d <= end; });
+                viewport.innerHTML = '';
+                
+                if(matches.length === 0) { viewport.innerHTML = '<div style="font-size:0.65rem; opacity:0.5; font-style:italic;">No active holiday closures recorded inside this date span parameter.</div>'; return; }
+
+                matches.forEach(h => {
+                    let div = document.createElement('div'); div.className = 'holiday-pill-node';
+                    div.innerHTML = `<span>🏛️ ${h.name}</span> <span>${formatFormattedResultString(new Date(h.date + 'T00:00:00'))}</span>`;
+                    viewport.appendChild(div);
+                });
+            } catch(err) { viewport.innerHTML = '<div style="font-size:0.65rem; color:var(--brand-red);">Holiday stream offline.</div>'; }
+        }
+
+        /* ----------------------------------------------------------
+           DRAGGABLE ABSOLUTE POP-OUT CANVAS FLOATING ENGINES
+           ---------------------------------------------------------- */
+        function popOutPipelineWindowInstance(idx) { pipelineCollection[idx].isPopped = true; renderPipelinesFlowContainerCanvas(); }
+        function dockPipelineInstanceBack(idx) { pipelineCollection[idx].isPopped = false; const pane = document.getElementById(`floating_pane_node_${idx}`); if(pane) pane.remove(); renderPipelinesFlowContainerCanvas(); }
+
+        function createOrUpdateFloatingWindowPane(idx, pipe) {
+            let pane = document.getElementById(`floating_pane_node_${idx}`);
+            if(!pane) {
+                pane = document.createElement('div'); pane.className = 'floating-pane'; pane.setAttribute('id', `floating_pane_node_${idx}`);
+                pane.innerHTML = `
+                    <div class="pane-header" id="pane_handle_${idx}">
+                        <h4>Floating Analysis Pipeline #${idx + 1}</h4>
+                        <div class="header-icons" style="font-size:0.9rem;">
+                            <div class="header-icon" onclick="dockPipelineInstanceBack(${idx})">📥</div>
+                        </div>
+                    </div>
+                    <div class="pane-content">${createPipelineFormTemplateHTMLString(idx, pipe)}</div>
+                `;
+                document.body.appendChild(pane); setupWindowDragCapabilities(pane, document.getElementById(`pane_handle_${idx}`));
+            }
+            evaluatePipelineCalculationsLogicNode(idx);
+        }
+
+        function setupWindowDragCapabilities(paneEl, handleEl) {
+            let x1 = 0, y1 = 0, x2 = 0, y2 = 0; handleEl.onmousedown = dragMouseDown;
+            function dragMouseDown(e) {
+                e.preventDefault(); x2 = e.clientX; y2 = e.clientY;
+                document.onmouseup = () => { document.onmouseup = null; document.onmousemove = null; };
+                document.onmousemove = (ev) => {
+                    x1 = x2 - ev.clientX; y1 = y2 - ev.clientY; x2 = ev.clientX; y2 = ev.clientY;
+                    paneEl.style.top = (paneEl.offsetTop - y1) + "px"; paneEl.style.left = (paneEl.offsetLeft - x1) + "px";
+                };
+            }
+        }
+
+        /* ----------------------------------------------------------
+           PROMPT SEARCH FRAME MODAL DIALOGS WITH MULTI-CHOICE FILTERS
+           ---------------------------------------------------------- */
+        function openLocationSearchModalForElement(intent, index) {
+            activeModalIntentType = intent; selectedTargetIndexReference = index;
+            document.getElementById('modal-input-group-pane').style.display = 'block';
+            document.getElementById('modal-choices-list-pane').style.display = 'none';
+            
+            const modal = document.getElementById('search-modal-prompt');
+            modal.classList.add('active');
+            document.getElementById('modal-text-input').value = ''; document.getElementById('modal-text-input').focus();
+        }
+
+        function closePromptModal() { document.getElementById('search-modal-prompt').classList.remove('active'); }
+        function resetModalInputPaneView() { document.getElementById('modal-input-group-pane').style.display = 'block'; document.getElementById('modal-choices-list-pane').style.display = 'none'; }
+
+        async function submitPromptModalSearchQuery() {
+            const queryTerm = document.getElementById('modal-text-input').value.trim();
+            if(!queryTerm) return;
+
+            try {
+                let res = await fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/geonames-all-cities-with-a-population-1000/records?where=search(name%2C%20%22${encodeURIComponent(queryTerm)}%22)&limit=10`);
+                if (res.ok) {
+                    let data = await res.json();
+                    if(data.results && data.results.length > 1) {
+                        pendingAPIResultsBuffer = data.results;
+                        renderAmbiguityChoiceButtonsList();
+                        return;
+                    } else if(data.results && data.results.length === 1) {
+                        applyGeonameCityRecordSelection(data.results[0]);
+                        closePromptModal();
+                        return;
+                    }
+                }
+            } catch(e) {}
+
+            closePromptModal();
+        }
+
+        function renderAmbiguityChoiceButtonsList() {
+            document.getElementById('modal-input-group-pane').style.display = 'none';
+            const container = document.getElementById('modal-choices-container');
+            container.innerHTML = '';
+
+            let trackedUniques = [];
+            pendingAPIResultsBuffer.forEach(city => {
+                let countryNameLabel = city.cou_name || city.country_code;
+                let displayLabelStr = `${city.name}, ${countryNameLabel} (${city.timezone || 'GMT'})`;
+                
+                if(trackedUniques.includes(displayLabelStr)) return;
+                trackedUniques.push(displayLabelStr);
+
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn-link'; btn.innerText = displayLabelStr;
+                btn.onclick = () => {
+                    applyGeonameCityRecordSelection(city); closePromptModal();
+                };
+                container.appendChild(btn);
+            });
+            document.getElementById('modal-choices-list-pane').style.display = 'block';
+        }
+
+        function applyGeonameCityRecordSelection(cityData) {
+            let inferredLabel = `${cityData.name} (${cityData.country_code.toUpperCase()})`;
+            let matchedISO = cityData.country_code.toUpperCase();
+            let isSouthern = (cityData.coordinates && cityData.coordinates.lat < 0);
+
+            if(!citySpecificOverrideDatabase[cityData.name.toLowerCase()]) {
+                citySpecificOverrideDatabase[cityData.name.toLowerCase()] = {
+                    airports: "Wikidata Active Search Core",
+                    transit: `https://www.google.com/search?q=${encodeURIComponent(cityData.name + " public transit transportation lines website")}`
+                };
+            }
+
+            if(activeModalIntentType === 'add-clock') {
+                clockCollection.push({ name: inferredLabel, tz: cityData.timezone }); compileClockGridMatrix();
+            } else if(activeModalIntentType === 'edit-clock') {
+                clockCollection[selectedTargetIndexReference].name = inferredLabel;
+                clockCollection[selectedTargetIndexReference].tz = cityData.timezone; compileClockGridMatrix();
+            } else if(activeModalIntentType === 'pipeline-holiday') {
+                const pipe = pipelineCollection[selectedTargetIndexReference];
+                pipe.countryISO = matchedISO;
+                pipe.countryLbl = inferredLabel;
+                pipe.lat = cityData.coordinates.lat;
+                pipe.lon = cityData.coordinates.lon;
+                pipe.southern = isSouthern;
+                
+                if(!localityNotesLookup[matchedISO]) {
+                    localityNotesLookup[matchedISO] = `💡 Note: Local cultural standards apply to regional coordinates within country code (${matchedISO}).`;
+                }
+                renderPipelinesFlowContainerCanvas();
+            }
+        }
+
+        function saveActiveConfigurationsAsDefaults() {
+            localStorage.setItem('locadate_clocks', JSON.stringify(clockCollection));
+            localStorage.setItem('locadate_pipelines', JSON.stringify(pipelineCollection));
+            localStorage.setItem('locadate_work_start', hourWorkStart);
+            localStorage.setItem('locadate_work_end', hourWorkEnd);
+            localStorage.setItem('locadate_sleep_start', hourSleepStart);
+            localStorage.setItem('locadate_sleep_end', hourSleepEnd);
+            localStorage.setItem('locadate_focus_hour', globalFocusHourInt);
+            
+            // Visual custom toast prompt launcher
+            const toast = document.getElementById('toast-notice-container');
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+
+            dispatchStatusMessage("Saved!");
+        }
+
+        initMultiSliderEngine();
+        compileClockGridMatrix();
+    </script>
+</body>
+</html>
