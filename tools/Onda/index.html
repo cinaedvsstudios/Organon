@@ -1984,9 +1984,9 @@
             <!-- Tab 1 View: Pure Drag and Drop Zone -->
             <div id="tab-files" class="viewport-content active-content">
                 <div id="drop-zone" style="height: 250px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
-                    <div style="font-size: 1.4rem; margin-bottom: 8px; font-weight: bold;">DRAG & DROP AUDIO FILES HERE</div>
+                    <div style="font-size: 1.4rem; margin-bottom: 8px; font-weight: bold;">DRAG & DROP AUDIO, VIDEO OR MIDI FILES HERE</div>
                     <span style="font-size: 0.9em; color: var(--water-spray);">(Or click to browse Hard Drive)</span>
-                    <input type="file" id="file-input" accept="audio/*,video/*" multiple style="display: none;">
+                    <input type="file" id="file-input" accept="audio/*,video/*,.mid,.midi,audio/midi,audio/x-midi" multiple style="display: none;">
                 </div>
                 <p style="text-align: center; color: var(--chiseled-bronze); font-size: 0.85rem; margin-top: 15px; font-style: italic;">
                     Files dropped here are instantly added to your active playlist queue.
@@ -2233,7 +2233,7 @@
                 <div class="library-manager-actions library-actions-menu">
                     <details class="library-action-group"><summary>Select</summary><div class="library-action-menu-panel"><button id="btn-db-select-mode" class="btn-pill">Select Multiple</button></div></details>
                     <details class="library-action-group"><summary>Add</summary><div class="library-action-menu-panel"><button id="btn-db-add-folder" class="btn-pill">Add Folder</button><button id="btn-db-import-json" class="btn-pill">Import JSON</button></div></details>
-                    <input type="file" id="folder-input" accept="audio/*,video/*" multiple webkitdirectory directory style="display:none;">
+                    <input type="file" id="folder-input" accept="audio/*,video/*,.mid,.midi,audio/midi,audio/x-midi" multiple webkitdirectory directory style="display:none;">
                     <details class="library-action-group"><summary>Export</summary><div class="library-action-menu-panel"><button id="btn-db-export-everything" class="btn-pill">Export Everything</button><button id="btn-db-export-library" class="btn-pill">Export Full</button><button id="btn-db-export-streams" class="btn-pill">Export Streams</button><button id="btn-db-export-playlist" class="btn-pill">Export Playlist</button><button id="btn-db-export-missing-info" class="btn-pill">Export Missing Info</button></div></details>
                     <details class="library-action-group"><summary>Repair</summary><div class="library-action-menu-panel"><button id="btn-db-save-local-now" class="btn-pill">Save Local</button><button id="btn-db-check-library" class="btn-pill">Check Files</button><button id="btn-db-import-metadata-overlay" class="btn-pill">Import Metadata Overlay</button></div></details>
                     <input type="file" id="metadata-overlay-file-input" accept=".json,application/json" style="display:none;">
@@ -3526,6 +3526,7 @@
         function sourceStatus(meta) {
             if (!meta) return 'unknown';
             if (meta.sourceType === 'stream' || meta.streamUrl) return 'stream';
+            if (meta.sourceType === 'midi') return meta.blobFile ? 'MIDI ready' : 'MIDI needs relink';
             if (meta.blobFile) return 'local ready';
             return 'needs relink';
         }
@@ -5308,7 +5309,7 @@
                     lines.push(`  Check: ${result}`);
                 } else {
                     const hasLoadedFile = !!meta.blobFile;
-                    lines.push(`[LOCAL] ${label}`);
+                    lines.push(`[${meta.sourceType === 'midi' ? 'MIDI' : 'LOCAL'}] ${label}`);
                     lines.push(`  Recorded path/name: ${meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No path stored'}`);
                     lines.push(`  Check: ${hasLoadedFile ? 'OK — file is loaded in this session' : 'NEEDS RELINK — browser cannot verify saved local paths without the user selecting the file/folder again'}`);
                 }
@@ -5434,7 +5435,7 @@
 
         async function handleUploadedFiles(files) {
             const playableFiles = Array.from(files).filter(file => {
-                return file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm)$/i);
+                return Boolean(window.OndaMidi?.isMidiFile(file)) || file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm|mid|midi)$/i);
             });
 
             if (playableFiles.length === 0) {
@@ -5447,6 +5448,9 @@
             let queueDuplicates = 0;
 
             playableFiles.forEach(file => {
+                const isMidi = Boolean(window.OndaMidi?.isMidiFile(file)) || /\.(mid|midi)$/i.test(file.name || '');
+                const localSourceType = isMidi ? 'midi' : 'local';
+                const defaultLocalTag = isMidi ? 'MIDI File' : 'Local File';
                 const relativePath = file.webkitRelativePath || file.name;
                 const nextId = createTrackIdFromParts(['local', relativePath, file.name, file.size, file.lastModified || '']);
                 const legacyId = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
@@ -5458,7 +5462,7 @@
                     name: id,
                     libraryId: id,
                     fileName: file.name,
-                    sourceType: 'local',
+                    sourceType: localSourceType,
                     blobFile: file,
                     sizeBytes: file.size,
                     localPath: relativePath
@@ -5471,12 +5475,12 @@
                     title: existing.title || file.name.replace(/\.[^/.]+$/, ''),
                     nickname: existing.nickname || '',
                     lyrics: existing.lyrics || '',
-                    tags: Array.isArray(existing.tags) && existing.tags.length ? existing.tags : ['Local File'],
+                    tags: Array.isArray(existing.tags) && existing.tags.length ? existing.tags : [defaultLocalTag],
                     playlists: Array.isArray(existing.playlists) ? existing.playlists : [],
                     size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
                     sizeBytes: file.size,
                     duration: existing.duration || null,
-                    sourceType: 'local',
+                    sourceType: localSourceType,
                     localPath: relativePath || existing.localPath || file.name,
                     streamUrl: null,
                     blobFile: file
@@ -5531,30 +5535,68 @@
         async function loadTrack(file) {
             currentFile = file;
 
+            if (window.OndaMidi) window.OndaMidi.stopForTrackChange();
             localAudio.pause();
             streamAudio.pause();
 
             const key = file.name || file.libraryId || file.id;
+            const fileLooksMidi = Boolean(window.OndaMidi?.isMidiTrack(file)) || /\.(mid|midi)$/i.test(String(file.fileName || file.name || ''));
             if (!virtualLibrary[key]) {
                 virtualLibrary[key] = {
                     id: key,
                     fileName: file.fileName || file.name || 'Unknown Track',
                     nickname: '',
                     lyrics: '',
-                    tags: file.streamUrl ? ['URL Stream'] : ['Local File'],
+                    tags: file.streamUrl ? ['URL Stream'] : (fileLooksMidi ? ['MIDI File'] : ['Local File']),
                     playlists: [],
                     size: file.streamUrl ? 'URL Stream' : '',
-                    sourceType: file.streamUrl ? 'stream' : 'local',
+                    sourceType: file.streamUrl ? 'stream' : (fileLooksMidi ? 'midi' : 'local'),
                     streamUrl: file.streamUrl || null,
                     localPath: file.localPath || file.fileName || null
                 };
             }
 
             const meta = virtualLibrary[key];
+            const isMidi = fileLooksMidi || meta.sourceType === 'midi' || Boolean(window.OndaMidi?.isMidiTrack(meta));
             currentFile.name = key;
             rememberRecentTrack(key);
 
-            if ((file.streamUrl || meta.streamUrl) && (file.sourceType === 'stream' || meta.sourceType === 'stream')) {
+            if (isMidi) {
+                if (!window.OndaMidi?.audio) {
+                    updateMetadataUI();
+                    pauseAudio();
+                    startVisualizer();
+                    showToast('MIDI support module is missing. Check that onda-midi.js is deployed beside index.html.');
+                    return;
+                }
+                activeAudio = window.OndaMidi.audio;
+                let blob = file.blobFile || meta.blobFile;
+                if (!blob) {
+                    showToast('Restoring cached MIDI file...');
+                    blob = await hydrateLocalAudioBlob(key);
+                    if (blob) {
+                        file.blobFile = blob;
+                        meta.blobFile = blob;
+                    }
+                }
+                if (!blob) {
+                    updateMetadataUI();
+                    pauseAudio();
+                    startVisualizer();
+                    showToast('MIDI metadata is saved, but the file needs to be reselected before it can play.');
+                    return;
+                }
+                try {
+                    await window.OndaMidi.load(blob, meta);
+                } catch (err) {
+                    console.error('MIDI load failed:', err);
+                    updateMetadataUI();
+                    pauseAudio();
+                    startVisualizer();
+                    showToast(`Could not read MIDI file: ${err.message || 'unknown MIDI error'}`);
+                    return;
+                }
+            } else if ((file.streamUrl || meta.streamUrl) && (file.sourceType === 'stream' || meta.sourceType === 'stream')) {
                 activeAudio = streamAudio;
                 activeAudio.src = file.streamUrl || meta.streamUrl;
             } else {
@@ -5728,7 +5770,7 @@
 
             const sourceTypeEl = document.getElementById('meta-source-type');
             const sourceDetailEl = document.getElementById('meta-source-detail');
-            if (sourceTypeEl) sourceTypeEl.innerText = meta.sourceType === 'stream' || meta.streamUrl ? 'Stream / online source' : 'Local file metadata';
+            if (sourceTypeEl) sourceTypeEl.innerText = meta.sourceType === 'stream' || meta.streamUrl ? 'Stream / online source' : (meta.sourceType === 'midi' ? 'MIDI sequence file' : 'Local file metadata');
             if (sourceDetailEl) sourceDetailEl.innerText = meta.streamUrl || meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No location recorded';
             const playlistsDisplay = document.getElementById('meta-playlists-display');
             if (playlistsDisplay) playlistsDisplay.innerText = playlistNames.length ? playlistNames.join(' / ') : 'No playlists assigned.';
@@ -7972,6 +8014,7 @@
             }
         });
     </script>
+    <script src="./onda-midi.js"></script>
 
 <!-- Onda Cloud Sync + Setup Wizard (Netlify Blobs) -->
 <style id="onda-cloud-sync-style">
