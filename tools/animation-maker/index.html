@@ -10,13 +10,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <link rel="stylesheet" href="./styles.css">
+    <link rel="stylesheet" href="./clips.css">
 </head>
 <body>
     <div class="app-wrapper">
         <header class="top-sticky-panel" id="top-panel">
             <div class="title-pill">
                 <div class="title-left"><div id="countdown-circle" class="countdown-circle-indicator">5</div><span>ANIMATION MAKER</span></div>
-                <button type="button" id="btn-convert-movie" class="nav-btn-mini">CONVERT MOVIE</button>
+                <button type="button" id="btn-convert-movie" class="nav-btn-mini">ADD VIDEO CLIP</button>
             </div>
             <div class="panel-content-hide upload-wrap">
                 <label for="image-picker" class="file-upload-label" id="upload-label">🏛️ UPLOAD IMAGES (PNG/JPG)</label>
@@ -27,9 +28,12 @@
 
         <main class="middle-scroll-panel">
             <section class="config-card" id="queue-card" hidden>
-                <h3>1. Sequence Grid</h3>
+                <div class="card-title-action sequence-title-actions">
+                    <h3>1. Sequence Grid</h3>
+                    <button type="button" class="mini-action" id="reorder-clips-btn" hidden>REORDER CLIPS</button>
+                </div>
                 <div class="input-group inline-input"><label for="seq-name">Name:</label><input type="text" id="seq-name" value="animation-export" placeholder="Filename..."></div>
-                <p class="help-text">Drag to reorder. Use 👁 to preview processing or ⊕ to align a single frame.</p>
+                <p class="help-text">Frames stay grouped by clip. Drag to reorder within a clip; use REORDER CLIPS to move whole videos. Use 👁 to preview or ⊕ to align.</p>
                 <div class="frame-queue-grid" id="frame-grid"></div>
             </section>
 
@@ -129,6 +133,16 @@
             <button data-nudge="down" type="button">↓</button>
         </div>
         <button type="button" id="reset-align" class="modal-action">RESET POSITION</button>
+    </div>
+
+    <div id="reorder-clips-modal" class="draggable-modal reorder-clips-modal" hidden>
+        <button class="modal-close" data-close="reorder-clips-modal" type="button">×</button>
+        <h3 id="reorder-clips-drag-handle">Reorder Clips</h3>
+        <p class="help-text reorder-help">Drag pills into playback order, or use the arrows on mobile.</p>
+        <div class="clip-order-list" id="clip-order-list"></div>
+        <div class="reorder-actions">
+            <button type="button" class="modal-action" id="apply-clip-order">APPLY ORDER</button>
+        </div>
     </div>
 
     <div id="frame-editor-modal" class="editor-modal" hidden>
