@@ -1,0 +1,41 @@
+/* Animation Maker editing enhancements: bucket transparency, animate-only help, shadows and preview surfaces. */
+.mode-three button { font-size: .56rem; line-height: 1.25; white-space: normal; }
+.invert-mask-btn { margin-bottom: 7px; background: var(--forest-teal); }
+.invert-mask-btn.active-toggle { border-color: var(--water-spray); background: var(--water-blue); color: var(--white-accent); }
+.tool-tip-text { margin: 7px 0 9px; color: rgba(245,240,219,.67); font-size: .63rem; line-height: 1.4; }
+.tool-heading-tip { display: flex; align-items: center; gap: 7px; margin-bottom: 8px; }
+.tool-heading-tip h4 { margin: 0; }
+.info-tip {
+    position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;
+    border: 1px solid var(--water-spray); border-radius: 50%; background: rgba(75,132,191,.22); color: var(--water-spray);
+    font: 700 .72rem var(--font-body); cursor: help;
+}
+.info-tip span {
+    display: none; position: absolute; z-index: 30; left: 26px; top: -5px; width: 220px; padding: 9px 10px;
+    border: 1px solid var(--water-spray); border-radius: 8px; background: #101313; color: var(--alabaster-paper);
+    font: .68rem/1.45 var(--font-body); text-transform: none; letter-spacing: 0; box-shadow: 0 8px 20px rgba(0,0,0,.65);
+}
+.info-tip:hover span, .info-tip:focus span { display: block; }
+.shadow-options { align-items: flex-end; }
+.shadow-options .input-group { flex: .8; }
+.shadow-options .slider-container { flex: 1; }
+.preview-bg-selector { margin-left: auto; }
+.preview-bg-selector button { font-size: .56rem; padding: 6px 8px; }
+.canvas-viewport.preview-bg-checker {
+    background-color: #161817;
+    background-image: linear-gradient(45deg,#222521 25%,transparent 25%),linear-gradient(-45deg,#222521 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#222521 75%),linear-gradient(-45deg,transparent 75%,#222521 75%);
+    background-size: 28px 28px; background-position: 0 0,0 14px,14px -14px,-14px 0;
+}
+.canvas-viewport.preview-bg-black { background: #000; background-image: none; }
+.canvas-viewport.preview-bg-white { background: #fff; background-image: none; }
+.canvas-viewport.preview-bg-green { background: #19a74a; background-image: none; }
+#bucket-mode button { font-size: .56rem; }
+#clear-buckets { background: var(--forest-teal); margin-bottom: 7px; }
+@media (max-width: 920px) {
+    .preview-bg-selector { order: 3; width: 100%; margin: 8px 0 0; }
+    .zoom-tools { flex-wrap: wrap; }
+}
+@media (max-width: 680px) {
+    .info-tip span { left: auto; right: -8px; top: 26px; width: 220px; }
+    .shadow-options { flex-wrap: wrap; }
+}
