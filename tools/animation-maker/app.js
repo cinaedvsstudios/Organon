@@ -12,7 +12,7 @@
     };
 
     const state = {
-        frames: [], clips: [], cutoutActions: [], paintActions: [], movingActions: [], fixedBaseEnabled: false, baseFrameId: null,
+        frames: [], clips: [], cutoutActions: [], cutoutInverted: false, paintActions: [], movingActions: [], fixedBaseEnabled: false, baseFrameId: null,
         currentPreviewIndex: null, alignIndex: 0, editorIndex: 0, editorPlaying: false, editorTimer: null,
         animationTimer: null, animationPlaying: false, history: [], historyIndex: -1, reorderDraft: [], clipSerial: 0
     };
@@ -183,7 +183,7 @@
     async function renderFrame(index, dim) {
         let output; const baseIndex = baseFrameIndex();
         if (state.fixedBaseEnabled && state.movingActions.length && index !== baseIndex) { output = await drawPreparedFrame(baseIndex, dim); const moving = await drawPreparedFrame(index, dim), mask = buildMask(state.movingActions, dim, 'add', 'subtract'), movingCtx = moving.getContext('2d'); movingCtx.globalCompositeOperation = 'destination-in'; movingCtx.drawImage(mask, 0, 0); output.getContext('2d').drawImage(moving, 0, 0); } else output = await drawPreparedFrame(index, dim);
-        if (state.cutoutActions.length) { const mask = buildMask(state.cutoutActions, dim, 'remove', 'restore'), ctx = output.getContext('2d'); ctx.globalCompositeOperation = 'destination-out'; ctx.drawImage(mask, 0, 0); ctx.globalCompositeOperation = 'source-over'; }
+        if (state.cutoutActions.length) { const mask = buildMask(state.cutoutActions, dim, 'remove', 'restore'), ctx = output.getContext('2d'); ctx.globalCompositeOperation = state.cutoutInverted ? 'destination-in' : 'destination-out'; ctx.drawImage(mask, 0, 0); ctx.globalCompositeOperation = 'source-over'; }
         applyPaint(output.getContext('2d'), dim); return output;
     }
     function buildMask(actions, dim, positive, negative) { const mask = makeCanvas(dim), ctx = mask.getContext('2d'); actions.forEach((action) => { ctx.save(); ctx.globalCompositeOperation = action.mode === negative ? 'destination-out' : 'source-over'; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#fff'; renderActionPath(ctx, action, dim, true); ctx.restore(); }); return mask; }
@@ -202,8 +202,24 @@
     document.querySelectorAll('[data-nudge]').forEach((control) => control.addEventListener('click', () => { const frame = state.frames[state.alignIndex]; if (!frame) return; const direction = control.dataset.nudge; if (direction === 'up') frame.offsetY -= 1; if (direction === 'down') frame.offsetY += 1; if (direction === 'left') frame.offsetX -= 1; if (direction === 'right') frame.offsetX += 1; checkpoint(); renderAlign(); renderFrameGrid(); refreshOpenPreviews(); }));
     $('reset-align').addEventListener('click', () => { const frame = state.frames[state.alignIndex]; if (!frame) return; frame.offsetX = 0; frame.offsetY = 0; checkpoint(); renderAlign(); renderFrameGrid(); refreshOpenPreviews(); });
 
+    function installInvertMaskButton() {
+        const clearButton = $('clear-cutout');
+        if (!clearButton || $('invert-cutout-mask')) return;
+        const button = document.createElement('button');
+        button.type = 'button'; button.id = 'invert-cutout-mask'; button.className = 'small-reset'; button.style.background = 'var(--forest-teal)'; button.style.marginTop = '10px';
+        clearButton.parentNode.insertBefore(button, clearButton);
+        button.addEventListener('click', () => { state.cutoutInverted = !state.cutoutInverted; updateInvertMaskButton(); checkpoint(); renderEditor(); refreshOpenPreviews(); });
+        updateInvertMaskButton();
+    }
+    function updateInvertMaskButton() {
+        const button = $('invert-cutout-mask'); if (!button) return;
+        button.textContent = `INVERT MASK: ${state.cutoutInverted ? 'ON' : 'OFF'}`;
+        button.style.background = state.cutoutInverted ? 'var(--water-blue)' : 'var(--forest-teal)';
+        button.style.borderColor = state.cutoutInverted ? 'var(--water-spray)' : 'var(--chiseled-bronze)';
+    }
+    installInvertMaskButton();
     els.openEditorBtn.addEventListener('click', () => { if (!state.frames.length) return; state.editorIndex = 0; els.editorModal.hidden = false; edit.finalView = true; resetViewport(); checkpoint(true); updateEditorLabels(); renderEditor(); });
-    function updateEditorLabels() { $('editor-frame-number').textContent = `FRAME ${state.editorIndex + 1} / ${Math.max(1, state.frames.length)}`; $('base-frame-label').textContent = `BASE: ${baseFrameIndex() + 1}`; $('fixed-base-enabled').checked = state.fixedBaseEnabled; }
+    function updateEditorLabels() { $('editor-frame-number').textContent = `FRAME ${state.editorIndex + 1} / ${Math.max(1, state.frames.length)}`; $('base-frame-label').textContent = `BASE: ${baseFrameIndex() + 1}`; $('fixed-base-enabled').checked = state.fixedBaseEnabled; updateInvertMaskButton(); }
     $('editor-prev').addEventListener('click', () => switchEditorFrame(-1)); $('editor-next').addEventListener('click', () => switchEditorFrame(1));
     function switchEditorFrame(step) { if (!state.frames.length) return; state.editorIndex = (state.editorIndex + step + state.frames.length) % state.frames.length; updateEditorLabels(); renderEditor(); }
     $('editor-play').addEventListener('click', () => { state.editorPlaying = !state.editorPlaying; $('editor-play').textContent = state.editorPlaying ? '❚❚ PAUSE' : '▶ PLAY'; clearInterval(state.editorTimer); if (state.editorPlaying) state.editorTimer = setInterval(() => switchEditorFrame(1), parseInt($('frame-delay').value, 10)); });
@@ -219,12 +235,12 @@
     $('base-prev').addEventListener('click', () => moveBase(-1)); $('base-next').addEventListener('click', () => moveBase(1));
     function moveBase(step) { const nextIndex = (baseFrameIndex() + step + state.frames.length) % state.frames.length; state.baseFrameId = state.frames[nextIndex].id; checkpoint(); updateEditorLabels(); renderEditor(); }
     $('use-current-base').addEventListener('click', () => { state.baseFrameId = state.frames[state.editorIndex].id; checkpoint(); updateEditorLabels(); renderEditor(); });
-    $('clear-cutout').addEventListener('click', () => { state.cutoutActions = []; checkpoint(); renderEditor(); refreshOpenPreviews(); }); $('clear-paint').addEventListener('click', () => { state.paintActions = []; checkpoint(); renderEditor(); refreshOpenPreviews(); }); $('clear-moving').addEventListener('click', () => { state.movingActions = []; checkpoint(); renderEditor(); refreshOpenPreviews(); });
-    $('reset-all-edits').addEventListener('click', () => { if (!window.confirm('Clear all cutouts, paint, fixed-base regions and individual alignment changes?')) return; state.cutoutActions = []; state.paintActions = []; state.movingActions = []; state.fixedBaseEnabled = false; state.baseFrameId = state.frames.length ? state.frames[0].id : null; state.frames.forEach((frame) => { frame.offsetX = 0; frame.offsetY = 0; }); checkpoint(); updateEditorLabels(); renderEditor(); renderFrameGrid(); refreshOpenPreviews(); });
+    $('clear-cutout').addEventListener('click', () => { state.cutoutActions = []; state.cutoutInverted = false; updateInvertMaskButton(); checkpoint(); renderEditor(); refreshOpenPreviews(); }); $('clear-paint').addEventListener('click', () => { state.paintActions = []; checkpoint(); renderEditor(); refreshOpenPreviews(); }); $('clear-moving').addEventListener('click', () => { state.movingActions = []; checkpoint(); renderEditor(); refreshOpenPreviews(); });
+    $('reset-all-edits').addEventListener('click', () => { if (!window.confirm('Clear all cutouts, paint, fixed-base regions and individual alignment changes?')) return; state.cutoutActions = []; state.cutoutInverted = false; state.paintActions = []; state.movingActions = []; state.fixedBaseEnabled = false; state.baseFrameId = state.frames.length ? state.frames[0].id : null; state.frames.forEach((frame) => { frame.offsetX = 0; frame.offsetY = 0; }); updateInvertMaskButton(); checkpoint(); updateEditorLabels(); renderEditor(); renderFrameGrid(); refreshOpenPreviews(); });
     $('undo-edit').addEventListener('click', undo); $('redo-edit').addEventListener('click', redo);
-    function snapshot() { return JSON.stringify({ cutout: state.cutoutActions, paint: state.paintActions, moving: state.movingActions, fixed: state.fixedBaseEnabled, baseFrameId: state.baseFrameId, offsets: Object.fromEntries(state.frames.map((frame) => [frame.id, { offsetX: frame.offsetX, offsetY: frame.offsetY }])) }); }
+    function snapshot() { return JSON.stringify({ cutout: state.cutoutActions, cutoutInverted: state.cutoutInverted, paint: state.paintActions, moving: state.movingActions, fixed: state.fixedBaseEnabled, baseFrameId: state.baseFrameId, offsets: Object.fromEntries(state.frames.map((frame) => [frame.id, { offsetX: frame.offsetX, offsetY: frame.offsetY }])) }); }
     function checkpoint(reset = false) { const value = snapshot(); if (reset || !state.history.length) { state.history = [value]; state.historyIndex = 0; return; } if (state.history[state.historyIndex] === value) return; state.history = state.history.slice(0, state.historyIndex + 1); state.history.push(value); state.historyIndex = state.history.length - 1; }
-    function restoreSnapshot(value) { const saved = JSON.parse(value); state.cutoutActions = saved.cutout; state.paintActions = saved.paint; state.movingActions = saved.moving; state.fixedBaseEnabled = saved.fixed; state.baseFrameId = saved.baseFrameId; state.frames.forEach((frame) => { if (saved.offsets[frame.id]) { frame.offsetX = saved.offsets[frame.id].offsetX; frame.offsetY = saved.offsets[frame.id].offsetY; } }); updateEditorLabels(); renderEditor(); renderFrameGrid(); refreshOpenPreviews(); }
+    function restoreSnapshot(value) { const saved = JSON.parse(value); state.cutoutActions = saved.cutout; state.cutoutInverted = Boolean(saved.cutoutInverted); state.paintActions = saved.paint; state.movingActions = saved.moving; state.fixedBaseEnabled = saved.fixed; state.baseFrameId = saved.baseFrameId; state.frames.forEach((frame) => { if (saved.offsets[frame.id]) { frame.offsetX = saved.offsets[frame.id].offsetX; frame.offsetY = saved.offsets[frame.id].offsetY; } }); updateInvertMaskButton(); updateEditorLabels(); renderEditor(); renderFrameGrid(); refreshOpenPreviews(); }
     function undo() { if (state.historyIndex > 0) { state.historyIndex -= 1; restoreSnapshot(state.history[state.historyIndex]); } } function redo() { if (state.historyIndex < state.history.length - 1) { state.historyIndex += 1; restoreSnapshot(state.history[state.historyIndex]); } }
 
     async function renderEditor() { if (els.editorModal.hidden || !state.frames[state.editorIndex]) return; const token = ++edit.renderToken, dim = getDim(), result = edit.finalView ? await renderFrame(state.editorIndex, dim) : await drawOriginalFrame(state.editorIndex, dim); if (token !== edit.renderToken) return; els.editorCanvas.width = dim; els.editorCanvas.height = dim; const ctx = els.editorCanvas.getContext('2d'); ctx.clearRect(0, 0, dim, dim); ctx.drawImage(result, 0, 0); drawTransient(ctx, dim); fitCanvas(); }
