@@ -31,6 +31,11 @@
 .canvas-viewport.preview-bg-green { background: #19a74a; background-image: none; }
 #bucket-mode button { font-size: .56rem; }
 #clear-buckets { background: var(--forest-teal); margin-bottom: 7px; }
+#queue-card { position: relative; padding-bottom: 68px; }
+#queue-card .sequence-title-actions #reorder-clips-btn {
+    position: absolute; left: 20px; right: 20px; bottom: 18px; width: calc(100% - 40px);
+    min-height: 36px; border-radius: 999px;
+}
 @media (max-width: 920px) {
     .preview-bg-selector { order: 3; width: 100%; margin: 8px 0 0; }
     .zoom-tools { flex-wrap: wrap; }
@@ -38,4 +43,5 @@
 @media (max-width: 680px) {
     .info-tip span { left: auto; right: -8px; top: 26px; width: 220px; }
     .shadow-options { flex-wrap: wrap; }
+    #queue-card .sequence-title-actions #reorder-clips-btn { margin-top: 0; width: calc(100% - 40px); }
 }
