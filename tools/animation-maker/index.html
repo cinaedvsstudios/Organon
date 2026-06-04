@@ -18,13 +18,13 @@
 <div class="app-wrapper">
 <header class="top-sticky-panel" id="top-panel">
 <div class="title-pill"><div class="title-left"><div id="countdown-circle" class="countdown-circle-indicator">5</div><span>ANIMATION MAKER</span></div><button type="button" id="btn-convert-movie" class="nav-btn-mini">ADD VIDEO CLIPS</button></div>
-<div class="panel-content-hide upload-wrap"><label for="image-picker" class="file-upload-label" id="upload-label">🏛️ UPLOAD IMAGES (PNG/JPG)</label><input type="file" id="image-picker" multiple accept="image/png,image/jpeg,image/jpg"><input type="file" id="video-picker" multiple accept="video/mp4,video/webm,video/quicktime,video/x-m4v"></div>
+<div class="panel-content-hide upload-wrap"><label for="image-picker" class="file-upload-label" id="upload-label">🏛️ UPLOAD IMAGES / ANIMATED GIF / WEBP</label><input type="file" id="image-picker" multiple accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"><input type="file" id="video-picker" multiple accept="video/mp4,video/webm,video/quicktime,video/x-m4v"></div>
 </header>
 <main class="middle-scroll-panel">
 <section class="config-card" id="queue-card" hidden>
 <h3>1. Sequence Grid</h3>
 <div class="input-group inline-input"><label for="seq-name">Name:</label><input type="text" id="seq-name" value="animation-export" placeholder="Filename..."></div>
-<p class="help-text">Frames stay grouped by clip. Drag within a clip; use REORDER CLIPS below to move whole videos. Use 👁 to preview or ⊕ to align.</p><div class="frame-queue-grid" id="frame-grid"></div>
+<p class="help-text">Frames stay grouped by clip. Drag within a clip; use REORDER CLIPS below to move whole videos or imported animations. Use 👁 to preview or ⊕ to align.</p><div class="frame-queue-grid" id="frame-grid"></div>
 <div class="sequence-bottom-actions"><button type="button" class="mini-action" id="reorder-clips-btn" hidden>REORDER CLIPS</button></div>
 </section>
 <section class="config-card" id="adjust-card">
@@ -72,6 +72,7 @@
 <footer class="editor-footer"><button type="button" id="reset-all-edits" class="danger-action">CLEAR ALL EDITS</button><button type="button" class="modal-action" data-close="frame-editor-modal">APPLY / CLOSE</button></footer><div class="resize-handle" aria-hidden="true"></div>
 </div></div>
 <script src="./multi-video-import.js"></script>
+<script src="./animated-image-import.js"></script>
 <script src="./app-v3.js"></script>
 <script src="./webp-ui-fix.js"></script>
 </body>
