@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: EXPORTER
- * Handles live MediaRecorder export from the canvas preview and Web Audio graph.
+ * Live MediaRecorder export from canvas plus Web Audio.
  */
 
 import { audioCtx, masterMixer } from './audio-mixer.js';
@@ -11,4 +11,5 @@ let mediaRecorder = null;
 let recordedChunks = [];
 let activeCanvasStream = null;
 let activeMasterStream = null;
-let activeAudioDestination
+let activeAudioDestination = null;
+let activeMimeType = 'video/webm';
