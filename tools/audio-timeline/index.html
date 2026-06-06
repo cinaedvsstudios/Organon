@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organon Studio | Micro-NLE</title>
+    <style>
+        /* ORGANON BRAND VARIABLES INJECTED FOR STANDALONE TESTING */
+        :root {
+            --stone-ochre: #e0a360;
+            --brand-red: #9a2f4f;
+            --bg-nightsky: #1e201c;
+            --bg-card: #292a24;
+            --white-accent: #ffffff;
+            --water-blue: #4b84bf;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--white-accent);
+            font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            margin: 0;
+            padding: 0;
+        }
+
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            background-color: var(--bg-nightsky);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Video Preview Screen */
+        .preview-container {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background-color: #000;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-bottom: 2px solid var(--stone-ochre);
+        }
+
+        #master-canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        /* Controls & Jog Wheel */
+        .playback-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: var(--bg-card);
+        }
+
+        .btn-icon {
+            background: var(--stone-ochre);
+            color: var(--bg-nightsky);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .btn-icon:hover { background: var(--white-accent); }
+
+        .btn-danger { background: var(--brand-red); color: white; }
+        
+        /* Timeline Lanes */
+        .timeline-container {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .track-lane {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(224, 163, 96, 0.3); /* Stone Ochre faded */
+            border-radius: 6px;
+            height: 60px;
+            margin-bottom: 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        .track-lane.audio { border-left: 4px solid var(--water-blue); }
+        .track-lane.video { border-left: 4px solid var(--stone-ochre); }
+
+        /* Bottom Sticky Export Panel */
+        .bottom-sticky-panel {
+            position: sticky;
+            bottom: 0;
+            background-color: var(--bg-card);
+            padding: 15px;
+            border-top: 2px solid var(--brand-red);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        select.format-picker {
+            background: var(--bg-nightsky);
+            color: var(--stone-ochre);
+            border: 1px solid var(--stone-ochre);
+            padding: 8px;
+            border-radius: 4px;
+        }
+
+        /* Floating Chrominance Panel (Hidden by default) */
+        #chroma-panel {
+            display: none;
+            position: absolute;
+            top: 50px;
+            left: 20px;
+            width: 300px;
+            background: var(--bg-card);
+            border: 2px solid var(--water-blue);
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            z-index: 100;
+            cursor: grab;
+        }
+
+        .chroma-header {
+            background: var(--water-blue);
+            color: white;
+            padding: 5px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-top-left-radius: 6px;
+            border-top-right-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+    
+    <div class="preview-container">
+        <canvas id="master-canvas" width="1280" height="720"></canvas>
+    </div>
+
+    <div class="playback-controls">
+        <button class="btn-icon" id="btn-prev-frame">|&lt; Frame</button>
+        <button class="btn-icon" id="btn-play">PLAY</button>
+        <button class="btn-icon" id="btn-next-frame">Frame &gt;|</button>
+        <button class="btn-icon btn-danger" id="btn-snap-png" title="Download Current Frame">📸 PNG</button>
+    </div>
+
+    <div class="timeline-container">
+        <h4 style="margin-top: 0; color: var(--stone-ochre);">Timeline Assets</h4>
+        
+        <div class="track-lane video">
+            <span style="font-size: 12px; color: #ccc;">[Drop Video Here]</span>
+        </div>
+        
+        <div class="track-lane audio">
+            <span style="font-size: 12px; color: #ccc;">[Drop ElevenLabs Audio Here]</span>
+            </div>
+
+        <button class="btn-icon" id="btn-add-media" style="width: 100%; margin-top: 10px;">+ Import Media</button>
+        <button class="btn-icon" id="btn-toggle-chroma" style="width: 100%; margin-top: 10px; background: var(--water-blue); color: white;">Open Chrominance Stabilizer</button>
+    </div>
+
+    <div class="bottom-sticky-panel">
+        <select class="format-picker" id="export-format">
+            <option value="mp4">Master Video (.mp4)</option>
+            <option value="webm">Web Video (.webm)</option>
+            <option value="avi">Legacy Video (.avi) [Slower]</option>
+            <option value="mp3">Audio Only (.mp3)</option>
+        </select>
+        <button class="btn-icon btn-danger" id="btn-export">Export Render</button>
+    </div>
+
+    <div id="chroma-panel">
+        <div class="chroma-header" id="chroma-drag-handle">Chrominance Analyzer</div>
+        <div style="padding: 10px;">
+            <div style="display: flex; gap: 10px;">
+                <canvas id="chroma-canvas-raw" width="130" height="75" style="background:#000; border: 1px solid #555;"></canvas>
+                <canvas id="chroma-canvas-fixed" width="130" height="75" style="background:#000; border: 1px solid var(--water-blue);"></canvas>
+            </div>
+            <p style="font-size: 10px; color: #ccc; margin-top: 10px;">Place markers on timeline to calculate AI exposure drift.</p>
+            <button class="btn-icon" style="font-size: 10px; width: 100%;">Suggest Corrections</button>
+        </div>
+    </div>
+
+</div>
+
+<script type="module" src="./js/main.js"></script>
+
+</body>
+</html>
