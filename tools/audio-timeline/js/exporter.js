@@ -13,3 +13,4 @@ let activeCanvasStream = null;
 let activeMasterStream = null;
 let activeAudioDestination = null;
 let activeMimeType = 'video/webm';
+let activeExtension = 'webm';
