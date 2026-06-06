@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Icon Slicer & Formatter</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* Organon Brand Variables */
+        :root {
+            --stone-ochre: #E5A862;
+            --chiseled-bronze: #896b49;
+            --bg-card: #292a24;
+            --bg-input: rgba(24, 25, 25, 0.95);
+            --water-blue: #4B84BF;
+            --water-spray: #79B4E3;
+            --brand-red: #9A2F4F;
+            --slider-track: #61112E;
+            --alabaster-paper: #F2ECE0;
+            --bg-nightsky: #181919;
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            margin-bottom: 12px;
+            letter-spacing: 0.03em;
+        }
+
+        /* Tactile Inputs */
+        input, select {
+            background-color: var(--bg-input);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 8px 14px;
+            border-radius: 9999px;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.8rem;
+        }
+        input:focus, select:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+            padding: 0;
+            border: none !important;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: var(--slider-track);
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+        }
+        input[type=range]::-webkit-slider-thumb {
+            border: 1px solid var(--stone-ochre);
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: var(--brand-red);
+            cursor: pointer;
+            -webkit-appearance: none;
+            margin-top: -6px;
+        }
+
+        /* Master Wrapper */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        /* Panel 1: Top Sticky Settings */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            /* Placeholder for the sandstone texture */
+            background-image: linear-gradient(rgba(224, 163, 96, 0.9), rgba(224, 163, 96, 0.9));
+            padding: 16px;
+            border-bottom: 1px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s ease-in-out;
+        }
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background-color: rgba(24, 25, 25, 0.9);
+            color: #75b2de;
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .countdown-circle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        .toolbar-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .tool-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .tool-group label {
+            font-size: 0.65rem;
+            color: var(--bg-nightsky);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* Panel 2: Middle Scrollable Canvas Area */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 120px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 24px;
+            padding: 16px;
+            box-sizing: border-box;
+        }
+
+        /* Canvas Specific Styling */
+        .canvas-wrapper {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            background-color: var(--bg-nightsky);
+            border: 1px dashed var(--chiseled-bronze);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+            cursor: crosshair;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #slicer-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: none; /* Hidden until loaded */
+        }
+        
+        #empty-state {
+            position: absolute;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.4);
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Quick Action Toolbar beneath canvas */
+        .canvas-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        .action-btn-small {
+            flex: 1;
+            background-color: rgba(0,0,0,0.5);
+            color: var(--stone-ochre);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 9999px;
+            padding: 8px;
+            font-size: 0.7rem;
+            font-family: var(--font-headers);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .action-btn-small:hover {
+            background-color: var(--water-blue);
+            color: white;
+            border-color: var(--water-spray);
+        }
+
+        /* Staging Queue Styling */
+        .staging-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .queue-item {
+            background-color: var(--bg-nightsky);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            position: relative;
+        }
+        .queue-thumb {
+            width: 64px;
+            height: 64px;
+            background-color: #000;
+            border: 1px dashed rgba(137, 107, 73, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.6rem;
+            color: rgba(242, 236, 224, 0.5);
+            background-image: linear-gradient(45deg, #222 25%, transparent 25%), 
+                              linear-gradient(-45deg, #222 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #222 75%), 
+                              linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 10px 10px;
+            background-position: 0 0, 0 5px, 5px -5px, -5px 0px;
+        }
+        .queue-item input {
+            width: 100%;
+            padding: 4px 8px;
+            font-size: 0.65rem;
+            text-align: center;
+        }
+        .delete-thumb {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--brand-red);
+            color: white;
+            border: 1px solid white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Panel 3: Bottom Sticky Export */
+        .bottom-sticky-panel {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            z-index: 110;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.9), rgba(224, 163, 96, 0.9));
+            padding: 10px 14px 14px 14px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            border-top: 1px solid var(--chiseled-bronze);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        .bottom-sticky-panel .btn-pill {
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            color: #75b2de !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            font-weight: 500;
+            font-size: 0.65rem !important;
+            text-transform: uppercase;
+            padding: 8px 12px !important;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.25s ease-in-out;
+        }
+        .bottom-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+        }
+        
+        .format-select {
+            width: auto;
+            min-width: 80px;
+            text-align: center;
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            font-weight: bold;
+        }
+        
+        /* Bounding box visualizer overlay */
+        #bounding-box-overlay {
+            position: absolute;
+            border: 2px solid var(--water-blue);
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+            pointer-events: none;
+            display: none;
+            z-index: 10;
+        }
+        
+        .box-corner {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--stone-ochre);
+            border: 1px solid #000;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        
+        <!-- PANEL 1: TOP STICKY SETTINGS -->
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>ICON SLICER & FORMATTER</span>
+                </div>
+            </div>
+            
+            <div class="panel-content-hide toolbar-grid">
+                <!-- Bounding Box Controls -->
+                <div class="tool-group">
+                    <label>Box Size (WxH)</label>
+                    <div style="display: flex; gap: 4px;">
+                        <input type="number" id="box-width" value="128" style="width: 50%;">
+                        <input type="number" id="box-height" value="128" style="width: 50%;">
+                    </div>
+                </div>
+                
+                <div class="tool-group">
+                    <label>Box Preset / Lock</label>
+                    <div style="display: flex; gap: 4px;">
+                        <select id="box-preset" style="width: 70%;">
+                            <option value="square">Square 1:1</option>
+                            <option value="rect">Unlocked Rect</option>
+                            <option value="64">64 x 64</option>
+                            <option value="256">256 x 256</option>
+                        </select>
+                        <input type="number" id="box-pad" value="2" title="Padding (px)" style="width: 30%; text-align: center;">
+                    </div>
+                </div>
+
+                <!-- Magic Wand Controls -->
+                <div class="tool-group" style="grid-column: span 2;">
+                    <label style="display: flex; justify-content: space-between;">
+                        <span>Magic Wand Tolerance</span>
+                        <span id="tol-val">20%</span>
+                    </label>
+                    <input type="range" id="wand-tolerance" min="0" max="100" value="20">
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL 2: CANVAS & PREVIEW QUEUE -->
+        <main class="middle-scroll-panel">
+            
+            <!-- Canvas Interaction Area -->
+            <div class="config-card">
+                <h3 style="font-size: 1rem;">Canvas Viewport</h3>
+                <div class="canvas-wrapper" id="drop-zone">
+                    <canvas id="slicer-canvas"></canvas>
+                    <div id="bounding-box-overlay">
+                        <div class="box-corner" style="top:-3px; left:-3px;"></div>
+                        <div class="box-corner" style="top:-3px; right:-3px;"></div>
+                        <div class="box-corner" style="bottom:-3px; left:-3px;"></div>
+                        <div class="box-corner" style="bottom:-3px; right:-3px;"></div>
+                    </div>
+                    <div id="empty-state">
+                        <span style="font-size: 2rem;">📥</span>
+                        <span>Drag & Drop Sprite Sheet Here</span>
+                        <input type="file" id="file-upload" accept="image/*" style="display:none;">
+                        <button onclick="document.getElementById('file-upload').click()" class="btn-pill" style="margin-top:8px; padding: 4px 12px; font-size: 0.7rem; border-radius: 99px; background: rgba(0,0,0,0.5); color: #fff; border: 1px solid var(--chiseled-bronze); cursor: pointer;">Or Browse Files</button>
+                    </div>
+                </div>
+                
+                <div class="canvas-actions">
+                    <button class="action-btn-small" id="btn-wand">🪄 Magic Wand</button>
+                    <button class="action-btn-small" id="btn-expand">🔍 Auto Expand</button>
+                    <button class="action-btn-small" id="btn-queue" style="background: var(--water-blue); color: white;">➕ Add to Queue</button>
+                </div>
+            </div>
+
+            <!-- Staging Queue Preview -->
+            <div class="config-card">
+                <h3 style="font-size: 1rem;">Staging Queue</h3>
+                <p style="font-size: 0.75rem; margin-bottom: 0;">Review sliced assets before batch exporting.</p>
+                
+                <div class="staging-grid" id="queue-container">
+                    <!-- Example Placeholder Items -->
+                    <div class="queue-item">
+                        <div class="delete-thumb">×</div>
+                        <div class="queue-thumb" style="color: #666;">Empty</div>
+                        <input type="text" value="icon_01" placeholder="Name">
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- PANEL 3: BOTTOM EXPORT ACTION -->
+        <div class="bottom-sticky-panel">
+            <select class="format-select" id="export-format">
+                <option value="png">PNG</option>
+                <option value="webp">WEBP</option>
+            </select>
+            <button type="button" class="btn-pill" id="btn-save-folder">📁 Save via API</button>
+            <button type="button" class="btn-pill" id="btn-download-zip">📦 Download ZIP</button>
+        </div>
+
+    </div>
+
+    <!-- UI Logic -->
+    <script>
+        // 5-Second Sticky Header Logic (Organon Standard)
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+
+        function resetCountdown() {
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            resetCountdown();
+        }
+
+        topStickyPanel.addEventListener("mouseenter", () => {
+            isHoveringPanel = true;
+            maximizePanel();
+            clearInterval(countdownInterval);
+        });
+
+        topStickyPanel.addEventListener("mouseleave", () => {
+            isHoveringPanel = false;
+            resetCountdown();
+            startCountdown();
+        });
+
+        topStickyPanel.addEventListener("click", () => {
+            if (topStickyPanel.classList.contains("minimized")) {
+                maximizePanel();
+            }
+        });
+
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) {
+                clearInterval(countdownInterval);
+                maximizePanel();
+            } else {
+                if (!isHoveringPanel) {
+                    startCountdown();
+                }
+            }
+        });
+
+        startCountdown();
+
+        // Tolerance Slider display update
+        const tolSlider = document.getElementById("wand-tolerance");
+        const tolDisplay = document.getElementById("tol-val");
+        tolSlider.addEventListener("input", (e) => {
+            tolDisplay.innerText = e.target.value + "%";
+        });
+
+        // Basic Canvas Image Loader for Previewing layout
+        const dropZone = document.getElementById('drop-zone');
+        const fileUpload = document.getElementById('file-upload');
+        const emptyState = document.getElementById('empty-state');
+        const canvas = document.getElementById('slicer-canvas');
+        const ctx = canvas.getContext('2d');
+        const bbOverlay = document.getElementById('bounding-box-overlay');
+
+        function handleImageLoad(e) {
+            const img = new Image();
+            img.onload = () => {
+                emptyState.style.display = 'none';
+                canvas.style.display = 'block';
+                
+                // For this UI phase, simply scale canvas to fit wrapper roughly
+                canvas.width = dropZone.clientWidth;
+                canvas.height = dropZone.clientHeight;
+                
+                // Draw a nice checkerboard background for transparency
+                drawCheckerboard();
+                
+                // Draw image centered
+                const scale = Math.min(canvas.width / img.width, canvas.height / img.height) * 0.8;
+                const x = (canvas.width / 2) - (img.width / 2) * scale;
+                const y = (canvas.height / 2) - (img.height / 2) * scale;
+                
+                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+                
+                // Show bounding box
+                bbOverlay.style.display = 'block';
+                updateBoundingBox();
+            };
+            img.src = e.target.result;
+        }
+
+        function drawCheckerboard() {
+            const size = 10;
+            for(let i=0; i<canvas.width; i+=size) {
+                for(let j=0; j<canvas.height; j+=size) {
+                    ctx.fillStyle = (i/size)%2 == (j/size)%2 ? '#222' : '#333';
+                    ctx.fillRect(i,j,size,size);
+                }
+            }
+        }
+
+        function updateBoundingBox() {
+            const w = document.getElementById('box-width').value;
+            const h = document.getElementById('box-height').value;
+            bbOverlay.style.width = w + 'px';
+            bbOverlay.style.height = h + 'px';
+            // Center it temporarily for the preview
+            bbOverlay.style.left = `calc(50% - ${w/2}px)`;
+            bbOverlay.style.top = `calc(50% - ${h/2}px)`;
+        }
+
+        // Bounding Box Syncing
+        document.getElementById('box-width').addEventListener('input', updateBoundingBox);
+        document.getElementById('box-height').addEventListener('input', updateBoundingBox);
+
+        // Upload Handlers
+        fileUpload.addEventListener('change', (e) => {
+            if (e.target.files[0]) {
+                const reader = new FileReader();
+                reader.onload = handleImageLoad;
+                reader.readAsDataURL(e.target.files[0]);
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--water-spray)';
+        });
+        
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--chiseled-bronze)';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--chiseled-bronze)';
+            if (e.dataTransfer.files[0]) {
+                const reader = new FileReader();
+                reader.onload = handleImageLoad;
+                reader.readAsDataURL(e.dataTransfer.files[0]);
+            }
+        });
+    </script>
+</body>
+</html>
