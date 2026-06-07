@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio2Midi Engine</title>
+
+    <!-- Iframe Guard: Redirects to the hub if opened directly -->
+    <script>
+    if (window === window.parent) {
+        window.location.href = '../../index.html';
+    }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+    :root {
+        --stone-ochre: #e0a360;
+        --chiseled-bronze: #896b49;
+        --white-accent: #ffffff;
+        --water-blue: #4b84bf;
+        --water-spray: #75b2de;
+        --forest-teal: #26615c;
+        --light-teal: #449e92;
+        --burgundy: #4a1525;
+        --brand-red: #9a2f4f;
+        --alabaster-paper: #f5f0db;
+        --bg-nightsky: #1e201c;
+        --bg-card: #292a24;
+        --bg-input: rgba(24, 25, 25, 0.95);
+
+        --font-headers: 'Cinzel', Georgia, serif;
+        --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+        --font-mono: 'Geist Mono', 'Courier New', monospace;
+    }
+
+    body {
+        background-color: var(--bg-nightsky);
+        color: var(--alabaster-paper);
+        font-family: var(--font-body);
+        margin: 0;
+        padding: 0;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        box-sizing: border-box;
+    }
+
+    h1, h2, h3, h4 {
+        font-family: var(--font-headers);
+        color: var(--stone-ochre);
+        margin-top: 0;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+    }
+
+    input[type="text"], select {
+        background-color: var(--bg-input);
+        color: #f5f0db !important;
+        border: 1px solid var(--chiseled-bronze) !important;
+        font-family: var(--font-body);
+        padding: 10px 18px;
+        border-radius: 9999px;
+        outline: none;
+        width: 100%;
+        box-sizing: border-box;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23e0a360'><polygon points='0,0 10,0 5,5'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 18px center;
+    }
+
+    /* Range Sliders Styling */
+    input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        background: transparent;
+        margin: 12px 0;
+    }
+    input[type="range"]:focus {
+        outline: none;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 6px;
+        cursor: pointer;
+        background: var(--burgundy);
+        border-radius: 9999px;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+        height: 16px;
+        width: 16px;
+        border-radius: 50%;
+        background: var(--brand-red);
+        cursor: pointer;
+        -webkit-appearance: none;
+        margin-top: -5px;
+        box-shadow: 0 0 6px rgba(154, 47, 79, 0.6);
+    }
+
+    .app-wrapper {
+        width: 100%;
+        max-width: 540px;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        box-sizing: border-box;
+        background-color: var(--bg-nightsky);
+    }
+
+    /* Top Sticky Panel Style Rules */
+    .top-sticky-panel {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background-color: #e0a360;
+        background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
+        background-size: cover;
+        padding: 16px;
+        border-bottom: 1px solid var(--chiseled-bronze);
+        border-bottom-left-radius: 28px;
+        border-bottom-right-radius: 28px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        transition: padding 0.3s ease-in-out;
+    }
+    .top-sticky-panel.minimized {
+        padding: 8px 16px !important;
+        cursor: pointer;
+    }
+    .top-sticky-panel.minimized .panel-content-hide {
+        display: none !important;
+    }
+
+    .title-pill {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background-color: rgba(24, 25, 25, 0.95);
+        color: var(--water-spray);
+        font-family: var(--font-headers);
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 8px 20px;
+        border-radius: 9999px;
+        border: 1px solid var(--chiseled-bronze);
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .countdown-circle-indicator {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1px solid var(--chiseled-bronze);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        margin-right: 12px;
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.6);
+        color: var(--stone-ochre);
+        font-weight: 700;
+    }
+
+    /* Middle Layout Frame */
+    .middle-scroll-panel {
+        flex: 1;
+        background-color: #000000;
+        padding: 16px 16px 140px 16px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .config-card {
+        background-color: var(--bg-card);
+        border: 1px solid var(--chiseled-bronze);
+        border-radius: 24px;
+        padding: 20px;
+        box-sizing: border-box;
+    }
+
+    /* File Drop Zone UI */
+    .drop-zone {
+        border: 2px dashed var(--chiseled-bronze);
+        border-radius: 20px;
+        padding: 32px 16px;
+        text-align: center;
+        background: rgba(24, 25, 25, 0.4);
+        cursor: pointer;
+        transition: border-color 0.2s, background-color 0.2s;
+    }
+    .drop-zone.dragover {
+        border-color: var(--water-spray);
+        background: rgba(75, 132, 191, 0.1);
+    }
+    .drop-zone p {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--alabaster-paper);
+    }
+    .drop-zone span {
+        font-size: 0.75rem;
+        color: var(--chiseled-bronze);
+        display: block;
+        margin-top: 6px;
+    }
+
+    /* Stem Queue Layout */
+    .stem-queue {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .stem-item {
+        background: var(--bg-input);
+        border: 1px solid var(--chiseled-bronze);
+        border-radius: 9999px;
+        padding: 6px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 0.8rem;
+    }
+    .stem-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 70%;
+        font-family: var(--font-mono);
+    }
+    .stem-remove {
+        color: var(--terracotta-peach);
+        cursor: pointer;
+        font-weight: bold;
+        padding: 2px 6px;
+    }
+
+    .slider-row {
+        margin-bottom: 16px;
+    }
+    .slider-label-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: var(--stone-ochre);
+        font-family: var(--font-mono);
+    }
+
+    /* Toggle Switches */
+    .toggle-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+    }
+    .toggle-label {
+        font-size: 0.85rem;
+    }
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 22px;
+    }
+    .switch input { display: none; }
+    .slider-toggle {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: var(--burgundy);
+        border-radius: 34px;
+        transition: .3s;
+    }
+    .slider-toggle:before {
+        position: absolute;
+        content: "";
+        height: 16px; width: 16px;
+        left: 3px; bottom: 3px;
+        background-color: var(--alabaster-paper);
+        border-radius: 50%;
+        transition: .3s;
+    }
+    input:checked + .slider-toggle {
+        background-color: var(--brand-red);
+    }
+    input:checked + .slider-toggle:before {
+        transform: translateX(22px);
+    }
+
+    /* Bottom Actions Sticky Panel */
+    .bottom-sticky-panel {
+        position: fixed;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 100%;
+        max-width: 540px;
+        z-index: 110;
+        background-color: #e0a360;
+        background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
+        background-size: cover;
+        padding: 12px 16px 16px 16px;
+        box-sizing: border-box;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        border-top: 1px solid var(--chiseled-bronze);
+        border-top-left-radius: 24px;
+        border-top-right-radius: 24px;
+    }
+
+    .bottom-sticky-panel .btn-pill {
+        background-color: rgba(24, 25, 25, 0.95) !important;
+        color: var(--water-spray) !important;
+        border: 1px solid var(--chiseled-bronze) !important;
+        font-family: var(--font-body);
+        font-weight: 600;
+        font-size: 0.75rem !important;
+        text-transform: uppercase;
+        padding: 10px 20px !important;
+        border-radius: 9999px;
+        cursor: pointer;
+        flex: 2;
+        transition: all 0.25s ease-in-out;
+        letter-spacing: 0.05em;
+    }
+    .bottom-sticky-panel .btn-pill.btn-reset {
+        flex: 1;
+        color: var(--terracotta-peach) !important;
+    }
+    .bottom-sticky-panel .btn-pill:hover {
+        background-color: rgba(41, 42, 36, 0.95) !important;
+        border-color: var(--water-spray) !important;
+        box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+    }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- TOP STICKY PANEL FRAME -->
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>AUDIO2MIDI MULTI-STEM ENGINE</span>
+                </div>
+            </div>
+            <div class="panel-content-hide" style="width:100%;">
+                <select id="preset-selector">
+                    <option value="polyphonic">PRESET: POLYPHONIC PIANO / GENERAL</option>
+                    <option value="monophonic">PRESET: MONOPHONIC BASS LINE</option>
+                    <option value="vocals">PRESET: LEAD VOCALS / MELODY</option>
+                    <option value="guitar">PRESET: ACOUSTIC GUITAR TRACK</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- MAIN MIDDLE SCROLL VIEWPORT -->
+        <main class="middle-scroll-panel">
+            <!-- STEM INGESTION CARD -->
+            <div class="config-card">
+                <h3>📁 Audio Stem Queue</h3>
+                <p style="font-size: 0.8rem; opacity:0.8; margin-bottom: 16px;">Upload audio components to process into parallel MIDI mappings. Max 10 stems.</p>
+                
+                <div class="drop-zone" id="drop-zone">
+                    <p>Drag & Drop Audio Files Here</p>
+                    <span>or click to browse local storage (.wav, .mp3, .m4a)</span>
+                    <input type="file" id="file-input" multiple accept="audio/*" style="display:none;">
+                </div>
+
+                <div class="stem-queue" id="stem-queue"></div>
+            </div>
+
+            <!-- ENGINE PARAMETERS CARD -->
+            <div class="config-card">
+                <h3>🎛️ Analysis Adjustments</h3>
+                
+                <!-- Onset Sensitivity -->
+                <div class="slider-row">
+                    <div class="slider-label-row">
+                        <span>Onset Tracking Confidence</span>
+                        <span id="onset-val">0.50</span>
+                    </div>
+                    <input type="range" id="slider-onset" min="0.05" max="0.95" step="0.05" value="0.50">
+                </div>
+
+                <!-- Frame Sensitivity -->
+                <div class="slider-row">
+                    <div class="slider-label-row">
+                        <span>Frame Note Retention</span>
+                        <span id="frame-val">0.30</span>
+                    </div>
+                    <input type="range" id="slider-frame" min="0.05" max="0.95" step="0.05" value="0.30">
+                </div>
+
+                <!-- Minimum Note Length -->
+                <div class="slider-row">
+                    <div class="slider-label-row">
+                        <span>Minimum Note Duration</span>
+                        <span id="duration-val">30 ms</span>
+                    </div>
+                    <input type="range" id="slider-duration" min="10" max="250" step="5" value="30">
+                </div>
+
+                <!-- Pitch Bend Logic Switch -->
+                <div class="toggle-row">
+                    <span class="toggle-label">Track Continuous Pitch Bends</span>
+                    <label class="switch">
+                        <input type="checkbox" id="toggle-pitchbend">
+                        <span class="slider-toggle"></span>
+                    </label>
+                </div>
+            </div>
+        </main>
+
+        <!-- BOTTOM FIXATION ACTION PANEL -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill btn-reset" id="reset-btn">Reset</button>
+            <button type="button" class="btn-pill" id="action-btn">Convert to MIDI</button>
+        </div>
+    </div>
+
+    <script>
+    // System Messaging Hooks
+    function setHubStatus(text) {
+        try {
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({ type: 'set-status', text: text }, '*');
+            }
+        } catch(e) {}
+    }
+
+    function clearHubStatus() {
+        try {
+            if (window.parent && window.parent.postMessage) {
+                window.parent.postMessage({ type: 'clear-status' }, '*');
+            }
+        } catch(e) {}
+    }
+
+    // Register Status Updates on UI Hover 
+    function bindHoverLog(selector, logMessage) {
+        const target = document.querySelector(selector);
+        if (!target) return;
+        target.addEventListener('mouseenter', () => setHubStatus(logMessage));
+        target.addEventListener('mouseleave', () => clearHubStatus());
+    }
+
+    bindHoverLog('#action-btn', 'Compile stacked stem files into independent polyphonic MIDI track segments.');
+    bindHoverLog('#reset-btn', 'Purge current conversion queue workspace and restore standard parameters.');
+    bindHoverLog('#drop-zone', 'Ingest stem audio recordings. Restricted to 10 files simultaneously.');
+
+    // Workspace & Ingestion Handling
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const stemQueue = document.getElementById('stem-queue');
+    const actionBtn = document.getElementById('action-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    let loadedFiles = [];
+
+    dropZone.addEventListener('click', () => fileInput.click());
+    
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+    function handleFiles(files) {
+        for (let file of files) {
+            if (loadedFiles.length >= 10) {
+                setHubStatus("Upload ceiling breached. Limit strictly mapped to 10 stems maximum.");
+                setTimeout(clearHubStatus, 4000);
+                break;
+            }
+            if (!loadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                loadedFiles.push(file);
+            }
+        }
+        renderQueue();
+    }
+
+    function renderQueue() {
+        stemQueue.innerHTML = '';
+        loadedFiles.forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = 'stem-item';
+            item.innerHTML = `
+                <span class="stem-name">[${index + 1}] ${file.name}</span>
+                <span class="stem-remove" data-index="${index}">&times;</span>
+            `;
+            stemQueue.appendChild(item);
+        });
+
+        // Bind quick closures
+        document.querySelectorAll('.stem-remove').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.getAttribute('data-index'));
+                loadedFiles.splice(idx, 1);
+                renderQueue();
+            });
+        });
+    }
+
+    // Reset Workspace Button Action Routine
+    resetBtn.addEventListener('click', () => {
+        loadedFiles = [];
+        renderQueue();
+        document.getElementById('slider-onset').value = 0.50;
+        document.getElementById('slider-frame').value = 0.30;
+        document.getElementById('slider-duration').value = 30;
+        document.getElementById('toggle-pitchbend').checked = false;
+        document.getElementById('preset-selector').value = 'polyphonic';
+        
+        document.getElementById('onset-val').innerText = "0.50";
+        document.getElementById('frame-val').innerText = "0.30";
+        document.getElementById('duration-val').innerText = "30 ms";
+        
+        setHubStatus("Workspace reset completely initialized.");
+        setTimeout(clearHubStatus, 2000);
+    });
+
+    // Realtime Value Feedback Sync
+    document.getElementById('slider-onset').addEventListener('input', (e) => {
+        document.getElementById('onset-val').innerText = parseFloat(e.target.value).toFixed(2);
+    });
+    document.getElementById('slider-frame').addEventListener('input', (e) => {
+        document.getElementById('frame-val').innerText = parseFloat(e.target.value).toFixed(2);
+    });
+    document.getElementById('slider-duration').addEventListener('input', (e) => {
+        document.getElementById('duration-val').innerText = e.target.value + " ms";
+    });
+
+    // Top Header Minimization & 5-Second Persistence Watch Logic
+    const topStickyPanel = document.querySelector(".top-sticky-panel");
+    const countdownCircle = document.getElementById("countdown-circle");
+    let countdownVal = 5;
+    let countdownInterval = null;
+    let isPanelLocked = false;
+    let isHoveringPanel = false;
+
+    function updateCircleDisplay() {
+        countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+    }
+
+    function startCountdown() {
+        if (isPanelLocked || isHoveringPanel) return;
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            countdownVal--;
+            updateCircleDisplay();
+            if (countdownVal <= 0) {
+                clearInterval(countdownInterval);
+                topStickyPanel.classList.add("minimized");
+            }
+        }, 1000);
+    }
+
+    function resetCountdown() {
+        clearInterval(countdownInterval);
+        countdownVal = 5;
+        updateCircleDisplay();
+    }
+
+    function maximizePanel() {
+        topStickyPanel.classList.remove("minimized");
+        resetCountdown();
+    }
+
+    topStickyPanel.addEventListener("mouseenter", () => {
+        isHoveringPanel = true;
+        maximizePanel();
+        clearInterval(countdownInterval);
+    });
+
+    topStickyPanel.addEventListener("mouseleave", () => {
+        isHoveringPanel = false;
+        resetCountdown();
+        startCountdown();
+    });
+
+    topStickyPanel.addEventListener("click", () => {
+        if (topStickyPanel.classList.contains("minimized")) {
+            maximizePanel();
+        }
+    });
+
+    countdownCircle.addEventListener("dblclick", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        isPanelLocked = !isPanelLocked;
+        updateCircleDisplay();
+        if (isPanelLocked) {
+            clearInterval(countdownInterval);
+            maximizePanel();
+        } else if (!isHoveringPanel) {
+            startCountdown();
+        }
+    });
+
+    startCountdown();
+    </script>
+</body>
+</html>
