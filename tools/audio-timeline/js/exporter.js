@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: EXPORTER
- * Handles live recording of the master canvas and Web Audio output.
+ * Live browser recorder for the Audio Timeline canvas and Web Audio graph.
  */
 
 import { audioCtx, masterMixer } from './audio-mixer.js';
@@ -15,42 +15,76 @@ let activeAudioDestination = null;
 let activeMimeType = 'video/webm';
 let activeExtension = 'webm';
 
-function getExportStatusElement() {
-    return document.getElementById('export-status');
+function getSupportedRecorderProfile(format) {
+    if (format === 'audio-webm') {
+        const audioTypes = [
+            'audio/webm;codecs=opus',
+            'audio/webm'
+        ];
+
+        for (const type of audioTypes) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                return { mimeType: type, extension: 'webm', audioOnly: true };
+            }
+        }
+
+        return { mimeType: '', extension: 'webm', audioOnly: true };
+    }
+
+    if (format === 'mp4') {
+        const mp4Types = [
+            'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+            'video/mp4'
+        ];
+
+        for (const type of mp4Types) {
+            if (MediaRecorder.isTypeSupported(type)) {
+                return { mimeType: type, extension: 'mp4', audioOnly: false };
+            }
+        }
+
+        console.warn('Native MediaRecorder MP4 is not supported here. Falling back to WebM.');
+    }
+
+    const webmTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm'
+    ];
+
+    for (const type of webmTypes) {
+        if (MediaRecorder.isTypeSupported(type)) {
+            return { mimeType: type, extension: 'webm', audioOnly: false };
+        }
+    }
+
+    return { mimeType: '', extension: 'webm', audioOnly: false };
 }
 
 function setExportStatus(message) {
-    const exportStatus = getExportStatusElement();
+    const exportStatus = document.getElementById('export-status');
     if (exportStatus) {
         exportStatus.textContent = message;
     }
 }
 
-function resetExportButton() {
+function resetExportButton(message = 'Export complete.') {
     const exportBtn = document.getElementById('btn-export');
-    if (!exportBtn) return;
+    if (exportBtn) {
+        exportBtn.innerText = 'Export Render';
+        exportBtn.style.background = '';
+    }
 
-    exportBtn.innerText = 'Export Render';
-    exportBtn.style.background = '';
+    setExportStatus(message);
 }
 
-function setExportButtonRecording() {
-    const exportBtn = document.getElementById('btn-export');
-    if (!exportBtn) return;
-
-    exportBtn.innerText = '🛑 STOP & SAVE';
-    exportBtn.style.background = 'var(--brand-red)';
-}
-
-function cleanupExportResources() {
+function cleanupExportGraph() {
     if (activeMasterStream) {
-        activeMasterStream.getTracks().forEach((track) => track.stop());
-        activeMasterStream = null;
+        activeMasterStream.getTracks().forEach(track => track.stop());
     }
 
     if (activeCanvasStream) {
-        activeCanvasStream.getTracks().forEach((track) => track.stop());
-        activeCanvasStream = null;
+        activeCanvasStream.getTracks().forEach(track => track.stop());
     }
 
     if (activeAudioDestination) {
@@ -59,77 +93,55 @@ function cleanupExportResources() {
         } catch (error) {
             console.warn('Export audio destination was already disconnected.', error);
         }
-
-        activeAudioDestination = null;
-    }
-}
-
-function chooseRecorderSettings(format) {
-    const videoCandidates = [];
-
-    if (format === 'mp4') {
-        videoCandidates.push(
-            { mimeType: 'video/mp4', extension: 'mp4' }
-        );
     }
 
-    videoCandidates.push(
-        { mimeType: 'video/webm;codecs=vp9,opus', extension: 'webm' },
-        { mimeType: 'video/webm;codecs=vp8,opus', extension: 'webm' },
-        { mimeType: 'video/webm', extension: 'webm' }
-    );
-
-    if (format === 'audio-webm') {
-        const audioCandidates = [
-            { mimeType: 'audio/webm;codecs=opus', extension: 'webm' },
-            { mimeType: 'audio/webm', extension: 'webm' }
-        ];
-
-        return audioCandidates.find((candidate) => MediaRecorder.isTypeSupported(candidate.mimeType)) || audioCandidates[audioCandidates.length - 1];
-    }
-
-    return videoCandidates.find((candidate) => MediaRecorder.isTypeSupported(candidate.mimeType)) || videoCandidates[videoCandidates.length - 1];
+    activeMasterStream = null;
+    activeCanvasStream = null;
+    activeAudioDestination = null;
 }
 
 export function startExport(format) {
-    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-        console.warn('Export is already running.');
-        return;
+    if (!window.MediaRecorder) {
+        alert('MediaRecorder is not available in this browser.');
+        return false;
     }
 
-    cleanupExportResources();
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        console.warn('Export already running.');
+        return false;
+    }
+
     recordedChunks = [];
 
-    const recorderSettings = chooseRecorderSettings(format);
-    activeMimeType = recorderSettings.mimeType;
-    activeExtension = recorderSettings.extension;
+    const profile = getSupportedRecorderProfile(format);
+    activeMimeType = profile.mimeType;
+    activeExtension = profile.extension;
 
-    activeCanvasStream = masterCanvas.captureStream(30);
     activeAudioDestination = audioCtx.createMediaStreamDestination();
     masterMixer.connect(activeAudioDestination);
 
-    const tracks = [];
+    activeCanvasStream = profile.audioOnly ? null : masterCanvas.captureStream(30);
 
-    if (format !== 'audio-webm') {
-        tracks.push(...activeCanvasStream.getVideoTracks());
-    }
+    const streamTracks = [
+        ...(activeCanvasStream ? activeCanvasStream.getVideoTracks() : []),
+        ...activeAudioDestination.stream.getAudioTracks()
+    ];
 
-    tracks.push(...activeAudioDestination.stream.getAudioTracks());
-
-    activeMasterStream = new MediaStream(tracks);
+    activeMasterStream = new MediaStream(streamTracks);
 
     try {
-        const recorderOptions = { mimeType: activeMimeType };
-
-        if (format !== 'audio-webm') {
-            recorderOptions.videoBitsPerSecond = 8000000;
-        }
+        const recorderOptions = activeMimeType
+            ? { mimeType: activeMimeType, videoBitsPerSecond: 8000000, audioBitsPerSecond: 192000 }
+            : { videoBitsPerSecond: 8000000, audioBitsPerSecond: 192000 };
 
         mediaRecorder = new MediaRecorder(activeMasterStream, recorderOptions);
+        activeMimeType = mediaRecorder.mimeType || activeMimeType || 'application/octet-stream';
     } catch (error) {
-        console.warn('MediaRecorder options failed. Falling back to browser defaults.', error);
-        mediaRecorder = new MediaRecorder(activeMasterStream);
-        activeMimeType = mediaRecorder.mimeType || activeMimeType;
+        cleanupExportGraph();
+        console.error('MediaRecorder initialization failed:', error);
+        alert('Export could not start in this browser.');
+        resetExportButton('Export failed.');
+        return false;
     }
 
     mediaRecorder.ondataavailable = (event) => {
@@ -140,16 +152,15 @@ export function startExport(format) {
 
     mediaRecorder.onerror = (event) => {
         console.error('MediaRecorder error:', event.error || event);
-        setExportStatus('Export failed. Check the browser console.');
-        resetExportButton();
-        cleanupExportResources();
-        recordedChunks = [];
+        cleanupExportGraph();
+        resetExportButton('Export failed. Check the console.');
     };
 
     mediaRecorder.onstop = () => {
         const blob = new Blob(recordedChunks, { type: activeMimeType });
-        const url = URL.createObjectURL(blob);
+        recordedChunks = [];
 
+        const url = URL.createObjectURL(blob);
         const downloadLink = document.createElement('a');
         downloadLink.style.display = 'none';
         downloadLink.href = url;
@@ -158,20 +169,23 @@ export function startExport(format) {
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
-
         URL.revokeObjectURL(url);
-        cleanupExportResources();
-        recordedChunks = [];
 
-        setExportStatus(`Export complete: ${activeMimeType}`);
-        resetExportButton();
+        cleanupExportGraph();
+        resetExportButton(`Export complete: ${activeMimeType}`);
         console.log(`Export complete: ${activeMimeType}`);
     };
 
     mediaRecorder.start(1000);
-    setExportButtonRecording();
-    setExportStatus(`Recording live canvas stream as ${activeMimeType}`);
-    console.log(`Recording started: ${activeMimeType}`);
+
+    const exportBtn = document.getElementById('btn-export');
+    if (exportBtn) {
+        exportBtn.innerText = 'STOP & SAVE';
+        exportBtn.style.background = 'var(--brand-red)';
+    }
+
+    setExportStatus(`Recording live stream as ${activeMimeType}`);
+    return true;
 }
 
 export function stopExport() {
