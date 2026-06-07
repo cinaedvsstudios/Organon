@@ -1,117 +1,15 @@
 {
-  "version": "v1.09-alpha",
+  "version": "v1.10-alpha",
   "categories": [
     {
       "id": "create",
       "label": "CREATE",
-      "tools": []
-    },
-    {
-      "id": "modify",
-      "label": "MODIFY",
       "tools": [
-        {
-          "id": "image-tile",
-          "label": "TILE IMAGE",
-          "path": "tools/image-tile/index.html",
-          "description": "Slice and tile images into precise, custom grid coordinates."
-        },
-        {
-          "id": "img2normal",
-          "label": "IMG2NORMAL",
-          "path": "tools/img2normal/index.html",
-          "description": "Convert images into normal maps for 3D rendering."
-        },
-        {
-          "id": "jpeg-compress",
-          "label": "JPEG COMPRESS",
-          "path": "tools/jpeg-compress/index.html",
-          "description": "Compress JPEG images to optimized files sizes."
-        },
-        {
-          "id": "frame-extractor",
-          "label": "FRAME EXTRACTOR",
-          "path": "tools/frame-extractor/index.html",
-          "description": "Extract still frames from local video files."
-        },
         {
           "id": "animation-maker",
           "label": "ANIMATION MAKER",
           "path": "tools/animation-maker/index.html",
           "description": "Create and preview animation assets from local media or image sequences."
-        }
-      ]
-    },
-    {
-      "id": "tools",
-      "label": "TOOLS",
-      "tools": [
-        {
-          "id": "code-repo-split",
-          "label": "CODE EDITOR | REPOSITORY",
-          "buttonType": "code-repo-split",
-          "description": "Open the code editor or repository from the split copper button.",
-          "splitTools": [
-            {
-              "id": "code-writer",
-              "label": "CODE EDITOR",
-              "path": "tools/code-writer/index.html",
-              "description": "Open the Organon code editor workspace."
-            },
-            {
-              "id": "repository",
-              "label": "REPOSITORY",
-              "path": "tools/repository/index.html",
-              "description": "Open the Organon UI repository."
-            }
-          ]
         },
         {
-          "id": "bulk-download",
-          "label": "BULK DOWNLOAD",
-          "path": "tools/bulk-download/index.html",
-          "description": "Download multiple files or assets in batch."
-        },
-        {
-          "id": "bulk-convert",
-          "label": "BULK CONVERT",
-          "path": "tools/bulk-convert/index.html",
-          "description": "Convert multiple local files in batch."
-        }
-      ]
-    },
-    {
-      "id": "analyze",
-      "label": "ANALYZE",
-      "tools": [
-        {
-          "id": "character-library",
-          "label": "CHARACTER LIBRARY",
-          "path": "tools/character-library/index.html",
-          "description": "Browse and manage the global character library sheet metadata."
-        },
-        {
-          "id": "onda-split",
-          "label": "ONDA | NEW TAB",
-          "buttonType": "dual-action-split",
-          "description": "Open Onda in the basin iframe or launch Onda in a new browser tab.",
-          "splitTools": [
-            {
-              "id": "onda",
-              "label": "ONDA",
-              "path": "tools/Onda/index.html",
-              "description": "Open Onda inside the Organon workspace."
-            },
-            {
-              "id": "onda-new-tab",
-              "label": "NEW TAB",
-              "path": "tools/Onda/index.html",
-              "openMode": "new-tab",
-              "description": "Open Onda in a new browser tab."
-            }
-          ]
-        }
-      ]
-    }
-  ]
-}
+          "id": "audio
