@@ -5,7 +5,7 @@
 
 // --- STATE & SETTINGS ---
 const masterCanvas = document.getElementById('master-canvas');
-const ctx = masterCanvas.getContext('2d', { willReadFrequently: true }); // Optimized for pixel manipulation
+const ctx = masterCanvas.getContext('2d', { willReadFrequently: true });
 
 // We create an invisible video element to do the actual decoding
 const hiddenVideoPlayer = document.createElement('video');
@@ -14,30 +14,90 @@ hiddenVideoPlayer.playsInline = true;
 
 let isPlaying = false;
 let animationFrameId = null;
-let currentFps = 30; // Default targeting 30fps for standard AI outputs
+let currentFps = 30;
+let currentVideoUrl = null;
 
 // Scale Mode: 'fit' (letterbox) or 'fill' (crop)
-export let scaleMode = 'fit'; 
+export let scaleMode = 'fit';
+
+function revokeCurrentVideoUrl() {
+    if (currentVideoUrl) {
+        URL.revokeObjectURL(currentVideoUrl);
+        currentVideoUrl = null;
+    }
+}
+
+function stopPlaybackLoop() {
+    if (animationFrameId !== null) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+}
+
+function seekTo(timeInSeconds) {
+    return new Promise((resolve, reject) => {
+        const duration = Number.isFinite(hiddenVideoPlayer.duration) ? hiddenVideoPlayer.duration : 0;
+        const safeTime = Math.max(0, Math.min(timeInSeconds, duration || timeInSeconds));
+
+        const cleanup = () => {
+            hiddenVideoPlayer.removeEventListener('seeked', handleSeeked);
+            hiddenVideoPlayer.removeEventListener('error', handleError);
+        };
+
+        const handleSeeked = () => {
+            cleanup();
+            resolve();
+        };
+
+        const handleError = () => {
+            cleanup();
+            reject(new Error('Video seek failed.'));
+        };
+
+        hiddenVideoPlayer.addEventListener('seeked', handleSeeked, { once: true });
+        hiddenVideoPlayer.addEventListener('error', handleError, { once: true });
+        hiddenVideoPlayer.currentTime = safeTime;
+    });
+}
 
 /**
  * Loads a video file into the hidden player and prepares it for Canvas rendering.
  */
 export function loadVideoFile(file) {
-    const fileURL = URL.createObjectURL(file);
-    hiddenVideoPlayer.src = fileURL;
+    stopPlaybackLoop();
+    isPlaying = false;
+
+    revokeCurrentVideoUrl();
+    currentVideoUrl = URL.createObjectURL(file);
+    hiddenVideoPlayer.src = currentVideoUrl;
     hiddenVideoPlayer.load();
 
-    return new Promise((resolve) => {
-        hiddenVideoPlayer.onloadedmetadata = () => {
+    return new Promise((resolve, reject) => {
+        const cleanup = () => {
+            hiddenVideoPlayer.removeEventListener('loadedmetadata', handleMetadata);
+            hiddenVideoPlayer.removeEventListener('error', handleError);
+        };
+
+        const handleMetadata = async () => {
+            cleanup();
             console.log(`Video Loaded: ${hiddenVideoPlayer.videoWidth}x${hiddenVideoPlayer.videoHeight}`);
-            
-            // Draw the very first frame so the canvas isn't blank
-            hiddenVideoPlayer.currentTime = 0;
-            hiddenVideoPlayer.onseeked = () => {
+
+            try {
+                await seekTo(0);
                 renderCurrentFrame();
                 resolve();
-            };
+            } catch (error) {
+                reject(error);
+            }
         };
+
+        const handleError = () => {
+            cleanup();
+            reject(new Error('Video load failed.'));
+        };
+
+        hiddenVideoPlayer.addEventListener('loadedmetadata', handleMetadata, { once: true });
+        hiddenVideoPlayer.addEventListener('error', handleError, { once: true });
     });
 }
 
@@ -50,23 +110,23 @@ export function renderCurrentFrame() {
     const cWidth = masterCanvas.width;
     const cHeight = masterCanvas.height;
 
-    // Clear background to pure Organon black
     ctx.fillStyle = '#000000';
     ctx.fillRect(0, 0, cWidth, cHeight);
 
     if (vWidth === 0 || vHeight === 0) return;
 
-    let drawWidth, drawHeight, offsetX, offsetY;
+    let drawWidth;
+    let drawHeight;
+    let offsetX;
+    let offsetY;
 
     if (scaleMode === 'fit') {
-        // LETTERBOXING (Keep whole video visible)
         const scale = Math.min(cWidth / vWidth, cHeight / vHeight);
         drawWidth = vWidth * scale;
         drawHeight = vHeight * scale;
         offsetX = (cWidth - drawWidth) / 2;
         offsetY = (cHeight - drawHeight) / 2;
     } else {
-        // FILL / CROP (Stretch to fill edges, crop the rest)
         const scale = Math.max(cWidth / vWidth, cHeight / vHeight);
         drawWidth = vWidth * scale;
         drawHeight = vHeight * scale;
@@ -74,15 +134,15 @@ export function renderCurrentFrame() {
         offsetY = (cHeight - drawHeight) / 2;
     }
 
-    // Draw the current video frame onto the canvas
     ctx.drawImage(hiddenVideoPlayer, offsetX, offsetY, drawWidth, drawHeight);
 }
 
 /**
- * Playback Loop using requestAnimationFrame for smooth drawing
+ * Playback Loop using requestAnimationFrame for smooth drawing.
  */
 function playbackLoop() {
     if (!isPlaying) return;
+
     renderCurrentFrame();
     animationFrameId = requestAnimationFrame(playbackLoop);
 }
@@ -91,30 +151,32 @@ export function togglePlayback() {
     if (isPlaying) {
         hiddenVideoPlayer.pause();
         isPlaying = false;
-        cancelAnimationFrame(animationFrameId);
+        stopPlaybackLoop();
     } else {
         hiddenVideoPlayer.play();
         isPlaying = true;
         playbackLoop();
     }
+
     return isPlaying;
 }
 
 /**
  * Frame-by-Frame Granularity controls.
- * Moves the hidden video exactly 1 frame forward or backward based on FPS.
+ * Moves the hidden video approximately 1 frame forward or backward based on FPS.
  */
-export function stepFrame(direction = 1) {
-    if (isPlaying) togglePlayback(); // Pause if currently playing
+export async function stepFrame(direction = 1) {
+    if (isPlaying) togglePlayback();
 
     const frameTime = 1 / currentFps;
-    hiddenVideoPlayer.currentTime += (frameTime * direction);
-    
-    // We must wait for the hidden video to actually "seek" before drawing
-    hiddenVideoPlayer.onseeked = () => {
+    const targetTime = hiddenVideoPlayer.currentTime + (frameTime * direction);
+
+    try {
+        await seekTo(targetTime);
         renderCurrentFrame();
-        hiddenVideoPlayer.onseeked = null; // clean up listener
-    };
+    } catch (error) {
+        console.warn('Frame step failed:', error);
+    }
 }
 
 /**
@@ -122,6 +184,11 @@ export function stepFrame(direction = 1) {
  */
 export function downloadCurrentFramePNG() {
     masterCanvas.toBlob((blob) => {
+        if (!blob) {
+            console.warn('Canvas snapshot failed.');
+            return;
+        }
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -131,4 +198,16 @@ export function downloadCurrentFramePNG() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }, 'image/png');
+}
+
+/**
+ * Explicit cleanup hook for future project reset/unload actions.
+ */
+export function destroyVideoRenderer() {
+    hiddenVideoPlayer.pause();
+    hiddenVideoPlayer.removeAttribute('src');
+    hiddenVideoPlayer.load();
+    isPlaying = false;
+    stopPlaybackLoop();
+    revokeCurrentVideoUrl();
 }

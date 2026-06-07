@@ -1,1 +1,166 @@
-{"version":"v1.10-alpha","categories":[{"id":"create","label":"CREATE","tools":[{"id":"animation-maker","label":"ANIMATION MAKER","path":"tools/animation-maker/index.html","description":"Create animation assets."},{"id":"audio2midi","label":"AUDIO2MIDI","path":"tools/audio2midi/index.html","description":"Convert or analyze audio as MIDI-style data."},{"id":"audio-timeline","label":"AUDIO TIMELINE","path":"tools/audio-timeline/index.html","description":"Assemble short
+{
+  "version": "v1.10-alpha",
+  "categories": [
+    {
+      "id": "create",
+      "label": "CREATE",
+      "tools": [
+        {
+          "id": "animation-maker",
+          "label": "ANIMATION MAKER",
+          "path": "tools/animation-maker/index.html",
+          "description": "Create and preview animation assets from local media or image sequences."
+        },
+        {
+          "id": "audio2midi",
+          "label": "AUDIO2MIDI",
+          "path": "tools/audio2midi/index.html",
+          "description": "Convert audio into MIDI-style note or timing data for music and sound workflows."
+        },
+        {
+          "id": "audio-timeline",
+          "label": "AUDIO TIMELINE",
+          "path": "tools/audio-timeline/index.html",
+          "description": "Assemble short video clips with audio, inspect exposure shifts, and export browser-rendered media."
+        },
+        {
+          "id": "code-repo-split",
+          "label": "CODE EDITOR | REPOSITORY",
+          "buttonType": "code-repo-split",
+          "description": "Open the code editor or repository from the split copper button.",
+          "splitTools": [
+            {
+              "id": "code-writer",
+              "label": "CODE EDITOR",
+              "path": "tools/code-writer/index.html",
+              "description": "Open the Organon code editor workspace."
+            },
+            {
+              "id": "repository",
+              "label": "REPOSITORY",
+              "path": "tools/repository/index.html",
+              "description": "Open the Organon UI repository."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "modify",
+      "label": "MODIFY",
+      "tools": [
+        {
+          "id": "image-tile",
+          "label": "TILE IMAGE",
+          "path": "tools/image-tile/index.html",
+          "description": "Slice and tile images into precise, custom grid coordinates."
+        },
+        {
+          "id": "img2normal",
+          "label": "IMG2NORMAL",
+          "path": "tools/img2normal/index.html",
+          "description": "Convert images into normal maps for 3D rendering."
+        },
+        {
+          "id": "jpeg-compress",
+          "label": "JPEG COMPRESS",
+          "path": "tools/jpeg-compress/index.html",
+          "description": "Compress JPEG images to optimized file sizes."
+        },
+        {
+          "id": "frame-extractor",
+          "label": "FRAME EXTRACTOR",
+          "path": "tools/frame-extractor/index.html",
+          "description": "Extract still frames from local video files."
+        },
+        {
+          "id": "iconedit",
+          "label": "ICON EDIT",
+          "path": "tools/iconedit/index.html",
+          "description": "Edit or prepare small icon assets for Organon and game UI use."
+        },
+        {
+          "id": "icon-slicer",
+          "label": "ICON SLICER",
+          "path": "tools/icon-slicer/index.html",
+          "description": "Slice icon sheets or icon grids into individual assets."
+        },
+        {
+          "id": "image-calculator",
+          "label": "IMAGE CALCULATOR",
+          "path": "tools/image-calculator/index.html",
+          "description": "Calculate image sizes, ratios, grids, scaling values, and layout measurements."
+        },
+        {
+          "id": "bulk-convert",
+          "label": "BULK CONVERT",
+          "path": "tools/bulk-convert/index.html",
+          "description": "Convert multiple local files in batch."
+        }
+      ]
+    },
+    {
+      "id": "tools",
+      "label": "TOOLS",
+      "tools": [
+        {
+          "id": "bulk-download",
+          "label": "BULK DOWNLOAD",
+          "path": "tools/bulk-download/index.html",
+          "description": "Download multiple files or assets in batch."
+        },
+        {
+          "id": "locadate-calc",
+          "label": "LOCA DATE CALC",
+          "path": "tools/locadate-calc/index.html",
+          "description": "Calculate dates, local timing, and location-based scheduling values."
+        },
+        {
+          "id": "boilerplate",
+          "label": "BOILERPLATE",
+          "path": "tools/boilerplate/index.html",
+          "description": "Open the Organon module starter boilerplate and layout reference."
+        },
+        {
+          "id": "info",
+          "label": "INFO",
+          "path": "tools/info/index.html",
+          "description": "Open the Organon system guide, visual palette, and module reference."
+        }
+      ]
+    },
+    {
+      "id": "analyze",
+      "label": "ANALYZE",
+      "tools": [
+        {
+          "id": "character-library",
+          "label": "CHARACTER LIBRARY",
+          "path": "tools/character-library/index.html",
+          "description": "Browse and manage the global character library sheet metadata."
+        },
+        {
+          "id": "onda-split",
+          "label": "ONDA | NEW TAB",
+          "buttonType": "dual-action-split",
+          "description": "Open Onda in the basin iframe or launch Onda in a new browser tab.",
+          "splitTools": [
+            {
+              "id": "onda",
+              "label": "ONDA",
+              "path": "tools/Onda/index.html",
+              "description": "Open Onda inside the Organon workspace."
+            },
+            {
+              "id": "onda-new-tab",
+              "label": "NEW TAB",
+              "path": "tools/Onda/index.html",
+              "openMode": "new-tab",
+              "description": "Open Onda in a new browser tab."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
