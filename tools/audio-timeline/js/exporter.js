@@ -6,9 +6,8 @@ let recordedChunks = [];
 let canvasStream = null;
 let audioDestination = null;
 let masterStream = null;
-let mimeType = 'video/webm';
-let extension = 'webm';
 
-function pickFormat(format) {
-  if (format === 'audio-webm') return { mimeType: 'audio/webm;codecs=opus', extension: 'webm' };
-  if (format === 'mp4' && MediaRecorder.isTypeSupported('video/mp
+function cleanupStreams() {
+  if (masterStream) masterStream.getTracks().forEach(track => track.stop());
+  if (canvasStream) canvasStream.getTracks().forEach(track => track.stop());
+  if (audioDestination) master
