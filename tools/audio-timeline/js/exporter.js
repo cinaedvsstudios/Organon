@@ -1,13 +1,1 @@
-import { audioCtx, masterMixer } from './audio-mixer.js';
-
-const masterCanvas = document.getElementById('master-canvas');
-let mediaRecorder = null;
-let recordedChunks = [];
-
-export function startExport(format) {
-  recordedChunks = [];
-  const canvasStream = masterCanvas.captureStream(30);
-  const audioDestination = audioCtx.createMediaStreamDestination();
-  masterMixer.connect(audioDestination);
-  const tracks = [
-    ...canvasStream
+import{audioCtx,masterMixer}from'./audio-mixer.js';const c=document.getElementById('master-canvas');let r,ch=[];export function startExport(){ch=[];let s=c.captureStream(30),d=audioCtx.createMediaStreamDestination();masterMixer.connect(d);r=new MediaRecorder(new MediaStream([...s.getTracks(),...d.stream.getTracks()]));r.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};r.onstop=()=>{let u=URL.createObjectURL(new Blob(ch,{type:'video/webm'})),a=document.createElement('a');a.href
