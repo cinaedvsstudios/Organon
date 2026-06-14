@@ -1,0 +1,2677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Preview</title>
+
+    <!-- System & Brand Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <!-- External 3D Production Engine, JSZip, and Loaders -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        /* ==========================================================
+           ORGANON BRAND DESIGN SYSTEM & PALETTE TOKENS
+           ========================================================== */
+        :root {
+            --stone-ochre: #e0a360;             /* Warm Sandstone [Color #1] */
+            --chiseled-bronze: #896b49;         /* Border Bronze [Color #2] */
+            --white-accent: #ffffff;            /* Pure White [Color #3] */
+            --water-blue: #4b84bf;              /* Flowing Blue [Color #4] */
+            --water-spray: #75b2de;             /* Sky Blue [Color #5] */
+            --forest-teal: #26615c;             /* Deep Forest Teal [Color #6] */
+            --light-teal: #449e92;              /* Active Spliced Teal [Color #7] */
+            --burgundy: #4a1525;                /* Warning Deep Burgundy [Color #8] */
+            --brand-red: #9a2f4f;               /* Active Ruby Red [Color #9] */
+            --terracotta-peach: #d27d6c;        /* Soft Terracotta [Color #10] */
+            --alabaster-paper: #f5f0db;         /* Pure Primary Copy [Color #11] */
+            --bg-nightsky: #131412;             /* Pitch Dark Backdrop [Color #12] */
+            --bg-card: #1c1e1a;                 /* Textured Obsidian Card */
+            --bg-input: #11120f;                /* Deep Inset Dark */
+
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+
+            --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Scrollbar Styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-nightsky);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--chiseled-bronze);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--stone-ochre);
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        /* Header Brand Bar */
+        header {
+            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-nightsky) 100%);
+            border-bottom: 2px solid var(--chiseled-bronze);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        .brand-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            border: 2px solid var(--stone-ochre);
+            background: var(--bg-nightsky);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--stone-ochre);
+            font-family: var(--font-headers);
+            font-weight: 800;
+            font-size: 1.5rem;
+            box-shadow: 0 0 10px rgba(224, 163, 96, 0.2);
+        }
+
+        .brand-title h1 {
+            font-family: var(--font-headers);
+            font-size: 1.4rem;
+            margin: 0;
+            color: var(--stone-ochre);
+            letter-spacing: 0.05em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .brand-title p {
+            font-size: 0.75rem;
+            margin: 2px 0 0 0;
+            color: var(--water-spray);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 500;
+        }
+
+        .system-time {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+            background: rgba(224, 163, 96, 0.08);
+            border: 1px solid rgba(224, 163, 96, 0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
+        }
+
+        /* Master Grid Layout */
+        .dashboard-container {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 360px 1fr;
+            height: calc(100vh - 86px);
+            overflow: hidden;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                overflow: visible;
+            }
+        }
+
+        /* Sidebar Panel (File Manager & Deck) */
+        .sidebar-panel {
+            background-color: var(--bg-card);
+            border-right: 2px solid var(--chiseled-bronze);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
+        }
+
+        .panel-title {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-size: 1rem;
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid rgba(137, 107, 73, 0.3);
+            padding-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Drag & Drop Hotspot */
+        .dropzone-hotspot {
+            border: 2px dashed var(--chiseled-bronze);
+            border-radius: 12px;
+            background-color: rgba(17, 18, 15, 0.6);
+            padding: 24px 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            position: relative;
+        }
+
+        .dropzone-hotspot:hover, .dropzone-hotspot.dragover {
+            border-color: var(--stone-ochre);
+            background-color: rgba(224, 163, 96, 0.05);
+            box-shadow: 0 0 15px rgba(224, 163, 96, 0.1);
+        }
+
+        .dropzone-hotspot svg {
+            width: 36px;
+            height: 36px;
+            stroke: var(--stone-ochre);
+            margin-bottom: 8px;
+            transition: var(--transition-smooth);
+        }
+
+        .dropzone-hotspot:hover svg {
+            transform: translateY(-4px);
+            stroke: var(--water-spray);
+        }
+
+        .dropzone-text {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--alabaster-paper);
+            margin-bottom: 4px;
+        }
+
+        .dropzone-subtext {
+            font-size: 0.65rem;
+            color: rgba(245, 240, 219, 0.5);
+        }
+
+        /* Dynamic Asset Registry Deck */
+        .deck-scroller {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-height: 150px;
+        }
+
+        .deck-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 8px;
+        }
+
+        .asset-tile {
+            aspect-ratio: 1;
+            background-color: var(--bg-input);
+            border: 2px solid var(--chiseled-bronze);
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 6px;
+            box-sizing: border-box;
+            transition: var(--transition-smooth);
+            overflow: hidden;
+        }
+
+        .asset-tile:hover {
+            border-color: var(--stone-ochre);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .asset-tile.active-asset {
+            border-color: var(--water-blue);
+            background-color: rgba(75, 132, 191, 0.1);
+            box-shadow: 0 0 12px rgba(75, 132, 191, 0.3);
+        }
+
+        .tile-thumbnail {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+
+        .tile-icon {
+            font-size: 1.8rem;
+            margin-bottom: 2px;
+        }
+
+        .tile-meta {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(17, 18, 15, 0.85);
+            color: var(--alabaster-paper);
+            font-size: 0.55rem;
+            font-family: var(--font-mono);
+            text-align: center;
+            padding: 3px 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border-top: 1px solid rgba(137, 107, 73, 0.2);
+        }
+
+        .asset-tile-remove {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--burgundy);
+            color: var(--alabaster-paper);
+            font-size: 0.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: var(--transition-smooth);
+            z-index: 5;
+            border: none;
+            cursor: pointer;
+        }
+
+        .asset-tile:hover .asset-tile-remove {
+            opacity: 1;
+        }
+
+        .asset-tile-remove:hover {
+            background: var(--brand-red);
+            transform: scale(1.1);
+        }
+
+        /* Demo Suite Deck Launcher */
+        .demo-suit-container {
+            background-color: rgba(224, 163, 96, 0.04);
+            border: 1px solid rgba(137, 107, 73, 0.3);
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .demo-suit-title {
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            color: var(--stone-ochre);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .demo-suit-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 6px;
+        }
+
+        .btn-demo {
+            background-color: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 6px;
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            font-size: 0.65rem;
+            padding: 6px 8px;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .btn-demo:hover {
+            border-color: var(--stone-ochre);
+            background-color: rgba(224, 163, 96, 0.1);
+        }
+
+        /* Preview Display Frame Panel */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-nightsky);
+            position: relative;
+            overflow: hidden;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 15px;
+        }
+
+        .preview-header-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1.5px solid var(--chiseled-bronze);
+            padding-bottom: 10px;
+        }
+
+        .active-file-title {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-size: 1.15rem;
+            margin: 0;
+            letter-spacing: 0.05em;
+        }
+
+        .active-file-details {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--water-spray);
+            margin-top: 2px;
+        }
+
+        /* Layout Upgrade: Interactive Dual Screen Panel
+           Left side: Fixed aspect ratio square.
+           Right side: Scrolling configuration dashboard. */
+        .split-viewport-container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            height: calc(100vh - 240px);
+            min-height: 400px;
+        }
+
+        @media (max-width: 860px) {
+            .split-viewport-container {
+                flex-direction: column;
+                height: auto;
+            }
+            .left-viewport-square {
+                width: 100% !important;
+                aspect-ratio: 1 / 1;
+            }
+        }
+
+        .left-viewport-square {
+            width: 48%;
+            aspect-ratio: 1 / 1;
+            max-height: 100%;
+            background: radial-gradient(circle at center, #1b1d19 0%, #0d0e0c 100%);
+            border: 2px solid var(--chiseled-bronze);
+            border-radius: 16px;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 8px 24px rgba(0,0,0,0.5);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .right-controls-scroller {
+            flex: 1;
+            background-color: var(--bg-card);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 16px;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Viewport Display Sub-nodes */
+        .viewport-node {
+            max-width: 100%;
+            max-height: 100%;
+            display: none;
+        }
+
+        #viewport-canvas {
+            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        #viewport-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        #threejs-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+        }
+
+        /* Floating Window trigger eye icon overlay */
+        .floating-eye-action {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: rgba(17, 18, 15, 0.85);
+            border: 1px solid var(--stone-ochre);
+            color: var(--stone-ochre);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            z-index: 9;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        .floating-eye-action:hover {
+            background-color: var(--stone-ochre);
+            color: var(--bg-nightsky);
+            transform: scale(1.1);
+        }
+
+        .floating-eye-action svg {
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+
+        /* Interactive Floating Draggable Box Overlay */
+        .interactive-lightbox-modal {
+            position: fixed;
+            top: 10%;
+            left: 25%;
+            width: 600px;
+            height: 500px;
+            min-width: 300px;
+            min-height: 250px;
+            background-color: rgba(28, 30, 26, 0.95);
+            border: 2px solid var(--stone-ochre);
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+        }
+
+        .lightbox-header {
+            background-color: var(--bg-input);
+            padding: 10px 15px;
+            border-bottom: 1.5px solid var(--chiseled-bronze);
+            cursor: move;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        .lightbox-header span {
+            font-family: var(--font-headers);
+            font-size: 0.85rem;
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        .lightbox-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .lightbox-close-btn {
+            background: transparent;
+            border: none;
+            color: var(--alabaster-paper);
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+
+        .lightbox-close-btn:hover {
+            color: var(--brand-red);
+        }
+
+        .lightbox-body {
+            flex: 1;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .lightbox-canvas-mirror {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .lightbox-resize-handle {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            background: linear-gradient(135deg, transparent 50%, var(--stone-ochre) 50%);
+            cursor: se-resize;
+        }
+
+        /* Adjustment Sliders UI block */
+        .controls-panel-section {
+            border: 1px solid rgba(137, 107, 73, 0.25);
+            background-color: rgba(17, 18, 15, 0.4);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .controls-panel-section-title {
+            font-family: var(--font-headers);
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+            margin: 0 0 4px 0;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .slider-control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .slider-control-label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: rgba(245, 240, 219, 0.85);
+        }
+
+        .slider-control-val {
+            font-family: var(--font-mono);
+            color: var(--water-spray);
+            font-size: 0.75rem;
+        }
+
+        .input-row-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-value-box {
+            background-color: var(--bg-input);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 6px;
+            color: var(--stone-ochre);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            padding: 6px 10px;
+            width: 70px;
+            text-align: center;
+            outline: none;
+        }
+
+        .input-value-box:focus {
+            border-color: var(--stone-ochre);
+        }
+
+        /* Beautiful System Dialog Modals */
+        .organon-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background-color: rgba(19, 20, 18, 0.9);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .organon-modal-container {
+            background-color: var(--bg-card);
+            border: 2px solid var(--stone-ochre);
+            border-radius: 16px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .organon-modal-header {
+            background-color: var(--bg-input);
+            padding: 15px 20px;
+            border-bottom: 1.5px solid var(--chiseled-bronze);
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .organon-modal-body {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: rgba(245, 240, 219, 0.9);
+        }
+
+        .organon-modal-footer {
+            background-color: rgba(17, 18, 15, 0.5);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            border-top: 1px solid rgba(137, 107, 73, 0.2);
+        }
+
+        .organon-select-dropdown {
+            background-color: var(--bg-input);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-radius: 6px;
+            color: var(--stone-ochre);
+            font-family: var(--font-body);
+            font-size: 0.8rem;
+            padding: 8px 12px;
+            outline: none;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .organon-select-dropdown:focus {
+            border-color: var(--stone-ochre);
+        }
+
+        .toggle-switch-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Quick Switch UI Toggle */
+        .switch-toggle-core {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 22px;
+        }
+
+        .switch-toggle-core input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 3px;
+            bottom: 3px;
+            background-color: var(--chiseled-bronze);
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .switch-slider {
+            background-color: rgba(224, 163, 96, 0.2);
+            border-color: var(--stone-ochre);
+        }
+
+        input:checked + .switch-slider:before {
+            transform: translateX(22px);
+            background-color: var(--stone-ochre);
+        }
+
+        /* Color Picker Uniform Row */
+        .color-picker-control-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .color-bubble-swatch {
+            -webkit-appearance: none;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            background: none;
+            overflow: hidden;
+            border: 1.5px solid var(--chiseled-bronze);
+        }
+
+        .color-bubble-swatch::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-bubble-swatch::-webkit-color-swatch {
+            border: none;
+            border-radius: 50%;
+        }
+
+        /* Viewport Initial Blank Template */
+        .viewport-blank-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            max-width: 420px;
+            padding: 30px;
+        }
+
+        .viewport-blank-state svg {
+            width: 64px;
+            height: 64px;
+            stroke: var(--chiseled-bronze);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite ease-in-out;
+        }
+
+        .viewport-blank-state h2 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+            letter-spacing: 0.05em;
+        }
+
+        .viewport-blank-state p {
+            color: rgba(245, 240, 219, 0.6);
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Loader Overlay Inside Matrix Viewport */
+        .viewport-loader {
+            position: absolute;
+            inset: 0;
+            background: rgba(19, 20, 18, 0.85);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            z-index: 8;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(224, 163, 96, 0.2);
+            border-top-color: var(--stone-ochre);
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+        }
+
+        .loader-text {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            color: var(--stone-ochre);
+        }
+
+        /* Clean Dialog Custom Overlay */
+        .toast-notify {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background-color: var(--bg-card);
+            border: 1.5px solid var(--chiseled-bronze);
+            border-left: 4px solid var(--stone-ochre);
+            color: var(--alabaster-paper);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: var(--transition-smooth);
+            z-index: 4000;
+        }
+
+        .toast-notify.visible {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Animations */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Frame -->
+    <header>
+        <div class="brand-container">
+            <div class="brand-logo">Ω</div>
+            <div class="brand-title">
+                <h1>Simple Preview</h1>
+                <p>Universal Asset Pipeline Verification Terminal</p>
+            </div>
+        </div>
+        <div class="system-time" id="system-epoch">CLOCK COUPLING INIT...</div>
+    </header>
+
+    <!-- Master Layout Platform -->
+    <div class="dashboard-container">
+        
+        <!-- Sidebar Workspace Manager Panel -->
+        <aside class="sidebar-panel">
+            
+            <!-- Category Group 1: Pipeline Inputs -->
+            <div>
+                <div class="panel-title">
+                    <span>Repository Inputs</span>
+                </div>
+                
+                <div class="dropzone-hotspot" id="drag-drop-receiver">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                    </svg>
+                    <div class="dropzone-text">Drop Assets Here</div>
+                    <div class="dropzone-subtext">Supports PNG, JPG, MP3, WAV, MP4, GLB, FBX</div>
+                    <input type="file" id="fallback-native-uploader" multiple style="display:none;">
+                </div>
+            </div>
+
+            <!-- Category Group 2: Deck registry squares -->
+            <div style="flex: 1; display: flex; flex-direction: column;">
+                <div class="panel-title">
+                    <span>File Registry Deck</span>
+                    <span id="deck-counter" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--water-spray);">0 items</span>
+                </div>
+                
+                <div class="deck-scroller">
+                    <div class="deck-grid" id="deck-tiles-container">
+                        <!-- Instantiated registry blocks will anchor dynamically here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category Group 3: Built-in Demo Playground Assets -->
+            <div class="demo-suit-container">
+                <div class="demo-suit-title">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    Sandbox Demo Injector
+                </div>
+                <div class="demo-suit-grid">
+                    <button class="btn-demo" onclick="injectDemoAsset('image')">🎨 Demo Image</button>
+                    <button class="btn-demo" onclick="injectDemoAsset('video')">🎥 Demo Video</button>
+                    <button class="btn-demo" onclick="injectDemoAsset('audio')">🎵 Demo Audio</button>
+                    <button class="btn-demo" onclick="injectDemoAsset('3d')">📦 Demo 3D GLB</button>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- Dynamic Output Preview Matrix Panel -->
+        <main class="preview-panel">
+            
+            <div class="preview-header-meta">
+                <div>
+                    <h2 class="active-file-title" id="preview-title-node">Matrix Unpopulated</h2>
+                    <div class="active-file-details" id="preview-metadata-node">Registry currently dry. Awaiting initial asset load protocols.</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn-demo" id="save-all-zip-btn" style="border-color: var(--water-blue); color: var(--water-spray); background: rgba(75, 132, 191, 0.1);">
+                        📦 Save ZIP
+                    </button>
+                    <button class="btn-demo" id="flush-registry-action" style="border-color: var(--burgundy); color: var(--terracotta-peach); background: rgba(74, 21, 37, 0.2);">
+                        Flush Registry
+                    </button>
+                </div>
+            </div>
+
+            <!-- Split Panel Workspace Setup -->
+            <div class="split-viewport-container">
+                
+                <!-- Left Square Visualizer Space -->
+                <div class="left-viewport-square" id="main-viewport-panel">
+                    
+                    <!-- Floating Draggable Eye Window Trigger -->
+                    <div class="floating-eye-action" id="trigger-zoom-window" title="Open Floating Zoom Grid" style="display: none;">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </div>
+
+                    <!-- Initial State Placeholder Screen -->
+                    <div class="viewport-blank-state" id="viewport-empty-screen">
+                        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"/>
+                            <path d="M10 15v-6l5.2 3L10 15z"/>
+                        </svg>
+                        <h2>Awaiting Pipeline Hook</h2>
+                        <p>Drop file assets into the input bay, search using system dialogue, or try out the Quick Demo suite to instantiate viewport render cycles.</p>
+                    </div>
+
+                    <!-- Visual Render targets -->
+                    <canvas id="viewport-canvas" class="viewport-node"></canvas>
+                    <video id="viewport-video" class="viewport-node" playsinline></video>
+                    <div id="threejs-container"></div>
+
+                    <!-- Viewport Matrix Loader Overlay -->
+                    <div class="viewport-loader" id="viewport-buffering-card">
+                        <div class="spinner"></div>
+                        <div class="loader-text" id="viewport-buffering-msg">Generating mesh nodes...</div>
+                    </div>
+                </div>
+
+                <!-- Right Side Scrolling Control Panel Dashboard -->
+                <div class="right-controls-scroller">
+                    
+                    <!-- Segment 1: Unified Playback / Slideshow Core -->
+                    <div class="controls-panel-section">
+                        <h4 class="controls-panel-section-title">⏱️ Deck Playback & loop</h4>
+                        
+                        <!-- Timeline Playback Indicator (Audio/Video only) -->
+                        <div id="media-timeline-interface" style="display: none; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; font-family: var(--font-mono); color: var(--stone-ochre);">
+                                <span>Linear Track Time</span>
+                                <span id="timeline-numerical-clock">00:00 / 00:00</span>
+                            </div>
+                            <input type="range" class="scrubber-bar" id="media-scrolling-timeline" value="0" min="0" step="0.01" style="width: 100%; height: 6px; border-radius: 3px; accent-color: var(--stone-ochre);">
+                            <div style="display: flex; gap: 8px; justify-content: center; margin-top: 4px;">
+                                <button class="btn-demo" id="media-trigger-play">▶️ Play</button>
+                                <button class="btn-demo" id="media-trigger-stop">⏹️ Stop</button>
+                            </div>
+                        </div>
+
+                        <!-- Slideshow configuration for image matrices -->
+                        <div id="slideshow-setup-dashboard" style="display: flex; flex-direction: column; gap: 10px; border-top: 1px dashed rgba(137, 107, 73, 0.2); padding-top: 10px;">
+                            <div class="slider-control-label-row">
+                                <span>Image Loop Speed</span>
+                            </div>
+                            <div class="input-row-group">
+                                <input type="number" class="input-value-box" id="slideshow-interval-secs" value="3" min="0.5" step="0.5">
+                                <span style="font-size: 0.8rem; color: rgba(245, 240, 219, 0.65);">seconds per image</span>
+                            </div>
+                            <div style="display: flex; gap: 8px; margin-top: 4px;">
+                                <button class="btn-demo" id="slideshow-trigger-play" style="flex: 1; justify-content: center;">🔄 Start Slideshow Loop</button>
+                                <button class="btn-demo" id="slideshow-trigger-pause" style="flex: 1; justify-content: center; display: none; background-color: var(--burgundy); border-color: var(--brand-red);">⏸️ Pause Slideshow</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segment 2: Hardware Pixel Filters (Only visible for Images) -->
+                    <div class="controls-panel-section" id="image-processing-section" style="display: none;">
+                        <h4 class="controls-panel-section-title">🎨 Hardware Color Grading</h4>
+                        
+                        <!-- Exposure control slider -->
+                        <div class="slider-control-group">
+                            <div class="slider-control-label-row">
+                                <span>Exposure Level</span>
+                                <span class="slider-control-val" id="val-exposure">0%</span>
+                            </div>
+                            <input type="range" id="filter-exposure" min="-100" max="100" value="0" style="accent-color: var(--stone-ochre);">
+                        </div>
+
+                        <!-- Brightness control slider -->
+                        <div class="slider-control-group">
+                            <div class="slider-control-label-row">
+                                <span>Brightness Level</span>
+                                <span class="slider-control-val" id="val-brightness">100%</span>
+                            </div>
+                            <input type="range" id="filter-brightness" min="0" max="200" value="100" style="accent-color: var(--stone-ochre);">
+                        </div>
+
+                        <!-- Saturation control slider -->
+                        <div class="slider-control-group">
+                            <div class="slider-control-label-row">
+                                <span>Saturation Level</span>
+                                <span class="slider-control-val" id="val-saturation">100%</span>
+                            </div>
+                            <input type="range" id="filter-saturation" min="0" max="200" value="100" style="accent-color: var(--stone-ochre);">
+                        </div>
+
+                        <!-- Highlights control slider -->
+                        <div class="slider-control-group">
+                            <div class="slider-control-label-row">
+                                <span>Highlights Compensation</span>
+                                <span class="slider-control-val" id="val-highlights">0%</span>
+                            </div>
+                            <input type="range" id="filter-highlights" min="-100" max="100" value="0" style="accent-color: var(--stone-ochre);">
+                        </div>
+
+                        <!-- Shadows control slider -->
+                        <div class="slider-control-group">
+                            <div class="slider-control-label-row">
+                                <span>Shadows Compensation</span>
+                                <span class="slider-control-val" id="val-shadows">0%</span>
+                            </div>
+                            <input type="range" id="filter-shadows" min="-100" max="100" value="0" style="accent-color: var(--stone-ochre);">
+                        </div>
+
+                        <!-- Tint control slider -->
+                        <div class="slider-control-group">
+                            <div class="slider-control-label-row">
+                                <span>Tint Shift</span>
+                                <span class="slider-control-val" id="val-tint">0</span>
+                            </div>
+                            <input type="range" id="filter-tint" min="-100" max="100" value="0" style="accent-color: var(--stone-ochre);">
+                        </div>
+                    </div>
+
+                    <!-- Segment 3: Chromakey Green/Blue Removal Controls -->
+                    <div class="controls-panel-section" id="chromakey-section" style="display: none;">
+                        <div class="controls-panel-section-title">
+                            <span>🎭 Chromakey Studio</span>
+                            <div class="toggle-switch-row">
+                                <label class="switch-toggle-core">
+                                    <input type="checkbox" id="chromakey-active-toggle">
+                                    <span class="switch-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="chromakey-expanded-controls" style="opacity: 0.5; pointer-events: none; transition: var(--transition-smooth); display: flex; flex-direction: column; gap: 12px;">
+                            <div class="slider-control-label-row">
+                                <span>Key Backdrop target Color</span>
+                            </div>
+                            <div class="color-picker-control-row">
+                                <input type="color" id="chromakey-color-picker" class="color-bubble-swatch" value="#00b140">
+                                <span id="chromakey-hex-readout" style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--stone-ochre);">#00b140</span>
+                            </div>
+
+                            <div class="slider-control-group">
+                                <div class="slider-control-label-row">
+                                    <span>Threshold Range</span>
+                                    <span class="slider-control-val" id="val-chroma-threshold">40</span>
+                                </div>
+                                <input type="range" id="chromakey-threshold" min="0" max="250" value="40" style="accent-color: var(--stone-ochre);">
+                            </div>
+
+                            <div class="slider-control-group">
+                                <div class="slider-control-label-row">
+                                    <span>Feathering Smoothness</span>
+                                    <span class="slider-control-val" id="val-chroma-feather">15</span>
+                                </div>
+                                <input type="range" id="chromakey-feather" min="0" max="100" value="15" style="accent-color: var(--stone-ochre);">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Segment 4: Overwrite & Local File Sync Nodes -->
+                    <div class="controls-panel-section" id="asset-synchronization-controls" style="display: none;">
+                        <h4 class="controls-panel-section-title">💾 Sync & Overwrite File</h4>
+                        <p style="font-size: 0.7rem; color: rgba(245, 240, 219, 0.6); margin: 0 0 5px 0; line-height: 1.3;">
+                            Overwrite locks your adjustments directly into the current asset slot, updating the thumbnail deck in real-time.
+                        </p>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn-demo" id="action-overwrite-asset" style="flex: 1; justify-content: center; border-color: var(--stone-ochre); color: var(--stone-ochre);">
+                                Overwrite Current Asset
+                            </button>
+                            <button class="btn-demo" id="action-export-asset" style="flex: 1; justify-content: center; border-color: var(--water-spray); color: var(--water-spray);">
+                                Export Single
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </main>
+
+    </div>
+
+    <!-- Floating Draggable Resizable Zoom Window -->
+    <div class="interactive-lightbox-modal" id="floating-zoom-window">
+        <div class="lightbox-header" id="floating-zoom-header">
+            <span>🔍 High Fidelity Mirror Viewport</span>
+            <div class="lightbox-header-actions">
+                <button class="lightbox-close-btn" id="close-zoom-window" title="Close Window">×</button>
+            </div>
+        </div>
+        <div class="lightbox-body">
+            <canvas id="floating-canvas-mirror" class="lightbox-canvas-mirror"></canvas>
+            <div class="lightbox-resize-handle" id="floating-resize-handle"></div>
+        </div>
+    </div>
+
+    <!-- System Modal Dialog (Format Incompatibility warnings & ZIP options) -->
+    <div class="organon-modal-overlay" id="organon-modal-dialog">
+        <div class="organon-modal-container">
+            <div class="organon-modal-header" id="organon-modal-header-title">Compatibility Guard Warning</div>
+            <div class="organon-modal-body" id="organon-modal-content-body">
+                <!-- Loaded dynamically by JS -->
+            </div>
+            <div class="organon-modal-footer" id="organon-modal-footer-actions">
+                <!-- Actions -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Banner -->
+    <div class="toast-notify" id="toast-banner">
+        <span id="toast-icon">ℹ️</span>
+        <span id="toast-message">Task updated</span>
+    </div>
+
+    <script>
+        /* ==========================================================
+           1. INITIAL STATE & REGISTER PIPELINE MEMORY BINDINGS
+           ========================================================== */
+        let assetRegistryList = [];
+        let activeAssetIndex = null;
+        
+        // Image Processing Variables
+        let imageElementSource = null;
+        let originalImageBackupBuffer = null; // Backup ImageData structure
+
+        // Active Running Media Pointers
+        let currentAudioNode = null;
+        let timelineProgressInterval = null;
+        let isSeekingTimeline = false;
+
+        // Slideshow Loop Variables
+        let slideshowIntervalId = null;
+        let isSlideshowPlaying = false;
+
+        // ThreeJS Active Graphic Scene References
+        let active3DScene = null;
+        let active3DCamera = null;
+        let active3DRenderer = null;
+        let active3DControls = null;
+        let threedFrameAnimationId = null;
+
+        // HTML Canvas Elements
+        const mainCanvas = document.getElementById("viewport-canvas");
+        const mainCanvasCtx = mainCanvas.getContext("2d");
+        const floatingCanvas = document.getElementById("floating-canvas-mirror");
+        const floatingCanvasCtx = floatingCanvas.getContext("2d");
+
+        // UI Core Node Hooks
+        const dropzone = document.getElementById("drag-drop-receiver");
+        const fileSelector = document.getElementById("fallback-native-uploader");
+        const deckContainer = document.getElementById("deck-tiles-container");
+        const deckCounterNode = document.getElementById("deck-counter");
+        const flushRegistryBtn = document.getElementById("flush-registry-action");
+        const saveAllZipBtn = document.getElementById("save-all-zip-btn");
+
+        // Display Viewport Hooks
+        const viewEmptyScreen = document.getElementById("viewport-empty-screen");
+        const viewVideoNode = document.getElementById("viewport-video");
+        const viewThreeJSNode = document.getElementById("threejs-container");
+        const viewLoadingScreen = document.getElementById("viewport-buffering-card");
+        const viewLoadingLabel = document.getElementById("viewport-buffering-msg");
+        const triggerZoomWindowBtn = document.getElementById("trigger-zoom-window");
+
+        // Controls Scroller Section Hooks
+        const timelineInterfaceSection = document.getElementById("media-timeline-interface");
+        const timelineProgressSlider = document.getElementById("media-scrolling-timeline");
+        const timelineDisplayClock = document.getElementById("timeline-numerical-clock");
+        const mediaPlayBtn = document.getElementById("media-trigger-play");
+        const mediaStopBtn = document.getElementById("media-trigger-stop");
+
+        // Image Modification Filter Slider Hooks
+        const imgAdjustmentsSection = document.getElementById("image-processing-section");
+        const filterExposure = document.getElementById("filter-exposure");
+        const filterBrightness = document.getElementById("filter-brightness");
+        const filterSaturation = document.getElementById("filter-saturation");
+        const filterHighlights = document.getElementById("filter-highlights");
+        const filterShadows = document.getElementById("filter-shadows");
+        const filterTint = document.getElementById("filter-tint");
+
+        // Display value badges
+        const badgeExposure = document.getElementById("val-exposure");
+        const badgeBrightness = document.getElementById("val-brightness");
+        const badgeSaturation = document.getElementById("val-saturation");
+        const badgeHighlights = document.getElementById("val-highlights");
+        const badgeShadows = document.getElementById("val-shadows");
+        const badgeTint = document.getElementById("val-tint");
+
+        // Chromakey Green/Blue Removal Studio Hooks
+        const chromakeySection = document.getElementById("chromakey-section");
+        const chromaToggle = document.getElementById("chromakey-active-toggle");
+        const chromaExpandedSection = document.getElementById("chromakey-expanded-controls");
+        const chromaColorPicker = document.getElementById("chromakey-color-picker");
+        const chromaHexReadout = document.getElementById("chromakey-hex-readout");
+        const chromaThreshold = document.getElementById("chromakey-threshold");
+        const chromaFeather = document.getElementById("chromakey-feather");
+        const badgeChromaThreshold = document.getElementById("val-chroma-threshold");
+        const badgeChromaFeather = document.getElementById("val-chroma-feather");
+
+        // Overwrite Actions Node Hooks
+        const assetSynchronizationSection = document.getElementById("asset-synchronization-controls");
+        const actionOverwriteAssetBtn = document.getElementById("action-overwrite-asset");
+        const actionExportAssetBtn = document.getElementById("action-export-asset");
+
+        // Slideshow Hooks
+        const slideshowTriggerPlayBtn = document.getElementById("slideshow-trigger-play");
+        const slideshowTriggerPauseBtn = document.getElementById("slideshow-trigger-pause");
+        const slideshowIntervalInput = document.getElementById("slideshow-interval-secs");
+
+        // Modal Dialog Box Overlay Hooks
+        const organonModalDialog = document.getElementById("organon-modal-dialog");
+        const organonModalHeaderTitle = document.getElementById("organon-modal-header-title");
+        const organonModalContentBody = document.getElementById("organon-modal-content-body");
+        const organonModalFooterActions = document.getElementById("organon-modal-footer-actions");
+
+        // Floating Window Zoom Modal UI Hooks
+        const zoomFloatingWindow = document.getElementById("floating-zoom-window");
+        const zoomFloatingWindowHeader = document.getElementById("floating-zoom-header");
+        const zoomFloatingWindowClose = document.getElementById("close-zoom-window");
+        const zoomFloatingWindowResizeHandle = document.getElementById("floating-resize-handle");
+
+        // Brand Epoch clock Hook
+        const brandSystemEpoch = document.getElementById("system-epoch");
+        const activePreviewTitle = document.getElementById("preview-title-node");
+        const activePreviewMeta = document.getElementById("preview-metadata-node");
+
+        /* ==========================================================
+           2. LIVE CLOCK COUPLING TIMER ENGINE
+           ========================================================== */
+        function syncSystemClockEpoch() {
+            const now = new Date();
+            const formatted = now.toLocaleDateString('en-US', {
+                month: 'short',
+                day: '2-digit',
+                year: 'numeric'
+            }).toUpperCase() + " | " + now.toLocaleTimeString('en-US', { hour12: false });
+            brandSystemEpoch.textContent = formatted;
+        }
+        setInterval(syncSystemClockEpoch, 1000);
+        syncSystemClockEpoch();
+
+        /* ==========================================================
+           3. TOAST MESSAGING BRIDGE
+           ========================================================== */
+        function showToastMessage(text, icon = "🏛️") {
+            const toast = document.getElementById("toast-banner");
+            document.getElementById("toast-icon").textContent = icon;
+            document.getElementById("toast-message").textContent = text;
+            
+            toast.classList.add("visible");
+            setTimeout(() => {
+                toast.classList.remove("visible");
+            }, 3000);
+        }
+
+        /* ==========================================================
+           4. DRAG & DROP PIPELINE CONTROL HOOKS
+           ========================================================== */
+        dropzone.addEventListener("click", () => fileSelector.click());
+
+        dropzone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropzone.classList.add("dragover");
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+            dropzone.classList.remove("dragover");
+        });
+
+        dropzone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            dropzone.classList.remove("dragover");
+            if (e.dataTransfer.files.length > 0) {
+                assimilateUploadedAssets(e.dataTransfer.files);
+            }
+        });
+
+        fileSelector.addEventListener("change", (e) => {
+            if (e.target.files.length > 0) {
+                assimilateUploadedAssets(e.target.files);
+            }
+        });
+
+        /* ==========================================================
+           5. ASSET PIPELINE ASSIMILATION & PARSING MATRIX
+           ========================================================== */
+        function assimilateUploadedAssets(files) {
+            let processedItems = 0;
+            
+            for (let i = 0; i < files.length; i++) {
+                const fileObj = files[i];
+                const cleanExtension = fileObj.name.split('.').pop().toLowerCase();
+                const objectBlobUrl = URL.createObjectURL(fileObj);
+                
+                const assetData = {
+                    id: 'asset-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+                    name: fileObj.name,
+                    size: formatFileBytes(fileObj.size),
+                    type: fileObj.type || determineTypeByExtension(cleanExtension),
+                    extension: cleanExtension,
+                    blobUrl: objectBlobUrl,
+                    isDemoAsset: false,
+                    rawFile: fileObj,
+                    adjustments: {
+                        exposure: 0,
+                        brightness: 100,
+                        saturation: 100,
+                        highlights: 0,
+                        shadows: 0,
+                        tint: 0,
+                        chromaActive: false,
+                        chromaColor: "#00b140",
+                        chromaThreshold: 40,
+                        chromaFeather: 15
+                    }
+                };
+
+                assetRegistryList.push(assetData);
+                processedItems++;
+            }
+
+            if (processedItems > 0) {
+                renderRegistryDeck();
+                showToastMessage(`Instantiated ${processedItems} new pipeline nodes`, "✅");
+                setViewportActiveAsset(assetRegistryList.length - processedItems);
+            }
+        }
+
+        function determineTypeByExtension(ext) {
+            if (['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'svg'].includes(ext)) return 'image/' + ext;
+            if (['mp3', 'wav', 'ogg', 'aac'].includes(ext)) return 'audio/' + ext;
+            if (['mp4', 'webm', 'ogv', 'mov'].includes(ext)) return 'video/' + ext;
+            if (['glb', 'gltf', 'fbx'].includes(ext)) return 'model/gltf-binary';
+            return 'application/octet-stream';
+        }
+
+        function formatFileBytes(bytes) {
+            if (!bytes || bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        /* ==========================================================
+           6. DECK SQUARE GENERATOR INTERFACE
+           ========================================================== */
+        function renderRegistryDeck() {
+            deckContainer.innerHTML = "";
+            deckCounterNode.textContent = `${assetRegistryList.length} items`;
+
+            assetRegistryList.forEach((asset, index) => {
+                const tile = document.createElement("div");
+                tile.className = `asset-tile ${index === activeAssetIndex ? 'active-asset' : ''}`;
+                tile.setAttribute("data-id", asset.id);
+
+                // Build Tile Thumbnail / Dynamic Visual representation
+                if (asset.type.startsWith("image/") && !asset.isDemoAsset) {
+                    const img = document.createElement("img");
+                    img.className = "tile-thumbnail";
+                    img.src = asset.blobUrl;
+                    img.alt = asset.name;
+                    tile.appendChild(img);
+                } else {
+                    const iconEl = document.createElement("div");
+                    iconEl.className = "tile-icon";
+                    iconEl.textContent = getIconByAssetType(asset);
+                    tile.appendChild(iconEl);
+                }
+
+                // Append Tile Name Meta Ribbon
+                const meta = document.createElement("div");
+                meta.className = "tile-meta";
+                meta.textContent = asset.name;
+                tile.appendChild(meta);
+
+                // Tile Close/Delete button trigger
+                const deleteBtn = document.createElement("button");
+                deleteBtn.className = "asset-tile-remove";
+                deleteBtn.innerHTML = "×";
+                deleteBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    purgeRegistryAssetAtIndex(index);
+                });
+                tile.appendChild(deleteBtn);
+
+                // Frame activation listener
+                tile.addEventListener("click", () => {
+                    stopSlideshowLoop();
+                    setViewportActiveAsset(index);
+                });
+
+                deckContainer.appendChild(tile);
+            });
+        }
+
+        function getIconByAssetType(asset) {
+            const ext = asset.extension;
+            if (asset.type.startsWith("image/")) return "🎨";
+            if (asset.type.startsWith("audio/")) return "🎵";
+            if (asset.type.startsWith("video/")) return "🎥";
+            if (ext === "glb" || ext === "gltf" || ext === "fbx") return "📦";
+            return "📄";
+        }
+
+        /* ==========================================================
+           7. DEMO SUITE ASSET INJECTOR
+           ========================================================== */
+        function injectDemoAsset(type) {
+            let demoNode = null;
+            const uniqueId = 'demo-' + Date.now();
+
+            switch(type) {
+                case 'image':
+                    demoNode = {
+                        id: uniqueId,
+                        name: "organon_sculpture_highres.jpg",
+                        size: "1.4 MB",
+                        type: "image/jpeg",
+                        extension: "jpg",
+                        blobUrl: "https://images.unsplash.com/photo-1605721911519-3dfeb3be25e7?q=80&w=1200&auto=format&fit=crop",
+                        isDemoAsset: true,
+                        adjustments: {
+                            exposure: 0,
+                            brightness: 100,
+                            saturation: 100,
+                            highlights: 0,
+                            shadows: 0,
+                            tint: 0,
+                            chromaActive: false,
+                            chromaColor: "#00b140",
+                            chromaThreshold: 40,
+                            chromaFeather: 15
+                        }
+                    };
+                    break;
+                case 'video':
+                    demoNode = {
+                        id: uniqueId,
+                        name: "pipeline_render_loop.mp4",
+                        size: "4.8 MB",
+                        type: "video/mp4",
+                        extension: "mp4",
+                        blobUrl: "https://assets.mixkit.co/videos/preview/mixkit-animation-of-futuristic-abstract-shapes-34241-large.mp4",
+                        isDemoAsset: true,
+                        adjustments: {
+                            exposure: 0,
+                            brightness: 100,
+                            saturation: 100,
+                            highlights: 0,
+                            shadows: 0,
+                            tint: 0,
+                            chromaActive: false,
+                            chromaColor: "#00b140",
+                            chromaThreshold: 40,
+                            chromaFeather: 15
+                        }
+                    };
+                    break;
+                case 'audio':
+                    demoNode = {
+                        id: uniqueId,
+                        name: "temple_ambience_chamber.mp3",
+                        size: "2.1 MB",
+                        type: "audio/mpeg",
+                        extension: "mp3",
+                        blobUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                        isDemoAsset: true,
+                        adjustments: {
+                            exposure: 0,
+                            brightness: 100,
+                            saturation: 100,
+                            highlights: 0,
+                            shadows: 0,
+                            tint: 0,
+                            chromaActive: false,
+                            chromaColor: "#00b140",
+                            chromaThreshold: 40,
+                            chromaFeather: 15
+                        }
+                    };
+                    break;
+                case '3d':
+                    demoNode = {
+                        id: uniqueId,
+                        name: "duck_geometry_v1.glb",
+                        size: "112 KB",
+                        type: "model/gltf-binary",
+                        extension: "glb",
+                        blobUrl: "https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/Duck/glTF-Binary/Duck.glb",
+                        isDemoAsset: true,
+                        adjustments: {
+                            exposure: 0,
+                            brightness: 100,
+                            saturation: 100,
+                            highlights: 0,
+                            shadows: 0,
+                            tint: 0,
+                            chromaActive: false,
+                            chromaColor: "#00b140",
+                            chromaThreshold: 40,
+                            chromaFeather: 15
+                        }
+                    };
+                    break;
+            }
+
+            if (demoNode) {
+                assetRegistryList.push(demoNode);
+                renderRegistryDeck();
+                showToastMessage(`Demo asset injected: ${demoNode.name}`, "🚀");
+                setViewportActiveAsset(assetRegistryList.length - 1);
+            }
+        }
+
+        /* ==========================================================
+           8. MASTER VIEWPORT CONTROLLER & DISPATCHER
+           ========================================================== */
+        function teardownPriorViewportAssets() {
+            // Cancel 3D animation loop frame
+            if (threedFrameAnimationId) {
+                cancelAnimationFrame(threedFrameAnimationId);
+                threedFrameAnimationId = null;
+            }
+
+            // Stop Timeline interval for A/V
+            if (timelineProgressInterval) {
+                clearInterval(timelineProgressInterval);
+                timelineProgressInterval = null;
+            }
+
+            // Clear Canvas and elements
+            mainCanvasCtx.clearRect(0, 0, mainCanvas.width, mainCanvas.height);
+            mainCanvas.style.display = "none";
+            floatingCanvasCtx.clearRect(0, 0, floatingCanvas.width, floatingCanvas.height);
+
+            // Clear Video Player Core
+            viewVideoNode.pause();
+            viewVideoNode.src = "";
+            viewVideoNode.style.display = "none";
+
+            // Clean & Terminate Audio context element
+            if (currentAudioNode) {
+                currentAudioNode.pause();
+                currentAudioNode = null;
+            }
+
+            // Terminate & Purge WebGL ThreeJS context rendering nodes
+            if (active3DRenderer) {
+                if (active3DControls) active3DControls.dispose();
+                active3DRenderer.dispose();
+                viewThreeJSNode.innerHTML = "";
+                active3DRenderer = null;
+                active3DScene = null;
+                active3DCamera = null;
+                active3DControls = null;
+            }
+            viewThreeJSNode.style.display = "none";
+
+            // Hide Playback control dashboards
+            timelineInterfaceSection.style.display = "none";
+            imgAdjustmentsSection.style.display = "none";
+            chromakeySection.style.display = "none";
+            assetSynchronizationSection.style.display = "none";
+            triggerZoomWindowBtn.style.display = "none";
+            
+            viewLoadingScreen.style.display = "none";
+            viewEmptyScreen.style.display = "none";
+            
+            imageElementSource = null;
+            originalImageBackupBuffer = null;
+        }
+
+        function setViewportActiveAsset(index) {
+            const currentAsset = activeAssetIndex !== null ? assetRegistryList[activeAssetIndex] : null;
+            const nextAsset = index >= 0 && index < assetRegistryList.length ? assetRegistryList[index] : null;
+
+            // Soft transition optimization logic: prevent DOM flickering and scroll jump resets
+            const isTypeSame = currentAsset && nextAsset && (
+                (currentAsset.type.startsWith("image/") && nextAsset.type.startsWith("image/")) ||
+                (currentAsset.type.startsWith("video/") && nextAsset.type.startsWith("video/")) ||
+                (currentAsset.type.startsWith("audio/") && nextAsset.type.startsWith("audio/"))
+            );
+
+            if (!isTypeSame) {
+                teardownPriorViewportAssets();
+            } else {
+                // Soft teardown context actions
+                if (threedFrameAnimationId) {
+                    cancelAnimationFrame(threedFrameAnimationId);
+                    threedFrameAnimationId = null;
+                }
+                if (timelineProgressInterval) {
+                    clearInterval(timelineProgressInterval);
+                    timelineProgressInterval = null;
+                }
+                if (currentAudioNode) {
+                    currentAudioNode.pause();
+                    currentAudioNode = null;
+                }
+                viewVideoNode.pause();
+                viewLoadingScreen.style.display = "none";
+                viewEmptyScreen.style.display = "none";
+            }
+            
+            if (index < 0 || index >= assetRegistryList.length) {
+                activeAssetIndex = null;
+                activePreviewTitle.textContent = "Matrix Unpopulated";
+                activePreviewMeta.textContent = "Registry dry. Awaiting pipeline hook.";
+                viewEmptyScreen.style.display = "flex";
+                teardownPriorViewportAssets();
+                renderRegistryDeck();
+                return;
+            }
+
+            activeAssetIndex = index;
+            renderRegistryDeck();
+
+            const asset = assetRegistryList[index];
+            activePreviewTitle.textContent = asset.name;
+            activePreviewMeta.textContent = `Type: ${asset.type || 'Custom Asset'}  |  Weight: ${asset.size}`;
+
+            const ext = asset.extension;
+
+            // Route execution loop based on extension parsing criteria
+            if (asset.type.startsWith("image/")) {
+                dispatchImageViewer(asset, isTypeSame);
+            } else if (asset.type.startsWith("video/")) {
+                dispatchVideoViewer(asset);
+            } else if (asset.type.startsWith("audio/")) {
+                dispatchAudioViewer(asset);
+            } else if (ext === "glb" || ext === "gltf" || ext === "fbx") {
+                if (!isTypeSame) teardownPriorViewportAssets();
+                dispatch3DModelViewer(asset);
+            } else {
+                teardownPriorViewportAssets();
+                activePreviewTitle.textContent = "Format Parsing Out Of Bounds";
+                activePreviewMeta.textContent = `Type: ${asset.type} | Weight: ${asset.size}`;
+                viewEmptyScreen.style.display = "flex";
+                viewEmptyScreen.querySelector("h2").textContent = "Parsing Fault";
+                viewEmptyScreen.querySelector("p").textContent = "We detected a file structure with no associated pipeline visualizer bounds.";
+            }
+        }
+
+        /* ==========================================================
+           9. REAL-TIME CANVAS PIXEL ADJUSTMENTS PROCESSING ENGINE
+           ========================================================== */
+        function dispatchImageViewer(asset, isTypeSame) {
+            if (!isTypeSame) {
+                viewLoadingScreen.style.display = "flex";
+                viewLoadingLabel.textContent = "Processing Graphic Matrix...";
+            }
+
+            // Restore sliders based on specific asset state
+            filterExposure.value = asset.adjustments.exposure !== undefined ? asset.adjustments.exposure : 0;
+            filterBrightness.value = asset.adjustments.brightness !== undefined ? asset.adjustments.brightness : 100;
+            filterSaturation.value = asset.adjustments.saturation !== undefined ? asset.adjustments.saturation : 100;
+            filterHighlights.value = asset.adjustments.highlights !== undefined ? asset.adjustments.highlights : 0;
+            filterShadows.value = asset.adjustments.shadows !== undefined ? asset.adjustments.shadows : 0;
+            filterTint.value = asset.adjustments.tint !== undefined ? asset.adjustments.tint : 0;
+
+            chromaToggle.checked = asset.adjustments.chromaActive;
+            chromaColorPicker.value = asset.adjustments.chromaColor;
+            chromaHexReadout.textContent = asset.adjustments.chromaColor.toUpperCase();
+            chromaThreshold.value = asset.adjustments.chromaThreshold;
+            chromaFeather.value = asset.adjustments.chromaFeather;
+
+            badgeExposure.textContent = `${filterExposure.value > 0 ? '+' : ''}${filterExposure.value}%`;
+            badgeBrightness.textContent = `${filterBrightness.value}%`;
+            badgeSaturation.textContent = `${filterSaturation.value}%`;
+            badgeHighlights.textContent = `${filterHighlights.value > 0 ? '+' : ''}${filterHighlights.value}%`;
+            badgeShadows.textContent = `${filterShadows.value > 0 ? '+' : ''}${filterShadows.value}%`;
+            badgeTint.textContent = `${filterTint.value > 0 ? '+' : ''}${filterTint.value}`;
+            
+            badgeChromaThreshold.textContent = chromaThreshold.value;
+            badgeChromaFeather.textContent = chromaFeather.value;
+
+            // Toggle expansion layout opacity based on switch checked status
+            if (chromaToggle.checked) {
+                chromaExpandedSection.style.opacity = "1";
+                chromaExpandedSection.style.pointerEvents = "auto";
+            } else {
+                chromaExpandedSection.style.opacity = "0.5";
+                chromaExpandedSection.style.pointerEvents = "none";
+            }
+
+            imageElementSource = new Image();
+            imageElementSource.crossOrigin = "anonymous";
+            imageElementSource.src = asset.blobUrl;
+            
+            imageElementSource.onload = () => {
+                // Resize Viewport Canvas according to constraints
+                mainCanvas.width = imageElementSource.naturalWidth || 600;
+                mainCanvas.height = imageElementSource.naturalHeight || 600;
+                
+                // Draw to mirror canvas buffer
+                mainCanvasCtx.drawImage(imageElementSource, 0, 0);
+                
+                // Get original unaltered pixels
+                originalImageBackupBuffer = mainCanvasCtx.getImageData(0, 0, mainCanvas.width, mainCanvas.height);
+                
+                mainCanvas.style.display = "block";
+                triggerZoomWindowBtn.style.display = "flex";
+                imgAdjustmentsSection.style.display = "flex";
+                chromakeySection.style.display = "flex";
+                assetSynchronizationSection.style.display = "flex";
+                viewLoadingScreen.style.display = "none";
+
+                // Perform first rendering step of pixel arrays
+                renderCanvasPixelAdjustments();
+            };
+
+            imageElementSource.onerror = () => {
+                viewLoadingScreen.style.display = "none";
+                showToastMessage("Failed to load image asset source", "❌");
+            };
+        }
+
+        // Apply sliders & green screen calculations to canvas in real-time
+        function renderCanvasPixelAdjustments() {
+            if (!originalImageBackupBuffer) return;
+
+            const width = mainCanvas.width;
+            const height = mainCanvas.height;
+
+            // Grab a copy of our fresh backing pixels
+            const renderBuffer = mainCanvasCtx.createImageData(width, height);
+            renderBuffer.data.set(originalImageBackupBuffer.data);
+
+            const data = renderBuffer.data;
+            const length = data.length;
+
+            // Read controller values
+            const exposureVal = parseFloat(filterExposure.value); // -100 to 100
+            const exposureFactor = Math.pow(2, exposureVal / 50);
+
+            const brightness = parseFloat(filterBrightness.value) / 100; // 0.0 - 2.0
+            
+            const saturationVal = parseFloat(filterSaturation.value); // 0 to 200
+            const saturationFactor = saturationVal / 100;
+
+            const highlights = parseFloat(filterHighlights.value); // -100 to 100
+            const shadows = parseFloat(filterShadows.value); // -100 to 100
+            const tintVal = parseFloat(filterTint.value); // -100 to 100
+
+            // Chroma Key Properties
+            const chromaEnabled = chromaToggle.checked;
+            const targetColorHex = chromaColorPicker.value;
+            const keyColorRGB = hexToRgb(targetColorHex) || { r: 0, g: 177, b: 64 };
+            const threshold = parseFloat(chromaThreshold.value);
+            const feather = parseFloat(chromaFeather.value);
+
+            // Real-time Pixel Adjustment Filter Pipeline
+            for (let i = 0; i < length; i += 4) {
+                let r = data[i];
+                let g = data[i+1];
+                let b = data[i+2];
+                let a = data[i+3];
+
+                // Skip processing completely if pixel alpha is already 0
+                if (a === 0) continue;
+
+                // 1. Exposure modifier
+                r *= exposureFactor;
+                g *= exposureFactor;
+                b *= exposureFactor;
+
+                // 2. Brightness modifier
+                r *= brightness;
+                g *= brightness;
+                b *= brightness;
+
+                // 3. Tint shift (Creative adjustment)
+                if (tintVal !== 0) {
+                    r -= tintVal * 0.35;
+                    g += tintVal * 0.7;
+                    b -= tintVal * 0.35;
+                }
+
+                // 4. Saturation calculations
+                if (saturationFactor !== 1) {
+                    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+                    r = luma + (r - luma) * saturationFactor;
+                    g = luma + (g - luma) * saturationFactor;
+                    b = luma + (b - luma) * saturationFactor;
+                }
+
+                // 5. Highlights / Shadows Curve modifications
+                const y = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                if (highlights !== 0 && y > 128) {
+                    const weight = (y - 128) / 127; // weight from 0.0 to 1.0
+                    r += weight * highlights * 0.5;
+                    g += weight * highlights * 0.5;
+                    b += weight * highlights * 0.5;
+                }
+
+                if (shadows !== 0 && y <= 128) {
+                    const weight = (128 - y) / 128; // weight from 0.0 to 1.0
+                    r += weight * shadows * 0.5;
+                    g += weight * shadows * 0.5;
+                    b += weight * shadows * 0.5;
+                }
+
+                // 6. Chromakey Backdrop Removal
+                if (chromaEnabled) {
+                    const dist = Math.sqrt(
+                        Math.pow(r - keyColorRGB.r, 2) +
+                        Math.pow(g - keyColorRGB.g, 2) +
+                        Math.pow(b - keyColorRGB.b, 2)
+                    );
+
+                    if (dist < threshold) {
+                        a = 0;
+                    } else if (dist < threshold + feather && feather > 0) {
+                        const alphaFactor = (dist - threshold) / feather;
+                        a = a * alphaFactor;
+                    }
+                }
+
+                // Write modified clamp pixels back
+                data[i] = Math.max(0, Math.min(255, r));
+                data[i+1] = Math.max(0, Math.min(255, g));
+                data[i+2] = Math.max(0, Math.min(255, b));
+                data[i+3] = Math.max(0, Math.min(255, a));
+            }
+
+            // Output modifications
+            mainCanvasCtx.putImageData(renderBuffer, 0, 0);
+
+            // Keep local state values up to date inside object cache
+            if (activeAssetIndex !== null && assetRegistryList[activeAssetIndex]) {
+                const asset = assetRegistryList[activeAssetIndex];
+                asset.adjustments.exposure = filterExposure.value;
+                asset.adjustments.brightness = filterBrightness.value;
+                asset.adjustments.saturation = filterSaturation.value;
+                asset.adjustments.highlights = filterHighlights.value;
+                asset.adjustments.shadows = filterShadows.value;
+                asset.adjustments.tint = filterTint.value;
+                
+                asset.adjustments.chromaActive = chromaToggle.checked;
+                asset.adjustments.chromaColor = chromaColorPicker.value;
+                asset.adjustments.chromaThreshold = chromaThreshold.value;
+                asset.adjustments.chromaFeather = chromaFeather.value;
+            }
+
+            // Synchronize floating draggable viewer
+            mirrorToFloatingViewer();
+        }
+
+        // Color Converter Helper
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // Bind interactive adjustment controls
+        [filterExposure, filterBrightness, filterSaturation, filterHighlights, filterShadows, filterTint, chromaThreshold, chromaFeather].forEach(slider => {
+            slider.addEventListener("input", (e) => {
+                if (slider === filterExposure) badgeExposure.textContent = `${e.target.value > 0 ? '+' : ''}${e.target.value}%`;
+                if (slider === filterBrightness) badgeBrightness.textContent = `${e.target.value}%`;
+                if (slider === filterSaturation) badgeSaturation.textContent = `${e.target.value}%`;
+                if (slider === filterHighlights) badgeHighlights.textContent = `${e.target.value > 0 ? '+' : ''}${e.target.value}%`;
+                if (slider === filterShadows) badgeShadows.textContent = `${e.target.value > 0 ? '+' : ''}${e.target.value}%`;
+                if (slider === filterTint) badgeTint.textContent = `${e.target.value > 0 ? '+' : ''}${e.target.value}`;
+                
+                if (slider === chromaThreshold) badgeChromaThreshold.textContent = e.target.value;
+                if (slider === chromaFeather) badgeChromaFeather.textContent = e.target.value;
+                renderCanvasPixelAdjustments();
+            });
+        });
+
+        chromaToggle.addEventListener("change", (e) => {
+            if (e.target.checked) {
+                chromaExpandedSection.style.opacity = "1";
+                chromaExpandedSection.style.pointerEvents = "auto";
+            } else {
+                chromaExpandedSection.style.opacity = "0.5";
+                chromaExpandedSection.style.pointerEvents = "none";
+            }
+            renderCanvasPixelAdjustments();
+        });
+
+        chromaColorPicker.addEventListener("input", (e) => {
+            chromaHexReadout.textContent = e.target.value.toUpperCase();
+            renderCanvasPixelAdjustments();
+        });
+
+        /* ==========================================================
+           10. FLOATING DRAGGABLE RESIZABLE ZOOM WINDOW
+           ========================================================== */
+        triggerZoomWindowBtn.addEventListener("click", () => {
+            zoomFloatingWindow.style.display = "flex";
+            mirrorToFloatingViewer();
+        });
+
+        zoomFloatingWindowClose.addEventListener("click", () => {
+            zoomFloatingWindow.style.display = "none";
+        });
+
+        function mirrorToFloatingViewer() {
+            if (zoomFloatingWindow.style.display !== "none") {
+                floatingCanvas.width = mainCanvas.width;
+                floatingCanvas.height = mainCanvas.height;
+                floatingCanvasCtx.clearRect(0, 0, floatingCanvas.width, floatingCanvas.height);
+                floatingCanvasCtx.drawImage(mainCanvas, 0, 0);
+            }
+        }
+
+        // Draggable Floating Logic
+        let isDraggingLightbox = false;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let windowStartX = 0;
+        let windowStartY = 0;
+
+        zoomFloatingWindowHeader.addEventListener("mousedown", (e) => {
+            if (e.target.classList.contains("lightbox-close-btn")) return;
+            isDraggingLightbox = true;
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            windowStartX = zoomFloatingWindow.offsetLeft;
+            windowStartY = zoomFloatingWindow.offsetTop;
+            document.addEventListener("mousemove", performDragLightbox);
+            document.addEventListener("mouseup", endDragLightbox);
+            e.preventDefault();
+        });
+
+        function performDragLightbox(e) {
+            if (!isDraggingLightbox) return;
+            const deltaX = e.clientX - dragStartX;
+            const deltaY = e.clientY - dragStartY;
+            zoomFloatingWindow.style.left = `${windowStartX + deltaX}px`;
+            zoomFloatingWindow.style.top = `${windowStartY + deltaY}px`;
+        }
+
+        function endDragLightbox() {
+            isDraggingLightbox = false;
+            document.removeEventListener("mousemove", performDragLightbox);
+            document.removeEventListener("mouseup", endDragLightbox);
+        }
+
+        // Resizable Floating Logic
+        let isResizingLightbox = false;
+        let resizeStartX = 0;
+        let resizeStartY = 0;
+        let startWidth = 0;
+        let startHeight = 0;
+
+        zoomFloatingWindowResizeHandle.addEventListener("mousedown", (e) => {
+            isResizingLightbox = true;
+            resizeStartX = e.clientX;
+            resizeStartY = e.clientY;
+            startWidth = zoomFloatingWindow.clientWidth;
+            startHeight = zoomFloatingWindow.clientHeight;
+            document.addEventListener("mousemove", performResizeLightbox);
+            document.addEventListener("mouseup", endResizeLightbox);
+            e.preventDefault();
+        });
+
+        function performResizeLightbox(e) {
+            if (!isResizingLightbox) return;
+            const deltaX = e.clientX - resizeStartX;
+            const deltaY = e.clientY - resizeStartY;
+            zoomFloatingWindow.style.width = `${startWidth + deltaX}px`;
+            zoomFloatingWindow.style.height = `${startHeight + deltaY}px`;
+        }
+
+        function endResizeLightbox() {
+            isResizingLightbox = false;
+            document.removeEventListener("mousemove", performResizeLightbox);
+            document.removeEventListener("mouseup", endResizeLightbox);
+        }
+
+        /* ==========================================================
+           11. AUDIO & VIDEO DISPATCH CORES
+           ========================================================== */
+        function dispatchVideoViewer(asset) {
+            viewVideoNode.src = asset.blobUrl;
+            viewVideoNode.style.display = "block";
+            
+            timelineInterfaceSection.style.display = "flex";
+            bindTimelineControllers(viewVideoNode);
+            showToastMessage("Video stream connected", "🎬");
+        }
+
+        function dispatchAudioViewer(asset) {
+            currentAudioNode = new Audio(asset.blobUrl);
+            timelineInterfaceSection.style.display = "flex";
+            bindTimelineControllers(currentAudioNode);
+            showToastMessage("Audio stream connected", "🔊");
+        }
+
+        function bindTimelineControllers(mediaElement) {
+            timelineProgressSlider.value = 0;
+            timelineProgressSlider.max = 100;
+            timelineDisplayClock.textContent = "00:00 / 00:00";
+
+            mediaPlayBtn.onclick = null;
+            mediaStopBtn.onclick = null;
+            timelineProgressSlider.oninput = null;
+            timelineProgressSlider.onchange = null;
+
+            if (mediaElement.readyState >= 1) {
+                initDurationLayout();
+            } else {
+                mediaElement.addEventListener("loadedmetadata", initDurationLayout);
+            }
+
+            function initDurationLayout() {
+                timelineProgressSlider.max = mediaElement.duration || 100;
+                refreshTimelineDetails();
+            }
+
+            function refreshTimelineDetails() {
+                const currentSecs = mediaElement.currentTime || 0;
+                const totalSecs = mediaElement.duration || 0;
+                
+                if (!isSeekingTimeline) {
+                    timelineProgressSlider.value = currentSecs;
+                }
+                
+                timelineDisplayClock.textContent = `${formatTimelineClock(currentSecs)} / ${formatTimelineClock(totalSecs)}`;
+            }
+
+            timelineProgressInterval = setInterval(() => {
+                if (mediaElement && !mediaElement.paused && !isSeekingTimeline) {
+                    refreshTimelineDetails();
+                }
+            }, 100);
+
+            timelineProgressSlider.oninput = () => {
+                isSeekingTimeline = true;
+                timelineDisplayClock.textContent = `${formatTimelineClock(timelineProgressSlider.value)} / ${formatTimelineClock(mediaElement.duration)}`;
+            };
+
+            timelineProgressSlider.onchange = () => {
+                mediaElement.currentTime = timelineProgressSlider.value;
+                isSeekingTimeline = false;
+            };
+
+            mediaPlayBtn.onclick = () => {
+                mediaElement.play().then(() => {
+                    showToastMessage("Playback initialized", "▶️");
+                }).catch(err => {
+                    console.warn(err);
+                    showToastMessage("Playback blocked by browser autoplay constraints", "⚠️");
+                });
+            };
+
+            mediaStopBtn.onclick = () => {
+                mediaElement.pause();
+                mediaElement.currentTime = 0;
+                refreshTimelineDetails();
+                showToastMessage("Playback stopped", "⏹️");
+            };
+        }
+
+        function formatTimelineClock(timeInSecs) {
+            if (isNaN(timeInSecs)) return "00:00";
+            const mins = Math.floor(timeInSecs / 60);
+            const secs = Math.floor(timeInSecs % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        /* ==========================================================
+           12. INTERACTIVE THREEJS 3D DISPATCH CORE
+           ========================================================== */
+        function dispatch3DModelViewer(asset) {
+            viewThreeJSNode.style.display = "block";
+            viewLoadingScreen.style.display = "flex";
+            viewLoadingLabel.textContent = "Compiling WebGL Viewport...";
+
+            setTimeout(() => {
+                try {
+                    const width = mainViewportPanel().clientWidth;
+                    const height = mainViewportPanel().clientHeight;
+
+                    active3DScene = new THREE.Scene();
+                    active3DScene.background = null;
+
+                    active3DCamera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+                    active3DCamera.position.set(0, 5, 10);
+
+                    active3DRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    active3DRenderer.setSize(width, height);
+                    active3DRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                    active3DRenderer.shadowMap.enabled = true;
+                    viewThreeJSNode.appendChild(active3DRenderer.domElement);
+
+                    active3DControls = new THREE.OrbitControls(active3DCamera, active3DRenderer.domElement);
+                    active3DControls.enableDamping = true;
+                    active3DControls.dampingFactor = 0.05;
+
+                    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+                    active3DScene.add(ambientLight);
+
+                    const dirLight = new THREE.DirectionalLight(0xfff8f0, 1.2);
+                    dirLight.position.set(10, 18, 12);
+                    active3DScene.add(dirLight);
+
+                    const ext = asset.extension;
+
+                    if (ext === 'glb' || ext === 'gltf') {
+                        const gltfLoader = new THREE.GLTFLoader();
+                        gltfLoader.load(asset.blobUrl, (gltf) => {
+                            active3DScene.add(gltf.scene);
+                            autoFocusCameraOnGeometry(gltf.scene);
+                            viewLoadingScreen.style.display = "none";
+                            showToastMessage("3D GLTF structure active", "📦");
+                        }, undefined, (err) => render3DViewerError(err));
+                    } else if (ext === 'fbx') {
+                        const fbxLoader = new THREE.FBXLoader();
+                        fbxLoader.load(asset.blobUrl, (fbx) => {
+                            active3DScene.add(fbx);
+                            autoFocusCameraOnGeometry(fbx);
+                            viewLoadingScreen.style.display = "none";
+                            showToastMessage("3D FBX structure active", "📦");
+                        }, undefined, (err) => render3DViewerError(err));
+                    }
+
+                    function tickLoop3D() {
+                        if (!active3DRenderer) return;
+                        threedFrameAnimationId = requestAnimationFrame(tickLoop3D);
+                        if (active3DControls) active3DControls.update();
+                        active3DRenderer.render(active3DScene, active3DCamera);
+                    }
+                    tickLoop3D();
+
+                } catch (err) {
+                    render3DViewerError(err);
+                }
+            }, 100);
+        }
+
+        function mainViewportPanel() {
+            return document.getElementById("main-viewport-panel");
+        }
+
+        function autoFocusCameraOnGeometry(spatialNode) {
+            const bBox = new THREE.Box3().setFromObject(spatialNode);
+            const size = bBox.getSize(new THREE.Vector3());
+            const center = bBox.getCenter(new THREE.Vector3());
+
+            spatialNode.position.x += (spatialNode.position.x - center.x);
+            spatialNode.position.y += (spatialNode.position.y - center.y);
+            spatialNode.position.z += (spatialNode.position.z - center.z);
+
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const idealDistance = maxDim * 1.8;
+
+            active3DCamera.position.set(idealDistance * 0.6, idealDistance * 0.6, idealDistance);
+            active3DCamera.lookAt(0, 0, 0);
+
+            if (active3DControls) {
+                active3DControls.target.set(0, 0, 0);
+                active3DControls.update();
+            }
+        }
+
+        function render3DViewerError(err) {
+            viewLoadingScreen.style.display = "none";
+            viewThreeJSNode.style.display = "none";
+            viewEmptyScreen.style.display = "flex";
+            viewEmptyScreen.querySelector("h2").textContent = "3D Fault";
+            viewEmptyScreen.querySelector("p").textContent = `Renderer execution failed to parse spatial nodes.`;
+            showToastMessage("WebGL parsing anomaly detected", "❌");
+        }
+
+        /* ==========================================================
+           13. DYNAMIC SLIDESHOW INTERACTIVE COMPONENT
+           ========================================================== */
+        slideshowTriggerPlayBtn.addEventListener("click", startSlideshowLoop);
+        slideshowTriggerPauseBtn.addEventListener("click", stopSlideshowLoop);
+
+        function startSlideshowLoop() {
+            if (isSlideshowPlaying || assetRegistryList.length === 0) return;
+
+            isSlideshowPlaying = true;
+            slideshowTriggerPlayBtn.style.display = "none";
+            slideshowTriggerPauseBtn.style.display = "flex";
+
+            const speedSecs = parseFloat(slideshowIntervalInput.value) || 3;
+            
+            slideshowIntervalId = setInterval(() => {
+                let nextIdx = (activeAssetIndex + 1) % assetRegistryList.length;
+                setViewportActiveAsset(nextIdx);
+            }, speedSecs * 1000);
+
+            showToastMessage(`Image Loop Active (${speedSecs}s intervals)`, "🔄");
+        }
+
+        function stopSlideshowLoop() {
+            if (!isSlideshowPlaying) return;
+
+            isSlideshowPlaying = false;
+            slideshowTriggerPlayBtn.style.display = "flex";
+            slideshowTriggerPauseBtn.style.display = "none";
+
+            clearInterval(slideshowIntervalId);
+            slideshowIntervalId = null;
+            showToastMessage("Slideshow Loop Paused", "⏸️");
+        }
+
+        /* ==========================================================
+           14. ORGANON CUSTOM COMPATIBILITY MODAL BOX OVERLAY
+           ========================================================== */
+        function openCustomModalDialog(title, contentHTML, actionButtonsArray) {
+            organonModalHeaderTitle.textContent = title;
+            organonModalContentBody.innerHTML = contentHTML;
+            organonModalFooterActions.innerHTML = "";
+
+            actionButtonsArray.forEach(btnInfo => {
+                const btn = document.createElement("button");
+                btn.className = "btn-demo";
+                btn.textContent = btnInfo.text;
+                if (btnInfo.style) {
+                    Object.assign(btn.style, btnInfo.style);
+                }
+                btn.addEventListener("click", () => {
+                    btnInfo.action(btn);
+                });
+                organonModalFooterActions.appendChild(btn);
+            });
+
+            organonModalDialog.style.display = "flex";
+        }
+
+        function closeCustomModalDialog() {
+            organonModalDialog.style.display = "none";
+        }
+
+        /* ==========================================================
+           15. IN-MEMORY EXPORT & REGISTRY DECK SYNC
+           ========================================================== */
+        actionOverwriteAssetBtn.addEventListener("click", performOverwriteTransaction);
+        actionExportAssetBtn.addEventListener("click", performSingleExportTransaction);
+
+        function performOverwriteTransaction() {
+            if (activeAssetIndex === null || !assetRegistryList[activeAssetIndex]) return;
+
+            const asset = assetRegistryList[activeAssetIndex];
+            const originalType = asset.type; // e.g. "image/jpeg"
+            const chromaActive = chromaToggle.checked;
+
+            // Transparency Check: JPEGs do not support transparency. 
+            if (chromaActive && (originalType === 'image/jpeg' || originalType === 'image/jpg')) {
+                const contentHTML = `
+                    <p style="color: var(--terracotta-peach); font-weight: 700;">⚠️ Transparency Format Warning</p>
+                    <p>The current file format is <strong>JPEG</strong>, which does not support transparent layers. Saving with chromakey active will replace transparency with black pixels.</p>
+                    <p>Please select a compatible alpha-channel format below to apply edits:</p>
+                    <select id="modal-override-dropdown" class="organon-select-dropdown">
+                        <option value="image/png">PNG Format (Highly Recommended)</option>
+                        <option value="image/webp">WebP Format (Lossless Compressed)</option>
+                    </select>
+                `;
+
+                const buttons = [
+                    {
+                        text: "Cancel Process",
+                        action: () => closeCustomModalDialog()
+                    },
+                    {
+                        text: "Save & Format",
+                        style: { borderColor: "var(--stone-ochre)", color: "var(--stone-ochre)" },
+                        action: () => {
+                            const newFormat = document.getElementById("modal-override-dropdown").value;
+                            closeCustomModalDialog();
+                            executeSaveWithFormat(newFormat);
+                        }
+                    }
+                ];
+
+                openCustomModalDialog("Overwrite Integrity Check", contentHTML, buttons);
+            } else {
+                executeSaveWithFormat(originalType);
+            }
+        }
+
+        function executeSaveWithFormat(targetMimeType) {
+            const asset = assetRegistryList[activeAssetIndex];
+            
+            // Output canvas data to high-quality blob URL
+            mainCanvas.toBlob((blob) => {
+                if (!blob) {
+                    showToastMessage("Failed to generate image buffer data", "❌");
+                    return;
+                }
+
+                // Revoke old blob to release memory leak
+                if (!asset.isDemoAsset) {
+                    URL.revokeObjectURL(asset.blobUrl);
+                }
+
+                const newBlobUrl = URL.createObjectURL(blob);
+                asset.blobUrl = newBlobUrl;
+                asset.type = targetMimeType;
+                
+                // Set name extension correctly based on new format
+                const extensionName = targetMimeType.split('/').pop();
+                const baseName = asset.name.substring(0, asset.name.lastIndexOf('.'));
+                asset.name = `${baseName}.${extensionName === 'jpeg' ? 'jpg' : extensionName}`;
+                asset.rawFile = new File([blob], asset.name, { type: targetMimeType });
+
+                showToastMessage(`Overwrote slot. Format: ${targetMimeType.split('/')[1].toUpperCase()}`, "💾");
+                
+                // Refresh title and registry square
+                activePreviewTitle.textContent = asset.name;
+                activePreviewMeta.textContent = `Type: ${asset.type}  |  Weight: ${formatFileBytes(blob.size)}`;
+                renderRegistryDeck();
+            }, targetMimeType, 1.0); // Compress at max quality
+        }
+
+        function performSingleExportTransaction() {
+            if (activeAssetIndex === null || !assetRegistryList[activeAssetIndex]) return;
+            const asset = assetRegistryList[activeAssetIndex];
+
+            mainCanvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `adjusted_${asset.name}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToastMessage("Export completed", "✅");
+            }, asset.type, 1.0);
+        }
+
+        /* ==========================================================
+           16. CLIENT-SIDE ZIP COMPILATION ENGINE
+           ========================================================== */
+        saveAllZipBtn.addEventListener("click", () => {
+            if (assetRegistryList.length === 0) {
+                showToastMessage("No files inside registry", "⚠️");
+                return;
+            }
+
+            // Verify if any key active files are JPEG format
+            let containsIncompatibleKeyedImage = false;
+            assetRegistryList.forEach(asset => {
+                if (asset.type.startsWith("image/") && asset.adjustments.chromaActive && (asset.type === 'image/jpeg' || asset.type === 'image/jpg')) {
+                    containsIncompatibleKeyedImage = true;
+                }
+            });
+
+            const contentHTML = `
+                <p>Compile all file indices of your workspace into a unified ZIP archive package.</p>
+                
+                <div class="slider-control-group" style="margin-top: 10px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; color: var(--stone-ochre);">Export Target Format</span>
+                    <select id="zip-conversion-dropdown" class="organon-select-dropdown" style="margin-top: 4px;">
+                        <option value="original">Original Asset formats (Same as current)</option>
+                        <option value="image/png">Convert all Images to PNG (Lossless/Transparency)</option>
+                        <option value="image/jpeg">Convert all Images to JPEG (Flat Backdrop)</option>
+                        <option value="image/webp">Convert all Images to WebP (Modern Compress)</option>
+                    </select>
+                </div>
+
+                ${containsIncompatibleKeyedImage ? `
+                    <div style="background-color: rgba(74, 21, 37, 0.4); border: 1px solid var(--brand-red); border-radius: 8px; padding: 12px; font-size: 0.75rem; color: var(--terracotta-peach); margin-top: 8px;">
+                        <strong>Note:</strong> Some of your images have Chromakey active but are formatted as JPEGs. Choose "Convert all Images to PNG" to preserve transparency.
+                    </div>
+                ` : ''}
+            `;
+
+            const buttons = [
+                {
+                    text: "Cancel",
+                    action: () => closeCustomModalDialog()
+                },
+                {
+                    text: "Build and Download ZIP",
+                    style: { borderColor: "var(--water-spray)", color: "var(--water-spray)" },
+                    action: (btnElement) => {
+                        const choice = document.getElementById("zip-conversion-dropdown").value;
+                        btnElement.disabled = true;
+                        btnElement.textContent = "Compiling Archive...";
+                        buildArchiveZIP(choice);
+                    }
+                }
+            ];
+
+            openCustomModalDialog("Export Workspace ZIP Archive", contentHTML, buttons);
+        });
+
+        async function buildArchiveZIP(imageTargetMimeType) {
+            const zip = new JSZip();
+            const promises = [];
+
+            showToastMessage("Compiling file indices...", "📦");
+
+            assetRegistryList.forEach((asset, idx) => {
+                if (asset.type.startsWith("image/")) {
+                    // Export edited images through the canvas processing matrices to catch filters
+                    const promise = new Promise((resolve) => {
+                        const tempImg = new Image();
+                        tempImg.crossOrigin = "anonymous";
+                        tempImg.src = asset.blobUrl;
+                        tempImg.onload = () => {
+                            const tempCanvas = document.createElement("canvas");
+                            const tempCtx = tempCanvas.getContext("2d");
+                            tempCanvas.width = tempImg.naturalWidth;
+                            tempCanvas.height = tempImg.naturalHeight;
+                            tempCtx.drawImage(tempImg, 0, 0);
+
+                            const originalBuffer = tempCtx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+                            const width = tempCanvas.width;
+                            const height = tempCanvas.height;
+                            const data = originalBuffer.data;
+
+                            const exposureVal = parseFloat(asset.adjustments.exposure !== undefined ? asset.adjustments.exposure : 0);
+                            const exposureFactor = Math.pow(2, exposureVal / 50);
+
+                            const brightness = parseFloat(asset.adjustments.brightness !== undefined ? asset.adjustments.brightness : 100) / 100;
+
+                            const saturationVal = parseFloat(asset.adjustments.saturation !== undefined ? asset.adjustments.saturation : 100);
+                            const saturationFactor = saturationVal / 100;
+
+                            const highlights = parseFloat(asset.adjustments.highlights !== undefined ? asset.adjustments.highlights : 0);
+                            const shadows = parseFloat(asset.adjustments.shadows !== undefined ? asset.adjustments.shadows : 0);
+                            const tintVal = parseFloat(asset.adjustments.tint !== undefined ? asset.adjustments.tint : 0);
+                            
+                            const chromaEnabled = asset.adjustments.chromaActive;
+                            const keyColorRGB = hexToRgb(asset.adjustments.chromaColor) || { r: 0, g: 177, b: 64 };
+                            const threshold = parseFloat(asset.adjustments.chromaThreshold);
+                            const feather = parseFloat(asset.adjustments.chromaFeather);
+
+                            for (let i = 0; i < data.length; i += 4) {
+                                let r = data[i];
+                                let g = data[i+1];
+                                let b = data[i+2];
+                                let a = data[i+3];
+
+                                if (a === 0) continue;
+
+                                r *= exposureFactor;
+                                r *= brightness;
+                                g *= exposureFactor;
+                                g *= brightness;
+                                b *= exposureFactor;
+                                b *= brightness;
+
+                                if (tintVal !== 0) {
+                                    r -= tintVal * 0.35;
+                                    g += tintVal * 0.7;
+                                    b -= tintVal * 0.35;
+                                }
+
+                                if (saturationFactor !== 1) {
+                                    const luma = 0.299 * r + 0.587 * g + 0.114 * b;
+                                    r = luma + (r - luma) * saturationFactor;
+                                    g = luma + (g - luma) * saturationFactor;
+                                    b = luma + (b - luma) * saturationFactor;
+                                }
+
+                                const y = 0.299 * r + 0.587 * g + 0.114 * b;
+
+                                if (highlights !== 0 && y > 128) {
+                                    const weight = (y - 128) / 127;
+                                    r += weight * highlights * 0.5;
+                                    g += weight * highlights * 0.5;
+                                    b += weight * highlights * 0.5;
+                                }
+
+                                if (shadows !== 0 && y <= 128) {
+                                    const weight = (128 - y) / 128;
+                                    r += weight * shadows * 0.5;
+                                    g += weight * shadows * 0.5;
+                                    b += weight * shadows * 0.5;
+                                }
+
+                                if (chromaEnabled) {
+                                    const dist = Math.sqrt(
+                                        Math.pow(r - keyColorRGB.r, 2) +
+                                        Math.pow(g - keyColorRGB.g, 2) +
+                                        Math.pow(b - keyColorRGB.b, 2)
+                                    );
+                                    if (dist < threshold) {
+                                        a = 0;
+                                    } else if (dist < threshold + feather && feather > 0) {
+                                        const alphaFactor = (dist - threshold) / feather;
+                                        a = a * alphaFactor;
+                                    }
+                                }
+
+                                data[i] = Math.max(0, Math.min(255, r));
+                                data[i+1] = Math.max(0, Math.min(255, g));
+                                data[i+2] = Math.max(0, Math.min(255, b));
+                                data[i+3] = Math.max(0, Math.min(255, a));
+                            }
+
+                            tempCtx.putImageData(originalBuffer, 0, 0);
+
+                            const exportFormat = imageTargetMimeType === 'original' ? asset.type : imageTargetMimeType;
+                            tempCanvas.toBlob((blob) => {
+                                const ext = exportFormat.split('/').pop().replace('jpeg', 'jpg');
+                                const baseName = asset.name.substring(0, asset.name.lastIndexOf('.'));
+                                zip.file(`${baseName}.${ext}`, blob);
+                                resolve();
+                            }, exportFormat, 1.0);
+                        };
+                        tempImg.onerror = () => resolve();
+                    });
+                    promises.push(promise);
+                } else {
+                    // Native binary download stream for audio, video or 3D files
+                    const promise = fetch(asset.blobUrl)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            zip.file(asset.name, blob);
+                        });
+                    promises.push(promise);
+                }
+            });
+
+            await Promise.all(promises);
+
+            zip.generateAsync({ type: "blob" }).then((content) => {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `organon_workspace_${Date.now()}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                closeCustomModalDialog();
+                showToastMessage("ZIP Package Downloaded!", "✅");
+            });
+        }
+
+        /* ==========================================================
+           17. FLUSH REGISTRY LIFECYCLE RECLAMATION
+           ========================================================== */
+        flushRegistryBtn.addEventListener("click", () => {
+            stopSlideshowLoop();
+            teardownPriorViewportAssets();
+            
+            assetRegistryList.forEach(asset => {
+                if (!asset.isDemoAsset) {
+                    URL.revokeObjectURL(asset.blobUrl);
+                }
+            });
+            
+            assetRegistryList = [];
+            showToastMessage("Memory registry flushed clean.", "🧹");
+            setViewportActiveAsset(-1);
+        });
+
+        // Initialize empty baseline viewport state on page load
+        setViewportActiveAsset(-1);
+    </script>
+</body>
+</html>
