@@ -1,0 +1,20 @@
+{
+  "baseline": "onda_strict_ui_cleanup.zip",
+  "pass": "desktop-fix-pass-1",
+  "fixed": [
+    "Top player rebuilt as left control square plus right title/timeline/utilities row.",
+    "Workspace mode bar made sticky inside the desktop workspace scroll area.",
+    "Current/playlist panes given internal scroll and bottom clearance above the fixed bottom bar.",
+    "Library select panel now exposes Select Visible, Clear Selection, and Invert Selection.",
+    "Added invert-selection behaviour for visible library rows.",
+    "Library/playlist/current track titles forced left-aligned.",
+    "Settings drag now anchors from getBoundingClientRect before removing transform, preventing jump on drag start.",
+    "Settings tabs restyled as Onda buttons instead of browser-default buttons.",
+    "Settings popup received bottom-right resize handle using CSS variables."
+  ],
+  "not_touched": [
+    "netlify/functions/onda-sync.js",
+    "onda-midi.js behaviour",
+    "mobile-specific layout pass"
+  ]
+}

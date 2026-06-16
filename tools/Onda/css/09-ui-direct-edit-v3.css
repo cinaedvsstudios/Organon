@@ -1,0 +1,270 @@
+        #organon-bottom-panel.onda-bottom-bar-v3 {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto auto !important;
+            align-items: center !important;
+            gap: 10px !important;
+            justify-content: stretch !important;
+        }
+        #organon-bottom-panel.onda-bottom-bar-v3 #btn-database-engine {
+            width: 100% !important;
+            min-width: 0 !important;
+            text-align: center !important;
+        }
+        #organon-bottom-panel .onda-bottom-mini-pill {
+            width: auto !important;
+            min-width: 46px !important;
+            height: 38px !important;
+            padding: 0 14px !important;
+            border-radius: 999px !important;
+            background-color: rgba(24, 25, 25, 0.9) !important;
+            color: var(--water-spray) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.45) !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: 0 0 auto !important;
+            font-size: 1.1rem !important;
+            line-height: 1 !important;
+        }
+        #organon-bottom-panel .onda-bottom-mini-pill.active {
+            background-color: rgba(75, 132, 191, 0.28) !important;
+            border-color: var(--water-spray) !important;
+            color: var(--alabaster-paper) !important;
+        }
+        body.onda-app-fullscreen #organon-top-panel {
+            margin-top: 4px !important;
+        }
+        body.onda-app-fullscreen #organon-middle-panel {
+            padding-top: 8px !important;
+        }
+        body.onda-force-desktop-mode {
+            min-width: 1024px !important;
+            overflow-x: auto !important;
+            padding-left: 120px !important;
+            padding-right: 120px !important;
+        }
+        body.onda-force-desktop-mode #organon-top-panel {
+            padding: 20px 40px !important;
+        }
+        body.onda-force-desktop-mode #organon-bottom-panel {
+            left: 120px !important;
+            right: 120px !important;
+        }
+        body.onda-force-desktop-mode #library-manager-drawer {
+            left: 140px !important;
+            right: 140px !important;
+            width: auto !important;
+            max-width: none !important;
+        }
+        body.onda-force-desktop-mode .primary-controls {
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+        }
+        body.onda-force-desktop-mode #start-controls-pill,
+        body.onda-force-desktop-mode #end-utilities-pill {
+            width: fit-content !important;
+            gap: 14px !important;
+            padding: 4px 14px !important;
+        }
+        body.onda-force-desktop-mode .utility-btn {
+            width: auto !important;
+            min-width: 0 !important;
+            height: auto !important;
+            font-size: 1.8rem !important;
+            padding: 4px 5px !important;
+        }
+
+        .onda-track-row-enhanced,
+        .library-result-row.onda-track-row-enhanced,
+        .library-mini-row.onda-track-row-enhanced,
+        .playlist-detail-track-row.onda-track-row-enhanced,
+        .history-list-row.onda-track-row-enhanced {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            box-sizing: border-box;
+        }
+        .onda-track-row-enhanced .library-row-main {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+            min-width: 0;
+        }
+        .onda-track-row-enhanced .onda-track-text-wrap,
+        .onda-track-row-enhanced .playlist-row-content,
+        .onda-track-row-enhanced .library-row-main > div:first-child {
+            min-width: 0;
+            max-width: 100%;
+        }
+        .onda-track-row-enhanced .library-track-title,
+        .onda-track-row-enhanced .library-track-meta {
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .onda-track-row-enhanced .library-track-title,
+        .onda-track-row-enhanced .library-track-meta {
+            white-space: nowrap;
+        }
+        .onda-track-row-enhanced .library-row-buttons,
+        .onda-track-row-enhanced .onda-row-actions {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+            min-width: max-content;
+        }
+        .onda-track-row-enhanced .library-row-buttons .btn-pill,
+        .onda-track-row-enhanced .onda-row-actions .btn-pill,
+        .onda-now-panel .btn-pill {
+            padding: 6px 11px;
+            font-size: 0.72rem;
+            line-height: 1;
+            min-height: 30px;
+            white-space: nowrap;
+        }
+        .onda-track-row-enhanced .btn-onda-add-playlist {
+            border-color: var(--stone-ochre);
+            color: var(--stone-ochre);
+        }
+        .playlist-detail-track-row.onda-track-row-enhanced {
+            display: grid !important;
+            grid-template-columns: 32px minmax(0, 1fr) auto !important;
+            align-items: center;
+            gap: 9px;
+        }
+        .playlist-detail-track-row.onda-track-row-enhanced .history-list-number { grid-column: 1; }
+        .playlist-detail-track-row.onda-track-row-enhanced .onda-track-text-wrap { grid-column: 2; }
+        .playlist-detail-track-row.onda-track-row-enhanced .library-row-buttons { grid-column: 3; }
+        .onda-now-panel { margin-top: 12px; }
+        .onda-now-panel-label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            margin: 10px 0 8px;
+            color: var(--water-spray);
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-size: 0.78rem;
+        }
+        .onda-now-panel-sub {
+            color: var(--chiseled-bronze);
+            font-size: 0.68rem;
+            letter-spacing: normal;
+            text-transform: none;
+            font-weight: 700;
+        }
+        .onda-now-history-list,
+        .onda-now-playlist-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 230px;
+            overflow: auto;
+            padding-right: 2px;
+        }
+
+        @media (max-width: 768px) {
+            #organon-bottom-panel.onda-bottom-bar-v3 {
+                grid-template-columns: minmax(0, 1fr) auto auto !important;
+                padding-left: 14px !important;
+                padding-right: 14px !important;
+            }
+            #organon-bottom-panel.onda-bottom-bar-v3 #btn-database-engine {
+                font-size: 0.78rem !important;
+                padding: 10px 12px !important;
+            }
+            #organon-bottom-panel .onda-bottom-mini-pill {
+                min-width: 40px !important;
+                height: 36px !important;
+                padding: 0 10px !important;
+            }
+            #start-controls-pill.onda-transport-pill {
+                padding: 8px 18px !important;
+                gap: 18px !important;
+                min-height: 58px;
+                border-radius: 999px !important;
+            }
+            #start-controls-pill.onda-transport-pill .utility-btn {
+                width: 48px !important;
+                min-width: 48px !important;
+                height: 48px !important;
+                padding: 8px !important;
+                font-size: 2.35rem !important;
+                line-height: 1 !important;
+            }
+            #end-utilities-pill #btn-speed-cycle {
+                font-size: 2.7rem !important;
+            }
+            .library-drawer-inner,
+            .library-manager-content,
+            .library-results-panel,
+            #db-library-results,
+            #db-recent-list,
+            #history-list,
+            #now-playing-playlist-panel {
+                max-width: 100%;
+                min-width: 0;
+                overflow-x: hidden;
+                box-sizing: border-box;
+            }
+            .onda-track-row-enhanced .library-row-main {
+                grid-template-columns: minmax(0, 1fr);
+                gap: 8px;
+            }
+            .onda-track-row-enhanced .library-track-title,
+            .onda-track-row-enhanced .library-track-meta {
+                white-space: normal;
+                overflow-wrap: anywhere;
+                display: -webkit-box;
+                -webkit-box-orient: vertical;
+            }
+            .onda-track-row-enhanced .library-track-title { -webkit-line-clamp: 2; }
+            .onda-track-row-enhanced .library-track-meta { -webkit-line-clamp: 2; }
+            .onda-track-row-enhanced .library-row-buttons,
+            .onda-track-row-enhanced .onda-row-actions {
+                width: 100%;
+                min-width: 0;
+                justify-content: flex-start;
+            }
+            .onda-track-row-enhanced .library-row-buttons .btn-pill,
+            .onda-track-row-enhanced .onda-row-actions .btn-pill {
+                min-height: 34px;
+                padding: 8px 12px;
+            }
+            .playlist-detail-track-row.onda-track-row-enhanced {
+                grid-template-columns: 26px minmax(0, 1fr) !important;
+                align-items: start;
+            }
+            .playlist-detail-track-row.onda-track-row-enhanced .library-row-buttons {
+                grid-column: 2;
+                justify-content: flex-start;
+            }
+        }
+        @media (max-width: 420px) {
+            #start-controls-pill.onda-transport-pill {
+                gap: 14px !important;
+                padding: 8px 14px !important;
+            }
+            #start-controls-pill.onda-transport-pill .utility-btn {
+                width: 44px !important;
+                min-width: 44px !important;
+                height: 44px !important;
+                font-size: 2.15rem !important;
+            }
+        }
+        /* === END ONDA DIRECT EDIT V3 === */
+
+
+        /* === ONDA DIRECT EDIT V4: real desktop/mobile toggle + stronger fullscreen fallback === */

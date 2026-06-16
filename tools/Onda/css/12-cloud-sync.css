@@ -1,0 +1,626 @@
+.onda-cloud-card {
+        background: rgba(0, 0, 0, 0.26);
+        border: 1.5px solid var(--water-blue, #4b84bf);
+        border-radius: 12px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.08), 0 0 16px rgba(75,132,191,0.08);
+    }
+    .onda-cloud-title {
+        color: var(--water-spray, #75b2de);
+        font-weight: 900;
+        font-size: 0.88rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    .onda-cloud-help,
+    .onda-cloud-status {
+        color: var(--chiseled-bronze, #896b49);
+        font-size: 0.74rem;
+        line-height: 1.35;
+    }
+    .onda-cloud-status strong { color: var(--water-spray, #75b2de); }
+    .onda-cloud-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+        gap: 8px;
+    }
+    .onda-cloud-grid .btn-pill { padding: 7px 11px; font-size: 0.74rem; }
+    .onda-cloud-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.72);
+        z-index: 22000;
+    }
+    .onda-cloud-modal-overlay.open { display: block; }
+    .onda-cloud-modal {
+        display: none;
+        position: fixed;
+        z-index: 22001;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        width: min(92vw, 680px);
+        max-height: min(88vh, 760px);
+        overflow: auto;
+        background: var(--bg-card, #292a24);
+        color: var(--alabaster-paper, #f5f0db);
+        border: 2px solid var(--stone-ochre, #e0a360);
+        border-radius: 18px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 28px rgba(75,132,191,0.18);
+    }
+    .onda-cloud-modal.open { display: block; }
+    .onda-cloud-modal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 16px 18px 12px;
+        border-bottom: 1px solid rgba(224,163,96,0.35);
+        background: linear-gradient(90deg, rgba(38,97,92,0.24), rgba(0,0,0,0.18));
+    }
+    .onda-cloud-modal-title {
+        color: var(--water-spray, #75b2de);
+        font-weight: 900;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+    .onda-cloud-modal-body {
+        padding: 16px 18px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .onda-cloud-field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        color: var(--water-spray, #75b2de);
+        font-size: 0.76rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .onda-cloud-field input,
+    .onda-cloud-field select {
+        background: var(--bg-nightsky, #1e201c);
+        color: var(--alabaster-paper, #f5f0db);
+        border: 1px solid var(--chiseled-bronze, #896b49);
+        border-radius: 10px;
+        padding: 10px 12px;
+        box-sizing: border-box;
+        font-family: inherit;
+        font-size: 0.95rem;
+        text-transform: none;
+        letter-spacing: normal;
+        font-weight: 500;
+    }
+    .onda-cloud-device-list {
+        display: grid;
+        gap: 8px;
+    }
+    .onda-cloud-device-row {
+        border: 1px solid rgba(117,178,222,0.26);
+        border-radius: 12px;
+        padding: 10px;
+        background: rgba(0,0,0,0.20);
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 10px;
+        align-items: center;
+        cursor: pointer;
+    }
+    .onda-cloud-device-row.selected {
+        border-color: var(--stone-ochre, #e0a360);
+        background: rgba(224,163,96,0.13);
+        box-shadow: inset 0 0 0 1px rgba(224,163,96,0.18);
+    }
+    .onda-cloud-device-name { color: var(--water-spray, #75b2de); font-weight: 900; }
+    .onda-cloud-device-meta { color: rgba(245,240,219,0.65); font-size: 0.72rem; margin-top: 2px; overflow-wrap: anywhere; }
+    .onda-cloud-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+        border-top: 1px solid rgba(137,107,73,0.25);
+        padding-top: 12px;
+    }
+    .onda-cloud-warning {
+        border: 1px solid rgba(224,163,96,0.45);
+        background: rgba(224,163,96,0.09);
+        color: var(--alabaster-paper, #f5f0db);
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+    .onda-cloud-mobile-btn {
+        min-width: 30px;
+        height: 30px;
+        border-radius: 999px;
+        border: 1px solid rgba(117, 178, 222, 0.75);
+        background: rgba(0,0,0,0.24);
+        color: var(--water-spray, #75b2de);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.92rem;
+        cursor: pointer;
+    }
+    @media (max-width: 768px) {
+        .onda-cloud-modal { width: 94vw; max-height: 86vh; }
+        .onda-cloud-device-row { grid-template-columns: auto 1fr; }
+        .onda-cloud-device-row .btn-pill { grid-column: 2; justify-self: start; }
+        .onda-cloud-actions { justify-content: stretch; }
+        .onda-cloud-actions .btn-pill { flex: 1 1 auto; }
+    }
+
+
+        /* === ONDA SIX SCREENSHOT ISSUE FIXES: FINAL SOURCE OVERRIDES === */
+        /* 1. Desktop app frame: top player, middle workspace and bottom bar share the same outer width. */
+        @media (min-width: 769px) {
+            body:not(.onda-force-mobile-mode),
+            body.onda-force-desktop-mode {
+                padding-left: 64px !important;
+                padding-right: 64px !important;
+                box-sizing: border-box !important;
+            }
+            body:not(.onda-force-mobile-mode) #organon-top-panel,
+            body.onda-force-desktop-mode #organon-top-panel {
+                width: 100% !important;
+                max-width: none !important;
+                margin: 15px 0 0 0 !important;
+                box-sizing: border-box !important;
+                min-height: 170px !important;
+                padding: 18px 22px !important;
+            }
+            body:not(.onda-force-mobile-mode) #organon-middle-panel,
+            body.onda-force-desktop-mode #organon-middle-panel {
+                width: 100% !important;
+                max-width: none !important;
+                box-sizing: border-box !important;
+                padding-left: 40px !important;
+                padding-right: 40px !important;
+            }
+            body:not(.onda-force-mobile-mode) #organon-bottom-panel,
+            body.onda-force-desktop-mode #organon-bottom-panel {
+                left: 64px !important;
+                right: 64px !important;
+                width: auto !important;
+                max-width: none !important;
+                box-sizing: border-box !important;
+            }
+            body:not(.onda-force-mobile-mode) #library-manager-drawer,
+            body.onda-force-desktop-mode #library-manager-drawer {
+                left: 64px !important;
+                right: 64px !important;
+                width: auto !important;
+                max-width: none !important;
+                box-sizing: border-box !important;
+            }
+
+            /* 1. Desktop player: large square transport block on the left. */
+            body:not(.onda-force-mobile-mode) #organon-top-panel > div[style],
+            body.onda-force-desktop-mode #organon-top-panel > div[style] {
+                display: grid !important;
+                grid-template-columns: 196px minmax(0, 1fr) 300px !important;
+                grid-template-rows: auto auto !important;
+                grid-template-areas:
+                    "transport title utilities"
+                    "transport seek utilities" !important;
+                column-gap: 38px !important;
+                row-gap: 10px !important;
+                width: 100% !important;
+                min-width: 0 !important;
+                align-items: center !important;
+            }
+            body:not(.onda-force-mobile-mode) #organon-top-panel > div[style] > div:first-child,
+            body.onda-force-desktop-mode #organon-top-panel > div[style] > div:first-child {
+                grid-area: title !important;
+                min-width: 0 !important;
+                width: 100% !important;
+            }
+            body:not(.onda-force-mobile-mode) #organon-top-panel .primary-controls,
+            body.onda-force-desktop-mode #organon-top-panel .primary-controls {
+                display: contents !important;
+            }
+            body:not(.onda-force-mobile-mode) #start-controls-pill,
+            body.onda-force-desktop-mode #start-controls-pill {
+                grid-area: transport !important;
+                width: 184px !important;
+                min-width: 184px !important;
+                height: 142px !important;
+                min-height: 142px !important;
+                border-radius: 22px !important;
+                padding: 14px !important;
+                display: grid !important;
+                grid-template-columns: 1fr 1.2fr 1fr !important;
+                align-items: center !important;
+                justify-items: center !important;
+                gap: 8px !important;
+                align-self: stretch !important;
+            }
+            body:not(.onda-force-mobile-mode) #start-controls-pill .utility-btn,
+            body.onda-force-desktop-mode #start-controls-pill .utility-btn {
+                width: 62px !important;
+                min-width: 62px !important;
+                height: 62px !important;
+                min-height: 62px !important;
+                padding: 0 !important;
+                font-size: 2.7rem !important;
+                line-height: 1 !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            body:not(.onda-force-mobile-mode) #start-controls-pill #btn-play,
+            body.onda-force-desktop-mode #start-controls-pill #btn-play {
+                width: 78px !important;
+                min-width: 78px !important;
+                height: 78px !important;
+                min-height: 78px !important;
+                font-size: 3.15rem !important;
+            }
+            body:not(.onda-force-mobile-mode) #organon-top-panel .seek-container,
+            body.onda-force-desktop-mode #organon-top-panel .seek-container {
+                grid-area: seek !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            body:not(.onda-force-mobile-mode) #end-utilities-pill,
+            body.onda-force-desktop-mode #end-utilities-pill {
+                grid-area: utilities !important;
+                justify-self: end !important;
+                width: auto !important;
+                min-width: 245px !important;
+                max-width: 280px !important;
+                padding: 8px 14px !important;
+                gap: 12px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            body:not(.onda-force-mobile-mode) #now-playing,
+            body.onda-force-desktop-mode #now-playing {
+                max-width: none !important;
+                width: 100% !important;
+                text-align: left !important;
+            }
+        }
+
+        /* 2. Mobile main navigation tabs: icons only, no text labels. */
+        body.onda-force-mobile-mode .workspace-mode-bar .mode-tab-label,
+        body.onda-force-mobile-mode .mode-tab-label { display: none !important; }
+        @media (max-width: 768px) { .workspace-mode-bar .mode-tab-label { display: none !important; } }
+
+        /* 3. Mobile Library header: Select and Settings icons beside the X. */
+        .mobile-library-header-actions { display: none; }
+        body.onda-force-mobile-mode .library-drawer-title-row {
+            display: grid !important;
+            grid-template-columns: minmax(0, 1fr) auto auto !important;
+            align-items: center !important;
+            gap: 8px !important;
+        }
+        body.onda-force-mobile-mode .mobile-library-header-actions {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+        }
+        body.onda-force-mobile-mode #btn-mobile-select-mode,
+        body.onda-force-mobile-mode #btn-mobile-settings-mode,
+        body.onda-force-mobile-mode #btn-close-library-manager {
+            width: 38px !important;
+            min-width: 38px !important;
+            height: 38px !important;
+            padding: 0 !important;
+            border-radius: 999px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        body.onda-force-mobile-mode .library-manager-toolbar .library-manager-actions {
+            display: none !important;
+        }
+
+        /* 4. Desktop Library: larger left settings/select panel, no horizontal scroll, left-aligned titles. */
+        @media (min-width: 769px) {
+            body:not(.onda-force-mobile-mode) .library-manager-content,
+            body.onda-force-desktop-mode .library-manager-content {
+                grid-template-columns: 300px minmax(0, 1fr) !important;
+                gap: 18px !important;
+                overflow: hidden !important;
+            }
+            body:not(.onda-force-mobile-mode) .library-sidebar,
+            body.onda-force-desktop-mode .library-sidebar {
+                overflow-y: auto !important;
+                overflow-x: hidden !important;
+                padding-right: 14px !important;
+            }
+            body:not(.onda-force-mobile-mode) .library-sidebar .btn-pill,
+            body.onda-force-desktop-mode .library-sidebar .btn-pill {
+                width: 100% !important;
+                min-width: 0 !important;
+                box-sizing: border-box !important;
+                white-space: nowrap !important;
+                text-align: center !important;
+            }
+            body:not(.onda-force-mobile-mode) .library-result-row,
+            body.onda-force-desktop-mode .library-result-row {
+                text-align: left !important;
+            }
+            body:not(.onda-force-mobile-mode) .library-result-row .library-row-main,
+            body.onda-force-desktop-mode .library-result-row .library-row-main {
+                display: grid !important;
+                grid-template-columns: minmax(0, 1fr) auto !important;
+                align-items: center !important;
+                gap: 12px !important;
+                width: 100% !important;
+                min-width: 0 !important;
+            }
+            body:not(.onda-force-mobile-mode) .library-result-row .library-row-main > .library-row-main,
+            body.onda-force-desktop-mode .library-result-row .library-row-main > .library-row-main {
+                display: grid !important;
+                grid-template-columns: 34px minmax(0, 1fr) !important;
+                align-items: center !important;
+                justify-content: start !important;
+                gap: 10px !important;
+                min-width: 0 !important;
+            }
+            body:not(.onda-force-mobile-mode) .library-track-title,
+            body:not(.onda-force-mobile-mode) .library-track-meta,
+            body.onda-force-desktop-mode .library-track-title,
+            body.onda-force-desktop-mode .library-track-meta {
+                text-align: left !important;
+                justify-self: start !important;
+            }
+        }
+
+        /* 5 + 6. Mobile playlist/current rows: number/select, one-line title, one-line filename/source, then icon buttons. */
+        body.onda-force-mobile-mode .playlist-detail-track-row,
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row,
+        body.onda-force-mobile-mode .now-playing-queue-row {
+            display: grid !important;
+            grid-template-columns: 34px minmax(0, 1fr) !important;
+            grid-template-areas:
+                "num title"
+                "num meta"
+                "num actions" !important;
+            align-items: center !important;
+            gap: 3px 8px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+            padding: 9px 8px !important;
+            box-sizing: border-box !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-main {
+            display: contents !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-main > div:first-child,
+        body.onda-force-mobile-mode .now-playing-queue-row .onda-track-text-wrap {
+            display: contents !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-track-title,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-track-title {
+            grid-area: title !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            text-align: left !important;
+            color: var(--water-spray) !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-track-meta,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-track-meta {
+            grid-area: meta !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            word-break: normal !important;
+            overflow-wrap: normal !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            text-align: left !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-buttons,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons {
+            grid-area: actions !important;
+            display: flex !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-buttons .btn-pill,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-pill {
+            width: 36px !important;
+            min-width: 36px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            padding: 0 !important;
+            font-size: 0 !important;
+            border-radius: 999px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-buttons .btn-detail-play-track::after,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-now-play-track::after,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-onda-row-play::after { content: "▶️"; font-size: 1rem; }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-buttons .btn-detail-info-track::after,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-now-info-track::after { content: "ℹ️"; font-size: 1rem; }
+        body.onda-force-mobile-mode .playlist-detail-panel .library-result-row .library-row-buttons .btn-onda-add-playlist::after,
+        body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-onda-add-playlist::after { content: "➕"; font-size: 1rem; }
+        body.onda-force-mobile-mode .now-playing-queue-row .history-list-number {
+            grid-area: num !important;
+            align-self: start !important;
+            text-align: center !important;
+        }
+
+        /* Mobile playlist/current header: image left, title right, tools under title, meta below; never one-letter-per-line. */
+        body.onda-force-mobile-mode .playlist-detail-header,
+        body.onda-force-mobile-mode .now-playing-queue-header {
+            display: grid !important;
+            grid-template-columns: 92px minmax(0, 1fr) !important;
+            grid-template-areas:
+                "art title"
+                "art tools"
+                "meta meta"
+                "desc desc" !important;
+            align-items: start !important;
+            gap: 8px 12px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-header .playlist-detail-art,
+        body.onda-force-mobile-mode .now-playing-queue-header .playlist-detail-art {
+            grid-area: art !important;
+            width: 82px !important;
+            min-width: 82px !important;
+            height: 82px !important;
+            min-height: 82px !important;
+            margin: 0 !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-title-block {
+            grid-area: title !important;
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-title {
+            white-space: normal !important;
+            word-break: keep-all !important;
+            overflow-wrap: normal !important;
+            line-height: 1.18 !important;
+            text-align: left !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+        body.onda-force-mobile-mode .playlist-row-tools {
+            grid-area: tools !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: flex-start !important;
+            align-items: center !important;
+            flex-wrap: nowrap !important;
+            gap: 8px !important;
+            overflow: hidden !important;
+        }
+        body.onda-force-mobile-mode .playlist-row-tools .btn-pill {
+            width: 36px !important;
+            min-width: 36px !important;
+            height: 36px !important;
+            min-height: 36px !important;
+            padding: 0 !important;
+            font-size: 0 !important;
+            border-radius: 999px !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-meta-row {
+            grid-area: meta !important;
+            display: flex !important;
+            flex-wrap: wrap !important;
+            gap: 6px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        body.onda-force-mobile-mode .playlist-detail-description { grid-area: desc !important; }
+
+
+        /* Four issue correction: flat Library rows, visible mobile playlist buttons, and usable mobile header controls. */
+        .library-row-main {
+            min-width: 0 !important;
+        }
+        .library-track-text-wrap {
+            min-width: 0 !important;
+            max-width: 100% !important;
+        }
+        .library-row-buttons .btn-pill {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        body.onda-force-mobile-mode .playlist-row-tools .btn-pill,
+        body.onda-force-mobile-mode .library-row-buttons .btn-pill {
+            color: var(--water-spray) !important;
+            font-size: 1rem !important;
+            text-indent: 0 !important;
+            overflow: visible !important;
+        }
+        body.onda-force-mobile-mode .playlist-row-tools .btn-pill::after,
+        body.onda-force-mobile-mode .library-row-buttons .btn-pill::after {
+            content: none !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-result-row {
+            display: block !important;
+            padding: 10px 8px !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-result-row .library-row-main {
+            display: grid !important;
+            grid-template-columns: 34px minmax(0, 1fr) auto !important;
+            grid-template-areas:
+                "select title buttons"
+                "select file buttons"
+                "select playlist buttons" !important;
+            align-items: center !important;
+            gap: 3px 8px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .selection-indicator { grid-area: select !important; }
+        body.onda-force-mobile-mode #db-library-results .library-track-text-wrap {
+            display: contents !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-track-title {
+            grid-area: title !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            color: var(--water-spray) !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            text-align: left !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-file-line {
+            grid-area: file !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-playlist-line {
+            grid-area: playlist !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-track-meta {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            text-align: left !important;
+        }
+        body.onda-force-mobile-mode #db-library-results .library-row-buttons {
+            grid-area: buttons !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 8px !important;
+            min-width: max-content !important;
+        }
+        body.onda-force-mobile-mode #btn-mobile-select-mode.active,
+        body.onda-force-mobile-mode #btn-mobile-settings-mode.active {
+            background: rgba(75,132,191,0.34) !important;
+            box-shadow: 0 0 14px rgba(117,178,222,0.35) !important;
+        }
+
+        /* === END ONDA SIX SCREENSHOT ISSUE FIXES === */

@@ -1,0 +1,207 @@
+        body.onda-force-mobile-mode {
+            min-width: 0 !important;
+            max-width: 430px !important;
+            width: 100% !important;
+            margin: 0 auto !important;
+            padding: 0 15px !important;
+            overflow-x: hidden !important;
+            box-sizing: border-box !important;
+        }
+        body.onda-force-mobile-mode #organon-top-panel {
+            padding: 18px 14px !important;
+            margin-top: 15px !important;
+        }
+        body.onda-force-mobile-mode #organon-middle-panel {
+            padding: 15px 15px 120px 15px !important;
+        }
+        body.onda-force-mobile-mode #organon-bottom-panel {
+            left: 50% !important;
+            right: auto !important;
+            width: min(430px, calc(100vw - 30px)) !important;
+            transform: translateX(-50%) !important;
+            padding: 10px 15px 15px 15px !important;
+        }
+        body.onda-force-mobile-mode #library-manager-drawer {
+            left: 50% !important;
+            right: auto !important;
+            width: min(430px, calc(100vw - 30px)) !important;
+            max-width: min(430px, calc(100vw - 30px)) !important;
+            bottom: 62px !important;
+            top: var(--mobile-library-drawer-top, 178px) !important;
+            height: auto !important;
+            max-height: none !important;
+            transform: translate(-50%, calc(100% + 90px)) !important;
+        }
+        body.onda-force-mobile-mode #library-manager-drawer.drawer-open {
+            transform: translate(-50%, 0) !important;
+        }
+        body.onda-force-mobile-mode #library-manager-drawer .library-drawer-inner {
+            max-height: 100% !important;
+            height: 100% !important;
+        }
+        body.onda-force-mobile-mode .primary-controls {
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 10px !important;
+            margin-top: 12px !important;
+        }
+        body.onda-force-mobile-mode #start-controls-pill { order: 1 !important; }
+        body.onda-force-mobile-mode .seek-container {
+            order: 2 !important;
+            width: min(100%, 360px) !important;
+            max-width: 360px !important;
+            flex-grow: 0 !important;
+            justify-content: center !important;
+            margin: 2px 0 !important;
+        }
+        body.onda-force-mobile-mode #end-utilities-pill { order: 3 !important; }
+        body.onda-force-mobile-mode #start-controls-pill,
+        body.onda-force-mobile-mode #end-utilities-pill {
+            width: fit-content !important;
+            max-width: 100% !important;
+            justify-content: center !important;
+            gap: 8px !important;
+            padding: 5px 10px !important;
+            margin-inline: auto !important;
+        }
+        body.onda-force-mobile-mode .utility-btn {
+            font-size: 1.45rem !important;
+            padding: 3px 4px !important;
+        }
+        body.onda-force-mobile-mode #start-controls-pill.onda-transport-pill {
+            padding: 8px 18px !important;
+            gap: 18px !important;
+            min-height: 58px !important;
+            border-radius: 999px !important;
+        }
+        body.onda-force-mobile-mode #start-controls-pill.onda-transport-pill .utility-btn {
+            width: 48px !important;
+            min-width: 48px !important;
+            height: 48px !important;
+            padding: 8px !important;
+            font-size: 2.35rem !important;
+            line-height: 1 !important;
+        }
+        body.onda-force-mobile-mode #end-utilities-pill #btn-speed-cycle {
+            font-size: 2.7rem !important;
+        }
+        body.onda-force-mobile-mode .library-manager-toolbar {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+            padding: 8px 12px !important;
+        }
+        body.onda-force-mobile-mode .library-manager-toolbar .library-manager-actions { display: none !important; }
+        body.onda-force-mobile-mode .library-manager-content {
+            grid-template-columns: 1fr !important;
+            overflow: auto !important;
+        }
+        body.onda-force-mobile-mode .mobile-library-header-actions { display: flex !important; }
+        body.onda-force-mobile-mode .library-drawer-subtitle { display: none !important; }
+        body.onda-force-mobile-mode.onda-app-fullscreen #organon-top-panel {
+            margin-top: 0 !important;
+        }
+        body.onda-force-mobile-mode.onda-app-fullscreen #organon-middle-panel {
+            padding-top: 8px !important;
+        }
+        /* === END ONDA DIRECT EDIT V4 CSS === */
+
+
+        /* V7: force Now Playing playlist queue rows to render as normal visible rows */
+        #btn-playlist,
+        #btn-tags,
+        #btn-lyrics-modal {
+            display: none !important;
+        }
+        .now-playing-queue-list {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 8px !important;
+            margin-top: 12px !important;
+            max-height: 300px !important;
+            min-height: 0 !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+            border: 1px solid rgba(137,107,73,0.32) !important;
+            border-radius: 12px !important;
+            padding: 8px !important;
+            background: rgba(0,0,0,0.16) !important;
+        }
+        .now-playing-queue-row {
+            display: grid !important;
+            grid-template-columns: 34px minmax(0, 1fr) auto !important;
+            align-items: center !important;
+            gap: 10px !important;
+            min-height: 52px !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            box-sizing: border-box !important;
+            border: 1px solid rgba(117,178,222,0.18) !important;
+            border-radius: 10px !important;
+            padding: 8px 10px !important;
+            margin: 0 !important;
+            background: rgba(30,32,28,0.72) !important;
+            overflow: hidden !important;
+        }
+        .now-playing-queue-row.active-track {
+            border-color: var(--water-spray) !important;
+            background: rgba(75,132,191,0.16) !important;
+            box-shadow: 0 0 0 1px rgba(117,178,222,0.55), 0 0 18px rgba(117,178,222,0.25) !important;
+        }
+        .now-playing-queue-row .history-list-number {
+            grid-column: 1 !important;
+            color: var(--stone-ochre) !important;
+            font-weight: 900 !important;
+            text-align: center !important;
+        }
+        .now-playing-queue-row .onda-track-text-wrap {
+            grid-column: 2 !important;
+            min-width: 0 !important;
+            overflow: hidden !important;
+        }
+        .now-playing-queue-row .library-track-title,
+        .now-playing-queue-row .library-track-meta {
+            display: block !important;
+            min-width: 0 !important;
+            max-width: 100% !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .now-playing-queue-row .library-row-buttons {
+            grid-column: 3 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: flex-end !important;
+            gap: 6px !important;
+            flex-wrap: nowrap !important;
+            min-width: max-content !important;
+        }
+        .now-playing-queue-row .library-row-buttons .btn-pill {
+            padding: 6px 11px !important;
+            min-height: 30px !important;
+            font-size: 0.72rem !important;
+            line-height: 1 !important;
+            white-space: nowrap !important;
+        }
+        @media (max-width: 768px) {
+            .now-playing-queue-row {
+                grid-template-columns: 28px minmax(0, 1fr) !important;
+                align-items: start !important;
+            }
+            .now-playing-queue-row .library-row-buttons {
+                grid-column: 2 !important;
+                width: 100% !important;
+                justify-content: flex-start !important;
+                flex-wrap: wrap !important;
+                min-width: 0 !important;
+            }
+            .now-playing-queue-row .library-track-title,
+            .now-playing-queue-row .library-track-meta {
+                white-space: normal !important;
+                overflow-wrap: anywhere !important;
+            }
+        }
+
+        /* Onda V17 actual source fixes: Library drawer and playlist headers */

@@ -1,0 +1,18 @@
+{
+  "version": "mobile-fix-pass3",
+  "baseline": "onda_mobile_fix_pass2.zip",
+  "desktop_baseline_preserved": "onda_desktop_fix_pass2.zip",
+  "files_changed": [
+    "css/responsive.css",
+    "MOBILE_FIX_PASS3_REPORT.json",
+    "CHANGE_LIST.txt"
+  ],
+  "changes": [
+    "Normalized all mobile circular row action buttons to a single centered CSS pseudo-icon system.",
+    "Forced original button text to stay visually hidden on mobile so plus/add buttons cannot render doubled glyphs.",
+    "Disabled ::after icons for mobile row action buttons and made ::before the only icon source.",
+    "Rebuilt playlist detail and now-playing queue mobile rows as number/title/meta/actions grids.",
+    "Made playlist and now-playing .onda-track-text-wrap use display: contents so title/meta align with the grid instead of being trapped in a nested block.",
+    "Rebalanced history mobile row grid and action button alignment."
+  ]
+}

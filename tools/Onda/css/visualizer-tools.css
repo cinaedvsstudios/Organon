@@ -1,0 +1,95 @@
+/* Visualizer composer, presets, palettes, and related controls. */
+
+
+.vis-color-chip {
+  background: var(--visual-chip-color, #000000);
+  border: 1px solid rgba(117, 178, 222, 0.65);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.55), 0 0 8px rgba(117,178,222,0.18);
+  cursor: pointer;
+  height: 34px;
+  padding: 0;
+  width: 100%;
+}
+
+.vis-color-chip[data-color="#000000"] {
+  background-image: linear-gradient(135deg, transparent 0 43%, rgba(117,178,222,.65) 43% 48%, transparent 48% 100%);
+}
+
+.visual-color-palette {
+  background: rgba(0, 0, 0, 0.42);
+  border: 1px solid rgba(117, 178, 222, 0.35);
+  border-radius: 10px;
+  display: grid;
+  gap: 5px;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 8px;
+}
+
+.visual-color-palette[hidden] {
+  display: none;
+}
+
+.vis-palette-swatch {
+  aspect-ratio: 1 / 1;
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.42);
+  cursor: pointer;
+  min-height: 25px;
+  width: 100%;
+}
+
+.vis-palette-swatch.blank-swatch {
+  background: #000;
+  background-image: linear-gradient(135deg, transparent 0 43%, rgba(117,178,222,.85) 43% 50%, transparent 50% 100%);
+}
+
+.visual-layer-card.is-hidden .visual-layer-title,
+        .visual-layer-card.is-hidden label,
+        .visual-layer-card.is-hidden .composer-help,
+        .visual-layer-card.is-hidden .visual-range-readout {
+  color: #8d9297;
+}
+
+.composer-help-tight {
+  margin-bottom: 4px;
+}
+
+
+/* Fixed palette swatches replace dynamic inline background styles. */
+.vis-palette-swatch-0 { background: #d8a8cc; }
+.vis-palette-swatch-1 { background: #af63a5; }
+.vis-palette-swatch-2 { background: #a80084; }
+.vis-palette-swatch-3 { background: #79005b; }
+.vis-palette-swatch-4 { background: #50002f; }
+.vis-palette-swatch-5 { background: #d7a4b1; }
+.vis-palette-swatch-6 { background: #b05d78; }
+.vis-palette-swatch-7 { background: #a7002a; }
+.vis-palette-swatch-8 { background: #760016; }
+.vis-palette-swatch-9 { background: #520007; }
+.vis-palette-swatch-10 { background: #d8bea8; }
+.vis-palette-swatch-11 { background: #b37e62; }
+.vis-palette-swatch-12 { background: #a33f00; }
+.vis-palette-swatch-13 { background: #783d00; }
+.vis-palette-swatch-14 { background: #513000; }
+.vis-palette-swatch-15 { background: #e7d99a; }
+.vis-palette-swatch-16 { background: #c2a146; }
+.vis-palette-swatch-17 { background: #c38200; }
+.vis-palette-swatch-18 { background: #8b7800; }
+.vis-palette-swatch-19 { background: #585500; }
+.vis-palette-swatch-20 { background: #d0d9a8; }
+.vis-palette-swatch-21 { background: #a5ad63; }
+.vis-palette-swatch-22 { background: #78a000; }
+.vis-palette-swatch-23 { background: #446f00; }
+.vis-palette-swatch-24 { background: #234700; }
+.vis-palette-swatch-25 { background: #a8c8d9; }
+.vis-palette-swatch-26 { background: #6399ad; }
+.vis-palette-swatch-27 { background: #00669c; }
+.vis-palette-swatch-28 { background: #00436f; }
+.vis-palette-swatch-29 { background: #00264f; }
+.vis-palette-swatch-30 { background: #bca8d8; }
+.vis-palette-swatch-31 { background: #7c62ad; }
+.vis-palette-swatch-32 { background: #4b00a0; }
+.vis-palette-swatch-33 { background: #3d006f; }
+.vis-palette-swatch-34 { background: #2d004f; }

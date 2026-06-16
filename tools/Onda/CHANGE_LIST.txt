@@ -1,0 +1,74 @@
+Onda strict UI cleanup refactor
+
+Base source: onda_clean_ui_refactor, which was generated from the uploaded last-working backup.
+
+Rollback point before this pass:
+- /mnt/data/onda_clean_ui_refactor.zip
+
+What changed in this strict pass:
+- Removed the remaining normal UI-state DOM style mutations for display/show/hide/open/closed states.
+- Converted modal, toast, settings popup, playlist detail panel, tags bar, and now-playing mode pill visibility to class-based state.
+- Replaced remaining dynamic inline HTML style strings inside JavaScript templates with CSS classes or CSS-variable-backed classes.
+- Reworked visualizer colour chips so fixed palette colours use generated CSS classes and custom/runtime colours use a CSS variable.
+- Reworked settings popup dragging so JS writes CSS variables instead of direct left/top/transform element properties.
+- Reworked library drawer sizing so JS writes CSS variables and state classes instead of direct width/left/right/bottom element properties.
+- Moved Cloud Sync responsive rules out of cloud-sync.css and into responsive.css so cloud-sync.css is base component styling only.
+- Consolidated responsive.css into grouped media sections instead of many one-rule media blocks.
+- Confirmed there are no exact duplicate selectors outside responsive.css.
+- Preserved the Netlify function byte-for-byte from the uploaded onda-sync.js.
+
+Files touched in this pass:
+- css/layout.css
+- css/library.css
+- css/modals-settings.css
+- css/playlists-now-playing.css
+- css/responsive.css
+- css/cloud-sync.css
+- css/visualizer-tools.css
+- js/app-core.js
+- js/cloud-sync.js
+- CHANGE_LIST.txt
+- CLEAN_SOURCE_MAP.md
+- CLEAN_VERIFY_REPORT.json
+- STRICT_UI_CLEANUP_REPORT.json
+
+Known deliberate non-cleanups:
+- The app remains a classic-script app, not ES modules, because changing the global runtime model would be a separate high-risk architecture pass.
+- Runtime sizing/position/colour values still use CSS custom properties. Those are intentional dynamic values, not patch CSS.
+
+
+Desktop fix pass 1:
+- Top player rebuilt as left control square plus right title/timeline/utilities row.
+- Workspace mode bar made sticky inside the desktop workspace scroll area.
+- Current/playlist panes given internal scroll and bottom clearance above the fixed bottom bar.
+- Library select panel now exposes Select Visible, Clear Selection, and Invert Selection.
+- Added invert-selection behaviour for visible library rows.
+- Library/playlist/current track titles forced left-aligned.
+- Settings drag now anchors from getBoundingClientRect before removing transform, preventing jump on drag start.
+- Settings tabs restyled as Onda buttons instead of browser-default buttons.
+- Settings popup received bottom-right resize handle using CSS variables.
+
+Mobile fix pass 1
+- Preserved accepted desktop baseline from onda_desktop_fix_pass2.zip.
+- Rebuilt forced-mobile player layout so transport controls render first, timeline second, and utility pill third.
+- Added mobile history row grid so titles/meta align correctly and action buttons stay visible.
+- Added mobile row action pseudo-icons for Play, Info, and Add buttons so empty circular buttons render meaningful icons.
+- Reworked Now Playing mobile layout to place artwork beside display title, then all metadata boxes underneath.
+- Reworked mobile Library select action stack to scroll horizontally like settings tabs.
+- Added history text wrapper class during history row generation for stable mobile targeting.
+
+
+MOBILE FIX PASS 2
+- Fixed mobile workspace mode tab buttons by binding them directly as real buttons with click/touch handlers.
+- Raised the mobile workspace tab bar above the active viewport and forced it to accept pointer/touch events.
+- Fixed double-plus row action buttons by hiding original button text on mobile and letting a single CSS icon render the action.
+- Left accepted desktop layout unchanged.
+
+
+Mobile fix pass 3
+- Normalized all mobile circular row action buttons to a single centered CSS pseudo-icon system.
+- Forced original button text to stay visually hidden on mobile so plus/add buttons cannot render doubled glyphs.
+- Disabled ::after icons for mobile row action buttons and made ::before the only icon source.
+- Rebuilt playlist detail and now-playing queue mobile rows as number/title/meta/actions grids.
+- Made playlist and now-playing .onda-track-text-wrap use display: contents so title/meta align with the grid instead of being trapped in a nested block.
+- Rebalanced history mobile row grid and action button alignment.

@@ -1,0 +1,13 @@
+{
+  "pass": "desktop-fix-pass2",
+  "changes": [
+    "Rebuilt desktop player against current .desktop-player-layout classes and removed reliance on dead div[style] selectors.",
+    "Enlarged left transport control square and fixed play/prev/next sizing inside it.",
+    "Centered seek timeline in a stable right-side grid and kept utility pill beside the timeline.",
+    "Changed play active state so the button keeps the same size and only toggles active-state animation.",
+    "Fixed library row grid to selection circle | left-aligned text | actions.",
+    "Fixed layout enhancement row detection so selection circles are not marked as text wrappers.",
+    "Changed workspace scrolling model so menu bar stays visible and active tab content scrolls internally.",
+    "History/current/playlist row lists no longer spill behind the bottom Library bar."
+  ]
+}

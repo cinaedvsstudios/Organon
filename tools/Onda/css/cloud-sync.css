@@ -1,0 +1,223 @@
+/* Netlify Cloud Sync setup and device-sync UI only. */
+
+
+body.onda-force-mobile-mode #onda-mobile-save-cloud,
+        body.onda-force-mobile-mode #onda-mobile-load-cloud,
+        body.onda-force-mobile-mode .onda-cloud-mobile-btn {
+  display: none;
+}
+
+.onda-cloud-card {
+  background: rgba(0, 0, 0, 0.26);
+  border: 1.5px solid var(--water-blue, #4b84bf);
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.08), 0 0 16px rgba(75,132,191,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.onda-cloud-title {
+  color: var(--water-spray, #75b2de);
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.onda-cloud-help,
+    .onda-cloud-status {
+  color: var(--chiseled-bronze, #896b49);
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.onda-cloud-status strong {
+  color: var(--water-spray, #75b2de);
+}
+
+.onda-cloud-grid {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+}
+
+.onda-cloud-grid .btn-pill {
+  font-size: 0.74rem;
+  padding: 7px 11px;
+}
+
+.onda-cloud-modal-overlay {
+  background: rgba(0,0,0,0.72);
+  display: none;
+  inset: 0;
+  position: fixed;
+  z-index: 22000;
+}
+
+.onda-cloud-modal-overlay.open {
+  display: block;
+}
+
+.onda-cloud-modal {
+  background: var(--bg-card, #292a24);
+  border: 2px solid var(--stone-ochre, #e0a360);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.85), 0 0 28px rgba(75,132,191,0.18);
+  color: var(--alabaster-paper, #f5f0db);
+  display: none;
+  left: 50%;
+  max-height: min(88vh, 760px);
+  overflow: auto;
+  position: fixed;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(92vw, 680px);
+  z-index: 22001;
+}
+
+.onda-cloud-modal.open {
+  display: block;
+}
+
+.onda-cloud-modal-head {
+  align-items: center;
+  background: linear-gradient(90deg, rgba(38,97,92,0.24), rgba(0,0,0,0.18));
+  border-bottom: 1px solid rgba(224,163,96,0.35);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+}
+
+.onda-cloud-modal-title {
+  color: var(--water-spray, #75b2de);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.onda-cloud-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px 18px;
+}
+
+.onda-cloud-field {
+  color: var(--water-spray, #75b2de);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.76rem;
+  font-weight: 800;
+  gap: 5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.onda-cloud-field input,
+    .onda-cloud-field select {
+  background: var(--bg-nightsky, #1e201c);
+  border: 1px solid var(--chiseled-bronze, #896b49);
+  border-radius: 10px;
+  box-sizing: border-box;
+  color: var(--alabaster-paper, #f5f0db);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  padding: 10px 12px;
+  text-transform: none;
+}
+
+.onda-cloud-device-list {
+  display: grid;
+  gap: 8px;
+}
+
+.onda-cloud-device-row {
+  align-items: center;
+  background: rgba(0,0,0,0.20);
+  border: 1px solid rgba(117,178,222,0.26);
+  border-radius: 12px;
+  cursor: pointer;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto 1fr auto;
+  padding: 10px;
+}
+
+.onda-cloud-device-row.selected {
+  background: rgba(224,163,96,0.13);
+  border-color: var(--stone-ochre, #e0a360);
+  box-shadow: inset 0 0 0 1px rgba(224,163,96,0.18);
+}
+
+.onda-cloud-device-name {
+  color: var(--water-spray, #75b2de);
+  font-weight: 900;
+}
+
+.onda-cloud-device-meta {
+  color: rgba(245,240,219,0.65);
+  font-size: 0.72rem;
+  margin-top: 2px;
+  overflow-wrap: anywhere;
+}
+
+.onda-cloud-actions {
+  border-top: 1px solid rgba(137,107,73,0.25);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 12px;
+}
+
+.onda-cloud-warning {
+  background: rgba(224,163,96,0.09);
+  border: 1px solid rgba(224,163,96,0.45);
+  border-radius: 12px;
+  color: var(--alabaster-paper, #f5f0db);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  padding: 10px 12px;
+}
+
+.onda-cloud-mobile-btn {
+  align-items: center;
+  background: rgba(0,0,0,0.24);
+  border: 1px solid rgba(117, 178, 222, 0.75);
+  border-radius: 999px;
+  color: var(--water-spray, #75b2de);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.92rem;
+  height: 30px;
+  justify-content: center;
+  min-width: 30px;
+}
+
+
+
+
+
+
+
+
+
+
+
+.onda-cloud-status.is-error {
+  color: var(--terracotta-peach, #d27d6c);
+}
+
+.onda-cloud-status-time {
+  opacity: 0.7;
+}
+
+.onda-cloud-device-marker {
+  color: var(--stone-ochre, #e0a360);
+  font-size: 1.2rem;
+}

@@ -1,0 +1,18 @@
+/* Onda tokens and design constants. */
+
+
+:root {
+  --alabaster-paper: #f5f0db;
+  --bg-card: #292a24;
+  --bg-nightsky: #1e201c;
+  --brand-red: #9a2f4f;
+  --burgundy: #4a1525;
+  --chiseled-bronze: #896b49;
+  --forest-teal: #26615c;
+  --light-teal: #449e92;
+  --stone-ochre: #e0a360;
+  --terracotta-peach: #d27d6c;
+  --water-blue: #4b84bf;
+  --water-spray: #75b2de;
+  --white-accent: #ffffff;
+}

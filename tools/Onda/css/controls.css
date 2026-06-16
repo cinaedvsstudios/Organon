@@ -1,0 +1,192 @@
+/* Shared buttons, pills, tabs, and control elements. */
+
+
+#organon-bottom-panel .btn-pill {
+  background-color: rgba(24, 25, 25, 0.9);
+  border: 1px solid var(--chiseled-bronze);
+  color: #75b2de;
+  width: 100%;
+}
+
+#btn-database-engine {
+  -webkit-user-select: none;
+  touch-action: none;
+  user-select: none;
+}
+
+#btn-database-engine.drawer-resize-ready {
+  box-shadow: 0 0 14px rgba(117, 178, 222, 0.28), inset 0 0 0 1px rgba(117, 178, 222, 0.22);
+  cursor: ns-resize;
+}
+
+.btn-pill {
+  background-color: transparent;
+  border: 1px solid var(--water-blue);
+  border-radius: 50px;
+  box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.12), 0 0 10px rgba(75, 132, 191, 0.08);
+  color: var(--water-spray);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: bold;
+  padding: 8px 20px;
+  transition: all 0.2s ease;
+}
+
+.btn-pill:hover {
+  background-color: rgba(75, 132, 191, 0.12);
+  box-shadow: inset 0 0 0 1px rgba(117, 178, 222, 0.32), 0 0 14px rgba(75, 132, 191, 0.22);
+  filter: brightness(1.15);
+}
+
+.btn-pill:active {
+  transform: scale(0.95);
+}
+
+.pencil-btn {
+  background: none;
+  border: none;
+  color: var(--stone-ochre);
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-left: 8px;
+  transition: transform 0.2s ease;
+}
+
+.pencil-btn:hover {
+  color: var(--water-spray);
+  transform: scale(1.2);
+}
+
+.workspace-mode-bar {
+  background-color: rgba(0, 0, 0, 0.4);
+  border: 1.5px solid var(--chiseled-bronze);
+  border-radius: 50px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+  box-sizing: border-box;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  width: 100%;
+}
+
+.mode-tab-btn {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 50px;
+  color: var(--alabaster-paper);
+  cursor: pointer;
+  display: flex;
+  flex: 1;
+  font-size: 0.85rem;
+  font-weight: bold;
+  gap: 8px;
+  justify-content: center;
+  padding: 8px 12px;
+  transition: all 0.2s ease;
+}
+
+.mode-tab-btn:hover {
+  background-color: rgba(224, 163, 96, 0.1);
+}
+
+.mode-tab-btn.tab-active {
+  background-color: var(--water-blue);
+  box-shadow: 0 0 6px rgba(75, 132, 191, 0.5);
+  color: var(--white-accent);
+}
+
+.bulk-actions-stack .btn-pill {
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+}
+
+#organon-bottom-panel.onda-bottom-bar-v3 #btn-database-engine {
+  min-width: 0;
+  text-align: center;
+  width: 100%;
+}
+
+#organon-bottom-panel .onda-bottom-mini-pill {
+  align-items: center;
+  background-color: rgba(24, 25, 25, 0.9);
+  border: 1px solid var(--chiseled-bronze);
+  border-radius: 999px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.45);
+  color: var(--water-spray);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-size: 1.1rem;
+  height: 38px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 46px;
+  padding: 0 14px;
+  width: auto;
+}
+
+#organon-bottom-panel .onda-bottom-mini-pill.active {
+  background-color: rgba(75, 132, 191, 0.28);
+  border-color: var(--water-spray);
+  color: var(--alabaster-paper);
+}
+
+#btn-repeat-one .utility-mini-word,
+        #btn-repeat-all .utility-mini-word {
+  display: none;
+}
+
+#btn-repeat-one,
+        #btn-repeat-all,
+        #btn-shuffle,
+        #btn-speed-cycle,
+        #btn-toggle-advanced {
+  font-size: 1.35rem;
+}
+
+#btn-speed-cycle,
+        body.onda-force-mobile-mode #btn-speed-cycle,
+        body.onda-force-desktop-mode #btn-speed-cycle,
+        body.onda-force-mobile-mode #end-utilities-pill #btn-speed-cycle,
+        body.onda-force-desktop-mode #end-utilities-pill #btn-speed-cycle {
+  font-size: 1.25rem;
+}
+
+.inline-button-row {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-muted {
+  background: var(--chiseled-bronze);
+}
+
+.btn-danger {
+  background: var(--brand-red);
+  color: white;
+}
+
+.btn-primary-gold {
+  background: var(--stone-ochre);
+}
+
+.btn-compact {
+  font-size: 0.75rem;
+  padding: 4px 12px;
+}
+
+.btn-compact-danger {
+  background-color: var(--brand-red);
+  color: white;
+  font-size: 0.75rem;
+  padding: 4px 12px;
+}
+
+
+/* Desktop workspace tabs stay visible while the workspace scrolls. */
+.workspace-mode-bar {
+  position: sticky;
+  top: 0;
+  z-index: 95;
+}

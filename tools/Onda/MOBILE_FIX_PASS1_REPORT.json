@@ -1,0 +1,31 @@
+{
+  "baseline": "onda_desktop_fix_pass2.zip",
+  "scope": "mobile-only layout and row cleanup; desktop baseline preserved",
+  "changed_files": [
+    "css/responsive.css",
+    "js/app-core.js",
+    "CHANGE_LIST.txt"
+  ],
+  "fixes": [
+    "Mobile top player order: controls, timeline, utility pill",
+    "Mobile history row title/meta alignment",
+    "Mobile row action buttons no longer render empty",
+    "Mobile Now Playing: artwork + display name first, metadata boxes below",
+    "Mobile Library select actions scroll horizontally"
+  ],
+  "checks": {
+    "node_check": [
+      "js/app-core.js",
+      "js/layout-enhancements.js",
+      "js/cloud-sync.js",
+      "onda-midi.js",
+      "netlify/functions/onda-sync.js"
+    ],
+    "css_brace_balance": "all css files balanced",
+    "css_important_count": 0,
+    "inline_style_attributes_in_index": 0,
+    "missing_linked_local_assets": 0,
+    "duplicate_static_html_ids": 0,
+    "netlify_function_matches_uploaded_onda_sync_js": true
+  }
+}
