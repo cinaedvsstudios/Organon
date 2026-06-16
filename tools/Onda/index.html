@@ -72,11 +72,11 @@
 <div id="organon-middle-panel">
 <!-- Workspace Mode Selection Tabs Bar -->
 <div class="workspace-mode-bar">
-<button class="mode-tab-btn tab-active" id="tab-btn-files" onclick="switchWorkspaceTab('tab-files')"><span class="mode-tab-icon">📥</span><span class="mode-tab-label">Add</span></button>
-<button class="mode-tab-btn" id="tab-btn-history" onclick="switchWorkspaceTab('tab-history')"><span class="mode-tab-icon">🕘</span><span class="mode-tab-label">History</span></button>
-<button class="mode-tab-btn" id="tab-btn-playlists" onclick="switchWorkspaceTab('tab-playlists')"><span class="mode-tab-icon">📚</span><span class="mode-tab-label">Playlists</span></button>
-<button class="mode-tab-btn" id="tab-btn-library" onclick="switchWorkspaceTab('tab-library')"><span class="mode-tab-icon">🧿</span><span class="mode-tab-label">Current</span></button>
-<button class="mode-tab-btn" id="tab-btn-youtube" onclick="switchWorkspaceTab('tab-youtube')"><span class="mode-tab-icon">🌐</span><span class="mode-tab-label">Stream</span></button>
+<button class="mode-tab-btn tab-active" data-workspace-tab="tab-files" id="tab-btn-files" type="button"><span class="mode-tab-icon">📥</span><span class="mode-tab-label">Add</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-history" id="tab-btn-history" type="button"><span class="mode-tab-icon">🕘</span><span class="mode-tab-label">History</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-playlists" id="tab-btn-playlists" type="button"><span class="mode-tab-icon">📚</span><span class="mode-tab-label">Playlists</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-library" id="tab-btn-library" type="button"><span class="mode-tab-icon">🧿</span><span class="mode-tab-label">Current</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-youtube" id="tab-btn-youtube" type="button"><span class="mode-tab-icon">🌐</span><span class="mode-tab-label">Stream</span></button>
 </div>
 <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
 <div class="organon-card workspace-card-shell" id="workspace-viewport">
@@ -290,7 +290,7 @@
 </div>
 <div class="library-manager-toolbar">
 <div class="search-input-wrap">
-<input autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" inputmode="search" name="onda-library-search-query" placeholder="Search filename, nickname, tag, playlist, URL or source..." readonly spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
+<input aria-autocomplete="none" autocomplete="new-password" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" inputmode="search" name="onda-library-filter-not-login" placeholder="Search filename, nickname, tag, playlist, URL or source..." spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
 <button aria-label="Clear search" class="search-clear-btn" id="btn-db-clear-search" title="Clear search">×</button>
 </div>
 <div class="library-manager-actions library-actions-menu">

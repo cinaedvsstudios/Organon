@@ -86,3 +86,10 @@ MOBILE FIX PASS 5
 - Added Library render fallback that clears non-user autofill search text if it produces zero results while tracks exist.
 - Added playlist-to-library recovery so tracks visible in playlists can still appear in the Library drawer even if their catalogue record was missing/stale.
 - Reworked mobile playlist header action icons to use one pseudo-icon source and hide original text, preventing doubled Play/Shuffle/Edit emojis.
+
+Mobile Fix Pass 6
+- Removed the pass5 readonly/unlock search-field hack that could keep the Library filtered empty.
+- Cleared Library search on drawer open and after delayed autofill attempts without relying on activeElement checks.
+- Forced mobile Library drawer opens to the Results view so the track list is visible instead of restoring a hidden side-view.
+- Extended Library recovery to rebuild records from both saved playlists and the current playback queue.
+- Removed inline onclick workspace tab dependency and rebound workspace tabs through data-workspace-tab with pointer/click double-fire protection.

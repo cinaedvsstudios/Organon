@@ -1446,11 +1446,6 @@ body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] 
 
 /* Mobile fix pass 5: stop password-manager autofill from hiding Library tracks and remove doubled playlist header icons. */
 @media (max-width: 768px) {
-  #db-library-search[readonly] {
-    cursor: text;
-    -webkit-text-security: none;
-  }
-
   .playlist-detail-header .playlist-row-tools .btn-pill {
     align-items: center;
     display: inline-flex;
@@ -1490,4 +1485,31 @@ body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] 
   .playlist-detail-header .playlist-row-tools #btn-detail-edit-playlist::before {
     content: "✏️";
   }
+}
+
+
+/* Mobile fix pass 6: restore tab taps and force Library results to be visible. */
+body.onda-force-mobile-mode .workspace-mode-bar {
+  isolation: isolate;
+  z-index: 500;
+}
+
+body.onda-force-mobile-mode .workspace-mode-bar .mode-tab-btn {
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-results-panel {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] #db-library-results {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 180px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }

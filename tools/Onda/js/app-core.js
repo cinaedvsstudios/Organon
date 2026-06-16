@@ -857,73 +857,71 @@
 
         function ensureVirtualLibraryRecordsFromPlaylists() {
             let changed = false;
+
+            const recoverTrack = (trackLike, playlistName = '') => {
+                const id = getTrackId(trackLike);
+                if (!id || virtualLibrary[id]) return;
+                if (trackLike && typeof trackLike === 'object') {
+                    virtualLibrary[id] = {
+                        id,
+                        fileName: trackLike.fileName || trackLike.title || trackLike.name || id,
+                        title: trackLike.title || trackLike.fileName || trackLike.name || id,
+                        nickname: trackLike.nickname || '',
+                        lyrics: trackLike.lyrics || '',
+                        tags: Array.isArray(trackLike.tags) ? trackLike.tags : [],
+                        playlists: playlistName ? [playlistName] : [],
+                        sourceType: trackLike.sourceType || (trackLike.streamUrl ? 'stream' : 'local'),
+                        size: trackLike.size || '',
+                        sizeBytes: trackLike.sizeBytes || null,
+                        streamUrl: trackLike.streamUrl || null,
+                        localPath: trackLike.localPath || null,
+                        phonePath: trackLike.phonePath || null,
+                        desktopPath: trackLike.desktopPath || null,
+                        imageUrl: trackLike.imageUrl || null,
+                        imageData: trackLike.imageData || null,
+                        notes: trackLike.notes || '',
+                        recoveredFromPlaylist: true,
+                        needsRelink: !(trackLike.streamUrl || trackLike.blobFile),
+                        updatedAt: new Date().toISOString()
+                    };
+                } else {
+                    virtualLibrary[id] = {
+                        id,
+                        fileName: id,
+                        title: id,
+                        nickname: '',
+                        lyrics: '',
+                        tags: [],
+                        playlists: playlistName ? [playlistName] : [],
+                        sourceType: 'local',
+                        size: '',
+                        streamUrl: null,
+                        localPath: null,
+                        phonePath: null,
+                        desktopPath: null,
+                        imageUrl: null,
+                        imageData: null,
+                        notes: '',
+                        recoveredFromPlaylist: true,
+                        needsRelink: true,
+                        updatedAt: new Date().toISOString()
+                    };
+                }
+                changed = true;
+            };
+
             Object.entries(playlists || {}).forEach(([playlistName, tracks]) => {
-                if (!Array.isArray(tracks)) return;
-                tracks.forEach((trackLike) => {
-                    const id = getTrackId(trackLike);
-                    if (!id || virtualLibrary[id]) return;
-                    if (trackLike && typeof trackLike === 'object') {
-                        virtualLibrary[id] = {
-                            id,
-                            fileName: trackLike.fileName || trackLike.title || trackLike.name || id,
-                            title: trackLike.title || trackLike.fileName || trackLike.name || id,
-                            nickname: trackLike.nickname || '',
-                            lyrics: trackLike.lyrics || '',
-                            tags: Array.isArray(trackLike.tags) ? trackLike.tags : [],
-                            playlists: [playlistName],
-                            sourceType: trackLike.sourceType || (trackLike.streamUrl ? 'stream' : 'local'),
-                            size: trackLike.size || '',
-                            streamUrl: trackLike.streamUrl || null,
-                            localPath: trackLike.localPath || null,
-                            phonePath: trackLike.phonePath || null,
-                            desktopPath: trackLike.desktopPath || null,
-                            imageUrl: trackLike.imageUrl || null,
-                            imageData: trackLike.imageData || null,
-                            notes: trackLike.notes || '',
-                            recoveredFromPlaylist: true,
-                            needsRelink: !(trackLike.streamUrl || trackLike.blobFile),
-                            updatedAt: new Date().toISOString()
-                        };
-                    } else {
-                        virtualLibrary[id] = {
-                            id,
-                            fileName: id,
-                            title: id,
-                            nickname: '',
-                            lyrics: '',
-                            tags: [],
-                            playlists: [playlistName],
-                            sourceType: 'local',
-                            size: '',
-                            streamUrl: null,
-                            localPath: null,
-                            phonePath: null,
-                            desktopPath: null,
-                            imageUrl: null,
-                            imageData: null,
-                            notes: '',
-                            recoveredFromPlaylist: true,
-                            needsRelink: true,
-                            updatedAt: new Date().toISOString()
-                        };
-                    }
-                    changed = true;
-                });
+                if (Array.isArray(tracks)) tracks.forEach(trackLike => recoverTrack(trackLike, playlistName));
             });
+            if (Array.isArray(playlistTracks)) playlistTracks.forEach(trackLike => recoverTrack(trackLike, activePlaylistView || 'Current Queue'));
+
             if (changed) syncAllTrackPlaylistMetadata();
             return changed;
         }
 
-        function unlockLibrarySearchForUser() {
-            if (!dbLibrarySearch) return;
-            dbLibrarySearch.removeAttribute('readonly');
-        }
-
-        function clearLibrarySearchAutofill(reason = '') {
+        function clearLibrarySearchValue(reason = '') {
             if (!dbLibrarySearch) return false;
-            const value = String(dbLibrarySearch.value || '');
-            if (!value) return false;
-            if (document.activeElement === dbLibrarySearch && userTypedLibrarySearch) return false;
+            if (!dbLibrarySearch.value) return false;
             dbLibrarySearch.value = '';
             userTypedLibrarySearch = false;
             return true;
@@ -932,11 +930,10 @@
         function prepareLibrarySearchForDrawerOpen() {
             if (!dbLibrarySearch) return;
             userTypedLibrarySearch = false;
-            dbLibrarySearch.setAttribute('readonly', 'readonly');
-            clearLibrarySearchAutofill('drawer-open');
+            clearLibrarySearchValue('drawer-open');
             [80, 350, 900].forEach(delay => {
                 setTimeout(() => {
-                    if (libraryDrawer?.classList.contains('drawer-open') && clearLibrarySearchAutofill(`drawer-open-autofill-${delay}`)) {
+                    if (libraryDrawer?.classList.contains('drawer-open') && clearLibrarySearchValue(`drawer-open-autofill-${delay}`)) {
                         renderLibraryManager();
                     }
                 }, delay);
@@ -1549,6 +1546,10 @@
             showToast('Mobile library icons reset.');
         }
 
+        function isMobileLayoutActive() {
+            return document.body.classList.contains('onda-force-mobile-mode') || (window.matchMedia && window.matchMedia('(max-width: 768px)').matches && !document.body.classList.contains('onda-force-desktop-mode'));
+        }
+
         function setMobileLibraryView(view = 'results') {
             if (!libraryDrawer) return;
             const safeView = ['results', 'recents', 'playlists', 'help'].includes(view) ? view : 'results';
@@ -1606,8 +1607,8 @@
                 })
                 .sort((a, b) => getDisplayTitle(a[1]).localeCompare(getDisplayTitle(b[1])));
 
-            if (!entries.length && search && Object.keys(virtualLibrary).length && document.activeElement !== dbLibrarySearch) {
-                clearLibrarySearchAutofill('empty-results-autofill-guard');
+            if (!entries.length && search && Object.keys(virtualLibrary).length && !userTypedLibrarySearch) {
+                clearLibrarySearchValue('empty-results-autofill-guard');
                 return renderLibraryManager();
             }
 
@@ -1848,7 +1849,7 @@
                 const savedWidth = getLibraryDrawerSavedWidth();
                 if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
                 if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
-                setMobileLibraryView(libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results');
+                setMobileLibraryView(isMobileLayoutActive() ? 'results' : (libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results'));
                 prepareLibrarySearchForDrawerOpen();
                 renderLibraryManager();
             }
@@ -3509,6 +3510,8 @@
             saveLocalUiStateCheckpoint(`screen-change-after:${tabId}`);
         }
 
+        window.switchWorkspaceTab = switchWorkspaceTab;
+
         function saveLastPlayedTrack(reason = 'track-change') {
             if (!currentFile || !currentFile.name || !virtualLibrary[currentFile.name]) return;
             try {
@@ -4027,8 +4030,7 @@
 
         safeBind('btn-db-clear-search', 'click', () => {
             if (!dbLibrarySearch) return;
-            dbLibrarySearch.value = '';
-            userTypedLibrarySearch = false;
+            clearLibrarySearchValue('clear-button');
             renderLibraryManager();
             dbLibrarySearch.focus();
         });
@@ -4142,9 +4144,6 @@
         const playlistImageUrlInput = document.getElementById('input-playlist-image-url');
         if (playlistImageUrlInput) playlistImageUrlInput.addEventListener('input', () => updatePlaylistImagePreview(playlistImageUrlInput.value.trim()));
         if (dbLibrarySearch) {
-            dbLibrarySearch.addEventListener('pointerdown', unlockLibrarySearchForUser);
-            dbLibrarySearch.addEventListener('touchstart', unlockLibrarySearchForUser, { passive: true });
-            dbLibrarySearch.addEventListener('focus', unlockLibrarySearchForUser);
             dbLibrarySearch.addEventListener('input', () => {
                 userTypedLibrarySearch = true;
                 renderLibraryManager();
@@ -5767,17 +5766,24 @@
                 if (btn.dataset.ondaBoundWorkspaceTab === '1') return;
                 btn.dataset.ondaBoundWorkspaceTab = '1';
                 btn.type = 'button';
-                const tabId = 'tab-' + btn.id.replace(/^tab-btn-/, '');
+                const tabId = btn.dataset.workspaceTab || ('tab-' + btn.id.replace(/^tab-btn-/, ''));
+                let lastPointerActivation = 0;
+                const activate = (event) => {
+                    if (!document.getElementById(tabId)) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    lastPointerActivation = Date.now();
+                    switchWorkspaceTab(tabId);
+                };
+                btn.addEventListener('pointerup', activate, { capture: true, passive: false });
                 btn.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (document.getElementById(tabId)) switchWorkspaceTab(tabId);
+                    if (Date.now() - lastPointerActivation < 500) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        return;
+                    }
+                    activate(event);
                 }, true);
-                btn.addEventListener('touchend', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    if (document.getElementById(tabId)) switchWorkspaceTab(tabId);
-                }, { capture: true, passive: false });
             });
         }
         bindWorkspaceModeButtons();
