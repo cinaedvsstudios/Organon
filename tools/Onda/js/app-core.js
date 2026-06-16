@@ -3460,7 +3460,7 @@
             btnPlay.classList.remove('active-state');
         }
 
-        btnPlay.addEventListener('click', () => {
+        function togglePrimaryPlayControl() {
             if (!currentFile && !restoreLastPlayedTrack()) return;
             if (ignoreNextPlayClick) {
                 ignoreNextPlayClick = false;
@@ -3468,7 +3468,9 @@
             }
             if (isPlaying && !activeAudio.paused) pauseAudio();
             else playAudio();
-        });
+        }
+
+        btnPlay.addEventListener('click', togglePrimaryPlayControl);
 
         if (btnPause) {
             btnPause.addEventListener('click', () => {
@@ -3505,8 +3507,14 @@
         btnPlay.addEventListener('mousedown', startPlayHold);
         btnPlay.addEventListener('mouseup', releasePlayHold);
         btnPlay.addEventListener('mouseleave', () => { if (isHoldingPlay) releasePlayHold(); });
-        btnPlay.addEventListener('touchstart', (e) => { e.preventDefault(); startPlayHold(); });
-        btnPlay.addEventListener('touchend', (e) => { e.preventDefault(); releasePlayHold(); });
+        btnPlay.addEventListener('touchstart', (e) => { e.preventDefault(); startPlayHold(); }, { passive: false });
+        btnPlay.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const wasHolding = isHoldingPlay;
+            releasePlayHold();
+            if (!wasHolding) togglePrimaryPlayControl();
+        }, { passive: false });
+        btnPlay.addEventListener('touchcancel', (e) => { e.preventDefault(); releasePlayHold(); }, { passive: false });
 
         // --- ⏮ SKIP / RESTART NAVIGATION ACTION ---
         btnPrev.addEventListener('click', () => {

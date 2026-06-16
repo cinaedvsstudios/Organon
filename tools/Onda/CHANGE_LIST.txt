@@ -72,3 +72,9 @@ Mobile fix pass 3
 - Rebuilt playlist detail and now-playing queue mobile rows as number/title/meta/actions grids.
 - Made playlist and now-playing .onda-track-text-wrap use display: contents so title/meta align with the grid instead of being trapped in a nested block.
 - Rebalanced history mobile row grid and action button alignment.
+
+
+Mobile fix pass 4
+- Fixed mobile Play button tap not pausing playback by routing non-hold touchend through the same play/pause toggle as click.
+- Removed mobile pseudo-icon duplication from playlist detail header Play/Shuffle/Edit buttons.
+- Compact mobile Library select/settings action area so Library Results remains visible and scrollable.

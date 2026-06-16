@@ -1,0 +1,11 @@
+{
+  "baseline": "onda_mobile_fix_pass3.zip",
+  "output": "onda_mobile_fix_pass4.zip",
+  "changes": [
+    "Fixed mobile Play button tap so touchend toggles play/pause when it was not a hold-to-fast-forward gesture.",
+    "Disabled generated pseudo-icons on playlist detail header action buttons so Play, Shuffle and Edit show one emoji only.",
+    "Made mobile Library results view prioritise the actual track results list, with the select action strip compact and horizontally scrollable above it."
+  ],
+  "desktop_scope": "Desktop layout intentionally not changed.",
+  "netlify": "Function file preserved; verified separately by hash."
+}

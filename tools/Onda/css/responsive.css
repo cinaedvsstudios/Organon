@@ -1359,3 +1359,86 @@ body.onda-force-mobile-mode .history-list-row .library-row-buttons {
   grid-area: buttons;
   justify-content: flex-end;
 }
+
+
+/* Mobile fix pass 4: repair tap play/pause fallout, playlist header emoji duplication, and Library results visibility. */
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill {
+  align-items: center;
+  color: var(--water-spray);
+  display: inline-flex;
+  font-family: var(--font-mono);
+  font-size: 1.06rem;
+  height: 42px;
+  justify-content: center;
+  line-height: 1;
+  min-width: 42px;
+  padding: 0;
+  text-indent: 0;
+  width: 42px;
+}
+
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::before,
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::after {
+  content: none;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-manager-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-sidebar {
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+  padding: 0;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-panel {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-section {
+  margin: 0;
+  padding: 0;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-section:not(.active) {
+  display: none;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-section h3,
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .bulk-selection-summary {
+  display: none;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .bulk-select-panel {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-results-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] #db-library-results {
+  flex: 1 1 auto;
+  min-height: 160px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-section-label {
+  flex: 0 0 auto;
+}
