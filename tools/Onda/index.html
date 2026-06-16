@@ -290,7 +290,7 @@
 </div>
 <div class="library-manager-toolbar">
 <div class="search-input-wrap">
-<input id="db-library-search" placeholder="Search filename, nickname, tag, playlist, URL or source..." title="Hold to adjust fuzzy search" type="text"/>
+<input autocomplete="off" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" inputmode="search" name="onda-library-search-query" placeholder="Search filename, nickname, tag, playlist, URL or source..." readonly spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
 <button aria-label="Clear search" class="search-clear-btn" id="btn-db-clear-search" title="Clear search">×</button>
 </div>
 <div class="library-manager-actions library-actions-menu">
@@ -633,7 +633,7 @@
 <div class="onda-cloud-modal-body">
 <div class="onda-cloud-warning u-hidden" id="onda-cloud-startup-warning"></div>
 <label class="onda-cloud-field">Sync secret
-            <input autocomplete="current-password" id="onda-cloud-secret-input" placeholder="Enter the ONDA_SYNC_SECRET value you created in Netlify" type="password"/>
+            <input autocomplete="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="onda-cloud-secret-input" placeholder="Enter the ONDA_SYNC_SECRET value you created in Netlify" type="password"/>
 </label>
 <div class="onda-cloud-grid">
 <button class="btn-pill" id="onda-cloud-test-btn">Test Connection</button>

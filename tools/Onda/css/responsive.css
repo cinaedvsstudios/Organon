@@ -1442,3 +1442,52 @@ body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] 
 body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-section-label {
   flex: 0 0 auto;
 }
+
+
+/* Mobile fix pass 5: stop password-manager autofill from hiding Library tracks and remove doubled playlist header icons. */
+@media (max-width: 768px) {
+  #db-library-search[readonly] {
+    cursor: text;
+    -webkit-text-security: none;
+  }
+
+  .playlist-detail-header .playlist-row-tools .btn-pill {
+    align-items: center;
+    display: inline-flex;
+    font-size: 0;
+    height: 42px;
+    justify-content: center;
+    line-height: 1;
+    min-width: 42px;
+    padding: 0;
+    text-indent: 0;
+    width: 42px;
+  }
+
+  .playlist-detail-header .playlist-row-tools .btn-pill::after {
+    content: none;
+    display: none;
+  }
+
+  .playlist-detail-header .playlist-row-tools .btn-pill::before {
+    display: block;
+    font-size: 1.08rem;
+    line-height: 1;
+    text-indent: 0;
+  }
+
+  .playlist-detail-header .playlist-row-tools .btn-play-playlist::before,
+  .playlist-detail-header .playlist-row-tools #btn-detail-play-playlist::before {
+    content: "▶️";
+  }
+
+  .playlist-detail-header .playlist-row-tools .btn-shuffle-playlist::before,
+  .playlist-detail-header .playlist-row-tools #btn-detail-shuffle-playlist::before {
+    content: "🔀";
+  }
+
+  .playlist-detail-header .playlist-row-tools .btn-edit-playlist::before,
+  .playlist-detail-header .playlist-row-tools #btn-detail-edit-playlist::before {
+    content: "✏️";
+  }
+}

@@ -128,6 +128,7 @@
         let libraryDrawerCornerResizeSide = "right";
         let suppressLibraryDrawerToggleClick = false;
         const dbLibrarySearch = document.getElementById('db-library-search');
+        let userTypedLibrarySearch = false;
         const dbClearSearch = document.getElementById('btn-db-clear-search');
         const dbLibraryFilter = document.getElementById('db-library-filter');
         const dbLibraryResults = document.getElementById('db-library-results');
@@ -854,6 +855,94 @@
             return typeof trackLike === 'string' ? trackLike : (trackLike?.name || trackLike?.libraryId || trackLike?.id || null);
         }
 
+        function ensureVirtualLibraryRecordsFromPlaylists() {
+            let changed = false;
+            Object.entries(playlists || {}).forEach(([playlistName, tracks]) => {
+                if (!Array.isArray(tracks)) return;
+                tracks.forEach((trackLike) => {
+                    const id = getTrackId(trackLike);
+                    if (!id || virtualLibrary[id]) return;
+                    if (trackLike && typeof trackLike === 'object') {
+                        virtualLibrary[id] = {
+                            id,
+                            fileName: trackLike.fileName || trackLike.title || trackLike.name || id,
+                            title: trackLike.title || trackLike.fileName || trackLike.name || id,
+                            nickname: trackLike.nickname || '',
+                            lyrics: trackLike.lyrics || '',
+                            tags: Array.isArray(trackLike.tags) ? trackLike.tags : [],
+                            playlists: [playlistName],
+                            sourceType: trackLike.sourceType || (trackLike.streamUrl ? 'stream' : 'local'),
+                            size: trackLike.size || '',
+                            streamUrl: trackLike.streamUrl || null,
+                            localPath: trackLike.localPath || null,
+                            phonePath: trackLike.phonePath || null,
+                            desktopPath: trackLike.desktopPath || null,
+                            imageUrl: trackLike.imageUrl || null,
+                            imageData: trackLike.imageData || null,
+                            notes: trackLike.notes || '',
+                            recoveredFromPlaylist: true,
+                            needsRelink: !(trackLike.streamUrl || trackLike.blobFile),
+                            updatedAt: new Date().toISOString()
+                        };
+                    } else {
+                        virtualLibrary[id] = {
+                            id,
+                            fileName: id,
+                            title: id,
+                            nickname: '',
+                            lyrics: '',
+                            tags: [],
+                            playlists: [playlistName],
+                            sourceType: 'local',
+                            size: '',
+                            streamUrl: null,
+                            localPath: null,
+                            phonePath: null,
+                            desktopPath: null,
+                            imageUrl: null,
+                            imageData: null,
+                            notes: '',
+                            recoveredFromPlaylist: true,
+                            needsRelink: true,
+                            updatedAt: new Date().toISOString()
+                        };
+                    }
+                    changed = true;
+                });
+            });
+            if (changed) syncAllTrackPlaylistMetadata();
+            return changed;
+        }
+
+        function unlockLibrarySearchForUser() {
+            if (!dbLibrarySearch) return;
+            dbLibrarySearch.removeAttribute('readonly');
+        }
+
+        function clearLibrarySearchAutofill(reason = '') {
+            if (!dbLibrarySearch) return false;
+            const value = String(dbLibrarySearch.value || '');
+            if (!value) return false;
+            if (document.activeElement === dbLibrarySearch && userTypedLibrarySearch) return false;
+            dbLibrarySearch.value = '';
+            userTypedLibrarySearch = false;
+            return true;
+        }
+
+        function prepareLibrarySearchForDrawerOpen() {
+            if (!dbLibrarySearch) return;
+            userTypedLibrarySearch = false;
+            dbLibrarySearch.setAttribute('readonly', 'readonly');
+            clearLibrarySearchAutofill('drawer-open');
+            [80, 350, 900].forEach(delay => {
+                setTimeout(() => {
+                    if (libraryDrawer?.classList.contains('drawer-open') && clearLibrarySearchAutofill(`drawer-open-autofill-${delay}`)) {
+                        renderLibraryManager();
+                    }
+                }, delay);
+            });
+        }
+
         function getTrackPlaylistNames(trackId) {
             return Object.entries(playlists)
                 .filter(([, tracks]) => Array.isArray(tracks) && tracks.some(track => getTrackId(track) === trackId))
@@ -1488,6 +1577,7 @@
 
         function renderLibraryManager() {
             if (!dbLibraryResults) return;
+            ensureVirtualLibraryRecordsFromPlaylists();
             syncAllTrackPlaylistMetadata();
             updateBulkActionUI();
             const search = (dbLibrarySearch?.value || '').trim().toLowerCase();
@@ -1515,6 +1605,11 @@
                     return true;
                 })
                 .sort((a, b) => getDisplayTitle(a[1]).localeCompare(getDisplayTitle(b[1])));
+
+            if (!entries.length && search && Object.keys(virtualLibrary).length && document.activeElement !== dbLibrarySearch) {
+                clearLibrarySearchAutofill('empty-results-autofill-guard');
+                return renderLibraryManager();
+            }
 
             visibleLibraryIds = entries.map(([id]) => id);
             selectedLibraryIds = new Set(Array.from(selectedLibraryIds).filter(id => virtualLibrary[id]));
@@ -1754,6 +1849,7 @@
                 if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
                 if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
                 setMobileLibraryView(libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results');
+                prepareLibrarySearchForDrawerOpen();
                 renderLibraryManager();
             }
             saveLocalUiStateCheckpoint(shouldOpen ? 'library-drawer-open' : 'library-drawer-closed');
@@ -3932,6 +4028,7 @@
         safeBind('btn-db-clear-search', 'click', () => {
             if (!dbLibrarySearch) return;
             dbLibrarySearch.value = '';
+            userTypedLibrarySearch = false;
             renderLibraryManager();
             dbLibrarySearch.focus();
         });
@@ -4044,7 +4141,15 @@
         }
         const playlistImageUrlInput = document.getElementById('input-playlist-image-url');
         if (playlistImageUrlInput) playlistImageUrlInput.addEventListener('input', () => updatePlaylistImagePreview(playlistImageUrlInput.value.trim()));
-        if (dbLibrarySearch) dbLibrarySearch.addEventListener('input', renderLibraryManager);
+        if (dbLibrarySearch) {
+            dbLibrarySearch.addEventListener('pointerdown', unlockLibrarySearchForUser);
+            dbLibrarySearch.addEventListener('touchstart', unlockLibrarySearchForUser, { passive: true });
+            dbLibrarySearch.addEventListener('focus', unlockLibrarySearchForUser);
+            dbLibrarySearch.addEventListener('input', () => {
+                userTypedLibrarySearch = true;
+                renderLibraryManager();
+            });
+        }
         if (dbLibraryFilter) dbLibraryFilter.addEventListener('change', renderLibraryManager);
         if (dbLibraryResults) {
             dbLibraryResults.addEventListener('click', (e) => {

@@ -1,0 +1,10 @@
+{
+  "version": "onda_mobile_fix_pass5",
+  "baseline": "onda_mobile_fix_pass4.zip",
+  "fixed": [
+    "Library search password/autofill hiding all tracks",
+    "Library results fallback from playlists",
+    "playlist header doubled play/shuffle/edit icons"
+  ],
+  "netlify": "unchanged; verified separately below"
+}
