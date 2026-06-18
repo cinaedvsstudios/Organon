@@ -1,5 +1,26 @@
 # Ihy Changelog
 
+## v0.03 — Standalone launcher
+
+Ihy can now be opened in its own full-browser page without loading the Organon hub around it.
+
+### Changed in this version
+
+- Added `tools/ihy/standalone.html`.
+- The standalone launcher fills the browser viewport with Ihy and does not show the Organon shell.
+- The standalone page identifies itself as `v0.03` and preserves the same Ihy project and local-browser data used by the hub version.
+- The existing hub route remains available for normal Organon workflow.
+
+### Direct standalone route
+
+`https://cinaedvsstudios.github.io/Organon/tools/ihy/standalone.html`
+
+### Rollback baseline
+
+`v0.02` remains the last direct-Ihy desktop layout baseline. `v0.03` adds the standalone opening route.
+
+---
+
 ## v0.02 — Full desktop composition workspace
 
 Reworked the app shell so Ihy uses the available Organon workspace on desktop instead of being constrained to a 540px mobile column.
@@ -20,7 +41,7 @@ Reworked the app shell so Ihy uses the available Organon workspace on desktop in
 
 ### Rollback baseline
 
-`v0.01` remains the last compact/mobile-shell baseline. `v0.02` is the current full-screen desktop baseline.
+`v0.01` remains the last compact/mobile-shell baseline. `v0.02` is the full-screen desktop baseline.
 
 ---
 
