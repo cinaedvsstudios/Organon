@@ -1,14 +1,18 @@
-import { handlesAreSame, makeId, queryDirectoryPermission, requestDirectoryPermission } from './filesystem.js';
+import { makeId, queryDirectoryPermission, requestDirectoryPermission } from './filesystem.js';
+import { installFolderDrop } from './folder-drop.js';
+import { promptMountLabel } from './mount-dialog.js';
+import { createMountService } from './mount-service.js';
 import { OperationManager, directoryForSource } from './operations.js';
 import { createOperationUi } from './operation-ui.js';
 import { persistence } from './persistence.js';
-import { cloneSource, createLibraryEntry, createMount, createState, librarySource, makeWindowRecord, physicalSource, sourceKey, sourcePathLabel, sourceTitle, windowSnapshot } from './state.js';
+import { cloneSource, createLibraryEntry, createState, librarySource, makeWindowRecord, physicalSource, sourceKey, sourcePathLabel, sourceTitle, windowSnapshot } from './state.js';
 import { installWindowPills } from './window-pills.js';
 import { Workspace } from './workspace.js';
 
 const state = createState();
 let workspace;
 let operations;
+let mountService;
 let clipboard = null;
 let saveTimer = null;
 
@@ -102,22 +106,7 @@ async function mountFolder() {
   }
   try {
     const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    for (const existing of state.mounts.values()) {
-      if (await handlesAreSame(existing.handle, handle)) {
-        existing.permission = await queryDirectoryPermission(existing.handle);
-        openSource(physicalSource(existing.id, []));
-        toast(`${existing.nickname || existing.name} is already mounted.`);
-        return;
-      }
-    }
-    const colours = ['#e0a360', '#4b84bf', '#449e92', '#9a2f4f', '#d27d6c', '#896b49'];
-    const mount = createMount(handle, colours[state.mounts.size % colours.length]);
-    mount.permission = await queryDirectoryPermission(handle);
-    state.mounts.set(mount.id, mount);
-    openSource(physicalSource(mount.id, []));
-    workspace.refreshSpecialWindows();
-    scheduleSave();
-    toast(`Mounted ${mount.name}.`, 'success');
+    await mountService.mountDirectory(handle, { source: 'picker' });
   } catch (error) {
     if (error?.name !== 'AbortError') {
       console.error(error);
@@ -263,7 +252,11 @@ function bindControls() {
 
 async function boot() {
   installWindowPills(Workspace);
+  installFolderDrop(Workspace, async (handle, targetWindow) => {
+    await mountService.mountDirectory(handle, { targetWindow, source: 'drop' });
+  });
   workspace = new Workspace({ state, onStateChange: scheduleSave, onLocationOpened: recordRecent, onRequestPermission: reopenPermission, onAddToLibrary: showLibraryDialog, onOpenSource: openSource, onToast: toast, onCommand: handleCommand });
+  mountService = createMountService({ state, workspace, toast, scheduleSave, openSource, askForLabel: promptMountLabel });
   operations = new OperationManager({ ui: createOperationUi(), onRefresh: () => workspace.refreshWindows(), onToast: toast });
   bindControls();
   try { await restoreState(); }
