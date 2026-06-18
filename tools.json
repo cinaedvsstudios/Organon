@@ -28,7 +28,7 @@
         },
         {
           "id": "ihy",
-          "label": "IHY",
+          "label": "IHY<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
           "path": "tools/ihy/index.html",
           "description": "Create local sound effects, play an editable music grid, import audio references and export Ihy project JSON."
         },
@@ -46,7 +46,7 @@
       "tools": [
         {
           "id": "animation-maker",
-          "label": "ANIMATION MAKER",
+          "label": "ANIMATION MAKER<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
           "path": "tools/animation-maker/index.html",
           "description": "Create and preview animation assets from local media or image sequences."
         },
@@ -70,7 +70,7 @@
       "tools": [
         {
           "id": "alpha-isolator",
-          "label": "ALPHA ISOLATOR",
+          "label": "ALPHA ISOLATOR<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
           "path": "tools/alpha-isolator/index.html",
           "description": "Isolate, refine, and export alpha-channel image transparency."
         },
@@ -118,7 +118,7 @@
       "tools": [
         {
           "id": "simple-edit",
-          "label": "SIMPLE EDIT",
+          "label": "SIMPLE EDIT<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
           "path": "tools/simple-edit/index.html",
           "description": "Quickly cut and export selected audio or video timeline segments."
         },
@@ -160,7 +160,7 @@
       "tools": [
         {
           "id": "capsularius",
-          "label": "CAPSULARIUS",
+          "label": "CAPSULARIUS<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
           "path": "tools/capsularius/index.html",
           "description": "Open the local-first project workspace for folders and project assets."
         },
