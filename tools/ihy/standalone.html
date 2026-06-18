@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#181919">
+  <title>Ihy v0.03 — Sound & Music Workshop</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;background:#181919;overflow:hidden}
+    iframe{display:block;width:100%;height:100%;border:0;background:#181919}
+  </style>
+</head>
+<body>
+  <iframe id="ihy" src="./index.html" title="Ihy — Sound & Music Workshop"></iframe>
+  <script>
+    (() => {
+      const version = 'v0.03';
+      const frame = document.getElementById('ihy');
+      frame.addEventListener('load', () => {
+        try {
+          const doc = frame.contentDocument;
+          const subtitle = doc.querySelector('.subtitle');
+          const badge = doc.querySelector('.ver');
+          const status = doc.getElementById('status');
+          if (subtitle) subtitle.textContent = 'V0.03 · STANDALONE DESKTOP WORKSPACE · ICON SLOT READY';
+          if (badge) badge.textContent = version;
+          if (status) status.textContent = 'v0.03 — standalone desktop workspace; no Organon hub required.';
+          doc.title = 'Ihy v0.03 — Sound & Music Workshop';
+        } catch (_) {
+          // The tool itself remains usable if a browser blocks same-origin frame access.
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
