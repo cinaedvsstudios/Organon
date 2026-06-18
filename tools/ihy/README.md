@@ -1,101 +1,101 @@
-# Ihy — Organon Sound Library, Synth & Keyboard Workshop
+# Ihy — Organon Sound Library, Synth & Music Workshop
 
 **Status:** Planning only  
-**Version:** 0.02  
+**Version:** 0.03  
 **Path:** `tools/ihy/`  
-**App role:** A local-first Organon tool for creating, importing, organising, previewing and exporting audio assets; making game-style synth effects; playing a keyboard; recording short sequences; and auditioning pasted ABC notation.
+**App role:** A local-first Organon workshop for game sound effects, quality playable instruments, short music composition, MIDI/ABC import and export, and reusable audio assets.
 
 ---
 
 ## 1. Product definition
 
-Ihy combines the useful parts of the earlier **8-Bit Synth & Pure Frequency Generator** idea with the later shared Sound Library plan.
+Ihy is not a full DAW and it is not a replacement for Onda.
 
-It has four connected purposes:
+- **Onda** remains the music player and listener-facing library.
+- **Ihy** is where Organon audio is created, imported, edited, rendered and registered as reusable assets.
 
-1. **Audio Asset Library** — the shared place for sound assets created in Ihy or imported from local files.
-2. **Create Synth Sound** — an sfxr-style sound-effect creator for game audio, with controlled variation rather than meaningless total randomisation.
-3. **Signal & Keyboard Studio** — a pure-frequency/reference-tone mode plus an on-screen and physical-keyboard instrument for short musical ideas.
-4. **Sequence / Notation Tools** — short keyboard recordings and pasted ABC notation that can be heard, saved and exported.
+Ihy combines five connected jobs:
 
-Ihy is not a full DAW, playlist/music-listening app, cloud service or replacement for Onda. Onda remains the music player. Ihy is the workshop for practical reusable sound assets.
+1. **Audio Asset Library** — store generated, imported and rendered audio as searchable `asset_` records.
+2. **Create Synth Sound** — make game SFX, chiptune sounds, tone effects and controlled sound variations.
+3. **Signal & Frequency Mode** — produce exact requested continuous reference tones, sweeps and noise signals for sound design and simple hearing/reference checks.
+4. **Instrument & Composition Studio** — play quality sample-based instruments or synth instruments; record short music in editable tracks.
+5. **Sequence & Notation Tools** — import/export MIDI, paste/play ABC notation, and render projects to WAV and MP3.
 
----
-
-## 2. What is retained from the Gemini specification
-
-The original Gemini text contained several useful ideas that belong in Ihy:
-
-- Direct Web Audio oscillator generation for pure sine, square, sawtooth, triangle and noise signals.
-- A **continuous signal mode** for sustained tones and a separate **envelope-gated note mode** for keyboard/synth playing.
-- Exact frequency entry and a live Hz readout.
-- Reference presets such as 440 Hz, 432 Hz, 528 Hz, 100 Hz and 1,000 Hz.
-- ADSR sound shaping, including usable presets such as sustained and 8-bit pluck.
-- Controlled pitch sweeps for sound design and frequency scanning.
-- A simple chiptune arpeggiator.
-- A physical/on-screen keyboard with note labels.
-- A master-gain control, explicit Stop All action, and reliable cleanup when the tool is closed or navigated away from.
-- Organon header/footer styling and parent-Hub status messages.
-
-The plan does **not** keep the claim that browser-generated audio makes laboratory-grade speaker calibration possible or that it “bypasses” every source of distortion. Ihy can request and generate a precise Web Audio oscillator frequency locally, but the actual sound heard still depends on the browser, OS audio path, DAC, speakers/headphones, room and volume. The Signal mode is therefore a practical reference-tone and sound-design utility, not certified measurement equipment.
+The point is not to imitate a commercial studio. The point is to make good-enough music cues, stingers, game sounds and reusable audio assets quickly, entirely in the browser and without automatically uploading anything.
 
 ---
 
-## 3. Core scope and first-build boundary
+## 2. Non-negotiable decisions
 
-### Ihy owns audio assets
+### 2.1 Audio assets use the existing asset model
 
-Generated synth sounds and imported WAV, MP3, OGG or browser-supported audio files are all ordinary audio assets in the shared audio-filtered Asset Library. They use the established asset ID pattern:
+Generated synth sounds, imported WAV/MP3/OGG files, keyboard projects and rendered music cues are all normal audio assets.
 
 ```text
-asset_<stable-id>
+id: asset_<stable-id>
+mediaType: audio
 ```
 
-Ihy does not create a competing `sound_` or `ihy_` media-ID system.
+Ihy must not introduce a competing `sound_` or `ihy_` media-ID system.
 
-### First build remains standalone
+### 2.2 Ihy owns source data, not just exports
 
-The first implementation creates the Sound Library and Create Synth Sound inside Ihy only. It must **not** modify Object Creator, Quest Builder, Effect Editor, Puzzle Creator, Scene Editor or any other runtime code in the same pass.
+An editable Ihy project is the authoritative source. MIDI is an interchange/export format. WAV and MP3 are rendered audio outputs.
 
-Connections to those tools are a later integration pass. Until then, Ihy can export files and JSON data, and it can document the future asset-selection contract without changing other tools.
+```text
+Editable Ihy project → MIDI export
+Editable Ihy project → offline render → WAV export
+Editable Ihy project → offline render → MP3 export
+```
+
+### 2.3 Two sound engines
+
+Ihy needs two complementary engines:
+
+- **Native Web Audio synth engine** for game SFX, pure tones, chiptune instruments, noise, sweeps, custom envelopes and generated effects.
+- **Sample-based instrument engine** for decent piano, strings, guitars, winds, brass, choir and drums.
+
+A quality instrument must never silently fall back to a cheap oscillator sound. Show loading, unavailable or Synth Only status clearly.
+
+### 2.4 Preferred MIDI/instrument candidate
+
+The preferred candidate for the sample-based instrument and MIDI layer is **SpessaSynth / `spessasynth_lib`**, subject to implementation proof and licence review. It is the right direction because Ihy needs real soundfont-style instruments, MIDI import/export and offline audio rendering.
+
+`html-midi-player` is not the composition engine. It is only a possible later component for imported-MIDI preview, piano-roll, waterfall or staff display.
 
 ---
 
-## 4. Audio asset record
+## 3. Audio Asset Library
 
-Every sound in Ihy needs enough data to be reusable, searchable and safely referenced later.
+### 3.1 Purpose
+
+The Library is the centre of Ihy. It is where a generated or imported sound becomes a registered Organon audio asset.
+
+### 3.2 Asset record
 
 ```text
 id                 asset_<stable-id>
 mediaType          audio
 name               User-facing asset name.
-sourceType         synth | imported-audio | keyboard-sequence | abc-sequence.
-category           Primary sound category.
-tags               User-editable tag list.
+sourceType         synth | imported-audio | ihy-project | keyboard-sequence | abc-sequence.
+category           Primary category.
+tags               User-editable tags.
 favourite          True/false.
 createdAt          Timestamp.
 updatedAt          Timestamp.
 durationMs         Rendered or imported duration.
 fileName           Source/export filename where relevant.
 mimeType           Audio MIME type where known.
-audioBlob          Imported/rendered binary audio where required.
-previewPeaks       Lightweight waveform/peak preview data where practical.
-synthPreset        Complete saved synth state when sourceType is synth.
-sequenceData       Note event data when sourceType is keyboard-sequence.
-abcSource          Original ABC text when sourceType is abc-sequence.
+audioBlob          Imported or rendered audio data where required.
+previewPeaks       Lightweight waveform preview data where practical.
+synthPreset        Saved synth state for sourceType synth.
+projectData        Editable project data for sourceType ihy-project.
+sequenceData       Note events for keyboard sequence data.
+abcSource          Original ABC notation where relevant.
 ```
 
-The UI should also preserve a local edit/history trail for synthesised sounds. This is especially important because Chris wants the ability to step backward and forward through generated variations and star versions worth returning to.
-
----
-
-## 5. Audio Asset Library
-
-### 5.1 Purpose
-
-The Library is the centre of Ihy. It is not merely a save dialog after synthesis. It is where generated and imported audio become properly registered assets.
-
-### 5.2 Default categories
+### 3.3 Default categories
 
 - UI / click / confirm / error.
 - Pickup / inventory / coin.
@@ -109,28 +109,22 @@ The Library is the centre of Ihy. It is not merely a save dialog after synthesis
 - Reference tone / test signal.
 - Miscellaneous.
 
-A sound has one main category and any number of tags. Search matches name, category and tags.
+### 3.4 Required library behaviour
 
-### 5.3 Required Library actions
+- Search matching name, category and tags.
+- Category filters, favourites-only filter and sorting.
+- Quick preview plus a global Stop All control.
+- Rename, retag, duplicate and delete.
+- Favourite/star assets.
+- Show source settings where an item came from synth, MIDI project or ABC notation.
+- Import supported local audio files, including WAV, MP3, OGG and browser-supported formats.
+- Export selected rendered audio as WAV.
+- Export/import editable synth presets as JSON.
+- Warn before deletion when a later project-reference scan finds the asset is used elsewhere.
 
-- Instant search.
-- Category filter.
-- Favourites-only filter.
-- Sort by newest, oldest, name, category and recently previewed.
-- Quick preview and Stop All.
-- Rename, re-tag, duplicate and delete.
-- Star/unstar favourite sounds.
-- Show synth source settings where available.
-- Export selected audio as WAV.
-- Export/import an editable synth-preset JSON for synthesised sounds.
-- Import local WAV, MP3, OGG and browser-supported files.
-- Warn before deletion when a future project-reference scan finds that an asset is used elsewhere.
+### 3.5 Storage
 
-### 5.4 Storage
-
-Use **IndexedDB** for persistent asset metadata and audio blobs. localStorage is only for small UI preferences such as volume, last active tab, selected filters, keyboard octave and collapsed panels.
-
-Suggested database shape:
+Use IndexedDB for audio blobs, instrument caches, asset metadata and project data. Use localStorage only for small interface preferences.
 
 ```text
 Database: organon-asset-library
@@ -138,21 +132,25 @@ Store: assets
 Schema version: 1
 ```
 
-No audio uploads silently. Ihy is local-first.
+No audio is uploaded automatically.
 
 ---
 
-## 6. Create Synth Sound
+## 4. Create Synth Sound — game effects and chiptune
 
-### 6.1 Design goal
+### 4.1 Design goal
 
-Create Synth Sound should provide an sfxr-like game-SFX workflow: pick a recognisable sound type, preview immediately, make intentional adjustments, explore safe variations, then register the chosen version as an `asset_` audio asset.
+Create Synth Sound follows an sfxr-style workflow:
 
-It should never open as a wall of incomprehensible synthesis controls.
+1. Choose a recognisable sound family.
+2. Hear it immediately.
+3. Adjust a small grouped set of meaningful controls.
+4. Create controlled variations without losing good results.
+5. Save the chosen version as an `asset_` audio item.
 
-### 6.2 Starting sound families
+It must not open as a giant wall of synthesis controls.
 
-The initial set should cover:
+### 4.2 Starting sound families
 
 - Blip / UI click.
 - Confirm / success.
@@ -174,29 +172,23 @@ The initial set should cover:
 - Fire crackle-like burst.
 - Pure reference tone.
 
-### 6.3 Waveforms
+### 4.3 Core waveforms
 
-The base engine must support:
+- Sine.
+- Square.
+- Sawtooth.
+- Triangle.
+- White noise.
 
-- Sine — clean pure-tone/reference signal and soft sound design.
-- Square — classic 8-bit lead.
-- Sawtooth — brighter retro/chiptune tone.
-- Triangle — softer bass and Game Boy-like tone.
-- White noise — explosions, impacts, wind-like effects and texture.
-
-Waveform choice must be visible and immediately previewable.
-
-### 6.4 Controls
-
-Controls should be grouped into collapsible cards.
+### 4.4 Grouped controls
 
 **Source and pitch**
 
 - Waveform.
-- Base pitch in Hz and note form where applicable.
+- Base pitch in Hz and note form.
 - Pitch slide up/down.
 - Vibrato/pitch wobble.
-- Optional pitch-step or arpeggio amount.
+- Pitch-step/arpeggio amount.
 
 **Envelope**
 
@@ -205,72 +197,59 @@ Controls should be grouped into collapsible cards.
 - Sustain.
 - Release.
 - Overall length.
-- Envelope quick presets: Continuous, 8-Bit Pluck, Short Hit, Soft Fade, Charge.
+- Quick envelopes: Continuous, 8-Bit Pluck, Short Hit, Soft Fade, Charge.
 
 **Tone and texture**
 
-- Low-pass filter.
-- High-pass filter.
+- Low-pass/high-pass filters.
 - Resonance where useful.
 - Noise mix.
 - Bit-crush/sample-rate reduction.
 - Tremolo.
 - Phaser/sweep texture.
 - Stereo pan.
-- Master/output gain.
+- Output gain.
 
-Every slider needs a readable number and a reset-to-current-preset-default action.
+Every slider needs a readable value and a reset-to-current-preset-default action.
 
-### 6.5 Controlled variation and history
+### 4.5 Controlled variation and history
 
-Randomisation must preserve the identity of the selected sound family.
+- Subtle variation.
+- Strong variation.
+- Lock protected parameters.
+- Previous/Next variation history.
+- Star a good version.
+- Optional repeatable seed.
+- Undo/redo after variation or manual changes.
 
-- **Subtle variation:** safe small changes.
-- **Strong variation:** bigger changes while retaining the selected category’s character.
-- **Lock parameter:** protected controls are not varied.
-- **Previous / Next variation history:** step through earlier generated results without losing them.
-- **Star version:** mark a version before moving on.
-- **Optional seed:** recreate a variation later when it was good.
-- **Undo / redo:** always provide a clear recovery path after a variation or manual adjustment.
+A Coin preset may vary pitch, duration and sparkle. It must not unpredictably become a long distorted drone.
 
-A Coin sound can vary pitch, sparkle, tone and duration. It should not unpredictably become a five-second distorted drone.
+### 4.6 Rendering
 
-### 6.6 Save/export behaviour
-
-- Preview current version.
-- Save as new audio asset.
-- Update a saved synth asset deliberately.
-- Duplicate before changing an existing asset.
-- Render/export WAV.
-- Export/import synth preset JSON.
-
-Use Web Audio with OfflineAudioContext for deterministic rendering where browser support allows it. Do not record speaker output in real time merely to make a WAV.
+Synth effects are rendered through Web Audio and OfflineAudioContext where practical. Do not record speaker/tab output in real time to produce a WAV.
 
 ---
 
-## 7. Signal & Frequency Mode
+## 5. Signal & Frequency Mode
 
-### 7.1 Purpose
+### 5.1 Purpose
 
-Signal mode is the retained “Pure Frequency Generator” part of the old plan. It provides direct, sustained browser-synthesised signals for simple reference-tone checks, hearing tests, sound-design starting points and frequency sweeps.
+Signal mode is the retained Pure Frequency Generator concept. It produces requested continuous signals for sound design, reference tones, frequency sweeps and simple hearing/reference checks.
 
-It is not a certified hardware calibration tool.
+It is not laboratory-calibration equipment. Real-world playback still depends on browser, operating system, audio hardware, speakers/headphones, room and volume.
 
-### 7.2 Required controls
+### 5.2 Required controls
 
-- Waveform: sine, square, sawtooth, triangle, white noise.
-- Numeric frequency field with decimal support.
-- Frequency slider covering 20 Hz to 20,000 Hz.
-- Logarithmic slider mapping by default, because that makes lower frequencies controllable; a linear option may be added later.
-- Clear live readout, for example `440.00 Hz`.
+- Sine, square, sawtooth, triangle and white-noise signals.
+- Numeric frequency entry with decimal support.
+- 20 Hz–20,000 Hz slider, logarithmic by default.
+- Live Hz readout, for example `440.00 Hz`.
 - Master gain.
-- Start Signal / Stop Signal action.
-- Frequency sweep: start Hz, end Hz, duration and direction.
-- Hold/sustain state distinct from envelope-gated synth notes.
+- Start Signal / Stop Signal.
+- Sweep start, sweep end, direction and duration.
+- Continuous sustain distinct from normal envelope-gated notes.
 
-### 7.3 Reference presets
-
-The quick presets from the earlier specification should be retained as user-selectable starting values:
+### 5.3 Quick reference presets
 
 ```text
 A4 reference: 440 Hz
@@ -280,138 +259,313 @@ Low test tone: 100 Hz
 Reference sine tone: 1,000 Hz
 ```
 
-These are simply convenient stored values. The app must not attach unsupported medical, mystical or calibration claims to them.
+These are convenient stored settings only. Do not attach unsupported medical, mystical or certified-calibration claims to them.
 
-### 7.4 Frequency relationship for keyboard notes
+### 5.4 Equal-temperament note calculation
 
-When Ihy calculates notes from an A4 tuning reference, it uses equal temperament:
+For keyboard notes, Ihy uses:
 
 ```text
 f(n) = A4 × 2^(n / 12)
 ```
 
-`n` is the number of semitones away from A4. The A4 reference defaults to 440 Hz and can be changed in the keyboard settings.
+`n` is the number of semitones away from A4. The default A4 reference is 440 Hz and can be changed in keyboard settings.
 
 ---
 
-## 8. Keyboard & Recorder
+## 6. Quality instruments and sound banks
 
-### 8.1 Purpose
+### 6.1 Requirement
 
-Keyboard & Recorder is for short melodies, stingers and playable sound ideas. It is not a multitrack DAW.
+Ihy must produce musical instruments that are usable for draft scores, game cues and Forever Bound material—not only retro oscillators.
 
-It works through on-screen keys, touch and physical computer keyboard input.
+The sample-based engine should use a properly licensed SoundFont/DLS-style instrument bank. SpessaSynth is the preferred technical route, subject to an implementation proof and review of both library and sound-bank licence terms.
 
-### 8.2 Keyboard mapping
+### 6.2 Curated first instrument bank
 
-The initial desktop mapping should be:
+Do not expose a meaningless list of hundreds of near-duplicate General MIDI names. Start with a practical curated set.
+
+**Keys and mallets**
+
+- Grand Piano.
+- Soft/Felt Piano.
+- Electric Piano.
+- Organ.
+- Celesta or Music Box.
+- Vibraphone or Marimba.
+
+**Strings and pads**
+
+- Violin.
+- Cello.
+- String Ensemble.
+- Pizzicato Strings.
+- Warm Pad.
+- Cinematic Pad.
+
+**Guitars and bass**
+
+- Acoustic Guitar.
+- Nylon Guitar.
+- Electric Guitar.
+- Acoustic Bass.
+- Electric Bass.
+
+**Winds and brass**
+
+- Flute.
+- Clarinet.
+- Oboe.
+- Trumpet.
+- Trombone.
+- French Horn.
+
+**Other useful instruments**
+
+- Choir.
+- Bell.
+- Retro Lead.
+- Pluck.
+- Standard Drum Kit.
+- Noise/Percussion.
+
+### 6.3 Sound bank rules
+
+Before bundling any default sound bank, verify:
+
+- redistribution and modification permission;
+- attribution/notice requirements;
+- compression and first-load size;
+- audible quality of the curated instrument set;
+- reliable local caching behaviour.
+
+The user can later load their own compatible SF2/SF3/DLS bank locally. That imported bank remains on their device and is never uploaded.
+
+### 6.4 Performance rules
+
+- Load only what the selected instrument/track needs where the engine permits it.
+- Cache successful sound-bank loads locally.
+- Show a real loading state for first-time instrument use.
+- Keep a clearly labelled Synth Only fallback for slow devices.
+- Never silently replace a missing sample-based instrument with a square wave.
+
+---
+
+## 7. Instrument & Composition Studio
+
+### 7.1 Purpose
+
+This is a compact composition tool for short cues, loops, themes, stingers and game music. It is not a full DAW.
+
+### 7.2 Initial track layout
+
+The first visible UI starts with four tracks:
+
+1. Melody / lead.
+2. Harmony / piano or guitar.
+3. Bass / strings or pad.
+4. Drums / percussion.
+
+The underlying project data must not hard-code four as a permanent maximum.
+
+### 7.3 Project model
 
 ```text
-Lower octave: Z S X D C V G B H N J M
-Upper octave: Q 2 W 3 E R 5 T 6 Y 7 U
+projectId              ihy_project_<stable-id>
+name                   User project title.
+tempoBpm               Number.
+timeSignature          Numerator/denominator.
+loopStartBeat          Optional beat position.
+loopEndBeat            Optional beat position.
+masterVolume           Number.
+masterReverb           Number.
+masterChorus           Number.
+tracks                 Ordered track list.
+createdAt              Timestamp.
+updatedAt              Timestamp.
 ```
 
-Visible piano keys must show their matching computer-key label and musical note name. Input focus rules must stop accidental notes while a text field, search field or ABC textarea is active.
+Each track stores:
 
-### 8.3 Instrument presets
+```text
+trackId                ihy_track_<stable-id>
+name                   User-facing name.
+instrumentId           Sample-based instrument or saved synth preset reference.
+engineType             soundfont | synth | drum-kit.
+channel                MIDI channel when exported.
+muted                  True/false.
+solo                   True/false.
+volume                 Number.
+pan                    Number.
+transposeSemitones     Integer.
+notes                  Note-on/off, pitch, velocity and timing events.
+controllers            Sustain, modulation and supported controller data.
+```
 
-Phase 2 starts with a small dependable set:
+### 7.4 Keyboard requirements
 
-- Piano-like.
-- Soft pad.
-- Square/chiptune lead.
-- Pluck.
-- Bass.
-- Bell.
-- Noise/percussion.
+- On-screen piano with note names and computer-key labels.
+- Physical computer keyboard input.
+- Touch support.
+- Octave shift.
+- Global transpose.
+- Sustain button and Space-key sustain while keyboard focus is active.
+- Metronome, BPM and count-in.
+- Computer-key velocity control.
+- Instrument selector per armed track.
+- Record arm, mute, solo, volume and pan per track.
+- Optional physical MIDI-controller input where the browser supports it; computer keyboard remains the standard input route.
 
-### 8.4 Arpeggiator
+### 7.5 Chiptune behaviour
 
-The original BeepBox-inspired arpeggiator is useful and belongs here, not as a separate complex sequencer.
+Synth/chiptune instruments remain first-class. A project may combine a sample-based piano, cello or strings with retro lead, pluck, bass and custom Ihy synth sounds.
 
-- Toggle on/off.
-- Rate linked to BPM.
-- Simple patterns, starting with Up, Down, Up/Down and Octave.
-- Held-note pattern playback.
-- Clear visual state showing that a played note is being arpeggiated.
+The arpeggiator applies to the active synth/chiptune instrument and stores editable timing/settings rather than destructively baking notes until render/export.
 
-The arpeggiator is an instrument behaviour, not a replacement for the recorder timeline.
+### 7.6 Recorder
 
-### 8.5 Recorder
-
-The first recorder is single-track and event-based:
-
-- Record note-on and note-off timestamps.
+- Record note-on/note-off events with timing and velocity.
 - Play/stop and loop.
-- Set BPM.
+- BPM, metronome and count-in.
 - Quantise note starts and lengths.
-- Grid values: 1/1, 1/2, 1/4 and 1/8.
-- Save as an audio asset with source type `keyboard-sequence`.
-- Export rendered WAV.
+- Initial grids: 1/1, 1/2, 1/4 and 1/8.
+- Keep projects editable after recording.
 
-Piano roll editing, multitrack timelines, mixing and automation are later-only features.
+Piano-roll editing, automation, advanced mixing and unlimited tracks are later enhancements.
 
 ---
 
-## 9. ABC Player
+## 8. MIDI, WAV and MP3
 
-### 9.1 Purpose
+### 8.1 MIDI import
 
-ABC Player is a quick notation sandbox. Paste ABC notation, validate it, listen to it and optionally register it in the audio library.
+The importer must:
 
-### 9.2 Required behaviour
+- Read supported standard MIDI files.
+- Let the user choose new project or import into current project.
+- Preserve tempo, time signature, track names, note timing, pitch, duration, velocity, program/instrument information and supported controller data.
+- Show the user how imported tracks map to the closest available Ihy instruments.
+- Retain unsupported data where practical instead of silently discarding it.
 
-- Plain-text ABC input.
+### 8.2 MIDI export
+
+MIDI export is required for note-based Ihy projects and ABC-derived sequences.
+
+Exported `.mid` files include:
+
+- tempo;
+- time signature;
+- track names;
+- note on/off events;
+- velocity;
+- program changes/instrument mapping where applicable;
+- channel assignment;
+- pan, volume and sustain/controller events where supported.
+
+An arbitrary imported MP3/WAV or rendered game explosion cannot be converted into meaningful editable MIDI. MIDI export applies to note-event projects.
+
+### 8.3 WAV export
+
+WAV is the required high-quality audio export.
+
+- Render the whole project offline to stereo PCM at 44.1 kHz by default.
+- Add 48 kHz later if needed.
+- Use the same selected instruments, effects and mix as live playback.
+- Do not record speaker/tab audio in real time.
+- Whole-project WAV export is required before per-track/stem export.
+
+### 8.4 MP3 export
+
+MP3 is required for quick listening and sharing copies, after WAV rendering matches live playback.
+
+```text
+Ihy project → offline stereo PCM render → WAV encoder and MP3 encoder → downloaded file
+```
+
+The MP3 encoder must run locally in the browser and must be suitable for redistribution. Do not use an external conversion service.
+
+Initial bitrate choices:
+
+```text
+128 kbps  small preview
+192 kbps  default listening export
+320 kbps  high-quality listening export
+```
+
+---
+
+## 9. ABC notation
+
+ABC is a lightweight notation input/playback feature, not a full score editor.
+
+Required behaviour:
+
+- Paste editable ABC text.
 - Play, Stop and Restart.
-- BPM control where the notation supports it.
+- BPM control where notation supports it.
 - Practical parse errors with line references where possible.
-- Optional readable notation preview when the selected renderer supports it.
-- Keep original ABC source intact until directly edited.
-- Save as an asset with source type `abc-sequence`.
-- Render/export WAV where practical.
-
-ABC support starts as input/playback, not a full score editor.
+- Optional notation preview when a renderer supports it.
+- Save original ABC source in the asset/project data.
+- Convert note-based ABC material into the Ihy project model where practical.
+- Export compatible ABC-derived projects as MIDI, WAV and MP3.
 
 ---
 
-## 10. Audio safety and lifecycle rules
+## 10. Optional role of html-midi-player
 
-Audio behaviour needs explicit safeguards because the app can generate sustained tones and noise.
+`html-midi-player` may be used later for:
 
-- Audio begins only after a user gesture that enables the AudioContext.
-- Master gain opens at a low safe default, never a surprise full-volume signal.
-- Any continuous signal must have an obvious Stop Signal control.
-- A global Stop All control stops Library preview, synth preview, frequency signal, keyboard notes and sequence playback.
-- Switching selected assets must stop the outgoing sound cleanly.
-- Navigating away, receiving `pagehide`, destroying the iframe or closing the app must stop active oscillators/nodes and suspend or close the AudioContext where safe.
-- Object URLs created for imported/exported files must be revoked when no longer needed.
+- Read-only imported-MIDI preview.
+- Piano-roll, waterfall or staff display.
+- A compact playback preview before importing MIDI into an editable Ihy project.
+- Library-item MIDI visualisation.
+
+Do not use it as:
+
+- Ihy’s multi-track composer.
+- The authoritative project model.
+- The sample-based instrument engine.
+- MIDI writing/export logic.
+- Offline WAV/MP3 rendering.
+
+---
+
+## 11. Audio safety and lifecycle
+
+- Audio starts only after a user gesture enables AudioContext.
+- Default master gain is deliberately low.
+- Continuous tones have an obvious Stop Signal action.
+- Global Stop All stops library preview, synth preview, signal mode, keyboard notes and project playback.
+- Changing selected assets stops outgoing playback cleanly.
+- `pagehide`, app close, iframe destruction and navigation stop active nodes and suspend/close audio contexts where safe.
+- Revoke Object URLs when no longer needed.
 - Warn before importing unusually large audio files.
 
 ---
 
-## 11. Organon layout and responsive rules
+## 12. Organon layout and responsive rules
 
-The first build should follow the Organon sub-app pattern rather than inventing a separate desktop product shell.
+Ihy uses the standard Organon mobile-first application shell.
 
 ### Standard layout
 
-- **Panel 1 — sticky sandstone header:** tool title, active workspace selector, compact quick preset selector, collapse/lock behaviour.
-- **Panel 2 — black scrollable workspace:** cards for Library, Synth, Signal, Keyboard or ABC work.
-- **Panel 3 — fixed sandstone footer:** context-aware primary action such as Save Asset, Start Signal, Stop Signal, Record or Export WAV.
+- **Sticky sandstone header:** tool title, workspace selector, compact quick presets, collapse/lock behaviour.
+- **Black scrollable centre:** workspace cards for Library, Create, Signal, Compose or ABC.
+- **Fixed sandstone footer:** context-aware primary actions such as Save Asset, Start/Stop Signal, Record, Render WAV or Export MIDI.
 
-The first app must remain compatible with the standard mobile-first Organon width model, including the 540px layout constraint. On desktop, controls may use denser two-column card rows *inside* that layout, but Phase 1 does not create a separate wide workstation UI.
+The initial app remains compatible with Organon’s 540px mobile-first layout. Desktop may use denser two-column rows within that shell, but Phase 1 does not create a separate desktop-only product layout.
 
 ### Mobile
 
-- Use compact workspace tabs: Library, Create, Keyboard, ABC.
-- Keep the transport/stop controls reachable at the bottom.
-- Use grouped collapsible synth cards.
-- Make the on-screen keyboard playable; do not shrink keys until they are unusable.
-- Make Library search the first control rather than forcing long scrolling.
+- Workspace tabs: Library, Create, Signal, Compose, ABC.
+- Keep Stop All and current transport reachable at the bottom.
+- Use collapsible control groups.
+- Keep the on-screen keyboard playable; do not shrink keys into unusable targets.
+- Make Library search the first interaction rather than forcing long lists.
 
-### Parent Hub integration
+### Parent Hub handshake
 
-Use the existing Organon handshake:
+Use:
 
 ```text
 setHubStatus(text)
@@ -421,118 +575,97 @@ clearHubStatus()
 Examples:
 
 - `Preview selected audio asset`
-- `Generate a controlled variation of this Coin sound`
-- `Start a continuous 1,000 Hz sine reference tone`
-- `Quantise recorded notes to the selected beat grid`
-- `Save the current synth version as an audio asset`
+- `Create a controlled variation of this Coin sound`
+- `Start a continuous 1,000 Hz sine tone`
+- `Record notes to the armed Cello track`
+- `Render the current composition as a WAV file`
+- `Export the project as standard MIDI`
 
 ---
 
-## 12. Future cross-tool integration contract
+## 13. First-build boundaries
 
-This section documents a later integration, not work for the first build.
+The first implementation is standalone Ihy only. It must not alter Object Creator, Quest Builder, Effect Editor, Puzzle Creator, Scene Editor or other tool runtime code in the same pass.
 
-Future consumers such as Object Creator, Quest Builder and Effect Editor will use a common Audio Asset Picker that:
+Future cross-tool work will use a common Audio Asset Picker which:
 
-- Reads the shared `asset_` audio records.
-- Supports search, category filter, favourites and quick preview.
-- Saves only the selected `asset_` ID into the consumer’s own data.
-- Does not copy blobs or duplicate media metadata into every tool.
-- Shows `Audio asset unavailable — choose replacement` if an old reference cannot be resolved.
-
-The first Ihy implementation must not add this picker to other tools or change their save contracts.
+- reads shared `asset_` audio items;
+- supports search, categories, favourites and quick preview;
+- saves only the selected `asset_` ID into another tool’s data;
+- never copies audio blobs into every tool;
+- displays `Audio asset unavailable — choose replacement` where an old reference cannot resolve.
 
 ---
 
-## 13. Technical foundations
-
-### Required browser APIs
-
-- Web Audio API for playback, oscillators, gain and synthesis.
-- OfflineAudioContext for rendering when supported.
-- IndexedDB for asset data and audio blobs.
-- File input for imports.
-- Blob/Object URL export for WAV and JSON downloads.
-- Canvas or SVG for optional waveform/peak previews.
-
-### Known boundaries
-
-- A browser requires user interaction before AudioContext playback can start.
-- WAV is the core export format. MP3 export is not a required first-build feature.
-- Browser audio can be mathematically configured, but real-world playback is still dependent on the device and environment.
-- The app should work without a backend or automatic external upload.
-
----
-
-## 14. Delivery phases
+## 14. Delivery roadmap
 
 ### Phase 0 — foundation
 
-- Ihy shell using Organon conventions.
-- Iframe guard and Hub status bridge.
-- IndexedDB/audio-asset schema.
+- Ihy shell, iframe guard and Hub status bridge.
+- IndexedDB audio-asset and project schema.
 - Local UI preferences.
-- AudioContext enable and Stop All lifecycle logic.
+- AudioContext enable flow and Stop All lifecycle logic.
 
-### Phase 1 — first useful release: Audio Asset Library + Create Synth Sound
+### Phase 1 — Audio Asset Library + Create Synth Sound
 
-- Audio Asset Library with `asset_` IDs.
-- Import WAV/MP3/OGG and supported formats.
-- Library search, category, tags, favourites, preview, duplicate and delete.
-- sfxr-style synthesis with starting families.
-- Waveforms, envelope presets, controlled variation, Previous/Next history and starred versions.
-- Save/register synth sounds as audio assets.
+- Asset Library with `asset_` IDs.
+- Import local WAV/MP3/OGG/supportable formats.
+- Search, categories, tags, favourites, preview, duplicate and delete.
+- sfxr-style synth families and grouped controls.
+- Controlled variation history, starred versions and undo/redo.
+- Save synth versions as assets.
 - WAV and synth-preset JSON export/import.
-- Basic Signal mode: exact frequency, waveform, master gain, start/stop.
+- Basic Signal mode: exact frequency, waveform, gain and Start/Stop.
 
-**Do not modify other Organon tools in this phase.**
+### Phase 2 — Instrument & Composition Studio
 
-### Phase 2 — Keyboard, sweep and arpeggiator
+- SpessaSynth proof-of-integration using one approved sound bank.
+- Curated instrument picker.
+- Four visible tracks with future-safe project model.
+- On-screen/computer keyboard input, sustain, transpose, metronome, count-in and quantisation.
+- Chiptune/synth instruments selectable alongside sample-based instruments.
+- MIDI import/export.
+- Offline whole-project WAV rendering.
 
-- On-screen and physical keyboard.
-- Instrument presets.
-- A4 reference setting and note calculation.
-- Simple arpeggiator.
-- Frequency sweep controls.
-- Single-track recorder with BPM, quantisation and loop.
+### Phase 3 — Listening export, ABC and MIDI visualisation
 
-### Phase 3 — ABC Player
+- Local MP3 encoder with 128/192/320 kbps choices.
+- ABC input, playback and project conversion where practical.
+- Optional MIDI piano-roll/staff/waterfall preview.
+- Optional physical MIDI-controller input.
 
-- Pasted ABC input/playback.
-- Parse errors and notation preview where practical.
-- Save/register ABC sequences as audio assets.
-- WAV rendering/export when practical.
+### Phase 4 — Cross-tool audio picker
 
-### Phase 4 — shared picker integration
+- Shared Audio Asset Picker for future relevant Organon tools.
+- Missing-asset replacement flow.
+- Project asset-use audit later.
 
-- Implement the Audio Asset Picker in the appropriate later cross-tool pass.
-- Add safe missing-asset/replacement states.
-- Preserve the `asset_` reference model.
+### Later only when genuinely needed
 
-### Later only after real use shows the need
-
-- Piano-roll editing.
-- Multiple tracks.
-- Project sound packs and asset bundles.
+- Piano-roll editor.
+- More tracks.
+- Automation and advanced mixing.
+- Per-track/stem WAV exports.
+- Project sound packs/backups.
 - Batch export.
-- Asset-use audit across projects.
-- More advanced synthesis modules.
+- Additional advanced synthesis modules.
 
 ---
 
 ## 15. Build rules
 
-- Begin coding at **v0.01** and increase by **0.01** for each accepted implementation iteration.
-- Keep source files modular; do not put library storage, audio engine, synth logic and all UI into one giant file.
-- Use lowercase file and folder names unless an existing external path prevents that.
-- Do not refactor working code unless the requested task requires it.
-- Check all accepted changes on desktop and mobile.
-- Do not open a user-facing preview window unless explicitly requested.
-- This README is a plan only. Do not generate implementation code until Chris says **MAKE IT SO**.
+- Begin coding at **v0.01** and increase by **0.01** after each accepted implementation iteration.
+- Keep code modular; do not place storage, audio engine, synth logic, MIDI logic and all UI in one giant file.
+- Use lowercase filenames/folders unless an existing external path prevents it.
+- Do not refactor working code unless the request requires it.
+- Check accepted work on desktop and mobile.
+- Do not open user-facing preview windows unless explicitly requested.
+- Before bundling external code or sound banks, verify licence and attribution requirements.
+- This README is the controlling plan. Do not generate implementation code until Chris says **MAKE IT SO**.
 
 ---
 
-## 16. Initial implementation structure
+## 16. Proposed implementation structure
 
 ```text
 tools/ihy/
@@ -551,33 +684,54 @@ tools/ihy/
     signal-mode.js
     asset-library-db.js
     asset-library-ui.js
+    project-model.js
+    composition-engine.js
+    instrument-bank.js
     keyboard.js
     arpeggiator.js
     recorder.js
+    midi-io.js
     abc-player.js
+    offline-render.js
     wav-export.js
+    mp3-export.js
   data/
     synth-presets.json
+    instrument-catalog.json
 ```
 
-These files are a starting separation, not empty-file ceremony. Add a module only when a real implementation feature needs it.
+Add a module only when a real feature needs it. This structure is not an instruction to create empty files.
 
 ---
 
-## 17. Acceptance test for the Phase 1 release
+## 17. Acceptance tests
 
-Phase 1 is successful when all of the following work locally in a normal desktop browser:
+### Phase 1 success
 
 1. Open Ihy through Organon.
-2. Enable audio through an explicit user action.
-3. Choose a Coin or Magic Sparkle starting family.
-4. Hear a preview, adjust grouped controls and create a controlled variation.
-5. Move backward/forward through variation history and star a version.
-6. Save the chosen version as a named, tagged `asset_` audio asset.
-7. Search, favourite and preview it in Library.
-8. Export it as WAV and export its synth preset JSON.
-9. Start and stop a continuous 1,000 Hz sine tone at a low default gain.
-10. Refresh and find the saved assets retained locally.
-11. Confirm no active audio continues after Stop All or app navigation.
+2. Enable audio through an explicit action.
+3. Choose Coin or Magic Sparkle.
+4. Preview, adjust controls and create controlled variations.
+5. Step through history and star a version.
+6. Save it as a named/tagged `asset_` audio asset.
+7. Find, favourite and preview it from Library after a refresh.
+8. Export its WAV and synth-preset JSON.
+9. Start/stop a low-gain 1,000 Hz sine signal.
+10. Confirm Stop All and navigation leave no audio playing.
 
-When that works, Ihy has achieved the core purpose: reliable local creation and management of reusable Organon audio assets.
+### Phase 2 success
+
+1. Select Grand Piano, Cello, Warm Pad and Drum Kit on four tracks.
+2. Play clearly different instruments from on-screen/computer keyboard input.
+3. Record a short loop with count-in and metronome.
+4. Mute/solo tracks and adjust volume/pan.
+5. Save and reload the editable Ihy project locally.
+6. Export standard MIDI and re-import the notes/tracks intact.
+7. Render WAV that audibly matches live playback.
+8. Confirm audio stops cleanly when leaving Ihy.
+
+### Phase 3 success
+
+1. Export the same composition as a locally generated MP3 at selected bitrate.
+2. Paste valid ABC notation, hear it, save it and convert it into a compatible MIDI/WAV/MP3 project flow.
+3. Use an optional visual MIDI preview without making it the composition engine.
