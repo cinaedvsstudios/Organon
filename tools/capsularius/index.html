@@ -10,17 +10,15 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./css/capsularius.css">
+  <link rel="stylesheet" href="./css/step2.css">
 </head>
 <body>
   <header class="app-header">
     <div class="brand-zone">
       <h1>Organon</h1>
-      <span class="app-badge">Capsularius · v0.10 Step 1</span>
+      <span class="app-badge">Capsularius · v0.20 Step 2</span>
     </div>
-
     <nav class="header-actions" aria-label="Capsularius controls">
-      <button class="header-button" id="open-library-button" type="button">▣ Library</button>
-      <button class="header-button" id="open-recents-button" type="button">◷ Recents</button>
       <button class="header-button primary" id="mount-folder-button" type="button">＋ Mount Folder</button>
       <button class="header-button" id="new-window-button" type="button">＋ New Window</button>
     </nav>
@@ -31,58 +29,75 @@
     <div id="workspace-empty-state" class="workspace-empty-state" hidden>
       <span class="empty-state-icon">▣</span>
       <strong>No folder windows are open</strong>
-      <span>Mount a folder, open Library, or open Recents to begin.</span>
+      <span>Mount a folder or open Library from any folder window to begin.</span>
     </div>
   </main>
 
   <div id="toast-layer" class="toast-layer" aria-live="polite" aria-atomic="false"></div>
   <div id="dialog-layer" class="dialog-layer" aria-live="assertive"></div>
+  <menu id="context-menu" class="context-menu" hidden aria-label="File actions"></menu>
 
   <template id="library-dialog-template">
-    <div class="modal-backdrop" data-modal-backdrop>
+    <div class="modal-backdrop">
       <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="library-dialog-title">
         <div class="modal-title-row">
-          <div>
-            <p class="eyebrow">Library location</p>
-            <h2 id="library-dialog-title">Add folder to Library</h2>
-          </div>
+          <div><p class="eyebrow">Library location</p><h2 id="library-dialog-title">Add folder to Library</h2></div>
           <button class="icon-button" type="button" data-library-cancel aria-label="Close dialog">×</button>
         </div>
         <p class="modal-description" data-library-location></p>
         <div class="form-grid">
-          <label>
-            <span>Name</span>
-            <input data-library-name type="text" maxlength="72" autocomplete="off">
-          </label>
-          <label>
-            <span>Emoji</span>
-            <input data-library-emoji type="text" maxlength="4" autocomplete="off">
-          </label>
-          <label class="full-width">
-            <span>Colour</span>
-            <select data-library-colour>
-              <option value="#e0a360">Sandstone</option>
-              <option value="#4b84bf">Water blue</option>
-              <option value="#449e92">Teal</option>
-              <option value="#9a2f4f">Ruby</option>
-              <option value="#d27d6c">Coral</option>
-              <option value="#896b49">Bronze</option>
-            </select>
-          </label>
+          <label><span>Name</span><input data-library-name type="text" maxlength="72" autocomplete="off"></label>
+          <label><span>Emoji</span><input data-library-emoji type="text" maxlength="4" autocomplete="off"></label>
+          <label class="full-width"><span>Colour</span><select data-library-colour>
+            <option value="#e0a360">Sandstone</option><option value="#4b84bf">Water blue</option><option value="#449e92">Teal</option><option value="#9a2f4f">Ruby</option><option value="#d27d6c">Coral</option><option value="#896b49">Bronze</option>
+          </select></label>
         </div>
-        <div class="modal-actions">
-          <button class="action-button primary" type="button" data-library-confirm>Add to Library</button>
-          <button class="action-button" type="button" data-library-cancel>Cancel</button>
-        </div>
+        <div class="modal-actions"><button class="action-button primary" type="button" data-library-confirm>Add to Library</button><button class="action-button" type="button" data-library-cancel>Cancel</button></div>
       </section>
     </div>
   </template>
 
-  <template id="toast-template">
-    <section class="toast" role="status">
-      <span class="toast-symbol" data-toast-symbol></span>
-      <span class="toast-message" data-toast-message></span>
+  <template id="rename-dialog-template">
+    <div class="modal-backdrop">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="rename-dialog-title">
+        <p class="eyebrow">Capsularius</p>
+        <h2 id="rename-dialog-title" data-rename-title>Rename item</h2>
+        <p class="modal-description">Old name: <strong data-rename-old-name></strong></p>
+        <label class="single-field"><span>New name</span><input data-rename-input type="text" maxlength="220" autocomplete="off"></label>
+        <p class="form-error" data-rename-error hidden></p>
+        <div class="modal-actions"><button class="action-button primary" type="button" data-rename-confirm>Confirm Rename</button><button class="action-button" type="button" data-rename-cancel>Cancel</button></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="conflict-dialog-template">
+    <div class="modal-backdrop">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="conflict-dialog-title">
+        <p class="eyebrow">Name conflict</p>
+        <h2 id="conflict-dialog-title">An item already exists</h2>
+        <p class="modal-description">“<strong data-conflict-name></strong>” already exists in the destination.</p>
+        <p class="modal-description" data-conflict-detail></p>
+        <div class="modal-actions"><button class="action-button primary" type="button" data-conflict-replace>Replace</button><button class="action-button" type="button" data-conflict-rename>Rename</button><button class="action-button" type="button" data-conflict-cancel>Cancel</button></div>
+      </section>
+    </div>
+  </template>
+
+  <template id="operation-confirm-template">
+    <section class="toast operation-toast" role="dialog" aria-modal="true">
+      <div class="operation-copy"><span class="operation-badge" data-operation-badge></span><span class="toast-message" data-operation-message></span><span class="operation-detail" data-operation-detail></span></div>
+      <div class="toast-actions"><button class="action-button primary" type="button" data-operation-confirm>Confirm</button><button class="action-button" type="button" data-operation-cancel>Cancel</button></div>
     </section>
+  </template>
+
+  <template id="operation-progress-template">
+    <section class="toast operation-toast" role="status">
+      <div class="operation-copy"><span class="spinner"></span><span class="toast-message" data-progress-message></span></div>
+      <div class="toast-actions"><button class="action-button" type="button" data-progress-cancel>Cancel</button></div>
+    </section>
+  </template>
+
+  <template id="toast-template">
+    <section class="toast" role="status"><span class="toast-symbol" data-toast-symbol></span><span class="toast-message" data-toast-message></span></section>
   </template>
 
   <script type="module" src="./js/app.js"></script>
