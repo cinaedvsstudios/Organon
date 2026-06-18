@@ -18,6 +18,12 @@
           "description": "Convert audio material into MIDI-style note data where browser processing allows."
         },
         {
+          "id": "ihy",
+          "label": "IHY",
+          "path": "tools/ihy/index.html",
+          "description": "Create local sound effects, play an editable music grid, import audio references and export Ihy project JSON."
+        },
+        {
           "id": "audio-timeline",
           "label": "AUDIO TIMELINE",
           "path": "tools/audio-timeline/index.html",
