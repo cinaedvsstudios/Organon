@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e201c">
+    <meta name="description" content="Capsularius is Organon's local-first workspace for selected folders, media assets, archives, and project files.">
     <title>Organon Capsularius</title>
     <!-- Classical Greco-Roman Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -194,8 +196,14 @@
         /* ==========================================================
            WORKSPACE CANVAS (GRID GRID GRID!)
            ========================================================== */
-        #workspace-canvas {
+        #workspace-viewport {
             flex: 1;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #workspace-canvas {
             position: relative;
             background-color: var(--bg-nightsky);
             /* Creating the classical Blueprint dotted grid background */
@@ -655,21 +663,21 @@
             background: var(--water-spray);
             border-radius: 9999px;
             height: 10px;
-            transition: height 0.15s ease;
         }
 
         .preview-3d-canvas {
-            width: 100%;
-            height: 100%;
+            width: 400px;
+            height: 300px;
+            background: #0e100e;
+            border: 1px solid rgba(117,178,222,0.3);
         }
 
         .zoom-badge {
             position: absolute;
             bottom: 12px;
             right: 12px;
-            background: rgba(0, 0, 0, 0.7);
-            border: 1px solid var(--chiseled-bronze);
-            color: var(--stone-ochre);
+            background: rgba(0,0,0,0.65);
+            color: var(--water-spray);
             font-family: var(--font-mono);
             font-size: 0.7rem;
             padding: 3px 8px;
@@ -694,6 +702,11 @@
         }
 
         .context-item {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            font: inherit;
+            text-align: left;
             padding: 8px 16px;
             font-size: 0.8rem;
             color: var(--alabaster-paper);
@@ -762,19 +775,13 @@
             text-transform: uppercase;
             padding: 2px 6px;
             border-radius: 4px;
-            font-weight: bold;
-            background-color: rgba(117, 178, 222, 0.2);
-            color: var(--water-spray);
+            background: var(--water-blue);
+            color: var(--white-accent);
         }
 
         .toast-badge-action.move {
-            background-color: rgba(224, 163, 96, 0.2);
-            color: var(--stone-ochre);
-        }
-
-        .toast-badge-action.delete {
-            background-color: rgba(74, 21, 37, 0.3);
-            color: #ea8292;
+            background: var(--terracotta-peach);
+            color: var(--bg-nightsky);
         }
 
         .toast-message {
@@ -788,13 +795,16 @@
         }
 
         .toast-btn {
-            padding: 4px 10px;
-            font-size: 0.7rem;
-            border-radius: 9999px;
+            background: transparent;
             border: 1px solid var(--chiseled-bronze);
-            cursor: pointer;
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            font-size: 0.7rem;
             text-transform: uppercase;
-            font-weight: bold;
+            border-radius: 4px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: all 0.15s ease;
         }
 
         .toast-btn.confirm {
@@ -834,6 +844,49 @@
         .invisible {
             display: none !important;
         }
+
+        /* ==========================================================
+           FUTURE OPERATION LAYERS
+           These are intentionally inert in Foundation v0.01. The
+           operations module will activate them when real file actions
+           replace the legacy mock workspace.
+           ========================================================== */
+        #dialog-layer {
+            position: fixed;
+            inset: 0;
+            z-index: 300;
+            pointer-events: none;
+        }
+
+        #dialog-layer > * {
+            pointer-events: auto;
+        }
+
+        .operation-spinner {
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(245, 240, 219, 0.25);
+            border-top-color: var(--water-spray);
+            border-radius: 50%;
+            animation: capsularius-spin 0.8s linear infinite;
+            flex: 0 0 auto;
+        }
+
+        @keyframes capsularius-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .visually-hidden {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
     </style>
 </head>
 <body>
@@ -844,26 +897,26 @@
     <header id="workspace-header">
         <div class="brand-zone">
             <h1 class="brand-title">Organon</h1>
-            <span class="brand-subtitle">Grid Explorer v1.10</span>
+            <span class="brand-subtitle">Capsularius • Foundation v0.01</span>
         </div>
 
         <div class="controls-zone">
             <!-- Global Mount trigger -->
-            <button class="btn-pill" id="btn-mount-folder">
+            <button class="btn-pill" id="btn-mount-folder" type="button" aria-label="Mount a folder with Capsularius">
                 <svg style="width:14px; height:14px;" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
-                Mount Disk
+                Mount Folder
             </button>
             
-            <button class="btn-pill" id="btn-new-window">
+            <button class="btn-pill" id="btn-new-window" type="button" aria-label="Open a new Capsularius folder window">
                 <svg style="width:14px; height:14px;" viewBox="0 0 24 24"><path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/></svg>
-                + New Frame
+                + New Window
             </button>
             
             <div class="search-input-wrapper">
                 <svg class="search-icon-svg" viewBox="0 0 24 24">
                     <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
                 </svg>
-                <input type="text" class="search-input" id="canvas-search" placeholder="Filter active folders...">
+                <input type="text" class="search-input" id="canvas-search" placeholder="Filter active folder..." aria-label="Filter the active folder">
             </div>
         </div>
     </header>
@@ -871,35 +924,81 @@
     <!-- ==========================================================
        WORKSPACE CANVAS
        ========================================================== -->
-    <main id="workspace-canvas">
-        <!-- Spawning Compartment Frames will render dynamically inside this grid layer -->
+    <main id="workspace-viewport" aria-label="Capsularius workspace">
+        <section id="workspace-canvas" aria-label="Folder window canvas" data-workspace-version="foundation-v0.01">
+            <!-- Folder windows render dynamically inside this grid layer. -->
+        </section>
     </main>
 
     <!-- ==========================================================
        FLOATING PREVIEW WINDOWS
        ========================================================== -->
-    <div id="preview-layer">
+    <div id="preview-layer" aria-label="Floating previews">
         <!-- Draggable Floating Preview Engine Elements -->
     </div>
 
     <!-- ==========================================================
        CUSTOM RIGHT-CLICK CONTEXT MENU
        ========================================================== -->
-    <div id="context-menu">
-        <div class="context-item" data-action="preview">✨ Quick Preview</div>
-        <div class="context-item" data-action="unzip">📦 Extract Zip contents</div>
+    <div id="context-menu" role="menu" aria-label="File actions">
+        <button class="context-item" type="button" role="menuitem" data-action="preview">✨ Quick Preview</button>
+        <button class="context-item" type="button" role="menuitem" data-action="unzip">📦 Extract Zip contents</button>
         <div class="context-divider"></div>
-        <div class="context-item" data-action="copy">📋 Queue Copy</div>
-        <div class="context-item" data-action="move">✂️ Queue Move (Shift)</div>
+        <button class="context-item" type="button" role="menuitem" data-action="copy">📋 Copy</button>
+        <button class="context-item" type="button" role="menuitem" data-action="move">✂️ Move</button>
         <div class="context-divider"></div>
-        <div class="context-item" data-action="rename">✏️ Edit Nickname</div>
-        <div class="context-item" data-action="delete" style="color: #ea8292;">🗑️ Force Delete</div>
+        <button class="context-item" type="button" role="menuitem" data-action="rename">✏️ Rename</button>
+        <button class="context-item" type="button" role="menuitem" data-action="delete" style="color: #ea8292;">🗑️ Permanently delete</button>
     </div>
 
     <!-- ==========================================================
-       TOAST POPUP MANAGER (PROMPT WINDOWS)
-       ========================================================== -->
-    <div id="toast-manager"></div>
+        TOAST POPUP MANAGER (PROMPT WINDOWS)
+        ========================================================== -->
+    <div id="toast-manager" role="status" aria-live="polite" aria-atomic="false"></div>
+    <div id="dialog-layer" aria-live="assertive" aria-atomic="true"></div>
+
+    <!--
+      Reusable operation templates. These remain inert until the real
+      operations module replaces the legacy MockFileSystem handlers.
+    -->
+    <template id="operation-confirmation-template">
+        <section class="toast-pill operation-confirmation" role="dialog" aria-modal="true">
+            <div class="toast-info">
+                <span class="toast-badge-action" data-operation-badge></span>
+                <span class="toast-message" data-operation-message></span>
+            </div>
+            <div class="toast-actions">
+                <button class="toast-btn confirm" type="button" data-operation-confirm></button>
+                <button class="toast-btn cancel" type="button" data-operation-cancel>Cancel</button>
+            </div>
+        </section>
+    </template>
+
+    <template id="operation-progress-template">
+        <section class="toast-pill operation-progress" role="status">
+            <div class="toast-info">
+                <span class="operation-spinner" aria-hidden="true"></span>
+                <span class="toast-message" data-operation-progress-message></span>
+            </div>
+            <div class="toast-actions">
+                <button class="toast-btn cancel" type="button" data-operation-cancel>Cancel</button>
+            </div>
+        </section>
+    </template>
+
+    <template id="conflict-rename-template">
+        <section class="toast-pill conflict-rename" role="dialog" aria-modal="true">
+            <div class="toast-info">
+                <span class="toast-message" data-conflict-message></span>
+            </div>
+            <label class="visually-hidden" for="conflict-rename-input">New name</label>
+            <input id="conflict-rename-input" class="search-input" data-conflict-new-name autocomplete="off">
+            <div class="toast-actions">
+                <button class="toast-btn confirm" type="button" data-conflict-confirm>Confirm Rename</button>
+                <button class="toast-btn cancel" type="button" data-conflict-cancel>Cancel</button>
+            </div>
+        </section>
+    </template>
 
     <!-- ==========================================================
        WORKSPACE INTERACTIVE ENGINE
@@ -999,16 +1098,15 @@
                             <span class="window-nickname" contenteditable="true" spellcheck="false">${this.nickname}</span>
                         </div>
                         <div class="window-actions">
-                            <div class="color-dot-picker" style="background-color: ${this.color}"></div>
-                            <div class="action-icon btn-rename-trigger" title="Nickname Edit">✏️</div>
-                            <div class="action-icon btn-close-trigger" title="Close Window">✕</div>
+                            <div class="color-dot-picker" style="background: ${this.color};"></div>
+                            <div class="action-icon btn-close-trigger">✕</div>
                         </div>
                     </div>
                     <div class="window-toolbar">
                         <div class="breadcrumbs"></div>
                         <div class="view-toggle">
-                            <span class="toggle-tab ${this.viewMode === 'grid' ? 'active' : ''}" data-mode="grid">Grid</span>
-                            <span class="toggle-tab ${this.viewMode === 'list' ? 'active' : ''}" data-mode="list">List</span>
+                            <span class="toggle-tab active" data-mode="grid">Grid</span>
+                            <span class="toggle-tab" data-mode="list">List</span>
                         </div>
                     </div>
                     <div class="window-body"></div>
@@ -1412,41 +1510,36 @@
                     img.src = file.src || 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=800&q=80';
                     transformNode.appendChild(img);
                 } 
-                else if (file.type === 'code' || file.name.endsWith('.html') || file.name.endsWith('.json') || file.name.endsWith('.txt')) {
+                else if (file.type === 'code') {
                     const pre = document.createElement('pre');
                     pre.className = 'preview-text';
-                    pre.innerText = file.content || `[No Content Specified]\nFile bounds: ${file.size}`;
+                    pre.innerText = file.content || '// No content loaded for this virtual file.';
                     transformNode.appendChild(pre);
-                    el.querySelector('.zoom-badge').style.display = 'none'; // Hide zoom badge for code previews
+                    el.querySelector('.zoom-badge').style.display = 'none';
                 } 
                 else if (file.type === 'audio') {
-                    // Injecting simulated wave visualizers + direct controls
                     const visualContainer = document.createElement('div');
                     visualContainer.className = 'preview-audio-visuals';
                     
                     const visualizer = document.createElement('div');
                     visualizer.className = 'audio-bar-visualizer';
-                    for(let i = 0; i < 16; i++) {
+                    for (let i = 0; i < 30; i++) {
                         const bar = document.createElement('div');
                         bar.className = 'visualizer-bar';
+                        bar.style.height = `${Math.floor(Math.random() * 45) + 10}px`;
                         visualizer.appendChild(bar);
                     }
 
                     const audioControl = document.createElement('audio');
                     audioControl.controls = true;
                     audioControl.style.width = '100%';
-                    // Creating nice aesthetic simulated tracking loops
-                    let timer = null;
                     audioControl.addEventListener('play', () => {
-                        timer = setInterval(() => {
-                            visualizer.querySelectorAll('.visualizer-bar').forEach(bar => {
-                                const h = Math.floor(Math.random() * 55) + 5;
-                                bar.style.height = `${h}px`;
-                            });
-                        }, 100);
+                        visualizer.querySelectorAll('.visualizer-bar').forEach(bar => {
+                            bar.style.transition = 'height 0.25s ease-in-out';
+                            setInterval(() => bar.style.height = `${Math.floor(Math.random() * 50) + 5}px`, 250);
+                        });
                     });
                     audioControl.addEventListener('pause', () => {
-                        clearInterval(timer);
                         visualizer.querySelectorAll('.visualizer-bar').forEach(bar => bar.style.height = '10px');
                     });
 
@@ -1796,11 +1889,11 @@
 
             toast.innerHTML = `
                 <div class="toast-info">
-                    <span class="toast-badge-action delete">Delete</span>
-                    <span class="toast-message">Are you sure you want to delete <strong>${fileName}</strong>?</span>
+                    <span class="toast-badge-action move">Delete</span>
+                    <span class="toast-message">Delete <strong>${fileName}</strong> permanently?</span>
                 </div>
                 <div class="toast-actions">
-                    <button class="toast-btn confirm" style="background-color: var(--burgundy);">Delete</button>
+                    <button class="toast-btn confirm">Confirm</button>
                     <button class="toast-btn cancel">Cancel</button>
                 </div>
             `;
@@ -1811,44 +1904,34 @@
                 onConfirm();
                 toast.remove();
             });
-
-            toast.querySelector('.cancel').addEventListener('click', () => {
-                toast.remove();
-            });
+            toast.querySelector('.cancel').addEventListener('click', () => toast.remove());
         }
 
-        // Standard informative popup triggers
-        function triggerToast(message, type = 'complete') {
+        function triggerToast(message, type = 'info') {
             const toastId = Date.now();
             const toast = document.createElement('div');
             toast.className = 'toast-pill';
             toast.id = `toast-${toastId}`;
 
-            let badgeHtml = `<span class="toast-badge-action">System</span>`;
-            if (type === 'delete') badgeHtml = `<span class="toast-badge-action delete">Wiped</span>`;
-            if (type === 'info') badgeHtml = `<span class="toast-badge-action move">Notice</span>`;
+            let badge = type === 'complete' ? 'DONE' : type === 'delete' ? 'DELETED' : 'INFO';
+            let badgeClass = type === 'delete' ? 'move' : '';
 
             toast.innerHTML = `
                 <div class="toast-info">
-                    ${badgeHtml}
+                    <span class="toast-badge-action ${badgeClass}">${badge}</span>
                     <span class="toast-message">${message}</span>
                 </div>
             `;
 
             document.getElementById('toast-manager').appendChild(toast);
-            
-            // Clean up automatically
-            setTimeout(() => {
-                toast.style.animation = 'slideIn 0.2s cubic-bezier(0.4, 0, 0.2, 1) reverse forwards';
-                setTimeout(() => toast.remove(), 250);
-            }, 3500);
+            setTimeout(() => toast.remove(), type === 'info' ? 3500 : 2500);
         }
 
         // ==========================================================
-        // PERSISTENCE STATE ENGINE (INDEXEDDB WRAPPER INTEGRATION)
+        // WORKSPACE PERSISTENCE MANAGEMENT
         // ==========================================================
         function saveWorkspaceState() {
-            const serializedFrames = AppState.windows.map(w => ({
+            const activeFrames = AppState.windows.map(w => ({
                 id: w.id,
                 nickname: w.nickname,
                 color: w.color,
@@ -1859,126 +1942,150 @@
                 viewMode: w.viewMode,
                 currentPath: w.currentPath
             }));
-
-            // Sync with browser memory standard storage smoothly
-            localStorage.setItem('organon_explorer_workspace_v1', JSON.stringify(serializedFrames));
+            localStorage.setItem('organon_grid_explorer_state', JSON.stringify(activeFrames));
         }
 
         function loadWorkspaceState() {
-            const rawData = localStorage.getItem('organon_explorer_workspace_v1');
-            if (rawData) {
+            const raw = localStorage.getItem('organon_grid_explorer_state');
+            if (raw) {
                 try {
-                    const parsedFrames = JSON.parse(rawData);
-                    parsedFrames.forEach(frame => {
-                        const w = new FolderWindow(frame.id, frame.nickname, frame.color, frame.x, frame.y, frame.width, frame.height);
-                        w.viewMode = frame.viewMode;
-                        w.currentPath = frame.currentPath;
-                        w.renderContent();
-                        AppState.windows.push(w);
-                    });
-                } catch(e) {
-                    console.error("Corrupt layout state detected. Resetting workspace...", e);
-                    spawnDefaultWorkspace();
-                }
-            } else {
-                spawnDefaultWorkspace();
-            }
-        }
-
-        function spawnDefaultWorkspace() {
-            // Spawn two aligned visual snap folder view grids
-            const win1 = new FolderWindow(1, 'Project Assets', '#e0a360', 60, 40, 420, 360);
-            const win2 = new FolderWindow(2, 'Backup Workspace', '#4b84bf', 520, 40, 420, 360);
-            AppState.windows.push(win1, win2);
-            saveWorkspaceState();
-        }
-
-        // ==========================================================
-        // MOUNTING SYSTEM DIRECTORIES (FILE SYSTEM ACCESS API)
-        // ==========================================================
-        const mountBtn = document.getElementById('btn-mount-folder');
-        mountBtn.addEventListener('click', async () => {
-            try {
-                if ('showDirectoryPicker' in window) {
-                    // Triggers local OS platform directory authorization picker
-                    const dirHandle = await window.showDirectoryPicker();
-                    AppState.mountedHandles.push(dirHandle);
-
-                    // Dynamic folder container allocation
-                    const localSubPath = `root/${dirHandle.name}`;
-                    MockFileSystem[localSubPath] = [];
-
-                    // Scan first-level subdirectories recursively to map inside mock structure smoothly
-                    for await (const entry of dirHandle.values()) {
-                        let type = 'code';
-                        if (entry.kind === 'directory') type = 'folder';
-                        else if (entry.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) type = 'image';
-                        else if (entry.name.match(/\.(mp3|wav|ogg|flac)$/i)) type = 'audio';
-                        else if (entry.name.match(/\.(mp4|webm|mov)$/i)) type = 'video';
-                        else if (entry.name.match(/\.(zip|tar|gz|rar)$/i)) type = 'zip';
-                        else if (entry.name.match(/\.(gltf|obj|fbx|3d)$/i)) type = 'model3d';
-
-                        MockFileSystem[localSubPath].push({
-                            name: entry.name,
-                            type: type,
-                            size: type === 'folder' ? '--' : 'Local File'
+                    const storedFrames = JSON.parse(raw);
+                    if (Array.isArray(storedFrames) && storedFrames.length > 0) {
+                        storedFrames.forEach(data => {
+                            const win = new FolderWindow(data.id, data.nickname, data.color, data.x, data.y, data.width, data.height);
+                            win.viewMode = data.viewMode || 'grid';
+                            win.currentPath = data.currentPath || 'root';
+                            win.renderContent();
+                            AppState.windows.push(win);
                         });
+                        return;
                     }
-
-                    // Spawns customized canvas viewport representation
-                    const id = AppState.windows.length + 1;
-                    const spawned = new FolderWindow(id, dirHandle.name, '#449e92', 100, 100, 440, 380);
-                    spawned.currentPath = localSubPath;
-                    spawned.renderContent();
-                    AppState.windows.push(spawned);
-                    
-                    triggerToast(`Successfully mounted workspace folder: ${dirHandle.name}!`, 'complete');
-                    saveWorkspaceState();
-                } else {
-                    // Fallback alerts
-                    triggerToast("Native File System API is not supported by your browser environment. Utilizing simulated secure sandbox file structure.", "info");
-                    // Spawn alternative simulation container
-                    const id = AppState.windows.length + 1;
-                    const simulated = new FolderWindow(id, 'Simulated Mount', '#d27d6c', 160, 120, 420, 340);
-                    AppState.windows.push(simulated);
-                    saveWorkspaceState();
+                } catch (e) {
+                    console.error('State recovery corrupted.', e);
                 }
+            }
+            // Default multi-panel boot setup
+            spawnNewFrame('Asset Library', '#e0a360', 60, 60);
+            spawnNewFrame('Audio Vault', '#4b84bf', 520, 140);
+        }
+
+        function spawnNewFrame(nickname = 'New Frame', color = null, x = null, y = null) {
+            const id = AppState.windows.length > 0 ? Math.max(...AppState.windows.map(w => w.id)) + 1 : 1;
+            const offset = AppState.windows.length * 30;
+            const win = new FolderWindow(
+                id,
+                nickname,
+                color || ThemePalette[id % ThemePalette.length],
+                x !== null ? x : 80 + offset,
+                y !== null ? y : 80 + offset
+            );
+            AppState.windows.push(win);
+            win.focus();
+            saveWorkspaceState();
+            return win;
+        }
+
+        // ==========================================================
+        // VIRTUAL MOUNTING FILESYSTEM API PROTOCOL
+        // ==========================================================
+        document.getElementById('btn-mount-folder').addEventListener('click', async () => {
+            if (!('showDirectoryPicker' in window)) {
+                triggerToast('This browser cannot open local folders. Use Chrome or Edge.', 'delete');
+                return;
+            }
+
+            try {
+                const dirHandle = await window.showDirectoryPicker();
+                const mountName = dirHandle.name;
+                const basePath = `root/${mountName}`;
+
+                // Map directory contents dynamically into fake interface proxy
+                const entries = [];
+                for await (const entry of dirHandle.values()) {
+                    const ext = entry.kind === 'directory' ? 'folder' : entry.name.split('.').pop().toLowerCase();
+                    let type = 'code';
+                    if (entry.kind === 'directory') type = 'folder';
+                    else if (['jpg','jpeg','png','gif','webp'].includes(ext)) type = 'image';
+                    else if (['mp3','wav','ogg'].includes(ext)) type = 'audio';
+                    else if (['mp4','webm','mov'].includes(ext)) type = 'video';
+                    else if (['obj','gltf','glb','3d'].includes(ext)) type = 'model3d';
+                    else if (['zip','tar','gz','rar'].includes(ext)) type = 'zip';
+
+                    entries.push({ name: entry.name, type, size: entry.kind === 'directory' ? 'Folder' : 'Loading...' });
+                }
+
+                MockFileSystem[basePath] = entries;
+                MockFileSystem['root'].push({ name: mountName, type: 'folder', size: 'Mounted Disk' });
+                AppState.mountedHandles.push({ name: mountName, handle: dirHandle, path: basePath });
+
+                const newWin = spawnNewFrame(mountName, '#449e92');
+                newWin.currentPath = basePath;
+                newWin.isPhysical = true;
+                newWin.physicalHandle = dirHandle;
+                newWin.renderContent();
+                triggerToast(`Mounted ${mountName} with ${entries.length} detected nodes.`, 'complete');
             } catch (err) {
-                console.warn("Direct folder pick canceled by host user.", err);
+                if (err.name !== 'AbortError') {
+                    triggerToast('Could not mount folder.', 'delete');
+                }
             }
         });
 
-        // Spawns blank Frames
         document.getElementById('btn-new-window').addEventListener('click', () => {
-            const id = AppState.windows.length > 0 ? Math.max(...AppState.windows.map(w => w.id)) + 1 : 1;
-            const x = 60 + (AppState.windows.length * 20) % 300;
-            const y = 60 + (AppState.windows.length * 20) % 200;
-            const w = new FolderWindow(id, `Workspace Frame ${id}`, ThemePalette[id % ThemePalette.length], x, y, 400, 320);
-            AppState.windows.push(w);
-            saveWorkspaceState();
-            triggerToast(`Spawned Compartment Frame Space #${id}`, 'complete');
+            spawnNewFrame();
         });
 
-        // Global Dynamic Workspace Filter Box
+        // Global Search Filter
         document.getElementById('canvas-search').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            AppState.windows.forEach(w => {
-                const elements = w.dom.querySelectorAll('.grid-item, .file-row');
-                elements.forEach(el => {
-                    const name = el.querySelector('.file-name').innerText.toLowerCase();
-                    if (name.includes(query)) {
-                        el.style.display = '';
-                    } else {
-                        el.style.display = 'none';
-                    }
+            const query = e.target.value.toLowerCase().trim();
+            AppState.windows.forEach(win => {
+                const nodes = win.dom.querySelectorAll('.grid-item, .file-row');
+                nodes.forEach(node => {
+                    const text = node.innerText.toLowerCase();
+                    node.style.display = text.includes(query) ? '' : 'none';
                 });
             });
         });
 
-        // Initialize App Launcher
-        window.onload = function() {
+        // Canvas Marquee Selection logic for visual workspace
+        canvas.addEventListener('mousedown', (e) => {
+            if (e.target !== canvas) return;
+            const startX = e.offsetX;
+            const startY = e.offsetY;
+            const box = document.createElement('div');
+            box.className = 'marquee-box';
+            box.style.left = `${startX}px`;
+            box.style.top = `${startY}px`;
+            canvas.appendChild(box);
+
+            const onMouseMove = (moveEvent) => {
+                const rect = canvas.getBoundingClientRect();
+                const currentX = moveEvent.clientX - rect.left;
+                const currentY = moveEvent.clientY - rect.top;
+                const left = Math.min(startX, currentX);
+                const top = Math.min(startY, currentY);
+                const width = Math.abs(currentX - startX);
+                const height = Math.abs(currentY - startY);
+                box.style.left = `${left}px`;
+                box.style.top = `${top}px`;
+                box.style.width = `${width}px`;
+                box.style.height = `${height}px`;
+            };
+
+            const onMouseUp = () => {
+                box.remove();
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        // Initial system boot
+        document.addEventListener('DOMContentLoaded', () => {
             loadWorkspaceState();
-        };
+        });
     </script>
 </body>
 </html>
