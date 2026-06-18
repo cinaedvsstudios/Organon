@@ -1,21 +1,30 @@
 {
-  "version": "v1.11-alpha",
+  "version": "v1.12-alpha",
   "categories": [
     {
-      "id": "create",
-      "label": "CREATE",
+      "id": "audio",
+      "label": "AUDIO",
       "tools": [
         {
-          "id": "animation-maker",
-          "label": "ANIMATION MAKER",
-          "path": "tools/animation-maker/index.html",
-          "description": "Create and preview animation assets from local media or image sequences."
-        },
-        {
-          "id": "audio2midi",
-          "label": "AUDIO2MIDI",
-          "path": "tools/audio2midi/index.html",
-          "description": "Convert audio material into MIDI-style note data where browser processing allows."
+          "id": "onda-split",
+          "label": "ONDA | NEW TAB",
+          "buttonType": "dual-action-split",
+          "description": "Open Onda in the basin iframe or launch Onda in a new browser tab.",
+          "splitTools": [
+            {
+              "id": "onda",
+              "label": "ONDA",
+              "path": "https://ondaplayer.netlify.app/",
+              "description": "Open Onda inside the Organon workspace."
+            },
+            {
+              "id": "onda-new-tab",
+              "label": "NEW TAB",
+              "path": "https://ondaplayer.netlify.app/",
+              "openMode": "new-tab",
+              "description": "Open Onda in a new browser tab."
+            }
+          ]
         },
         {
           "id": "ihy",
@@ -24,36 +33,40 @@
           "description": "Create local sound effects, play an editable music grid, import audio references and export Ihy project JSON."
         },
         {
+          "id": "audio2midi",
+          "label": "AUDIO2MIDI",
+          "path": "tools/audio2midi/index.html",
+          "description": "Convert audio material into MIDI-style note data where browser processing allows."
+        }
+      ]
+    },
+    {
+      "id": "video",
+      "label": "VIDEO",
+      "tools": [
+        {
+          "id": "animation-maker",
+          "label": "ANIMATION MAKER",
+          "path": "tools/animation-maker/index.html",
+          "description": "Create and preview animation assets from local media or image sequences."
+        },
+        {
           "id": "audio-timeline",
           "label": "AUDIO TIMELINE",
           "path": "tools/audio-timeline/index.html",
           "description": "Assemble short AI video clips with generated audio and export a browser-rendered timeline."
         },
         {
-          "id": "code-repo-split",
-          "label": "CODE EDITOR | REPOSITORY",
-          "buttonType": "code-repo-split",
-          "description": "Open the code editor or repository from the split copper button.",
-          "splitTools": [
-            {
-              "id": "code-writer",
-              "label": "CODE EDITOR",
-              "path": "tools/code-writer/index.html",
-              "description": "Open the Organon code editor workspace."
-            },
-            {
-              "id": "repository",
-              "label": "REPOSITORY",
-              "path": "tools/repository/index.html",
-              "description": "Open the Organon UI repository."
-            }
-          ]
+          "id": "frame-extractor",
+          "label": "FRAME EXTRACTOR",
+          "path": "tools/frame-extractor/index.html",
+          "description": "Extract still frames from local video files."
         }
       ]
     },
     {
-      "id": "modify",
-      "label": "MODIFY",
+      "id": "image",
+      "label": "IMAGE",
       "tools": [
         {
           "id": "alpha-isolator",
@@ -66,12 +79,6 @@
           "label": "MULTI EDIT",
           "path": "tools/multi-edit/index.html",
           "description": "Edit and process multiple local media or asset files in one workspace."
-        },
-        {
-          "id": "simple-edit",
-          "label": "SIMPLE EDIT",
-          "path": "tools/simple-edit/index.html",
-          "description": "Quickly cut and export selected audio or video timeline segments."
         },
         {
           "id": "image-tile",
@@ -92,22 +99,10 @@
           "description": "Compress JPEG images to optimized file sizes."
         },
         {
-          "id": "frame-extractor",
-          "label": "FRAME EXTRACTOR",
-          "path": "tools/frame-extractor/index.html",
-          "description": "Extract still frames from local video files."
-        },
-        {
           "id": "icon-slicer",
           "label": "ICON SLICER",
           "path": "tools/icon-slicer/index.html",
           "description": "Slice icon sheets or source graphics into individual icon assets."
-        },
-        {
-          "id": "image-calculator",
-          "label": "IMAGE CALCULATOR",
-          "path": "tools/image-calculator/index.html",
-          "description": "Calculate image dimensions, scaling, crop ratios, and pixel layout values."
         },
         {
           "id": "bulk-convert",
@@ -118,14 +113,26 @@
       ]
     },
     {
-      "id": "tools",
-      "label": "TOOLS",
+      "id": "utilities",
+      "label": "UTILITIES",
       "tools": [
         {
-          "id": "capsularius",
-          "label": "CAPSULARIUS",
-          "path": "tools/capsularius/index.html",
-          "description": "Open the local-first project workspace for folders and project assets."
+          "id": "simple-edit",
+          "label": "SIMPLE EDIT",
+          "path": "tools/simple-edit/index.html",
+          "description": "Quickly cut and export selected audio or video timeline segments."
+        },
+        {
+          "id": "simple-preview",
+          "label": "SIMPLE PREVIEW",
+          "path": "tools/simple-preview/index.html",
+          "description": "Preview local 2D, 3D, and media assets in a universal viewer."
+        },
+        {
+          "id": "image-calculator",
+          "label": "IMAGE CALCULATOR",
+          "path": "tools/image-calculator/index.html",
+          "description": "Calculate image dimensions, scaling, crop ratios, and pixel layout values."
         },
         {
           "id": "bulk-download",
@@ -148,41 +155,40 @@
       ]
     },
     {
-      "id": "analyze",
-      "label": "ANALYZE",
+      "id": "workspace",
+      "label": "WORKSPACE",
       "tools": [
+        {
+          "id": "capsularius",
+          "label": "CAPSULARIUS",
+          "path": "tools/capsularius/index.html",
+          "description": "Open the local-first project workspace for folders and project assets."
+        },
+        {
+          "id": "code-repo-split",
+          "label": "CODE EDITOR | REPOSITORY",
+          "buttonType": "code-repo-split",
+          "description": "Open the code editor or repository from the split copper button.",
+          "splitTools": [
+            {
+              "id": "code-writer",
+              "label": "CODE EDITOR",
+              "path": "tools/code-writer/index.html",
+              "description": "Open the Organon code editor workspace."
+            },
+            {
+              "id": "repository",
+              "label": "REPOSITORY",
+              "path": "tools/repository/index.html",
+              "description": "Open the Organon UI repository."
+            }
+          ]
+        },
         {
           "id": "character-library",
           "label": "CHARACTER LIBRARY",
           "path": "tools/character-library/index.html",
           "description": "Browse and manage the global character library sheet metadata."
-        },
-        {
-          "id": "simple-preview",
-          "label": "SIMPLE PREVIEW",
-          "path": "tools/simple-preview/index.html",
-          "description": "Preview local 2D, 3D, and media assets in a universal viewer."
-        },
-        {
-          "id": "onda-split",
-          "label": "ONDA | NEW TAB",
-          "buttonType": "dual-action-split",
-          "description": "Open Onda in the basin iframe or launch Onda in a new browser tab.",
-          "splitTools": [
-            {
-              "id": "onda",
-              "label": "ONDA",
-              "path": "https://ondaplayer.netlify.app/",
-              "description": "Open Onda inside the Organon workspace."
-            },
-            {
-              "id": "onda-new-tab",
-              "label": "NEW TAB",
-              "path": "https://ondaplayer.netlify.app/",
-              "openMode": "new-tab",
-              "description": "Open Onda in a new browser tab."
-            }
-          ]
         }
       ]
     }
