@@ -83,16 +83,23 @@ export function createLibraryEntry(source, { name, emoji, colour }) {
 export function makeWindowRecord(state, source, overrides = {}) {
   const id = state.nextWindowId++;
   const stagger = (state.windows.size % 8) * 28;
+  const isRestoredWindow = Number.isFinite(overrides.id);
+  const hasSavedColour = typeof overrides.colour === 'string' && overrides.colour.length > 0;
+  const colour = isRestoredWindow && hasSavedColour
+    ? overrides.colour
+    : PALETTE[state.currentColourIndex++ % PALETTE.length];
+
   return {
     id,
     source: cloneSource(source),
     nickname: overrides.nickname || sourceTitle(state, source),
-    colour: overrides.colour || defaultColourForSource(state, source),
+    colour,
     x: Number.isFinite(overrides.x) ? overrides.x : 60 + stagger,
     y: Number.isFinite(overrides.y) ? overrides.y : 48 + stagger,
     width: Number.isFinite(overrides.width) ? overrides.width : 530,
     height: Number.isFinite(overrides.height) ? overrides.height : 420,
     viewMode: overrides.viewMode === 'list' ? 'list' : 'grid',
+    minimized: Boolean(overrides.minimized),
     filter: '',
     items: [],
     selectedIds: new Set(),
@@ -123,6 +130,7 @@ export function windowSnapshot(windowRecord) {
     y: windowRecord.y,
     width: windowRecord.width,
     height: windowRecord.height,
-    viewMode: windowRecord.viewMode
+    viewMode: windowRecord.viewMode,
+    minimized: Boolean(windowRecord.minimized)
   };
 }
