@@ -1,5 +1,33 @@
 # Ihy Changelog
 
+## v0.04 — Standalone editor rebuild
+
+Rebuilt the standalone Ihy page as its own direct application rather than wrapping the compact hub tool in an iframe.
+
+### Changed in this version
+
+- The standalone page now has its own full-width desktop composition layout.
+- Replaced the old music-note placeholder with the app image path `icon.png` and simplified the header to **Ihy** plus the version badge.
+- Moved the primary composition controls into one left-side control card.
+- Moved Import, Export and Save into that same control card.
+- Added emoji-labelled controls for Play, Stop, Record, Metronome, Import, Export, Save, Add Track, Add Section, Clear and Zoom.
+- Kept the Tracks card directly under the control card in the left column.
+- Moved section labels into the bottom edge of the piano roll as long coloured pills aligned to the beat grid.
+- The keyboard now sits directly beneath the piano roll and uses the same editor width.
+- The standalone project loader rejects an empty saved track list and falls back to the four default tracks, starter notes and default sections instead of showing a blank composition view.
+- JSON import/export and local project save remain available in the standalone app.
+- Desktop uses the full browser width; screens below 900px switch to the stacked layout.
+
+### Rollback baseline
+
+`v0.03` remains the previous standalone-launcher baseline. `v0.04` is the current standalone editor baseline.
+
+### Direct standalone route
+
+`https://cinaedvsstudios.github.io/Organon/tools/ihy/standalone.html`
+
+---
+
 ## v0.03 — Standalone launcher
 
 Ihy can now be opened in its own full-browser page without loading the Organon hub around it.
@@ -8,16 +36,7 @@ Ihy can now be opened in its own full-browser page without loading the Organon h
 
 - Added `tools/ihy/standalone.html`.
 - The standalone launcher fills the browser viewport with Ihy and does not show the Organon shell.
-- The standalone page identifies itself as `v0.03` and preserves the same Ihy project and local-browser data used by the hub version.
 - The existing hub route remains available for normal Organon workflow.
-
-### Direct standalone route
-
-`https://cinaedvsstudios.github.io/Organon/tools/ihy/standalone.html`
-
-### Rollback baseline
-
-`v0.02` remains the last direct-Ihy desktop layout baseline. `v0.03` adds the standalone opening route.
 
 ---
 
@@ -38,10 +57,6 @@ Reworked the app shell so Ihy uses the available Organon workspace on desktop in
 - Mobile devices below 900px keep the stacked 540px-style layout intentionally.
 - Visible version, JSON project version and newly saved local project key are now `v0.02`.
 - Existing `v0.01` locally saved projects are still loaded as a fallback and normalised into the v0.02 project shape.
-
-### Rollback baseline
-
-`v0.01` remains the last compact/mobile-shell baseline. `v0.02` is the full-screen desktop baseline.
 
 ---
 
@@ -81,7 +96,3 @@ Initial GitHub prototype for the Organon Sound & Music Workshop.
 - Automatic BPM/key detection.
 - Audio-to-MIDI conversion; use the existing Organon Audio2MIDI tool.
 - Lyrics and lyric timing.
-
-### Rollback baseline
-
-`v0.01` is the first working Ihy prototype baseline.
