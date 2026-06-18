@@ -1,5 +1,29 @@
 # Ihy Changelog
 
+## v0.02 — Full desktop composition workspace
+
+Reworked the app shell so Ihy uses the available Organon workspace on desktop instead of being constrained to a 540px mobile column.
+
+### Changed in this version
+
+- Desktop layout is now full-width inside the Organon tool basin.
+- The composition screen uses a desktop workspace structure:
+  - left column for transport, track selection and track controls;
+  - full-width section strip above the editor;
+  - wide piano-roll editor beside the tracks;
+  - keyboard across the workspace below the editor.
+- The piano roll now receives the available vertical workspace height on desktop, up to a sensible maximum.
+- Header and fixed bottom action bar use the full workspace width on desktop.
+- Mobile devices below 900px keep the stacked 540px-style layout intentionally.
+- Visible version, JSON project version and newly saved local project key are now `v0.02`.
+- Existing `v0.01` locally saved projects are still loaded as a fallback and normalised into the v0.02 project shape.
+
+### Rollback baseline
+
+`v0.01` remains the last compact/mobile-shell baseline. `v0.02` is the current full-screen desktop baseline.
+
+---
+
 ## v0.01 — Interactive prototype
 
 Initial GitHub prototype for the Organon Sound & Music Workshop.
