@@ -80,6 +80,20 @@ export function createLibraryEntry(source, { name, emoji, colour }) {
   };
 }
 
+function normaliseSettings(raw = {}) {
+  const windowSettings = raw.window || {};
+  const folders = raw.folders && typeof raw.folders === 'object' ? raw.folders : {};
+  return {
+    scope: raw.scope === 'folder' ? 'folder' : 'window',
+    window: {
+      viewMode: windowSettings.viewMode === 'list' ? 'list' : 'grid',
+      sortBy: ['name', 'type', 'size', 'modified'].includes(windowSettings.sortBy) ? windowSettings.sortBy : 'name',
+      sortDirection: windowSettings.sortDirection === 'desc' ? 'desc' : 'asc'
+    },
+    folders
+  };
+}
+
 export function makeWindowRecord(state, source, overrides = {}) {
   const id = state.nextWindowId++;
   const stagger = (state.windows.size % 8) * 28;
@@ -88,6 +102,14 @@ export function makeWindowRecord(state, source, overrides = {}) {
   const colour = isRestoredWindow && hasSavedColour
     ? overrides.colour
     : PALETTE[state.currentColourIndex++ % PALETTE.length];
+  const settings = normaliseSettings(overrides.settings || {
+    scope: 'window',
+    window: {
+      viewMode: overrides.viewMode,
+      sortBy: overrides.sortBy,
+      sortDirection: overrides.sortDirection
+    }
+  });
 
   return {
     id,
@@ -98,8 +120,12 @@ export function makeWindowRecord(state, source, overrides = {}) {
     y: Number.isFinite(overrides.y) ? overrides.y : 48 + stagger,
     width: Number.isFinite(overrides.width) ? overrides.width : 530,
     height: Number.isFinite(overrides.height) ? overrides.height : 420,
-    viewMode: overrides.viewMode === 'list' ? 'list' : 'grid',
+    viewMode: settings.window.viewMode,
+    settings,
     minimized: Boolean(overrides.minimized),
+    treeExpanded: new Set(Array.isArray(overrides.treeExpanded) ? overrides.treeExpanded : []),
+    treeChildren: new Map(),
+    treeLoading: new Set(),
     filter: '',
     items: [],
     selectedIds: new Set(),
@@ -131,6 +157,8 @@ export function windowSnapshot(windowRecord) {
     width: windowRecord.width,
     height: windowRecord.height,
     viewMode: windowRecord.viewMode,
-    minimized: Boolean(windowRecord.minimized)
+    settings: windowRecord.settings,
+    minimized: Boolean(windowRecord.minimized),
+    treeExpanded: [...windowRecord.treeExpanded]
   };
 }
