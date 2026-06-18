@@ -3,6 +3,7 @@ import { OperationManager, directoryForSource } from './operations.js';
 import { createOperationUi } from './operation-ui.js';
 import { persistence } from './persistence.js';
 import { cloneSource, createLibraryEntry, createMount, createState, librarySource, makeWindowRecord, physicalSource, sourceKey, sourcePathLabel, sourceTitle, windowSnapshot } from './state.js';
+import { installWindowPills } from './window-pills.js';
 import { Workspace } from './workspace.js';
 
 const state = createState();
@@ -26,7 +27,14 @@ function serialiseMount(mount) {
 }
 
 function workspaceSnapshot() {
-  return { nextWindowId: state.nextWindowId, activeWindowId: state.activeWindowId, panX: state.workspace.panX, panY: state.workspace.panY, windows: [...state.windows.values()].map(windowSnapshot) };
+  return {
+    nextWindowId: state.nextWindowId,
+    activeWindowId: state.activeWindowId,
+    panX: state.workspace.panX,
+    panY: state.workspace.panY,
+    currentColourIndex: state.currentColourIndex,
+    windows: [...state.windows.values()].map(windowSnapshot)
+  };
 }
 
 function scheduleSave() {
@@ -68,6 +76,10 @@ async function restoreState() {
     state.activeWindowId = saved.workspace.activeWindowId || null;
     state.workspace.panX = Number(saved.workspace.panX) || 0;
     state.workspace.panY = Number(saved.workspace.panY) || 0;
+    const savedColourIndex = Number(saved.workspace.currentColourIndex);
+    state.currentColourIndex = Number.isFinite(savedColourIndex)
+      ? Math.max(0, savedColourIndex)
+      : (Array.isArray(saved.workspace.windows) ? saved.workspace.windows.length : 0);
     workspace.applyWorkspaceTransform();
     const specialSeen = new Set();
     for (const snapshot of Array.isArray(saved.workspace.windows) ? saved.workspace.windows : []) {
@@ -250,6 +262,7 @@ function bindControls() {
 }
 
 async function boot() {
+  installWindowPills(Workspace);
   workspace = new Workspace({ state, onStateChange: scheduleSave, onLocationOpened: recordRecent, onRequestPermission: reopenPermission, onAddToLibrary: showLibraryDialog, onOpenSource: openSource, onToast: toast, onCommand: handleCommand });
   operations = new OperationManager({ ui: createOperationUi(), onRefresh: () => workspace.refreshWindows(), onToast: toast });
   bindControls();
