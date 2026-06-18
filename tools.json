@@ -1,5 +1,5 @@
 {
-  "version": "v1.10-alpha",
+  "version": "v1.11-alpha",
   "categories": [
     {
       "id": "create",
@@ -56,6 +56,24 @@
       "label": "MODIFY",
       "tools": [
         {
+          "id": "alpha-isolator",
+          "label": "ALPHA ISOLATOR",
+          "path": "tools/alpha-isolator/index.html",
+          "description": "Isolate, refine, and export alpha-channel image transparency."
+        },
+        {
+          "id": "multi-edit",
+          "label": "MULTI EDIT",
+          "path": "tools/multi-edit/index.html",
+          "description": "Edit and process multiple local media or asset files in one workspace."
+        },
+        {
+          "id": "simple-edit",
+          "label": "SIMPLE EDIT",
+          "path": "tools/simple-edit/index.html",
+          "description": "Quickly cut and export selected audio or video timeline segments."
+        },
+        {
           "id": "image-tile",
           "label": "TILE IMAGE",
           "path": "tools/image-tile/index.html",
@@ -104,6 +122,12 @@
       "label": "TOOLS",
       "tools": [
         {
+          "id": "capsularius",
+          "label": "CAPSULARIUS",
+          "path": "tools/capsularius/index.html",
+          "description": "Open the local-first project workspace for folders and project assets."
+        },
+        {
           "id": "bulk-download",
           "label": "BULK DOWNLOAD",
           "path": "tools/bulk-download/index.html",
@@ -134,6 +158,12 @@
           "description": "Browse and manage the global character library sheet metadata."
         },
         {
+          "id": "simple-preview",
+          "label": "SIMPLE PREVIEW",
+          "path": "tools/simple-preview/index.html",
+          "description": "Preview local 2D, 3D, and media assets in a universal viewer."
+        },
+        {
           "id": "onda-split",
           "label": "ONDA | NEW TAB",
           "buttonType": "dual-action-split",
@@ -142,13 +172,13 @@
             {
               "id": "onda",
               "label": "ONDA",
-              "path": "tools/Onda/index.html",
+              "path": "https://ondaplayer.netlify.app/",
               "description": "Open Onda inside the Organon workspace."
             },
             {
               "id": "onda-new-tab",
               "label": "NEW TAB",
-              "path": "tools/Onda/index.html",
+              "path": "https://ondaplayer.netlify.app/",
               "openMode": "new-tab",
               "description": "Open Onda in a new browser tab."
             }
