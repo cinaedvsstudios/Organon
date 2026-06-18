@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "app": "Capsularius",
+  "description": "Portable baseline settings for Capsularius. Browser directory permission handles are intentionally not stored here.",
+  "workspace": {
+    "currentColourIndex": 0,
+    "panX": 0,
+    "panY": 0,
+    "windows": [
+      {
+        "source": { "kind": "library" },
+        "nickname": "Library",
+        "colour": "#e0a360",
+        "x": 60,
+        "y": 48,
+        "width": 530,
+        "height": 420,
+        "viewMode": "grid",
+        "minimized": false
+      }
+    ]
+  },
+  "libraryTemplates": [],
+  "notes": [
+    "Actual local folders are protected browser permission handles and are stored only in IndexedDB on the user's device.",
+    "After browser storage is cleared, re-mount or re-drop the folder roots, then restore any portable settings backup."
+  ]
+}
