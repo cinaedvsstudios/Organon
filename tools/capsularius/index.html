@@ -12,12 +12,13 @@
   <link rel="stylesheet" href="./css/capsularius.css">
   <link rel="stylesheet" href="./css/step2.css">
   <link rel="stylesheet" href="./css/window-pills.css">
+  <link rel="stylesheet" href="./css/folder-drop.css">
 </head>
 <body>
   <header class="app-header">
     <div class="brand-zone">
       <h1>Organon</h1>
-      <span class="app-badge">Capsularius · v0.21 Step 2</span>
+      <span class="app-badge">Capsularius · v0.22 Step 2</span>
     </div>
     <div id="window-pills" class="window-pills" aria-label="Open folder windows"></div>
     <nav class="header-actions" aria-label="Capsularius controls">
@@ -31,13 +32,26 @@
     <div id="workspace-empty-state" class="workspace-empty-state" hidden>
       <span class="empty-state-icon">▣</span>
       <strong>No folder windows are open</strong>
-      <span>Mount a folder or open Library from any folder window to begin.</span>
+      <span>Mount a folder or drop one from Explorer into a window to begin.</span>
     </div>
   </main>
 
   <div id="toast-layer" class="toast-layer" aria-live="polite" aria-atomic="false"></div>
   <div id="dialog-layer" class="dialog-layer" aria-live="assertive"></div>
   <menu id="context-menu" class="context-menu" hidden aria-label="File actions"></menu>
+
+  <template id="mount-label-template">
+    <div class="modal-backdrop">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="mount-label-title">
+        <p class="eyebrow">Mounted root folder</p>
+        <h2 id="mount-label-title">Name this mounted drive</h2>
+        <p class="modal-description">The browser supplied the root name “<strong data-mount-raw-name></strong>”. Choose the display name Capsularius should show in its folder tree.</p>
+        <label class="single-field"><span>Display name</span><input data-mount-label-input type="text" maxlength="72" autocomplete="off"></label>
+        <p class="form-error" data-mount-label-error hidden></p>
+        <div class="modal-actions"><button class="action-button primary" type="button" data-mount-label-confirm>Mount drive</button><button class="action-button" type="button" data-mount-label-cancel>Cancel</button></div>
+      </section>
+    </div>
+  </template>
 
   <template id="library-dialog-template">
     <div class="modal-backdrop">
