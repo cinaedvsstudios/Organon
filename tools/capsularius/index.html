@@ -13,16 +13,18 @@
   <link rel="stylesheet" href="./css/step2.css">
   <link rel="stylesheet" href="./css/window-pills.css">
   <link rel="stylesheet" href="./css/folder-drop.css">
+  <link rel="stylesheet" href="./css/folder-tree.css">
 </head>
 <body>
   <header class="app-header">
     <div class="brand-zone">
       <h1>Organon</h1>
-      <span class="app-badge">Capsularius · v0.22 Step 2</span>
+      <span class="app-badge">Capsularius · v0.23 Step 2</span>
     </div>
     <div id="window-pills" class="window-pills" aria-label="Open folder windows"></div>
     <nav class="header-actions" aria-label="Capsularius controls">
       <button class="header-button primary" id="mount-folder-button" type="button">＋ Mount Folder</button>
+      <button class="header-button" id="tile-windows-button" type="button" title="Tile all visible windows">▦ Tile Windows</button>
       <button class="header-button" id="new-window-button" type="button">＋ New Window</button>
     </nav>
   </header>
@@ -39,6 +41,23 @@
   <div id="toast-layer" class="toast-layer" aria-live="polite" aria-atomic="false"></div>
   <div id="dialog-layer" class="dialog-layer" aria-live="assertive"></div>
   <menu id="context-menu" class="context-menu" hidden aria-label="File actions"></menu>
+
+  <template id="window-settings-template">
+    <div class="modal-backdrop">
+      <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="window-settings-title">
+        <p class="eyebrow">Window settings</p>
+        <h2 id="window-settings-title">Display settings</h2>
+        <p class="modal-description">Choose how folders appear in “<strong data-window-settings-name></strong>”.</p>
+        <div class="window-settings-grid">
+          <label><span>View</span><select data-window-settings-view><option value="grid">Thumbnail grid</option><option value="list">List</option></select></label>
+          <label><span>Sort by</span><select data-window-settings-sort><option value="name">Name</option><option value="type">Type</option><option value="size">Size</option><option value="modified">Date modified</option></select></label>
+          <label><span>Direction</span><select data-window-settings-direction><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+        </div>
+        <label class="settings-scope"><input type="checkbox" data-window-settings-all><span><strong>Apply these settings to every folder in this window</strong><span>When unchecked, the settings apply only to the folder currently open in this window.</span></span></label>
+        <div class="modal-actions"><button class="action-button primary" type="button" data-window-settings-save>Save Settings</button><button class="action-button" type="button" data-window-settings-cancel>Cancel</button></div>
+      </section>
+    </div>
+  </template>
 
   <template id="mount-label-template">
     <div class="modal-backdrop">
