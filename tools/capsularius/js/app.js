@@ -1,5 +1,6 @@
 import { makeId, queryDirectoryPermission, requestDirectoryPermission } from './filesystem.js';
 import { installFolderDrop } from './folder-drop.js';
+import { installFolderTree } from './folder-tree.js';
 import { promptMountLabel } from './mount-dialog.js';
 import { createMountService } from './mount-service.js';
 import { OperationManager, directoryForSource } from './operations.js';
@@ -7,6 +8,9 @@ import { createOperationUi } from './operation-ui.js';
 import { persistence } from './persistence.js';
 import { cloneSource, createLibraryEntry, createState, librarySource, makeWindowRecord, physicalSource, sourceKey, sourcePathLabel, sourceTitle, windowSnapshot } from './state.js';
 import { installWindowPills } from './window-pills.js';
+import { openWindowSettingsDialog } from './window-settings-dialog.js';
+import { installWindowSettings } from './window-settings.js';
+import { installWindowTiling } from './window-tiling.js';
 import { Workspace } from './workspace.js';
 
 const state = createState();
@@ -225,6 +229,7 @@ async function handleCommand(command, payload) {
 
 function bindControls() {
   document.getElementById('mount-folder-button').addEventListener('click', mountFolder);
+  document.getElementById('tile-windows-button').addEventListener('click', () => workspace.tileVisibleWindows());
   document.getElementById('new-window-button').addEventListener('click', () => {
     const active = state.windows.get(state.activeWindowId);
     if (active?.source?.kind === 'physical') openSource(active.source);
@@ -255,6 +260,9 @@ async function boot() {
   installFolderDrop(Workspace, async (handle, targetWindow) => {
     await mountService.mountDirectory(handle, { targetWindow, source: 'drop' });
   });
+  installFolderTree(Workspace);
+  installWindowSettings(Workspace, openWindowSettingsDialog);
+  installWindowTiling(Workspace);
   workspace = new Workspace({ state, onStateChange: scheduleSave, onLocationOpened: recordRecent, onRequestPermission: reopenPermission, onAddToLibrary: showLibraryDialog, onOpenSource: openSource, onToast: toast, onCommand: handleCommand });
   mountService = createMountService({ state, workspace, toast, scheduleSave, openSource, askForLabel: promptMountLabel });
   operations = new OperationManager({ ui: createOperationUi(), onRefresh: () => workspace.refreshWindows(), onToast: toast });
