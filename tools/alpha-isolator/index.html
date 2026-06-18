@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organon Alpha Isolator</title>
+
+    <!-- Iframe Guard: Redirects to the hub if opened directly -->
+    <script>
+        if (window === window.parent) {
+            window.location.href = '../../index.html';
+        }
+    </script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --stone-ochre: #E5A862;       /* Color #1 */
+            --chiseled-bronze: #896b49;   /* Color #2 */
+            --bg-card: #292a24;           /* Color #3 fallback */
+            --bg-input: rgba(24, 25, 25, 0.95); 
+            --water-blue: #4B84BF;        /* Color #4 */
+            --water-spray: #79B4E3;       /* Color #5 */
+            --forest-teal: #26615c;       /* Color #6 */
+            --brand-red: #9A2F4F;         /* Color #9 Track Active */
+            --slider-track: #4a1525;      /* Color #8 Burgundy Track Inactive */
+            --alabaster-paper: #F2ECE0;   /* Color #11 */
+            --bg-nightsky: #181919;       /* Color #12 */
+
+            --font-headers: 'Cinzel', Georgia, serif;
+            --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'Geist Mono', 'Courier New', monospace;
+        }
+
+        body {
+            background-color: var(--bg-nightsky);
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            box-sizing: border-box;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: var(--font-headers);
+            color: var(--stone-ochre);
+            margin-top: 0;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        p {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 0.8rem;
+            opacity: 0.85;
+            line-height: 1.4;
+        }
+
+        /* Fully rounded pills styling */
+        input[type="text"], input[type="number"], select {
+            background-color: var(--bg-input);
+            color: #F0EBCB !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            padding: 10px 18px;
+            border-radius: 9999px;
+            outline: none;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.2s ease-in-out;
+        }
+        input:focus, select:focus {
+            border-color: var(--water-blue) !important;
+            box-shadow: 0 0 8px rgba(75, 132, 191, 0.35);
+        }
+
+        /* Hide numeric input arrows */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Range Slider Track Customization */
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .slider-label-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            color: var(--stone-ochre);
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: var(--slider-track);
+            height: 6px;
+            border-radius: 9999px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--brand-red);
+            cursor: pointer;
+            border: 1px solid var(--stone-ochre);
+            transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        /* App Structural Blueprint Wrappers */
+        .app-wrapper {
+            width: 100%;
+            max-width: 540px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            box-sizing: border-box;
+            background-color: var(--bg-nightsky);
+        }
+
+        /* Panel 1: Top Sticky Sandstone Header */
+        .top-sticky-panel {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            padding: 16px;
+            border-bottom: 1.5px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 28px;
+            border-bottom-right-radius: 28px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+            transition: padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .top-sticky-panel.minimized {
+            padding: 8px 16px !important;
+            cursor: pointer;
+        }
+        .top-sticky-panel.minimized .panel-content-hide {
+            display: none !important;
+        }
+
+        .title-pill {
+            display: flex;
+            align-items: center;
+            justify-space: space-between;
+            background-color: rgba(24, 25, 25, 0.95);
+            color: var(--water-spray);
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 8px 20px;
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            width: 100%;
+            box-sizing: border-box;
+            justify-content: space-between;
+        }
+
+        .countdown-circle-indicator {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 1px solid var(--chiseled-bronze);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.65rem;
+            margin-right: 12px;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.6);
+            color: var(--stone-ochre);
+            font-weight: 700;
+        }
+
+        /* Panel 2: Middle Scrollable Canvas Container */
+        .middle-scroll-panel {
+            flex: 1;
+            background-color: #000000;
+            padding: 16px 16px 140px 16px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .config-card {
+            background-color: rgba(41, 42, 36, 0.5);
+            border: 1px solid var(--chiseled-bronze);
+            border-radius: 24px;
+            padding: 18px;
+            box-sizing: border-box;
+        }
+
+        /* Grid Dual-View System */
+        .viewports-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .viewport-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0,0,0,0.4);
+            border: 1px solid var(--chiseled-bronze);
+            border-bottom: none;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+            padding: 6px 12px;
+            font-family: var(--font-headers);
+            font-size: 0.75rem;
+            color: var(--stone-ochre);
+        }
+
+        .viewport-title-bar + .canvas-viewport-frame {
+            border-top-left-radius: 0px;
+            border-top-right-radius: 0px;
+        }
+
+        /* Interactive Workspace Canvas Layout */
+        .canvas-viewport-frame {
+            width: 100%;
+            height: 240px;
+            border: 1.5px solid var(--chiseled-bronze);
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
+            background-image: linear-gradient(45deg, #111 25%, transparent 25%), 
+                              linear-gradient(-45deg, #111 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #111 75%), 
+                              linear-gradient(-45deg, transparent 75%, #111 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+            background-color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+            position: relative;
+        }
+
+        /* Preview Background Varieties */
+        .canvas-viewport-frame.bg-checkers {
+            background-color: #1a1a1a;
+        }
+        .canvas-viewport-frame.bg-black {
+            background-image: none !important;
+            background-color: #000000 !important;
+        }
+        .canvas-viewport-frame.bg-white {
+            background-image: none !important;
+            background-color: #ffffff !important;
+        }
+        .canvas-viewport-frame.bg-chromakey {
+            background-image: none !important;
+            background-color: #00ff00 !important;
+        }
+
+        #tool-canvas, #preview-canvas {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+
+        #tool-canvas {
+            cursor: crosshair;
+        }
+
+        .dimension-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .toggle-btn-group {
+            display: flex;
+            background-color: var(--bg-input);
+            border-radius: 9999px;
+            border: 1px solid var(--chiseled-bronze);
+            overflow: hidden;
+            padding: 2px;
+        }
+        .toggle-tab {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--alabaster-paper);
+            font-family: var(--font-body);
+            font-size: 0.65rem;
+            font-weight: 600;
+            padding: 8px 10px;
+            border-radius: 9999px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .toggle-tab.active {
+            background-color: var(--water-blue);
+            color: #fff;
+        }
+
+        .aspect-lock-btn {
+            background: var(--bg-input);
+            border: 1px solid var(--chiseled-bronze);
+            color: var(--stone-ochre);
+            border-radius: 50%;
+            width: 38px;
+            height: 38px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .aspect-lock-btn.locked {
+            background: var(--forest-teal);
+            color: #fff;
+            border-color: var(--water-spray);
+        }
+
+        /* Control Utilities Rows */
+        .util-btn-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        .btn-mini {
+            background-color: rgba(24, 25, 25, 0.8);
+            color: var(--water-spray);
+            border: 1px solid var(--chiseled-bronze);
+            padding: 6px 12px;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn-mini:hover {
+            background-color: var(--water-blue);
+            color: #fff;
+            border-color: var(--water-spray);
+        }
+
+        /* Panel 3: Bottom Fixed Sticky Execution Core */
+        .bottom-sticky-panel {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 540px;
+            z-index: 110;
+            background-color: #d79e5c;
+            background-image: linear-gradient(rgba(224, 163, 96, 0.75), rgba(224, 163, 96, 0.75)), url('../../Images/stonetext.jpg');
+            background-size: cover;
+            padding: 12px 16px 16px 16px;
+            box-sizing: border-box;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            border-top: 1.5px solid var(--chiseled-bronze);
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+        }
+
+        .bottom-sticky-panel .btn-pill {
+            background-color: rgba(24, 25, 25, 0.95) !important;
+            color: var(--water-spray) !important;
+            border: 1px solid var(--chiseled-bronze) !important;
+            font-family: var(--font-body);
+            font-weight: 600;
+            font-size: 0.75rem !important;
+            text-transform: uppercase;
+            padding: 10px 20px !important;
+            border-radius: 9999px;
+            cursor: pointer;
+            width: 100%;
+            letter-spacing: 0.05em;
+            transition: all 0.25s ease-in-out;
+        }
+        .bottom-sticky-panel .btn-pill:hover {
+            background-color: rgba(41, 42, 36, 0.95) !important;
+            border-color: var(--water-spray) !important;
+            box-shadow: 0 0 12px rgba(121, 180, 227, 0.45) !important;
+        }
+
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--alabaster-paper);
+            cursor: pointer;
+        }
+        .checkbox-row input {
+            accent-color: var(--water-blue);
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- PANEL 1: STICKY TOP CROWN -->
+        <div class="top-sticky-panel">
+            <div class="title-pill">
+                <div style="display: flex; align-items: center;">
+                    <div id="countdown-circle" class="countdown-circle-indicator">5</div>
+                    <span>Alpha Isolator Wizard</span>
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 0.65rem;">v1.0.8</span>
+            </div>
+            <div class="panel-content-hide" style="width:100%; display: flex; flex-direction: column; gap: 8px;">
+                <input type="file" id="image-loader" accept="image/*">
+            </div>
+        </div>
+
+        <!-- PANEL 2: MAIN CONFIGURATION AND VIEWPORT WORKSPACE -->
+        <main class="middle-scroll-panel">
+            
+            <div class="viewports-grid">
+                <!-- Workspace Frame -->
+                <div>
+                    <div class="viewport-title-bar">
+                        <span>Working Canvas</span>
+                        <span id="coord-readout" style="font-family:var(--font-mono); font-size:0.65rem;">No Image Loaded</span>
+                    </div>
+                    <div class="canvas-viewport-frame" id="drop-zone">
+                        <canvas id="tool-canvas"></canvas>
+                        <div id="canvas-placeholder" style="color: rgba(242,236,224,0.4); text-align:center; pointer-events:none; font-size:0.8rem; position: absolute;">
+                            [ DROP IMAGE HERE OR USE FILE INPUT ]
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Real-Time Previewer Frame -->
+                <div>
+                    <div class="viewport-title-bar">
+                        <span>Live Alpha Previewer</span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            <span style="font-size:0.6rem; opacity:0.7; margin-right:4px;">Backdrop:</span>
+                            <button type="button" class="btn-mini" style="padding:2px 6px;" id="bg-opt-check" title="Checkerboard">🏁</button>
+                            <button type="button" class="btn-mini" style="padding:2px 6px;" id="bg-opt-black" title="Solid Black">⬛</button>
+                            <button type="button" class="btn-mini" style="padding:2px 6px;" id="bg-opt-white" title="Solid White">⬜</button>
+                            <button type="button" class="btn-mini" style="padding:2px 6px;" id="bg-opt-green" title="Green Screen">🟩</button>
+                        </div>
+                    </div>
+                    <div class="canvas-viewport-frame bg-checkers" id="preview-viewport">
+                        <canvas id="preview-canvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Global Action Utilities Quickbar -->
+            <div class="util-btn-row">
+                <button type="button" class="btn-mini" id="btn-undo">↩️ Undo Last</button>
+                <button type="button" class="btn-mini" id="btn-invert">🔄 Invert Alpha</button>
+                <button type="button" class="btn-mini" id="btn-reset">🧼 Reset All</button>
+            </div>
+
+            <!-- Mode Selector Box -->
+            <div class="config-card">
+                <h3>Isolator Target Mode</h3>
+                <p>Select your operational engine logic tool. Use chroma keys, paint contiguous fills, or lasso frames.</p>
+                <div class="toggle-btn-group" id="engine-mode" style="margin-bottom: 12px;">
+                    <button type="button" class="toggle-tab active" data-mode="chroma">Chroma Key</button>
+                    <button type="button" class="toggle-tab" data-mode="paint">Paint Tin</button>
+                    <button type="button" class="toggle-tab" data-mode="lasso">Lasso Box</button>
+                    <button type="button" class="toggle-tab" data-mode="ellipse">Circle</button>
+                </div>
+                
+                <div class="toggle-btn-group" id="selection-action" style="max-width: 320px; margin: 0 auto;">
+                    <button type="button" class="toggle-tab active" data-action="clear">Clear Inside</button>
+                    <button type="button" class="toggle-tab" data-action="keep">Keep Inside / Crop</button>
+                </div>
+            </div>
+
+            <!-- Context Parameters Sliders Configuration -->
+            <div class="config-card">
+                <h3>Isolator Engine Parameters</h3>
+                
+                <div class="slider-container">
+                    <div class="slider-label-row">
+                        <span>Tolerance Cut Threshold</span>
+                        <span id="tolerance-val">30</span>
+                    </div>
+                    <input type="range" id="param-tolerance" min="0" max="150" value="30">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label-row">
+                        <span>Alpha Mask Edge Feather</span>
+                        <span id="feather-val">0</span>
+                    </div>
+                    <input type="range" id="param-feather" min="0" max="25" value="0">
+                </div>
+
+                <label class="checkbox-row" style="margin-top:12px;">
+                    <input type="checkbox" id="param-autoclip" checked>
+                    <span>Clip Transparent Outer Borders (Autotrim bounds on Save)</span>
+                </label>
+            </div>
+
+            <!-- Dimensions Layout Scaler Card -->
+            <div class="config-card">
+                <h3>Asset Bounds Engine Output</h3>
+                <p>Verify output scaling bounds. Maintains native aspect parameters safely.</p>
+                <div class="dimension-grid">
+                    <div>
+                        <span style="font-size:0.65rem; display:block; margin-bottom:4px; color:var(--water-spray);">WIDTH</span>
+                        <input type="number" id="output-w" placeholder="Auto">
+                    </div>
+                    <div>
+                        <span style="font-size:0.65rem; display:block; margin-bottom:4px; color:var(--water-spray);">HEIGHT</span>
+                        <input type="number" id="output-v" placeholder="Auto">
+                    </div>
+                    <button type="button" class="aspect-lock-btn locked" id="aspect-lock" title="Toggle Aspect Lock">🔒</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- PANEL 3: BOTTOM FIXED STICKY ACTION ENGINE -->
+        <div class="bottom-sticky-panel">
+            <button type="button" class="btn-pill" id="action-btn">COMPILE TRANSPARENT RGBA PNG</button>
+        </div>
+    </div>
+
+    <script>
+        // PostMessage Status Notification Protocols
+        function setHubStatus(text) {
+            try {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'set-status', text: text }, '*');
+                }
+            } catch (err) {}
+        }
+
+        function clearHubStatus() {
+            try {
+                if (window.parent && window.parent.postMessage) {
+                    window.parent.postMessage({ type: 'clear-status' }, '*');
+                }
+            } catch (err) {}
+        }
+
+        // Register UI Elements with Master Status Banner
+        function bindHoverNotice(selector, msg) {
+            const el = document.querySelector(selector);
+            if (!el) return;
+            el.addEventListener('mouseenter', () => setHubStatus(msg));
+            el.addEventListener('mouseleave', () => clearHubStatus());
+        }
+
+        bindHoverNotice('#action-btn', 'Process the visual mask algorithms and save transparency layout back to your hard drive.');
+        bindHoverNotice('#engine-mode', 'Switch tool modes: Chroma Key, Paint flood fills, Lasso boxes, or Circles.');
+        bindHoverNotice('#selection-action', 'Control whether geometric selections cut away pixels or crop and isolate them.');
+        bindHoverNotice('#param-autoclip', 'Find outer transparent boundaries and shrink layout sizing to fit tight borders.');
+
+        // Top Header Persistence Countdown Timers Controller
+        const topStickyPanel = document.querySelector(".top-sticky-panel");
+        const countdownCircle = document.getElementById("countdown-circle");
+        let countdownVal = 5;
+        let countdownInterval = null;
+        let isPanelLocked = false;
+        let isHoveringPanel = false;
+
+        function updateCircleDisplay() {
+            countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
+        }
+
+        function startCountdown() {
+            if (isPanelLocked || isHoveringPanel) return;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                countdownVal--;
+                updateCircleDisplay();
+                if (countdownVal <= 0) {
+                    clearInterval(countdownInterval);
+                    topStickyPanel.classList.add("minimized");
+                }
+            }, 1000);
+        }
+
+        function maximizePanel() {
+            topStickyPanel.classList.remove("minimized");
+            clearInterval(countdownInterval);
+            countdownVal = 5;
+            updateCircleDisplay();
+        }
+
+        topStickyPanel.addEventListener("mouseenter", () => { isHoveringPanel = true; maximizePanel(); });
+        topStickyPanel.addEventListener("mouseleave", () => { isHoveringPanel = false; startCountdown(); });
+        topStickyPanel.addEventListener("click", () => { if (topStickyPanel.classList.contains("minimized")) maximizePanel(); });
+        
+        countdownCircle.addEventListener("dblclick", (e) => {
+            e.stopPropagation(); e.preventDefault();
+            isPanelLocked = !isPanelLocked;
+            updateCircleDisplay();
+            if (isPanelLocked) { clearInterval(countdownInterval); maximizePanel(); }
+            else if (!isHoveringPanel) startCountdown();
+        });
+        startCountdown();
+
+        // -------------------------------------------------------------
+        // STATE-DRIVEN IMAGE RENDERING PROCESSOR MASK ENGINES
+        // -------------------------------------------------------------
+        const canvas = document.getElementById('tool-canvas');
+        const ctx = canvas.getContext('2d');
+        const previewCanvas = document.getElementById('preview-canvas');
+        const previewCtx = previewCanvas.getContext('2d');
+        const fileInput = document.getElementById('image-loader');
+        const placeholder = document.getElementById('canvas-placeholder');
+        const coordReadout = document.getElementById('coord-readout');
+        
+        let loadedImg = null;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let aspect = 1;
+        let currentMode = 'chroma';
+        let selectionAction = 'clear'; // 'clear' (inside) or 'keep' (crop outer)
+
+        // Offline Non-Destructive State Architecture
+        let baseCanvas = document.createElement('canvas');
+        let baseCtx = baseCanvas.getContext('2d');
+        let maskCanvas = document.createElement('canvas');
+        let maskCtx = maskCanvas.getContext('2d');
+
+        // History Undo Architecture Queue (Stores mask snapshots)
+        let undoHistory = [];
+        const maxUndoSteps = 10;
+
+        function saveHistorySnapshot() {
+            const temp = document.createElement('canvas');
+            temp.width = maskCanvas.width;
+            temp.height = maskCanvas.height;
+            const tCtx = temp.getContext('2d');
+            tCtx.drawImage(maskCanvas, 0, 0);
+            
+            undoHistory.push(temp);
+            if (undoHistory.length > maxUndoSteps) {
+                undoHistory.shift();
+            }
+        }
+
+        document.getElementById('btn-undo').addEventListener('click', () => {
+            if (undoHistory.length > 0) {
+                const prev = undoHistory.pop();
+                maskCtx.clearRect(0, 0, maskCanvas.width, maskCanvas.height);
+                maskCtx.drawImage(prev, 0, 0);
+                renderOutputPipeline();
+                setHubStatus("Restored previous alpha mask iteration successfully.");
+            } else {
+                setHubStatus("Undo queue empty.");
+            }
+        });
+
+        document.getElementById('btn-invert').addEventListener('click', () => {
+            if (!loadedImg) return;
+            saveHistorySnapshot();
+            
+            const temp = document.createElement('canvas');
+            temp.width = maskCanvas.width;
+            temp.height = maskCanvas.height;
+            const tCtx = temp.getContext('2d');
+            tCtx.drawImage(maskCanvas, 0, 0);
+
+            maskCtx.clearRect(0,0,maskCanvas.width, maskCanvas.height);
+            maskCtx.save();
+            // Fill with full white
+            maskCtx.fillStyle = '#ffffff';
+            maskCtx.fillRect(0, 0, maskCanvas.width, maskCanvas.height);
+            // Subtract previous mask values to invert alpha layout
+            maskCtx.globalCompositeOperation = 'difference';
+            maskCtx.drawImage(temp, 0, 0);
+            maskCtx.restore();
+
+            renderOutputPipeline();
+            setHubStatus("Inverted working transparency layers.");
+        });
+
+        document.getElementById('btn-reset').addEventListener('click', () => {
+            if (!loadedImg) return;
+            saveHistorySnapshot();
+            maskCtx.fillStyle = '#ffffff';
+            maskCtx.fillRect(0,0,maskCanvas.width, maskCanvas.height);
+            renderOutputPipeline();
+            setHubStatus("Flushed mask data. Canvas restored to fully opaque.");
+        });
+
+        // Toggle Preview Backdrops
+        const previewViewport = document.getElementById('preview-viewport');
+        document.getElementById('bg-opt-check').addEventListener('click', () => {
+            previewViewport.className = 'canvas-viewport-frame bg-checkers';
+        });
+        document.getElementById('bg-opt-black').addEventListener('click', () => {
+            previewViewport.className = 'canvas-viewport-frame bg-black';
+        });
+        document.getElementById('bg-opt-white').addEventListener('click', () => {
+            previewViewport.className = 'canvas-viewport-frame bg-white';
+        });
+        document.getElementById('bg-opt-green').addEventListener('click', () => {
+            previewViewport.className = 'canvas-viewport-frame bg-chromakey';
+        });
+
+        // Parameter Sliders Action Bindings
+        document.getElementById('param-tolerance').addEventListener('input', (e) => {
+            document.getElementById('tolerance-val').innerText = e.target.value;
+        });
+        document.getElementById('param-feather').addEventListener('input', (e) => {
+            document.getElementById('feather-val').innerText = e.target.value;
+            renderOutputPipeline();
+        });
+
+        // Mode Navigation System Selection
+        document.querySelectorAll('#engine-mode .toggle-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#engine-mode .toggle-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentMode = btn.getAttribute('data-mode');
+                resetDragState();
+                setHubStatus(`Active Mode: ${currentMode.toUpperCase()}`);
+            });
+        });
+
+        document.querySelectorAll('#selection-action .toggle-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('#selection-action .toggle-tab').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectionAction = btn.getAttribute('data-action');
+            });
+        });
+
+        // Dimensions Layout Sizing Pipelines
+        const aspectBtn = document.getElementById('aspect-lock');
+        const widthInput = document.getElementById('output-w');
+        const heightInput = document.getElementById('output-v');
+
+        aspectBtn.addEventListener('click', () => aspectBtn.classList.toggle('locked'));
+        widthInput.addEventListener('input', () => {
+            if (aspectBtn.classList.contains('locked') && loadedImg) {
+                heightInput.value = Math.round(widthInput.value / aspect);
+            }
+        });
+        heightInput.addEventListener('input', () => {
+            if (aspectBtn.classList.contains('locked') && loadedImg) {
+                widthInput.value = Math.round(heightInput.value * aspect);
+            }
+        });
+
+        // Dropzone & Load Sequences
+        fileInput.addEventListener('change', (e) => { if (e.target.files[0]) processImageFile(e.target.files[0]); });
+        
+        const dropZone = document.getElementById('drop-zone');
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = "var(--water-spray)"; });
+        dropZone.addEventListener('dragleave', () => { dropZone.style.borderColor = "var(--chiseled-bronze)"; });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = "var(--chiseled-bronze)";
+            if (e.dataTransfer.files[0]) processImageFile(e.dataTransfer.files[0]);
+        });
+
+        function processImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                loadedImg = new Image();
+                loadedImg.onload = function() {
+                    placeholder.style.display = 'none';
+                    originalWidth = loadedImg.width;
+                    originalHeight = loadedImg.height;
+                    aspect = originalWidth / originalHeight;
+                    
+                    widthInput.value = originalWidth;
+                    heightInput.value = originalHeight;
+                    
+                    // Scale canvases matching loaded image footprint
+                    canvas.width = originalWidth;
+                    canvas.height = originalHeight;
+                    previewCanvas.width = originalWidth;
+                    previewCanvas.height = originalHeight;
+
+                    baseCanvas.width = originalWidth;
+                    baseCanvas.height = originalHeight;
+                    baseCtx.drawImage(loadedImg, 0, 0);
+
+                    maskCanvas.width = originalWidth;
+                    maskCanvas.height = originalHeight;
+                    maskCtx.fillStyle = '#ffffff';
+                    maskCtx.fillRect(0, 0, originalWidth, originalHeight);
+
+                    undoHistory = []; // Reset history
+                    
+                    renderOutputPipeline();
+                    setHubStatus(`Loaded source context maps successfully: ${originalWidth}x${originalHeight}`);
+                }
+                loadedImg.src = event.target.result;
+            }
+            reader.readAsDataURL(file);
+        }
+
+        // -------------------------------------------------------------
+        // GRAPHICS COMPOSITING AND FEATHERING RENDERING PIPELINES
+        // -------------------------------------------------------------
+        function renderOutputPipeline() {
+            if (!loadedImg) return;
+
+            // Clear operational viewport canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw original assets first
+            ctx.drawImage(baseCanvas, 0, 0);
+
+            // Composite transparency mask onto canvas via alpha channels
+            ctx.save();
+            ctx.globalCompositeOperation = 'destination-in';
+            
+            const featherVal = parseInt(document.getElementById('param-feather').value);
+            if (featherVal > 0) {
+                // Generate a temporary blurred copy of mask to achieve feathered compositing
+                const tempMask = document.createElement('canvas');
+                tempMask.width = maskCanvas.width;
+                tempMask.height = maskCanvas.height;
+                const tmCtx = tempMask.getContext('2d');
+                tmCtx.drawImage(maskCanvas, 0, 0);
+
+                ctx.filter = `blur(${featherVal}px)`;
+                ctx.drawImage(tempMask, 0, 0);
+            } else {
+                ctx.drawImage(maskCanvas, 0, 0);
+            }
+            ctx.restore();
+
+            // Re-render real-time preview viewport layout
+            previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+            previewCtx.drawImage(canvas, 0, 0);
+        }
+
+        // -------------------------------------------------------------
+        // MULTI-TOOL INTERACTIVE CLICKS AND GEOMETRIC DRAGGING
+        // -------------------------------------------------------------
+        let dragActive = false;
+        let dragStart = { x: 0, y: 0 };
+        let dragCurrent = { x: 0, y: 0 };
+        let lassoVertices = [];
+
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return {
+                x: Math.floor((e.clientX - rect.left) * scaleX),
+                y: Math.floor((e.clientY - rect.top) * scaleY)
+            };
+        }
+
+        function resetDragState() {
+            dragActive = false;
+            lassoVertices = [];
+            renderOutputPipeline();
+        }
+
+        // Canvas UI Interaction Handlers
+        canvas.addEventListener('mousedown', (e) => {
+            if (!loadedImg) return;
+            const pt = getCanvasCoords(e);
+            coordReadout.innerText = `X: ${pt.x}, Y: ${pt.y}`;
+
+            if (currentMode === 'chroma') {
+                saveHistorySnapshot();
+                executeChromaKey(pt.x, pt.y);
+            } else if (currentMode === 'paint') {
+                saveHistorySnapshot();
+                executeFloodFillAlpha(pt.x, pt.y);
+            } else if (currentMode === 'lasso') {
+                dragActive = true;
+                lassoVertices.push(pt);
+                drawInteractiveGuides();
+            } else if (currentMode === 'ellipse') {
+                dragActive = true;
+                dragStart = pt;
+                dragCurrent = pt;
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!loadedImg) return;
+            const pt = getCanvasCoords(e);
+            coordReadout.innerText = `X: ${pt.x}, Y: ${pt.y}`;
+
+            if (dragActive) {
+                dragCurrent = pt;
+                drawInteractiveGuides();
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!dragActive || !loadedImg) return;
+            dragActive = false;
+
+            if (currentMode === 'lasso') {
+                // If user double clicked or closed within safe proximity threshold, execute cut
+                const distToStart = Math.sqrt((dragCurrent.x - lassoVertices[0].x)**2 + (dragCurrent.y - lassoVertices[0].y)**2);
+                if (lassoVertices.length > 2 && (distToStart < 25 || e.detail === 2)) {
+                    saveHistorySnapshot();
+                    applyVectorCut('polygon', lassoVertices);
+                    lassoVertices = [];
+                }
+            } else if (currentMode === 'ellipse') {
+                saveHistorySnapshot();
+                applyVectorCut('ellipse', { start: dragStart, end: dragCurrent });
+            }
+            renderOutputPipeline();
+        });
+
+        // Handle drawing guides overlay in realtime
+        function drawInteractiveGuides() {
+            renderOutputPipeline();
+            
+            ctx.save();
+            ctx.strokeStyle = 'var(--water-spray)';
+            ctx.lineWidth = Math.max(2, originalWidth / 250);
+            ctx.setLineDash([5, 5]);
+
+            if (currentMode === 'ellipse') {
+                // Draw selection bounds preview
+                const rx = Math.abs(dragCurrent.x - dragStart.x);
+                const ry = Math.abs(dragCurrent.y - dragStart.y);
+                ctx.beginPath();
+                ctx.ellipse(dragStart.x, dragStart.y, rx, ry, 0, 0, 2 * Math.PI);
+                ctx.stroke();
+            } else if (currentMode === 'lasso' && lassoVertices.length > 0) {
+                ctx.beginPath();
+                ctx.moveTo(lassoVertices[0].x, lassoVertices[0].y);
+                for (let i = 1; i < lassoVertices.length; i++) {
+                    ctx.lineTo(lassoVertices[i].x, lassoVertices[i].y);
+                }
+                ctx.lineTo(dragCurrent.x, dragCurrent.y);
+                ctx.stroke();
+
+                // Draw circles at key nodes
+                ctx.fillStyle = 'var(--stone-ochre)';
+                lassoVertices.forEach(v => {
+                    ctx.beginPath();
+                    ctx.arc(v.x, v.y, Math.max(4, originalWidth/150), 0, 2*Math.PI);
+                    ctx.fill();
+                });
+            }
+            ctx.restore();
+        }
+
+        // -------------------------------------------------------------
+        // REMOVAL PROCESSOR CALCULATION MATHEMATICS
+        // -------------------------------------------------------------
+        function executeChromaKey(startX, startY) {
+            const baseImgData = baseCtx.getImageData(0, 0, baseCanvas.width, baseCanvas.height);
+            const basePixels = baseImgData.data;
+            const maskImgData = maskCtx.getImageData(0, 0, maskCanvas.width, maskCanvas.height);
+            const maskPixels = maskImgData.data;
+
+            const targetIdx = (startY * baseCanvas.width + startX) * 4;
+            const targetR = basePixels[targetIdx];
+            const targetG = basePixels[targetIdx + 1];
+            const targetB = basePixels[targetIdx + 2];
+
+            const tolerance = parseInt(document.getElementById('param-tolerance').value);
+
+            for (let i = 0; i < basePixels.length; i += 4) {
+                const r = basePixels[i];
+                const g = basePixels[i+1];
+                const b = basePixels[i+2];
+
+                const distance = Math.sqrt((r - targetR)**2 + (g - targetG)**2 + (b - targetB)**2);
+                if (distance <= tolerance) {
+                    maskPixels[i] = 0;
+                    maskPixels[i+1] = 0;
+                    maskPixels[i+2] = 0;
+                    maskPixels[i+3] = 0; // Completely transparent
+                }
+            }
+            maskCtx.putImageData(maskImgData, 0, 0);
+            renderOutputPipeline();
+        }
+
+        // BFS Matrix Flood Filler
+        function executeFloodFillAlpha(startX, startY) {
+            const w = baseCanvas.width;
+            const h = baseCanvas.height;
+            const baseImgData = baseCtx.getImageData(0, 0, w, h);
+            const basePixels = baseImgData.data;
+            const maskImgData = maskCtx.getImageData(0, 0, w, h);
+            const maskPixels = maskImgData.data;
+
+            const targetIdx = (startY * w + startX) * 4;
+            const targetR = basePixels[targetIdx];
+            const targetG = basePixels[targetIdx + 1];
+            const targetB = basePixels[targetIdx + 2];
+
+            const tolerance = parseInt(document.getElementById('param-tolerance').value);
+
+            const visited = new Uint8Array(w * h);
+            const queue = [[startX, startY]];
+            visited[startY * w + startX] = 1;
+
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                const idx = (cy * w + cx) * 4;
+
+                const r = basePixels[idx];
+                const g = basePixels[idx+1];
+                const b = basePixels[idx+2];
+
+                const distance = Math.sqrt((r - targetR)**2 + (g - targetG)**2 + (b - targetB)**2);
+
+                if (distance <= tolerance) {
+                    // Update alpha coordinates to transparent (Black) on mask
+                    maskPixels[idx] = 0;
+                    maskPixels[idx+1] = 0;
+                    maskPixels[idx+2] = 0;
+                    maskPixels[idx+3] = 0;
+
+                    const adjacents = [[cx+1, cy], [cx-1, cy], [cx, cy+1], [cx, cy-1]];
+                    for (const [nx, ny] of adjacents) {
+                        if (nx >= 0 && nx < w && ny >= 0 && ny < h && !visited[ny * w + nx]) {
+                            visited[ny * w + nx] = 1;
+                            queue.push([nx, ny]);
+                        }
+                    }
+                }
+            }
+            maskCtx.putImageData(maskImgData, 0, 0);
+            renderOutputPipeline();
+        }
+
+        // Advanced Vector Mask Processing (Polygon Lasso / Circle Ellipse)
+        function applyVectorCut(shapeType, geomData) {
+            // Create offscreen mask compositing sandbox
+            const tempMask = document.createElement('canvas');
+            tempMask.width = maskCanvas.width;
+            tempMask.height = maskCanvas.height;
+            const tCtx = tempMask.getContext('2d');
+
+            if (selectionAction === 'clear') {
+                // Clear selected area: copy existing mask, then subtract selection
+                tCtx.drawImage(maskCanvas, 0, 0);
+                tCtx.save();
+                tCtx.fillStyle = '#000000';
+                tCtx.globalCompositeOperation = 'destination-out';
+                
+                tCtx.beginPath();
+                if (shapeType === 'polygon') {
+                    tCtx.moveTo(geomData[0].x, geomData[0].y);
+                    for(let i=1; i<geomData.length; i++) {
+                        tCtx.lineTo(geomData[i].x, geomData[i].y);
+                    }
+                    tCtx.closePath();
+                } else if (shapeType === 'ellipse') {
+                    const rx = Math.abs(geomData.end.x - geomData.start.x);
+                    const ry = Math.abs(geomData.end.y - geomData.start.y);
+                    tCtx.ellipse(geomData.start.x, geomData.start.y, rx, ry, 0, 0, 2*Math.PI);
+                }
+                tCtx.fill();
+                tCtx.restore();
+
+                maskCtx.clearRect(0,0,maskCanvas.width, maskCanvas.height);
+                maskCtx.drawImage(tempMask, 0, 0);
+            } else if (selectionAction === 'keep') {
+                // Keep only selected area: draw selection shape white on clear background, composite existing mask in
+                tCtx.fillStyle = '#ffffff';
+                tCtx.beginPath();
+                if (shapeType === 'polygon') {
+                    tCtx.moveTo(geomData[0].x, geomData[0].y);
+                    for(let i=1; i<geomData.length; i++) {
+                        tCtx.lineTo(geomData[i].x, geomData[i].y);
+                    }
+                    tCtx.closePath();
+                } else if (shapeType === 'ellipse') {
+                    const rx = Math.abs(geomData.end.x - geomData.start.x);
+                    const ry = Math.abs(geomData.end.y - geomData.start.y);
+                    tCtx.ellipse(geomData.start.x, geomData.start.y, rx, ry, 0, 0, 2*Math.PI);
+                }
+                tCtx.fill();
+
+                // Intersect with current mask
+                tCtx.save();
+                tCtx.globalCompositeOperation = 'destination-in';
+                tCtx.drawImage(maskCanvas, 0, 0);
+                tCtx.restore();
+
+                maskCtx.clearRect(0,0,maskCanvas.width, maskCanvas.height);
+                maskCtx.drawImage(tempMask, 0, 0);
+            }
+        }
+
+        // -------------------------------------------------------------
+        // EXPORT, RESIZE, AUTOCLIP PACKAGING COMPILATION
+        // -------------------------------------------------------------
+        function computeAutotrimSlices(canvasSource) {
+            const tempCtx = canvasSource.getContext('2d');
+            const imgData = tempCtx.getImageData(0, 0, canvasSource.width, canvasSource.height);
+            const pixels = imgData.data;
+            const w = canvasSource.width;
+            const h = canvasSource.height;
+
+            let minX = w, maxX = 0, minY = h, maxY = 0;
+            let foundAlpha = false;
+
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const alpha = pixels[(y * w + x) * 4 + 3];
+                    if (alpha > 0) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                        foundAlpha = true;
+                    }
+                }
+            }
+
+            if (!foundAlpha) return canvasSource; // Return unmodified if empty
+
+            const trimW = (maxX - minX) + 1;
+            const trimH = (maxY - minY) + 1;
+
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = trimW;
+            cropCanvas.height = trimH;
+            const cropCtx = cropCanvas.getContext('2d');
+
+            cropCtx.drawImage(canvasSource, minX, minY, trimW, trimH, 0, 0, trimW, trimH);
+            return cropCanvas;
+        }
+
+        document.getElementById('action-btn').addEventListener('click', () => {
+            if (!loadedImg) {
+                setHubStatus("CRITICAL FAIL: Unable to process data array until source image mapping context loaded.");
+                return;
+            }
+
+            // Create flat render export frame
+            let exportCanvas = document.createElement('canvas');
+            exportCanvas.width = canvas.width;
+            exportCanvas.height = canvas.height;
+            const exportCtx = exportCanvas.getContext('2d');
+            exportCtx.drawImage(canvas, 0, 0);
+
+            // Execute Autotrim constraints if active
+            if (document.getElementById('param-autoclip').checked) {
+                exportCanvas = computeAutotrimSlices(exportCanvas);
+            }
+
+            // Run resizing operations
+            const targetW = parseInt(widthInput.value) || exportCanvas.width;
+            const targetH = parseInt(heightInput.value) || exportCanvas.height;
+
+            const finalCanvas = document.createElement('canvas');
+            finalCanvas.width = targetW;
+            finalCanvas.height = targetH;
+            const finalCtx = finalCanvas.getContext('2d');
+            
+            // Draw clean, scaled slice
+            finalCtx.imageSmoothingEnabled = true;
+            finalCtx.imageSmoothingQuality = 'high';
+            finalCtx.drawImage(exportCanvas, 0, 0, exportCanvas.width, exportCanvas.height, 0, 0, targetW, targetH);
+
+            const link = document.createElement('a');
+            link.download = 'organon_alpha_isolated.png';
+            link.href = finalCanvas.toDataURL('image/png');
+            link.click();
+            
+            setHubStatus("SUCCESS: Packaged isolated alpha transparency mapping file pipeline directly to local Downloads directory!");
+        });
+    </script>
+</body>
+</html>
