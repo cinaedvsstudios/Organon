@@ -83,8 +83,9 @@ export function createLibraryEntry(source, { name, emoji, colour }) {
 export function makeWindowRecord(state, source, overrides = {}) {
   const id = state.nextWindowId++;
   const stagger = (state.windows.size % 8) * 28;
+  const isRestoredWindow = Number.isFinite(overrides.id);
   const hasSavedColour = typeof overrides.colour === 'string' && overrides.colour.length > 0;
-  const colour = hasSavedColour
+  const colour = isRestoredWindow && hasSavedColour
     ? overrides.colour
     : PALETTE[state.currentColourIndex++ % PALETTE.length];
 
