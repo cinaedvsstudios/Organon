@@ -1,4 +1,4 @@
-/* Ihy v0.44 action feedback */
+/* Ihy v0.45 action feedback, resizers and playback indicators */
 #status.status {
   position: fixed;
   z-index: 1000;
@@ -26,6 +26,80 @@
   opacity: 1;
   transform: translateY(0);
 }
+
+.resizable-shell {
+  position: relative;
+  min-width: 0;
+}
+.resizable-shell .roll-scroll,
+.resizable-shell .piano-wrap {
+  margin: 0;
+}
+.roll-resize-shell .roll-scroll {
+  height: var(--roll-panel-height, min(450px, calc(100vh - 350px)));
+  min-height: 220px;
+  max-height: 760px;
+}
+.keyboard-resize-shell .piano-wrap {
+  --keyboard-panel-height: 214px;
+  --keyboard-key-height: 198px;
+  --keyboard-black-height: 124px;
+  height: var(--keyboard-panel-height);
+  min-height: 150px;
+  max-height: 620px;
+  overflow: auto;
+}
+.keyboard-resize-shell .piano {
+  height: var(--keyboard-panel-height);
+  min-height: var(--keyboard-panel-height);
+}
+.keyboard-resize-shell .key {
+  height: var(--keyboard-key-height);
+}
+.keyboard-resize-shell .key.black {
+  height: var(--keyboard-black-height);
+}
+.panel-resize-grip {
+  position: absolute;
+  z-index: 45;
+  right: 5px;
+  bottom: 5px;
+  width: 24px;
+  height: 24px;
+  cursor: nwse-resize;
+  border: 1px solid rgba(153,241,249,.72);
+  border-radius: 7px 2px 7px 2px;
+  background:
+    linear-gradient(135deg, transparent 0 34%, rgba(117,241,250,.95) 35% 41%, transparent 42% 53%, rgba(117,241,250,.8) 54% 60%, transparent 61%),
+    linear-gradient(180deg, rgba(25,67,75,.9), rgba(10,25,28,.96));
+  box-shadow: 0 3px 8px rgba(0,0,0,.64), inset 0 1px 0 rgba(255,255,255,.15);
+  touch-action: none;
+}
+.panel-resize-grip:hover,
+.panel-resize-grip.resizing {
+  border-color: #d2ffff;
+  box-shadow: 0 0 0 2px rgba(67,215,231,.27), 0 4px 12px rgba(0,0,0,.72);
+}
+
+#playPause.is-playing {
+  color: #071719;
+  border-color: #c8feff;
+  background: linear-gradient(180deg, #c4ffff, #62e3ed 58%, #23afc2);
+  animation: ihy-play-pulse 1.1s ease-in-out infinite;
+}
+.transport-time.is-playing {
+  border-color: #80f3fb;
+  box-shadow: 0 0 0 2px rgba(67,215,231,.22), 0 0 19px rgba(67,215,231,.7), var(--shadow);
+  animation: ihy-counter-pulse 1.1s ease-in-out infinite;
+}
+@keyframes ihy-play-pulse {
+  0%,100% { transform: translateY(0); box-shadow: 0 0 0 0 rgba(90,230,240,.28), var(--shadow); }
+  50% { transform: translateY(-1px); box-shadow: 0 0 0 5px rgba(90,230,240,.08), 0 0 18px rgba(90,230,240,.72), var(--shadow); }
+}
+@keyframes ihy-counter-pulse {
+  0%,100% { filter: brightness(1); }
+  50% { filter: brightness(1.16); }
+}
 @media (max-width: 620px) {
   #status.status {
     right: 10px;
@@ -33,4 +107,5 @@
     width: calc(100vw - 20px);
     border-radius: 14px;
   }
+  .panel-resize-grip { width: 28px; height: 28px; right: 4px; bottom: 4px; }
 }
