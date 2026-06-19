@@ -1,12 +1,14 @@
 function refreshWindowNumbers() {
   document.querySelectorAll('#workspace-world .folder-window').forEach((windowElement, index) => {
     const label = windowElement.querySelector('.window-index');
-    if (label) label.textContent = `#${index + 1}`;
+    const next = `#${index + 1}`;
+    if (label && label.textContent !== next) label.textContent = next;
   });
 
   document.querySelectorAll('#window-pills button').forEach((pill, index) => {
     const title = pill.textContent.replace(/^\s*#\d+\s*/, '').trim();
-    pill.textContent = `#${index + 1}${title ? ` ${title}` : ''}`;
+    const next = `#${index + 1}${title ? ` ${title}` : ''}`;
+    if (pill.textContent !== next) pill.textContent = next;
   });
 }
 
