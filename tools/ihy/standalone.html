@@ -4,17 +4,21 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.19 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone.css?v=0.19">
+  <title>Ihy v0.20 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone.css?v=0.20">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.19</div></div>
+    <div class="brand">
+      <img class="icon" src="./icon.png" alt="Ihy">
+      <div class="title">Ihy</div>
+      <div class="version">v0.20</div>
+    </div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
       <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
       <div class="top-control short"><input id="bpm" type="number" min="30" max="260" value="92" aria-label="Beats per minute"><small>BPM</small></div>
-      <div class="top-control key-control" style="width:150px"><select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option></select><small>Key</small></div>
+      <div class="top-control key-control"><select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option></select><small>Key</small></div>
       <div class="top-control"><button class="chord-toggle" id="chordToggle" type="button" aria-pressed="false">♫ Chord</button><small>Chord mode</small></div>
       <div class="top-control arm"><select id="armed" aria-label="Armed track"></select><small>Armed track</small></div>
       <div class="top-control quant"><select id="quant" aria-label="Quantise"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select><small>Quantise</small></div>
@@ -22,13 +26,103 @@
       <div class="top-control"><button class="chord-toggle" id="metro" type="button" aria-pressed="false">♫ Metro</button><small>Metronome</small></div>
     </div>
   </header>
+
   <main class="app">
-    <section class="view active" id="composeView"><div class="layout"><aside class="side">
-      <div class="card"><h2>🎛️ Controls</h2><div class="section-label">Project &amp; sound</div><div class="control-grid"><button class="btn primary" id="newProject">＋ New</button><button class="btn primary" id="save">💾 Save</button><button class="btn" id="createSound">✨ Create</button><button class="btn" id="loadExample">♫ Example</button></div><div class="section-label">Files &amp; tools</div><div class="control-grid"><button class="btn" id="import">📥 Import</button><button class="btn" id="export">📤 Export</button><button class="btn" id="libraryButton">🎧 Library</button><button class="btn" id="analyseButton">🔎 Analyse</button><button class="btn" id="signalButton">〰 Signal</button></div><input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden><div class="section-label">Quick add</div><div class="control-grid"><button class="btn" id="quickAdd" type="button">＋ Quick add</button></div><div class="section-label">Transport</div><div class="transport-grid"><button class="btn" id="record">⏺ Record</button><button class="btn" id="stop">⏹ Stop</button></div><p class="status" id="status"></p></div>
-      <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
-    </aside><section class="editor"><div class="card"><div class="piano-toolbar"><h2>🎼 Piano roll</h2><div class="piano-actions"><button class="btn" id="play">▶ Play</button><span class="transport-time" id="transportTime">0:00 / 0:42</span><button class="btn" id="addSection">＋ Section</button><div class="zoom-control"><label for="zoomSlider">Zoom</label><input id="zoomSlider" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></div><button class="btn" id="clear">🗑 Clear</button></div><span class="toolbar-spacer" aria-hidden="true"></span></div><div class="arrangement-shell"><div class="arrangement-spacer"></div><div class="arrangement-viewport" id="arrangementViewport"><div class="arrangement" id="arrangement"></div></div></div><div class="roll-scroll" id="rollScroll"><div class="roll-grid"><div class="pitch-labels" id="labels"></div><div class="roll" id="roll"></div></div></div></div><div class="card"><div class="headrow"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. The instrument changes the armed track.</span><select id="instrument" style="max-width:190px" aria-label="Track instrument"></select></div><div class="pianowrap"><div class="piano" id="piano"></div></div></div></section></div></section>
-    <section class="view" id="createView"><div class="card"><h2>✨ Create sound</h2><p class="placeholder">Simple game and SFX sound controls will live here.</p></div></section><section class="view" id="signalView"><div class="card"><h2>〰 Signal</h2><p class="placeholder">Continuous frequency signal mode returns in a later pass.</p></div></section><section class="view" id="libraryView"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library and permanent imported-audio storage are next.</p></div></section><section class="view" id="analyseView"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis will connect to the Organon Audio2MIDI workflow later.</p></div></section>
+    <section class="view active" id="composeView">
+      <div class="layout">
+        <aside class="side">
+          <div class="card">
+            <h2>🎛️ Controls</h2>
+            <div class="section-label">Project &amp; sound</div>
+            <div class="control-grid">
+              <button class="btn primary" id="newProject">＋ New</button>
+              <button class="btn primary" id="save">💾 Save</button>
+              <button class="btn" id="createSound">✨ Create</button>
+              <button class="btn" id="loadExample">♫ Example</button>
+            </div>
+
+            <div class="section-label">Files &amp; tools</div>
+            <div class="control-grid">
+              <button class="btn" id="import">📥 Import</button>
+              <button class="btn" id="export">📤 Export</button>
+              <button class="btn" id="libraryButton">🎧 Library</button>
+              <button class="btn" id="analyseButton">🔎 Analyse</button>
+            </div>
+            <input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
+
+            <div class="section-label">Quick add</div>
+            <div class="control-grid">
+              <button class="btn" id="quickBass" type="button">＋ Bass</button>
+              <button class="btn" id="quickMotif" type="button">＋ Motif</button>
+            </div>
+
+            <div class="section-label">Transport</div>
+            <div class="transport-grid">
+              <button class="btn" id="record">⏺ Record</button>
+              <button class="btn" id="stop">⏹ Stop</button>
+            </div>
+            <p class="status" id="status"></p>
+          </div>
+
+          <div class="card">
+            <div class="headrow">
+              <h2 style="flex:1">🎚️ Tracks</h2>
+              <button class="btn" id="addTrack">＋ Track</button>
+            </div>
+            <div class="tracks" id="tracks"></div>
+          </div>
+        </aside>
+
+        <section class="editor">
+          <div class="card">
+            <div class="piano-toolbar">
+              <h2>🎼 Piano roll</h2>
+              <div class="piano-actions">
+                <button class="btn" id="play">▶ Play</button>
+                <span class="transport-time" id="transportTime">0:00 / 0:42</span>
+                <button class="btn" id="addSection">＋ Section</button>
+                <div class="zoom-control">
+                  <label for="zoomSlider">Zoom</label>
+                  <input id="zoomSlider" type="range" min="70" max="150" value="100" step="5">
+                  <output id="zoomValue">100%</output>
+                </div>
+                <button class="btn" id="clear">🗑 Clear</button>
+              </div>
+              <span class="toolbar-spacer" aria-hidden="true"></span>
+            </div>
+
+            <div class="arrangement-shell">
+              <div class="arrangement-spacer"></div>
+              <div class="arrangement-viewport" id="arrangementViewport"><div class="arrangement" id="arrangement"></div></div>
+            </div>
+            <div class="roll-scroll" id="rollScroll"><div class="roll-grid"><div class="pitch-labels" id="labels"></div><div class="roll" id="roll"></div></div></div>
+          </div>
+
+          <div class="card">
+            <div class="headrow">
+              <h2>⌨️ Keyboard</h2>
+              <span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. The instrument changes the armed track.</span>
+              <select id="instrument" style="max-width:190px" aria-label="Track instrument"></select>
+            </div>
+            <div class="pianowrap"><div class="piano" id="piano"></div></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="createView"><div class="card"><h2>✨ Create sound</h2><p class="placeholder">Simple game and SFX sound controls will live here.</p></div></section>
+    <section class="view" id="libraryView"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library and permanent imported-audio storage are next.</p></div></section>
+    <section class="view" id="analyseView"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis will connect to the Organon Audio2MIDI workflow later.</p></div></section>
   </main>
-  <script src="./standalone.js?v=0.19"></script>
+
+  <div class="quick-add-modal" id="quickAddModal" hidden role="dialog" aria-modal="true" aria-labelledby="quickAddTitle">
+    <section class="quick-add-dialog">
+      <h3 id="quickAddTitle">Quick add</h3>
+      <p id="quickAddText"></p>
+      <button class="btn primary" id="quickAddClose" type="button">Close</button>
+    </section>
+  </div>
+
+  <script src="./standalone.js?v=0.20"></script>
 </body>
 </html>
