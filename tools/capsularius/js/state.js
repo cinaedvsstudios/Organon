@@ -7,7 +7,7 @@ export function createState() {
     mounts: new Map(),
     library: [],
     recents: [],
-    googleDrive: { connected: false },
+    googleDrive: { accounts: [], ready: false },
     windows: new Map(),
     nextWindowId: 1,
     activeWindowId: null,
@@ -20,18 +20,14 @@ export function physicalSource(mountId, pathSegments = []) {
   return { kind: 'physical', mountId, pathSegments: [...pathSegments] };
 }
 
-export function librarySource() {
-  return { kind: 'library' };
-}
-
-export function recentsSource() {
-  return { kind: 'recents' };
-}
+export function librarySource() { return { kind: 'library' }; }
+export function recentsSource() { return { kind: 'recents' }; }
 
 export function googleDriveSource(node = 'root', options = {}) {
   return {
     kind: 'google-drive',
     node,
+    accountId: options.accountId || null,
     folderId: options.folderId || null,
     driveId: options.driveId || null,
     name: options.name || null,
@@ -41,7 +37,7 @@ export function googleDriveSource(node = 'root', options = {}) {
 
 export function sourceKey(source) {
   if (source.kind === 'physical') return `physical:${source.mountId}:${source.pathSegments.join('/')}`;
-  if (source.kind === 'google-drive') return `google-drive:${source.node}:${source.driveId || ''}:${source.folderId || ''}`;
+  if (source.kind === 'google-drive') return `google-drive:${source.accountId || 'none'}:${source.node}:${source.driveId || ''}:${source.folderId || ''}`;
   return source.kind;
 }
 
@@ -49,6 +45,7 @@ export function cloneSource(source) {
   if (source.kind === 'physical') return physicalSource(source.mountId, source.pathSegments);
   if (source.kind === 'google-drive') {
     return googleDriveSource(source.node, {
+      accountId: source.accountId,
       folderId: source.folderId,
       driveId: source.driveId,
       name: source.name,
@@ -58,12 +55,18 @@ export function cloneSource(source) {
   return { kind: source.kind };
 }
 
+function googleAccountLabel(state, accountId) {
+  const account = state.googleDrive?.accounts?.find((item) => item.id === accountId);
+  return account?.label || account?.displayName || account?.email || 'Google Drive';
+}
+
 export function sourceTitle(state, source) {
   if (source.kind === 'library') return 'Library';
   if (source.kind === 'recents') return 'Recents';
   if (source.kind === 'google-drive') {
-    if (source.node === 'root') return 'Google Drive';
-    if (source.node === 'connect') return 'Connect Google Drive';
+    if (source.node === 'root') return 'Google Drives';
+    if (source.node === 'account') return googleAccountLabel(state, source.accountId);
+    if (source.node === 'connect') return source.accountId ? `Connect ${googleAccountLabel(state, source.accountId)}` : 'Connect Google Drive';
     if (source.node === 'my-drive') return 'My Drive';
     if (source.node === 'shared-with-me') return 'Shared with me';
     if (source.node === 'shared-drives') return 'Shared drives';
@@ -93,28 +96,11 @@ export function sourcePathLabel(state, source) {
 }
 
 export function createMount(handle, colour) {
-  return {
-    id: makeId('mount'),
-    handle,
-    name: handle.name,
-    nickname: handle.name,
-    colour,
-    createdAt: Date.now(),
-    lastOpenedAt: Date.now(),
-    permission: 'prompt'
-  };
+  return { id: makeId('mount'), handle, name: handle.name, nickname: handle.name, colour, createdAt: Date.now(), lastOpenedAt: Date.now(), permission: 'prompt' };
 }
 
 export function createLibraryEntry(source, { name, emoji, colour }) {
-  return {
-    id: makeId('library'),
-    mountId: source.mountId,
-    pathSegments: [...source.pathSegments],
-    name,
-    emoji: emoji || '📁',
-    colour,
-    addedAt: Date.now()
-  };
+  return { id: makeId('library'), mountId: source.mountId, pathSegments: [...source.pathSegments], name, emoji: emoji || '📁', colour, addedAt: Date.now() };
 }
 
 function normaliseSettings(raw = {}) {
@@ -136,18 +122,8 @@ export function makeWindowRecord(state, source, overrides = {}) {
   const stagger = (state.windows.size % 8) * 28;
   const isRestoredWindow = Number.isFinite(overrides.id);
   const hasSavedColour = typeof overrides.colour === 'string' && overrides.colour.length > 0;
-  const colour = isRestoredWindow && hasSavedColour
-    ? overrides.colour
-    : PALETTE[state.currentColourIndex++ % PALETTE.length];
-  const settings = normaliseSettings(overrides.settings || {
-    scope: 'window',
-    window: {
-      viewMode: overrides.viewMode,
-      sortBy: overrides.sortBy,
-      sortDirection: overrides.sortDirection
-    }
-  });
-
+  const colour = isRestoredWindow && hasSavedColour ? overrides.colour : PALETTE[state.currentColourIndex++ % PALETTE.length];
+  const settings = normaliseSettings(overrides.settings || { scope: 'window', window: { viewMode: overrides.viewMode, sortBy: overrides.sortBy, sortDirection: overrides.sortDirection } });
   return {
     id,
     source: cloneSource(source),
@@ -185,18 +161,5 @@ export function defaultColourForSource(state, source) {
 }
 
 export function windowSnapshot(windowRecord) {
-  return {
-    id: windowRecord.id,
-    source: cloneSource(windowRecord.source),
-    nickname: windowRecord.nickname,
-    colour: windowRecord.colour,
-    x: windowRecord.x,
-    y: windowRecord.y,
-    width: windowRecord.width,
-    height: windowRecord.height,
-    viewMode: windowRecord.viewMode,
-    settings: windowRecord.settings,
-    minimized: Boolean(windowRecord.minimized),
-    treeExpanded: [...windowRecord.treeExpanded]
-  };
+  return { id: windowRecord.id, source: cloneSource(windowRecord.source), nickname: windowRecord.nickname, colour: windowRecord.colour, x: windowRecord.x, y: windowRecord.y, width: windowRecord.width, height: windowRecord.height, viewMode: windowRecord.viewMode, settings: windowRecord.settings, minimized: Boolean(windowRecord.minimized), treeExpanded: [...windowRecord.treeExpanded] };
 }
