@@ -10,6 +10,7 @@ const capsulariusIcon = path.join(capsulariusRoot, 'capsularius.ico');
 const desktopStatePath = path.join(capsulariusRoot, 'desktop', 'capsularius-desktop-state.json');
 const approvedRoots = new Set();
 const MAX_DESKTOP_STATE_BYTES = 2 * 1024 * 1024;
+let desktopStateWriteQueue = Promise.resolve();
 
 app.setAppUserModelId('com.cinaedvsstudios.organon.capsularius');
 
@@ -79,7 +80,7 @@ function normaliseDesktopState(raw) {
   return clean;
 }
 
-async function loadDesktopState() {
+async function readDesktopStateFile() {
   try {
     const text = await fs.readFile(desktopStatePath, 'utf8');
     return normaliseDesktopState(JSON.parse(text));
@@ -90,7 +91,7 @@ async function loadDesktopState() {
   }
 }
 
-async function saveDesktopState(raw) {
+async function writeDesktopStateFile(raw) {
   const state = normaliseDesktopState(raw);
   if (!state) throw new Error('Capsularius desktop state is invalid.');
   await fs.mkdir(path.dirname(desktopStatePath), { recursive:true });
@@ -98,6 +99,55 @@ async function saveDesktopState(raw) {
   await fs.writeFile(temporaryPath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
   await fs.rename(temporaryPath, desktopStatePath);
   return { path:desktopStatePath, savedAt:Date.now() };
+}
+
+function mergeDesktopState(previous, incoming) {
+  const current = previous && typeof previous === 'object' ? previous : {};
+  const next = incoming && typeof incoming === 'object' ? incoming : {};
+  return {
+    ...current,
+    ...next,
+    preferences: {
+      ...(current.preferences && typeof current.preferences === 'object' ? current.preferences : {}),
+      ...(next.preferences && typeof next.preferences === 'object' ? next.preferences : {})
+    }
+  };
+}
+
+async function queueDesktopStateMutation(mutator) {
+  desktopStateWriteQueue = desktopStateWriteQueue
+    .catch(() => undefined)
+    .then(async () => {
+      const current = await readDesktopStateFile();
+      const next = await mutator(current && typeof current === 'object' ? current : {});
+      return writeDesktopStateFile(next);
+    });
+  return desktopStateWriteQueue;
+}
+
+async function loadDesktopState() {
+  await desktopStateWriteQueue.catch(() => undefined);
+  return readDesktopStateFile();
+}
+
+async function saveDesktopState(raw) {
+  return queueDesktopStateMutation((current) => mergeDesktopState(current, raw));
+}
+
+async function getDesktopPreference(key) {
+  const state = await loadDesktopState();
+  return state?.preferences?.[key] ?? null;
+}
+
+async function setDesktopPreference(key, value) {
+  if (typeof key !== 'string' || !key.trim()) throw new Error('A desktop setting name is required.');
+  return queueDesktopStateMutation((current) => ({
+    ...current,
+    preferences: {
+      ...(current.preferences && typeof current.preferences === 'object' ? current.preferences : {}),
+      [key]: value
+    }
+  }));
 }
 
 async function chooseDirectory() {
@@ -127,6 +177,8 @@ async function resolveChild(parentPath, name, expectedKind, create) {
 function registerBridge() {
   ipcMain.handle('capsularius:load-desktop-state', loadDesktopState);
   ipcMain.handle('capsularius:save-desktop-state', async (_event, state) => saveDesktopState(state));
+  ipcMain.handle('capsularius:get-desktop-preference', async (_event, key) => getDesktopPreference(key));
+  ipcMain.handle('capsularius:set-desktop-preference', async (_event, key, value) => setDesktopPreference(key, value));
 
   ipcMain.handle('capsularius:set-zoom-factor', (event, value) => {
     const factor = Number(value);
