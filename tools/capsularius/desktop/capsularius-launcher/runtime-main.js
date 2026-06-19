@@ -7,7 +7,9 @@ const launcherRoot = __dirname;
 const capsulariusRoot = path.resolve(launcherRoot, '..', '..');
 const capsulariusEntry = path.join(capsulariusRoot, 'index.html');
 const capsulariusIcon = path.join(capsulariusRoot, 'capsularius.ico');
+const desktopStatePath = path.join(capsulariusRoot, 'desktop', 'capsularius-desktop-state.json');
 const approvedRoots = new Set();
+const MAX_DESKTOP_STATE_BYTES = 2 * 1024 * 1024;
 
 app.setAppUserModelId('com.cinaedvsstudios.organon.capsularius');
 
@@ -69,6 +71,35 @@ async function safeChildPath(parentPath, name) {
   return path.join(parent, name);
 }
 
+function normaliseDesktopState(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const clean = JSON.parse(JSON.stringify(raw));
+  const bytes = Buffer.byteLength(JSON.stringify(clean), 'utf8');
+  if (bytes > MAX_DESKTOP_STATE_BYTES) throw new Error('Capsularius desktop state is too large to save.');
+  return clean;
+}
+
+async function loadDesktopState() {
+  try {
+    const text = await fs.readFile(desktopStatePath, 'utf8');
+    return normaliseDesktopState(JSON.parse(text));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    if (error instanceof SyntaxError) throw new Error('Capsularius desktop state JSON is invalid.');
+    throw error;
+  }
+}
+
+async function saveDesktopState(raw) {
+  const state = normaliseDesktopState(raw);
+  if (!state) throw new Error('Capsularius desktop state is invalid.');
+  await fs.mkdir(path.dirname(desktopStatePath), { recursive:true });
+  const temporaryPath = `${desktopStatePath}.${process.pid}.tmp`;
+  await fs.writeFile(temporaryPath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+  await fs.rename(temporaryPath, desktopStatePath);
+  return { path:desktopStatePath, savedAt:Date.now() };
+}
+
 async function chooseDirectory() {
   const result = await dialog.showOpenDialog({ title:'Mount folder in Capsularius Desktop', properties:['openDirectory'] });
   if (result.canceled || !result.filePaths[0]) return null;
@@ -94,6 +125,9 @@ async function resolveChild(parentPath, name, expectedKind, create) {
 }
 
 function registerBridge() {
+  ipcMain.handle('capsularius:load-desktop-state', loadDesktopState);
+  ipcMain.handle('capsularius:save-desktop-state', async (_event, state) => saveDesktopState(state));
+
   ipcMain.handle('capsularius:set-zoom-factor', (event, value) => {
     const factor = Number(value);
     if (!Number.isFinite(factor) || factor < 0.6 || factor > 1.4) throw new Error('Capsularius zoom must be between 60% and 140%.');
