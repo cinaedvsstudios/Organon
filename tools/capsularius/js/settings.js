@@ -1,11 +1,13 @@
-import { allKnownExtensions, FILE_TYPE_OVERRIDES_KEY, fileTypeDescriptor, saveOverrides } from './file-types.js';
+import { FILE_TYPE_DELETED_KEY, FILE_TYPE_OVERRIDES_KEY } from './file-types.js';
+import { addFileTypeDraft, createFileTypeUiState, deleteSelectedFileType, renderFileTypesTab } from './file-type-table.js';
 import { queryDirectoryPermission, readDirectory } from './filesystem.js';
 
 const BACKUP_KEYS = [
   'capsularius.sidebarWidth.v1',
   'capsularius.columnWidths.v1',
   'capsularius.fileMetadata.v1',
-  FILE_TYPE_OVERRIDES_KEY
+  FILE_TYPE_OVERRIDES_KEY,
+  FILE_TYPE_DELETED_KEY
 ];
 
 function el(tag, className, text) {
@@ -15,15 +17,9 @@ function el(tag, className, text) {
   return node;
 }
 
-function readOverrides() {
-  try {
-    const value = JSON.parse(localStorage.getItem(FILE_TYPE_OVERRIDES_KEY) || '{}');
-    return value && typeof value === 'object' ? value : {};
-  } catch (_) { return {}; }
-}
-
 function closeSettings() {
   document.querySelector('.caps-settings-backdrop')?.remove();
+  document.querySelector('.caps-emoji-picker')?.remove();
 }
 
 async function checkMount(mount) {
@@ -82,7 +78,7 @@ function removeMount(app, mount) {
   app.save();
 }
 
-function mountedLocationTab(app, body, rerender) {
+function renderMountedLocations(app, body, rerender) {
   body.append(el('p','caps-settings-copy','Mounted Locations checks whether Capsularius can open each saved browser folder. A folder that opens normally is connected; the browser not exposing its Windows drive path is not treated as an error.'));
   const list = el('div','caps-settings-list');
   for (const mount of app.state.mounts.values()) {
@@ -114,53 +110,7 @@ function mountedLocationTab(app, body, rerender) {
   controls.append(mount,scan); footer.append(controls,el('span','caps-settings-note','Remove deletes only Capsularius’s saved reference.')); body.append(footer);
 }
 
-function fileTypesTab(app, body, rerender) {
-  body.append(el('p','caps-settings-copy','Capsularius includes a default database for common file types. Edit a row only when you want different text in the Type column.'));
-  const overrides = readOverrides();
-  const extras = [];
-  for (const record of app.state.windows.values()) for (const entry of record.items || []) {
-    const extension = entry.name?.split('.').pop()?.toLowerCase();
-    if (extension && extension !== entry.name) extras.push(extension);
-  }
-  const list = el('div','caps-file-types');
-  for (const extension of allKnownExtensions(extras)) {
-    const descriptor = fileTypeDescriptor(`file.${extension}`);
-    const row = el('label','caps-file-type-row');
-    row.append(el('span','caps-file-type-icon',descriptor.icon),el('code','',`.${extension}`));
-    const input = document.createElement('input');
-    input.value = overrides[extension] || '';
-    input.placeholder = descriptor.label;
-    input.dataset.extension = extension;
-    row.append(input); list.append(row);
-  }
-  body.append(list);
-  const add = el('div','caps-add-extension');
-  const extension = document.createElement('input'); extension.placeholder='Extension, e.g. abc';
-  const label = document.createElement('input'); label.placeholder='Type label';
-  const addButton = el('button','', '＋ Add');
-  addButton.addEventListener('click',()=>{
-    const key=extension.value.trim().replace(/^\./,'').toLowerCase();
-    if(!key)return;
-    overrides[key]=label.value.trim()||`File · .${key}`;
-    saveOverrides(overrides); rerender();
-  });
-  add.append(extension,label,addButton); body.append(add);
-  const footer = el('div','caps-settings-footer');
-  const save = el('button','primary','💾 Save File Type Labels');
-  save.addEventListener('click',()=>{
-    body.querySelectorAll('[data-extension]').forEach((input)=>{
-      const value=input.value.trim();
-      if(value) overrides[input.dataset.extension]=value;
-      else delete overrides[input.dataset.extension];
-    });
-    saveOverrides(overrides);
-    for(const record of app.state.windows.values()) app.workspace.renderWindow(record);
-    app.toast('File type labels saved.','success');
-  });
-  footer.append(save,el('span','caps-settings-note','Leave a field blank to use Capsularius’s default label.')); body.append(footer);
-}
-
-function backupTab(app, body) {
+function renderBackup(body) {
   body.append(el('p','caps-settings-copy','Export or import Capsularius’s visual settings, file-type labels, and local metadata. Browser folder handles are not included, so mounted folders still need reconnecting after import.'));
   const area = el('div','caps-settings-backup');
   const exportCard=el('article'); exportCard.append(el('h3','','Export Settings'),el('p','','Download the current local Capsularius settings as a JSON file.'));
@@ -179,24 +129,49 @@ function backupTab(app, body) {
 }
 
 export function installSettings(app) {
-  const button=document.getElementById('settings-button');
-  if(!button)return;
-  let tab='locations';
-  const render=()=>{
+  const button = document.getElementById('settings-button');
+  if (!button) return;
+  let tab = 'locations';
+  const typeUi = createFileTypeUiState();
+
+  const render = () => {
     closeSettings();
-    const backdrop=el('div','caps-settings-backdrop');
-    const panel=el('section','caps-settings');
-    const header=el('header','caps-settings-header');
-    const left=el('div');left.append(el('h2','caps-settings-title','Capsularius Settings'));
-    const tabs=el('nav','caps-settings-tabs');
-    [['locations','Mounted Locations'],['types','File Types'],['backup','Backup']].forEach(([key,label])=>{
-      const item=el('button',`caps-settings-tab${tab===key?' active':''}`,label);item.type='button';item.addEventListener('click',()=>{tab=key;render();});tabs.append(item);
-    });left.append(tabs);
-    const close=el('button','caps-settings-close','❌');close.type='button';close.addEventListener('click',closeSettings);header.append(left,close);
-    const body=el('main','caps-settings-body');
-    if(tab==='locations')mountedLocationTab(app,body,render);
-    else if(tab==='types')fileTypesTab(app,body,render);
-    else backupTab(app,body);
+    const backdrop = el('div','caps-settings-backdrop');
+    const panel = el('section','caps-settings');
+    const header = el('header','caps-settings-header');
+    const left = el('div');
+    left.append(el('h2','caps-settings-title','Capsularius Settings'));
+    const tabs = el('nav','caps-settings-tabs');
+    [['locations','Mounted Locations'],['types','File Types'],['backup','Backup']].forEach(([key,label]) => {
+      const item = el('button',`caps-settings-tab${tab === key ? ' active' : ''}`,label);
+      item.type='button';
+      item.addEventListener('click',()=>{tab=key;render();});
+      tabs.append(item);
+    });
+    left.append(tabs);
+
+    const actions = el('div','caps-settings-header-actions');
+    if (tab === 'types') {
+      const add = el('button','caps-settings-header-button','＋ New Type');
+      add.type='button';
+      add.addEventListener('click',()=>addFileTypeDraft(typeUi,render));
+      const remove = el('button','caps-settings-header-button danger','🗑 Delete Type');
+      remove.type='button';
+      remove.dataset.deleteFileType='true';
+      remove.disabled=!typeUi.selectedId;
+      remove.addEventListener('click',()=>deleteSelectedFileType(app,typeUi,render));
+      actions.append(add,remove);
+    }
+    const close = el('button','caps-settings-close','❌');
+    close.type='button';
+    close.addEventListener('click',closeSettings);
+    actions.append(close);
+    header.append(left,actions);
+
+    const body = el('main','caps-settings-body');
+    if (tab === 'locations') renderMountedLocations(app,body,render);
+    else if (tab === 'types') renderFileTypesTab(app,body,render,typeUi);
+    else renderBackup(body);
     panel.append(header,body);backdrop.append(panel);document.getElementById('dialog-layer').append(backdrop);
   };
   button.addEventListener('click',render);
