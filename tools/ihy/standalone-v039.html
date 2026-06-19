@@ -25,33 +25,24 @@
       if (!response.ok) throw new Error(`Source file returned ${response.status}.`);
       let source = await response.text();
 
-      const replacements = [
-        [
-          "const safe=(raw,fallback)=>{try{return JSON.parse(raw)}catch{return fallback}};",
-          "const safe=(raw,fallback)=>{try{const value=JSON.parse(raw);return value??fallback}catch{return fallback}};"
-        ],
-        [
-          "dragMute=Boolean(safe(localStorage.getItem('ihy-v038-drag-mute'),'false'))",
-          "dragMute=safe(localStorage.getItem('ihy-v038-drag-mute'),false)===true"
-        ],
-        [
-          "history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});",
-          "history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});history={undo:Array.isArray(history?.undo)?history.undo:[],redo:Array.isArray(history?.redo)?history.redo:[]};"
-        ],
-        [
-          '<div class="version">v0.38</div>',
-          '<div class="version">v0.39</div>'
-        ],
-        [
-          'v0.38 — piano-roll editor.',
-          'v0.39 — repaired piano-roll editor.'
-        ]
-      ];
-
-      for (const [before, after] of replacements) {
-        if (!source.includes(before)) throw new Error('The editor source did not match the expected repair baseline.');
-        source = source.replace(before, after);
-      }
+      source = source.replace(
+        /safe=\(r,f\)=>\{try\{return JSON\.parse\(r\)\}catch\{return f\}\}/,
+        'safe=(r,f)=>{try{const value=JSON.parse(r);return value??f}catch{return f}}'
+      );
+      source = source.replace(
+        /history=safe\(localStorage\.getItem\(HSTORE\),\{undo:\[\],redo:\[\]\}\);/,
+        'history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});history={undo:Array.isArray(history?.undo)?history.undo:[],redo:Array.isArray(history?.redo)?history.redo:[]};'
+      );
+      source = source.replace(
+        /const p=safe\(localStorage\.getItem\(WSTORE\),\{\}\)\[id\]/,
+        'const p=(safe(localStorage.getItem(WSTORE),{})||{})[id]'
+      );
+      source = source.replace(
+        /const p=safe\(localStorage\.getItem\(WSTORE\),\{\}\);p\[d\.id\]/,
+        'const p=(safe(localStorage.getItem(WSTORE),{})||{});p[d.id]'
+      );
+      source = source.replace('<div class="version">v0.38</div>', '<div class="version">v0.39</div>');
+      source = source.replace('v0.38 — piano-roll editor.', 'v0.39 — repaired piano-roll editor.');
 
       document.open();
       document.write(source);
