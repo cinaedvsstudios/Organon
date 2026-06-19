@@ -17,15 +17,16 @@ function cloneJson(value, fallback) {
   catch (_) { return fallback; }
 }
 
-function normaliseDesktopState(raw = {}) {
+function normaliseDesktopState(raw) {
+  const source = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
   return {
     version: 1,
-    savedAt: Number(raw.savedAt) || 0,
-    mounts: Array.isArray(raw.mounts) ? raw.mounts : [],
-    library: Array.isArray(raw.library) ? raw.library : [],
-    recents: Array.isArray(raw.recents) ? raw.recents : [],
-    workspace: raw.workspace && typeof raw.workspace === 'object' ? raw.workspace : null,
-    mountVerification: raw.mountVerification && typeof raw.mountVerification === 'object' ? raw.mountVerification : {}
+    savedAt: Number(source.savedAt) || 0,
+    mounts: Array.isArray(source.mounts) ? source.mounts : [],
+    library: Array.isArray(source.library) ? source.library : [],
+    recents: Array.isArray(source.recents) ? source.recents : [],
+    workspace: source.workspace && typeof source.workspace === 'object' ? source.workspace : null,
+    mountVerification: source.mountVerification && typeof source.mountVerification === 'object' ? source.mountVerification : {}
   };
 }
 
