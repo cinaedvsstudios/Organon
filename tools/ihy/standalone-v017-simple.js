@@ -10,7 +10,9 @@
   const timer = $('#transportTime');
   const roll = $('#roll');
   const arrangement = $('#arrangement');
-  if (!slider || !value || !play || !stop || !mount || !timer || !roll || !arrangement) return;
+  const rollScroll = $('#rollScroll');
+  const arrangementViewport = $('#arrangementViewport');
+  if (!slider || !value || !play || !stop || !mount || !timer || !roll || !arrangement || !rollScroll || !arrangementViewport) return;
 
   const BEAT_WIDTH = 40;
   let playing = false;
@@ -61,6 +63,7 @@
     document.documentElement.dataset.ihyRollScale = String(scale);
     roll.style.zoom = String(scale);
     arrangement.style.zoom = '';
+    arrangementViewport.scrollLeft = rollScroll.scrollLeft / scale;
     ensureTimeLabels();
   }
 
@@ -83,6 +86,7 @@
   play.addEventListener('click', () => { if (!playing) setButton(true); });
   stop.addEventListener('click', () => setButton(false));
   slider.addEventListener('input', event => setZoom(event.target.value));
+  rollScroll.addEventListener('scroll', () => { arrangementViewport.scrollLeft = rollScroll.scrollLeft / (zoom / 100); });
 
   const observer = new MutationObserver(records => {
     if (observerQueued) return;
