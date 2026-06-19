@@ -1,0 +1,36 @@
+/* Draggable, resizable asset Preview and Properties windows. */
+.caps-asset-window { position:fixed; z-index:14000; display:flex; flex-direction:column; width:min(760px,calc(100vw - 28px)); min-width:320px; min-height:260px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); overflow:hidden; resize:both; border:1px solid #75b2de; border-radius:12px; color:#eef7ff; background:linear-gradient(145deg,#1b2a38,#101921); box-shadow:0 28px 78px rgba(0,0,0,.78); }
+.caps-preview-window { width:min(820px,calc(100vw - 28px)); height:min(620px,calc(100vh - 28px)); }
+.caps-properties-window { width:min(560px,calc(100vw - 28px)); max-height:calc(100vh - 28px); }
+.caps-asset-window-bar { display:flex; flex:0 0 auto; align-items:flex-start; justify-content:space-between; gap:14px; padding:10px 13px; border-bottom:1px solid rgba(117,178,222,.34); color:#d7edff; background:rgba(8,18,28,.7); cursor:grab; user-select:none; touch-action:none; }
+.caps-asset-window-heading { display:grid; min-width:0; gap:2px; }
+.caps-asset-window-heading strong { overflow:hidden; color:#f5fbff; font-size:.86rem; text-overflow:ellipsis; white-space:nowrap; }
+.caps-asset-window-heading span { overflow:hidden; color:#a9c7dd; font:.66rem var(--mono,monospace); text-overflow:ellipsis; white-space:nowrap; }
+.caps-asset-window-close { flex:0 0 auto; padding:0; border:0; background:transparent; cursor:pointer; font-size:1.2rem; filter:drop-shadow(0 2px 3px rgba(0,0,0,.82)); }
+.caps-preview-loading, .caps-preview-empty { display:grid; flex:1; place-content:center; justify-items:center; gap:10px; min-height:210px; padding:22px; color:#b7d2e7; text-align:center; }
+.caps-preview-empty-icon { font-size:3rem; filter:drop-shadow(0 4px 5px rgba(0,0,0,.55)); }
+.caps-preview-empty strong { color:#edf7ff; font-size:.9rem; }
+.caps-preview-content { display:grid; flex:1; min-height:0; overflow:auto; background:#071018; }
+.caps-preview-image { display:block; width:auto; max-width:100%; height:auto; max-height:100%; margin:auto; object-fit:contain; }
+.caps-preview-video { width:100%; height:100%; min-height:260px; background:#000; }
+.caps-preview-audio { display:grid; place-content:center; justify-items:center; gap:16px; min-height:250px; padding:24px; color:#eaf6ff; background:radial-gradient(circle at center,rgba(59,110,147,.35),rgba(5,10,15,.9)); }
+.caps-preview-audio-icon { font-size:4rem; filter:drop-shadow(0 5px 8px rgba(0,0,0,.75)); }
+.caps-preview-audio audio { width:min(420px,100%); }
+.caps-preview-pdf { width:100%; min-height:520px; border:0; background:#fff; }
+.caps-preview-text { min-height:0; margin:0; padding:14px; overflow:auto; color:#d7eaf7; background:#081018; font:12px/1.45 var(--mono,monospace); white-space:pre-wrap; overflow-wrap:anywhere; }
+.caps-properties-content { min-height:0; overflow:auto; padding:15px; }
+.caps-properties-grid { display:grid; grid-template-columns:145px minmax(0,1fr); gap:9px 13px; margin:0; font-size:.77rem; }
+.caps-properties-grid dt { color:#a8c8df; }
+.caps-properties-grid dd { min-width:0; margin:0; overflow-wrap:anywhere; }
+.caps-properties-fields { display:grid; gap:10px; margin-top:18px; }
+.caps-properties-fields label { display:grid; gap:5px; color:#b9d6e9; font-size:.7rem; }
+.caps-properties-fields input, .caps-properties-fields textarea { width:100%; box-sizing:border-box; padding:8px 9px; border:1px solid rgba(117,178,222,.45); border-radius:6px; color:#eef7ff; background:#0a141d; font:inherit; font-size:.78rem; }
+.caps-properties-fields textarea { min-height:76px; resize:vertical; }
+.caps-asset-window-actions { display:flex; justify-content:flex-end; margin-top:14px; }
+.caps-asset-window-actions button { border:1px solid #75b2de; border-radius:6px; padding:8px 10px; color:#0a1720; background:#a8d7f5; box-shadow:0 3px 9px rgba(0,0,0,.52); cursor:pointer; font:700 .73rem var(--body); }
+@media (max-width:620px) {
+  .caps-asset-window { resize:none; min-width:0; }
+  .caps-preview-window { width:calc(100vw - 20px); height:min(540px,calc(100vh - 20px)); }
+  .caps-properties-window { width:calc(100vw - 20px); }
+  .caps-properties-grid { grid-template-columns:112px minmax(0,1fr); }
+}
