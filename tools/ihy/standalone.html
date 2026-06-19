@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.26 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.27 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.22">
   <link rel="stylesheet" href="./standalone-v023.css?v=0.23">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.26</div></div>
+    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.27</div></div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
       <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
@@ -35,7 +35,7 @@
         <input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
         <div class="section-label">Quick add</div><div class="control-grid"><button class="btn" id="quickBass" type="button">＋ Bass</button><button class="btn" id="quickMotif" type="button">＋ Motif</button></div>
         <div class="section-label">Transport</div><div class="transport-grid"><button class="btn" id="record">⏺ Record</button><button class="btn" id="stop">⏹ Stop</button></div>
-        <p class="status" id="status">v0.26 — original MIDI example, C4 guide and M/S/H track controls.</p>
+        <p class="status" id="status">v0.27 — corrected multi-track MIDI import, C4 guide and M/S/H controls.</p>
       </div>
       <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
     </aside><section class="editor">
@@ -51,10 +51,11 @@
   <div class="analysis-modal" id="analysisModal" hidden role="dialog" aria-modal="true" aria-labelledby="analysisTitle"><section class="analysis-dialog"><h3 id="analysisTitle">🔎 Open project analysis</h3><div id="analysisDetails"></div><button class="btn primary" id="analysisClose" type="button">Close</button></section></div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <script src="./standalone.js?v=0.26"></script>
+  <script src="./standalone.js?v=0.27"></script>
   <script src="./standalone-v022.js?v=0.22"></script>
   <script src="./standalone-v024.js?v=0.24"></script>
   <script src="./standalone-v025.js?v=0.25"></script>
   <script src="./standalone-v026.js?v=0.26"></script>
+  <script src="./standalone-v027.js?v=0.27"></script>
 </body>
 </html>
