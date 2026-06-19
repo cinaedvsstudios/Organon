@@ -20,6 +20,17 @@ export function physicalSource(mountId, pathSegments = []) {
   return { kind: 'physical', mountId, pathSegments: [...pathSegments] };
 }
 
+export function zipSource(mountId, parentPathSegments = [], archiveName = '', zipPath = '', options = {}) {
+  return {
+    kind: 'zip',
+    mountId,
+    parentPathSegments: [...parentPathSegments],
+    archiveName,
+    zipPath: String(zipPath || '').replace(/^\/+/, ''),
+    parent: options.parent ? cloneSource(options.parent) : null
+  };
+}
+
 export function librarySource() { return { kind: 'library' }; }
 export function recentsSource() { return { kind: 'recents' }; }
 
@@ -37,12 +48,14 @@ export function googleDriveSource(node = 'root', options = {}) {
 
 export function sourceKey(source) {
   if (source.kind === 'physical') return `physical:${source.mountId}:${source.pathSegments.join('/')}`;
+  if (source.kind === 'zip') return `zip:${source.mountId}:${source.parentPathSegments.join('/')}:${source.archiveName}:${source.zipPath}`;
   if (source.kind === 'google-drive') return `google-drive:${source.accountId || 'none'}:${source.node}:${source.driveId || ''}:${source.folderId || ''}`;
   return source.kind;
 }
 
 export function cloneSource(source) {
   if (source.kind === 'physical') return physicalSource(source.mountId, source.pathSegments);
+  if (source.kind === 'zip') return zipSource(source.mountId, source.parentPathSegments, source.archiveName, source.zipPath, { parent:source.parent || null });
   if (source.kind === 'google-drive') {
     return googleDriveSource(source.node, {
       accountId: source.accountId,
@@ -63,6 +76,10 @@ function googleAccountLabel(state, accountId) {
 export function sourceTitle(state, source) {
   if (source.kind === 'library') return 'Library';
   if (source.kind === 'recents') return 'Recents';
+  if (source.kind === 'zip') {
+    const segments = source.zipPath.replace(/\/$/, '').split('/').filter(Boolean);
+    return segments.at(-1) || source.archiveName || 'ZIP archive';
+  }
   if (source.kind === 'google-drive') {
     if (source.node === 'root') return 'Google Drives';
     if (source.node === 'account') return googleAccountLabel(state, source.accountId);
@@ -81,6 +98,12 @@ export function sourceTitle(state, source) {
 export function sourcePathLabel(state, source) {
   if (source.kind === 'library') return 'Library';
   if (source.kind === 'recents') return 'Recents';
+  if (source.kind === 'zip') {
+    const mount = state.mounts.get(source.mountId);
+    const root = [mount?.nickname || mount?.name || 'Missing location', ...source.parentPathSegments, source.archiveName];
+    const inner = source.zipPath.replace(/\/$/, '').split('/').filter(Boolean);
+    return [...root, ...inner].join(' / ');
+  }
   if (source.kind === 'google-drive') {
     const labels = [];
     let current = source;
@@ -157,6 +180,7 @@ export function defaultColourForSource(state, source) {
   if (source.kind === 'library') return '#e0a360';
   if (source.kind === 'recents') return '#4b84bf';
   if (source.kind === 'google-drive') return '#4285f4';
+  if (source.kind === 'zip') return state.mounts.get(source.mountId)?.colour || '#896b49';
   return state.mounts.get(source.mountId)?.colour || '#449e92';
 }
 
