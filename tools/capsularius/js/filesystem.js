@@ -1,9 +1,10 @@
-const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'svg']);
-const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'mid', 'midi']);
-const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'mkv', 'avi']);
+const IMAGE_EXTENSIONS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'svg', 'tif', 'tiff', 'ico', 'heic']);
+const AUDIO_EXTENSIONS = new Set(['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac', 'wma', 'aiff', 'opus']);
+const VIDEO_EXTENSIONS = new Set(['mp4', 'webm', 'mov', 'mkv', 'avi', 'm4v', 'mpeg', 'mpg']);
 const MODEL_EXTENSIONS = new Set(['glb', 'gltf', 'obj', 'fbx', 'stl', 'dae']);
 const ARCHIVE_EXTENSIONS = new Set(['zip']);
 const CODE_EXTENSIONS = new Set(['txt', 'md', 'json', 'html', 'htm', 'css', 'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'xml', 'yaml', 'yml', 'csv', 'py', 'java', 'cs', 'cpp', 'c', 'h', 'php', 'sql', 'sh', 'bat', 'ps1']);
+const METADATA_TIMEOUT_MS = 9000;
 
 export function makeId(prefix = 'caps') {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
@@ -70,22 +71,83 @@ export async function resolveDirectory(rootHandle, segments = []) {
 export async function readDirectory(rootHandle, segments = []) {
   const directoryHandle = await resolveDirectory(rootHandle, segments);
   const entries = [];
-
-  // Deliberately do not call getFile() for every file here. That can lock the UI
-  // while a large folder is opened. The workspace hydrates size/date/MIME later.
   for await (const [name, handle] of directoryHandle.entries()) {
     if (handle.kind === 'directory') {
-      entries.push({ id: `directory:${name}`, name, kind: 'directory', handle, fileType: 'directory', size: null, lastModified: null, metadataPending: false });
+      entries.push({ id:`directory:${name}`, name, kind:'directory', handle, fileType:'directory', size:null, lastModified:null, metadataPending:false });
     } else {
-      entries.push({ id: `file:${name}`, name, kind: 'file', handle, fileType: typeForFile(name), size: null, lastModified: null, mimeType: '', metadataPending: true });
+      entries.push({ id:`file:${name}`, name, kind:'file', handle, fileType:typeForFile(name), size:null, lastModified:null, mimeType:'', metadataPending:true });
     }
   }
-
   entries.sort((first, second) => {
     if (first.kind !== second.kind) return first.kind === 'directory' ? -1 : 1;
-    return first.name.localeCompare(second.name, undefined, { numeric: true, sensitivity: 'base' });
+    return first.name.localeCompare(second.name, undefined, { numeric:true, sensitivity:'base' });
   });
   return { directoryHandle, entries };
+}
+
+function cleanNumber(value) {
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+async function imageMetadata(file) {
+  if ('createImageBitmap' in window) {
+    try {
+      const bitmap = await createImageBitmap(file);
+      const result = { status:'ready', width:bitmap.width, height:bitmap.height, duration:null };
+      bitmap.close?.();
+      return result;
+    } catch (_) { /* fall through to the Image element fallback */ }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    return await new Promise((resolve) => {
+      const image = new Image();
+      const timer = setTimeout(() => finish({ status:'unavailable', width:null, height:null, duration:null }), METADATA_TIMEOUT_MS);
+      const finish = (result) => { clearTimeout(timer); image.onload=null; image.onerror=null; resolve(result); };
+      image.onload = () => finish({ status:'ready', width:image.naturalWidth || null, height:image.naturalHeight || null, duration:null });
+      image.onerror = () => finish({ status:'unavailable', width:null, height:null, duration:null });
+      image.src = url;
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+async function mediaMetadata(file, tagName) {
+  const url = URL.createObjectURL(file);
+  try {
+    return await new Promise((resolve) => {
+      const media = document.createElement(tagName);
+      const timer = setTimeout(() => finish({ status:'unavailable', width:null, height:null, duration:null }), METADATA_TIMEOUT_MS);
+      const finish = (result) => {
+        clearTimeout(timer);
+        media.removeAttribute('src');
+        media.load?.();
+        resolve(result);
+      };
+      media.preload = 'metadata';
+      media.muted = true;
+      media.onloadedmetadata = () => finish({
+        status:'ready',
+        width:tagName === 'video' ? cleanNumber(media.videoWidth) : null,
+        height:tagName === 'video' ? cleanNumber(media.videoHeight) : null,
+        duration:cleanNumber(media.duration)
+      });
+      media.onerror = () => finish({ status:'unavailable', width:null, height:null, duration:null });
+      media.src = url;
+      media.load();
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+export async function scanMediaMetadata(file, fileType = typeForFile(file?.name || '', file?.type || '')) {
+  if (!file) return { status:'unavailable', width:null, height:null, duration:null };
+  if (fileType === 'image') return imageMetadata(file);
+  if (fileType === 'audio') return mediaMetadata(file, 'audio');
+  if (fileType === 'video') return mediaMetadata(file, 'video');
+  return { status:'not-applicable', width:null, height:null, duration:null };
 }
 
 export async function hydrateFileEntry(entry) {
@@ -95,6 +157,7 @@ export async function hydrateFileEntry(entry) {
   entry.size = file.size;
   entry.lastModified = file.lastModified;
   entry.mimeType = file.type || '';
+  entry.capsulariusMeta = await scanMediaMetadata(file, entry.fileType);
   entry.metadataPending = false;
   return entry;
 }
