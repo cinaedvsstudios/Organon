@@ -119,7 +119,17 @@ export function sourcePathLabel(state, source) {
 }
 
 export function createMount(handle, colour) {
-  return { id: makeId('mount'), handle, name: handle.name, nickname: handle.name, colour, createdAt: Date.now(), lastOpenedAt: Date.now(), permission: 'prompt' };
+  return {
+    id: makeId('mount'),
+    handle,
+    nativePath: handle?.nativePath || null,
+    name: handle.name,
+    nickname: handle.name,
+    colour,
+    createdAt: Date.now(),
+    lastOpenedAt: Date.now(),
+    permission: 'prompt'
+  };
 }
 
 export function createLibraryEntry(source, { name, emoji, colour }) {
