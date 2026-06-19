@@ -4,49 +4,72 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.12 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone-v012.css">
+  <title>Ihy v0.13 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone.css?v=0.13">
 </head>
 <body>
   <header class="top">
     <img class="icon" src="./icon.png" alt="Ihy">
     <div class="title">Ihy</div>
-    <div class="version">v0.12</div>
+    <div class="version">v0.13</div>
     <span class="divider" aria-hidden="true"></span>
     <div class="project">
       <input id="title" value="Untitled cue" aria-label="Project name">
-      <input id="bpm" type="number" value="92" aria-label="Beats per minute">
-      <select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option></select>
+      <input id="bpm" type="number" min="30" max="260" value="92" aria-label="Beats per minute">
+      <select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option></select>
     </div>
     <button class="chord-toggle" id="chordToggle" type="button" aria-pressed="false">♫ Chord</button>
+    <span class="divider" aria-hidden="true"></span>
+    <div class="header-field"><label for="armed">Armed</label><select id="armed"></select></div>
+    <div class="header-field"><label for="quant">Quantise</label><select id="quant"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select></div>
+    <div class="header-field"><label for="transpose">Transpose</label><input id="transpose" type="number" min="-24" max="24" value="0"></div>
   </header>
 
   <main class="app">
-    <section class="view active" id="compose">
+    <section class="view active" id="composeView">
       <div class="layout">
         <aside class="side">
           <div class="card">
-            <div class="tabs"><button class="btn active tab" data-view="compose">Compose</button><button class="btn tab" data-view="create">Create</button><button class="btn tab" data-view="signal">Signal</button><button class="btn tab" data-view="library">Library</button><button class="btn tab" data-view="analyse">Analyse</button></div>
             <h2>🎛️ Controls</h2>
-            <div class="buttons" style="margin-top:10px"><button class="btn primary" id="play">▶️ Play</button><button class="btn" id="stop">⏹️ Stop</button><button class="btn" id="record">⏺️ Record</button><button class="btn" id="metro">🎵 Metro</button></div>
-            <div class="fields"><div class="field"><label>Armed</label><select id="armed"></select></div><div class="field"><label>Quantise</label><select id="quant"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select></div><div class="field"><label>Transpose</label><input id="transpose" type="number" value="0"></div></div>
-            <div class="actions" style="margin-top:10px"><button class="btn" id="import">📥 Import</button><button class="btn" id="export">📤 Export</button><button class="btn primary" id="save">💾 Save</button></div>
-            <input id="file" type="file" accept=".json" hidden>
-            <p class="status" id="status">v0.12 — click notes, chord mode and inline note editor.</p>
+            <div class="section-label">Project &amp; sound</div>
+            <div class="control-grid">
+              <button class="btn primary" id="newProject">＋ New composition</button>
+              <button class="btn primary" id="save">💾 Save</button>
+              <button class="btn" id="createSound">✨ Create sound</button>
+              <button class="btn" id="loadExample">♫ Load example</button>
+            </div>
+            <div class="section-label">Files &amp; tools</div>
+            <div class="control-grid">
+              <button class="btn" id="import">📥 Import</button>
+              <button class="btn" id="export">📤 Export</button>
+              <button class="btn" id="libraryButton">🎧 Library</button>
+              <button class="btn" id="analyseButton">🔎 Analyse</button>
+              <button class="btn" id="signalButton">〰 Signal</button>
+            </div>
+            <input id="file" type="file" accept=".json,application/json" hidden>
+            <div class="section-label">Transport</div>
+            <div class="transport-grid">
+              <button class="btn" id="record">⏺ Record</button>
+              <button class="btn" id="metro">♫ Metro</button>
+              <button class="btn primary" id="play">▶ Play</button>
+              <button class="btn" id="stop">⏹ Stop</button>
+            </div>
+            <p class="status" id="status">v0.13 — direct composition workspace.</p>
           </div>
-          <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">➕ Track</button></div><div class="tracks" id="tracks"></div></div>
+          <div class="card">
+            <div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">＋ Track</button></div>
+            <div class="tracks" id="tracks"></div>
+          </div>
         </aside>
 
         <section class="editor">
           <div class="card">
-            <div class="headrow"><h2>🎼 Piano roll</h2><span class="help">Click an empty cell to add a note. Drag notes to move them, pull their right edge to resize, or right-click for an inline note editor.</span><button class="btn" id="addSection">➕ Section</button><button class="btn" id="clear">🗑️ Clear armed</button></div>
-            <div class="scroll">
-              <div class="content">
-                <div class="gridrow"><div class="labels" id="labels"></div><div class="roll" id="roll"></div></div>
-                <div class="timeline-row"><div class="timeline-spacer"></div><div class="timeline" id="timeline" aria-label="Playback timeline"></div></div>
-                <div class="sectionrow"><div class="spacer"></div><div class="sections" id="sections"></div></div>
-              </div>
+            <div class="headrow"><h2>🎼 Piano roll</h2><span class="help">Click an empty cell to add a note. Drag notes to move them, pull their right edge to resize, or right-click for an inline note editor.</span><button class="btn" id="addSection">＋ Section</button><button class="btn" id="clear">🗑 Clear armed</button></div>
+            <div class="arrangement-shell">
+              <div class="arrangement-spacer"></div>
+              <div class="arrangement-viewport" id="arrangementViewport"><div class="arrangement" id="arrangement"></div></div>
             </div>
+            <div class="roll-scroll" id="rollScroll"><div class="roll-grid"><div class="pitch-labels" id="labels"></div><div class="roll" id="roll"></div></div></div>
           </div>
           <div class="card">
             <div class="headrow"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. Keyboard input plays the armed track; Record writes notes to the grid.</span><select id="instrument" style="max-width:190px"></select></div>
@@ -56,10 +79,10 @@
       </div>
     </section>
 
-    <section class="view" id="create"><div class="card"><h2>✨ Create</h2><p class="placeholder">Working sound presets:</p><div class="presetgrid" id="presets"></div></div></section>
-    <section class="view" id="signal"><div class="card"><h2>〰️ Signal</h2><p class="placeholder">Continuous frequency signal mode returns in the next build.</p></div></section>
-    <section class="view" id="library"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library returns in the next build.</p></div></section>
-    <section class="view" id="analyse"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis connects to the existing Audio2MIDI workflow in the next build.</p></div></section>
+    <section class="view" id="createView"><div class="card"><h2>✨ Create sound</h2><p class="placeholder">These are the simple game/SFX synth presets from the screenshot: Coin, Magic Sparkle, Laser, Jump and Portal. They are separate from the sampled music instruments in Compose.</p><div class="presetgrid" id="presets"></div></div></section>
+    <section class="view" id="signalView"><div class="card"><h2>〰 Signal</h2><p class="placeholder">Continuous frequency signal mode returns in the next build.</p></div></section>
+    <section class="view" id="libraryView"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library and permanent imported-audio storage are the next library pass.</p></div></section>
+    <section class="view" id="analyseView"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis will connect to the existing Organon Audio2MIDI workflow in the next pass.</p></div></section>
   </main>
 
   <div class="note-popover" id="notePopover" hidden role="dialog" aria-label="Edit note">
@@ -67,10 +90,18 @@
     <label>Instrument<select id="noteMenuInstrument"></select></label>
     <label>Velocity<input id="noteMenuVelocity" type="number" min="1" max="127" step="1"></label>
     <label>Length beats<input id="noteMenuLength" type="number" min="0.125" max="64" step="0.125"></label>
-    <div class="note-menu-actions"><button class="btn primary" id="noteMenuApply">Apply</button><button class="btn danger" id="noteMenuDelete">Delete</button><button class="btn close" id="noteMenuClose">Close</button></div>
+    <div class="note-menu-actions"><button class="btn primary" id="noteMenuApply">Apply</button><button class="btn danger" id="noteMenuDelete">Delete</button><button class="btn" id="noteMenuClose">Close</button></div>
+  </div>
+
+  <div class="dialog-backdrop" id="projectDialogBackdrop" hidden>
+    <div class="project-dialog" role="dialog" aria-modal="true" aria-labelledby="projectDialogTitle">
+      <h3 id="projectDialogTitle">Replace composition?</h3>
+      <p id="projectDialogText"></p>
+      <div class="dialog-actions"><button class="btn primary" id="dialogSave">Save &amp; continue</button><button class="btn danger" id="dialogDiscard">Continue without saving</button><button class="btn" id="dialogCancel">Cancel</button></div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <script src="./standalone-v012.js"></script>
+  <script src="./standalone.js?v=0.13"></script>
 </body>
 </html>
