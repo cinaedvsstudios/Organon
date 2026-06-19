@@ -39,6 +39,10 @@ async function writeValue(key, value) {
   });
 }
 
+function desktopModeSelected() {
+  return document.documentElement.dataset.capsulariusMode === 'desktop';
+}
+
 export const persistence = {
   async load() {
     const [mounts, library, recents, workspace, googleDriveAccounts, mountVerification] = await Promise.all([
@@ -49,8 +53,12 @@ export const persistence = {
       readValue('google-drive-accounts', []),
       readValue('mount-verification', {})
     ]);
+    const desktopMode = desktopModeSelected();
+    const compatibleMounts = Array.isArray(mounts)
+      ? mounts.filter((mount) => desktopMode ? Boolean(mount?.nativePath) : !mount?.nativePath)
+      : [];
     return {
-      mounts: Array.isArray(mounts) ? mounts : [],
+      mounts: compatibleMounts,
       library: Array.isArray(library) ? library : [],
       recents: Array.isArray(recents) ? recents : [],
       workspace: workspace && typeof workspace === 'object' ? workspace : null,
