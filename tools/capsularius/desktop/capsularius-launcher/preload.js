@@ -8,5 +8,6 @@ contextBridge.exposeInMainWorld('capsulariusDesktop', Object.freeze({
   resolveChild: (parentPath, name, kind, create) => ipcRenderer.invoke('capsularius:resolve-child', parentPath, name, kind, Boolean(create)),
   removeEntry: (parentPath, name, recursive) => ipcRenderer.invoke('capsularius:remove-entry', parentPath, name, Boolean(recursive)),
   readFile: (nativePath) => ipcRenderer.invoke('capsularius:read-file', nativePath),
-  writeFile: (nativePath, bytes) => ipcRenderer.invoke('capsularius:write-file', nativePath, bytes)
+  writeFile: (nativePath, bytes) => ipcRenderer.invoke('capsularius:write-file', nativePath, bytes),
+  setZoomFactor: (factor) => ipcRenderer.invoke('capsularius:set-zoom-factor', factor)
 }));
