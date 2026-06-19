@@ -4,14 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.28 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone.css?v=0.22">
-  <link rel="stylesheet" href="./standalone-v023.css?v=0.23">
-  <link rel="stylesheet" href="./standalone-v028.css?v=0.28">
+  <title>Ihy v0.29 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone-v029.css?v=0.29">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.28</div></div>
+    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.29</div></div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
       <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
@@ -46,7 +44,7 @@
             <div class="control-grid"><button class="btn" id="quickBass" type="button">＋ Bass</button><button class="btn" id="quickMotif" type="button">＋ Motif</button></div>
             <div class="section-label">Transport</div>
             <div class="transport-grid"><button class="btn" id="record">⏺ Record</button><button class="btn" id="stop">⏹ Stop</button></div>
-            <p class="status" id="status">v0.28 — one controller for playback, clear and import.</p>
+            <p class="status" id="status">v0.29 — add, select, group and note-menu editing.</p>
           </div>
           <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
         </aside>
@@ -56,11 +54,11 @@
             <div class="piano-toolbar">
               <h2>🎼 Piano roll</h2>
               <div class="piano-actions">
-                <div class="piano-tool-buttons" aria-label="Unassigned piano-roll tools">
-                  <button class="btn piano-tool-button" id="toolMusic" type="button" aria-label="Unassigned music tool">🎶</button>
-                  <button class="btn piano-tool-button" id="toolPointer" type="button" aria-label="Unassigned pointer tool">👆</button>
-                  <button class="btn piano-tool-button" id="toolJoin" type="button" aria-label="Unassigned join tool">🫱🏻‍🫲🏽</button>
-                  <button class="btn piano-tool-button" id="toolDrop" type="button" aria-label="Unassigned drop tool">🫳🏽</button>
+                <div class="piano-tool-buttons" aria-label="Piano roll edit modes">
+                  <button class="btn piano-tool-button tool-active" id="toolMusic" type="button" title="Add notes">🎶</button>
+                  <button class="btn piano-tool-button" id="toolPointer" type="button" title="Select notes">👆</button>
+                  <button class="btn piano-tool-button" id="toolJoin" type="button" title="Group or ungroup selected notes">🫱🏻‍🫲🏽</button>
+                  <button class="btn piano-tool-button" id="toolTrash" type="button" title="Delete selected notes">🗑️</button>
                 </div>
                 <button class="btn" id="play">▶ Play</button>
                 <span class="transport-time" id="transportTime">0:00 / 0:42</span>
@@ -78,9 +76,17 @@
     </section>
   </main>
 
+  <menu class="note-menu" id="noteMenu" hidden aria-label="Note edit menu">
+    <button type="button" data-note-action="copy">Copy</button>
+    <button type="button" data-note-action="cut">Cut</button>
+    <button type="button" data-note-action="paste" id="menuPaste">Paste</button>
+    <button type="button" data-note-action="duplicate">Duplicate</button>
+    <button type="button" data-note-action="delete" class="danger">Delete</button>
+  </menu>
+
   <div class="analysis-modal" id="analysisModal" hidden role="dialog" aria-modal="true" aria-labelledby="analysisTitle"><section class="analysis-dialog"><h3 id="analysisTitle">🔎 Open project analysis</h3><div id="analysisDetails"></div><button class="btn primary" id="analysisClose" type="button">Close</button></section></div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <script src="./standalone.js?v=0.28"></script>
+  <script src="./standalone-v029.js?v=0.29"></script>
 </body>
 </html>
