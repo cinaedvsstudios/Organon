@@ -1,1 +1,0 @@
-Capsularius Desktop launcher files belong inside tools/capsularius.
