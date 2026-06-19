@@ -1,5 +1,6 @@
 import { ArchiveService } from './archive-service.js';
 import { installArchiveWorkspace } from './archive-workspace.js';
+import { chooseDesktopDirectory, restoreDesktopDirectory } from './desktop-handles.js';
 import { makeId, queryDirectoryPermission, requestDirectoryPermission } from './filesystem.js';
 import { installFolderDrop } from './folder-drop.js';
 import { promptMountLabel } from './mount-dialog.js';
@@ -7,6 +8,7 @@ import { createMountService } from './mount-service.js';
 import { OperationManager, directoryForSource } from './operations.js';
 import { createOperationUi } from './operation-ui.js';
 import { persistence } from './persistence.js';
+import { chooseFilesystemMode } from './runtime-mode.js';
 import { createLibraryEntry, createState, librarySource, makeWindowRecord, physicalSource, sourceKey, sourcePathLabel, sourceTitle, windowSnapshot } from './state.js';
 import { installTree } from './tree.js';
 import { installWorkspaceUi } from './workspace-ui.js';
@@ -20,6 +22,7 @@ let archives;
 let mountService;
 let clipboard = null;
 let saveTimer = null;
+let filesystemMode = 'browser';
 
 function toast(message, type = 'info') {
   const template = document.getElementById('toast-template');
@@ -32,7 +35,9 @@ function toast(message, type = 'info') {
 }
 
 function serialiseMount(mount) {
-  return { id:mount.id, handle:mount.handle, name:mount.name, nickname:mount.nickname, colour:mount.colour, createdAt:mount.createdAt, lastOpenedAt:mount.lastOpenedAt, health:mount.health || 'unknown', healthDetail:mount.healthDetail || '' };
+  const saved = { id:mount.id, name:mount.name, nickname:mount.nickname, colour:mount.colour, createdAt:mount.createdAt, lastOpenedAt:mount.lastOpenedAt, health:mount.health || 'unknown', healthDetail:mount.healthDetail || '' };
+  if (mount.nativePath) return { ...saved, nativePath:mount.nativePath };
+  return { ...saved, handle:mount.handle };
 }
 
 function workspaceSnapshot() {
@@ -66,7 +71,18 @@ function openSource(source, options = {}) {
 async function restoreState() {
   const saved = await persistence.load();
   for (const raw of saved.mounts) {
-    if (!raw?.id || !raw?.handle) continue;
+    if (!raw?.id) continue;
+    if (raw.nativePath) {
+      if (filesystemMode !== 'desktop') continue;
+      try {
+        const handle = await restoreDesktopDirectory(raw.nativePath);
+        state.mounts.set(raw.id,{ ...raw, handle, nativePath:handle.nativePath, permission:'granted', health:'connected', healthDetail:'Desktop folder opens normally.' });
+      } catch (_) {
+        /* The folder was removed, disconnected, or is no longer available under this Windows account. */
+      }
+      continue;
+    }
+    if (!raw.handle) continue;
     let permission = 'denied';
     try { permission = await queryDirectoryPermission(raw.handle); } catch (_) { /* browser no longer recognises the handle */ }
     state.mounts.set(raw.id,{ ...raw, permission, health:permission === 'granted' ? 'connected' : 'permission-required' });
@@ -83,6 +99,7 @@ async function restoreState() {
     const specialWindows = new Set();
     for (const snapshot of Array.isArray(saved.workspace.windows) ? saved.workspace.windows : []) {
       if (!snapshot?.source) continue;
+      if (snapshot.source.kind === 'physical' && !state.mounts.has(snapshot.source.mountId)) continue;
       if ((snapshot.source.kind === 'library' || snapshot.source.kind === 'recents') && specialWindows.has(snapshot.source.kind)) continue;
       if (snapshot.source.kind === 'library' || snapshot.source.kind === 'recents') specialWindows.add(snapshot.source.kind);
       const record = makeWindowRecord(state,snapshot.source,snapshot);
@@ -95,18 +112,34 @@ async function restoreState() {
 }
 
 async function mountFolder() {
-  if (!('showDirectoryPicker' in window)) return toast('This browser cannot mount local folders. Open Capsularius in Chrome or Edge.','error');
-  try { await mountService.mountDirectory(await window.showDirectoryPicker({ mode:'readwrite' }),{ source:'picker' }); }
-  catch (error) { if (error?.name !== 'AbortError') toast('Capsularius could not mount that folder.','error'); }
+  try {
+    if (filesystemMode === 'desktop') {
+      const handle = await chooseDesktopDirectory();
+      if (handle) await mountService.mountDirectory(handle,{ source:'desktop' });
+      return;
+    }
+    if (!('showDirectoryPicker' in window)) return toast('This browser cannot mount local folders. Open Capsularius in Chrome or Edge.','error');
+    await mountService.mountDirectory(await window.showDirectoryPicker({ mode:'readwrite' }),{ source:'picker' });
+  } catch (error) {
+    if (error?.name !== 'AbortError') {
+      console.error(error);
+      toast(filesystemMode === 'desktop' ? 'Capsularius could not mount that Windows folder.' : 'Capsularius could not mount that folder.','error');
+    }
+  }
 }
 
 async function reopenPermission(mountId, windowRecord) {
   const mount = state.mounts.get(mountId);
   if (!mount) return toast('This mounted folder is no longer available.','error');
   try {
-    mount.permission = await requestDirectoryPermission(mount.handle);
+    if (filesystemMode === 'desktop' && mount.nativePath) {
+      mount.handle = await restoreDesktopDirectory(mount.nativePath);
+      mount.permission = 'granted';
+    } else {
+      mount.permission = await requestDirectoryPermission(mount.handle);
+    }
     if (mount.permission !== 'granted') return toast('Folder access was not granted.','error');
-    mount.health='connected';mount.healthDetail='Folder opens normally.';
+    mount.health='connected';mount.healthDetail=filesystemMode === 'desktop' ? 'Desktop folder opens normally.' : 'Folder opens normally.';
     await workspace.loadWindow(windowRecord);
     scheduleSave();
   } catch (error) { console.error(error); toast('Capsularius could not reconnect that folder.','error'); }
@@ -253,7 +286,11 @@ function bindControls() {
 }
 
 async function boot() {
-  installFolderDrop(Workspace,async(handle,targetWindow)=>mountService.mountDirectory(handle,{ targetWindow, source:'drop' }));
+  filesystemMode = await chooseFilesystemMode();
+  installFolderDrop(Workspace,async(handle,targetWindow)=>{
+    if (filesystemMode === 'desktop') return toast('Use Mount to choose a Windows folder in Desktop mode.');
+    return mountService.mountDirectory(handle,{ targetWindow, source:'drop' });
+  });
   installTree(Workspace);
   installWorkspaceUi(Workspace);
   installArchiveWorkspace(Workspace);
