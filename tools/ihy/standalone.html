@@ -4,30 +4,36 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.45 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.46 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
-  <link rel="stylesheet" href="./feedback.css?v=0.45">
+  <link rel="stylesheet" href="./feedback.css?v=0.46">
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <img class="brand-icon" src="./icon.png" alt="Ihy">
       <strong>Ihy</strong>
-      <span class="version-pill">v0.45</span>
+      <span class="version-pill">v0.46</span>
     </div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
-      <label class="field bpm-field"><span>BPM</span><input id="bpm" type="number" min="30" max="260" value="92"></label>
-      <label class="field key-field"><span>Key</span><select id="projectKey">
-        <option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option>
-      </select></label>
-      <label class="field"><span>Chord mode</span><button id="chordMode" class="toggle" type="button" aria-pressed="false">♫ Chord</button></label>
-      <label class="field armed-field"><span>Armed track</span><select id="armedTrack"></select></label>
-      <label class="field quant-field"><span>Quantise</span><select id="quantise">
-        <option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option>
-      </select></label>
-      <label class="field transpose-field"><span>Transpose</span><input id="transpose" type="number" min="-24" max="24" value="0"></label>
+      <div class="header-transport" aria-label="Editor and playback controls">
+        <div class="tool-set" aria-label="Piano roll tools">
+          <button class="button tool active" id="toolAdd" type="button" title="Add notes">🎶</button>
+          <button class="button tool" id="undo" type="button" title="Undo">↶</button>
+          <button class="button tool" id="redo" type="button" title="Redo">↷</button>
+          <button class="button tool" id="toolSelect" type="button" title="Select notes">👆</button>
+          <button class="button tool" id="groupSelection" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button>
+          <button class="button tool" id="deleteSelection" type="button" title="Delete selection">🗑️</button>
+        </div>
+        <button class="button play" id="playPause" type="button">▶ Play</button>
+        <button class="button stop" id="stopPlayback" type="button">⏹ Stop</button>
+        <output id="transportTime" class="transport-time">0:00 / 0:42</output>
+        <button class="button" id="addSection" type="button">＋ Section</button>
+        <label class="zoom"><span>Zoom</span><input id="zoomRange" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></label>
+        <button class="button tool" id="dragMute" type="button" title="Mute note audition while dragging">🔊</button>
+      </div>
     </div>
   </header>
 
@@ -51,6 +57,20 @@
           <button class="button" id="quickBass" type="button">＋ Bass</button>
           <button class="button" id="quickMotif" type="button">＋ Motif</button>
         </div>
+        <p class="section-label">Project settings</p>
+        <div class="control-settings-grid">
+          <label class="field field-wide"><span>Instrument</span><select id="instrument" aria-label="Track instrument"></select></label>
+          <label class="field"><span>BPM</span><input id="bpm" type="number" min="30" max="260" value="92"></label>
+          <label class="field"><span>Key</span><select id="projectKey">
+            <option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option>
+          </select></label>
+          <label class="field"><span>Chord mode</span><button id="chordMode" class="toggle" type="button" aria-pressed="false">♫ Chord</button></label>
+          <label class="field"><span>Armed track</span><select id="armedTrack"></select></label>
+          <label class="field"><span>Quantise</span><select id="quantise">
+            <option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option>
+          </select></label>
+          <label class="field"><span>Transpose</span><input id="transpose" type="number" min="-24" max="24" value="0"></label>
+        </div>
         <p id="status" class="status" aria-live="polite"></p>
       </section>
 
@@ -65,31 +85,11 @@
 
     <section class="editor">
       <section class="panel piano-panel">
-        <div class="piano-toolbar">
-          <h2>🎼 Piano roll</h2>
-          <div class="toolbar-actions">
-            <div class="tool-set" aria-label="Piano roll tools">
-              <button class="button tool active" id="toolAdd" type="button" title="Add notes">🎶</button>
-              <button class="button tool" id="undo" type="button" title="Undo">↶</button>
-              <button class="button tool" id="redo" type="button" title="Redo">↷</button>
-              <button class="button tool" id="toolSelect" type="button" title="Select notes">👆</button>
-              <button class="button tool" id="groupSelection" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button>
-              <button class="button tool" id="deleteSelection" type="button" title="Delete selection">🗑️</button>
-            </div>
-            <button class="button play" id="playPause" type="button">▶ Play</button>
-            <button class="button stop" id="stopPlayback" type="button">⏹ Stop</button>
-            <output id="transportTime" class="transport-time">0:00 / 0:42</output>
-            <button class="button" id="addSection" type="button">＋ Section</button>
-            <label class="zoom"><span>Zoom</span><input id="zoomRange" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></label>
-            <button class="button tool" id="dragMute" type="button" title="Mute note audition while dragging">🔊</button>
-          </div>
-        </div>
-
+        <div class="piano-toolbar"><h2>🎼 Piano roll</h2></div>
         <div class="timeline-shell">
           <div class="timeline-key">TIME</div>
           <div id="timelineViewport" class="timeline-viewport"><div id="timeline" class="timeline"></div></div>
         </div>
-
         <div id="rollResizeShell" class="resizable-shell roll-resize-shell">
           <div id="rollScroll" class="roll-scroll">
             <div class="roll-grid">
@@ -104,8 +104,7 @@
       <section class="panel">
         <div class="panel-heading keyboard-heading">
           <h2>⌨️ Keyboard</h2>
-          <span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. The instrument changes the armed track.</span>
-          <select id="instrument" class="instrument-select" aria-label="Track instrument"></select>
+          <span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note.</span>
         </div>
         <div id="keyboardResizeShell" class="resizable-shell keyboard-resize-shell">
           <div id="keyboardWrap" class="piano-wrap"><div id="piano" class="piano"></div></div>
@@ -151,9 +150,7 @@
   <div id="renameModal" class="modal-layer" hidden>
     <section class="modal">
       <header class="modal-header"><h3>Rename track</h3><span>⠿</span></header>
-      <div class="modal-body">
-        <label class="modal-field">Track name<input id="renameInput" maxlength="60"></label>
-      </div>
+      <div class="modal-body"><label class="modal-field">Track name<input id="renameInput" maxlength="60"></label></div>
       <footer class="modal-footer"><button class="button" data-close="renameModal" type="button">Cancel</button><button class="button primary" id="renameConfirm" type="button">OK</button></footer>
     </section>
   </div>

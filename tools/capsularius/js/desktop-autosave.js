@@ -1,4 +1,3 @@
-import './restore-special-windows.js';
 import { persistence } from './persistence.js';
 
 function saveNow(workspace) {

@@ -96,12 +96,9 @@ async function restoreState() {
     state.workspace.panY = Number(saved.workspace.panY) || 0;
     state.currentColourIndex = Math.max(0,Number(saved.workspace.currentColourIndex) || 0);
     workspace.applyWorkspaceTransform();
-    const specialWindows = new Set();
     for (const snapshot of Array.isArray(saved.workspace.windows) ? saved.workspace.windows : []) {
       if (!snapshot?.source) continue;
       if (snapshot.source.kind === 'physical' && !state.mounts.has(snapshot.source.mountId)) continue;
-      if ((snapshot.source.kind === 'library' || snapshot.source.kind === 'recents') && specialWindows.has(snapshot.source.kind)) continue;
-      if (snapshot.source.kind === 'library' || snapshot.source.kind === 'recents') specialWindows.add(snapshot.source.kind);
       const record = makeWindowRecord(state,snapshot.source,snapshot);
       record.id = Number(snapshot.id) || state.nextWindowId++;
       state.nextWindowId = Math.max(state.nextWindowId,record.id + 1);
