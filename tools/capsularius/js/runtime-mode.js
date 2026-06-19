@@ -2,6 +2,11 @@ export function desktopRuntimeAvailable() {
   return Boolean(window.capsulariusDesktop?.isDesktop);
 }
 
+function applyModeBadge() {
+  const badge = document.querySelector('.app-badge');
+  if (badge) badge.textContent = 'v0.37.0 — Dual Filesystem';
+}
+
 export function chooseFilesystemMode() {
   return new Promise((resolve) => {
     const template = document.getElementById('runtime-mode-template');
@@ -18,6 +23,7 @@ export function chooseFilesystemMode() {
     const choose = (mode) => {
       dialog.remove();
       document.documentElement.dataset.capsulariusMode = mode;
+      applyModeBadge();
       resolve(mode);
     };
 
