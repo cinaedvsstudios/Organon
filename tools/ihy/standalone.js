@@ -3,7 +3,7 @@
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
-  const VERSION = '0.14';
+  const VERSION = '0.18';
   const GRID_MIN = 48;
   const GRID_MAX = 84;
   const MIN_PIANO = 36;
@@ -40,6 +40,7 @@
   const noteName = pitch => `${NAMES[pitch % 12]}${Math.floor(pitch / 12) - 1}`;
   const makeNote = (start, pitch, duration = 1, velocity = 92) => ({ id: uid(), start, pitch, duration, velocity, instrument: null });
   const getInstrumentName = id => (INSTRUMENTS.find(item => item[0] === id) || [id, id])[1];
+  const displayScale = () => Math.max(.7, Number(document.documentElement.dataset.ihyRollScale || 1));
 
   function blankProject() {
     return { title: 'Untitled cue', bpm: 92, key: 'D minor', sections: [], source: null, tracks: [{ id: uid(), name: 'Piano', instrument: 'grand_piano', color: COLORS[0], muted: false, solo: false, notes: [] }] };
@@ -56,7 +57,7 @@
   }
 
   let project;
-  try { project = normaliseProject(JSON.parse(localStorage.getItem('ihy-v014') || localStorage.getItem('ihy-v013') || localStorage.getItem('ihy-v012') || 'null')); }
+  try { project = normaliseProject(JSON.parse(localStorage.getItem('ihy-v018') || localStorage.getItem('ihy-v014') || localStorage.getItem('ihy-v013') || localStorage.getItem('ihy-v012') || 'null')); }
   catch (_) { project = blankProject(); }
 
   let activeTrackId = project.tracks[0].id;
@@ -103,7 +104,7 @@
 
   function updateMeta() { project.title = $('#title').value || project.title; project.bpm = Number($('#bpm').value) || 92; project.key = $('#key').value; }
   function snapshot() { updateMeta(); return JSON.stringify(project); }
-  function setStatus(message, timeout = 3400) { $('#status').textContent = message; clearTimeout(setStatus.timer); if (timeout) setStatus.timer = setTimeout(() => { $('#status').textContent = 'v0.14 — MIDI import, main-track ruler and clean header.'; }, timeout); }
+  function setStatus(message, timeout = 3400) { $('#status').textContent = message; clearTimeout(setStatus.timer); if (timeout) setStatus.timer = setTimeout(() => { $('#status').textContent = ''; }, timeout); }
   function setView(name) { $$('.view').forEach(view => view.classList.toggle('active', view.id === `${name}View`)); }
 
   function ensureAudio() {
@@ -183,7 +184,7 @@
     if (arrangement) arrangement.style.left = left;
     if (follow) {
       const scroll = $('#rollScroll');
-      const target = playheadBeat * beatWidth;
+      const target = playheadBeat * beatWidth * displayScale();
       if (target > scroll.scrollLeft + scroll.clientWidth - 120) scroll.scrollLeft = Math.max(0, target - scroll.clientWidth * .35);
     }
   }
@@ -325,8 +326,8 @@
 
   function createAt(event) {
     const box = $('#roll').getBoundingClientRect();
-    const start = snap(clamp((event.clientX - box.left) / beatWidth, 0, projectLength() - .125));
-    const pitch = clamp(GRID_MAX - Math.floor((event.clientY - box.top) / ROW), GRID_MIN, GRID_MAX);
+    const start = snap(clamp((event.clientX - box.left) / (beatWidth * displayScale()), 0, projectLength() - .125));
+    const pitch = clamp(GRID_MAX - Math.floor((event.clientY - box.top) / (ROW * displayScale())), GRID_MIN, GRID_MAX);
     const track = getTrack(activeTrackId);
     const notes = (chordMode ? chordFor(pitch) : [pitch]).map(value => makeNote(start, value));
     track.notes.push(...notes);
@@ -351,7 +352,7 @@
   function applyNoteMenu() { if (!noteMenuRef) return; const note = noteMenuRef.note; note.instrument = $('#noteMenuInstrument').value || null; note.velocity = clamp(Number($('#noteMenuVelocity').value) || 92, 1, 127); note.duration = clamp(snap(Number($('#noteMenuLength').value) || 1), .125, projectLength() - note.start); selected = noteMenuRef; closeNoteMenu(); renderRoll(); setStatus('Note updated.'); }
   function deleteMenuNote() { if (!noteMenuRef) return; noteMenuRef.track.notes = noteMenuRef.track.notes.filter(note => note.id !== noteMenuRef.note.id); selected = null; closeNoteMenu(); renderRoll(); setStatus('Note deleted.'); }
 
-  function saveProject(silent = false) { updateMeta(); localStorage.setItem('ihy-v014', JSON.stringify(project)); savedSnapshot = snapshot(); if (!silent) setStatus(`Saved “${project.title}” locally.`); }
+  function saveProject(silent = false) { updateMeta(); localStorage.setItem('ihy-v018', JSON.stringify(project)); savedSnapshot = snapshot(); if (!silent) setStatus(`Saved “${project.title}” locally.`); }
   function exportProject() { saveProject(true); const url = URL.createObjectURL(new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' })); const link = document.createElement('a'); link.href = url; link.download = `${(project.title || 'ihy-project').replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.ihy.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000); setStatus('Exported editable Ihy JSON.'); }
 
   function gmInstrument(program, channel) {
@@ -492,7 +493,7 @@
     requestReplace('Load Potion Song example?', 'Your current composition will be replaced by the supplied piano MIDI example. Would you like to save it first?', async () => {
       setStatus('Loading Potion Song MIDI example…', 0);
       try {
-        const response = await fetch('./examples/potion_song_all_piano_v7.mid?v=0.14', { cache: 'no-store' });
+        const response = await fetch('./examples/potion_song_all_piano_v7.mid?v=0.18', { cache: 'no-store' });
         if (!response.ok) throw new Error('The built-in MIDI file could not be read.');
         project = normaliseProject(parseMidi(await response.arrayBuffer(), 'Potion Song — Piano Example.mid'));
         project.title = 'Potion Song — Piano Example';
@@ -525,6 +526,14 @@
   $('#chordToggle').addEventListener('click', () => { chordMode = !chordMode; localStorage.setItem('ihy-chord-mode', String(chordMode)); renderHeader(); setStatus(chordMode ? `Chord mode on — ${$('#key').value} triads.` : 'Chord mode off — clicks add one note.'); });
   $('#key').addEventListener('change', () => { project.key = $('#key').value; renderHeader(); });
   $('#armed').addEventListener('change', event => { activeTrackId = event.target.value; selected = null; closeNoteMenu(); renderTracks(); renderRoll(); });
+  $('#instrument').addEventListener('change', event => {
+    const track = getTrack(activeTrackId);
+    if (!track) return;
+    track.instrument = event.target.value;
+    renderTracks();
+    setStatus(`${track.name} now uses ${getInstrumentName(track.instrument)}.`);
+  });
+  $('#quickAdd').addEventListener('click', () => setStatus('Quick add is the next composition pass.'));
 
   $('#tracks').addEventListener('click', event => {
     const button = event.target.closest('button'); if (!button) return;
@@ -549,8 +558,8 @@
   });
   $('#roll').addEventListener('pointermove', event => {
     if (!noteDrag) return;
-    const dx = (event.clientX - noteDrag.x) / beatWidth;
-    const dy = Math.round((event.clientY - noteDrag.y) / ROW);
+    const dx = (event.clientX - noteDrag.x) / (beatWidth * displayScale());
+    const dy = Math.round((event.clientY - noteDrag.y) / (ROW * displayScale()));
     if (noteDrag.mode === 'resize') noteDrag.ref.note.duration = clamp(snap(noteDrag.duration + dx), .125, projectLength() - noteDrag.ref.note.start);
     else { noteDrag.ref.note.start = clamp(snap(noteDrag.start + dx), 0, projectLength() - noteDrag.ref.note.duration); noteDrag.ref.note.pitch = clamp(noteDrag.pitch - dy, GRID_MIN, GRID_MAX); }
     renderRoll();
@@ -569,7 +578,7 @@
 
   $('#piano').addEventListener('pointerdown', event => { const key = event.target.closest('.key'); if (key) playImmediate(Number(key.dataset.pitch), pressed.has(' ') ? 1.35 : .5); });
   $('#record').addEventListener('click', () => { recording = !recording; recordStartedAt = performance.now(); $('#record').classList.toggle('on', recording); $('#record').textContent = recording ? '⏺ Recording' : '⏺ Record'; setStatus(recording ? 'Recording keyboard notes.' : 'Recording stopped.'); });
-  $('#metro').addEventListener('click', () => { metronome = !metronome; $('#metro').classList.toggle('on', metronome); setStatus(metronome ? 'Metronome enabled.' : 'Metronome disabled.'); });
+  $('#metro').addEventListener('click', () => { metronome = !metronome; $('#metro').classList.toggle('on', metronome); $('#metro').setAttribute('aria-pressed', String(metronome)); setStatus(metronome ? 'Metronome enabled.' : 'Metronome disabled.'); });
   $('#play').addEventListener('click', playProject);
   $('#stop').addEventListener('click', () => { stopPlayback(false); setStatus('Playback stopped.'); });
   $('#presets').addEventListener('click', event => { const button = event.target.closest('[data-preset]'); if (!button) return; const [name, pitch] = PRESETS[Number(button.dataset.preset)]; const audio = ensureAudio(); if (audio) synth('retro_lead', pitch, 96, .28, audio.currentTime); setStatus(`${name} synth preset previewed.`); });
