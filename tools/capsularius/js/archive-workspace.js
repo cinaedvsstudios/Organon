@@ -57,6 +57,7 @@ export function installArchiveWorkspace(Workspace) {
     } finally {
       record.loading = false;
       this.renderWindow(record);
+      if (!record.error) this.queueMetadata?.(record);
     }
   };
 
@@ -138,7 +139,7 @@ export function installArchiveWorkspace(Workspace) {
       const selected = this.getSelectedEntries(record);
       const copy = menu.querySelector('[data-command="copy"]');
       if (copy) { copy.disabled = selected.length === 0; copy.textContent = '📂 Copy selected to folder'; }
-      ['cut','rename','delete','add-to-library'].forEach((command)=>{
+      ['cut','rename','delete','add-to-library','duplicate-file'].forEach((command)=>{
         const item = menu.querySelector(`[data-command="${command}"]`);
         if (item) item.hidden = true;
       });
