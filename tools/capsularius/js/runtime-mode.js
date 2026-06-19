@@ -1,3 +1,5 @@
+import { restoreUiZoom } from './ui-zoom.js';
+
 export function desktopRuntimeAvailable() {
   return Boolean(window.capsulariusDesktop?.isDesktop);
 }
@@ -20,15 +22,16 @@ export function chooseFilesystemMode() {
     desktopButton.setAttribute('aria-label', desktopButton.title);
     dialog.querySelector('[data-desktop-unavailable]').hidden = desktopAvailable;
 
-    const choose = (mode) => {
-      dialog.remove();
+    const choose = async (mode) => {
       document.documentElement.dataset.capsulariusMode = mode;
       applyModeBadge();
+      try { await restoreUiZoom(); } catch (_) { /* The current session can continue at the default zoom. */ }
+      dialog.remove();
       resolve(mode);
     };
 
-    browserButton.addEventListener('click', () => choose('browser'));
-    desktopButton.addEventListener('click', () => choose('desktop'));
+    browserButton.addEventListener('click', () => { void choose('browser'); });
+    desktopButton.addEventListener('click', () => { void choose('desktop'); });
     document.getElementById('dialog-layer').append(dialog);
     (desktopAvailable ? desktopButton : browserButton).focus();
   });
