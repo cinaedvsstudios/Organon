@@ -143,10 +143,10 @@ async function recordRecent(source) {
   if (!mount) return;
   const key = sourceKey(source);
   const next = {
-    id: makeId('recent'), mountId: source.mountId, pathSegments: [...source.pathSegments],
-    name: sourceTitle(state, source), colour: mount.colour, lastOpenedAt: Date.now(), key
+    id: makeId('recent'), mountId:source.mountId, pathSegments:[...source.pathSegments],
+    name:sourceTitle(state,source), colour:mount.colour, lastOpenedAt:Date.now(), key
   };
-  state.recents = [next, ...state.recents.filter((entry) => entry.key !== key)].slice(0, 10);
+  state.recents = [next,...state.recents.filter((entry)=>entry.key !== key)].slice(0,10);
   workspace.refreshSpecialWindows?.();
   scheduleSave();
 }
@@ -159,38 +159,42 @@ function showLibraryDialog(windowRecord, source = windowRecord.source) {
   const name = dialog.querySelector('[data-library-name]');
   const emoji = dialog.querySelector('[data-library-emoji]');
   const colour = dialog.querySelector('[data-library-colour]');
-  dialog.querySelector('[data-library-location]').textContent = sourcePathLabel(state, source);
-  name.value = sourceTitle(state, source); emoji.value = '📁'; colour.value = mount.colour;
+  dialog.querySelector('[data-library-location]').textContent = sourcePathLabel(state,source);
+  name.value = sourceTitle(state,source); emoji.value='📁'; colour.value=mount.colour;
   const close = () => dialog.remove();
-  dialog.querySelectorAll('[data-library-cancel]').forEach((button) => button.addEventListener('click', close));
-  dialog.querySelector('[data-library-confirm]').addEventListener('click', () => {
-    const key = sourceKey(source);
-    const entry = createLibraryEntry(source, { name:name.value.trim() || sourceTitle(state,source), emoji:emoji.value.trim() || '📁', colour:colour.value || mount.colour });
-    const existing = state.library.findIndex((item) => sourceKey(physicalSource(item.mountId,item.pathSegments)) === key);
-    if (existing === -1) state.library.push(entry);
+  dialog.querySelectorAll('[data-library-cancel]').forEach((button)=>button.addEventListener('click',close));
+  dialog.querySelector('[data-library-confirm]').addEventListener('click',()=>{
+    const key=sourceKey(source);
+    const entry=createLibraryEntry(source,{ name:name.value.trim() || sourceTitle(state,source), emoji:emoji.value.trim() || '📁', colour:colour.value || mount.colour });
+    const existing=state.library.findIndex((item)=>sourceKey(physicalSource(item.mountId,item.pathSegments)) === key);
+    if(existing===-1)state.library.push(entry);
     else state.library.splice(existing,1,{...entry,id:state.library[existing].id,addedAt:state.library[existing].addedAt});
-    workspace.refreshSpecialWindows(); scheduleSave(); close(); toast(existing === -1 ? `Added ${entry.name} to Library.` : `Updated ${entry.name} in Library.`, 'success');
+    workspace.refreshSpecialWindows();scheduleSave();close();toast(existing===-1?`Added ${entry.name} to Library.`:`Updated ${entry.name} in Library.`,'success');
   });
   document.getElementById('dialog-layer').append(dialog);
-  setTimeout(() => name.focus(), 0);
+  setTimeout(()=>name.focus(),0);
 }
 
 function hasAccess(record) {
   return record?.source?.kind === 'physical' && state.mounts.get(record.source.mountId)?.permission === 'granted';
 }
 
+async function parentDirectoryFor(record) {
+  return directoryForSource(state,record.source);
+}
+
 async function runTransfer(sourceWindow, targetWindow, entries, mode) {
   if (!entries.length) return toast('Select at least one item first.', 'error');
   if (!hasAccess(sourceWindow) || !hasAccess(targetWindow)) return toast('Reconnect both folders before changing files.', 'error');
-  await operations.copyOrMove({
+  return operations.copyOrMove({
     mode, entries,
-    sourceDirectory: await directoryForSource(state, sourceWindow.source),
-    targetDirectory: await directoryForSource(state, targetWindow.source),
-    sourceLabel: sourceTitle(state, sourceWindow.source),
-    targetLabel: sourceTitle(state, targetWindow.source),
-    sourcePathSegments: sourceWindow.source.pathSegments,
-    targetPathSegments: targetWindow.source.pathSegments,
-    sameMount: sourceWindow.source.mountId === targetWindow.source.mountId
+    sourceDirectory:await parentDirectoryFor(sourceWindow),
+    targetDirectory:await parentDirectoryFor(targetWindow),
+    sourceLabel:sourceTitle(state,sourceWindow.source),
+    targetLabel:sourceTitle(state,targetWindow.source),
+    sourcePathSegments:sourceWindow.source.pathSegments,
+    targetPathSegments:targetWindow.source.pathSegments,
+    sameMount:sourceWindow.source.mountId === targetWindow.source.mountId
   });
 }
 
@@ -200,29 +204,38 @@ async function handleCommand(command, payload) {
   if (command === 'transfer') return runTransfer(sourceWindow,targetWindow,entries,mode);
   if (command === 'copy' || command === 'cut') {
     if (!hasAccess(windowRecord) || !entries.length) return toast('Select real folder items first.', 'error');
-    clipboard = { mode: command === 'cut' ? 'move' : 'copy', entries:[...entries], sourceWindow };
+    clipboard = { mode:command === 'cut' ? 'move' : 'copy', entries:[...entries], sourceWindow };
     return toast(`${command === 'cut' ? 'Cut' : 'Copied'} ${entries.length} item${entries.length === 1 ? '' : 's'}. Choose a destination and paste.`);
   }
   if (command === 'paste') {
     if (!clipboard) return toast('Nothing is waiting to be pasted.', 'error');
     if (!hasAccess(windowRecord)) return toast('Open a real destination folder first.', 'error');
-    await runTransfer(clipboard.sourceWindow,windowRecord,clipboard.entries,clipboard.mode);
-    if (clipboard.mode === 'move') clipboard = null;
-    return;
+    const result = await runTransfer(clipboard.sourceWindow,windowRecord,clipboard.entries,clipboard.mode);
+    if (clipboard.mode === 'move' && result) clipboard = null;
+    return result;
   }
   if (command === 'new-folder') {
     if (!hasAccess(windowRecord)) return toast('Open a real folder first.', 'error');
-    return operations.createFolder({ directoryHandle:await directoryForSource(state,windowRecord.source), label:sourceTitle(state,windowRecord.source) });
+    return operations.createFolder({ directoryHandle:await parentDirectoryFor(windowRecord), label:sourceTitle(state,windowRecord.source) });
   }
   if (command === 'rename') {
     if (!hasAccess(windowRecord) || entries.length !== 1) return toast('Select one real item to rename.', 'error');
-    return operations.rename({ entry:entries[0], parentDirectory:await directoryForSource(state,windowRecord.source), parentLabel:sourceTitle(state,windowRecord.source) });
+    return operations.rename({ entry:entries[0], parentDirectory:await parentDirectoryFor(windowRecord), parentLabel:sourceTitle(state,windowRecord.source) });
+  }
+  if (command === 'duplicate-file') {
+    if (!hasAccess(windowRecord) || entry?.kind !== 'file') return toast('Select one real file to duplicate.', 'error');
+    return operations.duplicate({ entry, parentDirectory:await parentDirectoryFor(windowRecord), parentLabel:sourceTitle(state,windowRecord.source) });
+  }
+  if (command === 'delete-file') {
+    if (!hasAccess(windowRecord) || entry?.kind !== 'file') return toast('Select one real file to delete.', 'error');
+    return operations.delete({ entries:[entry], parentDirectory:await parentDirectoryFor(windowRecord), parentLabel:sourceTitle(state,windowRecord.source) });
   }
   if (command === 'delete') {
     if (!hasAccess(windowRecord) || !entries.length) return toast('Select real folder items to delete.', 'error');
-    return operations.delete({ entries, parentDirectory:await directoryForSource(state,windowRecord.source), parentLabel:sourceTitle(state,windowRecord.source) });
+    return operations.delete({ entries, parentDirectory:await parentDirectoryFor(windowRecord), parentLabel:sourceTitle(state,windowRecord.source) });
   }
   if (command === 'add-to-library' && entry?.kind === 'directory') showLibraryDialog(windowRecord,physicalSource(windowRecord.source.mountId,[...windowRecord.source.pathSegments,entry.name]));
+  return false;
 }
 
 function bindControls() {
@@ -249,7 +262,7 @@ function bindControls() {
 }
 
 async function boot() {
-  installFolderDrop(Workspace, async (handle,targetWindow) => mountService.mountDirectory(handle,{targetWindow,source:'drop'}));
+  installFolderDrop(Workspace,async(handle,targetWindow)=>mountService.mountDirectory(handle,{targetWindow,source:'drop'}));
   installTree(Workspace);
   installWorkspaceUi(Workspace);
   workspace = new Workspace({ state,onStateChange:scheduleSave,onLocationOpened:recordRecent,onRequestPermission:reopenPermission,onAddToLibrary:showLibraryDialog,onOpenSource:openSource,onToast:toast,onCommand:handleCommand });
@@ -259,7 +272,7 @@ async function boot() {
   installSettings({ state,workspace,toast,save:scheduleSave });
   bindControls();
   try { await restoreState(); }
-  catch (error) { console.error(error); toast('Saved Capsularius locations could not be restored.','error'); openSource(librarySource(),{nickname:'Library',colour:'#e0a360'}); }
+  catch (error) { console.error(error);toast('Saved Capsularius locations could not be restored.','error');openSource(librarySource(),{nickname:'Library',colour:'#e0a360'}); }
 }
 
 boot();
