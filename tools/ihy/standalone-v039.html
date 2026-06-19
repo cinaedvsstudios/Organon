@@ -4,92 +4,125 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.40</title>
+  <title>Ihy v0.41</title>
   <style>
     html,body{height:100%;margin:0;background:#171817;color:#f4eddf;font-family:system-ui,sans-serif}
     #recovery{display:grid;height:100%;place-items:center;text-align:center;padding:24px}
-    .card{max-width:520px;padding:22px;border:1px solid #80643f;border-radius:16px;background:linear-gradient(145deg,#37382f,#20221d);box-shadow:0 10px 25px #0009}
+    .card{max-width:560px;padding:22px;border:1px solid #80643f;border-radius:16px;background:linear-gradient(145deg,#37382f,#20221d);box-shadow:0 10px 25px #0009}
     h1{margin:0 0 8px;color:#e3ab63;font:800 1.3rem Georgia,serif}
     p{margin:0;color:#c2bdb3;font-size:.9rem;line-height:1.5}
   </style>
 </head>
 <body>
-  <div id="recovery"><div class="card"><h1>Ihy v0.40</h1><p>Loading the repaired editor…</p></div></div>
+  <div id="recovery"><div class="card"><h1>Ihy v0.41</h1><p>Loading the repaired editor…</p></div></div>
   <script>
   (async () => {
     const fail = message => {
       document.getElementById('recovery').innerHTML = `<div class="card"><h1>Ihy could not start</h1><p>${message}</p></div>`;
     };
+
+    const replaceRequired = (source, pattern, replacement, label) => {
+      const output = source.replace(pattern, replacement);
+      if (output === source) throw new Error(`Patch failed: ${label}`);
+      return output;
+    };
+
     try {
-      const response = await fetch('./standalone-v038.html?v=0.40', { cache: 'no-store' });
+      const response = await fetch('./standalone-v038.html?v=0.41', { cache: 'no-store' });
       if (!response.ok) throw new Error(`Source file returned ${response.status}.`);
       let source = await response.text();
 
       const midiPatch = String.raw`
 function importMidiProject(buffer,fileName){
   const data=new Uint8Array(buffer); let pos=0;
-  const need=n=>{if(pos+n>data.length)throw new Error('The MIDI file ends unexpectedly.');};
+  const need=count=>{if(pos+count>data.length)throw new Error('The MIDI file ends unexpectedly.');};
   const byte=()=>{need(1);return data[pos++];};
-  const text=n=>{need(n);let out='';for(let i=0;i<n;i++)out+=String.fromCharCode(data[pos++]);return out;};
+  const text=count=>{need(count);let out='';for(let i=0;i<count;i++)out+=String.fromCharCode(data[pos++]);return out;};
   const u16=()=>((byte()<<8)|byte())>>>0;
   const u32=()=>((byte()*0x1000000)+(byte()<<16)+(byte()<<8)+byte())>>>0;
-  const vlq=end=>{let value=0;for(let i=0;i<4;i++){if(pos>=end)throw new Error('A MIDI event is incomplete.');const valueByte=byte();value=(value<<7)|(valueByte&127);if(!(valueByte&128))return value;}throw new Error('A MIDI variable-length value is invalid.');};
+  const vlq=end=>{let value=0;for(let i=0;i<4;i++){if(pos>=end)throw new Error('A MIDI event is incomplete.');const b=byte();value=(value<<7)|(b&127);if(!(b&128))return value;}throw new Error('A MIDI variable-length value is invalid.');};
   if(text(4)!=='MThd')throw new Error('This is not a Standard MIDI file.');
   const headerLength=u32(); if(headerLength<6)throw new Error('The MIDI header is incomplete.');
-  u16(); const trackCount=u16(); const division=u16();
+  u16(); const trackCount=u16(), division=u16();
   if(division&0x8000)throw new Error('SMPTE-timed MIDI files are not supported yet.');
   const ticksPerBeat=division||480; pos+=headerLength-6;
   let firstTempo=500000; const appTracks=[];
+  const programToInstrument=(program,channel)=>{
+    if(channel===9)return 'drum_kit';
+    if(program>=24&&program<=31)return 'acoustic_guitar';
+    if(program>=32&&program<=39)return 'electric_bass';
+    if(program===42||program===43)return 'cello';
+    if(program>=40&&program<=51)return 'strings';
+    if(program>=52&&program<=54)return 'choir';
+    if(program>=56&&program<=63)return 'horn';
+    if(program>=72&&program<=79)return 'flute';
+    if(program===14)return 'bell';
+    if(program>=88&&program<=95)return 'warm_pad';
+    return 'grand_piano';
+  };
   for(let trackIndex=0;trackIndex<trackCount;trackIndex++){
+    if(pos+8>data.length)throw new Error('A MIDI track is missing.');
     if(text(4)!=='MTrk')throw new Error('A MIDI track is malformed.');
-    const length=u32(), end=pos+length; if(end>data.length)throw new Error('A MIDI track is malformed.');
-    let tick=0,running=null,trackName=''; const programs=new Array(16).fill(0),activeNotes=new Map(),channels=new Map();
-    const channelData=channel=>{if(!channels.has(channel))channels.set(channel,{channel,notes:[],program:programs[channel]||0});return channels.get(channel);};
-    const closeNote=(channel,pitch,at)=>{const key=channel+':'+pitch,queue=activeNotes.get(key);if(!queue||!queue.length)return;const start=queue.shift();if(!queue.length)activeNotes.delete(key);const target=channelData(channel);target.notes.push({id:uid('note'),start:start.tick/ticksPerBeat,pitch:clamp(pitch,LOW,HIGH),duration:Math.max(.125,(at-start.tick)/ticksPerBeat),velocity:clamp(start.velocity,1,127),groupId:null});};
+    const trackLength=u32(), end=pos+trackLength; if(end>data.length)throw new Error('A MIDI track is malformed.');
+    let tick=0,running=null,trackName=''; const programs=new Array(16).fill(0),active=new Map(),channels=new Map();
+    const channelData=channel=>{if(!channels.has(channel))channels.set(channel,{channel,program:programs[channel]||0,notes:[]});return channels.get(channel);};
+    const closeNote=(channel,pitch,at)=>{const key=channel+':'+pitch,queue=active.get(key);if(!queue||!queue.length)return;const start=queue.shift();if(queue.length)active.set(key,queue);else active.delete(key);channelData(channel).notes.push({id:uid('note'),start:start.tick/ticksPerBeat,pitch:clamp(pitch,LOW,HIGH),duration:Math.max(.125,(at-start.tick)/ticksPerBeat),velocity:clamp(start.velocity,1,127),groupId:null});};
     while(pos<end){
-      tick+=vlq(end); let initial=byte(),status=initial,data1;
-      if(initial<128){if(running===null)throw new Error('MIDI running status is invalid.');status=running;data1=initial;}else if(status<240){running=status;}
+      tick+=vlq(end); let status=data[pos],data1;
+      if(status<128){if(running===null)throw new Error('MIDI running status is invalid.');status=running;data1=byte();}
+      else{status=byte();if(status<240)running=status;}
       if(status===255){const type=byte(),size=vlq(end);need(size);const payload=data.slice(pos,pos+size);pos+=size;if(type===3)trackName=new TextDecoder().decode(payload);if(type===81&&payload.length===3&&firstTempo===500000)firstTempo=(payload[0]<<16)|(payload[1]<<8)|payload[2];continue;}
       if(status===240||status===247){const size=vlq(end);need(size);pos+=size;continue;}
-      if(status>=240){const systemLength={241:1,242:2,243:1,246:0}[status]??0;need(systemLength);pos+=systemLength;continue;}
-      const command=status&240,channel=status&15; if(data1===undefined)data1=byte(); const data2=(command===192||command===208)?0:byte();
-      if(command===192){programs[channel]=data1;const target=channelData(channel);if(!target.notes.length)target.program=data1;continue;}
-      if(command===144&&data2>0){const key=channel+':'+data1,queue=activeNotes.get(key)||[];queue.push({tick,velocity:data2});activeNotes.set(key,queue);channelData(channel);continue;}
+      if(status>=240){const size={241:1,242:2,243:1,246:0}[status]??0;need(size);pos+=size;continue;}
+      const command=status&240,channel=status&15;if(data1===undefined)data1=byte();const data2=(command===192||command===208)?0:byte();
+      if(command===192){programs[channel]=data1;channelData(channel).program=data1;continue;}
+      if(command===144&&data2>0){const key=channel+':'+data1,queue=active.get(key)||[];queue.push({tick,velocity:data2});active.set(key,queue);channelData(channel);continue;}
       if(command===128||(command===144&&data2===0)){closeNote(channel,data1,tick);continue;}
     }
-    activeNotes.forEach((queue,key)=>{const parts=key.split(':').map(Number),channel=parts[0],pitch=parts[1];queue.forEach(start=>{const target=channelData(channel);target.notes.push({id:uid('note'),start:start.tick/ticksPerBeat,pitch:clamp(pitch,LOW,HIGH),duration:Math.max(.125,(tick-start.tick)/ticksPerBeat),velocity:clamp(start.velocity,1,127),groupId:null});});});
-    const moreThanOne=channels.size>1; channels.forEach((value,channel)=>{if(!value.notes.length)return;const program=value.program;const instrument=channel===9?'drum_kit':program===42?'cello':program>=40&&program<=51?'strings':program===73?'flute':program===60?'horn':program===52?'choir':program===89?'warm_pad':program===14?'bell':program>=32&&program<=39?'electric_bass':program>=24&&program<=31?'acoustic_guitar':'grand_piano';appTracks.push({id:uid('track'),name:(trackName||('MIDI track '+(trackIndex+1)))+(moreThanOne?' — ch '+(channel+1):''),instrument,color:COLORS[appTracks.length%COLORS.length],muted:false,solo:false,hidden:false,notes:value.notes.sort((a,b)=>a.start-b.start||a.pitch-b.pitch)});});
+    active.forEach((queue,key)=>{const parts=key.split(':').map(Number),channel=parts[0],pitch=parts[1];queue.forEach(start=>channelData(channel).notes.push({id:uid('note'),start:start.tick/ticksPerBeat,pitch:clamp(pitch,LOW,HIGH),duration:Math.max(.125,(tick-start.tick)/ticksPerBeat),velocity:clamp(start.velocity,1,127),groupId:null}));});
+    channels.forEach((value,channel)=>{if(!value.notes.length)return;const multi=channels.size>1;appTracks.push({id:uid('track'),name:(trackName||('MIDI track '+(trackIndex+1)))+(multi?' — ch '+(channel+1):''),instrument:programToInstrument(value.program,channel),color:COLORS[appTracks.length%COLORS.length],muted:false,solo:false,hidden:false,notes:value.notes.sort((a,b)=>a.start-b.start||a.pitch-b.pitch)});});
     pos=end;
   }
   if(!appTracks.length)throw new Error('No MIDI note events were found in this file.');
-  return normal({title:String(fileName||'Imported MIDI').replace(/\.(mid|midi)$/i,''),bpm:Math.round(60000000/firstTempo),key:'C major',sections:[],tracks:appTracks});
+  return {title:String(fileName||'Imported MIDI').replace(/\.(mid|midi)$/i,''),bpm:Math.round(60000000/firstTempo),key:'C major',sections:[],tracks:appTracks};
 }
 async function importFile(file){
   try{
-    const buffer=await file.arrayBuffer(),signature=String.fromCharCode(...new Uint8Array(buffer,0,Math.min(4,buffer.byteLength)));
-    const raw=signature==='MThd'||/\.(mid|midi)$/i.test(file.name)?importMidiProject(buffer,file.name):JSON.parse(new TextDecoder().decode(buffer));
+    const buffer=await file.arrayBuffer();
+    const signature=buffer.byteLength>=4?String.fromCharCode(...new Uint8Array(buffer,0,4)):'';
+    const raw=(signature==='MThd'||/\.(mid|midi)$/i.test(file.name))?importMidiProject(buffer,file.name):JSON.parse(new TextDecoder().decode(buffer));
     snapshot();project=normal(raw);activeId=project.tracks[0].id;selected.clear();persist();render({center:true});message('Imported '+file.name+'.',5000);
-  }catch(error){alert('Unable to import this file: '+error.message);}
+  }catch(error){alert('Unable to import this file: '+error.message);message('Import failed.');}
 }
 `;
 
-      source = source.replace(
+      source = replaceRequired(
+        source,
         /safe=\(r,f\)=>\{try\{return JSON\.parse\(r\)\}catch\{return f\}\}/,
-        'safe=(r,f)=>{try{const value=JSON.parse(r);return value??f}catch{return f}}'
+        'safe=(r,f)=>{try{const value=JSON.parse(r);return value??f}catch{return f}}',
+        'safe JSON helper'
       );
-      source = source.replace(
+      source = replaceRequired(
+        source,
         /history=safe\(localStorage\.getItem\(HSTORE\),\{undo:\[\],redo:\[\]\}\);/,
-        'history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});history={undo:Array.isArray(history?.undo)?history.undo:[],redo:Array.isArray(history?.redo)?history.redo:[]};'
+        'history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});history={undo:Array.isArray(history?.undo)?history.undo:[],redo:Array.isArray(history?.redo)?history.redo:[]};',
+        'history initialisation'
       );
-      source = source.replace(
-        /async function importFile\(file\)\{[\s\S]*?\nfunction startWindowDrag/,
-        midiPatch + '\nfunction startWindowDrag'
+      source = replaceRequired(
+        source,
+        /async function importFile\([^)]*\)\{[\s\S]*?\}\s*function bind\(\)/,
+        midiPatch + '\nfunction bind()',
+        'importFile MIDI parser'
       );
-      source = source.replace(
+      source = replaceRequired(
+        source,
         /\$\('#clearTrack'\)\.onclick=\(\)=>\{[\s\S]*?\};\$\('#importProject'\)\.onclick=/,
-        "$('#clearTrack').onclick=()=>{const t=armed();const count=t.notes.length;if(!count){message(t.name+' is already empty.');return;}snapshot();t.notes=[];selected.clear();persist();render();message('Cleared '+count+' note'+(count===1?'':'s')+' from '+t.name+'.');};$('#importProject').onclick="
+        "$('#clearTrack').onclick=()=>{const t=armed();const count=t.notes.length;if(!count){message(t.name+' is already empty.');return;}snapshot();t.notes=[];selected.clear();persist();render();message('Cleared '+count+' note'+(count===1?'':'s')+' from '+t.name+'.');};$('#importProject').onclick=",
+        'clear active track'
       );
-      source = source.replaceAll('v0.38', 'v0.40');
+      source = source.replace(/const p=safe\(localStorage\.getItem\(WSTORE\),\{\}\)\[id\]/g, 'const p=(safe(localStorage.getItem(WSTORE),{})||{})[id]');
+      source = source.replace(/const p=safe\(localStorage\.getItem\(WSTORE\),\{\}\);p\[d\.id\]/g, 'const p=(safe(localStorage.getItem(WSTORE),{})||{});p[d.id]');
+      source = source.replaceAll('v0.38', 'v0.41');
 
       document.open();
       document.write(source);
