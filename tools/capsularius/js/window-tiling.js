@@ -1,4 +1,4 @@
-const VERSION_LABEL = 'Capsularius · v0.28.0 — Window Tiling & Operation Panels';
+const VERSION_LABEL = 'Capsularius · v0.28.1 — Folder Picker Relink';
 
 function ensureTilingStyles() {
   if (document.getElementById('capsularius-tiling-styles')) return;
