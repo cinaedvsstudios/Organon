@@ -4,13 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.30 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.31 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone-v029.css?v=0.29">
   <link rel="stylesheet" href="./standalone-v030.css?v=0.30">
+  <link rel="stylesheet" href="./standalone-v031.css?v=0.31">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.30</div></div>
+    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.31</div></div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
       <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
@@ -45,7 +46,7 @@
             <div class="control-grid"><button class="btn" id="quickBass" type="button">＋ Bass</button><button class="btn" id="quickMotif" type="button">＋ Motif</button></div>
             <div class="section-label">Transport</div>
             <div class="transport-grid"><button class="btn" id="record">⏺ Record</button><button class="btn" id="stop">⏹ Stop</button></div>
-            <p class="status" id="status">v0.30 — solid timeline, gradients and quick-add placeholders.</p>
+            <p class="status" id="status">v0.31 — sections, floating report and export workspaces.</p>
           </div>
           <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
         </aside>
@@ -85,18 +86,56 @@
     <button type="button" data-note-action="delete" class="danger">Delete</button>
   </menu>
 
-  <div class="analysis-modal" id="analysisModal" hidden role="dialog" aria-modal="true" aria-labelledby="analysisTitle"><section class="analysis-dialog"><h3 id="analysisTitle">🔎 Open project analysis</h3><div id="analysisDetails"></div><button class="btn primary" id="analysisClose" type="button">Close</button></section></div>
+  <!-- Kept hidden because the v0.29 controller still requires these compatibility elements. -->
+  <div class="analysis-modal" id="analysisModal" hidden><section class="analysis-dialog"><h3 id="analysisTitle">Analysis</h3><div id="analysisDetails"></div><button class="btn" id="analysisClose" type="button">Close</button></section></div>
 
-  <div class="quick-placeholder-modal" id="quickPlaceholderModal" hidden role="dialog" aria-modal="true" aria-labelledby="quickPlaceholderTitle">
-    <section class="quick-placeholder-dialog">
-      <h3 id="quickPlaceholderTitle">Quick add</h3>
-      <p id="quickPlaceholderBody"></p>
-      <button class="btn primary" id="quickPlaceholderClose" type="button">Close</button>
+  <div class="section-menu" id="sectionMenu" hidden aria-label="Section menu">
+    <button type="button" data-section-action="rename">Rename</button>
+    <button type="button" data-section-action="duplicate">Duplicate</button>
+    <button type="button" data-section-action="delete" class="danger">Delete</button>
+  </div>
+
+  <div class="floating-window" id="quickWindow" hidden role="dialog" aria-modal="false" aria-labelledby="quickPlaceholderTitle">
+    <section class="floating-dialog">
+      <header class="floating-dialog-header"><h3 class="floating-dialog-title" id="quickPlaceholderTitle">Quick add</h3><span>⠿</span></header>
+      <div class="floating-dialog-body"><p id="quickPlaceholderBody"></p></div>
+      <footer class="floating-dialog-footer"><button class="btn primary" id="quickPlaceholderClose" type="button">Close</button></footer>
+    </section>
+  </div>
+
+  <div class="floating-window" id="analysisWindow" hidden role="dialog" aria-modal="false" aria-labelledby="analysisWindowTitle">
+    <section class="floating-dialog">
+      <header class="floating-dialog-header"><h3 class="floating-dialog-title" id="analysisWindowTitle">🔎 Project analysis</h3><span>⠿</span></header>
+      <div class="floating-dialog-body"><textarea class="analysis-report" id="analysisReport" readonly spellcheck="false"></textarea></div>
+      <footer class="floating-dialog-footer"><button class="btn" id="copyAnalysis" type="button">Copy report</button><button class="btn primary" id="analysisCloseFloating" type="button" onclick="document.getElementById('analysisWindow').hidden=true">Close</button></footer>
+    </section>
+  </div>
+
+  <div class="floating-window" id="exportWindow" hidden role="dialog" aria-modal="false" aria-labelledby="exportWindowTitle">
+    <section class="floating-dialog">
+      <header class="floating-dialog-header"><h3 class="floating-dialog-title" id="exportWindowTitle">📤 Export composition</h3><span>⠿</span></header>
+      <div class="floating-dialog-body">
+        <div class="export-format-grid" role="radiogroup" aria-label="Export format">
+          <label class="export-format-choice"><input type="radio" name="exportFormat" value="json" checked>JSON</label>
+          <label class="export-format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label>
+          <label class="export-format-choice"><input type="radio" name="exportFormat" value="wav">WAV</label>
+          <label class="export-format-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label>
+        </div>
+        <p class="export-description" id="exportDescription"></p>
+        <div class="export-options">
+          <div class="export-option"><label for="exportSampleRate">Sample rate</label><select id="exportSampleRate"><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option></select><small>Used for WAV and MP3 mixdown.</small></div>
+          <div class="export-option" id="bitrateOption" hidden><label for="exportBitrate">MP3 bitrate</label><select id="exportBitrate"><option value="128">128 kbps</option><option value="192" selected>192 kbps</option><option value="320">320 kbps</option></select><small>Used only for MP3.</small></div>
+        </div>
+        <label style="display:flex;gap:8px;align-items:center;color:#e3ded2;font-size:.76rem"><input id="includeMutedTracks" type="checkbox" style="width:auto;height:auto"> Include muted tracks</label>
+        <p class="export-description" id="exportStatus"></p>
+      </div>
+      <footer class="floating-dialog-footer"><button class="btn" id="exportClose" type="button">Close</button><button class="btn primary" id="performExport" type="button">Export file</button></footer>
     </section>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone-v029.js?v=0.29"></script>
   <script src="./standalone-v030.js?v=0.30"></script>
+  <script src="./standalone-v031.js?v=0.31"></script>
 </body>
 </html>
