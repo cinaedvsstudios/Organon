@@ -4,78 +4,73 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.06 — Sound &amp; Music Workshop</title>
-  <style>
-    html,body{width:100%;height:100%;margin:0;background:#181919;overflow:hidden}
-    iframe{display:block;width:100%;height:100%;border:0;background:#181919}
-  </style>
+  <title>Ihy v0.12 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone-v012.css">
 </head>
 <body>
-  <iframe id="ihy" src="./index.html?standalone=v0.06" title="Ihy — Sound &amp; Music Workshop"></iframe>
-  <script>
-    (() => {
-      'use strict';
-      const frame = document.getElementById('ihy');
-      const css = `
-        .app{max-width:none!important;margin:0!important;padding-bottom:18px!important;min-height:100vh!important}
-        .top{padding:10px 20px!important;border-radius:0 0 18px 18px!important}
-        .title-row{display:grid!important;grid-template-columns:42px max-content max-content minmax(420px,1fr)!important;align-items:center!important;justify-content:start!important;gap:10px!important;width:100%!important;margin:0!important}
-        .icon-slot{width:42px!important;height:42px!important;flex:0 0 42px!important;border:0!important;border-radius:0!important;background:transparent!important;overflow:visible!important}
-        .icon-slot img{display:block;width:42px!important;height:42px!important;object-fit:contain!important}
-        .title-copy{min-width:0!important;flex:none!important}.title{color:#f7eddd!important;text-shadow:0 1px 2px rgb(0 0 0/.72)!important;font-size:1.28rem!important;letter-spacing:.08em!important;white-space:nowrap!important;overflow:visible!important}.sub{display:none!important}
-        .ver{margin:0!important;padding:7px 10px!important}
-        .top-fields{display:grid!important;grid-template-columns:minmax(260px,1.35fr) 105px 150px!important;gap:8px!important;width:100%!important;margin:0!important}
-        main{padding:12px 20px 24px!important}.tabs{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;overflow:visible!important;padding:12px!important;margin:0 0 12px!important}.tab{width:100%!important}.tab:last-child:nth-child(odd){grid-column:1/-1!important}
-        .compose{display:grid!important;grid-template-columns:292px minmax(0,1fr)!important;grid-template-areas:"controls roll" "tracks keyboard"!important;gap:14px!important;align-items:start!important}.compose-controls{grid-area:controls!important}.compose-tracks{grid-area:tracks!important}.compose-roll{grid-area:roll!important;min-width:0!important}.compose-keys{grid-area:keyboard!important;min-width:0!important}.compose-sections{display:none!important}
-        .roll-wrap{height:min(350px,calc(100vh - 510px))!important;min-height:280px!important;max-height:380px!important}.section-inline{display:block!important;margin:0!important;padding:0!important;border:0!important;border-top:1px solid #5d4c39!important;border-radius:0!important;background:#121310!important;overflow:auto!important}.section-inline .section-wrap{border:0!important;border-radius:0!important;background:#121310!important}.section-inline .sections{height:50px!important}.section-inline .section{top:8px!important;height:34px!important;border-radius:999px!important;padding:0 12px!important}
-        .bottom{position:static!important;left:auto!important;bottom:auto!important;transform:none!important;max-width:none!important;width:auto!important;margin-top:10px!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important}.bottom-inner{width:100%!important}.bottom-actions{grid-template-columns:1fr 1fr 1fr!important}.status{color:#b9b4a9!important;text-align:left!important}
-        @media(max-width:899px){.app{max-width:540px!important;margin:auto!important}.top{padding:12px!important}.title-row{display:flex!important;flex-wrap:wrap!important}.top-fields{flex:1 0 100%!important;grid-template-columns:1.4fr .62fr .8fr!important;margin-top:10px!important}.compose{display:flex!important;flex-direction:column!important}.roll-wrap{height:400px!important;min-height:0!important}.bottom-actions{grid-template-columns:1fr 1fr 1.15fr!important}.status{text-align:center!important}}
-      `;
-      function arrange(doc) {
-        if (doc.getElementById('ihy-v006-layout')) return;
-        const style = doc.createElement('style');
-        style.id = 'ihy-v006-layout';
-        style.textContent = css;
-        doc.head.append(style);
-        doc.title = 'Ihy v0.06 — Sound & Music Workshop';
-        const icon = doc.querySelector('.icon-slot');
-        if (icon) {
-          icon.innerHTML = '';
-          const image = doc.createElement('img');
-          image.src = './icon.png';
-          image.alt = 'Ihy';
-          icon.append(image);
-        }
-        const title = doc.querySelector('.title');
-        if (title) title.textContent = 'Ihy';
-        const version = doc.querySelector('.ver');
-        if (version) version.textContent = 'v0.06';
-        const titleRow = doc.querySelector('.title-row');
-        const projectFields = doc.querySelector('.top-fields');
-        if (titleRow && projectFields) titleRow.append(projectFields);
-        const tabs = doc.querySelector('.tabs');
-        const controlCard = doc.querySelector('.compose-controls');
-        if (tabs && controlCard) controlCard.prepend(tabs);
-        const sectionCard = doc.querySelector('.compose-sections');
-        const rollCard = doc.querySelector('.compose-roll');
-        if (sectionCard && rollCard) {
-          const sectionWrap = sectionCard.querySelector('.section-wrap');
-          if (sectionWrap) {
-            sectionWrap.classList.add('section-inline');
-            const rollWrap = rollCard.querySelector('.roll-wrap');
-            if (rollWrap) rollWrap.after(sectionWrap);
-          }
-          sectionCard.remove();
-        }
-        const footer = doc.querySelector('.bottom');
-        if (footer && controlCard) controlCard.append(footer);
-        const status = doc.getElementById('status');
-        if (status) status.textContent = 'v0.06 — aligned desktop editor.';
-      }
-      frame.addEventListener('load', () => {
-        try { arrange(frame.contentDocument); } catch (_) {}
-      });
-    })();
-  </script>
+  <header class="top">
+    <img class="icon" src="./icon.png" alt="Ihy">
+    <div class="title">Ihy</div>
+    <div class="version">v0.12</div>
+    <span class="divider" aria-hidden="true"></span>
+    <div class="project">
+      <input id="title" value="Untitled cue" aria-label="Project name">
+      <input id="bpm" type="number" value="92" aria-label="Beats per minute">
+      <select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option></select>
+    </div>
+    <button class="chord-toggle" id="chordToggle" type="button" aria-pressed="false">♫ Chord</button>
+  </header>
+
+  <main class="app">
+    <section class="view active" id="compose">
+      <div class="layout">
+        <aside class="side">
+          <div class="card">
+            <div class="tabs"><button class="btn active tab" data-view="compose">Compose</button><button class="btn tab" data-view="create">Create</button><button class="btn tab" data-view="signal">Signal</button><button class="btn tab" data-view="library">Library</button><button class="btn tab" data-view="analyse">Analyse</button></div>
+            <h2>🎛️ Controls</h2>
+            <div class="buttons" style="margin-top:10px"><button class="btn primary" id="play">▶️ Play</button><button class="btn" id="stop">⏹️ Stop</button><button class="btn" id="record">⏺️ Record</button><button class="btn" id="metro">🎵 Metro</button></div>
+            <div class="fields"><div class="field"><label>Armed</label><select id="armed"></select></div><div class="field"><label>Quantise</label><select id="quant"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select></div><div class="field"><label>Transpose</label><input id="transpose" type="number" value="0"></div></div>
+            <div class="actions" style="margin-top:10px"><button class="btn" id="import">📥 Import</button><button class="btn" id="export">📤 Export</button><button class="btn primary" id="save">💾 Save</button></div>
+            <input id="file" type="file" accept=".json" hidden>
+            <p class="status" id="status">v0.12 — click notes, chord mode and inline note editor.</p>
+          </div>
+          <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">➕ Track</button></div><div class="tracks" id="tracks"></div></div>
+        </aside>
+
+        <section class="editor">
+          <div class="card">
+            <div class="headrow"><h2>🎼 Piano roll</h2><span class="help">Click an empty cell to add a note. Drag notes to move them, pull their right edge to resize, or right-click for an inline note editor.</span><button class="btn" id="addSection">➕ Section</button><button class="btn" id="clear">🗑️ Clear armed</button></div>
+            <div class="scroll">
+              <div class="content">
+                <div class="gridrow"><div class="labels" id="labels"></div><div class="roll" id="roll"></div></div>
+                <div class="timeline-row"><div class="timeline-spacer"></div><div class="timeline" id="timeline" aria-label="Playback timeline"></div></div>
+                <div class="sectionrow"><div class="spacer"></div><div class="sections" id="sections"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="headrow"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. Keyboard input plays the armed track; Record writes notes to the grid.</span><select id="instrument" style="max-width:190px"></select></div>
+            <div class="pianowrap"><div class="piano" id="piano"></div></div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <section class="view" id="create"><div class="card"><h2>✨ Create</h2><p class="placeholder">Working sound presets:</p><div class="presetgrid" id="presets"></div></div></section>
+    <section class="view" id="signal"><div class="card"><h2>〰️ Signal</h2><p class="placeholder">Continuous frequency signal mode returns in the next build.</p></div></section>
+    <section class="view" id="library"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library returns in the next build.</p></div></section>
+    <section class="view" id="analyse"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis connects to the existing Audio2MIDI workflow in the next build.</p></div></section>
+  </main>
+
+  <div class="note-popover" id="notePopover" hidden role="dialog" aria-label="Edit note">
+    <div class="note-popover-title" id="notePopoverTitle">Edit note</div>
+    <label>Instrument<select id="noteMenuInstrument"></select></label>
+    <label>Velocity<input id="noteMenuVelocity" type="number" min="1" max="127" step="1"></label>
+    <label>Length beats<input id="noteMenuLength" type="number" min="0.125" max="64" step="0.125"></label>
+    <div class="note-menu-actions"><button class="btn primary" id="noteMenuApply">Apply</button><button class="btn danger" id="noteMenuDelete">Delete</button><button class="btn close" id="noteMenuClose">Close</button></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+  <script src="./standalone-v012.js"></script>
 </body>
 </html>
