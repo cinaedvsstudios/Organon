@@ -1,4 +1,5 @@
-# Local Capsularius desktop runtime generated on first launch.
+# Local Capsularius desktop runtime and workspace state.
 Capsularius Desktop/
 _capsularius-brand-staging/
 _capsularius-brand-package/
+desktop/capsularius-desktop-state.json
