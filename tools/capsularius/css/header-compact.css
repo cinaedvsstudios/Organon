@@ -1,0 +1,33 @@
+/* Compact desktop header: keep the version beneath the product title without increasing header height. */
+.app-header{
+  min-height:64px;
+}
+
+.brand-zone{
+  align-self:stretch;
+  flex-direction:column;
+  align-items:flex-start;
+  justify-content:center;
+  gap:1px;
+}
+
+.brand-zone h1{
+  line-height:1;
+}
+
+.app-badge{
+  width:max-content;
+  padding:1px 5px;
+  border-radius:4px;
+  font-size:.52rem;
+  line-height:1.15;
+  letter-spacing:.045em;
+}
+
+.header-actions{
+  flex-wrap:nowrap;
+}
+
+.header-button{
+  white-space:nowrap;
+}
