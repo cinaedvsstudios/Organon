@@ -20,7 +20,7 @@
 </head>
 <body>
   <header class="app-header">
-    <div class="brand-zone"><h1>Capsularius</h1><span class="app-badge">v0.35.5 — Preview Controls &amp; File Actions</span></div>
+    <div class="brand-zone"><h1>Capsularius</h1><span class="app-badge">v0.35.6 — ZIP Folders &amp; Image Pan</span></div>
     <div id="window-pills" class="window-pills" aria-label="Open folder windows"></div>
     <nav class="header-actions" aria-label="Capsularius controls">
       <button class="header-button primary" id="mount-folder-button" type="button">📂 Mount Folder</button>
@@ -43,6 +43,7 @@
   <template id="operation-confirm-template"><section class="toast operation-toast" role="dialog"><div class="operation-copy"><span class="operation-badge" data-operation-badge></span><span class="toast-message" data-operation-message></span><span class="operation-detail" data-operation-detail></span></div><div class="toast-actions"><button class="action-button primary" type="button" data-operation-confirm>Confirm</button><button class="action-button" type="button" data-operation-cancel>Cancel</button></div></section></template>
   <template id="operation-progress-template"><section class="toast operation-toast" role="status"><div class="operation-copy"><span class="spinner"></span><span class="toast-message" data-progress-message></span></div><div class="toast-actions"><button class="action-button" type="button" data-progress-cancel>Cancel</button></div></section></template>
   <template id="toast-template"><section class="toast" role="status"><span class="toast-symbol" data-toast-symbol></span><span class="toast-message" data-toast-message></span></section></template>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script type="module" src="./js/app.js"></script>
 </body>
 </html>
