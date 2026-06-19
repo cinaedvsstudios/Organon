@@ -6,7 +6,10 @@ const { pathToFileURL } = require('node:url');
 const launcherRoot = __dirname;
 const capsulariusRoot = path.resolve(launcherRoot, '..', '..');
 const capsulariusEntry = path.join(capsulariusRoot, 'index.html');
+const capsulariusIcon = path.join(capsulariusRoot, 'capsularius.ico');
 const approvedRoots = new Set();
+
+app.setAppUserModelId('com.cinaedvsstudios.organon.capsularius');
 
 function normalisePath(value) {
   return path.resolve(String(value || ''));
@@ -143,6 +146,7 @@ function createWindow() {
     minWidth: 980,
     minHeight: 660,
     backgroundColor: '#1e201c',
+    icon: capsulariusIcon,
     show: false,
     title: 'Capsularius Desktop',
     webPreferences: {
