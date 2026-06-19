@@ -4,6 +4,8 @@ contextBridge.exposeInMainWorld('capsulariusDesktop', Object.freeze({
   isDesktop: true,
   loadDesktopState: () => ipcRenderer.invoke('capsularius:load-desktop-state'),
   saveDesktopState: (state) => ipcRenderer.invoke('capsularius:save-desktop-state', state),
+  getDesktopPreference: (key) => ipcRenderer.invoke('capsularius:get-desktop-preference', key),
+  setDesktopPreference: (key, value) => ipcRenderer.invoke('capsularius:set-desktop-preference', key, value),
   chooseDirectory: () => ipcRenderer.invoke('capsularius:choose-directory'),
   restoreDirectory: (nativePath) => ipcRenderer.invoke('capsularius:restore-directory', nativePath),
   listDirectory: (nativePath) => ipcRenderer.invoke('capsularius:list-directory', nativePath),
