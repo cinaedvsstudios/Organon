@@ -32,6 +32,12 @@ async function existingEntry(directoryHandle, name) {
   }
 }
 
+async function nextDuplicateName(directoryHandle, originalName) {
+  let attempt = 2;
+  while (await existingEntry(directoryHandle, suggestedName(originalName, attempt))) attempt += 1;
+  return suggestedName(originalName, attempt);
+}
+
 async function countEntries(entries) {
   const totals = { items: 0, files: 0, bytes: 0 };
   async function visit(entry) {
@@ -58,10 +64,10 @@ export class OperationManager {
   }
 
   async copyOrMove({ mode, entries, sourceDirectory, targetDirectory, sourceLabel, targetLabel, sourcePathSegments, targetPathSegments, sameMount }) {
-    if (!entries.length) return;
+    if (!entries.length) return false;
     if (mode === 'move' && sameMount && sourcePathSegments.join('/') === targetPathSegments.join('/')) {
       this.onToast('The source and destination are the same folder.', 'error');
-      return;
+      return false;
     }
     for (const entry of entries) {
       if (entry.kind === 'directory' && sameMount) {
@@ -69,7 +75,7 @@ export class OperationManager {
         const destinationInsideSource = targetPathSegments.length >= sourceFolder.length && sourceFolder.every((segment, index) => targetPathSegments[index] === segment);
         if (destinationInsideSource) {
           this.onToast('A folder cannot be copied or moved into itself.', 'error');
-          return;
+          return false;
         }
       }
     }
@@ -81,7 +87,7 @@ export class OperationManager {
       detail: `From: “${sourceLabel}”`,
       confirmLabel: `Confirm ${action}`
     });
-    if (!confirmed) return;
+    if (!confirmed) return false;
 
     const controller = this.begin(`${action} preparation…`);
     try {
@@ -98,14 +104,15 @@ export class OperationManager {
       controller.complete();
       this.onRefresh();
       this.onToast(`${mode === 'move' ? 'Moved' : 'Copied'} ${entries.length} item${entries.length === 1 ? '' : 's'} to “${targetLabel}”.`, 'success');
+      return true;
     } catch (error) {
       controller.complete();
-      if (error instanceof OperationCancelled) {
-        this.onToast('Operation cancelled. Completed items were left in place.', 'info');
-      } else {
+      if (error instanceof OperationCancelled) this.onToast('Operation cancelled. Completed items were left in place.', 'info');
+      else {
         console.error(error);
         this.onToast(error?.message || 'The file operation could not be completed.', 'error');
       }
+      return false;
     }
   }
 
@@ -116,7 +123,7 @@ export class OperationManager {
       suggestedName: entry.name,
       confirmLabel: 'Confirm Rename'
     });
-    if (!nextName || nextName === entry.name) return;
+    if (!nextName || nextName === entry.name) return false;
 
     const controller = this.begin(`Renaming “${entry.name}”…`);
     try {
@@ -125,6 +132,7 @@ export class OperationManager {
       controller.complete();
       this.onRefresh();
       this.onToast(`Renamed to “${nextName}”.`, 'success');
+      return true;
     } catch (error) {
       controller.complete();
       if (error instanceof OperationCancelled) this.onToast('Rename cancelled.', 'info');
@@ -132,6 +140,38 @@ export class OperationManager {
         console.error(error);
         this.onToast(error?.message || 'The item could not be renamed.', 'error');
       }
+      return false;
+    }
+  }
+
+  async duplicate({ entry, parentDirectory, parentLabel }) {
+    if (!entry || entry.kind !== 'file') return false;
+    const confirmed = await this.ui.confirm({
+      badge: 'Duplicate',
+      message: `Duplicate “${entry.name}”?`,
+      detail: `In: “${parentLabel}”`,
+      confirmLabel: 'Duplicate File'
+    });
+    if (!confirmed) return false;
+
+    const controller = this.begin(`Preparing duplicate of “${entry.name}”…`);
+    try {
+      controller.totals = await countEntries([entry]);
+      const targetName = await nextDuplicateName(parentDirectory, entry.name);
+      controller.update(`Duplicating 0 of ${controller.totals.files || 1}: ${targetName}`);
+      await this.copyEntry(entry, parentDirectory, controller, { mode:'copy', forcedName:targetName, root:true });
+      controller.complete();
+      this.onRefresh();
+      this.onToast(`Duplicated as “${targetName}”.`, 'success');
+      return true;
+    } catch (error) {
+      controller.complete();
+      if (error instanceof OperationCancelled) this.onToast('Duplicate cancelled.', 'info');
+      else {
+        console.error(error);
+        this.onToast(error?.message || 'The file could not be duplicated.', 'error');
+      }
+      return false;
     }
   }
 
@@ -142,24 +182,26 @@ export class OperationManager {
       suggestedName: 'New folder',
       confirmLabel: 'Create Folder'
     });
-    if (!name) return;
+    if (!name) return false;
     try {
       const exists = await existingEntry(directoryHandle, name);
       if (exists) {
         this.onToast(`“${name}” already exists in “${label}”.`, 'error');
-        return;
+        return false;
       }
       await directoryHandle.getDirectoryHandle(name, { create: true });
       this.onRefresh();
       this.onToast(`Created “${name}”.`, 'success');
+      return true;
     } catch (error) {
       console.error(error);
       this.onToast(error?.message || 'The folder could not be created.', 'error');
+      return false;
     }
   }
 
   async delete({ entries, parentDirectory, parentLabel }) {
-    if (!entries.length) return;
+    if (!entries.length) return false;
     const confirmed = await this.ui.confirm({
       badge: 'Delete',
       message: `Permanently delete ${entries.length} item${entries.length === 1 ? '' : 's'}?`,
@@ -167,7 +209,7 @@ export class OperationManager {
       confirmLabel: `Delete ${entries.length} Item${entries.length === 1 ? '' : 's'}`,
       destructive: true
     });
-    if (!confirmed) return;
+    if (!confirmed) return false;
 
     const controller = this.begin(`Deleting 0 of ${entries.length} items`);
     try {
@@ -180,6 +222,7 @@ export class OperationManager {
       controller.complete();
       this.onRefresh();
       this.onToast(`Deleted ${entries.length} item${entries.length === 1 ? '' : 's'} from “${parentLabel}”.`, 'success');
+      return true;
     } catch (error) {
       controller.complete();
       if (error instanceof OperationCancelled) this.onToast('Delete cancelled. Completed deletions cannot be undone.', 'info');
@@ -187,6 +230,7 @@ export class OperationManager {
         console.error(error);
         this.onToast(error?.message || 'The selected item could not be deleted.', 'error');
       }
+      return false;
     }
   }
 
@@ -221,7 +265,6 @@ export class OperationManager {
       const existing = await existingEntry(directoryHandle, name);
       if (!existing) return { name, existing: null };
       if (sourceKind === 'directory' && existing.kind === 'directory') return { name, existing };
-
       const choice = await this.ui.conflict({ name, destinationName: name, sourceKind, targetKind: existing.kind });
       if (choice === 'cancel') throw new OperationCancelled();
       if (choice === 'replace') {
@@ -251,9 +294,7 @@ export class OperationManager {
         : await destinationDirectory.getDirectoryHandle(target.name, { create: true });
       const { entries: children } = await readDirectory(entry.handle, []);
       if (children.length === 0) controller.update(`Creating folder: ${target.name}`);
-      for (const child of children) {
-        await this.copyEntry(child, targetDirectory, controller, { mode, root: false });
-      }
+      for (const child of children) await this.copyEntry(child, targetDirectory, controller, { mode, root: false });
       return;
     }
 
