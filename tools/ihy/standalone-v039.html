@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#171817">
+  <title>Ihy v0.39</title>
+  <style>
+    html,body{height:100%;margin:0;background:#171817;color:#f4eddf;font-family:system-ui,sans-serif}
+    #recovery{display:grid;height:100%;place-items:center;text-align:center;padding:24px}
+    .card{max-width:520px;padding:22px;border:1px solid #80643f;border-radius:16px;background:linear-gradient(145deg,#37382f,#20221d);box-shadow:0 10px 25px #0009}
+    h1{margin:0 0 8px;color:#e3ab63;font:800 1.3rem Georgia,serif}
+    p{margin:0;color:#c2bdb3;font-size:.9rem;line-height:1.5}
+  </style>
+</head>
+<body>
+  <div id="recovery"><div class="card"><h1>Ihy v0.39</h1><p>Loading the repaired editor…</p></div></div>
+  <script>
+  (async () => {
+    const fail = message => {
+      document.getElementById('recovery').innerHTML = `<div class="card"><h1>Ihy could not start</h1><p>${message}</p></div>`;
+    };
+    try {
+      const response = await fetch('./standalone-v038.html?v=0.39', { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Source file returned ${response.status}.`);
+      let source = await response.text();
+
+      const replacements = [
+        [
+          "const safe=(raw,fallback)=>{try{return JSON.parse(raw)}catch{return fallback}};",
+          "const safe=(raw,fallback)=>{try{const value=JSON.parse(raw);return value??fallback}catch{return fallback}};"
+        ],
+        [
+          "dragMute=Boolean(safe(localStorage.getItem('ihy-v038-drag-mute'),'false'))",
+          "dragMute=safe(localStorage.getItem('ihy-v038-drag-mute'),false)===true"
+        ],
+        [
+          "history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});",
+          "history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});history={undo:Array.isArray(history?.undo)?history.undo:[],redo:Array.isArray(history?.redo)?history.redo:[]};"
+        ],
+        [
+          '<div class="version">v0.38</div>',
+          '<div class="version">v0.39</div>'
+        ],
+        [
+          'v0.38 — piano-roll editor.',
+          'v0.39 — repaired piano-roll editor.'
+        ]
+      ];
+
+      for (const [before, after] of replacements) {
+        if (!source.includes(before)) throw new Error('The editor source did not match the expected repair baseline.');
+        source = source.replace(before, after);
+      }
+
+      document.open();
+      document.write(source);
+      document.close();
+    } catch (error) {
+      fail(error.message || 'Unknown startup error.');
+    }
+  })();
+  </script>
+</body>
+</html>
