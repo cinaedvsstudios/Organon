@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.39</title>
+  <title>Ihy v0.40</title>
   <style>
     html,body{height:100%;margin:0;background:#171817;color:#f4eddf;font-family:system-ui,sans-serif}
     #recovery{display:grid;height:100%;place-items:center;text-align:center;padding:24px}
@@ -14,16 +14,64 @@
   </style>
 </head>
 <body>
-  <div id="recovery"><div class="card"><h1>Ihy v0.39</h1><p>Loading the repaired editor…</p></div></div>
+  <div id="recovery"><div class="card"><h1>Ihy v0.40</h1><p>Loading the repaired editor…</p></div></div>
   <script>
   (async () => {
     const fail = message => {
       document.getElementById('recovery').innerHTML = `<div class="card"><h1>Ihy could not start</h1><p>${message}</p></div>`;
     };
     try {
-      const response = await fetch('./standalone-v038.html?v=0.39', { cache: 'no-store' });
+      const response = await fetch('./standalone-v038.html?v=0.40', { cache: 'no-store' });
       if (!response.ok) throw new Error(`Source file returned ${response.status}.`);
       let source = await response.text();
+
+      const midiPatch = String.raw`
+function importMidiProject(buffer,fileName){
+  const data=new Uint8Array(buffer); let pos=0;
+  const need=n=>{if(pos+n>data.length)throw new Error('The MIDI file ends unexpectedly.');};
+  const byte=()=>{need(1);return data[pos++];};
+  const text=n=>{need(n);let out='';for(let i=0;i<n;i++)out+=String.fromCharCode(data[pos++]);return out;};
+  const u16=()=>((byte()<<8)|byte())>>>0;
+  const u32=()=>((byte()*0x1000000)+(byte()<<16)+(byte()<<8)+byte())>>>0;
+  const vlq=end=>{let value=0;for(let i=0;i<4;i++){if(pos>=end)throw new Error('A MIDI event is incomplete.');const valueByte=byte();value=(value<<7)|(valueByte&127);if(!(valueByte&128))return value;}throw new Error('A MIDI variable-length value is invalid.');};
+  if(text(4)!=='MThd')throw new Error('This is not a Standard MIDI file.');
+  const headerLength=u32(); if(headerLength<6)throw new Error('The MIDI header is incomplete.');
+  u16(); const trackCount=u16(); const division=u16();
+  if(division&0x8000)throw new Error('SMPTE-timed MIDI files are not supported yet.');
+  const ticksPerBeat=division||480; pos+=headerLength-6;
+  let firstTempo=500000; const appTracks=[];
+  for(let trackIndex=0;trackIndex<trackCount;trackIndex++){
+    if(text(4)!=='MTrk')throw new Error('A MIDI track is malformed.');
+    const length=u32(), end=pos+length; if(end>data.length)throw new Error('A MIDI track is malformed.');
+    let tick=0,running=null,trackName=''; const programs=new Array(16).fill(0),activeNotes=new Map(),channels=new Map();
+    const channelData=channel=>{if(!channels.has(channel))channels.set(channel,{channel,notes:[],program:programs[channel]||0});return channels.get(channel);};
+    const closeNote=(channel,pitch,at)=>{const key=channel+':'+pitch,queue=activeNotes.get(key);if(!queue||!queue.length)return;const start=queue.shift();if(!queue.length)activeNotes.delete(key);const target=channelData(channel);target.notes.push({id:uid('note'),start:start.tick/ticksPerBeat,pitch:clamp(pitch,LOW,HIGH),duration:Math.max(.125,(at-start.tick)/ticksPerBeat),velocity:clamp(start.velocity,1,127),groupId:null});};
+    while(pos<end){
+      tick+=vlq(end); let initial=byte(),status=initial,data1;
+      if(initial<128){if(running===null)throw new Error('MIDI running status is invalid.');status=running;data1=initial;}else if(status<240){running=status;}
+      if(status===255){const type=byte(),size=vlq(end);need(size);const payload=data.slice(pos,pos+size);pos+=size;if(type===3)trackName=new TextDecoder().decode(payload);if(type===81&&payload.length===3&&firstTempo===500000)firstTempo=(payload[0]<<16)|(payload[1]<<8)|payload[2];continue;}
+      if(status===240||status===247){const size=vlq(end);need(size);pos+=size;continue;}
+      if(status>=240){const systemLength={241:1,242:2,243:1,246:0}[status]??0;need(systemLength);pos+=systemLength;continue;}
+      const command=status&240,channel=status&15; if(data1===undefined)data1=byte(); const data2=(command===192||command===208)?0:byte();
+      if(command===192){programs[channel]=data1;const target=channelData(channel);if(!target.notes.length)target.program=data1;continue;}
+      if(command===144&&data2>0){const key=channel+':'+data1,queue=activeNotes.get(key)||[];queue.push({tick,velocity:data2});activeNotes.set(key,queue);channelData(channel);continue;}
+      if(command===128||(command===144&&data2===0)){closeNote(channel,data1,tick);continue;}
+    }
+    activeNotes.forEach((queue,key)=>{const parts=key.split(':').map(Number),channel=parts[0],pitch=parts[1];queue.forEach(start=>{const target=channelData(channel);target.notes.push({id:uid('note'),start:start.tick/ticksPerBeat,pitch:clamp(pitch,LOW,HIGH),duration:Math.max(.125,(tick-start.tick)/ticksPerBeat),velocity:clamp(start.velocity,1,127),groupId:null});});});
+    const moreThanOne=channels.size>1; channels.forEach((value,channel)=>{if(!value.notes.length)return;const program=value.program;const instrument=channel===9?'drum_kit':program===42?'cello':program>=40&&program<=51?'strings':program===73?'flute':program===60?'horn':program===52?'choir':program===89?'warm_pad':program===14?'bell':program>=32&&program<=39?'electric_bass':program>=24&&program<=31?'acoustic_guitar':'grand_piano';appTracks.push({id:uid('track'),name:(trackName||('MIDI track '+(trackIndex+1)))+(moreThanOne?' — ch '+(channel+1):''),instrument,color:COLORS[appTracks.length%COLORS.length],muted:false,solo:false,hidden:false,notes:value.notes.sort((a,b)=>a.start-b.start||a.pitch-b.pitch)});});
+    pos=end;
+  }
+  if(!appTracks.length)throw new Error('No MIDI note events were found in this file.');
+  return normal({title:String(fileName||'Imported MIDI').replace(/\.(mid|midi)$/i,''),bpm:Math.round(60000000/firstTempo),key:'C major',sections:[],tracks:appTracks});
+}
+async function importFile(file){
+  try{
+    const buffer=await file.arrayBuffer(),signature=String.fromCharCode(...new Uint8Array(buffer,0,Math.min(4,buffer.byteLength)));
+    const raw=signature==='MThd'||/\.(mid|midi)$/i.test(file.name)?importMidiProject(buffer,file.name):JSON.parse(new TextDecoder().decode(buffer));
+    snapshot();project=normal(raw);activeId=project.tracks[0].id;selected.clear();persist();render({center:true});message('Imported '+file.name+'.',5000);
+  }catch(error){alert('Unable to import this file: '+error.message);}
+}
+`;
 
       source = source.replace(
         /safe=\(r,f\)=>\{try\{return JSON\.parse\(r\)\}catch\{return f\}\}/,
@@ -34,15 +82,14 @@
         'history=safe(localStorage.getItem(HSTORE),{undo:[],redo:[]});history={undo:Array.isArray(history?.undo)?history.undo:[],redo:Array.isArray(history?.redo)?history.redo:[]};'
       );
       source = source.replace(
-        /const p=safe\(localStorage\.getItem\(WSTORE\),\{\}\)\[id\]/,
-        'const p=(safe(localStorage.getItem(WSTORE),{})||{})[id]'
+        /async function importFile\(file\)\{[\s\S]*?\nfunction startWindowDrag/,
+        midiPatch + '\nfunction startWindowDrag'
       );
       source = source.replace(
-        /const p=safe\(localStorage\.getItem\(WSTORE\),\{\}\);p\[d\.id\]/,
-        'const p=(safe(localStorage.getItem(WSTORE),{})||{});p[d.id]'
+        /\$\('#clearTrack'\)\.onclick=\(\)=>\{[\s\S]*?\};\$\('#importProject'\)\.onclick=/,
+        "$('#clearTrack').onclick=()=>{const t=armed();const count=t.notes.length;if(!count){message(t.name+' is already empty.');return;}snapshot();t.notes=[];selected.clear();persist();render();message('Cleared '+count+' note'+(count===1?'':'s')+' from '+t.name+'.');};$('#importProject').onclick="
       );
-      source = source.replace('<div class="version">v0.38</div>', '<div class="version">v0.39</div>');
-      source = source.replace('v0.38 — piano-roll editor.', 'v0.39 — repaired piano-roll editor.');
+      source = source.replaceAll('v0.38', 'v0.40');
 
       document.open();
       document.write(source);
