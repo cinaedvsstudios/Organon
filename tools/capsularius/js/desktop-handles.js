@@ -123,3 +123,11 @@ export async function restoreDesktopDirectory(nativePath) {
   const descriptor = await desktopApi().restoreDirectory(nativePath);
   return descriptor ? descriptorToHandle(descriptor) : null;
 }
+
+export async function loadDesktopWorkspaceState() {
+  return desktopApi().loadDesktopState();
+}
+
+export async function saveDesktopWorkspaceState(state) {
+  return desktopApi().saveDesktopState(state);
+}
