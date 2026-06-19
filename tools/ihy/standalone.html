@@ -3,67 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#181919">
-  <title>Ihy v0.36 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone-v035.css?v=0.35">
+  <meta name="theme-color" content="#171817">
+  <title>Ihy v0.38</title>
+  <style>
+    html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#171817}
+    iframe{display:block}
+  </style>
 </head>
 <body>
-  <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.36</div></div>
-    <span class="divider" aria-hidden="true"></span>
-    <div class="top-controls">
-      <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
-      <div class="top-control short"><input id="bpm" type="number" min="30" max="260" value="92" aria-label="Beats per minute"><small>BPM</small></div>
-      <div class="top-control key-control"><select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option></select><small>Key</small></div>
-      <div class="top-control"><button class="chord-toggle" id="chordToggle" type="button" aria-pressed="false">♫ Chord</button><small>Chord mode</small></div>
-      <div class="top-control arm"><select id="armed" aria-label="Armed track"></select><small>Armed track</small></div>
-      <div class="top-control quant"><select id="quant" aria-label="Quantise"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select><small>Quantise</small></div>
-      <div class="top-control trans"><input id="transpose" type="number" min="-24" max="24" value="0" aria-label="Transpose"><small>Transpose</small></div>
-    </div>
-  </header>
-
-  <main class="app">
-    <section class="layout">
-      <aside class="side">
-        <div class="card">
-          <h2>🎛️ Controls</h2>
-          <div class="button-group" aria-label="Project actions"><button class="btn primary" id="createSound" type="button">✨ Create</button><button class="btn primary" id="save" type="button">💾 Save</button><button class="btn" id="clear" type="button">🗑 Clear</button></div>
-          <div class="button-group" aria-label="File and analysis actions"><button class="btn" id="import" type="button">📥 Import</button><button class="btn" id="export" type="button">📤 Export</button><button class="btn" id="analyseButton" type="button">🔎 Analyse</button></div>
-          <input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
-          <div class="section-label">Quick add</div><div class="control-grid"><button class="btn" id="quickBass" type="button">＋ Bass</button><button class="btn" id="quickMotif" type="button">＋ Motif</button></div>
-          <p class="status" id="status">v0.36 — clean editor controller.</p>
-        </div>
-        <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack" type="button">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
-      </aside>
-
-      <section class="editor">
-        <div class="card">
-          <div class="piano-toolbar">
-            <h2>🎼 Piano roll</h2>
-            <div class="piano-actions">
-              <div class="piano-tool-buttons" aria-label="Piano roll tools"><button class="btn piano-tool-button tool-active" id="toolMusic" type="button" title="Add notes">🎶</button><button class="btn piano-tool-button" id="toolUndo" type="button" title="Undo">↶</button><button class="btn piano-tool-button" id="toolRedo" type="button" title="Redo">↷</button><button class="btn piano-tool-button" id="toolPointer" type="button" title="Select notes">👆</button><button class="btn piano-tool-button" id="toolJoin" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button><button class="btn piano-tool-button" id="toolTrash" type="button" title="Delete selection">🗑️</button></div>
-              <button class="btn" id="play" type="button">▶ Play</button><button class="btn" id="stopInline" type="button">⏹ Stop</button><span class="transport-time" id="transportTime">0:00 / 0:42</span><button class="btn" id="addSection" type="button">＋ Section</button><div class="zoom-control"><label for="zoomSlider">Zoom</label><input id="zoomSlider" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></div><button class="btn" id="dragMute" type="button" title="Audition selection while dragging">🔊</button>
-            </div><span class="toolbar-spacer" aria-hidden="true"></span>
-          </div>
-          <div class="arrangement-shell"><div class="arrangement-spacer"></div><div class="arrangement-viewport" id="arrangementViewport"><div class="arrangement" id="arrangement"></div></div></div>
-          <div class="roll-scroll" id="rollScroll"><div class="roll-grid"><div class="pitch-labels" id="labels"></div><div class="roll" id="roll"></div></div></div>
-        </div>
-        <div class="card"><div class="headrow"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. The instrument changes the armed track.</span><select id="instrument" style="max-width:190px" aria-label="Track instrument"></select></div><div class="pianowrap"><div class="piano" id="piano"></div></div></div>
-      </section>
-    </section>
-  </main>
-
-  <menu class="context-menu" id="noteMenu" hidden aria-label="Note edit menu"><button type="button" data-note-action="copy">Copy</button><button type="button" data-note-action="cut">Cut</button><button type="button" data-note-action="paste" id="menuPaste">Paste</button><button type="button" data-note-action="duplicate">Duplicate</button><button type="button" data-note-action="make-chord" id="menuMakeChord" class="make-chord">Make chord</button><button type="button" data-note-action="delete" class="danger">Delete</button></menu>
-  <menu class="context-menu" id="trackMenu" hidden aria-label="Track menu"><button type="button" data-track-menu="rename">Rename</button><button type="button" data-track-menu="duplicate">Duplicate</button><button type="button" data-track-menu="delete" class="danger">Delete</button><div class="submenu"><button type="button" id="trackInstrumentLabel">Instrument ›</button><div id="trackInstrumentSubmenu" hidden></div></div></menu>
-  <menu class="context-menu" id="sectionMenu" hidden aria-label="Section menu"><button type="button" data-section-action="rename">Rename</button><button type="button" data-section-action="duplicate">Duplicate</button><button type="button" data-section-action="delete" class="danger">Delete</button></menu>
-
-  <div class="floating-window" id="quickWindow" hidden role="dialog" aria-modal="false" aria-labelledby="quickPlaceholderTitle"><section class="floating-dialog"><header class="floating-dialog-header"><h3 class="floating-dialog-title" id="quickPlaceholderTitle">Quick add</h3><span>⠿</span></header><div class="floating-dialog-body"><p id="quickPlaceholderBody"></p></div><footer class="floating-dialog-footer"><button class="btn primary" id="quickPlaceholderClose" type="button">Close</button></footer></section></div>
-  <div class="floating-window" id="analysisWindow" hidden role="dialog" aria-modal="false" aria-labelledby="analysisWindowTitle"><section class="floating-dialog"><header class="floating-dialog-header"><h3 class="floating-dialog-title" id="analysisWindowTitle">🔎 Project analysis</h3><span>⠿</span></header><div class="floating-dialog-body"><textarea class="analysis-report" id="analysisReport" readonly spellcheck="false"></textarea></div><footer class="floating-dialog-footer"><button class="btn" id="copyAnalysis" type="button">Copy report</button><button class="btn primary" id="analysisCloseFloating" type="button">Close</button></footer></section></div>
-  <div class="floating-window" id="exportWindow" hidden role="dialog" aria-modal="false" aria-labelledby="exportWindowTitle"><section class="floating-dialog"><header class="floating-dialog-header"><h3 class="floating-dialog-title" id="exportWindowTitle">📤 Export composition</h3><span>⠿</span></header><div class="floating-dialog-body"><div class="export-format-grid" role="radiogroup" aria-label="Export format"><label class="export-format-choice"><input type="radio" name="exportFormat" value="json" checked>JSON</label><label class="export-format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label><label class="export-format-choice"><input type="radio" name="exportFormat" value="wav">WAV</label><label class="export-format-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label></div><p class="export-description" id="exportDescription"></p><div class="export-options"><div class="export-option"><label for="exportSampleRate">Sample rate</label><select id="exportSampleRate"><option value="44100">44.1 kHz</option><option value="48000">48 kHz</option></select><small>Used for WAV and MP3 mixdown.</small></div><div class="export-option" id="bitrateOption" hidden><label for="exportBitrate">MP3 bitrate</label><select id="exportBitrate"><option value="128">128 kbps</option><option value="192" selected>192 kbps</option><option value="320">320 kbps</option></select><small>Used only for MP3.</small></div></div><label style="display:flex;gap:8px;align-items:center;color:#e3ded2;font-size:.76rem"><input id="includeMutedTracks" type="checkbox" style="width:auto;height:auto"> Include muted tracks</label><p class="export-description" id="exportStatus"></p></div><footer class="floating-dialog-footer"><button class="btn" id="exportClose" type="button">Close</button><button class="btn primary" id="performExport" type="button">Export file</button></footer></section></div>
-  <div class="floating-window" id="renameTrackWindow" hidden role="dialog" aria-modal="false" aria-labelledby="renameTrackTitle"><section class="floating-dialog"><header class="floating-dialog-header"><h3 class="floating-dialog-title" id="renameTrackTitle">Rename track</h3><span>⠿</span></header><div class="floating-dialog-body"><label class="modal-label" for="renameTrackInput">Track name</label><input class="themed-input" id="renameTrackInput" maxlength="60"></div><footer class="floating-dialog-footer"><button class="btn" id="renameTrackCancel" type="button">Cancel</button><button class="btn primary" id="renameTrackOk" type="button">OK</button></footer></section></div>
-
-  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <script src="./standalone-v035.js?v=0.35"></script>
-  <script src="./standalone-v036.js?v=0.36"></script>
+  <iframe src="./standalone-v038.html?v=0.38" title="Ihy v0.38 Sound and Music Workshop"></iframe>
 </body>
 </html>
