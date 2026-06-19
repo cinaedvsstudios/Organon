@@ -1,10 +1,12 @@
-// Capsularius v0.26.0 — Drive Accounts & Persistent Mount Verification
+// Capsularius v0.27.0 — Location Health & File Columns
 import { GoogleDriveService } from './google-drive.js';
+import { installLocationHealth } from './location-health.js';
+import { installFileColumns } from './file-columns.js';
 import { persistence } from './persistence.js';
 import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey, sourceTitle } from './state.js';
 import { readDirectory } from './filesystem.js';
 
-const CAPSULARIUS_VERSION = 'v0.26.1 — Drive Context Menu Fix';
+const CAPSULARIUS_VERSION = 'v0.27.0 — Location Health & File Columns';
 
 function setCapsulariusVersion() {
   const badge = document.querySelector('.app-badge');
@@ -318,4 +320,7 @@ export function installFolderTree(Workspace) {
   Workspace.prototype.renderFooter = function renderGoogleDriveFooter(windowRecord) { originalRenderFooter.call(this, windowRecord); if (windowRecord.source.kind === 'google-drive') { const drive = driveFor(this); const account = drive.account(windowRecord.source.accountId); windowRecord.element.querySelector('.window-status').textContent = account ? `${account.label} · ${drive.isConnected(account.id) ? 'read-only' : 'reconnect required'}` : 'Google Drive · read-only'; } };
   Workspace.prototype.renderItem = function renderGoogleDriveItem(windowRecord, entry, index, visibleEntries) { const node = originalRenderItem.call(this, windowRecord, entry, index, visibleEntries); if (windowRecord.source.kind === 'google-drive') { node.draggable = false; node.classList.add('cloud-file-item'); } return node; };
   Workspace.prototype.renderWindowShell = function renderGoogleDriveWindowShell(windowRecord) { originalRenderWindowShell.call(this, windowRecord); const up = windowRecord.element.querySelector('[data-action="up"]'); up.addEventListener('click', () => { if (windowRecord.source.kind === 'google-drive' && windowRecord.source.parent) this.handleGoogleTreeOpen(windowRecord, windowRecord.source.parent); }); };
+
+  installLocationHealth(Workspace);
+  installFileColumns(Workspace);
 }
