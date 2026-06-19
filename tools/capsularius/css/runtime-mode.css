@@ -1,0 +1,50 @@
+/* Startup runtime selector. The controls themselves are emoji-only; titles and aria labels carry the mode names. */
+.runtime-mode-card{
+  width:min(330px,100%);
+  padding:22px;
+  text-align:center;
+}
+
+.runtime-mode-card h2{
+  margin:4px 0 0;
+  color:var(--paper);
+  font:700 1.1rem var(--head);
+}
+
+.runtime-mode-actions{
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  margin:20px 0 12px;
+}
+
+.runtime-mode-button{
+  width:88px;
+  height:76px;
+  display:grid;
+  place-items:center;
+  border:1px solid var(--line);
+  border-radius:12px;
+  background:#0005;
+  color:var(--paper);
+  font-size:2rem;
+  transition:transform .12s,background .12s,border-color .12s,opacity .12s;
+}
+
+.runtime-mode-button:hover:not(:disabled){
+  transform:translateY(-2px);
+  border-color:var(--spray);
+  background:#4b84bf59;
+}
+
+.runtime-mode-button:disabled{
+  opacity:.28;
+  cursor:not-allowed;
+}
+
+.runtime-mode-help{
+  min-height:1.2em;
+  margin:0;
+  color:#f5f0db9e;
+  font-size:.73rem;
+}
