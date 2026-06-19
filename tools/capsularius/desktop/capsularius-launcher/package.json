@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Local Electron development launcher for Capsularius inside the Organon checkout.",
-  "main": "main.cjs",
+  "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dev": "electron ."
