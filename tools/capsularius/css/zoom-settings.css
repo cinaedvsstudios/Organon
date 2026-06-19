@@ -1,0 +1,46 @@
+/* Interface zoom control in Settings. */
+.caps-zoom-panel{
+  display:grid;
+  gap:14px;
+  max-width:480px;
+  padding:16px;
+  border:1px solid rgba(224,163,96,.28);
+  border-radius:10px;
+  background:rgba(0,0,0,.16);
+}
+
+.caps-zoom-readout{
+  color:var(--stone);
+  font:700 1.65rem var(--mono,monospace);
+  letter-spacing:.03em;
+}
+
+.caps-zoom-range{
+  width:100%;
+  accent-color:var(--teal-light);
+}
+
+.caps-zoom-scale{
+  display:flex;
+  justify-content:space-between;
+  color:#ad9d86;
+  font:.68rem var(--mono,monospace);
+}
+
+.caps-zoom-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+}
+
+.caps-zoom-actions button{
+  border:1px solid rgba(224,163,96,.48);
+  border-radius:6px;
+  padding:7px 10px;
+  color:#f4e5cf;
+  background:#31261d;
+  box-shadow:0 3px 9px rgba(0,0,0,.56);
+  cursor:pointer;
+  font:inherit;
+  font-size:.73rem;
+}
