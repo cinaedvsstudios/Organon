@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.20 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone.css?v=0.20">
+  <title>Ihy v0.21 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone.css?v=0.21">
 </head>
 <body>
   <header class="top">
     <div class="brand">
       <img class="icon" src="./icon.png" alt="Ihy">
       <div class="title">Ihy</div>
-      <div class="version">v0.20</div>
+      <div class="version">v0.21</div>
     </div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
@@ -61,7 +61,7 @@
               <button class="btn" id="record">⏺ Record</button>
               <button class="btn" id="stop">⏹ Stop</button>
             </div>
-            <p class="status" id="status"></p>
+            <p class="status" id="status">v0.21 — compact section strip and unassigned piano-roll tools.</p>
           </div>
 
           <div class="card">
@@ -78,6 +78,12 @@
             <div class="piano-toolbar">
               <h2>🎼 Piano roll</h2>
               <div class="piano-actions">
+                <div class="piano-tool-buttons" aria-label="Unassigned piano-roll tools">
+                  <button class="btn piano-tool-button" id="toolMusic" type="button" aria-label="Unassigned music tool">🎶</button>
+                  <button class="btn piano-tool-button" id="toolPointer" type="button" aria-label="Unassigned pointer tool">👆</button>
+                  <button class="btn piano-tool-button" id="toolJoin" type="button" aria-label="Unassigned join tool">🫱🏻‍🫲🏽</button>
+                  <button class="btn piano-tool-button" id="toolDrop" type="button" aria-label="Unassigned drop tool">🫳🏽</button>
+                </div>
                 <button class="btn" id="play">▶ Play</button>
                 <span class="transport-time" id="transportTime">0:00 / 0:42</span>
                 <button class="btn" id="addSection">＋ Section</button>
@@ -123,6 +129,6 @@
     </section>
   </div>
 
-  <script src="./standalone.js?v=0.20"></script>
+  <script src="./standalone.js?v=0.21"></script>
 </body>
 </html>
