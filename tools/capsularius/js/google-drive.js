@@ -5,21 +5,46 @@ const GOOGLE_CLIENT_ID = '102488628137-d4sc4gp34mht0p961umsl4rbkjv87j9b.apps.goo
 const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const GOOGLE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
+const GIS_URL = 'https://accounts.google.com/gsi/client';
 
-function waitForGoogleIdentity() {
+function loadGoogleIdentity() {
   if (window.google?.accounts?.oauth2) return Promise.resolve();
+
   return new Promise((resolve, reject) => {
-    const timeout = window.setTimeout(() => reject(new Error('Google sign-in could not load. Check your connection and reload Capsularius.')), 12000);
-    const timer = window.setInterval(() => {
+    const existing = document.querySelector(`script[src="${GIS_URL}"]`);
+    const script = existing || document.createElement('script');
+    const timeout = window.setTimeout(() => {
+      reject(new Error('Google sign-in could not load. Check your connection and reload Capsularius.'));
+    }, 12000);
+
+    const complete = () => {
       if (!window.google?.accounts?.oauth2) return;
       window.clearTimeout(timeout);
-      window.clearInterval(timer);
       resolve();
+    };
+
+    if (!existing) {
+      script.src = GIS_URL;
+      script.async = true;
+      script.defer = true;
+      script.addEventListener('load', complete, { once: true });
+      script.addEventListener('error', () => {
+        window.clearTimeout(timeout);
+        reject(new Error('Google sign-in could not load.'));
+      }, { once: true });
+      document.head.append(script);
+      return;
+    }
+
+    const poll = window.setInterval(() => {
+      if (!window.google?.accounts?.oauth2) return;
+      window.clearInterval(poll);
+      complete();
     }, 50);
   });
 }
 
-function googleError(message, status) {
+function driveError(message, status) {
   const error = new Error(message);
   error.status = status;
   return error;
@@ -29,14 +54,6 @@ function parseDriveItem(item, parentSource) {
   const isFolder = item.mimeType === GOOGLE_FOLDER_MIME;
   const modified = item.modifiedTime ? Date.parse(item.modifiedTime) : null;
   const size = item.size === undefined ? null : Number(item.size);
-  const source = isFolder
-    ? googleDriveSource('folder', {
-      folderId: item.id,
-      driveId: parentSource.driveId || null,
-      name: item.name,
-      parent: parentSource
-    })
-    : null;
 
   return {
     id: `google-file:${item.id}`,
@@ -46,7 +63,14 @@ function parseDriveItem(item, parentSource) {
     size: Number.isFinite(size) ? size : null,
     lastModified: Number.isFinite(modified) ? modified : null,
     mimeType: item.mimeType || '',
-    cloudSource: source,
+    cloudSource: isFolder
+      ? googleDriveSource('folder', {
+        folderId: item.id,
+        driveId: parentSource.driveId || null,
+        name: item.name,
+        parent: parentSource
+      })
+      : null,
     webViewLink: item.webViewLink || null,
     thumbnailLink: item.thumbnailLink || null
   };
@@ -56,7 +80,6 @@ export class GoogleDriveService {
   constructor({ state }) {
     this.state = state;
     this.accessToken = null;
-    this.tokenClient = null;
   }
 
   isConnected() {
@@ -64,46 +87,60 @@ export class GoogleDriveService {
   }
 
   async connect() {
-    await waitForGoogleIdentity();
+    await loadGoogleIdentity();
+
     return new Promise((resolve, reject) => {
-      this.tokenClient = window.google.accounts.oauth2.initTokenClient({
+      const tokenClient = window.google.accounts.oauth2.initTokenClient({
         client_id: GOOGLE_CLIENT_ID,
         scope: GOOGLE_DRIVE_SCOPE,
         callback: (response) => {
           if (!response || response.error || !response.access_token) {
-            reject(googleError(response?.error_description || response?.error || 'Google Drive access was not granted.'));
+            reject(driveError(response?.error_description || response?.error || 'Google Drive access was not granted.'));
             return;
           }
           this.accessToken = response.access_token;
           this.state.googleDrive.connected = true;
           resolve(response);
         },
-        error_callback: (error) => reject(googleError(error?.message || 'Google sign-in could not be opened.'))
+        error_callback: (error) => {
+          reject(driveError(error?.message || 'Google sign-in could not be opened.'));
+        }
       });
-      this.tokenClient.requestAccessToken({ prompt: 'select_account' });
+
+      tokenClient.requestAccessToken({ prompt: 'select_account' });
     });
   }
 
   async request(path, parameters = {}) {
-    if (!this.accessToken) throw googleError('Google Drive is not connected. Click Connect Google Drive first.', 401);
+    if (!this.accessToken) {
+      throw driveError('Google Drive is not connected. Click Connect Google Drive first.', 401);
+    }
+
     const url = new URL(`${DRIVE_API}${path}`);
     for (const [key, value] of Object.entries(parameters)) {
       if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value));
     }
-    const response = await fetch(url, { headers: { Authorization: `Bearer ${this.accessToken}` } });
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.accessToken}` }
+    });
+
     if (!response.ok) {
       let message = 'Google Drive could not complete this request.';
       try {
         const body = await response.json();
         message = body?.error?.message || message;
-      } catch (_) { /* no-op */ }
+      } catch (_) {
+        // The standard status message is sufficient when the response is not JSON.
+      }
       if (response.status === 401) {
         this.accessToken = null;
         this.state.googleDrive.connected = false;
         message = 'Your Google Drive session has expired. Click Google Drive and connect again.';
       }
-      throw googleError(message, response.status);
+      throw driveError(message, response.status);
     }
+
     return response.json();
   }
 
@@ -121,20 +158,18 @@ export class GoogleDriveService {
   async listFolderContents(source) {
     const parentId = source.node === 'my-drive' ? 'root' : source.folderId;
     if (!parentId) return [];
+
     const parameters = {
       q: `'${parentId}' in parents and trashed = false`,
       fields: 'nextPageToken,files(id,name,mimeType,size,modifiedTime,webViewLink,thumbnailLink)',
       pageSize: 100,
       orderBy: 'folder,name_natural',
       supportsAllDrives: true,
-      includeItemsFromAllDrives: true
+      includeItemsFromAllDrives: true,
+      corpora: source.driveId ? 'drive' : 'user',
+      driveId: source.driveId || null
     };
-    if (source.driveId) {
-      parameters.corpora = 'drive';
-      parameters.driveId = source.driveId;
-    } else {
-      parameters.corpora = 'user';
-    }
+
     const files = await this.listAll('/files', parameters, 'files');
     return files.map((file) => parseDriveItem(file, source));
   }
@@ -157,6 +192,7 @@ export class GoogleDriveService {
       fields: 'nextPageToken,drives(id,name)',
       pageSize: 100
     }, 'drives');
+
     return drives.map((drive) => ({
       id: `google-drive:${drive.id}`,
       name: drive.name,
@@ -186,7 +222,7 @@ export class GoogleDriveService {
           cloudSource: googleDriveSource('connect', { parent: source })
         }];
       }
-      throw googleError('Google Drive is not connected. Click Connect Google Drive first.', 401);
+      throw driveError('Google Drive is not connected. Click Connect Google Drive first.', 401);
     }
 
     if (source.node === 'root') {
@@ -196,6 +232,7 @@ export class GoogleDriveService {
         { id: 'google-shared-drives', name: 'Shared drives', kind: 'directory', fileType: 'directory', size: null, lastModified: null, cloudSource: googleDriveSource('shared-drives', { parent: source }) }
       ];
     }
+
     if (source.node === 'shared-drives') return this.listSharedDrives(source);
     if (source.node === 'shared-with-me') return this.listSharedWithMe(source);
     if (source.node === 'connect') return [];
@@ -215,5 +252,3 @@ export class GoogleDriveService {
       }));
   }
 }
-
-export const googleDriveConfig = { clientId: GOOGLE_CLIENT_ID, scope: GOOGLE_DRIVE_SCOPE };
