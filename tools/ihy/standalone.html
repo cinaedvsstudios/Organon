@@ -4,15 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.21 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone.css?v=0.21">
+  <title>Ihy v0.22 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone.css?v=0.22">
 </head>
 <body>
   <header class="top">
     <div class="brand">
       <img class="icon" src="./icon.png" alt="Ihy">
       <div class="title">Ihy</div>
-      <div class="version">v0.21</div>
+      <div class="version">v0.22</div>
     </div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
@@ -33,21 +33,19 @@
         <aside class="side">
           <div class="card">
             <h2>🎛️ Controls</h2>
-            <div class="section-label">Project &amp; sound</div>
-            <div class="control-grid">
-              <button class="btn primary" id="newProject">＋ New</button>
+            <div class="button-group" aria-label="Project and sound actions">
+              <button class="btn primary" id="createSound">✨ Create</button>
               <button class="btn primary" id="save">💾 Save</button>
-              <button class="btn" id="createSound">✨ Create</button>
               <button class="btn" id="loadExample">♫ Example</button>
             </div>
+            <button id="newProject" type="button" hidden aria-hidden="true">New project</button>
 
-            <div class="section-label">Files &amp; tools</div>
-            <div class="control-grid">
+            <div class="button-group" aria-label="File and analysis actions">
               <button class="btn" id="import">📥 Import</button>
               <button class="btn" id="export">📤 Export</button>
-              <button class="btn" id="libraryButton">🎧 Library</button>
               <button class="btn" id="analyseButton">🔎 Analyse</button>
             </div>
+            <button id="libraryButton" type="button" hidden aria-hidden="true">Library</button>
             <input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
 
             <div class="section-label">Quick add</div>
@@ -61,7 +59,7 @@
               <button class="btn" id="record">⏺ Record</button>
               <button class="btn" id="stop">⏹ Stop</button>
             </div>
-            <p class="status" id="status">v0.21 — compact section strip and unassigned piano-roll tools.</p>
+            <p class="status" id="status">v0.22 — grouped controls and open-project analysis.</p>
           </div>
 
           <div class="card">
@@ -118,7 +116,7 @@
 
     <section class="view" id="createView"><div class="card"><h2>✨ Create sound</h2><p class="placeholder">Simple game and SFX sound controls will live here.</p></div></section>
     <section class="view" id="libraryView"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library and permanent imported-audio storage are next.</p></div></section>
-    <section class="view" id="analyseView"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis will connect to the Organon Audio2MIDI workflow later.</p></div></section>
+    <section class="view" id="analyseView"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Analysis opens over the current project.</p></div></section>
   </main>
 
   <div class="quick-add-modal" id="quickAddModal" hidden role="dialog" aria-modal="true" aria-labelledby="quickAddTitle">
@@ -129,6 +127,15 @@
     </section>
   </div>
 
-  <script src="./standalone.js?v=0.21"></script>
+  <div class="analysis-modal" id="analysisModal" hidden role="dialog" aria-modal="true" aria-labelledby="analysisTitle">
+    <section class="analysis-dialog">
+      <h3 id="analysisTitle">🔎 Open project analysis</h3>
+      <div id="analysisDetails"></div>
+      <button class="btn primary" id="analysisClose" type="button">Close</button>
+    </section>
+  </div>
+
+  <script src="./standalone.js?v=0.22"></script>
+  <script src="./standalone-v022.js?v=0.22"></script>
 </body>
 </html>
