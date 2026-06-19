@@ -10,9 +10,7 @@
   const timer = $('#transportTime');
   const roll = $('#roll');
   const arrangement = $('#arrangement');
-  const rollGrid = document.querySelector('#rollScroll .roll-grid');
-  const arrangementViewport = $('#arrangementViewport');
-  if (!slider || !value || !play || !stop || !mount || !timer || !roll || !arrangement || !rollGrid || !arrangementViewport) return;
+  if (!slider || !value || !play || !stop || !mount || !timer || !roll || !arrangement) return;
 
   const BEAT_WIDTH = 40;
   let playing = false;
@@ -58,10 +56,11 @@
     slider.value = String(zoom);
     value.textContent = `${zoom}%`;
     localStorage.setItem('ihy-display-zoom', String(zoom));
+
     const scale = zoom / 100;
-    rollGrid.style.zoom = String(scale);
-    arrangement.style.zoom = String(scale);
-    arrangementViewport.style.height = `${58 * scale}px`;
+    document.documentElement.dataset.ihyRollScale = String(scale);
+    roll.style.zoom = String(scale);
+    arrangement.style.zoom = '';
     ensureTimeLabels();
   }
 
