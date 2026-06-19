@@ -6,11 +6,19 @@ echo.
 echo Starting Capsularius Desktop...
 echo.
 
+set "PORTABLE_NODE="
+for /d %%D in ("%~dp0node-v*-win-x64") do (
+  if exist "%%~fD\node.exe" set "PORTABLE_NODE=%%~fD"
+)
+if defined PORTABLE_NODE (
+  set "PATH=%PORTABLE_NODE%;%PATH%"
+  echo Using portable Node.js from "%PORTABLE_NODE%"
+)
+
 where node >nul 2>&1
 if errorlevel 1 (
   echo Node.js is required before Capsularius Desktop can start.
-  echo Install the current Node.js LTS release, then run this launcher again.
-  start "" "https://nodejs.org/"
+  echo Install the Windows installer from nodejs.org, or place an extracted node-v*-win-x64 folder beside this launcher.
   pause
   exit /b 1
 )
