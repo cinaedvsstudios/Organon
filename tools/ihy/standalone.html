@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.09 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone-v008.css">
+  <title>Ihy v0.10 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone-v008.css?v=0.10">
 </head>
 <body>
   <header class="top">
     <img class="icon" src="./icon.png" alt="Ihy">
     <div class="title">Ihy</div>
-    <div class="version">v0.09</div>
+    <div class="version">v0.10</div>
     <span class="divider" aria-hidden="true"></span>
     <div class="project">
       <input id="title" value="Untitled cue" aria-label="Project name">
@@ -31,7 +31,7 @@
             <div class="fields"><div class="field"><label>Armed</label><select id="armed"></select></div><div class="field"><label>Quantise</label><select id="quant"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select></div><div class="field"><label>Transpose</label><input id="transpose" type="number" value="0"></div></div>
             <div class="actions" style="margin-top:10px"><button class="btn" id="import">📥 Import</button><button class="btn" id="export">📤 Export</button><button class="btn primary" id="save">💾 Save</button></div>
             <input id="file" type="file" accept=".json" hidden>
-            <p class="status" id="status">v0.09 — timeline, cursor and extended keyboard.</p>
+            <p class="status" id="status">v0.10 — playback timeline and extended keyboard.</p>
           </div>
           <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">➕ Track</button></div><div class="tracks" id="tracks"></div></div>
         </aside>
@@ -55,12 +55,12 @@
       </div>
     </section>
 
-    <section class="view" id="create"><div class="card"><h2>✨ Create</h2><p class="placeholder">Sound creation controls return in the next build.</p></div></section>
+    <section class="view" id="create"><div class="card"><h2>✨ Create</h2><p class="placeholder">Working sound presets:</p><div class="presetgrid" id="presets"></div></div></section>
     <section class="view" id="signal"><div class="card"><h2>〰️ Signal</h2><p class="placeholder">Continuous frequency signal mode returns in the next build.</p></div></section>
     <section class="view" id="library"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library returns in the next build.</p></div></section>
     <section class="view" id="analyse"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis connects to the existing Audio2MIDI workflow in the next build.</p></div></section>
   </main>
 
-  <script src="./standalone-v008.js"></script>
+  <script src="./standalone-v008.js?v=0.10"></script>
 </body>
 </html>
