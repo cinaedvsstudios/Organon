@@ -1,0 +1,13 @@
+/* Ihy v0.28: single-controller visual repair layer. */
+.track{grid-template-columns:12px minmax(0,1fr) auto!important}
+.track-actions{display:flex!important;gap:4px!important}
+.track-actions .track-control{min-width:27px!important;min-height:29px!important;padding:4px!important}
+.track-actions .solo-active{color:#ecffff!important;border-color:#36cfe1!important;background:#137b91!important}
+.track-actions .hide-active{color:#fff!important;border-color:#c5c9bc!important;background:#595b52!important}
+.pitch-label.c-row{color:#9af8ff!important;background:rgba(66,215,230,.105)!important;font-weight:800!important}
+.pitch-label.c4-row{color:#eaffff!important;background:rgba(66,215,230,.22)!important;font-weight:1000!important}
+.c-guide{position:absolute;z-index:1;right:0;left:0;height:24px;background:rgba(66,215,230,.075);border-top:1px solid rgba(66,215,230,.3);border-bottom:1px solid rgba(66,215,230,.12);pointer-events:none}
+.c-guide.c4-guide{background:rgba(66,215,230,.16);border-top-color:rgba(109,241,255,.75);border-bottom-color:rgba(109,241,255,.35)}
+.note,.playhead{z-index:4!important}.playhead{z-index:10!important}
+#clear{color:#fff0f3;border-color:#be485d;background:#792535}
+#clear:hover{border-color:#ff8ba8;background:#923247}
