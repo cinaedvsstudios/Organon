@@ -1,0 +1,33 @@
+/* File Type table and icon picker. Kept separate from the workspace UI so Settings remains modular. */
+.caps-settings-header-actions { display:flex; align-items:flex-start; gap:8px; padding-bottom:12px; }
+.caps-settings-header-button { border:1px solid rgba(224,163,96,.48); border-radius:6px; padding:7px 9px; color:#f4e5cf; background:#31261d; box-shadow:0 3px 9px rgba(0,0,0,.56); cursor:pointer; font:700 .7rem var(--body); letter-spacing:.02em; white-space:nowrap; }
+.caps-settings-header-button.danger { color:#ffb6a7; border-color:rgba(206,88,74,.58); }
+.caps-settings-header-button:disabled { opacity:.38; cursor:not-allowed; }
+.caps-settings-close { padding:1px 0 0 6px; }
+.caps-file-types-toolbar { display:flex; justify-content:flex-end; margin:0 0 11px; }
+.caps-file-types-toolbar input { width:min(340px,100%); box-sizing:border-box; border:1px solid rgba(224,163,96,.42); border-radius:6px; padding:8px 10px; color:#f2e5d3; background:#151612; font:inherit; font-size:.77rem; }
+.caps-file-types-table { display:grid; gap:6px; }
+.caps-file-types-header, .caps-file-type-row { display:grid; grid-template-columns:160px 84px minmax(0,1fr); align-items:center; column-gap:10px; }
+.caps-file-types-header { position:sticky; top:0; z-index:2; min-height:30px; padding:0 9px; border:1px solid rgba(224,163,96,.4); border-radius:7px; color:#ecd5b4; background:#151612; font:700 .65rem var(--body); letter-spacing:.06em; text-transform:uppercase; }
+.caps-file-type-row { min-height:44px; padding:7px 9px; border:1px solid rgba(224,163,96,.19); border-radius:7px; background:rgba(0,0,0,.12); cursor:pointer; }
+.caps-file-type-row:hover { border-color:rgba(224,163,96,.52); background:rgba(224,163,96,.07); }
+.caps-file-type-row.selected { border-color:#75b2de; background:rgba(117,178,222,.13); box-shadow:0 0 0 1px rgba(117,178,222,.18) inset; }
+.caps-type-extension { color:#dfc39c; font:.78rem var(--mono,monospace); white-space:nowrap; }
+.caps-type-extension-input, .caps-type-icon-input, .caps-type-description-input { width:100%; box-sizing:border-box; min-width:0; border:1px solid rgba(224,163,96,.36); border-radius:5px; color:#f2e7d5; background:#151612; font:inherit; font-size:.78rem; }
+.caps-type-extension-input { padding:7px 8px; font-family:var(--mono,monospace); }
+.caps-type-icon-input { padding:5px 8px; font-size:1.15rem; line-height:1.1; text-align:center; }
+.caps-type-description-input { padding:7px 8px; }
+.caps-type-icon-input:focus, .caps-type-extension-input:focus, .caps-type-description-input:focus, .caps-file-types-toolbar input:focus { outline:1px solid #75b2de; border-color:#75b2de; }
+.caps-file-types-empty { margin:0; padding:16px 9px; border:1px dashed rgba(224,163,96,.34); border-radius:7px; color:#c8b89f; font-size:.8rem; }
+.caps-emoji-picker { position:fixed; z-index:13010; width:296px; max-height:330px; overflow:auto; padding:9px; border:1px solid #75b2de; border-radius:9px; color:#eaf4fd; background:#14202c; box-shadow:0 18px 50px rgba(0,0,0,.72); pointer-events:auto; }
+.caps-emoji-picker input { width:100%; box-sizing:border-box; margin-bottom:9px; padding:8px; border:1px solid rgba(117,178,222,.55); border-radius:6px; color:#ecf7ff; background:#0c1520; font:inherit; font-size:.78rem; }
+.caps-emoji-grid { display:grid; grid-template-columns:repeat(8,1fr); gap:5px; }
+.caps-emoji-choice { min-height:31px; border:1px solid rgba(117,178,222,.2); border-radius:5px; background:#1a2a38; cursor:pointer; font-size:1.12rem; }
+.caps-emoji-choice:hover { border-color:#75b2de; background:#253e52; }
+.caps-emoji-empty { grid-column:1 / -1; margin:8px 2px; color:#b8cad9; font-size:.75rem; }
+@media (max-width:700px) {
+  .caps-settings-header { align-items:flex-start; }
+  .caps-settings-header-actions { flex-wrap:wrap; justify-content:flex-end; }
+  .caps-file-types-header, .caps-file-type-row { grid-template-columns:106px 64px minmax(0,1fr); column-gap:6px; }
+  .caps-file-types-header { font-size:.56rem; }
+}
