@@ -39,26 +39,33 @@ async function writeValue(key, value) {
   });
 }
 
-function desktopModeSelected() {
-  return document.documentElement.dataset.capsulariusMode === 'desktop';
+function modeName() {
+  return document.documentElement.dataset.capsulariusMode === 'desktop' ? 'desktop' : 'browser';
+}
+
+function modeKey(key) {
+  return `${key}:${modeName()}`;
+}
+
+async function readModeValue(key, fallback, { browserLegacyFallback = false } = {}) {
+  const current = await readValue(modeKey(key), undefined);
+  if (current !== undefined) return current;
+  if (browserLegacyFallback && modeName() === 'browser') return readValue(key, fallback);
+  return fallback;
 }
 
 export const persistence = {
   async load() {
     const [mounts, library, recents, workspace, googleDriveAccounts, mountVerification] = await Promise.all([
-      readValue('mounts', []),
-      readValue('library', []),
-      readValue('recents', []),
-      readValue('workspace', null),
+      readModeValue('mounts', [], { browserLegacyFallback:true }),
+      readModeValue('library', [], { browserLegacyFallback:true }),
+      readModeValue('recents', [], { browserLegacyFallback:true }),
+      readModeValue('workspace', null, { browserLegacyFallback:true }),
       readValue('google-drive-accounts', []),
-      readValue('mount-verification', {})
+      readModeValue('mount-verification', {}, { browserLegacyFallback:true })
     ]);
-    const desktopMode = desktopModeSelected();
-    const compatibleMounts = Array.isArray(mounts)
-      ? mounts.filter((mount) => desktopMode ? Boolean(mount?.nativePath) : !mount?.nativePath)
-      : [];
     return {
-      mounts: compatibleMounts,
+      mounts: Array.isArray(mounts) ? mounts : [],
       library: Array.isArray(library) ? library : [],
       recents: Array.isArray(recents) ? recents : [],
       workspace: workspace && typeof workspace === 'object' ? workspace : null,
@@ -66,12 +73,12 @@ export const persistence = {
       mountVerification: mountVerification && typeof mountVerification === 'object' ? mountVerification : {}
     };
   },
-  saveMounts(mounts) { return writeValue('mounts', mounts); },
-  saveLibrary(library) { return writeValue('library', library); },
-  saveRecents(recents) { return writeValue('recents', recents); },
-  saveWorkspace(workspace) { return writeValue('workspace', workspace); },
+  saveMounts(mounts) { return writeValue(modeKey('mounts'), mounts); },
+  saveLibrary(library) { return writeValue(modeKey('library'), library); },
+  saveRecents(recents) { return writeValue(modeKey('recents'), recents); },
+  saveWorkspace(workspace) { return writeValue(modeKey('workspace'), workspace); },
   loadGoogleDriveAccounts() { return readValue('google-drive-accounts', []); },
   saveGoogleDriveAccounts(accounts) { return writeValue('google-drive-accounts', accounts); },
-  loadMountVerification() { return readValue('mount-verification', {}); },
-  saveMountVerification(records) { return writeValue('mount-verification', records); }
+  loadMountVerification() { return readModeValue('mount-verification', {}, { browserLegacyFallback:true }); },
+  saveMountVerification(records) { return writeValue(modeKey('mount-verification'), records); }
 };
