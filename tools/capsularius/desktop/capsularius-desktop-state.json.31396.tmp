@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "savedAt": 1781908244033,
+  "mounts": [],
+  "library": [],
+  "recents": [],
+  "workspace": {
+    "nextWindowId": 5,
+    "activeWindowId": 1,
+    "panX": 0,
+    "panY": 0,
+    "currentColourIndex": 2,
+    "windows": [
+      {
+        "id": 1,
+        "source": {
+          "kind": "library"
+        },
+        "nickname": "Library",
+        "colour": "#e0a360",
+        "x": 14,
+        "y": 14,
+        "width": 756,
+        "height": 684,
+        "viewMode": "grid",
+        "settings": {
+          "scope": "window",
+          "window": {
+            "viewMode": "grid",
+            "sortBy": "name",
+            "sortDirection": "asc"
+          },
+          "folders": {}
+        },
+        "minimized": false,
+        "treeExpanded": []
+      }
+    ]
+  },
+  "mountVerification": {},
+  "preferences": {
+    "uiZoom": 90
+  }
+}
