@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('capsulariusDesktop', Object.freeze({
   isDesktop: true,
+  loadDesktopState: () => ipcRenderer.invoke('capsularius:load-desktop-state'),
+  saveDesktopState: (state) => ipcRenderer.invoke('capsularius:save-desktop-state', state),
   chooseDirectory: () => ipcRenderer.invoke('capsularius:choose-directory'),
   restoreDirectory: (nativePath) => ipcRenderer.invoke('capsularius:restore-directory', nativePath),
   listDirectory: (nativePath) => ipcRenderer.invoke('capsularius:list-directory', nativePath),
