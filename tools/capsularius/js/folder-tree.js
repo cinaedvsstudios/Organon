@@ -1,4 +1,4 @@
-import { librarySource, physicalSource, recentsSource, sourceKey } from './state.js';
+import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey } from './state.js';
 import { readDirectory } from './filesystem.js';
 
 function makeElement(tag, className, text) {
@@ -9,11 +9,7 @@ function makeElement(tag, className, text) {
 }
 
 function sameSource(first, second) {
-  return first?.kind === second?.kind
-    && (first?.kind !== 'physical' || (
-      first.mountId === second.mountId
-      && first.pathSegments.join('/') === second.pathSegments.join('/')
-    ));
+  return sourceKey(first) === sourceKey(second);
 }
 
 function compareName(first, second) {
@@ -31,41 +27,45 @@ export function installFolderTree(Workspace) {
   Workspace.prototype.getVirtualTreeChildren = function getVirtualTreeChildren(source) {
     if (source.kind === 'library') {
       return this.buildLibraryEntries()
-        .map((entry) => ({
-          id: entry.id,
-          name: entry.name,
-          source: entry.source,
-          colour: entry.colour,
-          icon: entry.emoji || '▰',
-          subtitle: entry.subtitle
-        }))
+        .map((entry) => ({ id: entry.id, name: entry.name, source: entry.source, colour: entry.colour, icon: entry.emoji || '▰', subtitle: entry.subtitle }))
         .sort(compareName);
     }
     if (source.kind === 'recents') {
       return this.buildRecentEntries()
-        .map((entry) => ({
-          id: entry.id,
-          name: entry.name,
-          source: entry.source,
-          colour: entry.colour,
-          icon: '◷',
-          subtitle: entry.subtitle
-        }));
+        .map((entry) => ({ id: entry.id, name: entry.name, source: entry.source, colour: entry.colour, icon: '◷', subtitle: entry.subtitle }));
     }
     return [];
   };
 
   Workspace.prototype.loadTreeChildren = async function loadTreeChildren(windowRecord, source) {
-    if (source.kind !== 'physical') return this.getVirtualTreeChildren(source);
     const key = sourceKey(source);
-    if (windowRecord.treeChildren.has(key)) return windowRecord.treeChildren.get(key);
+    if ((source.kind === 'physical' || source.kind === 'google-drive') && windowRecord.treeChildren.has(key)) return windowRecord.treeChildren.get(key);
     if (windowRecord.treeLoading.has(key)) return [];
+    if (source.kind === 'library' || source.kind === 'recents') return this.getVirtualTreeChildren(source);
+
+    if (source.kind === 'google-drive') {
+      if (typeof this.getGoogleTreeChildren !== 'function') return [];
+      windowRecord.treeLoading.add(key);
+      this.renderSidebar(windowRecord);
+      try {
+        const children = await this.getGoogleTreeChildren(windowRecord, source);
+        windowRecord.treeChildren.set(key, children);
+        return children;
+      } catch (error) {
+        console.error(error);
+        this.onToast(error?.message || 'Capsularius could not read Google Drive folders.', 'error');
+        windowRecord.treeChildren.set(key, []);
+        return [];
+      } finally {
+        windowRecord.treeLoading.delete(key);
+        this.renderSidebar(windowRecord);
+      }
+    }
 
     const mount = this.state.mounts.get(source.mountId);
     if (!mount || mount.permission !== 'granted') return [];
     windowRecord.treeLoading.add(key);
     this.renderSidebar(windowRecord);
-
     try {
       const { entries } = await readDirectory(mount.handle, source.pathSegments);
       const children = entries
@@ -92,7 +92,7 @@ export function installFolderTree(Workspace) {
   };
 
   Workspace.prototype.treeChildrenFor = function treeChildrenFor(windowRecord, source) {
-    if (source.kind !== 'physical') return this.getVirtualTreeChildren(source);
+    if (source.kind === 'library' || source.kind === 'recents') return this.getVirtualTreeChildren(source);
     return windowRecord.treeChildren.get(sourceKey(source));
   };
 
@@ -136,30 +136,28 @@ export function installFolderTree(Workspace) {
     const quick = addSection('Quick access');
     quick.append(this.renderTreeNode(windowRecord, librarySource(), 'Library', '#e0a360', 0, { icon: '▣', virtual: true }));
     quick.append(this.renderTreeNode(windowRecord, recentsSource(), 'Recents', '#4b84bf', 0, { icon: '◷', virtual: true }));
+    quick.append(this.renderTreeNode(windowRecord, googleDriveSource('root'), 'Google Drive', '#4285f4', 0, { icon: 'G', virtual: true }));
 
     const mounted = addSection('Mounted folders');
     if (this.state.mounts.size === 0) {
       mounted.append(makeElement('div', 'nav-empty', 'No folders mounted'));
       return;
     }
-
     for (const mount of this.state.mounts.values()) {
-      const rootSource = physicalSource(mount.id, []);
-      mounted.append(this.renderTreeNode(windowRecord, rootSource, mount.nickname || mount.name, mount.colour, 0, { icon: '▰' }));
+      mounted.append(this.renderTreeNode(windowRecord, physicalSource(mount.id, []), mount.nickname || mount.name, mount.colour, 0, { icon: '▰' }));
     }
   };
 
   Workspace.prototype.renderTreeNode = function renderTreeNode(windowRecord, source, label, colour, depth, options = {}) {
     const key = sourceKey(source);
     const expanded = windowRecord.treeExpanded.has(key);
-    const loading = source.kind === 'physical' && windowRecord.treeLoading.has(key);
+    const loading = windowRecord.treeLoading.has(key);
     const children = this.treeChildrenFor(windowRecord, source);
     const active = sameSource(windowRecord.source, source);
     const hasKnownEmptyChildren = Array.isArray(children) && children.length === 0;
-    const isVirtual = Boolean(options.virtual);
 
     const wrapper = makeElement('div', 'tree-node-wrap');
-    const row = makeElement('div', `tree-node${active ? ' active' : ''}${isVirtual ? ' virtual-root' : ''}`);
+    const row = makeElement('div', `tree-node${active ? ' active' : ''}${options.virtual ? ' virtual-root' : ''}`);
     row.style.setProperty('--tree-depth', String(depth));
 
     const expander = makeElement('button', `tree-expander${expanded ? ' expanded' : ''}${loading ? ' loading' : ''}`, loading ? '·' : expanded ? '▾' : '▸');
@@ -182,7 +180,13 @@ export function installFolderTree(Workspace) {
     const button = makeElement('button', 'tree-label', label);
     button.type = 'button';
     button.title = options.subtitle ? `${label} — ${options.subtitle}` : label;
-    button.addEventListener('click', () => this.navigateWindow(windowRecord, source));
+    button.addEventListener('click', () => {
+      if (source.kind === 'google-drive' && typeof this.handleGoogleTreeOpen === 'function') {
+        this.handleGoogleTreeOpen(windowRecord, source);
+      } else {
+        this.navigateWindow(windowRecord, source);
+      }
+    });
     row.append(expander, icon, button);
     wrapper.append(row);
 
@@ -193,10 +197,7 @@ export function installFolderTree(Workspace) {
         wrapper.append(pending);
       } else if (children) {
         for (const child of children) {
-          wrapper.append(this.renderTreeNode(windowRecord, child.source, child.name, child.colour || colour, depth + 1, {
-            icon: child.icon || '▰',
-            subtitle: child.subtitle
-          }));
+          wrapper.append(this.renderTreeNode(windowRecord, child.source, child.name, child.colour || colour, depth + 1, { icon: child.icon || '▰', subtitle: child.subtitle }));
         }
       }
     }
