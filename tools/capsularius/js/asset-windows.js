@@ -48,6 +48,14 @@ function metadataLabel(entry) {
   return '—';
 }
 
+function hddPathLabel(workspace, record, entry) {
+  if (record.source.kind !== 'physical') return 'Not a local HDD folder.';
+  const mount = workspace.state.mounts.get(record.source.mountId);
+  const root = String(mount?.windowsPath || mount?.hddPath || mount?.recordedPath || '').trim();
+  if (!root) return 'Not recorded — browser folder access does not reveal full Windows paths.';
+  return [root.replace(/[\\/]+$/,''), ...record.source.pathSegments, entry.name].join('\\');
+}
+
 function propertyId(workspace, record, entry) {
   return `${sourcePathLabel(workspace.state,record.source)}|${entry.name}`;
 }
@@ -66,17 +74,22 @@ function bringToFront(panel) {
 function makeDraggable(panel, handle) {
   let drag = null;
   handle.addEventListener('pointerdown',(event)=>{
-    if(event.button!==0)return;
-    event.preventDefault();bringToFront(panel);
-    const bounds=panel.getBoundingClientRect();drag={id:event.pointerId,offsetX:event.clientX-bounds.left,offsetY:event.clientY-bounds.top};handle.setPointerCapture(event.pointerId);
+    if (event.button !== 0 || event.target.closest('button,input,textarea,select,a,label,[data-no-drag]')) return;
+    event.preventDefault();
+    bringToFront(panel);
+    const bounds = panel.getBoundingClientRect();
+    drag = { id:event.pointerId, offsetX:event.clientX-bounds.left, offsetY:event.clientY-bounds.top };
+    handle.setPointerCapture(event.pointerId);
   });
   handle.addEventListener('pointermove',(event)=>{
-    if(!drag||drag.id!==event.pointerId)return;
+    if(!drag || drag.id !== event.pointerId) return;
     const bounds=panel.getBoundingClientRect();
     panel.style.left=`${Math.max(8,Math.min(window.innerWidth-bounds.width-8,event.clientX-drag.offsetX))}px`;
     panel.style.top=`${Math.max(8,Math.min(window.innerHeight-bounds.height-8,event.clientY-drag.offsetY))}px`;
   });
-  const stop=()=>{drag=null;};handle.addEventListener('pointerup',stop);handle.addEventListener('pointercancel',stop);
+  const stop=()=>{ drag=null; };
+  handle.addEventListener('pointerup',stop);
+  handle.addEventListener('pointercancel',stop);
 }
 
 function positionPanel(panel, offset = 0) {
@@ -97,6 +110,28 @@ function createWindow({ kind, title, subtitle }) {
   bar.append(heading,close);panel.append(bar);panel.addEventListener('pointerdown',()=>bringToFront(panel));makeDraggable(panel,bar);return panel;
 }
 
+function addImageZoom(panel, image) {
+  const bar = panel.querySelector('.caps-asset-window-bar');
+  const close = panel.querySelector('.caps-asset-window-close');
+  const control = el('label','caps-preview-zoom');
+  control.dataset.noDrag = 'true';
+  const value = el('span','caps-preview-zoom-value','100%');
+  const input = document.createElement('input');
+  input.type='range'; input.min='10'; input.max='200'; input.step='5'; input.value='100'; input.title='Image zoom';
+  const apply = () => {
+    const zoom = Number(input.value);
+    value.textContent = `${zoom}%`;
+    image.style.maxWidth = 'none';
+    image.style.maxHeight = 'none';
+    image.style.width = `${zoom}%`;
+    image.style.height = 'auto';
+  };
+  input.addEventListener('input',apply);
+  control.append(el('span','caps-preview-zoom-label','Zoom'),input,value);
+  bar.insertBefore(control,close);
+  apply();
+}
+
 function unsupportedPreview(content, entry) {
   const type=fileTypeDescriptor(entry.name);const empty=el('div','caps-preview-empty');
   empty.append(el('span','caps-preview-empty-icon',type.icon || '📄'),el('strong','',entry.name),el('span','',`Capsularius cannot preview ${type.label} in the browser yet.`));content.append(empty);
@@ -106,7 +141,7 @@ async function addPreviewContent(panel, entry) {
   const content=el('div','caps-preview-content');panel.append(content);
   const file=await entry.handle.getFile();const extension=extensionOf(entry.name);const url=URL.createObjectURL(file);panel.dataset.objectUrl=url;
   if(entry.fileType==='image'){
-    const image=document.createElement('img');image.className='caps-preview-image';image.alt=entry.name;image.src=url;image.addEventListener('load',()=>panel.classList.add('preview-ready'));image.addEventListener('error',()=>unsupportedPreview(content,entry));content.append(image);return;
+    const image=document.createElement('img');image.className='caps-preview-image';image.alt=entry.name;image.src=url;image.addEventListener('load',()=>{panel.classList.add('preview-ready');addImageZoom(panel,image);});image.addEventListener('error',()=>unsupportedPreview(content,entry));content.append(image);return;
   }
   if(entry.fileType==='video'){
     const video=document.createElement('video');video.className='caps-preview-video';video.controls=true;video.preload='metadata';video.src=url;content.append(video);return;
@@ -136,7 +171,13 @@ export async function openPropertiesWindow(workspace, record, entries) {
   const panel=createWindow({kind:'properties',title:single?entry.name:`${entries.length} selected items`,subtitle:'Properties'});
   const content=el('div','caps-properties-content');const details=el('dl','caps-properties-grid');const add=(label,value)=>details.append(el('dt','',label),el('dd','',value));
   if(single){
-    add('Capsularius location',sourcePathLabel(workspace.state,record.source));add('Type',entry.kind==='directory'?'Folder':fileTypeDescriptor(entry.name).label);add('Size',entry.kind==='file'?formatBytes(entry.size):'—');add('Modified',formatDate(entry.lastModified));add('Length / dimensions',metadataLabel(entry));add('Browser MIME type',entry.mimeType || '—');
+    add('Capsularius location',sourcePathLabel(workspace.state,record.source));
+    add('HDD path',hddPathLabel(workspace,record,entry));
+    add('Type',entry.kind==='directory'?'Folder':fileTypeDescriptor(entry.name).label);
+    add('Size',entry.kind==='file'?formatBytes(entry.size):'—');
+    add('Modified',formatDate(entry.lastModified));
+    add('Length / dimensions',metadataLabel(entry));
+    add('Browser MIME type',entry.mimeType || '—');
   }else{
     add('Items',String(entries.length));add('Files',String(entries.filter((item)=>item.kind==='file').length));add('Folders',String(entries.filter((item)=>item.kind==='directory').length));add('Combined size',formatBytes(entries.reduce((total,item)=>total+(Number.isFinite(item.size)?item.size:0),0)));
   }
@@ -146,7 +187,19 @@ export async function openPropertiesWindow(workspace, record, entries) {
     [['Title','title',false],['Tags','tags',false],['Rating (0–5)','rating',false],['Description','description',true],['Notes','notes',true]].forEach(([label,key,multiline])=>{
       const wrapper=el('label');wrapper.append(el('span','',label));const input=document.createElement(multiline?'textarea':'input');if(!multiline)input.type=key==='rating'?'number':'text';if(key==='rating'){input.min='0';input.max='5';input.step='1';}input.value=saved[key] || '';input.dataset.property=key;wrapper.append(input);fields.append(wrapper);
     });
-    content.append(fields);const save=el('button','primary','💾 Save Capsularius metadata');save.addEventListener('click',()=>{const value={};fields.querySelectorAll('[data-property]').forEach((input)=>{value[input.dataset.property]=input.value.trim();});metadata[propertyId(workspace,record,entry)]=value;writeJson(PROPERTY_KEY,metadata);workspace.onToast('Properties saved in Capsularius.','success');});const actions=el('div','caps-asset-window-actions');actions.append(save);content.append(actions);
+    content.append(fields);
+    const actions=el('div','caps-asset-window-actions');
+    const save=el('button','primary','💾 Save Capsularius metadata');
+    save.addEventListener('click',()=>{const value={};fields.querySelectorAll('[data-property]').forEach((input)=>{value[input.dataset.property]=input.value.trim();});metadata[propertyId(workspace,record,entry)]=value;writeJson(PROPERTY_KEY,metadata);workspace.onToast('Properties saved in Capsularius.','success');});
+    actions.append(save);
+    if(entry.kind==='file'){
+      const duplicate=el('button','','📑 Duplicate File');
+      duplicate.addEventListener('click',async()=>{duplicate.disabled=true;const success=await workspace.onCommand('duplicate-file',{windowRecord:record,entries:[entry],entry});duplicate.disabled=false;if(success)workspace.onToast('File duplicated.','success');});
+      const remove=el('button','danger','🗑 Delete File');
+      remove.addEventListener('click',async()=>{remove.disabled=true;const success=await workspace.onCommand('delete-file',{windowRecord:record,entries:[entry],entry});if(success)removePanel(panel);else remove.disabled=false;});
+      actions.append(duplicate,remove);
+    }
+    content.append(actions);
   }
   panel.append(content);positionPanel(panel,0);
 }
