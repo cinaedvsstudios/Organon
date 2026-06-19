@@ -1,4 +1,5 @@
-import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey } from './state.js';
+import { GoogleDriveService } from './google-drive.js';
+import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey, sourceTitle } from './state.js';
 import { readDirectory } from './filesystem.js';
 
 function makeElement(tag, className, text) {
@@ -16,6 +17,22 @@ function compareName(first, second) {
   return first.name.localeCompare(second.name, undefined, { numeric: true, sensitivity: 'base' });
 }
 
+function driveFor(workspace) {
+  if (!workspace.googleDrive) workspace.googleDrive = new GoogleDriveService({ state: workspace.state });
+  return workspace.googleDrive;
+}
+
+function googleBreadcrumbs(source) {
+  const chain = [];
+  let current = source;
+  while (current) {
+    chain.unshift(current);
+    current = current.parent || null;
+  }
+  if (!chain.length || chain[0].node !== 'root') chain.unshift(googleDriveSource('root'));
+  return chain;
+}
+
 export function installFolderTree(Workspace) {
   if (Workspace.prototype.__capsulariusFolderTreeInstalled) return;
   Object.defineProperty(Workspace.prototype, '__capsulariusFolderTreeInstalled', { value: true });
@@ -23,6 +40,11 @@ export function installFolderTree(Workspace) {
   const originalRenderSidebar = Workspace.prototype.renderSidebar;
   const originalNavigateWindow = Workspace.prototype.navigateWindow;
   const originalLoadWindow = Workspace.prototype.loadWindow;
+  const originalRenderBreadcrumbs = Workspace.prototype.renderBreadcrumbs;
+  const originalOpenEntry = Workspace.prototype.openEntry;
+  const originalRenderFooter = Workspace.prototype.renderFooter;
+  const originalRenderItem = Workspace.prototype.renderItem;
+  const originalRenderWindowShell = Workspace.prototype.renderWindowShell;
 
   Workspace.prototype.getVirtualTreeChildren = function getVirtualTreeChildren(source) {
     if (source.kind === 'library') {
@@ -37,6 +59,40 @@ export function installFolderTree(Workspace) {
     return [];
   };
 
+  Workspace.prototype.getGoogleTreeChildren = async function getGoogleTreeChildren(_windowRecord, source) {
+    return driveFor(this).listTreeChildren(source);
+  };
+
+  Workspace.prototype.clearGoogleTreeCache = function clearGoogleTreeCache() {
+    for (const record of this.state.windows.values()) {
+      for (const key of [...record.treeChildren.keys()]) {
+        if (key.startsWith('google-drive:')) record.treeChildren.delete(key);
+      }
+    }
+  };
+
+  Workspace.prototype.handleGoogleTreeOpen = async function handleGoogleTreeOpen(windowRecord, source) {
+    const drive = driveFor(this);
+    try {
+      if (source.node === 'connect' || (source.node === 'root' && !drive.isConnected())) {
+        await drive.connect();
+        this.clearGoogleTreeCache();
+        this.refreshSpecialWindows();
+        await this.navigateWindow(windowRecord, googleDriveSource('my-drive', { folderId: 'root', parent: googleDriveSource('root') }));
+        this.onToast('Google Drive connected for this Capsularius session.', 'success');
+        return;
+      }
+      if (source.node === 'root') {
+        await this.navigateWindow(windowRecord, googleDriveSource('my-drive', { folderId: 'root', parent: googleDriveSource('root') }));
+        return;
+      }
+      await this.navigateWindow(windowRecord, source);
+    } catch (error) {
+      console.error(error);
+      this.onToast(error?.message || 'Google Drive could not be opened.', 'error');
+    }
+  };
+
   Workspace.prototype.loadTreeChildren = async function loadTreeChildren(windowRecord, source) {
     const key = sourceKey(source);
     if ((source.kind === 'physical' || source.kind === 'google-drive') && windowRecord.treeChildren.has(key)) return windowRecord.treeChildren.get(key);
@@ -44,7 +100,6 @@ export function installFolderTree(Workspace) {
     if (source.kind === 'library' || source.kind === 'recents') return this.getVirtualTreeChildren(source);
 
     if (source.kind === 'google-drive') {
-      if (typeof this.getGoogleTreeChildren !== 'function') return [];
       windowRecord.treeLoading.add(key);
       this.renderSidebar(windowRecord);
       try {
@@ -181,11 +236,8 @@ export function installFolderTree(Workspace) {
     button.type = 'button';
     button.title = options.subtitle ? `${label} — ${options.subtitle}` : label;
     button.addEventListener('click', () => {
-      if (source.kind === 'google-drive' && typeof this.handleGoogleTreeOpen === 'function') {
-        this.handleGoogleTreeOpen(windowRecord, source);
-      } else {
-        this.navigateWindow(windowRecord, source);
-      }
+      if (source.kind === 'google-drive') this.handleGoogleTreeOpen(windowRecord, source);
+      else this.navigateWindow(windowRecord, source);
     });
     row.append(expander, icon, button);
     wrapper.append(row);
@@ -204,6 +256,31 @@ export function installFolderTree(Workspace) {
     return wrapper;
   };
 
+  Workspace.prototype.loadWindow = async function loadWindowWithTree(windowRecord) {
+    if (windowRecord.source.kind === 'google-drive') {
+      windowRecord.loading = true;
+      windowRecord.error = null;
+      windowRecord.permissionRequired = false;
+      this.renderWindow(windowRecord);
+      try {
+        windowRecord.items = await driveFor(this).listSource(windowRecord.source);
+      } catch (error) {
+        windowRecord.error = error?.message || 'Google Drive could not be opened.';
+        windowRecord.items = [];
+      } finally {
+        windowRecord.loading = false;
+        this.renderWindow(windowRecord);
+        this.renderSidebar(windowRecord);
+      }
+      return;
+    }
+
+    const result = await originalLoadWindow.call(this, windowRecord);
+    if (windowRecord.source.kind === 'physical') this.expandTreeToSource(windowRecord, windowRecord.source).catch((error) => console.error(error));
+    else this.renderSidebar(windowRecord);
+    return result;
+  };
+
   Workspace.prototype.navigateWindow = async function navigateWithTree(windowRecord, source, options = {}) {
     const result = await originalNavigateWindow.call(this, windowRecord, source, options);
     if (source.kind === 'physical') {
@@ -215,13 +292,48 @@ export function installFolderTree(Workspace) {
     return result;
   };
 
-  Workspace.prototype.loadWindow = async function loadWindowWithTree(windowRecord) {
-    const result = await originalLoadWindow.call(this, windowRecord);
-    if (windowRecord.source.kind === 'physical') {
-      this.expandTreeToSource(windowRecord, windowRecord.source).catch((error) => console.error(error));
-    } else {
-      this.renderSidebar(windowRecord);
+  Workspace.prototype.renderBreadcrumbs = function renderGoogleBreadcrumbs(windowRecord) {
+    if (windowRecord.source.kind !== 'google-drive') return originalRenderBreadcrumbs.call(this, windowRecord);
+    const container = windowRecord.element.querySelector('.breadcrumbs');
+    container.replaceChildren();
+    googleBreadcrumbs(windowRecord.source).forEach((source, index, chain) => {
+      const crumb = makeElement('button', 'breadcrumb', sourceTitle(this.state, source));
+      crumb.type = 'button';
+      crumb.addEventListener('click', () => this.handleGoogleTreeOpen(windowRecord, source));
+      container.append(crumb);
+      if (index < chain.length - 1) container.append(makeElement('span', 'breadcrumb-separator', '/'));
+    });
+  };
+
+  Workspace.prototype.openEntry = async function openGoogleDriveEntry(windowRecord, entry) {
+    if (windowRecord.source.kind === 'google-drive' && entry.cloudSource) {
+      await this.handleGoogleTreeOpen(windowRecord, entry.cloudSource);
+      return;
     }
-    return result;
+    return originalOpenEntry.call(this, windowRecord, entry);
+  };
+
+  Workspace.prototype.renderFooter = function renderGoogleDriveFooter(windowRecord) {
+    originalRenderFooter.call(this, windowRecord);
+    if (windowRecord.source.kind === 'google-drive') {
+      windowRecord.element.querySelector('.window-status').textContent = driveFor(this).isConnected() ? 'Google Drive · read-only' : 'Google Drive · not connected';
+    }
+  };
+
+  Workspace.prototype.renderItem = function renderGoogleDriveItem(windowRecord, entry, index, visibleEntries) {
+    const node = originalRenderItem.call(this, windowRecord, entry, index, visibleEntries);
+    if (windowRecord.source.kind === 'google-drive') {
+      node.draggable = false;
+      node.classList.add('cloud-file-item');
+    }
+    return node;
+  };
+
+  Workspace.prototype.renderWindowShell = function renderGoogleDriveWindowShell(windowRecord) {
+    originalRenderWindowShell.call(this, windowRecord);
+    const up = windowRecord.element.querySelector('[data-action="up"]');
+    up.addEventListener('click', () => {
+      if (windowRecord.source.kind === 'google-drive' && windowRecord.source.parent) this.handleGoogleTreeOpen(windowRecord, windowRecord.source.parent);
+    });
   };
 }
