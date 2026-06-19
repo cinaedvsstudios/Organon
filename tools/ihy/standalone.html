@@ -4,13 +4,180 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.41</title>
-  <style>
-    html,body,iframe{width:100%;height:100%;margin:0;border:0;background:#171817}
-    iframe{display:block}
-  </style>
+  <title>Ihy v0.42 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone.css?v=0.42">
 </head>
 <body>
-  <iframe src="./standalone-v039.html?v=0.41" title="Ihy v0.41 Sound and Music Workshop"></iframe>
+  <header class="app-header">
+    <div class="brand">
+      <img class="brand-icon" src="./icon.png" alt="Ihy">
+      <strong>Ihy</strong>
+      <span class="version-pill">v0.42</span>
+    </div>
+    <span class="header-divider" aria-hidden="true"></span>
+    <div class="project-meta">
+      <label class="field composition-field"><span>Composition</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
+      <label class="field bpm-field"><span>BPM</span><input id="bpm" type="number" min="30" max="260" value="92"></label>
+      <label class="field key-field"><span>Key</span><select id="projectKey">
+        <option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option>
+      </select></label>
+      <label class="field"><span>Chord mode</span><button id="chordMode" class="toggle" type="button" aria-pressed="false">♫ Chord</button></label>
+      <label class="field armed-field"><span>Armed track</span><select id="armedTrack"></select></label>
+      <label class="field quant-field"><span>Quantise</span><select id="quantise">
+        <option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option>
+      </select></label>
+      <label class="field transpose-field"><span>Transpose</span><input id="transpose" type="number" min="-24" max="24" value="0"></label>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>🎛️ Controls</h2>
+        <div class="button-row group">
+          <button class="button create" id="createNew" type="button">✨ Create</button>
+          <button class="button primary" id="saveProject" type="button">💾 Save</button>
+          <button class="button danger" id="clearTrack" type="button">🗑 Clear</button>
+        </div>
+        <div class="button-row group">
+          <button class="button" id="importProject" type="button">📥 Import</button>
+          <button class="button" id="exportProject" type="button">📤 Export</button>
+          <button class="button" id="analyseProject" type="button">🔎 Analyse</button>
+        </div>
+        <input id="fileInput" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
+        <p class="section-label">Quick add</p>
+        <div class="button-row">
+          <button class="button" id="quickBass" type="button">＋ Bass</button>
+          <button class="button" id="quickMotif" type="button">＋ Motif</button>
+        </div>
+        <p id="status" class="status">v0.42 — direct consolidated editor.</p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>🎚️ Tracks</h2>
+          <button class="button compact" id="addTrack" type="button">＋ Track</button>
+        </div>
+        <div id="tracks" class="tracks"></div>
+      </section>
+    </aside>
+
+    <section class="editor">
+      <section class="panel piano-panel">
+        <div class="piano-toolbar">
+          <h2>🎼 Piano roll</h2>
+          <div class="toolbar-actions">
+            <div class="tool-set" aria-label="Piano roll tools">
+              <button class="button tool active" id="toolAdd" type="button" title="Add notes">🎶</button>
+              <button class="button tool" id="undo" type="button" title="Undo">↶</button>
+              <button class="button tool" id="redo" type="button" title="Redo">↷</button>
+              <button class="button tool" id="toolSelect" type="button" title="Select notes">👆</button>
+              <button class="button tool" id="groupSelection" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button>
+              <button class="button tool" id="deleteSelection" type="button" title="Delete selection">🗑️</button>
+            </div>
+            <button class="button play" id="playPause" type="button">▶ Play</button>
+            <button class="button stop" id="stopPlayback" type="button">⏹ Stop</button>
+            <output id="transportTime" class="transport-time">0:00 / 0:42</output>
+            <button class="button" id="addSection" type="button">＋ Section</button>
+            <label class="zoom"><span>Zoom</span><input id="zoomRange" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></label>
+            <button class="button tool" id="dragMute" type="button" title="Mute note audition while dragging">🔊</button>
+          </div>
+        </div>
+
+        <div class="timeline-shell">
+          <div class="timeline-key">TIME</div>
+          <div id="timelineViewport" class="timeline-viewport"><div id="timeline" class="timeline"></div></div>
+        </div>
+
+        <div id="rollScroll" class="roll-scroll">
+          <div class="roll-grid">
+            <div id="pitchLabels" class="pitch-labels"></div>
+            <div id="roll" class="roll"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-heading keyboard-heading">
+          <h2>⌨️ Keyboard</h2>
+          <span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. The instrument changes the armed track.</span>
+          <select id="instrument" class="instrument-select" aria-label="Track instrument"></select>
+        </div>
+        <div class="piano-wrap"><div id="piano" class="piano"></div></div>
+      </section>
+    </section>
+  </main>
+
+  <menu id="noteMenu" class="context-menu" hidden>
+    <button data-note-action="copy">Copy</button>
+    <button data-note-action="cut">Cut</button>
+    <button data-note-action="paste">Paste</button>
+    <button data-note-action="duplicate">Duplicate</button>
+    <button data-note-action="make-chord" class="make-chord">Make chord</button>
+    <button data-note-action="delete" class="danger">Delete</button>
+  </menu>
+
+  <menu id="trackMenu" class="context-menu" hidden>
+    <button data-track-action="rename">Rename</button>
+    <button data-track-action="duplicate">Duplicate</button>
+    <button data-track-action="delete" class="danger">Delete</button>
+    <div class="submenu">
+      <button id="trackInstrumentToggle" type="button">Instrument ›</button>
+      <div id="trackInstrumentChoices" hidden></div>
+    </div>
+  </menu>
+
+  <menu id="sectionMenu" class="context-menu" hidden>
+    <button data-section-action="rename">Rename</button>
+    <button data-section-action="duplicate">Duplicate</button>
+    <button data-section-action="delete" class="danger">Delete</button>
+  </menu>
+
+  <div id="quickModal" class="modal-layer" hidden>
+    <section class="modal">
+      <header class="modal-header"><h3 id="quickTitle">Quick add</h3><span>⠿</span></header>
+      <div class="modal-body"><p id="quickText"></p></div>
+      <footer class="modal-footer"><button class="button primary" data-close="quickModal" type="button">Close</button></footer>
+    </section>
+  </div>
+
+  <div id="renameModal" class="modal-layer" hidden>
+    <section class="modal">
+      <header class="modal-header"><h3>Rename track</h3><span>⠿</span></header>
+      <div class="modal-body">
+        <label class="modal-field">Track name<input id="renameInput" maxlength="60"></label>
+      </div>
+      <footer class="modal-footer"><button class="button" data-close="renameModal" type="button">Cancel</button><button class="button primary" id="renameConfirm" type="button">OK</button></footer>
+    </section>
+  </div>
+
+  <div id="analysisModal" class="modal-layer" hidden>
+    <section class="modal modal-wide">
+      <header class="modal-header"><h3>🔎 Project analysis</h3><span>⠿</span></header>
+      <div class="modal-body"><textarea id="analysisText" class="analysis-text" readonly spellcheck="false"></textarea></div>
+      <footer class="modal-footer"><button class="button" id="copyAnalysis" type="button">Copy report</button><button class="button primary" data-close="analysisModal" type="button">Close</button></footer>
+    </section>
+  </div>
+
+  <div id="exportModal" class="modal-layer" hidden>
+    <section class="modal">
+      <header class="modal-header"><h3>📤 Export composition</h3><span>⠿</span></header>
+      <div class="modal-body">
+        <div id="exportFormats" class="format-grid">
+          <label class="format-choice active"><input type="radio" name="exportFormat" value="json" checked>JSON</label>
+          <label class="format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label>
+          <label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="wav">WAV</label>
+          <label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label>
+        </div>
+        <p id="exportDescription" class="export-description"></p>
+        <label class="export-check"><input id="includeMuted" type="checkbox"> Include muted tracks</label>
+        <p id="exportStatus" class="export-description"></p>
+      </div>
+      <footer class="modal-footer"><button class="button" data-close="exportModal" type="button">Close</button><button class="button primary" id="doExport" type="button">Export file</button></footer>
+    </section>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
+  <script src="./standalone.js?v=0.42"></script>
 </body>
 </html>
