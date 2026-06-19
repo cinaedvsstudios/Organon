@@ -48,6 +48,10 @@ function scheduleSave() {
   window.clearTimeout(saveTimer);
   saveTimer = window.setTimeout(async () => {
     try {
+      if (filesystemMode === 'desktop' && window.capsulariusDesktop?.isDesktop) {
+        await persistence.saveDesktopWorkspaceFromApp(state);
+        return;
+      }
       await Promise.all([
         persistence.saveMounts([...state.mounts.values()].map(serialiseMount)),
         persistence.saveLibrary(state.library),
@@ -58,7 +62,7 @@ function scheduleSave() {
       console.error(error);
       toast('Capsularius could not save this workspace change.', 'error');
     }
-  },300);
+  }, filesystemMode === 'desktop' ? 650 : 300);
 }
 
 function openSource(source, options = {}) {
