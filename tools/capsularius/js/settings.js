@@ -1,13 +1,16 @@
 import { FILE_TYPE_DELETED_KEY, FILE_TYPE_OVERRIDES_KEY } from './file-types.js';
 import { addFileTypeDraft, createFileTypeUiState, deleteSelectedFileType, renderFileTypesTab } from './file-type-table.js';
 import { queryDirectoryPermission, readDirectory } from './filesystem.js';
+import { applyUiZoom, currentUiZoom, UI_ZOOM_DEFAULT, UI_ZOOM_MAX, UI_ZOOM_MIN } from './ui-zoom.js';
 
 const BACKUP_KEYS = [
   'capsularius.sidebarWidth.v1',
   'capsularius.columnWidths.v1',
   'capsularius.fileMetadata.v1',
   FILE_TYPE_OVERRIDES_KEY,
-  FILE_TYPE_DELETED_KEY
+  FILE_TYPE_DELETED_KEY,
+  'capsularius.uiZoom.browser.v1',
+  'capsularius.uiZoom.desktop.v1'
 ];
 
 function el(tag, className, text) {
@@ -110,6 +113,37 @@ function renderMountedLocations(app, body, rerender) {
   controls.append(mount,scan); footer.append(controls,el('span','caps-settings-note','Remove deletes only Capsularius’s saved reference.')); body.append(footer);
 }
 
+function renderZoom(body) {
+  body.append(el('p','caps-settings-copy','Choose the Capsularius interface scale. This works like browser zoom and is saved separately for Browser and Desktop mode.'));
+
+  const panel = el('section','caps-zoom-panel');
+  const readout = el('strong','caps-zoom-readout',`${currentUiZoom()}%`);
+  const range = document.createElement('input');
+  range.className = 'caps-zoom-range';
+  range.type = 'range';
+  range.min = String(UI_ZOOM_MIN);
+  range.max = String(UI_ZOOM_MAX);
+  range.step = '5';
+  range.value = String(currentUiZoom());
+  range.setAttribute('aria-label','Capsularius interface zoom');
+  const scale = el('div','caps-zoom-scale');
+  scale.append(el('span','',`${UI_ZOOM_MIN}%`),el('span','',`${UI_ZOOM_DEFAULT}%`),el('span','',`${UI_ZOOM_MAX}%`));
+  const actions = el('div','caps-zoom-actions');
+  const reset = el('button','','Reset to 100%');
+
+  const setZoom = async (value) => {
+    const next = await applyUiZoom(value);
+    range.value = String(next);
+    readout.textContent = `${next}%`;
+  };
+
+  range.addEventListener('input', () => { void setZoom(range.value); });
+  reset.addEventListener('click', () => { void setZoom(UI_ZOOM_DEFAULT); });
+  actions.append(reset);
+  panel.append(readout,range,scale,actions);
+  body.append(panel);
+}
+
 function renderBackup(body) {
   body.append(el('p','caps-settings-copy','Export or import Capsularius’s visual settings, file-type labels, and local metadata. Browser folder handles are not included, so mounted folders still need reconnecting after import.'));
   const area = el('div','caps-settings-backup');
@@ -142,7 +176,7 @@ export function installSettings(app) {
     const left = el('div');
     left.append(el('h2','caps-settings-title','Capsularius Settings'));
     const tabs = el('nav','caps-settings-tabs');
-    [['locations','Mounted Locations'],['types','File Types'],['backup','Backup']].forEach(([key,label]) => {
+    [['locations','Mounted Locations'],['zoom','Zoom'],['types','File Types'],['backup','Backup']].forEach(([key,label]) => {
       const item = el('button',`caps-settings-tab${tab === key ? ' active' : ''}`,label);
       item.type='button';
       item.addEventListener('click',()=>{tab=key;render();});
@@ -170,6 +204,7 @@ export function installSettings(app) {
 
     const body = el('main','caps-settings-body');
     if (tab === 'locations') renderMountedLocations(app,body,render);
+    else if (tab === 'zoom') renderZoom(body);
     else if (tab === 'types') renderFileTypesTab(app,body,render,typeUi);
     else renderBackup(body);
     panel.append(header,body);backdrop.append(panel);document.getElementById('dialog-layer').append(backdrop);
