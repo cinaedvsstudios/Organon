@@ -3,8 +3,20 @@ import { makeWindowRecord } from './state.js';
 
 const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
+async function waitForBootRestore(workspace, saved) {
+  const requiredDesktopMounts = saved.mounts.filter((mount) => mount?.nativePath).length;
+  const deadline = Date.now() + 8000;
+
+  while (Date.now() < deadline) {
+    const restoredDesktopMounts = [...workspace.state.mounts.values()].filter((mount) => mount?.nativePath).length;
+    const windowsAreSettled = [...workspace.state.windows.values()].every((record) => !record.loading);
+    if (restoredDesktopMounts >= requiredDesktopMounts && windowsAreSettled) return;
+    await wait(120);
+  }
+}
+
 async function restoreSavedWindowsSkippedByBoot() {
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+  for (let attempt = 0; attempt < 40; attempt += 1) {
     if (document.documentElement.dataset.capsulariusMode === 'desktop' && window.__capsulariusWorkspace) break;
     await wait(100);
   }
@@ -12,11 +24,12 @@ async function restoreSavedWindowsSkippedByBoot() {
   const workspace = window.__capsulariusWorkspace;
   if (document.documentElement.dataset.capsulariusMode !== 'desktop' || !workspace) return;
 
-  // app.js finishes its normal restore before this pass compares the saved JSON.
-  await wait(500);
-
   const saved = await persistence.load();
   const snapshots = Array.isArray(saved.workspace?.windows) ? saved.workspace.windows : [];
+  if (!snapshots.length) return;
+
+  await waitForBootRestore(workspace, saved);
+
   const existingIds = new Set(workspace.state.windows.keys());
   let restoredAny = false;
 
@@ -33,7 +46,7 @@ async function restoreSavedWindowsSkippedByBoot() {
     restoredAny = true;
   }
 
-  if (restoredAny) workspace.onStateChange();
+  if (restoredAny) await persistence.saveDesktopWorkspaceFromApp(workspace.state);
 }
 
 void restoreSavedWindowsSkippedByBoot().catch((error) => {
