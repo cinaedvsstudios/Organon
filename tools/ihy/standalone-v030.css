@@ -1,0 +1,161 @@
+/* Ihy v0.30 — surface treatment and restored arrangement bar */
+:root {
+  --v030-shadow: 0 4px 10px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.055);
+  --v030-deep-shadow: 0 9px 22px rgba(0,0,0,.52), inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+html,
+body {
+  background:
+    radial-gradient(1000px 620px at 58% -220px, rgba(66,215,230,.085), transparent 64%),
+    radial-gradient(900px 520px at 12% 10%, rgba(229,168,98,.07), transparent 66%),
+    linear-gradient(145deg, #1c1e1d 0%, #171918 52%, #111312 100%) !important;
+}
+
+.top {
+  background:
+    linear-gradient(180deg, rgba(42,45,42,.98), rgba(18,20,19,.98)) !important;
+  box-shadow: 0 5px 16px rgba(0,0,0,.58), inset 0 1px 0 rgba(255,255,255,.07) !important;
+}
+
+.card {
+  background:
+    linear-gradient(145deg, rgba(51,52,45,.99), rgba(37,39,34,.99) 58%, rgba(31,33,30,.99)) !important;
+  box-shadow: var(--v030-deep-shadow) !important;
+}
+
+.button-group {
+  background:
+    linear-gradient(145deg, rgba(39,42,38,.98), rgba(24,27,24,.98)) !important;
+  box-shadow: var(--v030-shadow) !important;
+}
+
+.btn,
+.chord-toggle,
+.piano-tool-button {
+  background:
+    linear-gradient(180deg, rgba(35,39,36,.98), rgba(16,18,17,.98)) !important;
+  box-shadow: var(--v030-shadow) !important;
+}
+
+.btn.primary {
+  background:
+    linear-gradient(180deg, #f2bf78 0%, #e2a55d 53%, #c98b43 100%) !important;
+  box-shadow: 0 4px 10px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,249,228,.5) !important;
+}
+
+#play {
+  background:
+    linear-gradient(180deg, #1ca6be 0%, #138096 56%, #0e5d6f 100%) !important;
+  box-shadow: 0 0 0 1px rgba(116,237,250,.25), 0 4px 10px rgba(0,0,0,.45), inset 0 1px 0 rgba(224,255,255,.35) !important;
+}
+
+#stop,
+#clear {
+  background:
+    linear-gradient(180deg, #a53c54 0%, #792535 58%, #5f1f2d 100%) !important;
+  box-shadow: var(--v030-shadow) !important;
+}
+
+input,
+select {
+  background:
+    linear-gradient(180deg, #151716 0%, #0b0d0c 100%) !important;
+  box-shadow: var(--v030-shadow) !important;
+}
+
+.track,
+.pianowrap,
+.roll-scroll,
+.arrangement-shell,
+.zoom-control,
+.transport-time {
+  box-shadow: var(--v030-shadow) !important;
+}
+
+.track {
+  background:
+    linear-gradient(145deg, rgba(31,34,31,.98), rgba(19,21,19,.98)) !important;
+}
+
+.pianowrap {
+  background:
+    linear-gradient(145deg, #171917, #0d0f0e) !important;
+}
+
+.roll-scroll {
+  background:
+    linear-gradient(145deg, rgba(14,17,16,.97), rgba(7,9,8,.98)) !important;
+}
+
+.arrangement-shell {
+  background:
+    linear-gradient(180deg, #191b18, #10120f) !important;
+}
+
+/* Main track is intentionally a disabled button, but it must remain a solid gold pill. */
+.arrangement-section:disabled {
+  opacity: 1 !important;
+  color: #1c1306 !important;
+  cursor: default !important;
+  background-color: #dfb658 !important;
+  background-image: linear-gradient(180deg, #f4d17b 0%, #dfb658 52%, #c68d36 100%) !important;
+  border-color: rgba(105,67,20,.72) !important;
+  box-shadow: 0 3px 7px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,250,222,.66) !important;
+}
+
+.arrangement-section:not(:disabled) {
+  opacity: 1 !important;
+  background-image: linear-gradient(180deg, rgba(255,255,255,.24), rgba(0,0,0,.18)) !important;
+  box-shadow: 0 3px 7px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.24) !important;
+}
+
+.arrangement-section {
+  align-items: center !important;
+  padding-bottom: 0 !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.4) !important;
+}
+
+.section-time-label {
+  color: #1d1307 !important;
+  text-shadow: 0 1px 0 rgba(255,245,210,.75) !important;
+}
+
+/* Quick-add placeholder modal */
+.quick-placeholder-modal[hidden] {
+  display: none !important;
+}
+
+.quick-placeholder-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: linear-gradient(145deg, rgba(0,0,0,.68), rgba(10,20,22,.76));
+  backdrop-filter: blur(3px);
+}
+
+.quick-placeholder-dialog {
+  width: min(410px, 100%);
+  padding: 20px;
+  border: 1px solid #b98a52;
+  border-radius: 16px;
+  background:
+    linear-gradient(145deg, #3b3b31 0%, #252822 65%, #1d201c 100%);
+  box-shadow: 0 20px 50px rgba(0,0,0,.78), inset 0 1px 0 rgba(255,255,255,.09);
+}
+
+.quick-placeholder-dialog h3 {
+  margin: 0;
+  color: #f0ba72;
+  font: 800 1rem Georgia, serif;
+}
+
+.quick-placeholder-dialog p {
+  margin: 10px 0 16px;
+  color: #e1ddd2;
+  font-size: .8rem;
+  line-height: 1.5;
+}
