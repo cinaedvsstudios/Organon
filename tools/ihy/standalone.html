@@ -4,14 +4,53 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.07 — Sound &amp; Music Workshop</title>
-  <style>
-    html,body{width:100%;height:100%;margin:0;background:#181919;overflow:hidden}
-    iframe{display:block;width:100%;height:100%;border:0;background:#181919}
-  </style>
+  <title>Ihy v0.08 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone-v008.css">
 </head>
 <body>
-  <iframe id="ihy" src="./index.html?standalone=v0.07" title="Ihy — Sound &amp; Music Workshop"></iframe>
-  <script src="./standalone-v007-layout.js"></script>
+  <header class="top">
+    <img class="icon" src="./icon.png" alt="Ihy">
+    <div class="title">Ihy</div>
+    <div class="version">v0.08</div>
+    <span class="divider" aria-hidden="true"></span>
+    <div class="project">
+      <input id="title" value="Untitled cue" aria-label="Project name">
+      <input id="bpm" type="number" value="92" aria-label="Beats per minute">
+      <select id="key" aria-label="Key"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option></select>
+    </div>
+  </header>
+  <main class="app">
+    <section class="view active" id="compose">
+      <div class="layout">
+        <aside class="side">
+          <div class="card">
+            <div class="tabs"><button class="btn active tab" data-view="compose">Compose</button><button class="btn tab" data-view="create">Create</button><button class="btn tab" data-view="signal">Signal</button><button class="btn tab" data-view="library">Library</button><button class="btn tab" data-view="analyse">Analyse</button></div>
+            <h2>🎛️ Controls</h2>
+            <div class="buttons" style="margin-top:10px"><button class="btn primary" id="play">▶️ Play</button><button class="btn" id="stop">⏹️ Stop</button><button class="btn" id="record">⏺️ Record</button><button class="btn" id="metro">🎵 Metro</button></div>
+            <div class="fields"><div class="field"><label>Armed</label><select id="armed"></select></div><div class="field"><label>Quantise</label><select id="quant"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select></div><div class="field"><label>Transpose</label><input id="transpose" type="number" value="0"></div></div>
+            <div class="actions" style="margin-top:10px"><button class="btn" id="import">📥 Import</button><button class="btn" id="export">📤 Export</button><button class="btn primary" id="save">💾 Save</button></div>
+            <input id="file" type="file" accept=".json" hidden>
+            <p class="status" id="status">v0.08 — direct standalone editor.</p>
+          </div>
+          <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">➕ Track</button></div><div class="tracks" id="tracks"></div></div>
+        </aside>
+        <section class="editor">
+          <div class="card">
+            <div class="headrow"><h2>🎼 Piano roll</h2><span class="help">Double-click an empty cell to add a note. Drag notes to move them, pull their right edge to resize, or right-click for an instrument override, velocity or deletion.</span><button class="btn" id="addSection">➕ Section</button><button class="btn" id="clear">🗑️ Clear armed</button></div>
+            <div class="scroll"><div class="content"><div class="gridrow"><div class="labels" id="labels"></div><div class="roll" id="roll"></div></div><div class="sectionrow"><div class="spacer"></div><div class="sections" id="sections"></div></div></div></div>
+          </div>
+          <div class="card">
+            <div class="headrow"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. Keyboard input plays the armed track; Record writes notes to the grid.</span><select id="instrument" style="max-width:190px"></select></div>
+            <div class="pianowrap"><div class="piano" id="piano"></div></div>
+          </div>
+        </section>
+      </div>
+    </section>
+    <section class="view" id="create"><div class="card"><h2>✨ Create</h2><p class="placeholder">Sound creation controls return in the next build.</p></div></section>
+    <section class="view" id="signal"><div class="card"><h2>〰️ Signal</h2><p class="placeholder">Continuous frequency signal mode returns in the next build.</p></div></section>
+    <section class="view" id="library"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library returns in the next build.</p></div></section>
+    <section class="view" id="analyse"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis connects to the existing Audio2MIDI workflow in the next build.</p></div></section>
+  </main>
+  <script src="./standalone-v008.js"></script>
 </body>
 </html>
