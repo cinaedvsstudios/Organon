@@ -4,15 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.43 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.44 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
+  <link rel="stylesheet" href="./feedback.css?v=0.44">
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <img class="brand-icon" src="./icon.png" alt="Ihy">
       <strong>Ihy</strong>
-      <span class="version-pill">v0.43</span>
+      <span class="version-pill">v0.44</span>
     </div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
@@ -50,7 +51,7 @@
           <button class="button" id="quickBass" type="button">＋ Bass</button>
           <button class="button" id="quickMotif" type="button">＋ Motif</button>
         </div>
-        <p id="status" class="status">v0.43 — direct application build.</p>
+        <p id="status" class="status" aria-live="polite"></p>
       </section>
 
       <section class="panel">
@@ -179,5 +180,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
+  <script src="./clear-all.js?v=0.44"></script>
 </body>
 </html>
