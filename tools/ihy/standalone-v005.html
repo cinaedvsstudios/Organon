@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#181919">
+  <title>Ihy v0.05 — Sound & Music Workshop</title>
+  <style>
+    html,body{width:100%;height:100%;margin:0;background:#181919;overflow:hidden}
+    iframe{display:block;width:100%;height:100%;border:0;background:#181919}
+  </style>
+</head>
+<body>
+  <iframe id="ihy" src="./standalone.html?v=0.04" title="Ihy — Sound & Music Workshop"></iframe>
+  <script>
+    (() => {
+      const frame = document.getElementById('ihy');
+      const css = `
+        .top{padding:12px 20px!important}
+        .heading{display:grid!important;grid-template-columns:42px auto auto minmax(420px,1fr)!important;align-items:center!important;gap:10px!important;width:min(1500px,100%)!important;margin:auto!important}
+        .name{flex:0!important;white-space:nowrap!important}
+        .project{display:grid!important;grid-template-columns:minmax(260px,1.35fr) 105px 150px!important;gap:8px!important;width:100%!important;margin:0!important}
+        .tabs{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;padding:12px!important;overflow:visible!important}
+        .tab{width:100%!important}.tab:last-child:nth-child(odd){grid-column:1/-1!important}
+        .scroll{height:min(420px,calc(100vh - 440px))!important;min-height:360px!important;max-height:460px!important}
+        @media(max-width:899px){
+          .heading{display:flex!important;flex-wrap:wrap!important}
+          .project{flex:1 0 100%!important;grid-template-columns:1.4fr .62fr .8fr!important;margin-top:10px!important}
+          .scroll{height:400px!important;min-height:0!important}
+        }
+      `;
+      frame.addEventListener('load', () => {
+        try {
+          const doc = frame.contentDocument;
+          if (doc.getElementById('ihy-v005-layout')) return;
+          const style = doc.createElement('style');
+          style.id = 'ihy-v005-layout';
+          style.textContent = css;
+          doc.head.append(style);
+          doc.title = 'Ihy v0.05 — Sound & Music Workshop';
+          const subtitle = doc.querySelector('.sub');
+          if (subtitle) subtitle.remove();
+          const version = doc.querySelector('.ver');
+          if (version) version.textContent = 'v0.05';
+          const heading = doc.querySelector('.heading');
+          const project = doc.querySelector('.project');
+          if (heading && project) heading.append(project);
+          const tabs = doc.querySelector('.tabs');
+          const side = doc.querySelector('.side');
+          if (tabs && side) side.prepend(tabs);
+          const status = doc.getElementById('status');
+          if (status) status.textContent = 'v0.05 — compact header and full editor view.';
+        } catch (_) {
+          // The page remains usable even if same-origin frame access is unavailable.
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
