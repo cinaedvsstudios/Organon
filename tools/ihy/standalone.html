@@ -4,78 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.06 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.07 — Sound &amp; Music Workshop</title>
   <style>
     html,body{width:100%;height:100%;margin:0;background:#181919;overflow:hidden}
     iframe{display:block;width:100%;height:100%;border:0;background:#181919}
   </style>
 </head>
 <body>
-  <iframe id="ihy" src="./index.html?standalone=v0.06" title="Ihy — Sound &amp; Music Workshop"></iframe>
-  <script>
-    (() => {
-      'use strict';
-      const frame = document.getElementById('ihy');
-      const css = `
-        .app{max-width:none!important;margin:0!important;padding-bottom:18px!important;min-height:100vh!important}
-        .top{padding:10px 20px!important;border-radius:0 0 18px 18px!important}
-        .title-row{display:grid!important;grid-template-columns:42px max-content max-content minmax(420px,1fr)!important;align-items:center!important;justify-content:start!important;gap:10px!important;width:100%!important;margin:0!important}
-        .icon-slot{width:42px!important;height:42px!important;flex:0 0 42px!important;border:0!important;border-radius:0!important;background:transparent!important;overflow:visible!important}
-        .icon-slot img{display:block;width:42px!important;height:42px!important;object-fit:contain!important}
-        .title-copy{min-width:0!important;flex:none!important}.title{color:#f7eddd!important;text-shadow:0 1px 2px rgb(0 0 0/.72)!important;font-size:1.28rem!important;letter-spacing:.08em!important;white-space:nowrap!important;overflow:visible!important}.sub{display:none!important}
-        .ver{margin:0!important;padding:7px 10px!important}
-        .top-fields{display:grid!important;grid-template-columns:minmax(260px,1.35fr) 105px 150px!important;gap:8px!important;width:100%!important;margin:0!important}
-        main{padding:12px 20px 24px!important}.tabs{display:grid!important;grid-template-columns:1fr 1fr!important;gap:7px!important;overflow:visible!important;padding:12px!important;margin:0 0 12px!important}.tab{width:100%!important}.tab:last-child:nth-child(odd){grid-column:1/-1!important}
-        .compose{display:grid!important;grid-template-columns:292px minmax(0,1fr)!important;grid-template-areas:"controls roll" "tracks keyboard"!important;gap:14px!important;align-items:start!important}.compose-controls{grid-area:controls!important}.compose-tracks{grid-area:tracks!important}.compose-roll{grid-area:roll!important;min-width:0!important}.compose-keys{grid-area:keyboard!important;min-width:0!important}.compose-sections{display:none!important}
-        .roll-wrap{height:min(350px,calc(100vh - 510px))!important;min-height:280px!important;max-height:380px!important}.section-inline{display:block!important;margin:0!important;padding:0!important;border:0!important;border-top:1px solid #5d4c39!important;border-radius:0!important;background:#121310!important;overflow:auto!important}.section-inline .section-wrap{border:0!important;border-radius:0!important;background:#121310!important}.section-inline .sections{height:50px!important}.section-inline .section{top:8px!important;height:34px!important;border-radius:999px!important;padding:0 12px!important}
-        .bottom{position:static!important;left:auto!important;bottom:auto!important;transform:none!important;max-width:none!important;width:auto!important;margin-top:10px!important;padding:0!important;background:transparent!important;border:0!important;border-radius:0!important}.bottom-inner{width:100%!important}.bottom-actions{grid-template-columns:1fr 1fr 1fr!important}.status{color:#b9b4a9!important;text-align:left!important}
-        @media(max-width:899px){.app{max-width:540px!important;margin:auto!important}.top{padding:12px!important}.title-row{display:flex!important;flex-wrap:wrap!important}.top-fields{flex:1 0 100%!important;grid-template-columns:1.4fr .62fr .8fr!important;margin-top:10px!important}.compose{display:flex!important;flex-direction:column!important}.roll-wrap{height:400px!important;min-height:0!important}.bottom-actions{grid-template-columns:1fr 1fr 1.15fr!important}.status{text-align:center!important}}
-      `;
-      function arrange(doc) {
-        if (doc.getElementById('ihy-v006-layout')) return;
-        const style = doc.createElement('style');
-        style.id = 'ihy-v006-layout';
-        style.textContent = css;
-        doc.head.append(style);
-        doc.title = 'Ihy v0.06 — Sound & Music Workshop';
-        const icon = doc.querySelector('.icon-slot');
-        if (icon) {
-          icon.innerHTML = '';
-          const image = doc.createElement('img');
-          image.src = './icon.png';
-          image.alt = 'Ihy';
-          icon.append(image);
-        }
-        const title = doc.querySelector('.title');
-        if (title) title.textContent = 'Ihy';
-        const version = doc.querySelector('.ver');
-        if (version) version.textContent = 'v0.06';
-        const titleRow = doc.querySelector('.title-row');
-        const projectFields = doc.querySelector('.top-fields');
-        if (titleRow && projectFields) titleRow.append(projectFields);
-        const tabs = doc.querySelector('.tabs');
-        const controlCard = doc.querySelector('.compose-controls');
-        if (tabs && controlCard) controlCard.prepend(tabs);
-        const sectionCard = doc.querySelector('.compose-sections');
-        const rollCard = doc.querySelector('.compose-roll');
-        if (sectionCard && rollCard) {
-          const sectionWrap = sectionCard.querySelector('.section-wrap');
-          if (sectionWrap) {
-            sectionWrap.classList.add('section-inline');
-            const rollWrap = rollCard.querySelector('.roll-wrap');
-            if (rollWrap) rollWrap.after(sectionWrap);
-          }
-          sectionCard.remove();
-        }
-        const footer = doc.querySelector('.bottom');
-        if (footer && controlCard) controlCard.append(footer);
-        const status = doc.getElementById('status');
-        if (status) status.textContent = 'v0.06 — aligned desktop editor.';
-      }
-      frame.addEventListener('load', () => {
-        try { arrange(frame.contentDocument); } catch (_) {}
-      });
-    })();
-  </script>
+  <iframe id="ihy" src="./index.html?standalone=v0.07" title="Ihy — Sound &amp; Music Workshop"></iframe>
+  <script src="./standalone-v007-layout.js"></script>
 </body>
 </html>
