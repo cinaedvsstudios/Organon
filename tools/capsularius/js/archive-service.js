@@ -1,5 +1,5 @@
 import { extensionOf, readDirectory, resolveDirectory, typeForFile } from './filesystem.js';
-import { sourceKey, zipSource } from './state.js';
+import { zipSource } from './state.js';
 
 function archiveError(message) {
   return new Error(message);
@@ -28,7 +28,9 @@ function directChild(path, prefix) {
   const remainder = path.slice(prefix.length);
   if (!remainder) return null;
   const slash = remainder.indexOf('/');
-  return slash === -1 ? { name:remainder, isDirectory:false, path:`${prefix}${remainder}` } : { name:remainder.slice(0,slash), isDirectory:true, path:`${prefix}${remainder.slice(0,slash + 1)}` };
+  return slash === -1
+    ? { name:remainder, isDirectory:false, path:`${prefix}${remainder}` }
+    : { name:remainder.slice(0,slash), isDirectory:true, path:`${prefix}${remainder.slice(0,slash + 1)}` };
 }
 
 function safeSize(zipObject) {
@@ -106,25 +108,26 @@ export class ArchiveService {
     const JSZip = requireJsZip();
     let zip;
     try {
-      zip = await JSZip.loadAsync(file, { createFolders:true });
+      zip = await JSZip.loadAsync(file,{ createFolders:true });
     } catch (error) {
       throw archiveError(error?.message || 'This ZIP archive could not be opened.');
     }
     const archive = { zip, size:file.size, lastModified:file.lastModified, file };
-    this.cache.set(key, archive);
+    this.cache.set(key,archive);
     return archive;
   }
 
   virtualFileHandle(source, path, name) {
+    const service = this;
     return {
       kind:'file',
       name,
       async getFile() {
-        const archive = await this.archiveFor(source);
+        const archive = await service.archiveFor(source);
         const object = archive.zip.files[path];
         if (!object || object.dir) throw archiveError(`“${name}” is no longer available in this ZIP.`);
         const blob = await object.async('blob');
-        return new File([blob], name, { type:mimeFor(name), lastModified:object.date?.getTime?.() || archive.lastModified || Date.now() });
+        return new File([blob],name,{ type:mimeFor(name), lastModified:object.date?.getTime?.() || archive.lastModified || Date.now() });
       }
     };
   }
@@ -135,8 +138,8 @@ export class ArchiveService {
       kind:'directory',
       name,
       async *entries() {
-        const children = await service.listSource(zipSource(source.mountId, source.parentPathSegments, source.archiveName, path, { parent:source }));
-        for (const child of children) yield [child.name, child.handle];
+        const children = await service.listSource(zipSource(source.mountId,source.parentPathSegments,source.archiveName,path,{ parent:source }));
+        for (const child of children) yield [child.name,child.handle];
       }
     };
   }
@@ -145,58 +148,56 @@ export class ArchiveService {
     const archive = await this.archiveFor(source);
     const prefix = folderPath(source.zipPath);
     const children = new Map();
-    for (const [rawPath, object] of Object.entries(archive.zip.files)) {
+    for (const [rawPath,object] of Object.entries(archive.zip.files)) {
       const path = normalisePath(rawPath);
-      const child = directChild(path, prefix);
+      const child = directChild(path,prefix);
       if (!child || !child.name) continue;
       const current = children.get(child.name);
-      if (!current || child.isDirectory) children.set(child.name, child);
-      if (object.dir && path === `${prefix}${child.name}/`) children.set(child.name, { name:child.name, isDirectory:true, path:`${prefix}${child.name}/` });
+      if (!current || child.isDirectory) children.set(child.name,child);
+      if (object.dir && path === `${prefix}${child.name}/`) children.set(child.name,{ name:child.name, isDirectory:true, path:`${prefix}${child.name}/` });
     }
-    return [...children.values()].map((child) => {
-      if (child.isDirectory) {
-        return {
-          id:`zip:${zipKey(source)}:${child.path}`,
-          name:child.name,
-          kind:'directory',
-          fileType:'directory',
-          size:null,
-          lastModified:null,
-          mimeType:'',
-          metadataPending:false,
-          zipPath:child.path,
-          handle:this.virtualDirectoryHandle(source, child.path, child.name)
-        };
-      }
+    return [...children.values()].map((child)=>{
+      if (child.isDirectory) return {
+        id:`zip:${zipKey(source)}:${child.path}`,
+        name:child.name,
+        kind:'directory',
+        fileType:'directory',
+        size:null,
+        lastModified:null,
+        mimeType:'',
+        metadataPending:false,
+        zipPath:child.path,
+        handle:this.virtualDirectoryHandle(source,child.path,child.name)
+      };
       const object = archive.zip.files[child.path];
       return {
         id:`zip:${zipKey(source)}:${child.path}`,
         name:child.name,
         kind:'file',
-        fileType:typeForFile(child.name, mimeFor(child.name)),
+        fileType:typeForFile(child.name,mimeFor(child.name)),
         size:safeSize(object),
         lastModified:object?.date?.getTime?.() || archive.lastModified || null,
         mimeType:mimeFor(child.name),
         metadataPending:true,
         zipPath:child.path,
-        handle:this.virtualFileHandle(source, child.path, child.name)
+        handle:this.virtualFileHandle(source,child.path,child.name)
       };
-    }).sort((one,two) => {
+    }).sort((one,two)=>{
       if (one.kind !== two.kind) return one.kind === 'directory' ? -1 : 1;
-      return one.name.localeCompare(two.name, undefined, { numeric:true, sensitivity:'base' });
+      return one.name.localeCompare(two.name,undefined,{ numeric:true, sensitivity:'base' });
     });
   }
 
   childSource(source, entry) {
-    return zipSource(source.mountId, source.parentPathSegments, source.archiveName, folderPath(entry.zipPath), { parent:source });
+    return zipSource(source.mountId,source.parentPathSegments,source.archiveName,folderPath(entry.zipPath),{ parent:source });
   }
 
   parentSource(source) {
-    const current = folderPath(source.zipPath).replace(/\/$/, '');
+    const current = folderPath(source.zipPath).replace(/\/$/,'');
     if (!current) return { kind:'physical', mountId:source.mountId, pathSegments:[...source.parentPathSegments] };
     const pieces = current.split('/').filter(Boolean);
     pieces.pop();
-    return zipSource(source.mountId, source.parentPathSegments, source.archiveName, pieces.length ? `${pieces.join('/')}/` : '');
+    return zipSource(source.mountId,source.parentPathSegments,source.archiveName,pieces.length ? `${pieces.join('/')}/` : '');
   }
 
   async createZip({ entries, directoryHandle, label }) {
@@ -213,7 +214,7 @@ export class ArchiveService {
       const choice = await this.ui.conflict({ name, sourceKind:'file', targetKind:existing.kind });
       if (choice === 'cancel') return false;
       if (choice === 'replace') {
-        await directoryHandle.removeEntry(name, { recursive:existing.kind === 'directory' });
+        await directoryHandle.removeEntry(name,{ recursive:existing.kind === 'directory' });
         break;
       }
       name = suggestedName(name,attempt++);
@@ -227,43 +228,42 @@ export class ArchiveService {
     const zip = new JSZip();
     const progress = this.ui.progress('Preparing files for ZIP…');
     let cancelled = false;
-    progress.onCancel(() => { cancelled = true; });
+    progress.onCancel(()=>{ cancelled=true; });
     const checkCancelled = () => { if (cancelled) throw archiveError('ZIP creation cancelled.'); };
     let fileCount = 0;
-    const addEntry = async (entry, prefix = '') => {
+    const addEntry = async (entry,prefix = '') => {
       checkCancelled();
       if (entry.kind === 'directory') {
         zip.folder(`${prefix}${entry.name}`);
-        const children = await readDirectory(entry.handle, []);
-        for (const child of children.entries) await addEntry(child, `${prefix}${entry.name}/`);
+        const children = await readDirectory(entry.handle,[]);
+        for (const child of children.entries) await addEntry(child,`${prefix}${entry.name}/`);
         return;
       }
       const file = await entry.handle.getFile();
       fileCount += 1;
       progress.update(`Adding ${fileCount}: ${prefix}${entry.name}`);
-      zip.file(`${prefix}${entry.name}`, file, { date:new Date(file.lastModified) });
+      zip.file(`${prefix}${entry.name}`,file,{ date:new Date(file.lastModified) });
     };
 
     try {
       for (const entry of entries) await addEntry(entry);
       checkCancelled();
-      const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 }, streamFiles:true }, (detail) => {
-        if (cancelled) return;
-        progress.update(`Compressing ${detail.percent.toFixed(0)}%${detail.currentFile ? `: ${detail.currentFile}` : ''}`);
+      const blob = await zip.generateAsync({ type:'blob', compression:'DEFLATE', compressionOptions:{ level:6 }, streamFiles:true },(detail)=>{
+        if (!cancelled) progress.update(`Compressing ${detail.percent.toFixed(0)}%${detail.currentFile ? `: ${detail.currentFile}` : ''}`);
       });
       checkCancelled();
       progress.update(`Writing ${name}…`);
-      const target = await directoryHandle.getFileHandle(name,{create:true});
+      const target = await directoryHandle.getFileHandle(name,{ create:true });
       const writable = await target.createWritable();
       try { await writable.write(blob); await writable.close(); }
       catch (error) { try { await writable.abort(); } catch (_) { /* no-op */ } throw error; }
       progress.close();
       this.onRefresh();
-      this.onToast(`Created “${name}”.`, 'success');
+      this.onToast(`Created “${name}”.`,'success');
       return true;
     } catch (error) {
       progress.close();
-      if (error?.message === 'ZIP creation cancelled.') this.onToast('ZIP creation cancelled.', 'info');
+      if (error?.message === 'ZIP creation cancelled.') this.onToast('ZIP creation cancelled.','info');
       else this.onToast(error?.message || 'The ZIP archive could not be created.','error');
       return false;
     }
