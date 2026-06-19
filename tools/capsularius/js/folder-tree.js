@@ -4,7 +4,7 @@ import { persistence } from './persistence.js';
 import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey, sourceTitle } from './state.js';
 import { readDirectory } from './filesystem.js';
 
-const CAPSULARIUS_VERSION = 'v0.26.0 — Drive Accounts & Mount Verification';
+const CAPSULARIUS_VERSION = 'v0.26.1 — Drive Context Menu Fix';
 
 function setCapsulariusVersion() {
   const badge = document.querySelector('.app-badge');
@@ -86,17 +86,38 @@ function openDriveConfirm({ title, description, confirmLabel }) {
 }
 
 function dismissDriveMenu() { document.querySelector('.drive-account-menu')?.remove(); }
-function openDriveMenu(workspace, event, account) {
+function showDriveMenu(event, build) {
   event.preventDefault(); event.stopPropagation(); dismissDriveMenu();
   const menu = makeElement('div', 'drive-account-menu');
-  const addAction = (label, handler, className = '') => { const button = makeElement('button', className, label); button.type = 'button'; button.addEventListener('click', async () => { dismissDriveMenu(); await handler(); }); menu.append(button); };
-  addAction('Rename Drive', () => workspace.renameGoogleDriveAccount(account.id));
-  addAction('Reconnect', () => workspace.reconnectGoogleDriveAccount(account.id));
-  addAction('Remove from Capsularius', () => workspace.removeGoogleDriveAccount(account.id), 'danger');
-  menu.style.left = `${Math.min(event.clientX, window.innerWidth - 205)}px`;
-  menu.style.top = `${Math.min(event.clientY, window.innerHeight - 150)}px`;
+  const addAction = (label, handler, className = '') => {
+    const button = makeElement('button', className, label);
+    button.type = 'button';
+    button.addEventListener('click', async () => { dismissDriveMenu(); await handler(); });
+    menu.append(button);
+  };
+  build(addAction);
+  menu.style.left = `${Math.min(event.clientX, window.innerWidth - 220)}px`;
+  menu.style.top = `${Math.min(event.clientY, window.innerHeight - 190)}px`;
   document.body.append(menu);
   setTimeout(() => document.addEventListener('pointerdown', (outside) => { if (!menu.contains(outside.target)) dismissDriveMenu(); }, { once: true }), 0);
+}
+function openDriveMenu(workspace, event, account, includeAdd = true) {
+  showDriveMenu(event, (addAction) => {
+    addAction('Rename Drive', () => workspace.renameGoogleDriveAccount(account.id));
+    addAction('Reconnect', () => workspace.reconnectGoogleDriveAccount(account.id));
+    if (includeAdd) addAction('＋ Add Google Drive', () => workspace.addGoogleDriveAccount());
+    addAction('Remove from Capsularius', () => workspace.removeGoogleDriveAccount(account.id), 'danger');
+  });
+}
+function openGoogleRootMenu(workspace, event) {
+  const accounts = driveFor(workspace).accounts();
+  if (accounts.length === 1) {
+    openDriveMenu(workspace, event, accounts[0], true);
+    return;
+  }
+  showDriveMenu(event, (addAction) => {
+    addAction('＋ Add Google Drive', () => workspace.addGoogleDriveAccount());
+  });
 }
 
 export function installFolderTree(Workspace) {
@@ -226,8 +247,12 @@ export function installFolderTree(Workspace) {
     quick.append(this.renderTreeNode(windowRecord, recentsSource(), 'Recents', '#4b84bf', 0, { icon: '◷', virtual: true }));
 
     const cloud = addSection('Google Drives'); const drive = driveFor(this); const accounts = drive.accounts();
-    if (!accounts.length) cloud.append(this.renderTreeNode(windowRecord, googleDriveSource('connect'), 'Google Drive', '#4285f4', 0, { icon: 'G', virtual: true, noExpander: true }));
-    for (const account of accounts) cloud.append(this.renderTreeNode(windowRecord, googleDriveSource('account', { accountId: account.id, name: account.label, parent: googleDriveSource('root') }), account.label, '#4285f4', 0, { icon: 'G', virtual: true, googleAccount: account, status: drive.isConnected(account.id) ? '' : 'Reconnect' }));
+    const singleAccount = accounts.length === 1 ? accounts[0] : null;
+    const rootLabel = singleAccount ? singleAccount.label : (accounts.length ? 'Google Drives' : 'Google Drive');
+    cloud.append(this.renderTreeNode(windowRecord, googleDriveSource('root'), rootLabel, '#4285f4', 0, {
+      icon: 'G', virtual: true, googleRoot: true,
+      status: singleAccount && !drive.isConnected(singleAccount.id) ? 'Reconnect' : ''
+    }));
     const addDrive = makeElement('button', 'drive-add-button', '＋ Add Google Drive'); addDrive.type = 'button'; addDrive.addEventListener('click', () => this.addGoogleDriveAccount()); cloud.append(addDrive);
 
     const mounted = addSection('Mounted folders');
@@ -237,6 +262,7 @@ export function installFolderTree(Workspace) {
 
   Workspace.prototype.renderTreeNode = function renderTreeNode(windowRecord, source, label, colour, depth, options = {}) {
     const key = sourceKey(source); const expanded = windowRecord.treeExpanded.has(key); const loading = windowRecord.treeLoading.has(key); const children = this.treeChildrenFor(windowRecord, source); const active = sameSource(windowRecord.source, source); const hasKnownEmptyChildren = Array.isArray(children) && children.length === 0;
+    const accountForNode = options.googleAccount || (source.kind === 'google-drive' && source.node === 'account' ? driveFor(this).account(source.accountId) : null);
     const wrapper = makeElement('div', 'tree-node-wrap'); const row = makeElement('div', `tree-node${active ? ' active' : ''}${options.virtual ? ' virtual-root' : ''}`); row.style.setProperty('--tree-depth', String(depth));
     const expander = makeElement('button', `tree-expander${expanded ? ' expanded' : ''}${loading ? ' loading' : ''}`, loading ? '·' : expanded ? '▾' : '▸'); expander.type = 'button'; expander.title = expanded ? 'Collapse folder tree' : 'Expand child folders'; expander.setAttribute('aria-label', expander.title);
     if (options.noExpander || (hasKnownEmptyChildren && !loading)) { expander.classList.add('empty'); expander.textContent = ''; expander.disabled = true; }
@@ -245,8 +271,26 @@ export function installFolderTree(Workspace) {
     const button = makeElement('button', 'tree-label', label); button.type = 'button'; button.title = options.subtitle ? `${label} — ${options.subtitle}` : label;
     button.addEventListener('click', () => { if (source.kind === 'google-drive') this.handleGoogleTreeOpen(windowRecord, source); else this.navigateWindow(windowRecord, source); });
     row.append(expander, icon, button);
-    if (options.status) { const status = makeElement('button', 'tree-access-state', options.status); status.type = 'button'; status.title = options.status === 'Reconnect' ? 'Reconnect this saved location' : options.status; status.addEventListener('click', (event) => { event.stopPropagation(); if (options.mountId) this.onRequestPermission(options.mountId, windowRecord); else if (options.googleAccount) this.reconnectGoogleDriveAccount(options.googleAccount.id); }); row.append(status); }
-    if (options.googleAccount) row.addEventListener('contextmenu', (event) => openDriveMenu(this, event, options.googleAccount));
+    if (options.status) {
+      const status = makeElement('button', 'tree-access-state', options.status); status.type = 'button'; status.title = options.status === 'Reconnect' ? 'Reconnect this saved location' : options.status;
+      status.addEventListener('click', (event) => {
+        event.stopPropagation();
+        if (options.mountId) this.onRequestPermission(options.mountId, windowRecord);
+        else if (accountForNode) this.reconnectGoogleDriveAccount(accountForNode.id);
+      });
+      row.append(status);
+    }
+    if (accountForNode) {
+      const openAccountContextMenu = (event) => openDriveMenu(this, event, accountForNode, true);
+      wrapper.addEventListener('contextmenu', openAccountContextMenu);
+      row.addEventListener('contextmenu', openAccountContextMenu);
+      button.addEventListener('contextmenu', openAccountContextMenu);
+    } else if (options.googleRoot || (source.kind === 'google-drive' && source.node === 'root')) {
+      const openRootContextMenu = (event) => openGoogleRootMenu(this, event);
+      wrapper.addEventListener('contextmenu', openRootContextMenu);
+      row.addEventListener('contextmenu', openRootContextMenu);
+      button.addEventListener('contextmenu', openRootContextMenu);
+    }
     wrapper.append(row);
     if (expanded) { if (loading) { const pending = makeElement('div', 'tree-loading', 'Reading folders…'); pending.style.setProperty('--tree-depth', String(depth + 1)); wrapper.append(pending); } else if (children) for (const child of children) wrapper.append(this.renderTreeNode(windowRecord, child.source, child.name, child.colour || colour, depth + 1, { icon: child.icon || '▰', subtitle: child.subtitle })); }
     return wrapper;
