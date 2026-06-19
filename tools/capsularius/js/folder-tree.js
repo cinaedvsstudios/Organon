@@ -2,6 +2,13 @@ import { GoogleDriveService } from './google-drive.js';
 import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey, sourceTitle } from './state.js';
 import { readDirectory } from './filesystem.js';
 
+const CAPSULARIUS_VERSION = 'v0.25.0 — Google Drive Session Sync';
+
+function setCapsulariusVersion() {
+  const badge = document.querySelector('.app-badge');
+  if (badge) badge.textContent = `Capsularius · ${CAPSULARIUS_VERSION}`;
+}
+
 function makeElement(tag, className, text) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -34,6 +41,7 @@ function googleBreadcrumbs(source) {
 }
 
 export function installFolderTree(Workspace) {
+  setCapsulariusVersion();
   if (Workspace.prototype.__capsulariusFolderTreeInstalled) return;
   Object.defineProperty(Workspace.prototype, '__capsulariusFolderTreeInstalled', { value: true });
 
@@ -71,15 +79,34 @@ export function installFolderTree(Workspace) {
     }
   };
 
+  Workspace.prototype.refreshGoogleDriveWindows = async function refreshGoogleDriveWindows() {
+    this.clearGoogleTreeCache();
+
+    const reloads = [];
+    for (const record of this.state.windows.values()) {
+      // Every window gets a fresh sidebar immediately, so the connected state is consistent.
+      this.renderSidebar(record);
+      if (record.source.kind === 'google-drive') reloads.push(this.loadWindow(record));
+    }
+
+    await Promise.allSettled(reloads);
+  };
+
   Workspace.prototype.handleGoogleTreeOpen = async function handleGoogleTreeOpen(windowRecord, source) {
     const drive = driveFor(this);
     try {
       if (source.node === 'connect' || (source.node === 'root' && !drive.isConnected())) {
         await drive.connect();
-        this.clearGoogleTreeCache();
-        this.refreshSpecialWindows();
-        await this.navigateWindow(windowRecord, googleDriveSource('my-drive', { folderId: 'root', parent: googleDriveSource('root') }));
-        this.onToast('Google Drive connected for this Capsularius session.', 'success');
+
+        // The window used for sign-in opens My Drive. Every existing Google Drive window
+        // then reloads from the newly authorised session automatically.
+        await this.navigateWindow(
+          windowRecord,
+          googleDriveSource('my-drive', { folderId: 'root', parent: googleDriveSource('root') })
+        );
+        await this.refreshGoogleDriveWindows();
+
+        this.onToast('Google Drive connected — all Google Drive windows refreshed.', 'success');
         return;
       }
       if (source.node === 'root') {

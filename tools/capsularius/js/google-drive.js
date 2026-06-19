@@ -1,3 +1,4 @@
+// Capsularius v0.25.0 — Google Drive Session Sync
 import { typeForFile } from './filesystem.js';
 import { googleDriveSource } from './state.js';
 
@@ -6,6 +7,8 @@ const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const GOOGLE_FOLDER_MIME = 'application/vnd.google-apps.folder';
 const DRIVE_API = 'https://www.googleapis.com/drive/v3';
 const GIS_URL = 'https://accounts.google.com/gsi/client';
+const SESSION_KEY = 'organon-capsularius-google-drive-session-v1';
+const SESSION_SAFETY_WINDOW_MS = 30000;
 
 function loadGoogleIdentity() {
   if (window.google?.accounts?.oauth2) return Promise.resolve();
@@ -44,6 +47,32 @@ function loadGoogleIdentity() {
   });
 }
 
+function clearSavedSession() {
+  try { window.sessionStorage.removeItem(SESSION_KEY); } catch (_) { /* Storage may be unavailable. */ }
+}
+
+function readSavedSession() {
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved?.accessToken || !Number.isFinite(saved.expiresAt) || saved.expiresAt <= Date.now()) {
+      clearSavedSession();
+      return null;
+    }
+    return saved;
+  } catch (_) {
+    clearSavedSession();
+    return null;
+  }
+}
+
+function saveSession(accessToken, expiresAt) {
+  try {
+    window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ accessToken, expiresAt }));
+  } catch (_) { /* The Drive connection still works for this page. */ }
+}
+
 function driveError(message, status) {
   const error = new Error(message);
   error.status = status;
@@ -79,11 +108,23 @@ function parseDriveItem(item, parentSource) {
 export class GoogleDriveService {
   constructor({ state }) {
     this.state = state;
-    this.accessToken = null;
+    const saved = readSavedSession();
+    this.accessToken = saved?.accessToken || null;
+    this.expiresAt = saved?.expiresAt || 0;
+    this.state.googleDrive.connected = Boolean(this.accessToken && this.expiresAt > Date.now());
   }
 
   isConnected() {
-    return Boolean(this.accessToken && this.state.googleDrive.connected);
+    const connected = Boolean(this.accessToken && this.expiresAt > Date.now());
+    if (!connected && this.accessToken) this.clearSession();
+    return connected;
+  }
+
+  clearSession() {
+    this.accessToken = null;
+    this.expiresAt = 0;
+    this.state.googleDrive.connected = false;
+    clearSavedSession();
   }
 
   async connect() {
@@ -99,7 +140,10 @@ export class GoogleDriveService {
             return;
           }
           this.accessToken = response.access_token;
+          const lifetimeMs = Math.max(60000, Number(response.expires_in || 3600) * 1000);
+          this.expiresAt = Date.now() + lifetimeMs - SESSION_SAFETY_WINDOW_MS;
           this.state.googleDrive.connected = true;
+          saveSession(this.accessToken, this.expiresAt);
           resolve(response);
         },
         error_callback: (error) => {
@@ -112,7 +156,7 @@ export class GoogleDriveService {
   }
 
   async request(path, parameters = {}) {
-    if (!this.accessToken) {
+    if (!this.isConnected()) {
       throw driveError('Google Drive is not connected. Click Connect Google Drive first.', 401);
     }
 
@@ -134,8 +178,7 @@ export class GoogleDriveService {
         // The standard status message is sufficient when the response is not JSON.
       }
       if (response.status === 401) {
-        this.accessToken = null;
-        this.state.googleDrive.connected = false;
+        this.clearSession();
         message = 'Your Google Drive session has expired. Click Google Drive and connect again.';
       }
       throw driveError(message, response.status);
