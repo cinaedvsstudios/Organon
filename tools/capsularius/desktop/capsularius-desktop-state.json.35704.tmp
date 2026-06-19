@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "savedAt": 1781908769099,
+  "mounts": [
+    {
+      "id": "mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4",
+      "nativePath": "E:\\Forever Bound\\Forever Bound GAME",
+      "name": "Forever Bound GAME",
+      "nickname": "Forever Bound GAME",
+      "colour": "#e0a360",
+      "createdAt": 1781908765019,
+      "lastOpenedAt": 1781908765043,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    }
+  ],
+  "library": [],
+  "recents": [
+    {
+      "id": "recent-f89af950-9d8c-4529-89f4-c0d3fd7b25e1",
+      "mountId": "mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4",
+      "pathSegments": [],
+      "name": "Forever Bound GAME",
+      "colour": "#e0a360",
+      "lastOpenedAt": 1781908765043,
+      "key": "physical:mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4:"
+    }
+  ],
+  "workspace": {
+    "nextWindowId": 14,
+    "activeWindowId": null,
+    "panX": 0,
+    "panY": 0,
+    "currentColourIndex": 4,
+    "windows": [
+      {
+        "id": 1,
+        "source": {
+          "kind": "library"
+        },
+        "nickname": "Library",
+        "colour": "#e0a360",
+        "x": 14,
+        "y": 14,
+        "width": 756,
+        "height": 684,
+        "viewMode": "grid",
+        "settings": {
+          "scope": "window",
+          "window": {
+            "viewMode": "grid",
+            "sortBy": "name",
+            "sortDirection": "asc"
+          },
+          "folders": {}
+        },
+        "minimized": false,
+        "treeExpanded": []
+      },
+      {
+        "id": 6,
+        "source": {
+          "kind": "library"
+        },
+        "nickname": "Library",
+        "colour": "#4b84bf",
+        "x": 782,
+        "y": 14,
+        "width": 756,
+        "height": 684,
+        "viewMode": "grid",
+        "settings": {
+          "scope": "window",
+          "window": {
+            "viewMode": "grid",
+            "sortBy": "name",
+            "sortDirection": "asc"
+          },
+          "folders": {}
+        },
+        "minimized": false,
+        "treeExpanded": []
+      }
+    ]
+  },
+  "mountVerification": {},
+  "preferences": {
+    "uiZoom": 90
+  }
+}
