@@ -7,6 +7,7 @@ export function createState() {
     mounts: new Map(),
     library: [],
     recents: [],
+    googleDrive: { connected: false },
     windows: new Map(),
     nextWindowId: 1,
     activeWindowId: null,
@@ -27,20 +28,47 @@ export function recentsSource() {
   return { kind: 'recents' };
 }
 
+export function googleDriveSource(node = 'root', options = {}) {
+  return {
+    kind: 'google-drive',
+    node,
+    folderId: options.folderId || null,
+    driveId: options.driveId || null,
+    name: options.name || null,
+    parent: options.parent ? cloneSource(options.parent) : null
+  };
+}
+
 export function sourceKey(source) {
   if (source.kind === 'physical') return `physical:${source.mountId}:${source.pathSegments.join('/')}`;
+  if (source.kind === 'google-drive') return `google-drive:${source.node}:${source.driveId || ''}:${source.folderId || ''}`;
   return source.kind;
 }
 
 export function cloneSource(source) {
-  return source.kind === 'physical'
-    ? physicalSource(source.mountId, source.pathSegments)
-    : { kind: source.kind };
+  if (source.kind === 'physical') return physicalSource(source.mountId, source.pathSegments);
+  if (source.kind === 'google-drive') {
+    return googleDriveSource(source.node, {
+      folderId: source.folderId,
+      driveId: source.driveId,
+      name: source.name,
+      parent: source.parent || null
+    });
+  }
+  return { kind: source.kind };
 }
 
 export function sourceTitle(state, source) {
   if (source.kind === 'library') return 'Library';
   if (source.kind === 'recents') return 'Recents';
+  if (source.kind === 'google-drive') {
+    if (source.node === 'root') return 'Google Drive';
+    if (source.node === 'connect') return 'Connect Google Drive';
+    if (source.node === 'my-drive') return 'My Drive';
+    if (source.node === 'shared-with-me') return 'Shared with me';
+    if (source.node === 'shared-drives') return 'Shared drives';
+    return source.name || 'Google Drive folder';
+  }
   const mount = state.mounts.get(source.mountId);
   if (!mount) return 'Missing location';
   if (source.pathSegments.length === 0) return mount.nickname || mount.name;
@@ -50,6 +78,15 @@ export function sourceTitle(state, source) {
 export function sourcePathLabel(state, source) {
   if (source.kind === 'library') return 'Library';
   if (source.kind === 'recents') return 'Recents';
+  if (source.kind === 'google-drive') {
+    const labels = [];
+    let current = source;
+    while (current) {
+      labels.unshift(sourceTitle(state, current));
+      current = current.parent || null;
+    }
+    return labels.join(' / ');
+  }
   const mount = state.mounts.get(source.mountId);
   if (!mount) return 'Missing location';
   return [mount.nickname || mount.name, ...source.pathSegments].join(' / ');
@@ -143,6 +180,7 @@ export function makeWindowRecord(state, source, overrides = {}) {
 export function defaultColourForSource(state, source) {
   if (source.kind === 'library') return '#e0a360';
   if (source.kind === 'recents') return '#4b84bf';
+  if (source.kind === 'google-drive') return '#4285f4';
   return state.mounts.get(source.mountId)?.colour || '#449e92';
 }
 
