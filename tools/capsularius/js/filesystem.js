@@ -6,9 +6,7 @@ const ARCHIVE_EXTENSIONS = new Set(['zip']);
 const CODE_EXTENSIONS = new Set(['txt', 'md', 'json', 'html', 'htm', 'css', 'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'xml', 'yaml', 'yml', 'csv', 'py', 'java', 'cs', 'cpp', 'c', 'h', 'php', 'sql', 'sh', 'bat', 'ps1']);
 
 export function makeId(prefix = 'caps') {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) return `${prefix}-${crypto.randomUUID()}`;
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
@@ -49,10 +47,7 @@ export function formatBytes(bytes) {
   const units = ['KB', 'MB', 'GB', 'TB'];
   let value = bytes / 1024;
   let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
+  while (value >= 1024 && unit < units.length - 1) { value /= 1024; unit += 1; }
   return `${value >= 10 || unit === 0 ? value.toFixed(0) : value.toFixed(1)} ${units[unit]}`;
 }
 
@@ -68,52 +63,40 @@ export async function requestDirectoryPermission(handle, mode = 'readwrite') {
 
 export async function resolveDirectory(rootHandle, segments = []) {
   let current = rootHandle;
-  for (const segment of segments) {
-    current = await current.getDirectoryHandle(segment);
-  }
+  for (const segment of segments) current = await current.getDirectoryHandle(segment);
   return current;
 }
 
 export async function readDirectory(rootHandle, segments = []) {
   const directoryHandle = await resolveDirectory(rootHandle, segments);
-  const rawEntries = [];
+  const entries = [];
 
+  // Deliberately do not call getFile() for every file here. That can lock the UI
+  // while a large folder is opened. The workspace hydrates size/date/MIME later.
   for await (const [name, handle] of directoryHandle.entries()) {
-    rawEntries.push({ name, handle });
+    if (handle.kind === 'directory') {
+      entries.push({ id: `directory:${name}`, name, kind: 'directory', handle, fileType: 'directory', size: null, lastModified: null, metadataPending: false });
+    } else {
+      entries.push({ id: `file:${name}`, name, kind: 'file', handle, fileType: typeForFile(name), size: null, lastModified: null, mimeType: '', metadataPending: true });
+    }
   }
 
-  const entries = await Promise.all(rawEntries.map(async ({ name, handle }) => {
-    if (handle.kind === 'directory') {
-      return {
-        id: `directory:${name}`,
-        name,
-        kind: 'directory',
-        handle,
-        fileType: 'directory',
-        size: null,
-        lastModified: null
-      };
-    }
-
-    const file = await handle.getFile();
-    return {
-      id: `file:${name}`,
-      name,
-      kind: 'file',
-      handle,
-      fileType: typeForFile(name, file.type),
-      size: file.size,
-      lastModified: file.lastModified,
-      mimeType: file.type
-    };
-  }));
-
-  entries.sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === 'directory' ? -1 : 1;
-    return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
+  entries.sort((first, second) => {
+    if (first.kind !== second.kind) return first.kind === 'directory' ? -1 : 1;
+    return first.name.localeCompare(second.name, undefined, { numeric: true, sensitivity: 'base' });
   });
-
   return { directoryHandle, entries };
+}
+
+export async function hydrateFileEntry(entry) {
+  if (!entry || entry.kind !== 'file' || !entry.handle?.getFile || entry.metadataPending === false) return entry;
+  const file = await entry.handle.getFile();
+  entry.fileType = typeForFile(entry.name, file.type || '');
+  entry.size = file.size;
+  entry.lastModified = file.lastModified;
+  entry.mimeType = file.type || '';
+  entry.metadataPending = false;
+  return entry;
 }
 
 export async function handlesAreSame(first, second) {
