@@ -2,6 +2,7 @@
 setlocal
 cd /d "%~dp0"
 
+set "BRANDED_RUNTIME_VERSION=2"
 set "CAPSULARIUS_ROOT=%~dp0..\.."
 for %%I in ("%CAPSULARIUS_ROOT%") do set "CAPSULARIUS_ROOT=%%~fI"
 set "STAGING_DIR=%CAPSULARIUS_ROOT%\_capsularius-brand-staging"
@@ -59,6 +60,7 @@ if not exist "%PACKAGE_DIR%\Capsularius Desktop-win32-x64\Capsularius Desktop.ex
 
 if exist "%RUNTIME_DIR%" rmdir /s /q "%RUNTIME_DIR%"
 move "%PACKAGE_DIR%\Capsularius Desktop-win32-x64" "%RUNTIME_DIR%" >nul
+> "%RUNTIME_DIR%\.capsularius-runtime-version" echo %BRANDED_RUNTIME_VERSION%
 rmdir /s /q "%STAGING_DIR%"
 rmdir /s /q "%PACKAGE_DIR%"
 
