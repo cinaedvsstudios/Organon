@@ -1,3 +1,10 @@
+function relabelImageContextAction() {
+  const action = document.querySelector('#context-menu [data-command="open-pixlr"]');
+  if (!action) return;
+  action.textContent = '📋 Copy image to clipboard';
+  action.title = 'Copy image to clipboard';
+}
+
 function imageToPngBlob(file) {
   return new Promise(async (resolve, reject) => {
     try {
@@ -22,6 +29,7 @@ function imageToPngBlob(file) {
 }
 
 export function canCopyImageToClipboard(entry) {
+  queueMicrotask(relabelImageContextAction);
   return Boolean(entry?.kind === 'file' && entry?.fileType === 'image' && entry?.handle?.getFile && navigator.clipboard?.write && globalThis.ClipboardItem);
 }
 
