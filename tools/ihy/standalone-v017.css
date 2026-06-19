@@ -1,0 +1,22 @@
+/* Ihy v0.17 — composition transport and arrangement presentation */
+:root{scrollbar-color:#42d7e6 #0e1518;scrollbar-width:thin}
+*{scrollbar-color:#42d7e6 #0e1518;scrollbar-width:thin}
+*::-webkit-scrollbar{width:12px;height:12px}
+*::-webkit-scrollbar-track{background:#0e1518;border:1px solid #355159;border-radius:999px}
+*::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#6af0fb,#26afc8);border:2px solid #0e1518;border-radius:999px;box-shadow:0 0 8px #3bd7e666}
+*::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,#9af8ff,#41cce2)}
+#pianoRollHelp{display:none!important}
+.roll-transport{display:flex;align-items:center;gap:7px;margin-left:auto;flex:0 0 auto}
+.roll-transport #play{min-width:82px;border-color:#36cfe1!important;background:#137b91!important;color:#ecffff!important;box-shadow:0 0 0 1px #74edfa33,0 3px 8px #0007!important}
+.roll-transport #play.is-paused{border-color:#f5c879!important;background:#d99635!important;color:#171813!important}
+.transport-time{min-width:98px;padding:8px 9px;border:1px solid #3a7883;border-radius:9px;background:#0e1518;color:#a4f5fb;text-align:center;font:700 .68rem ui-monospace,SFMono-Regular,Menlo,monospace;box-shadow:inset 0 1px 0 #ffffff0b,0 3px 7px #0006}
+.zoom-control{display:flex;align-items:center;gap:5px;min-width:182px;padding:3px 7px;border:1px solid #6d675b;border-radius:9px;background:#171917;box-shadow:inset 0 1px 0 #ffffff08,0 3px 7px #0005}
+.zoom-control label{color:#bdeff3;font:800 .56rem ui-monospace,SFMono-Regular,Menlo,monospace;text-transform:uppercase;letter-spacing:.04em}
+#zoomSlider{width:96px;height:16px;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;accent-color:#42d7e6}
+#zoomValue{min-width:44px;padding:5px 6px;border:1px solid #3a7883;border-radius:6px;background:#0e1518;color:#a4f5fb;text-align:center;font:700 .61rem ui-monospace,SFMono-Regular,Menlo,monospace}
+.arrangement .ruler-mark{display:none!important}
+.section-time-label{position:absolute;z-index:6;top:27px;transform:translateX(5px);color:#1b1711;font:900 .58rem ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.03em;pointer-events:none;text-shadow:0 1px 0 #ffffff55}
+.arrangement-section{z-index:2!important;padding-left:19px!important}
+.arrangement-playhead{z-index:9!important}
+@media(max-width:1120px){.roll-transport{width:100%;margin-left:0;order:3}.zoom-control{min-width:170px}}
+@media(max-width:720px){.zoom-control{min-width:100%;order:4}.roll-transport{flex-wrap:wrap}.transport-time{min-width:0;flex:1}}
