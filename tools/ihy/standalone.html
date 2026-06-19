@@ -4,12 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.35 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.36 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone-v035.css?v=0.35">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.35</div></div>
+    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.36</div></div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
       <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
@@ -27,20 +27,11 @@
       <aside class="side">
         <div class="card">
           <h2>🎛️ Controls</h2>
-          <div class="button-group" aria-label="Project actions">
-            <button class="btn primary" id="createSound" type="button">✨ Create</button>
-            <button class="btn primary" id="save" type="button">💾 Save</button>
-            <button class="btn" id="clear" type="button">🗑 Clear</button>
-          </div>
-          <div class="button-group" aria-label="File and analysis actions">
-            <button class="btn" id="import" type="button">📥 Import</button>
-            <button class="btn" id="export" type="button">📤 Export</button>
-            <button class="btn" id="analyseButton" type="button">🔎 Analyse</button>
-          </div>
+          <div class="button-group" aria-label="Project actions"><button class="btn primary" id="createSound" type="button">✨ Create</button><button class="btn primary" id="save" type="button">💾 Save</button><button class="btn" id="clear" type="button">🗑 Clear</button></div>
+          <div class="button-group" aria-label="File and analysis actions"><button class="btn" id="import" type="button">📥 Import</button><button class="btn" id="export" type="button">📤 Export</button><button class="btn" id="analyseButton" type="button">🔎 Analyse</button></div>
           <input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
-          <div class="section-label">Quick add</div>
-          <div class="control-grid"><button class="btn" id="quickBass" type="button">＋ Bass</button><button class="btn" id="quickMotif" type="button">＋ Motif</button></div>
-          <p class="status" id="status">v0.35 — clean editor controller.</p>
+          <div class="section-label">Quick add</div><div class="control-grid"><button class="btn" id="quickBass" type="button">＋ Bass</button><button class="btn" id="quickMotif" type="button">＋ Motif</button></div>
+          <p class="status" id="status">v0.36 — clean editor controller.</p>
         </div>
         <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack" type="button">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
       </aside>
@@ -50,22 +41,9 @@
           <div class="piano-toolbar">
             <h2>🎼 Piano roll</h2>
             <div class="piano-actions">
-              <div class="piano-tool-buttons" aria-label="Piano roll tools">
-                <button class="btn piano-tool-button tool-active" id="toolMusic" type="button" title="Add notes">🎶</button>
-                <button class="btn piano-tool-button" id="toolUndo" type="button" title="Undo">↶</button>
-                <button class="btn piano-tool-button" id="toolRedo" type="button" title="Redo">↷</button>
-                <button class="btn piano-tool-button" id="toolPointer" type="button" title="Select notes">👆</button>
-                <button class="btn piano-tool-button" id="toolJoin" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button>
-                <button class="btn piano-tool-button" id="toolTrash" type="button" title="Delete selection">🗑️</button>
-              </div>
-              <button class="btn" id="play" type="button">▶ Play</button>
-              <button class="btn" id="stopInline" type="button">⏹ Stop</button>
-              <span class="transport-time" id="transportTime">0:00 / 0:42</span>
-              <button class="btn" id="addSection" type="button">＋ Section</button>
-              <div class="zoom-control"><label for="zoomSlider">Zoom</label><input id="zoomSlider" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></div>
-              <button class="btn" id="dragMute" type="button" title="Audition selection while dragging">🔊</button>
-            </div>
-            <span class="toolbar-spacer" aria-hidden="true"></span>
+              <div class="piano-tool-buttons" aria-label="Piano roll tools"><button class="btn piano-tool-button tool-active" id="toolMusic" type="button" title="Add notes">🎶</button><button class="btn piano-tool-button" id="toolUndo" type="button" title="Undo">↶</button><button class="btn piano-tool-button" id="toolRedo" type="button" title="Redo">↷</button><button class="btn piano-tool-button" id="toolPointer" type="button" title="Select notes">👆</button><button class="btn piano-tool-button" id="toolJoin" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button><button class="btn piano-tool-button" id="toolTrash" type="button" title="Delete selection">🗑️</button></div>
+              <button class="btn" id="play" type="button">▶ Play</button><button class="btn" id="stopInline" type="button">⏹ Stop</button><span class="transport-time" id="transportTime">0:00 / 0:42</span><button class="btn" id="addSection" type="button">＋ Section</button><div class="zoom-control"><label for="zoomSlider">Zoom</label><input id="zoomSlider" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></div><button class="btn" id="dragMute" type="button" title="Audition selection while dragging">🔊</button>
+            </div><span class="toolbar-spacer" aria-hidden="true"></span>
           </div>
           <div class="arrangement-shell"><div class="arrangement-spacer"></div><div class="arrangement-viewport" id="arrangementViewport"><div class="arrangement" id="arrangement"></div></div></div>
           <div class="roll-scroll" id="rollScroll"><div class="roll-grid"><div class="pitch-labels" id="labels"></div><div class="roll" id="roll"></div></div></div>
@@ -86,5 +64,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone-v035.js?v=0.35"></script>
+  <script src="./standalone-v036.js?v=0.36"></script>
 </body>
 </html>
