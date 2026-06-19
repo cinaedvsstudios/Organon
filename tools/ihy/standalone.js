@@ -3,35 +3,21 @@
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
-
-  const STORAGE_KEY = 'ihy-v020';
+  const STORAGE_KEY = 'ihy-v021';
   const BASE_BEAT = 40;
   const ROW_HEIGHT = 24;
   const LOW_PITCH = 48;
   const HIGH_PITCH = 84;
   const MIN_BEATS = 64;
-
   const COLORS = ['#b68cff', '#60c6a4', '#dfb658', '#dc7898', '#79b4e3'];
   const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
   const KEYBOARD_MAP = { a: 60, w: 61, s: 62, e: 63, d: 64, f: 65, t: 66, g: 67, y: 68, h: 69, u: 70, j: 71, k: 72 };
-
   const INSTRUMENTS = [
-    ['grand_piano', 'Grand Piano'],
-    ['soft_piano', 'Soft Piano'],
-    ['cello', 'Cello'],
-    ['strings', 'Strings'],
-    ['flute', 'Flute'],
-    ['horn', 'French Horn'],
-    ['choir', 'Choir'],
-    ['warm_pad', 'Warm Pad'],
-    ['bell', 'Bell'],
-    ['acoustic_guitar', 'Acoustic Guitar'],
-    ['electric_bass', 'Electric Bass'],
-    ['drum_kit', 'Drum Kit'],
-    ['retro_lead', 'Retro Lead'],
-    ['pluck', 'Pluck']
+    ['grand_piano', 'Grand Piano'], ['soft_piano', 'Soft Piano'], ['cello', 'Cello'], ['strings', 'Strings'],
+    ['flute', 'Flute'], ['horn', 'French Horn'], ['choir', 'Choir'], ['warm_pad', 'Warm Pad'],
+    ['bell', 'Bell'], ['acoustic_guitar', 'Acoustic Guitar'], ['electric_bass', 'Electric Bass'],
+    ['drum_kit', 'Drum Kit'], ['retro_lead', 'Retro Lead'], ['pluck', 'Pluck']
   ];
-
   const SCALE_MAP = {
     'C major': { root: 0, notes: [0, 2, 4, 5, 7, 9, 11] },
     'D minor': { root: 2, notes: [0, 2, 3, 5, 7, 8, 10] },
@@ -45,75 +31,84 @@
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
   const noteName = pitch => `${NOTE_NAMES[pitch % 12]}${Math.floor(pitch / 12) - 1}`;
   const instrumentName = id => (INSTRUMENTS.find(([key]) => key === id) || [id, id])[1];
-  const createNote = (start, pitch, duration = 1, velocity = 92) => ({ id: uid(), start, pitch, duration, velocity });
+  const note = (start, pitch, duration = 1, velocity = 92) => ({ id: uid(), start, pitch, duration, velocity });
   const escapeHtml = value => String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char]));
 
-  function createBlankProject() {
+  function blankProject() {
     return {
       title: 'Untitled cue',
       bpm: 92,
       key: 'D minor',
       sections: [],
-      tracks: [{
-        id: uid(),
-        name: 'Piano',
-        instrument: 'grand_piano',
-        color: COLORS[0],
-        muted: false,
-        solo: false,
-        notes: []
-      }]
+      tracks: [{ id: uid(), name: 'Piano', instrument: 'grand_piano', color: COLORS[0], muted: false, solo: false, notes: [] }]
+    };
+  }
+
+  function potionSongExample() {
+    const phrase = [
+      [0, 69, 1], [1, 72, 1], [2, 74, 1], [3, 72, 1], [4, 69, 1], [5, 67, 1], [6, 65, 1], [7, 64, 1],
+      [8, 65, 1], [9, 69, 1], [10, 72, 1], [11, 74, 1], [12, 76, 1], [13, 74, 1], [14, 72, 1], [15, 69, 1],
+      [16, 69, .5], [16.5, 72, .5], [17, 74, 1], [18, 77, 1], [19, 76, 1], [20, 74, 1], [21, 72, 1], [22, 69, 1], [23, 65, 1],
+      [24, 67, 1], [25, 69, 1], [26, 72, 1], [27, 74, 1], [28, 72, 1], [29, 69, 1], [30, 67, 1], [31, 65, 1],
+      [32, 64, 1], [33, 67, 1], [34, 69, 1], [35, 72, 1], [36, 74, 2], [38, 72, 1], [39, 69, 1],
+      [40, 65, 1], [41, 69, 1], [42, 72, 1], [43, 76, 1], [44, 74, 1], [45, 72, 1], [46, 69, 1], [47, 67, 1],
+      [48, 69, 1], [49, 72, 1], [50, 74, 1], [51, 77, 1], [52, 76, 1], [53, 74, 1], [54, 72, 1], [55, 69, 1],
+      [56, 67, 1], [57, 65, 1], [58, 64, 1], [59, 65, 1], [60, 62, 4]
+    ];
+
+    const chords = [
+      [0, [50, 53, 57], 4], [4, [48, 52, 55], 4], [8, [46, 50, 53], 4], [12, [45, 48, 52], 4],
+      [16, [50, 53, 57], 4], [20, [48, 52, 55], 4], [24, [46, 50, 53], 4], [28, [45, 48, 52], 4],
+      [32, [50, 53, 57], 4], [36, [48, 52, 55], 4], [40, [46, 50, 53], 4], [44, [45, 48, 52], 4],
+      [48, [50, 53, 57], 4], [52, [48, 52, 55], 4], [56, [46, 50, 53], 4], [60, [38, 45, 50], 4]
+    ];
+
+    const pulse = [];
+    for (let beat = 0; beat < 64; beat += 1) {
+      pulse.push(note(beat, beat % 4 === 0 ? 50 : beat % 2 === 0 ? 53 : 57, .42, 62));
+    }
+
+    return {
+      title: 'Potion Song — Piano Example',
+      bpm: 92,
+      key: 'D minor',
+      sections: [
+        { id: uid(), name: 'Intro', start: 0, end: 16, color: '#dfb658' },
+        { id: uid(), name: 'Theme', start: 16, end: 48, color: '#b68cff' },
+        { id: uid(), name: 'Finale', start: 48, end: 64, color: '#60c6a4' }
+      ],
+      tracks: [
+        { id: uid(), name: 'Piano melody', instrument: 'grand_piano', color: '#b68cff', muted: false, solo: false, notes: phrase.map(([start, pitch, duration]) => note(start, pitch, duration, 104)) },
+        { id: uid(), name: 'Piano harmony', instrument: 'soft_piano', color: '#dfb658', muted: false, solo: false, notes: chords.flatMap(([start, pitches, duration]) => pitches.map(pitch => note(start, pitch, duration, 68))) },
+        { id: uid(), name: 'Cello', instrument: 'cello', color: '#60c6a4', muted: false, solo: false, notes: chords.map(([start, pitches, duration]) => note(start, pitches[0] - 12, duration, 74)) },
+        { id: uid(), name: 'Bell pulse', instrument: 'bell', color: '#79b4e3', muted: false, solo: false, notes: pulse }
+      ]
     };
   }
 
   function normaliseProject(raw) {
-    const fallback = createBlankProject();
+    const fallback = blankProject();
     if (!raw || !Array.isArray(raw.tracks) || !raw.tracks.length) return fallback;
 
     return {
       title: String(raw.title || fallback.title),
       bpm: clamp(Number(raw.bpm) || 92, 30, 260),
       key: SCALE_MAP[raw.key] ? raw.key : 'D minor',
-      sections: Array.isArray(raw.sections)
-        ? raw.sections.map((section, index) => ({
-            id: section.id || uid(),
-            name: String(section.name || `Section ${index + 1}`),
-            start: Math.max(0, Number(section.start) || 0),
-            end: Math.max(1, Number(section.end) || 8),
-            color: section.color || COLORS[index % COLORS.length]
-          }))
-        : [],
+      sections: Array.isArray(raw.sections) ? raw.sections.map((section, index) => ({
+        id: section.id || uid(), name: String(section.name || `Section ${index + 1}`), start: Math.max(0, Number(section.start) || 0), end: Math.max(1, Number(section.end) || 8), color: section.color || COLORS[index % COLORS.length]
+      })) : [],
       tracks: raw.tracks.map((track, index) => ({
-        id: track.id || uid(),
-        name: String(track.name || `Track ${index + 1}`),
-        instrument: INSTRUMENTS.some(([id]) => id === track.instrument) ? track.instrument : 'grand_piano',
-        color: track.color || COLORS[index % COLORS.length],
-        muted: Boolean(track.muted),
-        solo: Boolean(track.solo),
-        notes: Array.isArray(track.notes)
-          ? track.notes.map(note => ({
-              id: note.id || uid(),
-              start: Math.max(0, Number(note.start) || 0),
-              pitch: clamp(Number(note.pitch) || 60, LOW_PITCH, HIGH_PITCH),
-              duration: Math.max(0.125, Number(note.duration) || 1),
-              velocity: clamp(Number(note.velocity) || 92, 1, 127)
-            })).sort((a, b) => a.start - b.start || a.pitch - b.pitch)
-          : []
+        id: track.id || uid(), name: String(track.name || `Track ${index + 1}`), instrument: INSTRUMENTS.some(([id]) => id === track.instrument) ? track.instrument : 'grand_piano', color: track.color || COLORS[index % COLORS.length], muted: Boolean(track.muted), solo: Boolean(track.solo),
+        notes: Array.isArray(track.notes) ? track.notes.map(item => ({ id: item.id || uid(), start: Math.max(0, Number(item.start) || 0), pitch: clamp(Number(item.pitch) || 60, LOW_PITCH, HIGH_PITCH), duration: Math.max(.125, Number(item.duration) || 1), velocity: clamp(Number(item.velocity) || 92, 1, 127) })).sort((a, b) => a.start - b.start || a.pitch - b.pitch) : []
       }))
     };
   }
 
   let project;
   try {
-    project = normaliseProject(JSON.parse(
-      localStorage.getItem(STORAGE_KEY)
-      || localStorage.getItem('ihy-v019')
-      || localStorage.getItem('ihy-v018')
-      || localStorage.getItem('ihy-v014')
-      || 'null'
-    ));
+    project = normaliseProject(JSON.parse(localStorage.getItem(STORAGE_KEY) || localStorage.getItem('ihy-v020') || localStorage.getItem('ihy-v019') || localStorage.getItem('ihy-v018') || 'null'));
   } catch (_) {
-    project = createBlankProject();
+    project = blankProject();
   }
 
   let activeTrackId = project.tracks[0].id;
@@ -129,25 +124,23 @@
   let playbackStartedAt = 0;
   let playbackStartBeat = 0;
   let animationFrame = 0;
-  let audioContext = null;
-  let masterGain = null;
-  let scheduledCleanups = [];
-  const pressedKeys = new Set();
+  let context = null;
+  let master = null;
+  let activeSounds = [];
+  const heldKeys = new Set();
 
   const getTrack = id => project.tracks.find(track => track.id === id);
   const activeTrack = () => getTrack(activeTrackId);
   const secondsPerBeat = () => 60 / clamp(Number(project.bpm) || 92, 30, 260);
   const snap = value => {
-    const unit = Number($('#quant').value || 0.25);
+    const unit = Number($('#quant').value || .25);
     return Math.round(value / unit) * unit;
   };
 
-  function compositionLength() {
+  function projectLength() {
     let end = MIN_BEATS;
     project.sections.forEach(section => { end = Math.max(end, section.end); });
-    project.tracks.forEach(track => track.notes.forEach(note => {
-      end = Math.max(end, note.start + note.duration);
-    }));
+    project.tracks.forEach(track => track.notes.forEach(item => { end = Math.max(end, item.start + item.duration); }));
     return Math.max(MIN_BEATS, Math.ceil(end / 4) * 4);
   }
 
@@ -157,27 +150,23 @@
     project.key = SCALE_MAP[$('#key').value] ? $('#key').value : 'D minor';
   }
 
-  function showStatus(message = '', timeout = 3200) {
+  function status(message = '', timeout = 3200) {
     const target = $('#status');
     target.textContent = message;
-    clearTimeout(showStatus.timer);
-    if (message && timeout) {
-      showStatus.timer = setTimeout(() => {
-        if (target.textContent === message) target.textContent = '';
-      }, timeout);
-    }
+    clearTimeout(status.timer);
+    if (message && timeout) status.timer = setTimeout(() => {
+      if (target.textContent === message) target.textContent = '';
+    }, timeout);
   }
 
   function saveProject(silent = false) {
     syncMeta();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(project));
-    if (!silent) showStatus(`Saved “${project.title}”.`);
+    if (!silent) status(`Saved “${project.title}”.`);
   }
 
   function setView(name) {
-    $$('.view').forEach(view => {
-      view.classList.toggle('active', view.id === `${name}View`);
-    });
+    $$('.view').forEach(view => view.classList.toggle('active', view.id === `${name}View`));
   }
 
   function render() {
@@ -191,7 +180,6 @@
     $('#metro').setAttribute('aria-pressed', String(metronomeEnabled));
     $('#record').classList.toggle('on', recording);
     $('#record').textContent = recording ? '⏺ Recording' : '⏺ Record';
-
     renderTracks();
     renderTimeline();
     renderRoll();
@@ -207,29 +195,20 @@
 
     project.tracks.forEach(track => {
       armed.append(new Option(track.name, track.id, track.id === activeTrackId, track.id === activeTrackId));
-
       const row = document.createElement('div');
       row.className = `track${track.id === activeTrackId ? ' active' : ''}`;
-      row.innerHTML = `
-        <span class="swatch" style="background:${track.color}"></span>
-        <button class="btn track-arm" data-arm="${track.id}">${escapeHtml(track.name)}</button>
-        <span class="instrument">${escapeHtml(instrumentName(track.instrument))}</span>
-        <span class="track-actions">
-          <button class="btn" data-mute="${track.id}" aria-pressed="${track.muted}">M</button>
-          <button class="btn" data-solo="${track.id}" aria-pressed="${track.solo}">S</button>
-        </span>
-      `;
+      row.innerHTML = `<span class="swatch" style="background:${track.color}"></span><button class="btn track-arm" data-arm="${track.id}">${escapeHtml(track.name)}</button><span class="instrument">${escapeHtml(instrumentName(track.instrument))}</span><span class="track-actions"><button class="btn" data-mute="${track.id}" aria-pressed="${track.muted}">M</button><button class="btn" data-solo="${track.id}" aria-pressed="${track.solo}">S</button></span>`;
       list.append(row);
     });
 
-    const instrument = $('#instrument');
-    instrument.replaceChildren(...INSTRUMENTS.map(([id, name]) => new Option(name, id)));
-    instrument.value = activeTrack().instrument;
+    const select = $('#instrument');
+    select.replaceChildren(...INSTRUMENTS.map(([id, name]) => new Option(name, id)));
+    select.value = activeTrack().instrument;
   }
 
   function renderTimeline() {
     const host = $('#arrangement');
-    const total = compositionLength();
+    const total = projectLength();
     host.replaceChildren();
     host.style.width = `${total * beatWidth}px`;
 
@@ -239,10 +218,7 @@
     playhead.style.left = `${playheadBeat * beatWidth}px`;
     host.append(playhead);
 
-    const sections = project.sections.length
-      ? project.sections
-      : [{ id: 'main', name: 'Main Track', start: 0, end: total, color: '#dfb658', readonly: true }];
-
+    const sections = project.sections.length ? project.sections : [{ id: 'main', name: 'Main Track', start: 0, end: total, color: '#dfb658', readonly: true }];
     sections.forEach(section => {
       const marker = document.createElement('button');
       marker.className = 'arrangement-section';
@@ -267,10 +243,9 @@
   function renderRoll() {
     const labels = $('#labels');
     const roll = $('#roll');
-    const total = compositionLength();
     labels.replaceChildren();
     roll.replaceChildren();
-    roll.style.width = `${total * beatWidth}px`;
+    roll.style.width = `${projectLength() * beatWidth}px`;
 
     const playhead = document.createElement('div');
     playhead.id = 'playhead';
@@ -285,14 +260,14 @@
       labels.append(label);
     }
 
-    project.tracks.forEach(track => track.notes.forEach(note => {
+    project.tracks.forEach(track => track.notes.forEach(item => {
       const node = document.createElement('div');
-      node.className = `note${selectedNoteId === note.id ? ' selected' : ''}`;
-      node.dataset.note = note.id;
-      node.title = `${track.name} · ${noteName(note.pitch)} · ${note.duration} beats`;
-      node.style.left = `${note.start * beatWidth + 1}px`;
-      node.style.top = `${(HIGH_PITCH - note.pitch) * ROW_HEIGHT + 2}px`;
-      node.style.width = `${Math.max(10, note.duration * beatWidth - 2)}px`;
+      node.className = `note${selectedNoteId === item.id ? ' selected' : ''}`;
+      node.dataset.note = item.id;
+      node.title = `${track.name} · ${noteName(item.pitch)} · ${item.duration} beats`;
+      node.style.left = `${item.start * beatWidth + 1}px`;
+      node.style.top = `${(HIGH_PITCH - item.pitch) * ROW_HEIGHT + 2}px`;
+      node.style.width = `${Math.max(10, item.duration * beatWidth - 2)}px`;
       node.style.background = track.color;
       node.innerHTML = '<span class="resize-handle"></span>';
       roll.append(node);
@@ -302,8 +277,8 @@
   function renderKeyboard() {
     const piano = $('#piano');
     piano.replaceChildren();
-
     const whites = [];
+
     for (let pitch = 36; pitch <= 96; pitch += 1) {
       if (![1, 3, 6, 8, 10].includes(pitch % 12)) whites.push(pitch);
     }
@@ -329,46 +304,42 @@
   }
 
   function updateTransport() {
-    const toClock = seconds => {
+    const clock = seconds => {
       const whole = Math.max(0, Math.round(seconds));
       return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
     };
-    $('#transportTime').textContent = `${toClock(playheadBeat * secondsPerBeat())} / ${toClock(compositionLength() * secondsPerBeat())}`;
+    $('#transportTime').textContent = `${clock(playheadBeat * secondsPerBeat())} / ${clock(projectLength() * secondsPerBeat())}`;
   }
 
   function setPlayhead(beat, follow = false) {
-    playheadBeat = clamp(beat, 0, compositionLength());
+    playheadBeat = clamp(beat, 0, projectLength());
     const left = `${playheadBeat * beatWidth}px`;
-    const rollPlayhead = $('#playhead');
-    const timelinePlayhead = $('#arrangementPlayhead');
-    if (rollPlayhead) rollPlayhead.style.left = left;
-    if (timelinePlayhead) timelinePlayhead.style.left = left;
+    $('#playhead')?.style && ($('#playhead').style.left = left);
+    $('#arrangementPlayhead')?.style && ($('#arrangementPlayhead').style.left = left);
     updateTransport();
 
     if (follow) {
       const scroll = $('#rollScroll');
       const target = playheadBeat * beatWidth;
-      if (target > scroll.scrollLeft + scroll.clientWidth - 130) {
-        scroll.scrollLeft = Math.max(0, target - scroll.clientWidth * 0.35);
-      }
+      if (target > scroll.scrollLeft + scroll.clientWidth - 130) scroll.scrollLeft = Math.max(0, target - scroll.clientWidth * .35);
     }
   }
 
   function ensureAudio() {
-    if (audioContext) {
-      if (audioContext.state === 'suspended') audioContext.resume().catch(() => {});
-      return audioContext;
+    if (context) {
+      if (context.state === 'suspended') context.resume().catch(() => {});
+      return context;
     }
-    const Api = window.AudioContext || window.webkitAudioContext;
-    if (!Api) return null;
-    audioContext = new Api();
-    masterGain = audioContext.createGain();
-    masterGain.gain.value = 0.68;
-    masterGain.connect(audioContext.destination);
-    return audioContext;
+    const AudioApi = window.AudioContext || window.webkitAudioContext;
+    if (!AudioApi) return null;
+    context = new AudioApi();
+    master = context.createGain();
+    master.gain.value = 0.68;
+    master.connect(context.destination);
+    return context;
   }
 
-  function waveformFor(instrument) {
+  function waveform(instrument) {
     if (['cello', 'strings', 'horn', 'electric_bass'].includes(instrument)) return 'sawtooth';
     if (['retro_lead', 'drum_kit'].includes(instrument)) return 'square';
     if (['flute', 'choir', 'warm_pad', 'bell'].includes(instrument)) return 'sine';
@@ -376,51 +347,43 @@
   }
 
   function playTone(instrument, pitch, velocity, duration, at) {
-    const context = ensureAudio();
-    if (!context) return;
+    const audio = ensureAudio();
+    if (!audio) return;
+    const oscillator = audio.createOscillator();
+    const gain = audio.createGain();
+    const start = at ?? audio.currentTime;
+    const loudness = clamp((velocity || 92) / 127, 0.08, 1);
+    const length = Math.max(.08, duration);
 
-    const oscillator = context.createOscillator();
-    const gain = context.createGain();
-    const start = at ?? context.currentTime;
-    const intensity = clamp((velocity || 92) / 127, 0.08, 1);
-    const realDuration = Math.max(0.08, duration);
-
-    oscillator.type = waveformFor(instrument);
-    oscillator.frequency.setValueAtTime(
-      instrument === 'drum_kit' ? 120 : 440 * Math.pow(2, (pitch - 69) / 12),
-      start
-    );
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(0.12 * intensity, start + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + realDuration);
-    oscillator.connect(gain).connect(masterGain);
+    oscillator.type = waveform(instrument);
+    oscillator.frequency.setValueAtTime(instrument === 'drum_kit' ? 120 : 440 * Math.pow(2, (pitch - 69) / 12), start);
+    gain.gain.setValueAtTime(.0001, start);
+    gain.gain.exponentialRampToValueAtTime(.12 * loudness, start + .01);
+    gain.gain.exponentialRampToValueAtTime(.0001, start + length);
+    oscillator.connect(gain).connect(master);
     oscillator.start(start);
-    oscillator.stop(start + realDuration + 0.06);
+    oscillator.stop(start + length + .06);
 
-    scheduledCleanups.push(() => {
-      try {
-        oscillator.stop();
-        oscillator.disconnect();
-        gain.disconnect();
-      } catch (_) {}
+    activeSounds.push(() => {
+      try { oscillator.stop(); oscillator.disconnect(); gain.disconnect(); } catch (_) {}
     });
   }
 
-  function glowKey(pitch, delay, duration) {
+  function glow(pitch, delay, duration) {
     const begin = setTimeout(() => {
       const key = $(`.key[data-pitch="${pitch}"]`);
       key?.classList.add('playing');
       const end = setTimeout(() => key?.classList.remove('playing'), Math.max(80, duration));
-      scheduledCleanups.push(() => clearTimeout(end));
+      activeSounds.push(() => clearTimeout(end));
     }, Math.max(0, delay));
-    scheduledCleanups.push(() => clearTimeout(begin));
+    activeSounds.push(() => clearTimeout(begin));
   }
 
   function stopPlayback(reset = false) {
     playing = false;
     cancelAnimationFrame(animationFrame);
     animationFrame = 0;
-    scheduledCleanups.splice(0).forEach(cleanup => cleanup());
+    activeSounds.splice(0).forEach(cleanup => cleanup());
     $$('.key.playing').forEach(key => key.classList.remove('playing'));
     $('#play').textContent = '▶ Play';
     if (reset) setPlayhead(0);
@@ -429,13 +392,11 @@
   function animatePlayback() {
     if (!playing) return;
     const beat = playbackStartBeat + ((performance.now() - playbackStartedAt) / 1000) / secondsPerBeat();
-
-    if (beat >= compositionLength()) {
+    if (beat >= projectLength()) {
       stopPlayback(true);
-      showStatus('Playback reached the end.');
+      status('Playback reached the end.');
       return;
     }
-
     setPlayhead(beat, true);
     animationFrame = requestAnimationFrame(animatePlayback);
   }
@@ -443,51 +404,49 @@
   function togglePlay() {
     if (playing) {
       stopPlayback(false);
-      showStatus('Playback paused.');
+      status('Playback paused.');
       return;
     }
 
     syncMeta();
-    const context = ensureAudio();
-    if (!context) return;
+    const audio = ensureAudio();
+    if (!audio) return;
+    const start = playheadBeat;
+    const startAt = audio.currentTime + .05;
+    const soloed = project.tracks.some(track => track.solo);
 
-    const startBeat = playheadBeat;
-    const startAt = context.currentTime + 0.05;
-    const soloActive = project.tracks.some(track => track.solo);
-    const audibleTracks = project.tracks.filter(track => !track.muted && (!soloActive || track.solo));
-
-    audibleTracks.forEach(track => track.notes.forEach(note => {
-      const noteEnd = note.start + note.duration;
-      if (noteEnd <= startBeat) return;
-
-      const actualStart = Math.max(startBeat, note.start);
-      const delay = (actualStart - startBeat) * secondsPerBeat();
-      const duration = (noteEnd - actualStart) * secondsPerBeat();
-
-      playTone(track.instrument, note.pitch + Number($('#transpose').value || 0), note.velocity, duration, startAt + delay);
-      glowKey(note.pitch, delay * 1000, duration * 1000);
-    }));
+    project.tracks.filter(track => !track.muted && (!soloed || track.solo)).forEach(track => {
+      track.notes.forEach(item => {
+        const end = item.start + item.duration;
+        if (end <= start) return;
+        const actualStart = Math.max(start, item.start);
+        const delay = (actualStart - start) * secondsPerBeat();
+        const duration = (end - actualStart) * secondsPerBeat();
+        playTone(track.instrument, item.pitch + Number($('#transpose').value || 0), item.velocity, duration, startAt + delay);
+        glow(item.pitch, delay * 1000, duration * 1000);
+      });
+    });
 
     if (metronomeEnabled) {
-      for (let beat = Math.ceil(startBeat); beat < compositionLength(); beat += 1) {
-        const delay = (beat - startBeat) * secondsPerBeat();
-        playTone('bell', beat % 4 === 0 ? 84 : 76, 48, 0.06, startAt + delay);
+      for (let beat = Math.ceil(start); beat < projectLength(); beat += 1) {
+        const delay = (beat - start) * secondsPerBeat();
+        playTone('bell', beat % 4 === 0 ? 84 : 76, 48, .06, startAt + delay);
       }
     }
 
     playing = true;
     playbackStartedAt = performance.now() + 50;
-    playbackStartBeat = startBeat;
+    playbackStartBeat = start;
     $('#play').textContent = '⏸ Pause';
     animationFrame = requestAnimationFrame(animatePlayback);
   }
 
-  function playPitch(pitch, beats = 0.5) {
-    const context = ensureAudio();
-    if (!context) return;
+  function playImmediate(pitch, beats = .5) {
+    const audio = ensureAudio();
+    if (!audio) return;
     const duration = beats * secondsPerBeat();
-    playTone(activeTrack().instrument, pitch + Number($('#transpose').value || 0), 96, duration, context.currentTime + 0.02);
-    glowKey(pitch, 15, duration * 1000);
+    playTone(activeTrack().instrument, pitch + Number($('#transpose').value || 0), 96, duration, audio.currentTime + .02);
+    glow(pitch, 15, duration * 1000);
   }
 
   function inScale(pitch, scale) {
@@ -508,16 +467,15 @@
     const scale = SCALE_MAP[project.key] || SCALE_MAP['D minor'];
     let root = pitch;
     while (!inScale(root, scale) && root > LOW_PITCH) root -= 1;
-    return [root, scaleStep(root, 2, scale), scaleStep(root, 4, scale)]
-      .filter(value => value >= LOW_PITCH && value <= HIGH_PITCH);
+    return [root, scaleStep(root, 2, scale), scaleStep(root, 4, scale)].filter(value => value >= LOW_PITCH && value <= HIGH_PITCH);
   }
 
-  function addNoteAt(event) {
-    const box = $('#roll').getBoundingClientRect();
-    const start = snap(clamp((event.clientX - box.left) / beatWidth, 0, compositionLength() - 0.125));
-    const pitch = clamp(HIGH_PITCH - Math.floor((event.clientY - box.top) / ROW_HEIGHT), LOW_PITCH, HIGH_PITCH);
+  function addAt(event) {
+    const rect = $('#roll').getBoundingClientRect();
+    const start = snap(clamp((event.clientX - rect.left) / beatWidth, 0, projectLength() - .125));
+    const pitch = clamp(HIGH_PITCH - Math.floor((event.clientY - rect.top) / ROW_HEIGHT), LOW_PITCH, HIGH_PITCH);
     const pitches = $('#chordToggle').classList.contains('on') ? chordFor(pitch) : [pitch];
-    const notes = pitches.map(value => createNote(start, value));
+    const notes = pitches.map(value => note(start, value));
     activeTrack().notes.push(...notes);
     selectedNoteId = notes[0].id;
     renderRoll();
@@ -525,41 +483,29 @@
 
   function findNote(id) {
     for (const track of project.tracks) {
-      const note = track.notes.find(item => item.id === id);
-      if (note) return { track, note };
+      const item = track.notes.find(candidate => candidate.id === id);
+      if (item) return { track, note: item };
     }
     return null;
   }
 
-  function newComposition() {
+  function newProject() {
     if (!confirm('Start a new composition? Unsaved work will be replaced.')) return;
-    project = createBlankProject();
+    project = blankProject();
     activeTrackId = project.tracks[0].id;
     selectedNoteId = null;
     playheadBeat = 0;
     render();
-    showStatus('New composition ready.');
+    status('New composition ready.');
   }
 
-  async function loadExample() {
-    showStatus('Loading the piano example…', 0);
-    try {
-      const response = await fetch('./examples/potion_song_all_piano_v7.mid?v=0.20', { cache: 'no-store' });
-      if (!response.ok) throw new Error('Example MIDI could not be read.');
-
-      project = normaliseProject(parseMidi(await response.arrayBuffer(), 'Potion Song — Piano Example.mid'));
-      project.title = 'Potion Song — Piano Example';
-      project.sections = [];
-      activeTrackId = project.tracks[0].id;
-      selectedNoteId = null;
-      playheadBeat = 0;
-      render();
-      showStatus('Loaded Potion Song — Piano Example.', 6000);
-    } catch (error) {
-      console.error(error);
-      showStatus('Could not load the piano example.', 6000);
-      alert(`Unable to load the piano example: ${error.message}`);
-    }
+  function loadExample() {
+    project = potionSongExample();
+    activeTrackId = project.tracks[0].id;
+    selectedNoteId = null;
+    playheadBeat = 0;
+    render();
+    status('Loaded Potion Song — Piano Example.', 6000);
   }
 
   function exportProject() {
@@ -571,7 +517,7 @@
     link.download = `${project.title.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'ihy-project'}.ihy.json`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    showStatus('Exported project JSON.');
+    status('Exported project JSON.');
   }
 
   function gmInstrument(program, channel) {
@@ -591,33 +537,19 @@
   function parseMidi(buffer, fileName) {
     const data = new Uint8Array(buffer);
     let index = 0;
-    const text = size => {
-      const value = String.fromCharCode(...data.slice(index, index + size));
-      index += size;
-      return value;
-    };
+    const text = size => { const value = String.fromCharCode(...data.slice(index, index + size)); index += size; return value; };
     const u8 = () => data[index++];
     const u16 = () => (u8() << 8) | u8();
     const u32 = () => ((u8() * 0x1000000) + (u8() << 16) + (u8() << 8) + u8()) >>> 0;
-    const vlq = () => {
-      let value = 0;
-      let byte;
-      do {
-        byte = u8();
-        value = (value << 7) | (byte & 127);
-      } while (byte & 128);
-      return value;
-    };
+    const vlq = () => { let value = 0; let byte; do { byte = u8(); value = (value << 7) | (byte & 127); } while (byte & 128); return value; };
 
     if (text(4) !== 'MThd') throw new Error('This is not a Standard MIDI file.');
     const headerLength = u32();
     if (headerLength < 6) throw new Error('MIDI header is incomplete.');
-
     u16();
     const trackCount = u16();
     const division = u16();
     index += Math.max(0, headerLength - 6);
-
     if (division & 0x8000) throw new Error('SMPTE MIDI timing is not supported.');
 
     const tempos = [500000];
@@ -625,7 +557,6 @@
 
     for (let trackIndex = 0; trackIndex < trackCount && index < data.length; trackIndex += 1) {
       if (text(4) !== 'MTrk') throw new Error('A MIDI track is malformed.');
-
       const end = index + u32();
       let tick = 0;
       let runningStatus = null;
@@ -637,17 +568,16 @@
 
       while (index < end) {
         tick += vlq();
-        let status = data[index];
-
-        if (status < 128) {
+        let statusByte = data[index];
+        if (statusByte < 128) {
           if (runningStatus === null) throw new Error('Invalid MIDI running status.');
-          status = runningStatus;
+          statusByte = runningStatus;
         } else {
           index += 1;
-          if (status < 240) runningStatus = status;
+          if (statusByte < 240) runningStatus = statusByte;
         }
 
-        if (status === 255) {
+        if (statusByte === 255) {
           const type = u8();
           const size = vlq();
           const payload = data.slice(index, index + size);
@@ -657,74 +587,46 @@
           continue;
         }
 
-        if (status === 240 || status === 247) {
-          index += vlq();
-          continue;
-        }
+        if (statusByte === 240 || statusByte === 247) { index += vlq(); continue; }
 
-        const command = status & 240;
-        channel = status & 15;
+        const command = statusByte & 240;
+        channel = statusByte & 15;
         const first = u8();
         const second = command === 192 || command === 208 ? null : u8();
-
-        if (command === 192) {
-          program = first;
-          continue;
-        }
+        if (command === 192) { program = first; continue; }
 
         const key = `${channel}:${first}`;
         if (command === 144 && second > 0) {
-          const stack = active.get(key) || [];
-          stack.push({ tick, velocity: second });
-          active.set(key, stack);
-          continue;
-        }
-
-        if (command === 128 || (command === 144 && second === 0)) {
+          const queue = active.get(key) || [];
+          queue.push({ tick, velocity: second });
+          active.set(key, queue);
+        } else if (command === 128 || (command === 144 && second === 0)) {
           const start = active.get(key)?.shift();
-          if (start) notes.push(createNote(start.tick / division, first, Math.max(0.125, (tick - start.tick) / division), start.velocity));
+          if (start) notes.push(note(start.tick / division, first, Math.max(.125, (tick - start.tick) / division), start.velocity));
         }
       }
 
       if (notes.length) {
-        tracks.push({
-          id: uid(),
-          name: name || `MIDI track ${tracks.length + 1}`,
-          instrument: gmInstrument(program, channel),
-          color: COLORS[tracks.length % COLORS.length],
-          muted: false,
-          solo: false,
-          notes: notes.sort((a, b) => a.start - b.start || a.pitch - b.pitch)
-        });
+        tracks.push({ id: uid(), name: name || `MIDI track ${tracks.length + 1}`, instrument: gmInstrument(program, channel), color: COLORS[tracks.length % COLORS.length], muted: false, solo: false, notes: notes.sort((a, b) => a.start - b.start || a.pitch - b.pitch) });
       }
-
       index = end;
     }
 
     if (!tracks.length) throw new Error('No MIDI note events were found.');
-    return {
-      title: fileName.replace(/\.(mid|midi)$/i, '').replace(/[_-]+/g, ' ').trim() || 'Imported MIDI',
-      bpm: Math.round(60000000 / (tempos[0] || 500000)),
-      key: 'C major',
-      sections: [],
-      tracks
-    };
+    return { title: fileName.replace(/\.(mid|midi)$/i, '').replace(/[_-]+/g, ' ').trim() || 'Imported MIDI', bpm: Math.round(60000000 / (tempos[0] || 500000)), key: 'C major', sections: [], tracks };
   }
 
-  async function importProject(file) {
+  async function importFile(file) {
     try {
-      project = /\.(mid|midi)$/i.test(file.name)
-        ? normaliseProject(parseMidi(await file.arrayBuffer(), file.name))
-        : normaliseProject(JSON.parse(await file.text()));
-
+      project = /\.(mid|midi)$/i.test(file.name) ? normaliseProject(parseMidi(await file.arrayBuffer(), file.name)) : normaliseProject(JSON.parse(await file.text()));
       activeTrackId = project.tracks[0].id;
       selectedNoteId = null;
       playheadBeat = 0;
       render();
-      showStatus(`Imported ${file.name}.`);
+      status(`Imported ${file.name}.`);
     } catch (error) {
       alert(`Unable to import this file: ${error.message}`);
-      showStatus('Import failed.');
+      status('Import failed.');
     }
   }
 
@@ -738,7 +640,7 @@
     $('#quickAddModal').hidden = true;
   }
 
-  $('#newProject').addEventListener('click', newComposition);
+  $('#newProject').addEventListener('click', newProject);
   $('#save').addEventListener('click', () => saveProject(false));
   $('#loadExample').addEventListener('click', loadExample);
   $('#createSound').addEventListener('click', () => setView('create'));
@@ -747,23 +649,13 @@
   $('#quickBass').addEventListener('click', () => openQuickAdd('Bass'));
   $('#quickMotif').addEventListener('click', () => openQuickAdd('Motif'));
   $('#quickAddClose').addEventListener('click', closeQuickAdd);
-  $('#quickAddModal').addEventListener('click', event => {
-    if (event.target === $('#quickAddModal')) closeQuickAdd();
-  });
+  $('#quickAddModal').addEventListener('click', event => { if (event.target === $('#quickAddModal')) closeQuickAdd(); });
   $('#import').addEventListener('click', () => $('#file').click());
   $('#export').addEventListener('click', exportProject);
-  $('#file').addEventListener('change', event => {
-    if (event.target.files[0]) importProject(event.target.files[0]);
-    event.target.value = '';
-  });
-
+  $('#file').addEventListener('change', event => { if (event.target.files[0]) importFile(event.target.files[0]); event.target.value = ''; });
   $('#title').addEventListener('change', syncMeta);
-  $('#bpm').addEventListener('change', () => {
-    syncMeta();
-    updateTransport();
-  });
+  $('#bpm').addEventListener('change', () => { syncMeta(); updateTransport(); });
   $('#key').addEventListener('change', () => { project.key = $('#key').value; });
-
   $('#zoomSlider').addEventListener('input', event => {
     zoom = clamp(Number(event.target.value) || 100, 70, 150);
     beatWidth = BASE_BEAT * zoom / 100;
@@ -772,68 +664,25 @@
     renderRoll();
     updateTransport();
   });
-
   $('#chordToggle').addEventListener('click', () => {
     const button = $('#chordToggle');
     button.classList.toggle('on');
     button.setAttribute('aria-pressed', String(button.classList.contains('on')));
   });
-
-  $('#metro').addEventListener('click', () => {
-    metronomeEnabled = !metronomeEnabled;
-    render();
-    showStatus(metronomeEnabled ? 'Metronome enabled.' : 'Metronome disabled.');
-  });
-
-  $('#armed').addEventListener('change', event => {
-    activeTrackId = event.target.value;
-    selectedNoteId = null;
-    renderTracks();
-    renderRoll();
-  });
-
-  $('#instrument').addEventListener('change', event => {
-    activeTrack().instrument = event.target.value;
-    renderTracks();
-    showStatus(`${activeTrack().name} now uses ${instrumentName(activeTrack().instrument)}.`);
-  });
+  $('#metro').addEventListener('click', () => { metronomeEnabled = !metronomeEnabled; render(); status(metronomeEnabled ? 'Metronome enabled.' : 'Metronome disabled.'); });
+  $('#armed').addEventListener('change', event => { activeTrackId = event.target.value; selectedNoteId = null; renderTracks(); renderRoll(); });
+  $('#instrument').addEventListener('change', event => { activeTrack().instrument = event.target.value; renderTracks(); status(`${activeTrack().name} now uses ${instrumentName(activeTrack().instrument)}.`); });
 
   $('#tracks').addEventListener('click', event => {
     const button = event.target.closest('button');
     if (!button) return;
-
-    if (button.dataset.arm) {
-      activeTrackId = button.dataset.arm;
-      selectedNoteId = null;
-      renderTracks();
-      renderRoll();
-      return;
-    }
-
-    if (button.dataset.mute) {
-      const track = getTrack(button.dataset.mute);
-      track.muted = !track.muted;
-      renderTracks();
-      return;
-    }
-
-    if (button.dataset.solo) {
-      const track = getTrack(button.dataset.solo);
-      track.solo = !track.solo;
-      renderTracks();
-    }
+    if (button.dataset.arm) { activeTrackId = button.dataset.arm; selectedNoteId = null; renderTracks(); renderRoll(); return; }
+    if (button.dataset.mute) { const track = getTrack(button.dataset.mute); track.muted = !track.muted; renderTracks(); return; }
+    if (button.dataset.solo) { const track = getTrack(button.dataset.solo); track.solo = !track.solo; renderTracks(); }
   });
 
   $('#addTrack').addEventListener('click', () => {
-    const track = {
-      id: uid(),
-      name: `Track ${project.tracks.length + 1}`,
-      instrument: 'grand_piano',
-      color: COLORS[project.tracks.length % COLORS.length],
-      muted: false,
-      solo: false,
-      notes: []
-    };
+    const track = { id: uid(), name: `Track ${project.tracks.length + 1}`, instrument: 'grand_piano', color: COLORS[project.tracks.length % COLORS.length], muted: false, solo: false, notes: [] };
     project.tracks.push(track);
     activeTrackId = track.id;
     selectedNoteId = null;
@@ -844,30 +693,19 @@
     const name = prompt('Section name', `Section ${project.sections.length + 1}`);
     if (!name?.trim()) return;
     const start = project.sections.length ? project.sections[project.sections.length - 1].end : 0;
-    project.sections.push({
-      id: uid(),
-      name: name.trim(),
-      start,
-      end: Math.min(compositionLength(), start + 8),
-      color: COLORS[project.sections.length % COLORS.length]
-    });
+    project.sections.push({ id: uid(), name: name.trim(), start, end: Math.min(projectLength(), start + 8), color: COLORS[project.sections.length % COLORS.length] });
     renderTimeline();
   });
 
   $('#arrangement').addEventListener('click', event => {
-    const sectionNode = event.target.closest('.arrangement-section');
-    if (sectionNode?.disabled) return;
-
-    if (sectionNode) {
-      const section = project.sections.find(item => item.id === sectionNode.dataset.section);
-      const name = prompt('Section name', section.name);
-      if (name?.trim()) {
-        section.name = name.trim();
-        renderTimeline();
-      }
+    const section = event.target.closest('.arrangement-section');
+    if (section?.disabled) return;
+    if (section) {
+      const entry = project.sections.find(item => item.id === section.dataset.section);
+      const name = prompt('Section name', entry.name);
+      if (name?.trim()) { entry.name = name.trim(); renderTimeline(); }
       return;
     }
-
     const rect = $('#arrangement').getBoundingClientRect();
     setPlayhead((event.clientX - rect.left) / beatWidth);
   });
@@ -879,109 +717,56 @@
     renderRoll();
   });
 
-  $('#rollScroll').addEventListener('scroll', () => {
-    $('#arrangementViewport').scrollLeft = $('#rollScroll').scrollLeft;
-  });
-
+  $('#rollScroll').addEventListener('scroll', () => { $('#arrangementViewport').scrollLeft = $('#rollScroll').scrollLeft; });
   $('#roll').addEventListener('pointerdown', event => {
     if (event.button !== 0) return;
-    const noteNode = event.target.closest('.note');
-
-    if (!noteNode) {
-      if (event.target === $('#roll')) addNoteAt(event);
-      return;
-    }
-
+    const node = event.target.closest('.note');
+    if (!node) { if (event.target === $('#roll')) addAt(event); return; }
     event.preventDefault();
-    const ref = findNote(noteNode.dataset.note);
+    const ref = findNote(node.dataset.note);
     if (!ref) return;
-
     selectedNoteId = ref.note.id;
-    noteDrag = {
-      ref,
-      mode: event.target.classList.contains('resize-handle') ? 'resize' : 'move',
-      x: event.clientX,
-      y: event.clientY,
-      start: ref.note.start,
-      pitch: ref.note.pitch,
-      duration: ref.note.duration
-    };
+    noteDrag = { ref, mode: event.target.classList.contains('resize-handle') ? 'resize' : 'move', x: event.clientX, y: event.clientY, start: ref.note.start, pitch: ref.note.pitch, duration: ref.note.duration };
     renderRoll();
   });
-
   $('#roll').addEventListener('pointermove', event => {
     if (!noteDrag) return;
-
     const dx = (event.clientX - noteDrag.x) / beatWidth;
     const dy = Math.round((event.clientY - noteDrag.y) / ROW_HEIGHT);
-
     if (noteDrag.mode === 'resize') {
-      noteDrag.ref.note.duration = clamp(snap(noteDrag.duration + dx), 0.125, compositionLength() - noteDrag.ref.note.start);
+      noteDrag.ref.note.duration = clamp(snap(noteDrag.duration + dx), .125, projectLength() - noteDrag.ref.note.start);
     } else {
-      noteDrag.ref.note.start = clamp(snap(noteDrag.start + dx), 0, compositionLength() - noteDrag.ref.note.duration);
+      noteDrag.ref.note.start = clamp(snap(noteDrag.start + dx), 0, projectLength() - noteDrag.ref.note.duration);
       noteDrag.ref.note.pitch = clamp(noteDrag.pitch - dy, LOW_PITCH, HIGH_PITCH);
     }
     renderRoll();
   });
-
-  ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => {
-    $('#roll').addEventListener(type, () => { noteDrag = null; });
-  });
-
-  $('#piano').addEventListener('pointerdown', event => {
-    const key = event.target.closest('.key');
-    if (key) playPitch(Number(key.dataset.pitch), pressedKeys.has(' ') ? 1.35 : 0.5);
-  });
-
-  $('#record').addEventListener('click', () => {
-    recording = !recording;
-    recordingStartedAt = performance.now();
-    render();
-    showStatus(recording ? 'Recording keyboard notes.' : 'Recording stopped.');
-  });
-
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(type => $('#roll').addEventListener(type, () => { noteDrag = null; }));
+  $('#piano').addEventListener('pointerdown', event => { const key = event.target.closest('.key'); if (key) playImmediate(Number(key.dataset.pitch), heldKeys.has(' ') ? 1.35 : .5); });
+  $('#record').addEventListener('click', () => { recording = !recording; recordingStartedAt = performance.now(); render(); status(recording ? 'Recording keyboard notes.' : 'Recording stopped.'); });
   $('#play').addEventListener('click', togglePlay);
-  $('#stop').addEventListener('click', () => {
-    stopPlayback(false);
-    showStatus('Playback stopped.');
-  });
+  $('#stop').addEventListener('click', () => { stopPlayback(false); status('Playback stopped.'); });
 
   document.addEventListener('keydown', event => {
     if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
-
-    if (event.code === 'Space') {
-      event.preventDefault();
-      pressedKeys.add(' ');
-      return;
-    }
-
+    if (event.code === 'Space') { event.preventDefault(); heldKeys.add(' '); return; }
     const key = event.key.toLowerCase();
-    if (!KEYBOARD_MAP[key] || pressedKeys.has(key)) return;
-
-    pressedKeys.add(key);
-    const beats = pressedKeys.has(' ') ? 1.35 : 0.5;
-    playPitch(KEYBOARD_MAP[key], beats);
-
+    if (!KEYBOARD_MAP[key] || heldKeys.has(key)) return;
+    heldKeys.add(key);
+    const beats = heldKeys.has(' ') ? 1.35 : .5;
+    playImmediate(KEYBOARD_MAP[key], beats);
     if (recording) {
       const start = snap(((performance.now() - recordingStartedAt) / 1000) / secondsPerBeat());
-      if (start < compositionLength()) {
-        const note = createNote(start, KEYBOARD_MAP[key], beats);
-        activeTrack().notes.push(note);
-        selectedNoteId = note.id;
+      if (start < projectLength()) {
+        const item = note(start, KEYBOARD_MAP[key], beats);
+        activeTrack().notes.push(item);
+        selectedNoteId = item.id;
         renderRoll();
       }
     }
   });
-
-  document.addEventListener('keyup', event => {
-    if (event.code === 'Space') pressedKeys.delete(' ');
-    else pressedKeys.delete(event.key.toLowerCase());
-  });
-
-  document.addEventListener('keydown', event => {
-    if (event.key === 'Escape') closeQuickAdd();
-  });
-
+  document.addEventListener('keyup', event => { if (event.code === 'Space') heldKeys.delete(' '); else heldKeys.delete(event.key.toLowerCase()); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') closeQuickAdd(); });
   window.addEventListener('pagehide', () => stopPlayback(false));
 
   render();
