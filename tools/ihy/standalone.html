@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#181919">
-  <title>Ihy v0.15 — Sound &amp; Music Workshop</title>
-  <link rel="stylesheet" href="./standalone.css?v=0.15">
+  <title>Ihy v0.16 — Sound &amp; Music Workshop</title>
+  <link rel="stylesheet" href="./standalone.css?v=0.16">
+  <link rel="stylesheet" href="./standalone-v016.css?v=0.16">
 </head>
 <body>
   <header class="top">
-    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.15</div></div>
+    <div class="brand"><img class="icon" src="./icon.png" alt="Ihy"><div class="title">Ihy</div><div class="version">v0.16</div></div>
     <span class="divider" aria-hidden="true"></span>
     <div class="top-controls">
       <div class="top-control name"><input id="title" value="Untitled cue" aria-label="Project name"><small>Composition</small></div>
@@ -23,7 +24,7 @@
   </header>
   <main class="app">
     <section class="view active" id="composeView"><div class="layout"><aside class="side">
-      <div class="card"><h2>🎛️ Controls</h2><div class="section-label">Project &amp; sound</div><div class="control-grid"><button class="btn primary" id="newProject">＋ New composition</button><button class="btn primary" id="save">💾 Save</button><button class="btn" id="createSound">✨ Create sound</button><button class="btn" id="loadExample">♫ Load example</button></div><div class="section-label">Files &amp; tools</div><div class="control-grid"><button class="btn" id="import">📥 Import MIDI / JSON</button><button class="btn" id="export">📤 Export JSON</button><button class="btn" id="libraryButton">🎧 Library</button><button class="btn" id="analyseButton">🔎 Analyse</button><button class="btn" id="signalButton">〰 Signal</button></div><input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden><div class="section-label">Transport</div><div class="transport-grid"><button class="btn" id="record">⏺ Record</button><button class="btn" id="metro">♫ Metro</button><button class="btn primary" id="play">▶ Play</button><button class="btn" id="stop">⏹ Stop</button></div><p class="status" id="status">v0.15 — one permanent app route, MIDI import and built-in example.</p></div>
+      <div class="card"><h2>🎛️ Controls</h2><div class="section-label">Project &amp; sound</div><div class="control-grid"><button class="btn primary" id="newProject">＋ New composition</button><button class="btn primary" id="save">💾 Save</button><button class="btn" id="createSound">✨ Create sound</button><button class="btn" id="loadExample">♫ Load example</button></div><div class="section-label">Files &amp; tools</div><div class="control-grid"><button class="btn" id="import">📥 Import MIDI / JSON</button><button class="btn" id="export">📤 Export JSON</button><button class="btn" id="libraryButton">🎧 Library</button><button class="btn" id="analyseButton">🔎 Analyse</button><button class="btn" id="signalButton">〰 Signal</button></div><input id="file" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden><div class="section-label">Transport</div><div class="transport-grid"><button class="btn" id="record">⏺ Record</button><button class="btn" id="metro">♫ Metro</button><button class="btn primary" id="play">▶ Play</button><button class="btn" id="stop">⏹ Stop</button></div><p class="status" id="status">v0.16 — repaired header layout and valid Potion Song MIDI example.</p></div>
       <div class="card"><div class="headrow"><h2 style="flex:1">🎚️ Tracks</h2><button class="btn" id="addTrack">＋ Track</button></div><div class="tracks" id="tracks"></div></div>
     </aside><section class="editor"><div class="card"><div class="headrow"><h2>🎼 Piano roll</h2><span class="help">Click an empty cell to add a note. Drag notes to move them, pull their right edge to resize, or right-click for an inline note editor.</span><button class="btn" id="addSection">＋ Section</button><button class="btn" id="clear">🗑 Clear armed</button></div><div class="arrangement-shell"><div class="arrangement-spacer"></div><div class="arrangement-viewport" id="arrangementViewport"><div class="arrangement" id="arrangement"></div></div></div><div class="roll-scroll" id="rollScroll"><div class="roll-grid"><div class="pitch-labels" id="labels"></div><div class="roll" id="roll"></div></div></div></div><div class="card"><div class="headrow"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note. Keyboard input plays the armed track; Record writes notes to the grid.</span><select id="instrument" style="max-width:190px"></select></div><div class="pianowrap"><div class="piano" id="piano"></div></div></div></section></div></section>
     <section class="view" id="createView"><div class="card"><h2>✨ Create sound</h2><p class="placeholder">These are simple game/SFX synth presets, separate from the sampled music instruments in Compose.</p><div class="presetgrid" id="presets"></div></div></section><section class="view" id="signalView"><div class="card"><h2>〰 Signal</h2><p class="placeholder">Continuous frequency signal mode returns in the next build.</p></div></section><section class="view" id="libraryView"><div class="card"><h2>🎧 Library</h2><p class="placeholder">Audio asset library and permanent imported-audio storage are the next library pass.</p></div></section><section class="view" id="analyseView"><div class="card"><h2>🔎 Analyse</h2><p class="placeholder">Audio analysis will connect to the existing Organon Audio2MIDI workflow in the next pass.</p></div></section>
@@ -31,7 +32,7 @@
   <div class="note-popover" id="notePopover" hidden role="dialog" aria-label="Edit note"><div class="note-popover-title" id="notePopoverTitle">Edit note</div><label>Instrument<select id="noteMenuInstrument"></select></label><label>Velocity<input id="noteMenuVelocity" type="number" min="1" max="127" step="1"></label><label>Length beats<input id="noteMenuLength" type="number" min="0.125" max="64" step="0.125"></label><div class="note-menu-actions"><button class="btn primary" id="noteMenuApply">Apply</button><button class="btn danger" id="noteMenuDelete">Delete</button><button class="btn" id="noteMenuClose">Close</button></div></div>
   <div class="dialog-backdrop" id="projectDialogBackdrop" hidden><div class="project-dialog" role="dialog" aria-modal="true"><h3 id="projectDialogTitle">Replace composition?</h3><p id="projectDialogText"></p><div class="dialog-actions"><button class="btn primary" id="dialogSave">Save &amp; continue</button><button class="btn danger" id="dialogDiscard">Continue without saving</button><button class="btn" id="dialogCancel">Cancel</button></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <script src="./standalone-v015-compat.js?v=0.15"></script>
-  <script src="./standalone.js?v=0.15"></script>
+  <script src="./standalone-v016-midi.js?v=0.16"></script>
+  <script src="./standalone.js?v=0.16"></script>
 </body>
 </html>
