@@ -106,30 +106,63 @@ function createWindow({ kind, title, subtitle }) {
   const panel=el('section',`caps-asset-window caps-${kind}-window`);
   const bar=el('header','caps-asset-window-bar');
   const heading=el('div','caps-asset-window-heading');heading.append(el('strong','',title));if(subtitle)heading.append(el('span','',subtitle));
-  const close=el('button','caps-asset-window-close','❌');close.type='button';close.title='Close';close.addEventListener('click',()=>removePanel(panel));
+  const close=el('button','caps-asset-window-close','❌');
+  close.type='button';close.title='Close';
+  close.addEventListener('pointerdown',(event)=>event.stopPropagation());
+  close.addEventListener('click',(event)=>{ event.stopPropagation(); removePanel(panel); });
   bar.append(heading,close);panel.append(bar);panel.addEventListener('pointerdown',()=>bringToFront(panel));makeDraggable(panel,bar);return panel;
 }
 
-function addImageZoom(panel, image) {
+function createImageStage(image) {
+  const stage = el('div','caps-image-stage');
+  let zoom = 1;
+  let panX = 0;
+  let panY = 0;
+  let drag = null;
+  const apply = () => {
+    image.style.transform = `translate(-50%, -50%) translate(${panX}px, ${panY}px) scale(${zoom})`;
+  };
+  image.draggable = false;
+  stage.append(image);
+  stage.addEventListener('pointerdown',(event)=>{
+    if (event.button !== 0) return;
+    event.preventDefault();
+    drag = { id:event.pointerId, startX:event.clientX, startY:event.clientY, panX, panY };
+    stage.classList.add('panning');
+    stage.setPointerCapture(event.pointerId);
+  });
+  stage.addEventListener('pointermove',(event)=>{
+    if (!drag || drag.id !== event.pointerId) return;
+    panX = drag.panX + event.clientX - drag.startX;
+    panY = drag.panY + event.clientY - drag.startY;
+    apply();
+  });
+  const stop = () => { drag=null; stage.classList.remove('panning'); };
+  stage.addEventListener('pointerup',stop);
+  stage.addEventListener('pointercancel',stop);
+  apply();
+  return {
+    stage,
+    setZoom(value) { zoom = value; apply(); }
+  };
+}
+
+function addImageZoom(panel, imageController) {
   const bar = panel.querySelector('.caps-asset-window-bar');
   const close = panel.querySelector('.caps-asset-window-close');
   const control = el('label','caps-preview-zoom');
   control.dataset.noDrag = 'true';
+  control.addEventListener('pointerdown',(event)=>event.stopPropagation());
   const value = el('span','caps-preview-zoom-value','100%');
   const input = document.createElement('input');
-  input.type='range'; input.min='10'; input.max='200'; input.step='5'; input.value='100'; input.title='Image zoom';
-  const apply = () => {
-    const zoom = Number(input.value);
-    value.textContent = `${zoom}%`;
-    image.style.maxWidth = 'none';
-    image.style.maxHeight = 'none';
-    image.style.width = `${zoom}%`;
-    image.style.height = 'auto';
-  };
-  input.addEventListener('input',apply);
+  input.type='range';input.min='10';input.max='200';input.step='5';input.value='100';input.title='Image zoom';
+  input.addEventListener('input',()=>{
+    const zoom = Number(input.value) / 100;
+    value.textContent = `${input.value}%`;
+    imageController.setZoom(zoom);
+  });
   control.append(el('span','caps-preview-zoom-label','Zoom'),input,value);
   bar.insertBefore(control,close);
-  apply();
 }
 
 function unsupportedPreview(content, entry) {
@@ -141,7 +174,17 @@ async function addPreviewContent(panel, entry) {
   const content=el('div','caps-preview-content');panel.append(content);
   const file=await entry.handle.getFile();const extension=extensionOf(entry.name);const url=URL.createObjectURL(file);panel.dataset.objectUrl=url;
   if(entry.fileType==='image'){
-    const image=document.createElement('img');image.className='caps-preview-image';image.alt=entry.name;image.src=url;image.addEventListener('load',()=>{panel.classList.add('preview-ready');addImageZoom(panel,image);});image.addEventListener('error',()=>unsupportedPreview(content,entry));content.append(image);return;
+    const image=document.createElement('img');
+    image.className='caps-preview-image';image.alt=entry.name;image.src=url;
+    image.addEventListener('load',()=>{
+      panel.classList.add('preview-ready');
+      const controller=createImageStage(image);
+      content.replaceChildren(controller.stage);
+      addImageZoom(panel,controller);
+    });
+    image.addEventListener('error',()=>unsupportedPreview(content,entry));
+    content.append(image);
+    return;
   }
   if(entry.fileType==='video'){
     const video=document.createElement('video');video.className='caps-preview-video';video.controls=true;video.preload='metadata';video.src=url;content.append(video);return;
