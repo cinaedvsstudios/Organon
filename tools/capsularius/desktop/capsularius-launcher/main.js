@@ -91,6 +91,13 @@ async function resolveChild(parentPath, name, expectedKind, create) {
 }
 
 function registerBridge() {
+  ipcMain.handle('capsularius:set-zoom-factor', (event, value) => {
+    const factor = Number(value);
+    if (!Number.isFinite(factor) || factor < 0.6 || factor > 1.4) throw new Error('Capsularius zoom must be between 60% and 140%.');
+    event.sender.setZoomFactor(factor);
+    return factor;
+  });
+
   ipcMain.handle('capsularius:choose-directory', chooseDirectory);
   ipcMain.handle('capsularius:restore-directory', async (_event, nativePath) => approveDirectory(nativePath));
 
