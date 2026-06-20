@@ -1,3 +1,5 @@
+import './column-resize.js';
+
 function refreshWindowNumbers() {
   document.querySelectorAll('#workspace-world .folder-window').forEach((windowElement, index) => {
     const label = windowElement.querySelector('.window-index');
