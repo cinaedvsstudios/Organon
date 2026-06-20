@@ -31,6 +31,7 @@ export class DesktopFileHandle {
     this.nativePath = descriptor.path;
     this.size = Number.isFinite(descriptor.size) ? descriptor.size : null;
     this.lastModified = Number.isFinite(descriptor.modifiedTime) ? descriptor.modifiedTime : null;
+    this.createdTime = Number.isFinite(descriptor.createdTime) ? descriptor.createdTime : null;
   }
 
   async getFile() {
@@ -77,6 +78,8 @@ export class DesktopDirectoryHandle {
     this.kind = 'directory';
     this.name = descriptor.name;
     this.nativePath = descriptor.path;
+    this.lastModified = Number.isFinite(descriptor.modifiedTime) ? descriptor.modifiedTime : null;
+    this.createdTime = Number.isFinite(descriptor.createdTime) ? descriptor.createdTime : null;
   }
 
   async queryPermission() { return 'granted'; }
