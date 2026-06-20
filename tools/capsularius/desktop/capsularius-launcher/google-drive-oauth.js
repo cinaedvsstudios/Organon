@@ -4,12 +4,10 @@ const http = require('node:http');
 const path = require('node:path');
 const { safeStorage } = require('electron');
 
-const GOOGLE_CLIENT_ID = '102488628137-fsgdn04bu1s49adovtbpstbdnqp3smj5.apps.googleusercontent.com';
 const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
-const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
-const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_DRIVE_ABOUT_URL = 'https://www.googleapis.com/drive/v3/about?fields=user(permissionId,displayName,emailAddress)';
 const OAUTH_TIMEOUT_MS = 5 * 60 * 1000;
+const DEFAULT_CREDENTIALS_PATH = path.resolve(__dirname, '..', 'google-drive-desktop-oauth.json');
 
 function oauthError(message) {
   return new Error(message);
@@ -25,6 +23,32 @@ function randomToken(bytes = 32) {
 
 function codeChallenge(verifier) {
   return base64Url(crypto.createHash('sha256').update(verifier).digest());
+}
+
+function normaliseCredentials(raw) {
+  const installed = raw?.installed;
+  if (!installed || typeof installed !== 'object') throw oauthError('The selected Google OAuth JSON is not an installed-app credential. Download the Desktop client JSON, not the Web client JSON.');
+  if (!installed.client_id || !installed.client_secret || !installed.auth_uri || !installed.token_uri) {
+    throw oauthError('The Desktop Google OAuth JSON is missing required credential fields.');
+  }
+  return {
+    clientId: String(installed.client_id),
+    clientSecret: String(installed.client_secret),
+    authUri: String(installed.auth_uri),
+    tokenUri: String(installed.token_uri)
+  };
+}
+
+async function readCredentials(credentialsPath) {
+  try {
+    return normaliseCredentials(JSON.parse(await fs.readFile(credentialsPath, 'utf8')));
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      throw oauthError('Desktop Google OAuth is not configured yet. Copy the installed-client JSON to tools\\capsularius\\desktop\\google-drive-desktop-oauth.json, then try Google Drive again.');
+    }
+    if (error instanceof SyntaxError) throw oauthError('The Desktop Google OAuth JSON is not valid JSON.');
+    throw error;
+  }
 }
 
 async function postForm(url, body) {
@@ -161,15 +185,17 @@ function createTokenStore(app) {
   };
 }
 
-function createGoogleDriveOAuth({ app, shell }) {
+function createGoogleDriveOAuth({ app, shell, credentialsPath = DEFAULT_CREDENTIALS_PATH }) {
   const tokenStore = createTokenStore(app);
 
   async function refresh(accountId) {
     const saved = await tokenStore.get(accountId);
     if (!saved?.refreshToken) return null;
+    const credentials = await readCredentials(credentialsPath);
     try {
-      const token = await postForm(GOOGLE_TOKEN_URL, {
-        client_id: GOOGLE_CLIENT_ID,
+      const token = await postForm(credentials.tokenUri, {
+        client_id: credentials.clientId,
+        client_secret: credentials.clientSecret,
         grant_type: 'refresh_token',
         refresh_token: saved.refreshToken
       });
@@ -191,9 +217,10 @@ function createGoogleDriveOAuth({ app, shell }) {
   }
 
   async function requestInteractive(expectedAccountId = null) {
+    const credentials = await readCredentials(credentialsPath);
     const listener = await startLoopbackListener();
-    const authorization = new URL(GOOGLE_AUTH_URL);
-    authorization.searchParams.set('client_id', GOOGLE_CLIENT_ID);
+    const authorization = new URL(credentials.authUri);
+    authorization.searchParams.set('client_id', credentials.clientId);
     authorization.searchParams.set('redirect_uri', listener.redirectUri);
     authorization.searchParams.set('response_type', 'code');
     authorization.searchParams.set('scope', GOOGLE_DRIVE_SCOPE);
@@ -205,8 +232,9 @@ function createGoogleDriveOAuth({ app, shell }) {
 
     await shell.openExternal(authorization.toString());
     const callback = await listener.result;
-    const token = await postForm(GOOGLE_TOKEN_URL, {
-      client_id: GOOGLE_CLIENT_ID,
+    const token = await postForm(credentials.tokenUri, {
+      client_id: credentials.clientId,
+      client_secret: credentials.clientSecret,
       code: callback.code,
       code_verifier: callback.verifier,
       grant_type: 'authorization_code',
