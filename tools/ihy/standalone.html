@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.2 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.1 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
   <link rel="stylesheet" href="./bass-generator.css">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.2</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.1</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -102,7 +102,8 @@
   <div id="exportModal" class="modal-layer" hidden><section class="modal"><header class="modal-header"><h3>📤 Export composition</h3><span>⠿</span></header><div class="modal-body"><div id="exportFormats" class="format-grid"><label class="format-choice active"><input type="radio" name="exportFormat" value="json" checked>JSON</label><label class="format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="wav">WAV</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label></div><p id="exportDescription" class="export-description"></p><label class="export-check"><input id="includeMuted" type="checkbox"> Include muted tracks</label><p id="exportStatus" class="export-description"></p></div><footer class="modal-footer"><button class="button" data-close="exportModal" type="button">Close</button><button class="button primary" id="doExport" type="button">Export file</button></footer></section></div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
-  <script src="./standalone.js?v=1.2"></script>
+  <script src="./standalone.js?v=0.43"></script>
+  <script src="./clear-all.js?v=0.45"></script>
   <script src="./bass-generator.js?v=1.1"></script>
 </body>
 </html>
