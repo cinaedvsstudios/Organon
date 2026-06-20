@@ -1,4 +1,4 @@
-import { GoogleDriveService } from './google-drive.js';
+import { GoogleDriveService } from './google-drive-runtime.js';
 import { extensionOf, readDirectory } from './filesystem.js';
 import { googleDriveSource, librarySource, physicalSource, recentsSource, sourceKey, sourceTitle, zipSource } from './state.js';
 import { persistence } from './persistence.js';
