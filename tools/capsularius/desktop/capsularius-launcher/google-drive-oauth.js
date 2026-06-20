@@ -7,6 +7,7 @@ const { safeStorage } = require('electron');
 const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
 const GOOGLE_DRIVE_ABOUT_URL = 'https://www.googleapis.com/drive/v3/about?fields=user(permissionId,displayName,emailAddress)';
 const OAUTH_TIMEOUT_MS = 5 * 60 * 1000;
+const DEFAULT_CREDENTIALS_PATH = path.resolve(__dirname, '..', 'google-drive-desktop-oauth.json');
 
 function oauthError(message) {
   return new Error(message);
@@ -184,7 +185,7 @@ function createTokenStore(app) {
   };
 }
 
-function createGoogleDriveOAuth({ app, shell, credentialsPath }) {
+function createGoogleDriveOAuth({ app, shell, credentialsPath = DEFAULT_CREDENTIALS_PATH }) {
   const tokenStore = createTokenStore(app);
 
   async function refresh(accountId) {
