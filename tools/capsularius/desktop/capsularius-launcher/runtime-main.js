@@ -65,6 +65,20 @@ async function itemDescriptor(itemPath) {
   };
 }
 
+async function mapWithConcurrency(items, limit, mapper) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length:Math.min(limit, items.length) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index]);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
 async function approveDirectory(candidate) {
   const descriptor = await directoryDescriptor(candidate);
   approvedRoots.add(descriptor.path);
@@ -259,13 +273,26 @@ function registerBridge() {
 
   ipcMain.handle('capsularius:list-directory', async (_event, nativePath) => {
     const parent = await approvedExistingPath(nativePath);
-    const records = await fs.readdir(parent, { withFileTypes:true });
-    const listed = [];
-    for (const record of records) {
-      if (record.isSymbolicLink()) continue;
-      try { listed.push(await itemDescriptor(path.join(parent, record.name))); } catch (_) { /* Skip files which disappeared or are inaccessible during refresh. */ }
-    }
-    return listed.sort((left, right) => left.kind !== right.kind ? (left.kind === 'directory' ? -1 : 1) : left.name.localeCompare(right.name, undefined, { numeric:true, sensitivity:'base' }));
+    const records = (await fs.readdir(parent, { withFileTypes:true })).filter((record) => !record.isSymbolicLink());
+    const listed = await mapWithConcurrency(records, 32, async (record) => {
+      const itemPath = path.join(parent, record.name);
+      try {
+        const stats = await fs.stat(itemPath);
+        return {
+          path:itemPath,
+          name:record.name,
+          kind:stats.isDirectory() ? 'directory' : 'file',
+          size:stats.isFile() ? stats.size : null,
+          createdTime:stats.birthtimeMs || null,
+          modifiedTime:stats.mtimeMs || null
+        };
+      } catch (_) {
+        return null;
+      }
+    });
+    return listed
+      .filter(Boolean)
+      .sort((left, right) => left.kind !== right.kind ? (left.kind === 'directory' ? -1 : 1) : left.name.localeCompare(right.name, undefined, { numeric:true, sensitivity:'base' }));
   });
 
   ipcMain.handle('capsularius:resolve-child', async (_event, parentPath, name, expectedKind, create) => resolveChild(parentPath, name, expectedKind, create));
