@@ -4,36 +4,20 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.51 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.52 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
-  <link rel="stylesheet" href="./bass-generator-v050.css?v=0.51">
+  <link rel="stylesheet" href="./bass-generator-v050.css?v=0.52">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand">
-      <img class="brand-icon" src="./icon.png" alt="Ihy">
-      <strong>Ihy</strong>
-      <span class="version-pill">v0.51</span>
-    </div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v0.52</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
       <div class="header-transport" aria-label="Editor and playback controls">
-        <div class="tool-set" aria-label="Piano roll tools">
-          <button class="button tool active" id="toolAdd" type="button" title="Add notes">🎶</button>
-          <button class="button tool" id="undo" type="button" title="Undo">↶</button>
-          <button class="button tool" id="redo" type="button" title="Redo">↷</button>
-          <button class="button tool" id="toolSelect" type="button" title="Select notes">👆</button>
-          <button class="button tool" id="groupSelection" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button>
-          <button class="button tool" id="deleteSelection" type="button" title="Delete selection">🗑️</button>
-        </div>
-        <button class="button play" id="playPause" type="button">▶ Play</button>
-        <button class="button stop" id="stopPlayback" type="button">⏹ Stop</button>
-        <output id="transportTime" class="transport-time">0:00 / 0:42</output>
-        <button class="button" id="addSection" type="button">＋ Section</button>
-        <label class="zoom"><span>Zoom</span><input id="zoomRange" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></label>
-        <button class="button tool" id="dragMute" type="button" title="Mute note audition while dragging">🔊</button>
+        <div class="tool-set" aria-label="Piano roll tools"><button class="button tool active" id="toolAdd" type="button" title="Add notes">🎶</button><button class="button tool" id="undo" type="button" title="Undo">↶</button><button class="button tool" id="redo" type="button" title="Redo">↷</button><button class="button tool" id="toolSelect" type="button" title="Select notes">👆</button><button class="button tool" id="groupSelection" type="button" title="Group or ungroup selection">🫱🏻‍🫲🏽</button><button class="button tool" id="deleteSelection" type="button" title="Delete selection">🗑️</button></div>
+        <button class="button play" id="playPause" type="button">▶ Play</button><button class="button stop" id="stopPlayback" type="button">⏹ Stop</button><output id="transportTime" class="transport-time">0:00 / 0:42</output><button class="button" id="addSection" type="button">＋ Section</button><label class="zoom"><span>Zoom</span><input id="zoomRange" type="range" min="70" max="150" value="100" step="5"><output id="zoomValue">100%</output></label><button class="button tool" id="dragMute" type="button" title="Mute note audition while dragging">🔊</button>
       </div>
     </div>
   </header>
@@ -41,22 +25,11 @@
   <main class="workspace">
     <aside class="sidebar">
       <section class="panel">
-        <div class="button-row group">
-          <button class="button create" id="createNew" type="button">✨ Create</button>
-          <button class="button primary" id="saveProject" type="button">💾 Save</button>
-          <button class="button danger" id="clearTrack" type="button">🗑 Clear</button>
-        </div>
-        <div class="button-row group">
-          <button class="button" id="importProject" type="button">📥 Import</button>
-          <button class="button" id="exportProject" type="button">📤 Export</button>
-          <button class="button" id="analyseProject" type="button">🔎 Analyse</button>
-        </div>
+        <div class="button-row group"><button class="button create" id="createNew" type="button">✨ Create</button><button class="button primary" id="saveProject" type="button">💾 Save</button><button class="button danger" id="clearTrack" type="button">🗑 Clear</button></div>
+        <div class="button-row group"><button class="button" id="importProject" type="button">📥 Import</button><button class="button" id="exportProject" type="button">📤 Export</button><button class="button" id="analyseProject" type="button">🔎 Analyse</button></div>
         <input id="fileInput" type="file" accept=".json,.mid,.midi,application/json,audio/midi,audio/x-midi" hidden>
         <p class="section-label">Quick add</p>
-        <div class="button-row">
-          <button class="button" id="quickBass" type="button">＋ Bass</button>
-          <button class="button" id="quickMotif" type="button">＋ Motif</button>
-        </div>
+        <div class="button-row"><button class="button" id="quickBass" type="button">＋ Bass</button><button class="button" id="quickMotif" type="button">＋ Motif</button></div>
         <div class="control-settings-grid">
           <label class="field field-wide"><span>Instrument</span><select id="instrument" aria-label="Track instrument"></select></label>
           <label class="field"><span>BPM</span><input id="bpm" type="number" min="30" max="260" value="92"></label>
@@ -68,23 +41,12 @@
         </div>
         <p id="status" class="status" aria-live="polite"></p>
       </section>
-
-      <section class="panel">
-        <div class="panel-heading"><h2>🎚️ Tracks</h2><button class="button compact" id="addTrack" type="button">＋ Track</button></div>
-        <div id="tracks" class="tracks"></div>
-      </section>
+      <section class="panel"><div class="panel-heading"><h2>🎚️ Tracks</h2><button class="button compact" id="addTrack" type="button">＋ Track</button></div><div id="tracks" class="tracks"></div></section>
     </aside>
 
     <section class="editor">
-      <section class="panel piano-panel">
-        <div class="piano-toolbar"><h2>🎼 Piano roll</h2></div>
-        <div class="timeline-shell"><div class="timeline-key">TIME</div><div id="timelineViewport" class="timeline-viewport"><div id="timeline" class="timeline"></div></div></div>
-        <div id="rollResizeShell" class="resizable-shell roll-resize-shell"><div id="rollScroll" class="roll-scroll"><div class="roll-grid"><div id="pitchLabels" class="pitch-labels"></div><div id="roll" class="roll"></div></div></div><div id="rollResizeGrip" class="panel-resize-grip" title="Resize piano roll" aria-label="Resize piano roll"></div></div>
-      </section>
-      <section class="panel">
-        <div class="panel-heading keyboard-heading"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note.</span></div>
-        <div id="keyboardResizeShell" class="resizable-shell keyboard-resize-shell"><div id="keyboardWrap" class="piano-wrap"><div id="piano" class="piano"></div></div><div id="keyboardResizeGrip" class="panel-resize-grip" title="Resize keyboard" aria-label="Resize keyboard"></div></div>
-      </section>
+      <section class="panel piano-panel"><div class="piano-toolbar"><h2>🎼 Piano roll</h2></div><div class="timeline-shell"><div class="timeline-key">TIME</div><div id="timelineViewport" class="timeline-viewport"><div id="timeline" class="timeline"></div></div></div><div id="rollResizeShell" class="resizable-shell roll-resize-shell"><div id="rollScroll" class="roll-scroll"><div class="roll-grid"><div id="pitchLabels" class="pitch-labels"></div><div id="roll" class="roll"></div></div></div><div id="rollResizeGrip" class="panel-resize-grip" title="Resize piano roll" aria-label="Resize piano roll"></div></div></section>
+      <section class="panel"><div class="panel-heading keyboard-heading"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note.</span></div><div id="keyboardResizeShell" class="resizable-shell keyboard-resize-shell"><div id="keyboardWrap" class="piano-wrap"><div id="piano" class="piano"></div></div><div id="keyboardResizeGrip" class="panel-resize-grip" title="Resize keyboard" aria-label="Resize keyboard"></div></div></section>
     </section>
   </main>
 
@@ -96,17 +58,15 @@
 
   <div id="bassModal" class="modal-layer" hidden>
     <section id="bassModalCard" class="modal modal-wide bass-modal">
-      <header id="bassModalHeader" class="modal-header bass-modal-header">
-        <h3>＋ Bass Generator</h3>
-        <div class="bass-header-actions"><button id="bassPreview" class="button play" type="button">▶ Preview</button><button id="bassClose" class="button compact" type="button">Close</button><span class="bass-drag-handle" title="Drag window">⠿</span></div>
-      </header>
+      <header id="bassModalHeader" class="modal-header bass-modal-header"><h3>＋ Bass Generator</h3><div class="bass-header-actions"><button id="bassPreview" class="button play" type="button">▶ Preview</button><button id="bassClose" class="button compact" type="button">Close</button><span class="bass-drag-handle" title="Drag window">⠿</span></div></header>
       <div class="modal-body">
         <div class="bass-generator-layout">
           <div id="bassModeTabs" class="bass-mode-tabs"><button class="bass-mode-tab selected" data-mode="profile" type="button">Profile DNA</button><button class="bass-mode-tab" data-mode="orchestral" type="button">Custom Orchestral</button></div>
           <div class="bass-generator-controls">
             <section id="bassProfileControls" class="bass-control-card">
               <h4>Bass profile</h4>
-              <div class="bass-profile-select"><select id="bassProfileSelect" aria-label="Bass profile"></select><button id="bassLoadProfile" class="button compact" type="button">Load</button></div>
+              <div class="bass-profile-select"><select id="bassProfileSelect" aria-label="Bass profile"></select><button id="bassLoadProfile" class="button compact" type="button">Load</button><button id="bassLibraryToggle" class="button compact bass-library-toggle" type="button">Genre</button></div>
+              <p id="bassEmotionDetail" class="bass-emotion-detail" hidden></p>
               <div class="bass-profile-buttons"><button id="bassRandomProfile" class="button" type="button">Random profile</button><button id="bassMutate" class="button" type="button">Random variant</button></div>
               <label class="bass-form-field">Mutation amount<input id="bassMutationRate" type="range" min="0" max="50" value="25" step="5"><output id="bassMutationOutput" class="bass-mutation-output">25% mutation</output></label>
             </section>
@@ -119,20 +79,14 @@
               <label class="bass-check"><input id="bassInversions" type="checkbox"> Allow inversions</label>
               <div class="bass-profile-buttons"><button id="bassGenerateCustom" class="button primary" type="button">Generate custom line</button></div>
             </section>
-            <section class="bass-control-card">
-              <h4>Phrase length</h4>
-              <div id="bassPhraseChoices" class="bass-choice-row"><button class="bass-choice bass-phrase selected" data-beats="8" type="button">8 beats</button><button class="bass-choice bass-phrase" data-beats="16" type="button">16 beats</button><button class="bass-choice bass-phrase" data-beats="32" type="button">32 beats</button></div>
-            </section>
+            <section class="bass-control-card"><h4>Phrase length</h4><div id="bassPhraseChoices" class="bass-choice-row"><button class="bass-choice bass-phrase selected" data-beats="8" type="button">8 beats</button><button class="bass-choice bass-phrase" data-beats="16" type="button">16 beats</button><button class="bass-choice bass-phrase" data-beats="32" type="button">32 beats</button></div></section>
             <section class="bass-control-card"><h4>Timeline length</h4><span class="bass-length"><input id="bassLength" type="range" min="1" max="10" value="1" step="1"><output id="bassLengthValue">1 × 32 beats = 32 beats</output></span></section>
             <label class="bass-form-field bass-guide">Harmony guide<select id="bassHarmonySource"></select></label>
             <label class="bass-form-field">Orchestral bass sound<select id="bassInstrument"><option value="contrabass_arco">Contrabass (Arco)</option><option value="contrabass_pizz">Contrabass (Pizzicato)</option><option value="tuba">Tuba</option><option value="contrabassoon">Contrabassoon</option><option value="cello_bass">Cello Bass</option></select></label>
             <label class="bass-form-field">Register<select id="bassRegister"><option value="24">Low — C1 to B1</option><option value="36" selected>Standard — C2 to B2</option><option value="48">High — C3 to B3</option></select></label>
             <div id="bassSummary" class="bass-summary"></div>
           </div>
-          <section class="bass-editor">
-            <div class="bass-grid-heading"><div><h4 id="bassEditorTitle">Editable bass tune</h4><p id="bassEditorText">Rhythm controls notes and rests. Tune stores safe intervals above the active chord root. Tie controls how long a generated note holds.</p><div id="bassIntervalPalette" class="dna-interval-palette"></div><div id="bassTiePalette" class="dna-tie-palette"></div><p class="dna-legend">Select a Tune value and a Tie value, then click the corresponding editor cells. Right-click an active cell to cycle soft, normal and accent velocity.</p></div></div>
-            <div class="bass-step-scroll"><div id="bassStepGrid"></div></div><div id="bassBarLabels" class="dna-bar-labels"></div>
-          </section>
+          <section class="bass-editor"><div class="bass-grid-heading"><div><h4 id="bassEditorTitle">Editable bass tune</h4><p id="bassEditorText">Rhythm controls notes and rests. Tune stores safe intervals above the active chord root. Tie controls how long a generated note holds.</p><div id="bassIntervalPalette" class="dna-interval-palette"></div><div id="bassTiePalette" class="dna-tie-palette"></div><p class="dna-legend">Select a Tune value and a Tie value, then click the corresponding editor cells. Right-click an active cell to cycle soft, normal and accent velocity.</p></div></div><div class="bass-step-scroll"><div id="bassStepGrid"></div></div><div id="bassBarLabels" class="dna-bar-labels"></div></section>
         </div>
       </div>
       <footer class="modal-footer"><button id="bassAdd" class="button primary" type="button">Add to Timeline</button></footer><div id="bassResizeGrip" class="bass-modal-resize-grip" title="Resize Bass Generator" aria-label="Resize Bass Generator"></div>
@@ -146,6 +100,6 @@
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
   <script src="./clear-all.js?v=0.45"></script>
-  <script src="./bass-generator-v050.js?v=0.51"></script>
+  <script src="./bass-generator-v050.js?v=0.52"></script>
 </body>
 </html>
