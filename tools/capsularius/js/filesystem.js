@@ -68,14 +68,36 @@ export async function resolveDirectory(rootHandle, segments = []) {
   return current;
 }
 
+function timestampFromHandle(handle, key) {
+  const value = Number(handle?.[key]);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
 export async function readDirectory(rootHandle, segments = []) {
   const directoryHandle = await resolveDirectory(rootHandle, segments);
   const entries = [];
   for await (const [name, handle] of directoryHandle.entries()) {
+    const createdTime = timestampFromHandle(handle, 'createdTime');
+    const lastModified = timestampFromHandle(handle, 'lastModified');
     if (handle.kind === 'directory') {
-      entries.push({ id:`directory:${name}`, name, kind:'directory', handle, fileType:'directory', size:null, lastModified:null, metadataPending:false });
+      entries.push({ id:`directory:${name}`, name, kind:'directory', handle, fileType:'directory', size:null, createdTime, lastModified, metadataPending:false });
     } else {
-      entries.push({ id:`file:${name}`, name, kind:'file', handle, fileType:typeForFile(name), size:null, lastModified:null, mimeType:'', metadataPending:true });
+      const fileType = typeForFile(name);
+      const size = Number.isFinite(handle?.size) ? Number(handle.size) : null;
+      const hasNativeFileStats = Number.isFinite(size) && Number.isFinite(lastModified);
+      entries.push({
+        id:`file:${name}`,
+        name,
+        kind:'file',
+        handle,
+        fileType,
+        size,
+        createdTime,
+        lastModified,
+        mimeType:'',
+        metadataPending:!hasNativeFileStats,
+        capsulariusMeta:{ status:'not-requested', width:null, height:null, duration:null }
+      });
     }
   }
   entries.sort((first, second) => {
@@ -150,14 +172,16 @@ export async function scanMediaMetadata(file, fileType = typeForFile(file?.name 
   return { status:'not-applicable', width:null, height:null, duration:null };
 }
 
-export async function hydrateFileEntry(entry) {
+export async function hydrateFileEntry(entry, { includeMediaMetadata = true } = {}) {
   if (!entry || entry.kind !== 'file' || !entry.handle?.getFile || entry.metadataPending === false) return entry;
   const file = await entry.handle.getFile();
   entry.fileType = typeForFile(entry.name, file.type || '');
   entry.size = file.size;
   entry.lastModified = file.lastModified;
   entry.mimeType = file.type || '';
-  entry.capsulariusMeta = await scanMediaMetadata(file, entry.fileType);
+  entry.capsulariusMeta = includeMediaMetadata
+    ? await scanMediaMetadata(file, entry.fileType)
+    : { status:'not-requested', width:null, height:null, duration:null };
   entry.metadataPending = false;
   return entry;
 }
