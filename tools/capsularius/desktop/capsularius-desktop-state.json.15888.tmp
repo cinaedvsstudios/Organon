@@ -1,0 +1,214 @@
+{
+  "version": 1,
+  "savedAt": 1781913933993,
+  "mounts": [
+    {
+      "id": "mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4",
+      "nativePath": "E:\\Forever Bound\\Forever Bound GAME",
+      "name": "Forever Bound GAME",
+      "nickname": "Forever Bound GAME",
+      "colour": "#e0a360",
+      "createdAt": 1781908765019,
+      "lastOpenedAt": 1781909031872,
+      "health": "connected",
+      "healthDetail": "Desktop folder opens normally."
+    },
+    {
+      "id": "mount-b294f9c7-7806-4194-8ee9-b1e930d43ab2",
+      "nativePath": "E:\\Forever Bound\\Forever Bound GAME\\Forever-Bound-Game\\artifex",
+      "name": "artifex",
+      "nickname": "artifex",
+      "colour": "#4b84bf",
+      "createdAt": 1781908783523,
+      "lastOpenedAt": 1781908783556,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    },
+    {
+      "id": "mount-0f511939-d338-4588-b542-4e9e27a8ba4e",
+      "nativePath": "C:\\",
+      "name": "C:\\",
+      "nickname": "C:\\",
+      "colour": "#449e92",
+      "createdAt": 1781908791904,
+      "lastOpenedAt": 1781908791921,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    },
+    {
+      "id": "mount-58626813-7a6c-46ce-96e9-2b9490cf1600",
+      "nativePath": "E:\\",
+      "name": "E:\\",
+      "nickname": "E:\\",
+      "colour": "#9a2f4f",
+      "createdAt": 1781908798821,
+      "lastOpenedAt": 1781908798827,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    },
+    {
+      "id": "mount-9c869a42-2702-417c-ba06-299e68c31076",
+      "nativePath": "C:\\Users\\Chris\\OneDrive\\Desktop",
+      "name": "Desktop",
+      "nickname": "Desktop",
+      "colour": "#d27d6c",
+      "createdAt": 1781908805840,
+      "lastOpenedAt": 1781908805854,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    },
+    {
+      "id": "mount-b2661a45-6de2-40a4-bfd4-ce909d38fab5",
+      "nativePath": "C:\\Users\\Chris\\OneDrive\\Documents",
+      "name": "Documents",
+      "nickname": "Documents",
+      "colour": "#896b49",
+      "createdAt": 1781908811789,
+      "lastOpenedAt": 1781908811808,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    },
+    {
+      "id": "mount-2d73662f-3027-48fa-9c30-3bed0fbfafaf",
+      "nativePath": "C:\\Users\\Chris\\Downloads",
+      "name": "Downloads",
+      "nickname": "Downloads",
+      "colour": "#e0a360",
+      "createdAt": 1781908823317,
+      "lastOpenedAt": 1781908982809,
+      "health": "connected",
+      "healthDetail": "Folder opens normally."
+    }
+  ],
+  "library": [],
+  "recents": [
+    {
+      "id": "recent-38faee69-1cb7-46d8-b52b-4283e8377bd1",
+      "mountId": "mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4",
+      "pathSegments": [],
+      "name": "Forever Bound GAME",
+      "colour": "#e0a360",
+      "lastOpenedAt": 1781909031875,
+      "key": "physical:mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4:"
+    },
+    {
+      "id": "recent-401facde-3580-4c4e-a057-c521bad39253",
+      "mountId": "mount-2d73662f-3027-48fa-9c30-3bed0fbfafaf",
+      "pathSegments": [],
+      "name": "Downloads",
+      "colour": "#e0a360",
+      "lastOpenedAt": 1781908982809,
+      "key": "physical:mount-2d73662f-3027-48fa-9c30-3bed0fbfafaf:"
+    },
+    {
+      "id": "recent-e3810799-64a1-4a8f-8348-5ab22bcd0bcb",
+      "mountId": "mount-b2661a45-6de2-40a4-bfd4-ce909d38fab5",
+      "pathSegments": [],
+      "name": "Documents",
+      "colour": "#896b49",
+      "lastOpenedAt": 1781908811808,
+      "key": "physical:mount-b2661a45-6de2-40a4-bfd4-ce909d38fab5:"
+    },
+    {
+      "id": "recent-206538bd-ed18-48ae-9191-5cc23fb7e6ff",
+      "mountId": "mount-9c869a42-2702-417c-ba06-299e68c31076",
+      "pathSegments": [],
+      "name": "Desktop",
+      "colour": "#d27d6c",
+      "lastOpenedAt": 1781908805854,
+      "key": "physical:mount-9c869a42-2702-417c-ba06-299e68c31076:"
+    },
+    {
+      "id": "recent-d2f3d979-1b7d-45f6-a629-2d5c5caebe77",
+      "mountId": "mount-58626813-7a6c-46ce-96e9-2b9490cf1600",
+      "pathSegments": [],
+      "name": "E:\\",
+      "colour": "#9a2f4f",
+      "lastOpenedAt": 1781908798827,
+      "key": "physical:mount-58626813-7a6c-46ce-96e9-2b9490cf1600:"
+    },
+    {
+      "id": "recent-46eab53b-9245-42f1-8af0-e6e65b185522",
+      "mountId": "mount-0f511939-d338-4588-b542-4e9e27a8ba4e",
+      "pathSegments": [],
+      "name": "C:\\",
+      "colour": "#449e92",
+      "lastOpenedAt": 1781908791921,
+      "key": "physical:mount-0f511939-d338-4588-b542-4e9e27a8ba4e:"
+    },
+    {
+      "id": "recent-7e55743b-7316-45ec-98f5-c1ed5ce82102",
+      "mountId": "mount-b294f9c7-7806-4194-8ee9-b1e930d43ab2",
+      "pathSegments": [],
+      "name": "artifex",
+      "colour": "#4b84bf",
+      "lastOpenedAt": 1781908783556,
+      "key": "physical:mount-b294f9c7-7806-4194-8ee9-b1e930d43ab2:"
+    }
+  ],
+  "workspace": {
+    "nextWindowId": 23,
+    "activeWindowId": 6,
+    "panX": 0,
+    "panY": 0,
+    "currentColourIndex": 11,
+    "windows": [
+      {
+        "id": 1,
+        "source": {
+          "kind": "physical",
+          "mountId": "mount-2d73662f-3027-48fa-9c30-3bed0fbfafaf",
+          "pathSegments": []
+        },
+        "nickname": "Library",
+        "colour": "#e0a360",
+        "x": 14,
+        "y": 14,
+        "width": 853,
+        "height": 781,
+        "viewMode": "list",
+        "settings": {
+          "scope": "window",
+          "window": {
+            "viewMode": "grid",
+            "sortBy": "name",
+            "sortDirection": "asc"
+          },
+          "folders": {}
+        },
+        "minimized": false,
+        "treeExpanded": []
+      },
+      {
+        "id": 6,
+        "source": {
+          "kind": "physical",
+          "mountId": "mount-bf4078ea-122a-4e7f-8d92-2c60b8c3d5d4",
+          "pathSegments": []
+        },
+        "nickname": "Library",
+        "colour": "#4b84bf",
+        "x": 879,
+        "y": 14,
+        "width": 853,
+        "height": 781,
+        "viewMode": "list",
+        "settings": {
+          "scope": "window",
+          "window": {
+            "viewMode": "grid",
+            "sortBy": "name",
+            "sortDirection": "asc"
+          },
+          "folders": {}
+        },
+        "minimized": false,
+        "treeExpanded": []
+      }
+    ]
+  },
+  "mountVerification": {},
+  "preferences": {
+    "uiZoom": 80
+  }
+}
