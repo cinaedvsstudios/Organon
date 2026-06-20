@@ -1,6 +1,13 @@
-# Local Capsularius desktop runtime, workspace state, and configuration.
+# Local Capsularius desktop runtime and machine-specific data.
 Capsularius Desktop/
 _capsularius-brand-staging/
 _capsularius-brand-package/
+
+# Keep the folder itself in the repository; ignore all local state inside it.
+.capsularius-data/*
+!.capsularius-data/.gitkeep
+
+# Legacy local files left behind by earlier desktop builds.
 desktop/capsularius-desktop-state.json
+desktop/capsularius-desktop-state.json.*.tmp
 desktop/google-drive-desktop-oauth.json
