@@ -1952,8 +1952,7 @@
     $$('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
 
     $$('.modal-layer').forEach(layer => {
-      const modalHeader = layer.querySelector('.modal-header');
-      if (modalHeader) modalHeader.addEventListener('pointerdown', event => beginModalDrag(event, layer));
+      layer.querySelector('.modal-header').addEventListener('pointerdown', event => beginModalDrag(event, layer));
     });
 
     document.addEventListener('pointermove', event => {
