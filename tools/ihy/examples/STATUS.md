@@ -1,1 +1,0 @@
-The Ihy Import control supports Standard MIDI `.mid` and `.midi` files as well as Ihy JSON.
