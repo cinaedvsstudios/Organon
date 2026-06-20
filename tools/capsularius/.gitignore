@@ -1,5 +1,6 @@
-# Local Capsularius desktop runtime and workspace state.
+# Local Capsularius desktop runtime, workspace state, and configuration.
 Capsularius Desktop/
 _capsularius-brand-staging/
 _capsularius-brand-package/
 desktop/capsularius-desktop-state.json
+desktop/google-drive-desktop-oauth.json
