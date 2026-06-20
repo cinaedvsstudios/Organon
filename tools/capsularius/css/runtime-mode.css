@@ -42,6 +42,23 @@
   cursor:not-allowed;
 }
 
+.runtime-mode-remember{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  margin:0 0 12px;
+  color:#f5f0dbbf;
+  font-size:.76rem;
+  cursor:pointer;
+}
+
+.runtime-mode-remember input{
+  width:15px;
+  height:15px;
+  accent-color:var(--teal-light);
+}
+
 .runtime-mode-help{
   min-height:1.2em;
   margin:0;
