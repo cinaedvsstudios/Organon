@@ -3,23 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0; url=./standalone.html">
   <title>Ihy — Sound &amp; Music Workshop</title>
-  <script>
-    (async () => {
-      try {
-        const response = await fetch('./standalone.html?build=v1.2', { cache: 'no-store' });
-        if (!response.ok) throw new Error('Could not load Ihy.');
-        const html = (await response.text()).replace('./clear-all.js?v=0.45', './clear-all.js?v=1.2');
-        document.open();
-        document.write(html);
-        document.close();
-      } catch (_) {
-        window.location.replace('./standalone.html?build=v1.2');
-      }
-    })();
-  </script>
+  <script>window.location.replace('./standalone.html');</script>
 </head>
 <body>
-  <p>Opening Ihy…</p>
+  <p>Opening Ihy… <a href="./standalone.html">Open the permanent app page</a>.</p>
 </body>
 </html>
