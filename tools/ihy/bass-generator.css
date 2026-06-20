@@ -67,3 +67,45 @@
     width: 100%;
   }
 }
+
+/* Ihy v1.2 Bass Generator palette cleanup. */
+.bass-grid-heading > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 5px;
+}
+.bass-grid-heading > div > h4 {
+  flex: 0 0 100%;
+}
+.bass-grid-heading #bassEditorText,
+.bass-grid-heading .dna-legend {
+  display: none;
+}
+.bass-grid-heading .dna-interval-palette,
+.bass-grid-heading .dna-tie-palette {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+.bass-grid-heading .dna-tie-palette {
+  margin-left: 2px;
+}
+.bass-grid-heading .dna-tie-button {
+  color: #3a2504;
+  border-color: #e5bb63;
+  background: linear-gradient(180deg, #ffe7a1, #e7b350);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 2px 5px rgba(0,0,0,.22);
+}
+.bass-grid-heading .dna-tie-button:hover {
+  border-color: #fff0b8;
+  background: linear-gradient(180deg, #fff2bd, #efbd5c);
+}
+.bass-grid-heading .dna-tie-button.selected {
+  color: #2d1b02;
+  border-color: #fff3bd;
+  background: linear-gradient(180deg, #fff8d7, #f5c85d);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 1px rgba(223,171,65,.28);
+}
