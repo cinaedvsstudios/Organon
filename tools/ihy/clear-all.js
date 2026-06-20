@@ -1,6 +1,12 @@
 (() => {
   'use strict';
 
+  const APP_VERSION = 'v1';
+  document.title = `Ihy ${APP_VERSION} — Sound & Music Workshop`;
+  document.querySelectorAll('.version-pill').forEach((element) => {
+    element.textContent = APP_VERSION;
+  });
+
   const PROJECT_KEY = 'ihy-v042-project';
   const HISTORY_KEY = 'ihy-v042-history';
   const TOAST_KEY = 'ihy-v045-toast';
