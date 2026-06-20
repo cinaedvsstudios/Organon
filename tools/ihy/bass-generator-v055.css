@@ -1,0 +1,49 @@
+/* Ihy v0.55 Bass Generator layout refinements */
+#bassModal .bass-modal-header {
+  align-items: center;
+}
+#bassModal .bass-header-actions {
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+}
+#bassModal .bass-header-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(90px, 1fr));
+  flex: 1 1 370px;
+  max-width: 560px;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+#bassModal .bass-header-tabs .bass-mode-tab {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: .66rem;
+}
+#bassModal .bass-profile-select select {
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+#bassModal .bass-parser {
+  margin-top: 2px;
+}
+@media (max-width: 900px) {
+  #bassModal .bass-modal-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  #bassModal .bass-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  #bassModal .bass-header-tabs {
+    flex: 1 1 100%;
+    max-width: none;
+    width: 100%;
+  }
+}
