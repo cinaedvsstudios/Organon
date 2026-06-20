@@ -5,553 +5,433 @@
   const HISTORY_KEY = 'ihy-v042-history';
   const TOAST_KEY = 'ihy-v045-toast';
   const NOTE_PCS = { C:0, 'C#':1, Db:1, D:2, 'D#':3, Eb:3, E:4, F:5, 'F#':6, Gb:6, G:7, 'G#':8, Ab:8, A:9, 'A#':10, Bb:10, B:11 };
-  const TIES = [1, 2, 4, 8, 16];
-  const VELOCITIES = [62, 88, 112];
-  const COLORS = ['#60c6a4', '#b68cff', '#dfb658'];
+  const COLORS = ['#60c6a4','#b68cff','#dfb658','#dc7898','#79b4e3'];
+  const PITCH_LANES = [
+    { interval:12, label:'Octave', short:'+8' },
+    { interval:7, label:'Fifth', short:'+5' },
+    { interval:0, label:'Root', short:'R' },
+    { interval:-12, label:'Low root', short:'−8' }
+  ];
   const SOUNDFONTS = {
-    contrabass_arco: 'cello', contrabass_pizz: 'acoustic_bass', tuba: 'tuba', contrabassoon: 'bassoon', cello_bass: 'cello',
-    grand_piano: 'acoustic_grand_piano', strings: 'string_ensemble_1', violin: 'violin', church_organ: 'church_organ', clarinet: 'clarinet', oboe: 'oboe'
+    electric_bass:'electric_bass_finger', acoustic_guitar:'acoustic_guitar_nylon', cello:'cello',
+    warm_pad:'pad_2_warm', retro_lead:'lead_1_square', grand_piano:'acoustic_grand_piano'
   };
-  const SAVED_INSTRUMENTS = {
-    contrabass_arco: 'cello', contrabass_pizz: 'acoustic_guitar', tuba: 'horn', contrabassoon: 'horn', cello_bass: 'cello',
-    grand_piano: 'grand_piano', strings: 'strings', violin: 'strings', church_organ: 'horn', clarinet: 'flute', oboe: 'flute'
-  };
+  const VELOCITIES = { 1:68, 2:92, 3:114 };
+
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
-  const uid = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const mod = (value, base) => ((value % base) + base) % base;
-  const pick = values => values[Math.floor(Math.random() * values.length)];
-  const chance = probability => Math.random() < probability;
+  const uid = prefix => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,8)}`;
+  const clamp = (value,min,max) => Math.max(min,Math.min(max,value));
+  const copy = value => JSON.parse(JSON.stringify(value));
+  const projectEnd = project => Math.max(0, ...project.sections.map(section => Number(section.end)||0), ...project.tracks.flatMap(track => (track.notes||[]).map(note => (Number(note.start)||0)+(Number(note.duration)||0))));
+  const secondsPerBeat = project => 60 / clamp(Number(project.bpm)||92,30,260);
 
-  const rhythms = [
-    [2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0],
-    [0,0,2,0,0,0,2,0,0,0,2,0,0,0,2,0],
-    [2,0,0,2,2,0,2,0,2,0,0,2,2,0,2,0],
-    [2,0,0,2,0,2,0,0,2,0,2,0,0,2,0,2],
-    [2,0,0,0,0,0,2,0,2,0,0,0,0,2,0,0],
-    [2,0,2,2,2,0,2,2,2,0,2,2,2,0,2,2]
-  ];
-  const maps = [
-    [0,0,12,12,10,10,7,7,0,0,12,12,10,10,7,7],
-    [0,7,12,7,0,5,7,10,0,7,12,7,10,7,5,0],
-    [0,0,7,7,12,7,5,7,0,0,7,12,10,7,5,0],
-    [0,12,7,10,0,7,5,12,0,10,7,5,0,7,12,10],
-    [0,0,0,7,0,0,5,0,0,0,7,12,0,5,7,0]
-  ];
-  const genreNames = ['Disco Box', 'Disco Lift', 'Pulse Fifth', 'Night Walker', 'Silver Walker', 'Funk Reply', 'Low Roller', 'Gallop Box', 'Neon Rise', 'Stage Drive'];
-  const genres = Array.from({ length: 30 }, (_, index) => ({
-    id: index + 1,
-    name: `${genreNames[index % genreNames.length]} ${Math.floor(index / genreNames.length) + 1}`,
-    rhythm: rhythms[index % rhythms.length],
-    intervals: maps[index % maps.length]
-  }));
-  const emotions = {
-    aspirational: { name: 'Aspirational', tempo: '76–116 BPM', pool: [0,5,7,12], text: 'Sparse opening that grows into a broad, open lift.' },
-    showstopping: { name: 'Showstopping', tempo: '118–154 BPM', pool: [0,4,7,9,12], text: 'Bouncy anchored energy with crisp theatrical attacks.' },
-    romantic: { name: 'Romantic / Yearning', tempo: '62–100 BPM', pool: [0,3,7,8,12], text: 'Anticipated notes and live-feeling dynamic waves.' },
-    cabaret: { name: 'Cabaret / Sassy', tempo: '72–112 BPM', pool: [0,7,10,11], text: 'Heavy struts, dramatic gaps and hard accents.' },
-    scheming: { name: 'Scheming', tempo: '70–122 BPM', pool: [0,3,6,10], text: 'Unstable clusters and abrupt ominous silence.' },
-    effervescent: { name: 'Effervescent', tempo: '104–142 BPM', pool: [0,4,12], text: 'High bright offbeats without sub-bass mud.' }
+  let state = {
+    phraseBeats:8,
+    units:1,
+    pattern:'driving',
+    source:'key',
+    instrument:'electric_bass',
+    register:36,
+    steps:[]
   };
 
-  const state = {
-    mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
-    source: 'key', instrument: 'contrabass_arco', register: 36, sequence: [], manual: false,
-    write: { kind: 'interval', value: 0 }, tie: 2,
-    effects: { sustain: false, echo: false, chords: false },
-    custom: { motion: 'pedal', pedal: 'root', articulation: 82, dynamics: 'flat', inversions: false }
-  };
-  const playback = { context: null, gain: null, player: null, instrument: null, nodes: [], timer: 0, active: false };
+  let preview = { context:null, gain:null, player:null, instrument:null, nodes:[], timer:0, running:false };
 
   function readProject() {
     try {
       const project = JSON.parse(localStorage.getItem(PROJECT_KEY));
       if (project && Array.isArray(project.tracks)) return project;
     } catch (_) {}
-    return { bpm: 92, key: 'D minor', sections: [], tracks: [{ id: uid('track'), name: 'Piano', instrument: 'grand_piano', color: COLORS[1], notes: [] }] };
+    return { title:'untitled', bpm:92, key:'D minor', sections:[], tracks:[{ id:uid('track'), name:'Piano', instrument:'grand_piano', color:COLORS[1], muted:false, solo:false, hidden:false, notes:[] }] };
   }
-  function saveProject(project) { localStorage.setItem(PROJECT_KEY, JSON.stringify(project)); }
-  function saveHistory(project) {
-    let history = { undo: [], redo: [] };
+
+  function saveProject(project) {
+    localStorage.setItem(PROJECT_KEY,JSON.stringify(project));
+  }
+
+  function snapshot(project) {
+    let history = { undo:[], redo:[] };
     try {
       const loaded = JSON.parse(localStorage.getItem(HISTORY_KEY));
       if (loaded && Array.isArray(loaded.undo) && Array.isArray(loaded.redo)) history = loaded;
     } catch (_) {}
     history.undo.push(JSON.stringify(project));
-    history.undo = history.undo.slice(-100);
+    if (history.undo.length > 100) history.undo.shift();
     history.redo = [];
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+    localStorage.setItem(HISTORY_KEY,JSON.stringify(history));
   }
-  function status(text) { const target = $('#status'); if (target) target.textContent = text; }
-  function projectEnd(project) {
-    return Math.max(0, ...(project.sections || []).map(section => Number(section.end) || 0), ...(project.tracks || []).flatMap(track => (track.notes || []).map(note => (Number(note.start) || 0) + (Number(note.duration) || 0))));
-  }
-  function secondsPerBeat(project) { return 60 / clamp(Number(project.bpm) || 92, 30, 260); }
-  function isMinor(project) { return /minor/i.test(String(project.key || '')); }
-  function keyRoot(project) { const name = String(project.key || 'C').replace(/\s.*$/, '').replace('♭', 'b').replace('♯', '#'); return NOTE_PCS[name] ?? 0; }
-  function noteName(pitch) { const names = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B']; return `${names[mod(pitch, 12)]}${Math.floor(pitch / 12) - 1}`; }
-  function cell(kind, value, velocity = 2, tie = 2, extra = {}) { return { kind, value, velocity, tie, ...extra }; }
-  function stepCount() { return state.phrase * 4; }
 
-  function guideTrack(project) { return project.tracks.find(track => track.id === state.source); }
-  function chordPcs(project, beat) {
-    const track = guideTrack(project);
-    if (!track || !track.notes || !track.notes.length) return [];
+  function showToast(message) {
+    const status = $('#status');
+    if (status) status.textContent = message;
+  }
+
+  function keyRoot(key) {
+    const root = String(key||'C').replace(/\s.*$/,'').replace('♭','b').replace('♯','#');
+    return NOTE_PCS[root] ?? 0;
+  }
+
+  function makeCell(interval = 0, velocity = 2) {
+    return { interval, velocity };
+  }
+
+  function makeTemplate(pattern, phraseBeats) {
+    const steps = Array.from({ length:phraseBeats*4 }, () => null);
+    for (let bar=0; bar<phraseBeats/4; bar+=1) {
+      const first = bar*16;
+      const add = index => { steps[first+index] = makeCell(); };
+      if (pattern === 'driving') for (let index=0; index<16; index+=2) add(index);
+      if (pattern === 'pumping') [2,6,10,14].forEach(add);
+      if (pattern === 'root') add(0);
+      if (pattern === 'gallop') for (let beat=0; beat<4; beat+=1) [0,2,3].forEach(step => add(beat*4+step));
+    }
+    return steps;
+  }
+
+  function resetPhrase() {
+    state.steps = makeTemplate(state.pattern,state.phraseBeats);
+  }
+
+  function sourceTrack(project) {
+    return project.tracks.find(track => track.id === state.source) || null;
+  }
+
+  function rootAt(project, beat) {
+    const guide = sourceTrack(project);
+    if (!guide || !Array.isArray(guide.notes) || !guide.notes.length) return keyRoot(project.key);
     const epsilon = 0.0001;
-    const active = track.notes.filter(note => Number(note.start) <= beat + epsilon && Number(note.start) + Number(note.duration) > beat + epsilon);
-    if (active.length) return active.map(note => mod(Number(note.pitch) || 60, 12));
-    const previous = track.notes.filter(note => Number(note.start) <= beat + epsilon);
-    if (!previous.length) return [];
-    const latest = Math.max(...previous.map(note => Number(note.start)));
-    return track.notes.filter(note => Math.abs(Number(note.start) - latest) < epsilon).map(note => mod(Number(note.pitch) || 60, 12));
-  }
-  function rootAt(project, beat) { const pcs = chordPcs(project, beat); return pcs.length ? Math.min(...pcs) : keyRoot(project); }
-  function thirdAt(project, root, beat) {
-    const intervals = chordPcs(project, beat).map(pitch => mod(pitch - root, 12));
-    if (intervals.includes(3)) return 3;
-    if (intervals.includes(4)) return 4;
-    return isMinor(project) ? 3 : 4;
-  }
-  function fifthAt(project, root, beat) {
-    const intervals = chordPcs(project, beat).map(pitch => mod(pitch - root, 12));
-    if (intervals.includes(6)) return 6;
-    if (intervals.includes(8)) return 8;
-    return 7;
-  }
-  function scaleIntervals(project, root) {
-    const tonic = keyRoot(project);
-    const scale = isMinor(project) ? [0,2,3,5,7,8,10] : [0,2,4,5,7,9,11];
-    const result = [...new Set(scale.map(interval => mod(tonic + interval - root, 12)))].sort((a, b) => a - b);
-    if (!result.includes(0)) result.unshift(0);
-    return result;
-  }
-  function degreeInterval(project, root, degree) { if (degree === 8) return 12; return scaleIntervals(project, root)[clamp(Number(degree) || 1, 1, 7) - 1] ?? 0; }
-  function basePitch(root, offset = 0) { const base = Number(state.register) + offset; return base + mod(root - mod(base, 12), 12); }
-  function thirdText(project) { return isMinor(project) ? '♭3' : '3'; }
-  function tieText(tie) { return ({ 1: '1/16', 2: '1/8', 4: '1/4', 8: '1/2', 16: '1 bar' })[tie] || `${tie}×`; }
-  function cellText(project, current) {
-    if (!current) return '—';
-    if (current.kind === 'absolute') return noteName(current.value);
-    if (current.kind === 'third') return thirdText(project);
-    if (current.kind === 'degree') return ({ 1:'R', 2:'2', 3:thirdText(project), 4:'4', 5:'5', 6:'6', 7:'7', 8:'8' })[current.value] || 'R';
-    return ({ 0:'R', 3:'♭3', 4:'3', 5:'4', 6:'♭5', 7:'5', 8:'♭6', 9:'6', 10:'♭7', 11:'7', 12:'8' })[current.value] || String(current.value);
+    const active = guide.notes.filter(note => Number(note.start) <= beat+epsilon && Number(note.start)+Number(note.duration) > beat+epsilon);
+    if (active.length) return Math.min(...active.map(note => Number(note.pitch)||60)) % 12;
+    const prior = guide.notes.filter(note => Number(note.start) <= beat+epsilon);
+    if (!prior.length) return keyRoot(project.key);
+    const latest = Math.max(...prior.map(note => Number(note.start)));
+    return Math.min(...guide.notes.filter(note => Math.abs(Number(note.start)-latest)<epsilon).map(note => Number(note.pitch)||60)) % 12;
   }
 
-  function activeGenre() { return genres.find(item => item.id === state.genreId) || genres[0]; }
-  function activeEmotion() { return emotions[state.emotionId] || emotions.aspirational; }
-  function loadGenre() {
-    const profile = activeGenre();
-    state.sequence = Array.from({ length: stepCount() }, (_, index) => profile.rhythm[index % 16] ? cell('interval', profile.intervals[index % 16], profile.rhythm[index % 16], 2) : null);
-    state.write = { kind: 'interval', value: 0 };
-    state.tie = 2;
-    state.manual = false;
-  }
-  function buildEmotion(id, groupIndex = 0, groupCount = 1) {
-    const output = Array(stepCount()).fill(null);
-    const emotion = emotions[id];
-    const bars = Math.max(1, state.phrase / 4);
-    const add = (index, value, velocity = 2, tie = 2, extra = {}) => { if (index >= 0 && index < output.length) output[index] = cell('interval', value, velocity, tie, extra); };
-    for (let bar = 0; bar < bars; bar += 1) {
-      const start = bar * 16;
-      const overallBar = groupIndex * bars + bar;
-      const progress = (overallBar + 0.5) / Math.max(1, groupCount * bars);
-      if (id === 'aspirational') {
-        const density = progress < 0.5 ? (overallBar % 2 ? 2 : 1) : 4 + overallBar % 3;
-        [0,4,8,12,2,6,10,14].slice(0, density).forEach(step => add(start + step, pick(emotion.pool), progress > 0.5 ? 2 : 1));
-      } else if (id === 'showstopping') {
-        add(start, 0, 3, 2);
-        add(start + 4, pick([7, 12]), 2, 2);
-        [2,6,8,10,12,14].filter(() => chance(0.58)).forEach(step => add(start + step, pick(emotion.pool), 2, pick([1,2])));
-      } else if (id === 'romantic') {
-        if (start > 0) add(start - 1, pick([0,3,7]), 2, 4); else add(start, 0, 2, 4);
-        [6,10].filter(() => chance(0.62)).forEach(step => add(start + step, pick(emotion.pool), pick([1,2,2,3]), 4));
-      } else if (id === 'cabaret') {
-        add(start, 0, 3, 4);
-        add(start + 8, pick([0,7]), 3, 4);
-        [4,12,14].filter(() => chance(0.55)).forEach(step => add(start + step, pick(emotion.pool), 1, 2));
-      } else if (id === 'scheming') {
-        const cluster = pick([0,4,8,12]);
-        [0,1,2].slice(0, pick([2,3])).forEach(offset => add(start + cluster + offset, pick(emotion.pool), pick([1,2,3]), pick([1,2,4,8])));
-        if (chance(0.48)) add(start + pick([3,7,11,15]), pick(emotion.pool), 1, pick([1,8]));
-      } else if (id === 'effervescent') {
-        [2,6,10,14].filter(() => chance(0.74)).forEach(step => add(start + step, pick(emotion.pool), pick([1,2,2]), 1, { octaveOffset: 12 }));
-        [1,3,5,7,9,11,13,15].filter(() => chance(0.2)).forEach(step => add(start + step, pick(emotion.pool), 1, 1, { octaveOffset: 12 }));
-      }
-    }
-    if (!output.some(Boolean)) output[0] = cell('interval', 0, 2, 2);
-    return output;
-  }
-  function loadEmotion() { state.sequence = buildEmotion(state.emotionId, 0, Math.max(1, 32 / state.phrase)); state.write = { kind: 'interval', value: activeEmotion().pool[0] }; state.tie = 2; state.manual = false; }
-  function mutateGenre() {
-    const rate = state.mutation / 100;
-    const choices = [{ kind:'interval', value:0 }, { kind:'third', value:3 }, { kind:'interval', value:5 }, { kind:'interval', value:7 }, { kind:'interval', value:12 }];
-    state.sequence = state.sequence.map(current => {
-      let next = current ? { ...current } : null;
-      if (chance(rate)) { const selected = pick(choices); next = next ? null : cell(selected.kind, selected.value); }
-      if (next && chance(rate)) { const selected = pick(choices); next.kind = selected.kind; next.value = selected.value; }
-      if (next && chance(rate * 0.45)) next.velocity = pick([1,2,2,3]);
-      return next;
-    });
-    if (!state.sequence.some(Boolean)) state.sequence[0] = cell('interval', 0);
-    state.manual = true;
-  }
-  function generateCustom() {
-    const output = Array(stepCount()).fill(null);
-    const put = (index, degree, velocity = 2, tie = 4, extra = {}) => { if (index < output.length) output[index] = cell('degree', degree, velocity, tie, extra); };
-    if (state.custom.motion === 'pedal') {
-      put(0, state.custom.pedal === 'fifth' ? 5 : 1, 2, stepCount(), { fixed: true });
-    } else {
-      const contour = state.custom.motion === 'arpeggio' ? [1,3,5,8,5,3,1,5] : [1,2,3,4,5,4,3,2,1,2,3,5,6,5,4,2];
-      for (let index = 0; index < output.length; index += 4) {
-        let degree = contour[(index / 4) % contour.length];
-        if (state.custom.inversions && index % 16 === 0) degree = pick([3,5]);
-        put(index, degree, 2, 4, state.custom.motion === 'stepwise' ? { walk: true } : {});
-      }
-    }
-    state.sequence = output;
-    state.write = { kind: 'degree', value: 1 };
-    state.tie = 4;
-    state.manual = false;
+  function pitchFrom(rootPc, interval = 0) {
+    const base = Number(state.register)||36;
+    const rooted = base + ((rootPc-(base%12)+12)%12);
+    return clamp(rooted+interval, 24, 60);
   }
 
-  function resolveInterval(project, current, root, beat) {
-    if (current.kind === 'absolute') return null;
-    if (current.kind === 'third') return thirdAt(project, root, beat);
-    if (current.kind === 'degree') return degreeInterval(project, root, current.value);
-    return Number(current.value) || 0;
+  function noteDuration(pattern, stepInBar) {
+    if (pattern === 'root' && stepInBar === 0) return 4;
+    if (pattern === 'driving') return .47;
+    if (pattern === 'pumping') return .36;
+    if (pattern === 'gallop') return stepInBar%4===0 ? .48 : .23;
+    return .23;
   }
-  function closestPitch(candidate, previous) {
-    if (!Number.isFinite(previous)) return candidate;
-    let best = candidate;
-    let bestDistance = Math.abs(candidate - previous);
-    for (let offset = -36; offset <= 36; offset += 12) {
-      const test = candidate + offset;
-      if (test < 24 || test > 96) continue;
-      const distance = Math.abs(test - previous);
-      if (distance < bestDistance) { best = test; bestDistance = distance; }
-    }
-    return best;
+
+  function chordChangePoints(project,start,end) {
+    const guide = sourceTrack(project);
+    if (!guide) return [];
+    return [...new Set((guide.notes||[]).map(note => Number(note.start)).filter(time => time>start+.0001 && time<end-.0001))].sort((a,b)=>a-b);
   }
-  function resolvePitch(project, current, root, beat, previous) {
-    if (current.kind === 'absolute') return clamp(current.value, 24, 96);
-    let value = basePitch(root, current.octaveOffset || 0) + (resolveInterval(project, current, root, beat) || 0);
-    if (current.walk) value = closestPitch(value, previous);
-    return clamp(value, 24, 96);
-  }
-  function nextDistance(sequence, index) { for (let cursor = index + 1; cursor < sequence.length; cursor += 1) if (sequence[cursor]) return cursor - index; return sequence.length - index; }
-  function articulationGate() { return state.mode === 'custom' ? 0.26 + state.custom.articulation / 100 * 0.72 : 0.84; }
-  function velocityScale(fraction, beatOffset) {
-    if (state.mode === 'custom') {
-      if (state.custom.dynamics === 'crescendo') return 0.58 + 0.52 * fraction;
-      if (state.custom.dynamics === 'decrescendo') return 1.1 - 0.52 * fraction;
-      if (state.custom.dynamics === 'swell') return 0.55 + 0.57 * Math.sin(Math.PI * fraction);
-    }
-    if (state.mode === 'emotion' && state.emotionId === 'aspirational') return 1 + Math.floor(beatOffset / 4) * 0.015;
-    return 1;
-  }
-  function chordChanges(project, start, end) {
-    const track = guideTrack(project);
-    if (!track) return [];
-    return [...new Set(track.notes.map(note => Number(note.start)).filter(time => time > start + 0.0001 && time < end - 0.0001))].sort((a,b) => a - b);
-  }
-  function segmentNotes(project, start, end, current, groupId, previous, fixedRoot) {
-    const points = current.fixed ? [start, end] : [start, ...chordChanges(project, start, end), end];
+
+  function splitHeldNote(project,start,duration,cell,groupId) {
+    const end = start+duration;
+    const points = [start,...chordChangePoints(project,start,end),end];
     const notes = [];
-    let prior = previous;
-    for (let index = 0; index < points.length - 1; index += 1) {
-      const from = points[index], to = points[index + 1];
-      if (to - from < 0.03) continue;
-      const root = current.fixed ? fixedRoot : rootAt(project, from + 0.001);
-      const pitch = resolvePitch(project, current, root, from, prior);
-      notes.push({ id: uid('note'), start: from, pitch, duration: to - from, velocity: VELOCITIES[current.velocity - 1] || 88, groupId });
-      prior = pitch;
+    for (let index=0; index<points.length-1; index+=1) {
+      const segmentStart = points[index];
+      const segmentEnd = points[index+1];
+      if (segmentEnd-segmentStart < .03125) continue;
+      notes.push({
+        id:uid('note'),
+        start:segmentStart,
+        pitch:pitchFrom(rootAt(project,segmentStart+.0001),cell.interval),
+        duration:segmentEnd-segmentStart,
+        velocity:VELOCITIES[cell.velocity]||VELOCITIES[2],
+        groupId
+      });
     }
-    return { notes, previous: prior };
+    return notes;
   }
-  function sequenceFor(blockIndex, blockCount) { return state.mode === 'emotion' && !state.manual ? buildEmotion(state.emotionId, blockIndex, blockCount) : state.sequence; }
-  function baseNotes(project, blockStart, groupId, blockIndex, blockCount) {
-    const sequence = sequenceFor(blockIndex, blockCount);
+
+  function buildBlock(project,blockStart,groupId) {
     const notes = [];
-    let previous = null;
-    const fixedRoot = rootAt(project, blockStart + 0.001);
-    sequence.forEach((current, index) => {
-      if (!current) return;
-      const available = nextDistance(sequence, index);
-      const noteColumns = current.fixed ? Math.min(current.tie, sequence.length - index) : (state.effects.sustain ? available : Math.min(current.tie, available));
-      const duration = noteColumns * 0.25 * (state.effects.sustain ? 0.96 : articulationGate());
-      const result = segmentNotes(project, blockStart + index * 0.25, blockStart + index * 0.25 + duration, current, groupId, previous, fixedRoot);
-      notes.push(...result.notes);
-      previous = result.previous;
+    state.steps.forEach((cell,index) => {
+      if (!cell) return;
+      const start = blockStart+index/4;
+      const duration = noteDuration(state.pattern,index%16);
+      if (state.pattern === 'root' && duration >= 4) {
+        notes.push(...splitHeldNote(project,start,duration,cell,groupId));
+      } else {
+        notes.push({
+          id:uid('note'),
+          start,
+          pitch:pitchFrom(rootAt(project,start+.0001),cell.interval),
+          duration,
+          velocity:VELOCITIES[cell.velocity]||VELOCITIES[2],
+          groupId
+        });
+      }
     });
     return notes;
   }
-  function addChords(project, notes) {
-    if (!state.effects.chords) return notes;
-    const output = [];
-    notes.forEach(note => {
-      output.push(note);
-      const root = rootAt(project, note.start + 0.001);
-      const third = thirdAt(project, root, note.start + 0.001);
-      const fifth = fifthAt(project, root, note.start + 0.001);
-      let topRoot = basePitch(root);
-      while (topRoot <= note.pitch + 1) topRoot += 12;
-      const seen = new Set([note.pitch]);
-      [topRoot, topRoot + third, topRoot + fifth].forEach(pitch => {
-        const safe = clamp(pitch, 24, 96);
-        if (!seen.has(safe)) { seen.add(safe); output.push({ ...note, id: uid('note'), pitch: safe, velocity: Math.max(25, Math.round(note.velocity * 0.82)) }); }
-      });
-    });
-    return output;
-  }
-  function addEcho(notes, blockEnd) {
-    if (!state.effects.echo) return notes;
-    const output = [...notes];
-    notes.forEach(note => {
-      const start = note.start + 0.5;
-      if (start < blockEnd - 0.03) output.push({ ...note, id: uid('note'), start, duration: Math.max(0.08, Math.min(0.25, note.duration * 0.48)), velocity: Math.max(20, Math.round(note.velocity * 0.45)) });
-    });
-    return output;
-  }
-  function createBlock(project, start, groupId, blockIndex, blockCount) { return addEcho(addChords(project, baseNotes(project, start, groupId, blockIndex, blockCount)), start + state.phrase); }
+
   function buildPlan(project) {
-    const insertAt = projectEnd(project) ? Math.ceil(projectEnd(project) / 4) * 4 : 0;
-    const total = 32 * state.units;
-    const count = total / state.phrase;
-    const groups = [];
-    for (let index = 0; index < count; index += 1) {
+    const end = projectEnd(project);
+    const insertAt = end ? Math.ceil(end/4)*4 : 0;
+    const totalBeats = 32*state.units;
+    const groupCount = totalBeats/state.phraseBeats;
+    const groups = Array.from({ length:groupCount }, (_,index) => {
       const groupId = uid('bass-group');
-      const start = insertAt + index * state.phrase;
-      groups.push({ groupId, start, notes: createBlock(project, start, groupId, index, count) });
-    }
-    const notes = groups.flatMap(group => group.notes);
-    notes.forEach(note => { const fraction = clamp((note.start - insertAt) / Math.max(1, total), 0, 1); note.velocity = clamp(Math.round(note.velocity * velocityScale(fraction, note.start - insertAt)), 20, 127); });
-    return { insertAt, total, groups, notes };
+      const start = insertAt+index*state.phraseBeats;
+      return { groupId,start,beats:state.phraseBeats,notes:buildBlock(project,start,groupId) };
+    });
+    return { insertAt,totalBeats,groups,notes:groups.flatMap(group => group.notes) };
   }
 
-  function profileName() { return state.mode === 'genre' ? activeGenre().name : state.mode === 'emotion' ? activeEmotion().name : `Custom ${state.custom.motion}`; }
-  function renderSummary(project) {
+  function describePlan(project) {
     const plan = buildPlan(project);
-    const active = Object.entries(state.effects).filter(([, enabled]) => enabled).map(([name]) => name[0].toUpperCase() + name.slice(1));
-    $('#bassSummary').textContent = `${profileName()} • ${plan.groups.length} × ${state.phrase}-beat groups • ${plan.total} beats total • starts at beat ${plan.insertAt}${active.length ? ` • live: ${active.join(', ')}` : ''}.`;
+    const guide = state.source === 'key' ? `project key (${project.key})` : (sourceTrack(project)?.name || 'project key');
+    $('#bassSummary').textContent = `Adds ${plan.groups.length} × ${state.phraseBeats}-beat groups • ${plan.totalBeats} beats total • starts at beat ${plan.insertAt} • harmony: ${guide}.`;
   }
-  function renderGuideOptions(project) {
+
+  function renderGuideChoices(project) {
     const select = $('#bassHarmonySource');
-    const old = state.source;
-    select.replaceChildren(new Option(`Project key root — ${project.key}`, 'key'));
-    project.tracks.filter(track => track.notes && track.notes.length && !/bass/i.test(track.name)).forEach(track => select.append(new Option(`Guide track: ${track.name}`, track.id)));
-    state.source = [...select.options].some(option => option.value === old) ? old : 'key';
-    select.value = state.source;
+    const previous = state.source;
+    select.replaceChildren(new Option(`Project key root — ${project.key}`,'key'));
+    project.tracks.filter(track => (track.notes||[]).length && !/bass/i.test(track.name)).forEach(track => select.append(new Option(`Guide track: ${track.name}`,track.id)));
+    if ([...select.options].some(option => option.value === previous)) select.value = previous;
+    else { state.source='key'; select.value='key'; }
   }
-  function renderProfiles() {
-    const select = $('#bassProfileSelect');
-    const detail = $('#bassEmotionDetail');
-    const heading = $('#bassProfileHeading');
-    if (state.mode === 'genre') {
-      heading.textContent = 'Genre profile';
-      select.replaceChildren(...genres.map(profile => new Option(`${String(profile.id).padStart(2, '0')} · ${profile.name}`, profile.id)));
-      select.value = String(state.genreId);
-      detail.hidden = true;
-    } else {
-      heading.textContent = 'Emotion profile';
-      select.replaceChildren(...Object.entries(emotions).map(([id, emotion]) => new Option(emotion.name, id)));
-      select.value = state.emotionId;
-      detail.hidden = false;
-      detail.textContent = `${activeEmotion().text} Tempo guide: ${activeEmotion().tempo}.`;
-    }
+
+  function stepAt(index) {
+    return state.steps[index] || null;
   }
-  function palette(project) {
-    const choices = state.mode === 'custom'
-      ? [['degree',1,'R'], ['degree',2,'2'], ['degree',3,thirdText(project)], ['degree',4,'4'], ['degree',5,'5'], ['degree',6,'6'], ['degree',7,'7'], ['degree',8,'8']]
-      : [['interval',0,'R'], ['third',3,thirdText(project)], ['interval',5,'4'], ['interval',7,'5'], ['interval',10,'♭7'], ['interval',12,'8']];
-    const host = $('#bassIntervalPalette');
-    host.replaceChildren(...choices.map(([kind, value, label]) => { const button = document.createElement('button'); button.type = 'button'; button.className = `dna-interval-button${state.write.kind === kind && state.write.value === value ? ' selected' : ''}`; button.dataset.kind = kind; button.dataset.value = String(value); button.textContent = label; return button; }));
-  }
-  function renderTies() {
-    const host = $('#bassTiePalette');
-    host.replaceChildren(...TIES.map(tie => { const button = document.createElement('button'); button.type = 'button'; button.className = `dna-tie-button${state.tie === tie ? ' selected' : ''}`; button.dataset.tie = String(tie); button.textContent = tieText(tie); return button; }));
-  }
-  function renderEffects() { [['bassSustain','sustain'], ['bassEcho','echo'], ['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).classList.toggle('selected', state.effects[key])); }
-  function renderGrid(project) {
+
+  function renderGrid() {
     const host = $('#bassStepGrid');
-    const count = stepCount();
+    const total = state.phraseBeats*4;
     host.replaceChildren();
-    [['rhythm','Rhythm','note/rest'], ['tune','Tune','interval'], ['tie','Tie','length']].forEach(([mode, title, subtitle]) => {
-      const row = document.createElement('div'); row.className = 'dna-row';
-      const label = document.createElement('div'); label.className = 'dna-row-label'; label.innerHTML = `${title}<small>${subtitle}</small>`;
-      const grid = document.createElement('div'); grid.className = 'dna-grid'; grid.style.setProperty('--dna-step-count', String(count));
-      for (let index = 0; index < count; index += 1) {
-        const current = state.sequence[index];
-        const on = Boolean(current);
-        const button = document.createElement('button'); button.type = 'button'; button.dataset.index = String(index); button.dataset.mode = mode;
-        button.className = `dna-cell dna-${mode}${on ? ' is-on' : ''}${on ? ` velocity-${current.velocity}` : ''}${index % 16 === 0 ? ' bar-start' : ''}${index % 4 === 0 ? ' beat-start' : ''}`;
-        button.textContent = mode === 'rhythm' ? (on ? (current.velocity === 3 ? '●' : current.velocity === 2 ? '•' : '·') : '') : mode === 'tune' ? (on ? cellText(project, current) : '—') : (on ? tieText(current.tie) : '—');
+    PITCH_LANES.forEach(lane => {
+      const row = document.createElement('div');
+      row.className = 'bass-pitch-row';
+      const label = document.createElement('div');
+      label.className = 'bass-pitch-label';
+      label.innerHTML = `${lane.label}<small>${lane.short}</small>`;
+      const grid = document.createElement('div');
+      grid.className = 'bass-step-grid';
+      grid.style.setProperty('--bass-step-count',String(total));
+      for (let index=0; index<total; index+=1) {
+        const cell = stepAt(index);
+        const active = cell && cell.interval === lane.interval;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = `bass-step${active ? ` is-on velocity-${cell.velocity}` : ''}${index%16===0 ? ' bar-start' : ''}${index%4===0 ? ' beat-start' : ''}`;
+        button.dataset.step = String(index);
+        button.dataset.interval = String(lane.interval);
+        button.title = active
+          ? `Step ${index+1}: ${lane.label}, ${['','soft','normal','accent'][cell.velocity]}. Right-click to change velocity.`
+          : `Step ${index+1}: set ${lane.label}.`;
+        button.innerHTML = `<span>${active ? (cell.velocity===3 ? '●' : cell.velocity===2 ? '•' : '·') : ''}</span>`;
         grid.append(button);
       }
-      row.append(label, grid); host.append(row);
+      row.append(label,grid);
+      host.append(row);
     });
-    const bars = []; for (let bar = 0; bar < state.phrase / 4; bar += 1) bars.push(bar + 1);
-    $('#bassBarLabels').textContent = `Bars: ${bars.join('          ')}`;
+    const bars = [];
+    for (let bar=0; bar<state.phraseBeats/4; bar+=1) bars.push(String(bar+1));
+    $('#bassBarLabels').textContent = `Bars: ${bars.join('    ')}`;
   }
-  function renderMode() {
-    const customMode = state.mode === 'custom';
-    $('#bassProfileCard').hidden = customMode;
-    $('#bassCustomCard').hidden = !customMode;
-    $$('.bass-mode-tab').forEach(button => button.classList.toggle('selected', button.dataset.mode === state.mode));
-    $('#bassEditorTitle').textContent = customMode ? 'Editable orchestral bass line' : 'Editable bass tune';
-    $('#bassEditorText').textContent = customMode ? 'Rhythm controls notes and rests. Tune uses diatonic degrees. Tie holds notes across sixteenth-note columns.' : 'Rhythm controls notes and rests. Tune follows the active chord root. The dynamic third becomes 3 or ♭3 from the project key.';
-  }
-  function render() {
+
+  function renderModal() {
     const project = readProject();
-    renderMode(); renderGuideOptions(project); if (state.mode !== 'custom') renderProfiles();
-    $('#bassLength').value = String(state.units); $('#bassLengthValue').textContent = `${state.units} × 32 beats = ${state.units * 32} beats`;
-    $('#bassMutationRate').value = String(state.mutation); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`;
-    $('#bassInstrument').value = state.instrument; $('#bassRegister').value = String(state.register);
-    $('#bassCustomMotion').value = state.custom.motion; $('#bassPedalTarget').value = state.custom.pedal;
-    $('#bassArticulation').value = String(state.custom.articulation); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced';
-    $('#bassDynamics').value = state.custom.dynamics; $('#bassInversions').checked = state.custom.inversions;
-    $$('.bass-phrase').forEach(button => button.classList.toggle('selected', Number(button.dataset.b) === state.phrase));
-    palette(project); renderTies(); renderEffects(); renderGrid(project); renderSummary(project);
+    renderGuideChoices(project);
+    $('#bassLength').value = String(state.units);
+    $('#bassLengthValue').textContent = `${state.units} × 32 beats = ${state.units*32} beats`;
+    $('#bassInstrument').value = state.instrument;
+    $('#bassRegister').value = String(state.register);
+    $$('.bass-phrase').forEach(button => button.classList.toggle('selected',Number(button.dataset.beats)===state.phraseBeats));
+    $$('.bass-pattern').forEach(button => button.classList.toggle('selected',button.dataset.pattern===state.pattern));
+    renderGrid();
+    describePlan(project);
   }
+
+  function setPhrase(beats) {
+    state.phraseBeats = Number(beats);
+    resetPhrase();
+    renderModal();
+  }
+
+  function setPattern(pattern) {
+    state.pattern = pattern;
+    resetPhrase();
+    renderModal();
+  }
+
   function openModal() {
     stopPreview();
-    if (!state.sequence.length || state.sequence.length !== stepCount()) { if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); }
-    render(); $('#bassModal').hidden = false;
+    if (!state.steps.length || state.steps.length !== state.phraseBeats*4) resetPhrase();
+    renderModal();
+    $('#bassModal').hidden = false;
   }
-  function closeModal() { stopPreview(); $('#bassModal').hidden = true; }
-  function editCell(index, mode, rightClick) {
-    const current = state.sequence[index];
-    if (mode === 'rhythm') {
-      if (rightClick) { if (current) current.velocity = current.velocity % 3 + 1; else state.sequence[index] = cell(state.write.kind, state.write.value, 1, state.tie); }
-      else state.sequence[index] = current ? null : cell(state.write.kind, state.write.value, 2, state.tie);
-    } else if (mode === 'tune') {
-      if (rightClick) { if (current) current.velocity = current.velocity % 3 + 1; else state.sequence[index] = cell(state.write.kind, state.write.value, 1, state.tie); }
-      else state.sequence[index] = current ? { ...current, kind: state.write.kind, value: state.write.value } : cell(state.write.kind, state.write.value, 2, state.tie, state.mode === 'custom' && state.custom.motion === 'stepwise' ? { walk: true } : {});
-    } else {
-      if (!current) state.sequence[index] = cell(state.write.kind, state.write.value, 2, state.tie);
-      else if (rightClick) current.tie = TIES[(TIES.indexOf(current.tie) + 1) % TIES.length];
-      else current.tie = state.tie;
-    }
-    state.manual = true; render();
-  }
-  function parseDuration(text) { const fraction = String(text).trim().match(/^1\s*\/\s*(1|2|4|8|16)$/); if (fraction) return 4 / Number(fraction[1]); const numeric = Number(text); return Number.isFinite(numeric) && numeric > 0 ? numeric : null; }
-  function processPastedNotes() {
-    const raw = $('#bassTextInput').value.trim();
-    if (!raw) { status('Paste notes first.'); return; }
-    const matcher = /(R|[A-Ga-g](?:[#b♯♭])?-?\d+)\s*\(\s*([^)]*)\s*\)/g;
-    let match, last = 0, total = 0;
-    const tokens = [];
-    while ((match = matcher.exec(raw))) {
-      const gap = raw.slice(last, match.index).trim();
-      if (gap && !/^[,|\s]+$/.test(gap)) { status('Could not read the pasted text.'); return; }
-      last = matcher.lastIndex;
-      const duration = parseDuration(match[2]);
-      if (!duration) { status('Use durations like 1/4, 1/8, 1/2 or 1/16.'); return; }
-      tokens.push([match[1], duration]); total += duration;
-    }
-    if (!tokens.length || raw.slice(last).trim()) { status('Use notes like Ab1(1/4), separated by spaces.'); return; }
-    const phrase = total <= 8 ? 8 : total <= 16 ? 16 : total <= 32 ? 32 : 0;
-    if (!phrase) { status('Pasted phrases can be up to 32 beats.'); return; }
-    state.phrase = phrase; state.sequence = Array(stepCount()).fill(null);
-    let beat = 0;
-    for (const [token, duration] of tokens) {
-      const index = Math.round(beat / 0.25); const tie = Math.max(1, Math.round(duration / 0.25));
-      if (token !== 'R') {
-        const parsed = token.replace('♭','b').replace('♯','#').match(/^([A-Ga-g])([#b]?)(-?\d+)$/);
-        if (!parsed) { status(`Could not read ${token}.`); return; }
-        const pitchClass = NOTE_PCS[`${parsed[1].toUpperCase()}${parsed[2]}`];
-        if (pitchClass === undefined) { status(`Could not read ${token}.`); return; }
-        state.sequence[index] = cell('absolute', (Number(parsed[3]) + 1) * 12 + pitchClass, 2, tie);
-      }
-      beat += duration;
-    }
-    state.manual = true; status(`Processed ${tokens.length} token${tokens.length === 1 ? '' : 's'}.`); render();
+
+  function closeModal() {
+    stopPreview();
+    $('#bassModal').hidden = true;
   }
 
   function ensureAudio() {
-    if (playback.context) { if (playback.context.state === 'suspended') playback.context.resume().catch(() => {}); return playback.context; }
-    const AudioContextApi = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextApi) return null;
-    playback.context = new AudioContextApi(); playback.gain = playback.context.createGain(); playback.gain.gain.value = 0.78; playback.gain.connect(playback.context.destination);
-    return playback.context;
-  }
-  async function loadPlayer() {
-    const context = ensureAudio(); if (!context || !window.Soundfont) return null;
-    if (playback.player && playback.instrument === state.instrument) return playback.player;
-    playback.instrument = state.instrument;
-    try { playback.player = await window.Soundfont.instrument(context, SOUNDFONTS[state.instrument], { soundfont: 'MusyngKite', format: 'mp3', destination: playback.gain, gain: 0.94 }); return playback.player; }
-    catch (_) { return null; }
-  }
-  function stopPreview() {
-    clearTimeout(playback.timer); playback.nodes.splice(0).forEach(node => { try { node.stop(); } catch (_) {} }); playback.nodes = []; playback.active = false;
-    const button = $('#bassPreview'); if (button) { button.textContent = '▶ Preview'; button.classList.remove('is-previewing'); }
-  }
-  async function preview() {
-    if (playback.active) { stopPreview(); return; }
-    const project = readProject(); const player = await loadPlayer();
-    if (!player) { status('Preview sound could not load.'); return; }
-    const result = buildPlan(project); const now = playback.context.currentTime + 0.06; const seconds = secondsPerBeat(project);
-    playback.active = true; $('#bassPreview').textContent = '⏹ Stop Preview'; $('#bassPreview').classList.add('is-previewing');
-    result.notes.filter(note => note.start < result.insertAt + 32).forEach(note => {
-      try { const node = player.play(note.pitch, now + (note.start - result.insertAt) * seconds, { duration: Math.max(0.08, note.duration * seconds), gain: clamp(note.velocity / 127, 0.15, 0.95), attack: 0.008, release: 0.16 }); if (node && node.stop) playback.nodes.push(node); } catch (_) {}
-    });
-    playback.timer = window.setTimeout(stopPreview, Math.min(32000, 32 * seconds * 1000 + 260));
-  }
-  function addToTimeline() {
-    const project = readProject(); const result = buildPlan(project);
-    if (!result.notes.length) { status('Add at least one triggered step first.'); return; }
-    saveHistory(project);
-    let track = project.tracks.find(item => /bass/i.test(item.name));
-    if (!track) { track = { id: uid('track'), name: 'Bass', instrument: SAVED_INSTRUMENTS[state.instrument], color: COLORS[0], muted: false, solo: false, hidden: false, notes: [] }; project.tracks.push(track); }
-    track.instrument = SAVED_INSTRUMENTS[state.instrument]; track.notes.push(...result.notes); saveProject(project);
-    sessionStorage.setItem(TOAST_KEY, `Added ${result.groups.length} bass group${result.groups.length === 1 ? '' : 's'} to the timeline.`); window.location.reload();
+    if (preview.context) {
+      if (preview.context.state === 'suspended') preview.context.resume().catch(() => {});
+      return preview.context;
+    }
+    const Context = window.AudioContext || window.webkitAudioContext;
+    if (!Context) return null;
+    preview.context = new Context();
+    preview.gain = preview.context.createGain();
+    preview.gain.gain.value = .78;
+    preview.gain.connect(preview.context.destination);
+    return preview.context;
   }
 
-  function makeWindowDraggable() {
-    const card = $('#bassModalCard'), header = $('#bassModalHeader'), grip = $('#bassResizeGrip');
-    if (!card || !header || !grip) return;
-    header.addEventListener('pointerdown', event => {
-      if (event.target.closest('button,input,select,textarea,label')) return;
-      const rect = card.getBoundingClientRect(); const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
-      card.style.position = 'fixed'; card.style.margin = '0';
-      const move = moveEvent => { card.style.left = `${clamp(moveEvent.clientX - offsetX, 0, window.innerWidth - card.offsetWidth)}px`; card.style.top = `${clamp(moveEvent.clientY - offsetY, 0, window.innerHeight - card.offsetHeight)}px`; };
-      const end = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true });
+  async function loadPreviewInstrument() {
+    const context = ensureAudio();
+    if (!context || !window.Soundfont) return null;
+    if (preview.player && preview.instrument === state.instrument) return preview.player;
+    preview.player = null;
+    preview.instrument = state.instrument;
+    try {
+      preview.player = await window.Soundfont.instrument(context,SOUNDFONTS[state.instrument],{ soundfont:'MusyngKite',format:'mp3',destination:preview.gain,gain:.94 });
+      return preview.player;
+    } catch (_) { return null; }
+  }
+
+  function stopPreview() {
+    clearTimeout(preview.timer);
+    preview.timer = 0;
+    preview.nodes.splice(0).forEach(node => { try { node.stop?.(); } catch (_) {} });
+    preview.running = false;
+    const button = $('#bassPreview');
+    if (button) { button.textContent = '▶ Preview'; button.classList.remove('is-previewing'); }
+  }
+
+  async function previewPhrase() {
+    if (preview.running) { stopPreview(); return; }
+    const project = readProject();
+    const player = await loadPreviewInstrument();
+    if (!player) { showToast('Bass sample could not load.'); return; }
+    const plan = buildPlan(project);
+    const start = plan.insertAt;
+    const events = plan.notes.filter(note => note.start < start+32);
+    const now = preview.context.currentTime+.06;
+    const perBeat = secondsPerBeat(project);
+    preview.running = true;
+    $('#bassPreview').textContent = '⏹ Stop Preview';
+    $('#bassPreview').classList.add('is-previewing');
+    events.forEach(note => {
+      try {
+        const node = player.play(note.pitch,now+(note.start-start)*perBeat,{ duration:Math.max(.08,note.duration*perBeat),gain:clamp(note.velocity/127,.15,.95),attack:.008,release:.12 });
+        if (node?.stop) preview.nodes.push(node);
+      } catch (_) {}
     });
+    preview.timer = window.setTimeout(stopPreview,Math.max(600,Math.min(32000,32*perBeat*1000+260)));
+  }
+
+  function findBassTrack(project) {
+    let track = project.tracks.find(candidate => /bass/i.test(candidate.name) || candidate.instrument === 'electric_bass');
+    if (!track) {
+      track = { id:uid('track'),name:'Bass',instrument:state.instrument,color:COLORS[0],muted:false,solo:false,hidden:false,notes:[] };
+      project.tracks.push(track);
+    }
+    track.instrument = state.instrument;
+    return track;
+  }
+
+  function addToTimeline() {
+    const project = readProject();
+    const plan = buildPlan(project);
+    if (!plan.notes.length) { showToast('Add at least one note in the bass editor first.'); return; }
+    snapshot(copy(project));
+    const bass = findBassTrack(project);
+    bass.notes.push(...plan.notes);
+    saveProject(project);
+    sessionStorage.setItem(TOAST_KEY,`Added ${plan.groups.length} bass group${plan.groups.length===1?'':'s'} to the timeline.`);
+    window.location.reload();
+  }
+
+  function updateStep(step,interval,velocityMode) {
+    const current = stepAt(step);
+    if (velocityMode) {
+      if (current && current.interval === interval) current.velocity = current.velocity%3+1;
+      else state.steps[step] = makeCell(interval,1);
+    } else if (current && current.interval === interval) {
+      state.steps[step] = null;
+    } else {
+      state.steps[step] = makeCell(interval,current?.velocity||2);
+    }
+    renderGrid();
+    describePlan(readProject());
+  }
+
+  function setupResize() {
+    const modal = $('#bassModalCard');
+    const grip = $('#bassResizeGrip');
+    if (!modal || !grip) return;
     grip.addEventListener('pointerdown', event => {
-      const rect = card.getBoundingClientRect(); const startX = event.clientX, startY = event.clientY;
-      card.style.position = 'fixed'; card.style.margin = '0'; card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`; grip.classList.add('resizing');
-      const move = moveEvent => { card.style.width = `${clamp(rect.width + moveEvent.clientX - startX, 690, window.innerWidth - 20)}px`; card.style.height = `${clamp(rect.height + moveEvent.clientY - startY, 520, window.innerHeight - 20)}px`; };
-      const end = () => { grip.classList.remove('resizing'); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true });
+      event.preventDefault();
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const startWidth = modal.getBoundingClientRect().width;
+      const startHeight = modal.getBoundingClientRect().height;
+      grip.classList.add('resizing');
+      grip.setPointerCapture?.(event.pointerId);
+      const move = moveEvent => {
+        const width = clamp(Math.round(startWidth+moveEvent.clientX-startX),660,window.innerWidth-20);
+        const height = clamp(Math.round(startHeight+moveEvent.clientY-startY),500,window.innerHeight-20);
+        modal.style.width = `${width}px`;
+        modal.style.height = `${height}px`;
+      };
+      const end = () => {
+        grip.classList.remove('resizing');
+        window.removeEventListener('pointermove',move);
+        window.removeEventListener('pointerup',end);
+        window.removeEventListener('pointercancel',end);
+      };
+      window.addEventListener('pointermove',move);
+      window.addEventListener('pointerup',end,{ once:true });
+      window.addEventListener('pointercancel',end,{ once:true });
     });
   }
-  function setMode(mode) { state.mode = mode; if (mode === 'genre') loadGenre(); else if (mode === 'emotion') loadEmotion(); else generateCustom(); render(); }
+
   function bind() {
-    document.addEventListener('click', event => { const trigger = event.target.closest('#quickBass'); if (!trigger) return; event.preventDefault(); event.stopImmediatePropagation(); openModal(); }, true);
-    $('#bassClose').addEventListener('click', closeModal); $('#bassPreview').addEventListener('click', preview); $('#bassAdd').addEventListener('click', addToTimeline); $('#bassProcess').addEventListener('click', processPastedNotes);
-    $('#bassModeTabs').addEventListener('click', event => { const button = event.target.closest('.bass-mode-tab'); if (button) setMode(button.dataset.mode); });
-    $('#bassLoadProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = Number($('#bassProfileSelect').value); loadGenre(); } else { state.emotionId = $('#bassProfileSelect').value; loadEmotion(); } render(); });
-    $('#bassRandomProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = pick(genres).id; loadGenre(); } else { state.emotionId = pick(Object.keys(emotions)); loadEmotion(); } render(); });
-    $('#bassMutate').addEventListener('click', () => { if (state.mode === 'genre') mutateGenre(); else loadEmotion(); render(); });
-    $('#bassGenerateCustom').addEventListener('click', () => { generateCustom(); render(); });
-    $('#bassLength').addEventListener('input', event => { state.units = Number(event.target.value); render(); });
-    $('#bassMutationRate').addEventListener('input', event => { state.mutation = Number(event.target.value); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`; });
-    $('#bassHarmonySource').addEventListener('change', event => { state.source = event.target.value; render(); });
-    $('#bassInstrument').addEventListener('change', event => { state.instrument = event.target.value; });
-    $('#bassRegister').addEventListener('change', event => { state.register = Number(event.target.value); render(); });
-    $('#bassCustomMotion').addEventListener('change', event => { state.custom.motion = event.target.value; });
-    $('#bassPedalTarget').addEventListener('change', event => { state.custom.pedal = event.target.value; });
-    $('#bassArticulation').addEventListener('input', event => { state.custom.articulation = Number(event.target.value); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced'; });
-    $('#bassDynamics').addEventListener('change', event => { state.custom.dynamics = event.target.value; });
-    $('#bassInversions').addEventListener('change', event => { state.custom.inversions = event.target.checked; });
-    $('#bassPhraseChoices').addEventListener('click', event => { const button = event.target.closest('.bass-phrase'); if (!button) return; state.phrase = Number(button.dataset.b); if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); render(); });
-    [['bassSustain','sustain'],['bassEcho','echo'],['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).addEventListener('click', () => { state.effects[key] = !state.effects[key]; stopPreview(); render(); }));
-    $('#bassIntervalPalette').addEventListener('click', event => { const button = event.target.closest('.dna-interval-button'); if (!button) return; state.write = { kind: button.dataset.kind, value: Number(button.dataset.value) }; render(); });
-    $('#bassTiePalette').addEventListener('click', event => { const button = event.target.closest('.dna-tie-button'); if (!button) return; state.tie = Number(button.dataset.tie); render(); });
-    $('#bassStepGrid').addEventListener('click', event => { const button = event.target.closest('.dna-cell'); if (button) editCell(Number(button.dataset.index), button.dataset.mode, false); });
-    $('#bassStepGrid').addEventListener('contextmenu', event => { const button = event.target.closest('.dna-cell'); if (!button) return; event.preventDefault(); editCell(Number(button.dataset.index), button.dataset.mode, true); });
-    makeWindowDraggable();
+    document.addEventListener('click',event => {
+      const trigger = event.target.closest('#quickBass');
+      if (!trigger) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      openModal();
+    },true);
+
+    $('#bassClose')?.addEventListener('click',closeModal);
+    $('#bassPreview')?.addEventListener('click',previewPhrase);
+    $('#bassAdd')?.addEventListener('click',addToTimeline);
+    $('#bassReset')?.addEventListener('click',() => { resetPhrase(); renderModal(); });
+
+    $('#bassLength')?.addEventListener('input',event => { state.units=Number(event.target.value); $('#bassLengthValue').textContent=`${state.units} × 32 beats = ${state.units*32} beats`; describePlan(readProject()); });
+    $('#bassHarmonySource')?.addEventListener('change',event => { state.source=event.target.value; describePlan(readProject()); });
+    $('#bassInstrument')?.addEventListener('change',event => { state.instrument=event.target.value; });
+    $('#bassRegister')?.addEventListener('change',event => { state.register=Number(event.target.value); renderGrid(); describePlan(readProject()); });
+
+    $('#bassPhraseChoices')?.addEventListener('click',event => { const button=event.target.closest('.bass-phrase'); if (button) setPhrase(button.dataset.beats); });
+    $('#bassPatternChoices')?.addEventListener('click',event => { const button=event.target.closest('.bass-pattern'); if (button) setPattern(button.dataset.pattern); });
+    $('#bassStepGrid')?.addEventListener('click',event => {
+      const cell = event.target.closest('.bass-step');
+      if (!cell) return;
+      updateStep(Number(cell.dataset.step),Number(cell.dataset.interval),false);
+    });
+    $('#bassStepGrid')?.addEventListener('contextmenu',event => {
+      const cell = event.target.closest('.bass-step');
+      if (!cell) return;
+      event.preventDefault();
+      updateStep(Number(cell.dataset.step),Number(cell.dataset.interval),true);
+    });
+    setupResize();
   }
-  loadGenre(); bind();
+
+  bind();
 })();
