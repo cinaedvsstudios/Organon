@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, shell } = require('electron')
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { createGoogleDriveOAuth } = require('./google-drive-oauth.js');
 
 const launcherRoot = __dirname;
 const capsulariusRoot = path.resolve(launcherRoot, '..', '..');
@@ -11,6 +12,7 @@ const desktopStatePath = path.join(capsulariusRoot, 'desktop', 'capsularius-desk
 const approvedRoots = new Set();
 const MAX_DESKTOP_STATE_BYTES = 2 * 1024 * 1024;
 let desktopStateWriteQueue = Promise.resolve();
+let googleDriveOAuth;
 
 app.setAppUserModelId('com.cinaedvsstudios.organon.capsularius');
 
@@ -179,6 +181,9 @@ function registerBridge() {
   ipcMain.handle('capsularius:save-desktop-state', async (_event, state) => saveDesktopState(state));
   ipcMain.handle('capsularius:get-desktop-preference', async (_event, key) => getDesktopPreference(key));
   ipcMain.handle('capsularius:set-desktop-preference', async (_event, key, value) => setDesktopPreference(key, value));
+  ipcMain.handle('capsularius:request-google-drive-token', async (_event, options) => googleDriveOAuth.request(options || {}));
+  ipcMain.handle('capsularius:restore-google-drive-sessions', async (_event, accountIds) => googleDriveOAuth.restore(accountIds));
+  ipcMain.handle('capsularius:forget-google-drive-account', async (_event, accountId) => googleDriveOAuth.forget(accountId));
 
   ipcMain.handle('capsularius:set-zoom-factor', (event, value) => {
     const factor = Number(value);
@@ -261,6 +266,7 @@ app.whenReady().then(async () => {
   try { await fs.access(capsulariusEntry); }
   catch (_) { dialog.showErrorBox('Capsularius files not found', `The launcher could not find:\n${capsulariusEntry}`); app.quit(); return; }
 
+  googleDriveOAuth = createGoogleDriveOAuth({ app, shell });
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label:'Capsularius Desktop', submenu:[{ role:'reload', label:'Reload current local code' }, { role:'toggleDevTools', label:'Developer tools' }, { type:'separator' }, { role:'quit', label:'Quit' }] }
   ]));
