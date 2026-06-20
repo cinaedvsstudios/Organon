@@ -1,4 +1,5 @@
 @import url('./zoom-settings.css');
+@import url('./google-drive-menu.css');
 
 /* Compact desktop header: keep the version beneath the product title without increasing header height. */
 .app-header{
