@@ -1,9 +1,11 @@
+/* Ihy v1.0.0 Bass Generator — complete controller consolidated from v0.54. */
+
 (() => {
   'use strict';
 
-  const PROJECT_KEY = 'ihy-v042-project';
-  const HISTORY_KEY = 'ihy-v042-history';
-  const TOAST_KEY = 'ihy-v045-toast';
+  const PROJECT_KEY = 'ihy-v100-project';
+  const HISTORY_KEY = 'ihy-v100-history';
+  const TOAST_KEY = 'ihy-v100-toast';
   const NOTE_PCS = { C:0, 'C#':1, Db:1, D:2, 'D#':3, Eb:3, E:4, F:5, 'F#':6, Gb:6, G:7, 'G#':8, Ab:8, A:9, 'A#':10, Bb:10, B:11 };
   const TIES = [1, 2, 4, 8, 16];
   const VELOCITIES = [62, 88, 112];

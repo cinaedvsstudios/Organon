@@ -1,16 +1,18 @@
+/* Ihy v1.0.0 core — consolidated from standalone.js v0.42 plus clear-all.js v0.45. */
+
 (() => {
   'use strict';
 
   const $ = selector => document.querySelector(selector);
   const $$ = selector => [...document.querySelectorAll(selector)];
 
-  const APP_VERSION = '0.42';
-  const STORAGE_KEY = 'ihy-v042-project';
-  const BACKUP_PREFIX = 'ihy-v042-backup-';
-  const HISTORY_KEY = 'ihy-v042-history';
-  const WINDOW_KEY = 'ihy-v042-window-positions';
+  const APP_VERSION = '1.0.0';
+  const STORAGE_KEY = 'ihy-v100-project';
+  const BACKUP_PREFIX = 'ihy-v100-backup-';
+  const HISTORY_KEY = 'ihy-v100-history';
+  const WINDOW_KEY = 'ihy-v100-window-positions';
   const LEGACY_KEYS = [
-    'ihy-v041-project', 'ihy-v040-project', 'ihy-v039-project', 'ihy-v038-project',
+    'ihy-v042-project', 'ihy-v041-project', 'ihy-v040-project', 'ihy-v039-project', 'ihy-v038-project',
     'ihy-v035-project', 'ihy-v029-project', 'ihy-v028-project',
     'ihy-v027', 'ihy-v026', 'ihy-v025', 'ihy-v024', 'ihy-v023', 'ihy-v022', 'ihy-v021'
   ];
@@ -175,7 +177,7 @@
   let activeTrackId = project.tracks[0].id;
   let selected = new Set();
   let editMode = 'add';
-  let beatWidth = BASE_BEAT * clamp(Number(localStorage.getItem('ihy-v042-zoom') || 100), 70, 150) / 100;
+  let beatWidth = BASE_BEAT * clamp(Number(localStorage.getItem('ihy-v100-zoom') || 100), 70, 150) / 100;
   let playheadBeat = 0;
   let playing = false;
   let playStartedAt = 0;
@@ -186,7 +188,7 @@
   let sectionDrag = null;
   let contextPoint = { start: 0, pitch: 60 };
   let clipboard = null;
-  let dragMute = readJSON('ihy-v042-drag-mute', false) === true;
+  let dragMute = readJSON('ihy-v100-drag-mute', false) === true;
   let trackMenuTrackId = null;
   let sectionMenuSectionId = null;
   let renameTrackId = null;
@@ -1748,7 +1750,7 @@
 
     $('#zoomRange').addEventListener('input', event => {
       beatWidth = BASE_BEAT * clamp(Number(event.target.value) || 100, 70, 150) / 100;
-      localStorage.setItem('ihy-v042-zoom', String(Math.round(beatWidth / BASE_BEAT * 100)));
+      localStorage.setItem('ihy-v100-zoom', String(Math.round(beatWidth / BASE_BEAT * 100)));
       renderTimeline();
       renderRoll();
       updateTransport();
@@ -1756,7 +1758,7 @@
 
     $('#dragMute').addEventListener('click', () => {
       dragMute = !dragMute;
-      localStorage.setItem('ihy-v042-drag-mute', JSON.stringify(dragMute));
+      localStorage.setItem('ihy-v100-drag-mute', JSON.stringify(dragMute));
       renderTop();
     });
 
@@ -1952,7 +1954,9 @@
     $$('[data-close]').forEach(button => button.addEventListener('click', () => closeModal(button.dataset.close)));
 
     $$('.modal-layer').forEach(layer => {
-      layer.querySelector('.modal-header').addEventListener('pointerdown', event => beginModalDrag(event, layer));
+      if (layer.dataset.modalOwner === 'bass-generator') return;
+      const header = layer.querySelector('.modal-header');
+      if (header) header.addEventListener('pointerdown', event => beginModalDrag(event, layer));
     });
 
     document.addEventListener('pointermove', event => {
@@ -2041,4 +2045,155 @@
   }
 
   initialise();
+})();
+
+/* ---- v1 support layer: clear/reset, transient status and panel resizers ---- */
+
+(() => {
+  'use strict';
+
+  const PROJECT_KEY = 'ihy-v100-project';
+  const HISTORY_KEY = 'ihy-v100-history';
+  const TOAST_KEY = 'ihy-v100-toast';
+  const ROLL_SIZE_KEY = 'ihy-v100-roll-height';
+  const KEYBOARD_SIZE_KEY = 'ihy-v100-keyboard-height';
+
+  const makeBlankProject = () => ({
+    version: '1.0.0',
+    title: 'untitled',
+    bpm: 92,
+    key: 'D minor',
+    sections: [],
+    tracks: [{
+      id: `track-${Date.now().toString(36)}`,
+      name: 'Piano',
+      instrument: 'grand_piano',
+      color: '#b68cff',
+      muted: false,
+      solo: false,
+      hidden: false,
+      notes: []
+    }]
+  });
+
+  const toast = document.getElementById('status');
+  let toastTimer = 0;
+  const showToast = (text, duration = 3200) => {
+    if (!toast || !text) return;
+    toast.textContent = text;
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      if (toast.textContent === text) toast.textContent = '';
+    }, duration);
+  };
+
+  const queued = sessionStorage.getItem(TOAST_KEY);
+  if (queued) {
+    sessionStorage.removeItem(TOAST_KEY);
+    requestAnimationFrame(() => showToast(queued));
+  }
+
+  if (toast) {
+    new MutationObserver(() => {
+      const text = toast.textContent.trim();
+      if (!text) return;
+      clearTimeout(toastTimer);
+      toastTimer = window.setTimeout(() => {
+        if (toast.textContent.trim() === text) toast.textContent = '';
+      }, 3200);
+    }).observe(toast, { childList: true, characterData: true, subtree: true });
+  }
+
+  const clearButton = document.getElementById('clearTrack');
+  if (clearButton) {
+    const replacement = clearButton.cloneNode(true);
+    clearButton.replaceWith(replacement);
+    replacement.addEventListener('click', () => {
+      localStorage.setItem(PROJECT_KEY, JSON.stringify(makeBlankProject()));
+      localStorage.setItem(HISTORY_KEY, JSON.stringify({ undo: [], redo: [] }));
+      sessionStorage.setItem(TOAST_KEY, 'Cleared. New blank canvas ready.');
+      window.location.reload();
+    });
+  }
+
+  const exportStatus = document.getElementById('exportStatus');
+  if (exportStatus) {
+    new MutationObserver(() => {
+      const text = exportStatus.textContent.trim();
+      if (text) showToast(text);
+    }).observe(exportStatus, { childList: true, characterData: true, subtree: true });
+  }
+
+  const playButton = document.getElementById('playPause');
+  const counter = document.getElementById('transportTime');
+  const syncPlaybackGlow = () => {
+    const active = Boolean(playButton?.textContent.includes('Pause'));
+    playButton?.classList.toggle('is-playing', active);
+    counter?.classList.toggle('is-playing', active);
+  };
+  if (playButton) {
+    new MutationObserver(syncPlaybackGlow).observe(playButton, { childList: true, characterData: true, subtree: true });
+    playButton.addEventListener('click', () => setTimeout(syncPlaybackGlow, 20));
+  }
+  document.getElementById('stopPlayback')?.addEventListener('click', () => setTimeout(syncPlaybackGlow, 20));
+  syncPlaybackGlow();
+
+  const setupResizer = ({ gripId, targetId, storageKey, min, max, onHeight }) => {
+    const grip = document.getElementById(gripId);
+    const target = document.getElementById(targetId);
+    if (!grip || !target) return;
+
+    const stored = Number(localStorage.getItem(storageKey));
+    if (Number.isFinite(stored) && stored >= min && stored <= max) onHeight(stored);
+
+    grip.addEventListener('pointerdown', event => {
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = target.getBoundingClientRect().height;
+      grip.classList.add('resizing');
+      document.body.style.userSelect = 'none';
+      grip.setPointerCapture?.(event.pointerId);
+
+      const move = moveEvent => {
+        const next = Math.max(min, Math.min(max, Math.round(startHeight + moveEvent.clientY - startY)));
+        onHeight(next);
+      };
+      const end = () => {
+        grip.classList.remove('resizing');
+        document.body.style.userSelect = '';
+        localStorage.setItem(storageKey, String(Math.round(target.getBoundingClientRect().height)));
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', end);
+        window.removeEventListener('pointercancel', end);
+      };
+
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', end, { once: true });
+      window.addEventListener('pointercancel', end, { once: true });
+    });
+  };
+
+  setupResizer({
+    gripId: 'rollResizeGrip',
+    targetId: 'rollScroll',
+    storageKey: ROLL_SIZE_KEY,
+    min: 220,
+    max: 760,
+    onHeight: height => document.documentElement.style.setProperty('--roll-panel-height', `${height}px`)
+  });
+
+  setupResizer({
+    gripId: 'keyboardResizeGrip',
+    targetId: 'keyboardWrap',
+    storageKey: KEYBOARD_SIZE_KEY,
+    min: 150,
+    max: 620,
+    onHeight: height => {
+      const shell = document.getElementById('keyboardResizeShell');
+      if (!shell) return;
+      shell.style.setProperty('--keyboard-panel-height', `${height}px`);
+      shell.style.setProperty('--keyboard-key-height', `${Math.max(134, height - 16)}px`);
+      shell.style.setProperty('--keyboard-black-height', `${Math.max(84, Math.round((height - 16) * .63))}px`);
+    }
+  });
 })();
