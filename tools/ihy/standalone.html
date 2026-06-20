@@ -4,16 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.47 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.48 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
+  <link rel="stylesheet" href="./bass-generator.css?v=0.48">
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <img class="brand-icon" src="./icon.png" alt="Ihy">
       <strong>Ihy</strong>
-      <span class="version-pill">v0.47</span>
+      <span class="version-pill">v0.48</span>
     </div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
@@ -145,6 +146,56 @@
     </section>
   </div>
 
+  <div id="bassModal" class="modal-layer" hidden>
+    <section class="modal modal-wide bass-modal">
+      <header class="modal-header"><h3>＋ Bass Generator</h3><span>⠿</span></header>
+      <div class="modal-body">
+        <div class="bass-generator-layout">
+          <section class="bass-generator-controls">
+            <div>
+              <h4>Phrase length</h4>
+              <div id="bassPhraseChoices" class="bass-choice-row">
+                <button class="bass-choice bass-phrase selected" data-beats="8" type="button">8 beats</button>
+                <button class="bass-choice bass-phrase" data-beats="16" type="button">16 beats</button>
+                <button class="bass-choice bass-phrase" data-beats="32" type="button">32 beats</button>
+              </div>
+            </div>
+            <div>
+              <h4>Pattern</h4>
+              <div id="bassPatternChoices" class="bass-pattern-grid">
+                <button class="bass-pattern selected" data-pattern="driving" type="button"><strong>Driving</strong><span>8th-note forward movement.</span></button>
+                <button class="bass-pattern" data-pattern="pumping" type="button"><strong>Pumping</strong><span>Offbeats only.</span></button>
+                <button class="bass-pattern" data-pattern="root" type="button"><strong>Root</strong><span>One held root per bar.</span></button>
+                <button class="bass-pattern" data-pattern="gallop" type="button"><strong>Gallop</strong><span>Long-short-short rhythm.</span></button>
+              </div>
+            </div>
+            <label class="bass-form-field">Timeline length
+              <span class="bass-length"><input id="bassLength" type="range" min="1" max="10" value="1" step="1"><output id="bassLengthValue">1 × 32 beats = 32 beats</output></span>
+            </label>
+            <label class="bass-form-field">Harmony guide
+              <select id="bassHarmonySource"></select>
+            </label>
+            <label class="bass-form-field">Bass sound
+              <select id="bassInstrument">
+                <option value="electric_bass">Electric Bass</option><option value="acoustic_guitar">Acoustic Bass / Guitar</option><option value="cello">Cello Bass</option><option value="warm_pad">Warm Bass Pad</option><option value="retro_lead">Retro Bass</option><option value="grand_piano">Piano Bass</option>
+              </select>
+            </label>
+            <label class="bass-form-field">Register
+              <select id="bassRegister"><option value="24">Low — C1 to B1</option><option value="36" selected>Standard — C2 to B2</option><option value="48">High — C3 to B3</option></select>
+            </label>
+            <div id="bassSummary" class="bass-summary"></div>
+          </section>
+          <section class="bass-editor">
+            <div class="bass-grid-heading"><div><h4>Editable phrase grid</h4><p>Click a step to turn it on or off. Right-click an active step to cycle soft, normal and accent velocity. The phrase repeats as grouped blocks when added.</p></div><button id="bassReset" class="button compact" type="button">Reset pattern</button></div>
+            <div class="bass-step-scroll"><div id="bassStepGrid" class="bass-step-grid"></div></div>
+            <div id="bassBarLabels" class="bass-bar-labels"></div>
+          </section>
+        </div>
+      </div>
+      <footer class="modal-footer"><button id="bassClose" class="button" data-close="bassModal" type="button">Close</button><div class="bass-modal-actions"><button id="bassPreview" class="button play" type="button">▶ Play Preview</button><button id="bassAdd" class="button primary" type="button">Add to Timeline</button></div></footer>
+    </section>
+  </div>
+
   <div id="renameModal" class="modal-layer" hidden>
     <section class="modal">
       <header class="modal-header"><h3>Rename track</h3><span>⠿</span></header>
@@ -182,5 +233,6 @@
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
   <script src="./clear-all.js?v=0.45"></script>
+  <script src="./bass-generator.js?v=0.48"></script>
 </body>
 </html>
