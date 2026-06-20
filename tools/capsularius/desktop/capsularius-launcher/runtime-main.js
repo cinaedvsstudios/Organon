@@ -8,7 +8,12 @@ const launcherRoot = __dirname;
 const capsulariusRoot = path.resolve(launcherRoot, '..', '..');
 const capsulariusEntry = path.join(capsulariusRoot, 'index.html');
 const capsulariusIcon = path.join(capsulariusRoot, 'capsularius.ico');
-const desktopStatePath = path.join(capsulariusRoot, 'desktop', 'capsularius-desktop-state.json');
+const localDataDirectory = path.join(capsulariusRoot, '.capsularius-data');
+const desktopStatePath = path.join(localDataDirectory, 'desktop-state.json');
+const desktopOAuthCredentialsPath = path.join(localDataDirectory, 'google-drive-desktop-oauth.json');
+const legacyDesktopDirectory = path.join(capsulariusRoot, 'desktop');
+const legacyDesktopStatePath = path.join(legacyDesktopDirectory, 'capsularius-desktop-state.json');
+const legacyDesktopOAuthCredentialsPath = path.join(legacyDesktopDirectory, 'google-drive-desktop-oauth.json');
 const approvedRoots = new Set();
 const MAX_DESKTOP_STATE_BYTES = 2 * 1024 * 1024;
 let desktopStateWriteQueue = Promise.resolve();
@@ -82,6 +87,63 @@ function normaliseDesktopState(raw) {
   return clean;
 }
 
+async function fileExists(filePath) {
+  try {
+    await fs.access(filePath);
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
+async function readStateCandidate(filePath) {
+  try {
+    const [text, stats] = await Promise.all([fs.readFile(filePath, 'utf8'), fs.stat(filePath)]);
+    const state = normaliseDesktopState(JSON.parse(text));
+    return state ? { filePath, state, modifiedAt:stats.mtimeMs } : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function migrateLegacyDesktopState() {
+  if (await fileExists(desktopStatePath)) return;
+
+  const candidates = [];
+  const primary = await readStateCandidate(legacyDesktopStatePath);
+  if (primary) candidates.push(primary);
+
+  if (!primary) {
+    try {
+      const entries = await fs.readdir(legacyDesktopDirectory, { withFileTypes:true });
+      for (const entry of entries) {
+        if (!entry.isFile() || !entry.name.startsWith('capsularius-desktop-state.json.') || !entry.name.endsWith('.tmp')) continue;
+        const candidate = await readStateCandidate(path.join(legacyDesktopDirectory, entry.name));
+        if (candidate) candidates.push(candidate);
+      }
+    } catch (_) {
+      /* No legacy desktop directory is normal on a first run. */
+    }
+  }
+
+  if (!candidates.length) return;
+  candidates.sort((left, right) => right.modifiedAt - left.modifiedAt);
+  await writeDesktopStateFile(candidates[0].state);
+}
+
+async function migrateLegacyDesktopOAuthCredentials() {
+  if (await fileExists(desktopOAuthCredentialsPath)) return;
+  if (!await fileExists(legacyDesktopOAuthCredentialsPath)) return;
+  await fs.mkdir(localDataDirectory, { recursive:true });
+  await fs.copyFile(legacyDesktopOAuthCredentialsPath, desktopOAuthCredentialsPath);
+}
+
+async function migrateLocalData() {
+  await fs.mkdir(localDataDirectory, { recursive:true });
+  await migrateLegacyDesktopState();
+  await migrateLegacyDesktopOAuthCredentials();
+}
+
 async function readDesktopStateFile() {
   try {
     const text = await fs.readFile(desktopStatePath, 'utf8');
@@ -96,7 +158,7 @@ async function readDesktopStateFile() {
 async function writeDesktopStateFile(raw) {
   const state = normaliseDesktopState(raw);
   if (!state) throw new Error('Capsularius desktop state is invalid.');
-  await fs.mkdir(path.dirname(desktopStatePath), { recursive:true });
+  await fs.mkdir(localDataDirectory, { recursive:true });
   const temporaryPath = `${desktopStatePath}.${process.pid}.tmp`;
   await fs.writeFile(temporaryPath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
   await fs.rename(temporaryPath, desktopStatePath);
@@ -263,10 +325,16 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
-  try { await fs.access(capsulariusEntry); }
-  catch (_) { dialog.showErrorBox('Capsularius files not found', `The launcher could not find:\n${capsulariusEntry}`); app.quit(); return; }
+  try {
+    await fs.access(capsulariusEntry);
+    await migrateLocalData();
+  } catch (error) {
+    dialog.showErrorBox('Capsularius Desktop could not start', error?.message || String(error));
+    app.quit();
+    return;
+  }
 
-  googleDriveOAuth = createGoogleDriveOAuth({ app, shell });
+  googleDriveOAuth = createGoogleDriveOAuth({ app, shell, credentialsPath:desktopOAuthCredentialsPath });
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label:'Capsularius Desktop', submenu:[{ role:'reload', label:'Reload current local code' }, { role:'toggleDevTools', label:'Developer tools' }, { type:'separator' }, { role:'quit', label:'Quit' }] }
   ]));
