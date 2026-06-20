@@ -4,17 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v0.50 — Sound &amp; Music Workshop</title>
+  <title>Ihy v0.51 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
-  <link rel="stylesheet" href="./bass-generator-v050.css?v=0.50">
+  <link rel="stylesheet" href="./bass-generator-v050.css?v=0.51">
 </head>
 <body>
   <header class="app-header">
     <div class="brand">
       <img class="brand-icon" src="./icon.png" alt="Ihy">
       <strong>Ihy</strong>
-      <span class="version-pill">v0.50</span>
+      <span class="version-pill">v0.51</span>
     </div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
@@ -60,24 +60,17 @@
         <div class="control-settings-grid">
           <label class="field field-wide"><span>Instrument</span><select id="instrument" aria-label="Track instrument"></select></label>
           <label class="field"><span>BPM</span><input id="bpm" type="number" min="30" max="260" value="92"></label>
-          <label class="field"><span>Key</span><select id="projectKey">
-            <option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option>
-          </select></label>
+          <label class="field"><span>Key</span><select id="projectKey"><option>D minor</option><option>C major</option><option>A minor</option><option>F major</option><option>G major</option><option>A♭ major</option></select></label>
           <label class="field"><span>Chord mode</span><button id="chordMode" class="toggle" type="button" aria-pressed="false">♫ Chord</button></label>
           <label class="field"><span>Armed track</span><select id="armedTrack"></select></label>
-          <label class="field"><span>Quantise</span><select id="quantise">
-            <option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option>
-          </select></label>
+          <label class="field"><span>Quantise</span><select id="quantise"><option value="1">1/1</option><option value=".5">1/2</option><option value=".25" selected>1/4</option><option value=".125">1/8</option></select></label>
           <label class="field"><span>Transpose</span><input id="transpose" type="number" min="-24" max="24" value="0"></label>
         </div>
         <p id="status" class="status" aria-live="polite"></p>
       </section>
 
       <section class="panel">
-        <div class="panel-heading">
-          <h2>🎚️ Tracks</h2>
-          <button class="button compact" id="addTrack" type="button">＋ Track</button>
-        </div>
+        <div class="panel-heading"><h2>🎚️ Tracks</h2><button class="button compact" id="addTrack" type="button">＋ Track</button></div>
         <div id="tracks" class="tracks"></div>
       </section>
     </aside>
@@ -85,115 +78,74 @@
     <section class="editor">
       <section class="panel piano-panel">
         <div class="piano-toolbar"><h2>🎼 Piano roll</h2></div>
-        <div class="timeline-shell">
-          <div class="timeline-key">TIME</div>
-          <div id="timelineViewport" class="timeline-viewport"><div id="timeline" class="timeline"></div></div>
-        </div>
-        <div id="rollResizeShell" class="resizable-shell roll-resize-shell">
-          <div id="rollScroll" class="roll-scroll">
-            <div class="roll-grid">
-              <div id="pitchLabels" class="pitch-labels"></div>
-              <div id="roll" class="roll"></div>
-            </div>
-          </div>
-          <div id="rollResizeGrip" class="panel-resize-grip" title="Resize piano roll" aria-label="Resize piano roll"></div>
-        </div>
+        <div class="timeline-shell"><div class="timeline-key">TIME</div><div id="timelineViewport" class="timeline-viewport"><div id="timeline" class="timeline"></div></div></div>
+        <div id="rollResizeShell" class="resizable-shell roll-resize-shell"><div id="rollScroll" class="roll-scroll"><div class="roll-grid"><div id="pitchLabels" class="pitch-labels"></div><div id="roll" class="roll"></div></div></div><div id="rollResizeGrip" class="panel-resize-grip" title="Resize piano roll" aria-label="Resize piano roll"></div></div>
       </section>
-
       <section class="panel">
-        <div class="panel-heading keyboard-heading">
-          <h2>⌨️ Keyboard</h2>
-          <span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note.</span>
-        </div>
-        <div id="keyboardResizeShell" class="resizable-shell keyboard-resize-shell">
-          <div id="keyboardWrap" class="piano-wrap"><div id="piano" class="piano"></div></div>
-          <div id="keyboardResizeGrip" class="panel-resize-grip" title="Resize keyboard" aria-label="Resize keyboard"></div>
-        </div>
+        <div class="panel-heading keyboard-heading"><h2>⌨️ Keyboard</h2><span class="help">Computer keys: A W S E D F T G Y H U J K. Hold Space for a longer note.</span></div>
+        <div id="keyboardResizeShell" class="resizable-shell keyboard-resize-shell"><div id="keyboardWrap" class="piano-wrap"><div id="piano" class="piano"></div></div><div id="keyboardResizeGrip" class="panel-resize-grip" title="Resize keyboard" aria-label="Resize keyboard"></div></div>
       </section>
     </section>
   </main>
 
-  <menu id="noteMenu" class="context-menu" hidden>
-    <button data-note-action="copy">Copy</button><button data-note-action="cut">Cut</button><button data-note-action="paste">Paste</button><button data-note-action="duplicate">Duplicate</button><button data-note-action="make-chord" class="make-chord">Make chord</button><button data-note-action="delete" class="danger">Delete</button>
-  </menu>
-  <menu id="trackMenu" class="context-menu" hidden>
-    <button data-track-action="rename">Rename</button><button data-track-action="duplicate">Duplicate</button><button data-track-action="delete" class="danger">Delete</button><div class="submenu"><button id="trackInstrumentToggle" type="button">Instrument ›</button><div id="trackInstrumentChoices" hidden></div></div>
-  </menu>
-  <menu id="sectionMenu" class="context-menu" hidden>
-    <button data-section-action="rename">Rename</button><button data-section-action="duplicate">Duplicate</button><button data-section-action="delete" class="danger">Delete</button>
-  </menu>
+  <menu id="noteMenu" class="context-menu" hidden><button data-note-action="copy">Copy</button><button data-note-action="cut">Cut</button><button data-note-action="paste">Paste</button><button data-note-action="duplicate">Duplicate</button><button data-note-action="make-chord" class="make-chord">Make chord</button><button data-note-action="delete" class="danger">Delete</button></menu>
+  <menu id="trackMenu" class="context-menu" hidden><button data-track-action="rename">Rename</button><button data-track-action="duplicate">Duplicate</button><button data-track-action="delete" class="danger">Delete</button><div class="submenu"><button id="trackInstrumentToggle" type="button">Instrument ›</button><div id="trackInstrumentChoices" hidden></div></div></menu>
+  <menu id="sectionMenu" class="context-menu" hidden><button data-section-action="rename">Rename</button><button data-section-action="duplicate">Duplicate</button><button data-section-action="delete" class="danger">Delete</button></menu>
 
-  <div id="quickModal" class="modal-layer" hidden>
-    <section class="modal"><header class="modal-header"><h3 id="quickTitle">Quick add</h3><span>⠿</span></header><div class="modal-body"><p id="quickText"></p></div><footer class="modal-footer"><button class="button primary" data-close="quickModal" type="button">Close</button></footer></section>
-  </div>
+  <div id="quickModal" class="modal-layer" hidden><section class="modal"><header class="modal-header"><h3 id="quickTitle">Quick add</h3><span>⠿</span></header><div class="modal-body"><p id="quickText"></p></div><footer class="modal-footer"><button class="button primary" data-close="quickModal" type="button">Close</button></footer></section></div>
 
   <div id="bassModal" class="modal-layer" hidden>
     <section id="bassModalCard" class="modal modal-wide bass-modal">
       <header id="bassModalHeader" class="modal-header bass-modal-header">
         <h3>＋ Bass Generator</h3>
-        <div class="bass-header-actions">
-          <button id="bassPreview" class="button play" type="button">▶ Preview</button>
-          <button id="bassClose" class="button compact" type="button">Close</button>
-          <span class="bass-drag-handle" title="Drag window">⠿</span>
-        </div>
+        <div class="bass-header-actions"><button id="bassPreview" class="button play" type="button">▶ Preview</button><button id="bassClose" class="button compact" type="button">Close</button><span class="bass-drag-handle" title="Drag window">⠿</span></div>
       </header>
       <div class="modal-body">
         <div class="bass-generator-layout">
+          <div id="bassModeTabs" class="bass-mode-tabs"><button class="bass-mode-tab selected" data-mode="profile" type="button">Profile DNA</button><button class="bass-mode-tab" data-mode="orchestral" type="button">Custom Orchestral</button></div>
           <div class="bass-generator-controls">
-            <section class="bass-control-card">
+            <section id="bassProfileControls" class="bass-control-card">
               <h4>Bass profile</h4>
               <div class="bass-profile-select"><select id="bassProfileSelect" aria-label="Bass profile"></select><button id="bassLoadProfile" class="button compact" type="button">Load</button></div>
-              <div class="bass-profile-buttons"><button id="bassRandomProfile" class="button" type="button">Random profile</button></div>
+              <div class="bass-profile-buttons"><button id="bassRandomProfile" class="button" type="button">Random profile</button><button id="bassMutate" class="button" type="button">Random variant</button></div>
+              <label class="bass-form-field">Mutation amount<input id="bassMutationRate" type="range" min="0" max="50" value="25" step="5"><output id="bassMutationOutput" class="bass-mutation-output">25% mutation</output></label>
+            </section>
+            <section id="bassCustomControls" class="bass-control-card bass-hidden">
+              <h4>Custom orchestral profile</h4>
+              <label class="bass-form-field">Motion &amp; contour<select id="bassCustomMotion"><option value="pedal">Pedal Tone</option><option value="arpeggio">Arpeggiated / Broken Chord</option><option value="stepwise">Stepwise / Scale-Walking</option></select></label>
+              <label class="bass-form-field">Pedal target<select id="bassPedalTarget"><option value="root">Root</option><option value="fifth">Fifth</option></select></label>
+              <label class="bass-form-field">Staccato ↔ Legato<input id="bassArticulation" type="range" min="0" max="100" value="82" step="5"><output id="bassArticulationOutput" class="bass-articulation-output">Legato</output></label>
+              <label class="bass-form-field">Velocity envelope<select id="bassDynamics"><option value="flat">Flat</option><option value="crescendo">Crescendo</option><option value="decrescendo">Decrescendo</option><option value="swell">Swell</option></select></label>
+              <label class="bass-check"><input id="bassInversions" type="checkbox"> Allow inversions</label>
+              <div class="bass-profile-buttons"><button id="bassGenerateCustom" class="button primary" type="button">Generate custom line</button></div>
             </section>
             <section class="bass-control-card">
               <h4>Phrase length</h4>
               <div id="bassPhraseChoices" class="bass-choice-row"><button class="bass-choice bass-phrase selected" data-beats="8" type="button">8 beats</button><button class="bass-choice bass-phrase" data-beats="16" type="button">16 beats</button><button class="bass-choice bass-phrase" data-beats="32" type="button">32 beats</button></div>
             </section>
-            <section class="bass-control-card">
-              <h4>Timeline length</h4>
-              <span class="bass-length"><input id="bassLength" type="range" min="1" max="10" value="1" step="1"><output id="bassLengthValue">1 × 32 beats = 32 beats</output></span>
-            </section>
-            <section class="bass-control-card">
-              <h4>Related variation</h4>
-              <input id="bassMutationRate" type="range" min="0" max="50" value="25" step="5"><output id="bassMutationOutput" class="bass-mutation-output">25% similar change</output><div class="bass-profile-buttons"><button id="bassMutate" class="button" type="button">Random variant</button></div>
-            </section>
+            <section class="bass-control-card"><h4>Timeline length</h4><span class="bass-length"><input id="bassLength" type="range" min="1" max="10" value="1" step="1"><output id="bassLengthValue">1 × 32 beats = 32 beats</output></span></section>
             <label class="bass-form-field bass-guide">Harmony guide<select id="bassHarmonySource"></select></label>
-            <label class="bass-form-field">Bass sound<select id="bassInstrument"><option value="electric_bass">Electric Bass</option><option value="acoustic_guitar">Acoustic Bass / Guitar</option><option value="cello">Cello Bass</option><option value="warm_pad">Warm Bass Pad</option><option value="retro_lead">Retro Bass</option><option value="grand_piano">Piano Bass</option></select></label>
+            <label class="bass-form-field">Orchestral bass sound<select id="bassInstrument"><option value="contrabass_arco">Contrabass (Arco)</option><option value="contrabass_pizz">Contrabass (Pizzicato)</option><option value="tuba">Tuba</option><option value="contrabassoon">Contrabassoon</option><option value="cello_bass">Cello Bass</option></select></label>
             <label class="bass-form-field">Register<select id="bassRegister"><option value="24">Low — C1 to B1</option><option value="36" selected>Standard — C2 to B2</option><option value="48">High — C3 to B3</option></select></label>
             <div id="bassSummary" class="bass-summary"></div>
           </div>
           <section class="bass-editor">
-            <div class="bass-grid-heading">
-              <div>
-                <h4>Editable bass tune</h4>
-                <p>Each column is an eighth note. Rhythm toggles a note or rest. Tune stores an interval above the active chord root, so the phrase moves with the harmony instead of repeating one pitch.</p>
-                <div id="bassIntervalPalette" class="dna-interval-palette"></div>
-                <p class="dna-legend">Choose an interval, then click a Tune cell to write it. R = root, 4 = fourth, 5 = fifth, ♭7 = flat seventh, 8 = octave. Right-click any active cell for soft / normal / accent.</p>
-              </div>
-            </div>
-            <div class="bass-step-scroll"><div id="bassStepGrid"></div></div>
-            <div id="bassBarLabels" class="dna-bar-labels"></div>
+            <div class="bass-grid-heading"><div><h4 id="bassEditorTitle">Editable bass tune</h4><p id="bassEditorText">Rhythm controls notes and rests. Tune stores safe intervals above the active chord root. Tie controls how long a generated note holds.</p><div id="bassIntervalPalette" class="dna-interval-palette"></div><div id="bassTiePalette" class="dna-tie-palette"></div><p class="dna-legend">Select a Tune value and a Tie value, then click the corresponding editor cells. Right-click an active cell to cycle soft, normal and accent velocity.</p></div></div>
+            <div class="bass-step-scroll"><div id="bassStepGrid"></div></div><div id="bassBarLabels" class="dna-bar-labels"></div>
           </section>
         </div>
       </div>
-      <footer class="modal-footer"><button id="bassAdd" class="button primary" type="button">Add to Timeline</button></footer>
-      <div id="bassResizeGrip" class="bass-modal-resize-grip" title="Resize Bass Generator" aria-label="Resize Bass Generator"></div>
+      <footer class="modal-footer"><button id="bassAdd" class="button primary" type="button">Add to Timeline</button></footer><div id="bassResizeGrip" class="bass-modal-resize-grip" title="Resize Bass Generator" aria-label="Resize Bass Generator"></div>
     </section>
   </div>
 
-  <div id="renameModal" class="modal-layer" hidden>
-    <section class="modal"><header class="modal-header"><h3>Rename track</h3><span>⠿</span></header><div class="modal-body"><label class="modal-field">Track name<input id="renameInput" maxlength="60"></label></div><footer class="modal-footer"><button class="button" data-close="renameModal" type="button">Cancel</button><button class="button primary" id="renameConfirm" type="button">OK</button></footer></section>
-  </div>
-  <div id="analysisModal" class="modal-layer" hidden>
-    <section class="modal modal-wide"><header class="modal-header"><h3>🔎 Project analysis</h3><span>⠿</span></header><div class="modal-body"><textarea id="analysisText" class="analysis-text" readonly spellcheck="false"></textarea></div><footer class="modal-footer"><button class="button" id="copyAnalysis" type="button">Copy report</button><button class="button primary" data-close="analysisModal" type="button">Close</button></footer></section>
-  </div>
-  <div id="exportModal" class="modal-layer" hidden>
-    <section class="modal"><header class="modal-header"><h3>📤 Export composition</h3><span>⠿</span></header><div class="modal-body"><div id="exportFormats" class="format-grid"><label class="format-choice active"><input type="radio" name="exportFormat" value="json" checked>JSON</label><label class="format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="wav">WAV</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label></div><p id="exportDescription" class="export-description"></p><label class="export-check"><input id="includeMuted" type="checkbox"> Include muted tracks</label><p id="exportStatus" class="export-description"></p></div><footer class="modal-footer"><button class="button" data-close="exportModal" type="button">Close</button><button class="button primary" id="doExport" type="button">Export file</button></footer></section>
-  </div>
+  <div id="renameModal" class="modal-layer" hidden><section class="modal"><header class="modal-header"><h3>Rename track</h3><span>⠿</span></header><div class="modal-body"><label class="modal-field">Track name<input id="renameInput" maxlength="60"></label></div><footer class="modal-footer"><button class="button" data-close="renameModal" type="button">Cancel</button><button class="button primary" id="renameConfirm" type="button">OK</button></footer></section></div>
+  <div id="analysisModal" class="modal-layer" hidden><section class="modal modal-wide"><header class="modal-header"><h3>🔎 Project analysis</h3><span>⠿</span></header><div class="modal-body"><textarea id="analysisText" class="analysis-text" readonly spellcheck="false"></textarea></div><footer class="modal-footer"><button class="button" id="copyAnalysis" type="button">Copy report</button><button class="button primary" data-close="analysisModal" type="button">Close</button></footer></section></div>
+  <div id="exportModal" class="modal-layer" hidden><section class="modal"><header class="modal-header"><h3>📤 Export composition</h3><span>⠿</span></header><div class="modal-body"><div id="exportFormats" class="format-grid"><label class="format-choice active"><input type="radio" name="exportFormat" value="json" checked>JSON</label><label class="format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="wav">WAV</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label></div><p id="exportDescription" class="export-description"></p><label class="export-check"><input id="includeMuted" type="checkbox"> Include muted tracks</label><p id="exportStatus" class="export-description"></p></div><footer class="modal-footer"><button class="button" data-close="exportModal" type="button">Close</button><button class="button primary" id="doExport" type="button">Export file</button></footer></section></div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
   <script src="./clear-all.js?v=0.45"></script>
-  <script src="./bass-generator-v050.js?v=0.50"></script>
+  <script src="./bass-generator-v050.js?v=0.51"></script>
 </body>
 </html>
