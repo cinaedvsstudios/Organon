@@ -1,11 +1,9 @@
-/* Ihy v1.0.0 Bass Generator — complete controller consolidated from v0.54. */
-
 (() => {
   'use strict';
 
-  const PROJECT_KEY = 'ihy-v100-project';
-  const HISTORY_KEY = 'ihy-v100-history';
-  const TOAST_KEY = 'ihy-v100-toast';
+  const PROJECT_KEY = 'ihy-v042-project';
+  const HISTORY_KEY = 'ihy-v042-history';
+  const TOAST_KEY = 'ihy-v045-toast';
   const NOTE_PCS = { C:0, 'C#':1, Db:1, D:2, 'D#':3, Eb:3, E:4, F:5, 'F#':6, Gb:6, G:7, 'G#':8, Ab:8, A:9, 'A#':10, Bb:10, B:11 };
   const TIES = [1, 2, 4, 8, 16];
   const VELOCITIES = [62, 88, 112];
@@ -41,13 +39,20 @@
     [0,12,7,10,0,7,5,12,0,10,7,5,0,7,12,10],
     [0,0,0,7,0,0,5,0,0,0,7,12,0,5,7,0]
   ];
+  // Four older simple-controller patterns are retained as explicit v1 profiles.
+  const legacyGenres = [
+    { id: 1, name: 'Legacy · Driving', rhythm: [2,0,2,0,2,0,2,0,2,0,2,0,2,0,2,0], intervals: Array(16).fill(0) },
+    { id: 2, name: 'Legacy · Pumping', rhythm: [0,0,2,0,0,0,2,0,0,0,2,0,0,0,2,0], intervals: Array(16).fill(0) },
+    { id: 3, name: 'Legacy · Root', rhythm: [2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], intervals: Array(16).fill(0) },
+    { id: 4, name: 'Legacy · Gallop', rhythm: [2,0,2,2,2,0,2,2,2,0,2,2,2,0,2,2], intervals: Array(16).fill(0) }
+  ];
   const genreNames = ['Disco Box', 'Disco Lift', 'Pulse Fifth', 'Night Walker', 'Silver Walker', 'Funk Reply', 'Low Roller', 'Gallop Box', 'Neon Rise', 'Stage Drive'];
-  const genres = Array.from({ length: 30 }, (_, index) => ({
-    id: index + 1,
+  const genres = [...legacyGenres, ...Array.from({ length: 30 }, (_, index) => ({
+    id: index + legacyGenres.length + 1,
     name: `${genreNames[index % genreNames.length]} ${Math.floor(index / genreNames.length) + 1}`,
     rhythm: rhythms[index % rhythms.length],
     intervals: maps[index % maps.length]
-  }));
+  }))];
   const emotions = {
     aspirational: { name: 'Aspirational', tempo: '76–116 BPM', pool: [0,5,7,12], text: 'Sparse opening that grows into a broad, open lift.' },
     showstopping: { name: 'Showstopping', tempo: '118–154 BPM', pool: [0,4,7,9,12], text: 'Bouncy anchored energy with crisp theatrical attacks.' },
@@ -58,7 +63,7 @@
   };
 
   const state = {
-    mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
+    mode: 'genre', genreId: 5, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
     source: 'key', instrument: 'contrabass_arco', register: 36, sequence: [], manual: false,
     write: { kind: 'interval', value: 0 }, tie: 2,
     effects: { sustain: false, echo: false, chords: false },

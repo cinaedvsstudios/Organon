@@ -1,5 +1,5 @@
-/* Ihy v1.0.0 — consolidated application shell
-   Sources merged: standalone.css (v0.43) + feedback.css (v0.47). */
+/* Ihy v1.0.1 — core editor styles
+   Consolidated from the original active standalone.css and feedback.css. */
 
 :root{
   --bg:#171817;--surface:#2b2d27;--surface-deep:#1a1d1a;--line:#80643f;--gold:#e3ab63;
@@ -30,7 +30,7 @@ input,select{height:38px;padding:8px}input:focus,select:focus,textarea:focus{out
 .modal-layer{position:fixed;inset:0;z-index:140;pointer-events:none;background:transparent}.modal{position:fixed;top:16vh;left:50%;width:min(560px,calc(100vw - 32px));max-height:min(74vh,760px);overflow:hidden;pointer-events:auto;transform:translateX(-50%);border:1px solid #a67a47;border-radius:16px;background:linear-gradient(145deg,#3b3b31,#272923 62%,#1d201c);box-shadow:0 18px 44px rgba(0,0,0,.72),inset 0 1px 0 rgba(255,255,255,.09)}.modal.positioned{transform:none}.modal-wide{width:min(760px,calc(100vw - 32px))}.modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;cursor:grab;user-select:none;border-bottom:1px solid rgba(183,138,82,.54);background:linear-gradient(180deg,#52504a,#30322a);box-shadow:0 3px 7px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.08)}.modal-header h3{margin:0;color:#f0ba72;font:800 1rem Georgia,serif}.modal-body{max-height:calc(min(74vh,760px) - 64px);overflow-y:auto;padding:15px}.modal-body p{margin:0 0 14px;color:#e6e1d8;font-size:.82rem;line-height:1.5}.modal-footer{display:flex;justify-content:flex-end;gap:8px;padding:0 15px 15px}.modal-field{display:flex;flex-direction:column;gap:6px;color:#d9c39f;text-transform:uppercase;letter-spacing:.04em;font:800 .58rem ui-monospace,SFMono-Regular,Menlo,monospace}.analysis-text{display:block;width:100%;min-height:360px;resize:vertical;color:#e9fbfc;white-space:pre;tab-size:2;font:700 .72rem/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;background:linear-gradient(145deg,#111615,#091010)!important;border-color:#357782!important;box-shadow:inset 0 1px 8px rgba(0,0,0,.55),0 3px 7px rgba(0,0,0,.35)!important}.format-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:13px}.format-choice{position:relative;display:grid;min-height:56px;place-items:center;color:#b9e9ed;text-align:center;border:1px solid #4e6d72;border-radius:10px;background:linear-gradient(180deg,#283436,#121a1b);box-shadow:var(--shadow);font-size:.72rem;font-weight:900}.format-choice input{position:absolute;opacity:0}.format-choice.active{color:#071719;border-color:#6df1fb;background:linear-gradient(180deg,#79f0f8,#35becf)}.format-choice.muted-choice{color:#a9a49c}.export-description{min-height:38px;color:#d9dfd6;font-size:.74rem;line-height:1.45}.export-check{display:flex;gap:8px;align-items:center;color:#e3ded2;font-size:.76rem}.export-check input{width:auto;height:auto}
 @media(max-width:1120px){.piano-toolbar{grid-template-columns:1fr}.piano-toolbar>h2,.toolbar-actions{grid-column:1}.toolbar-actions{justify-content:flex-start;flex-wrap:wrap}}@media(max-width:899px){.workspace,.app-header{padding:12px}.header-divider{display:none}.composition-field{width:100%}.workspace{display:flex;flex-direction:column}.roll-scroll{height:400px;min-height:0}.panel-heading{flex-wrap:wrap}}@media(max-width:620px){.toolbar-actions{justify-content:center}.transport-time{min-width:0;flex:1 1 118px}.zoom{flex:1 1 210px}.tool-set{order:-1}.modal{top:9vh;width:calc(100vw - 20px);max-height:82vh}.modal-body{max-height:calc(82vh - 64px)}.format-grid{grid-template-columns:repeat(2,1fr)}}
 
-/* ---- Feedback and resizer layer merged from v0.47 ---- */
+/* Active feedback/resizer layer */
 
 /* Ihy v0.47 interface feedback, sizing, resizers and playback */
 :root {
@@ -233,3 +233,7 @@ input,select{height:38px;padding:8px}input:focus,select:focus,textarea:focus{out
   .header-transport .zoom { flex: 1 1 210px; }
   .panel-resize-grip { width: 28px; height: 28px; right: 4px; bottom: 4px; }
 }
+
+/* v1 generic-modal normalisation */
+.modal-footer .button { min-width: 120px; }
+.modal-body .modal-field + .modal-field { margin-top: 12px; }
