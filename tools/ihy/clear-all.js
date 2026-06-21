@@ -1,57 +1,11 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 'v1.3';
+  const APP_VERSION = 'v1.4';
   document.title = `Ihy ${APP_VERSION} — Sound & Music Workshop`;
   document.querySelectorAll('.version-pill').forEach((element) => {
     element.textContent = APP_VERSION;
   });
-
-  const bassEditorStyle = document.createElement('style');
-  bassEditorStyle.id = 'ihy-bass-editor-v1-2';
-  bassEditorStyle.textContent = `
-    #bassModal .bass-grid-heading > div {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      column-gap: 5px;
-    }
-    #bassModal .bass-grid-heading > div > h4 {
-      flex: 0 0 100%;
-    }
-    #bassModal #bassEditorText,
-    #bassModal .dna-legend {
-      display: none;
-    }
-    #bassModal .dna-interval-palette,
-    #bassModal .dna-tie-palette {
-      display: flex;
-      flex: 0 0 auto;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 8px;
-    }
-    #bassModal .dna-tie-palette {
-      margin-left: 2px;
-    }
-    #bassModal .dna-tie-button {
-      color: #3a2504;
-      border-color: #e5bb63;
-      background: linear-gradient(180deg, #ffe7a1, #e7b350);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.55), 0 2px 5px rgba(0,0,0,.22);
-    }
-    #bassModal .dna-tie-button:hover {
-      border-color: #fff0b8;
-      background: linear-gradient(180deg, #fff2bd, #efbd5c);
-    }
-    #bassModal .dna-tie-button.selected {
-      color: #2d1b02;
-      border-color: #fff3bd;
-      background: linear-gradient(180deg, #fff8d7, #f5c85d);
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 1px rgba(223,171,65,.28);
-    }
-  `;
-  document.head.append(bassEditorStyle);
 
   const PROJECT_KEY = 'ihy-v042-project';
   const HISTORY_KEY = 'ihy-v042-history';
