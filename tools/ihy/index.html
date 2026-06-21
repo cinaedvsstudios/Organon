@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.8 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.9 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
-  <link rel="stylesheet" href="./bass-generator.css?v=1.8">
+  <link rel="stylesheet" href="./bass-generator.css?v=1.9">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.8</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.9</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -89,8 +89,7 @@
               <div class="bass-card-section"><span class="bass-section-label">Harmony guide</span><select id="bassHarmonySource"></select></div>
             </section>
           </div>
-          <div id="bassSummary" class="bass-summary"></div>
-          <section class="bass-editor"><div class="bass-grid-heading"><div><h4 id="bassEditorTitle">Editable bass piano roll</h4><p class="bass-roll-help">Click empty space to add a note. Drag notes to move them, drag the right edge to change their length, and right-click a note to delete it.</p></div><button id="bassResetRoll" class="button" type="button">Reset generated</button></div><div class="bass-roll-scroll"><div id="bassRollCanvas" class="bass-roll-canvas"><div id="bassRollRuler" class="bass-roll-ruler"></div><div id="bassRollLabels" class="bass-roll-labels"></div><div id="bassRollGrid" class="bass-roll-grid"></div></div></div></section>
+          <section class="bass-editor"><div class="bass-grid-heading"><div class="bass-roll-actions"><div class="bass-roll-zoom" aria-label="Bass piano roll zoom"><button id="bassRollZoomOut" class="button compact" type="button" title="Zoom out">−</button><output id="bassRollZoomValue" class="bass-roll-zoom-value">100%</output><button id="bassRollZoomIn" class="button compact" type="button" title="Zoom in">＋</button></div><button id="bassResetRoll" class="button" type="button">Reset generated</button></div></div><div id="bassRollScroll" class="bass-roll-scroll"><div id="bassRollCanvas" class="bass-roll-canvas"><div id="bassRollRuler" class="bass-roll-ruler"></div><div id="bassRollLabels" class="bass-roll-labels"></div><div id="bassRollGrid" class="bass-roll-grid"></div></div></div></section>
         </div>
       </div>
       <div id="bassResizeGrip" class="bass-modal-resize-grip" title="Resize Bass Generator" aria-label="Resize Bass Generator"></div>
@@ -103,7 +102,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.8"></script>
-  <script src="./bass-generator.js?v=1.8"></script>
+  <script src="./clear-all.js?v=1.9"></script>
+  <script src="./bass-generator.js?v=1.9"></script>
 </body>
 </html>

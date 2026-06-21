@@ -1,7 +1,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 'v1.8';
+  const APP_VERSION = 'v1.9';
   document.title = `Ihy ${APP_VERSION} — Sound & Music Workshop`;
   document.querySelectorAll('.version-pill').forEach((element) => {
     element.textContent = APP_VERSION;

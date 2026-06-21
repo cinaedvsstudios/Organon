@@ -63,12 +63,12 @@
   const state = {
     mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
     source: 'key', instrument: 'contrabass_arco', register: 36, tempo: 92, sequence: [], manual: false,
-    rollNotes: [], rollReady: false, rollDirty: false,
+    rollNotes: [], rollReady: false, rollDirty: false, rollZoom: 1, rollViewportPending: true,
     write: { kind: 'interval', value: 0 }, tie: 2,
     effects: { sustain: false, echo: false, chords: false },
     custom: { motion: 'pedal', pedal: 'root', articulation: 82, dynamics: 'flat', inversions: false }
   };
-  const playback = { context: null, gain: null, player: null, instrument: null, nodes: [], timer: 0, active: false };
+  const playback = { context: null, gain: null, player: null, instrument: null, nodes: [], timer: 0, active: false, playheadFrame: 0, playheadProgress: 0 };
 
   function readProject() {
     try {
@@ -292,9 +292,15 @@
     });
     return notes;
   }
+  function rollMetrics() {
+    return {
+      stepWidth: Math.round(ROLL_STEP_WIDTH * state.rollZoom),
+      rowHeight: Math.round(ROLL_ROW_HEIGHT * state.rollZoom)
+    };
+  }
   function rollRange() {
-    const minPitch = Number(state.register);
-    return { minPitch, maxPitch: minPitch + 23 };
+    const visibleMinPitch = Number(state.register);
+    return { minPitch: visibleMinPitch - 12, maxPitch: visibleMinPitch + 35 };
   }
   function syncRollFromSequence(project = readProject()) {
     const notes = baseNotes(project, 0, 'bass-roll', 0, 1, state.sequence, false);
@@ -369,12 +375,6 @@
     return { insertAt, total, groups, notes };
   }
 
-  function profileName() { return state.mode === 'genre' ? activeGenre().name : state.mode === 'emotion' ? activeEmotion().name : `Custom ${state.custom.motion}`; }
-  function renderSummary(project) {
-    const plan = buildPlan(project);
-    const active = Object.entries(state.effects).filter(([, enabled]) => enabled).map(([name]) => name[0].toUpperCase() + name.slice(1));
-    $('#bassSummary').textContent = `${profileName()} • ${plan.groups.length} × ${state.phrase}-beat groups • ${plan.total} beats total • starts at beat ${plan.insertAt}${active.length ? ` • live: ${active.join(', ')}` : ''}.`;
-  }
   function renderGuideOptions(project) {
     const select = $('#bassHarmonySource');
     const old = state.source;
@@ -406,39 +406,44 @@
     const grid = $('#bassRollGrid');
     const rect = grid.getBoundingClientRect();
     const { minPitch, maxPitch } = rollRange();
+    const { stepWidth, rowHeight } = rollMetrics();
     const steps = Math.round(state.phrase / ROLL_STEP);
-    const step = clamp(Math.floor((event.clientX - rect.left) / ROLL_STEP_WIDTH), 0, steps - 1);
-    const row = clamp(Math.floor((event.clientY - rect.top) / ROLL_ROW_HEIGHT), 0, maxPitch - minPitch);
+    const step = clamp(Math.floor((event.clientX - rect.left) / stepWidth), 0, steps - 1);
+    const row = clamp(Math.floor((event.clientY - rect.top) / rowHeight), 0, maxPitch - minPitch);
     return { start: step * ROLL_STEP, pitch: maxPitch - row };
   }
   function renderRoll() {
+    const scroll = $('#bassRollScroll');
     const canvas = $('#bassRollCanvas');
     const ruler = $('#bassRollRuler');
     const labels = $('#bassRollLabels');
     const grid = $('#bassRollGrid');
     const { minPitch, maxPitch } = rollRange();
+    const { stepWidth, rowHeight } = rollMetrics();
     const pitchCount = maxPitch - minPitch + 1;
     const stepCount = Math.round(state.phrase / ROLL_STEP);
-    const gridWidth = stepCount * ROLL_STEP_WIDTH;
-    const gridHeight = pitchCount * ROLL_ROW_HEIGHT;
+    const gridWidth = stepCount * stepWidth;
+    const gridHeight = pitchCount * rowHeight;
+    const visibleHeight = 28 + 24 * rowHeight + 22;
 
+    scroll.style.setProperty('--bass-roll-visible-height', `${visibleHeight}px`);
     canvas.style.gridTemplateColumns = `${ROLL_LABEL_WIDTH}px ${gridWidth}px`;
     canvas.style.gridTemplateRows = `28px ${gridHeight}px`;
     canvas.style.width = `${ROLL_LABEL_WIDTH + gridWidth}px`;
     ruler.style.width = `${gridWidth}px`;
     labels.style.height = `${gridHeight}px`;
-    labels.style.gridTemplateRows = `repeat(${pitchCount}, ${ROLL_ROW_HEIGHT}px)`;
+    labels.style.gridTemplateRows = `repeat(${pitchCount}, ${rowHeight}px)`;
     grid.style.width = `${gridWidth}px`;
     grid.style.height = `${gridHeight}px`;
-    grid.style.setProperty('--bass-roll-step-width', `${ROLL_STEP_WIDTH}px`);
-    grid.style.setProperty('--bass-roll-row-height', `${ROLL_ROW_HEIGHT}px`);
-    grid.style.setProperty('--bass-roll-bar-width', `${ROLL_STEP_WIDTH * 16}px`);
+    grid.style.setProperty('--bass-roll-step-width', `${stepWidth}px`);
+    grid.style.setProperty('--bass-roll-row-height', `${rowHeight}px`);
+    grid.style.setProperty('--bass-roll-bar-width', `${stepWidth * 16}px`);
 
     ruler.replaceChildren();
     for (let beat = 0; beat < state.phrase; beat += 1) {
       const marker = document.createElement('span');
       marker.className = beat % 4 === 0 ? 'bass-roll-bar-marker' : 'bass-roll-beat-marker';
-      marker.style.left = `${beat * 4 * ROLL_STEP_WIDTH}px`;
+      marker.style.left = `${beat * 4 * stepWidth}px`;
       marker.textContent = beat % 4 === 0 ? `Bar ${Math.floor(beat / 4) + 1}` : String(beat + 1);
       ruler.append(marker);
     }
@@ -452,6 +457,12 @@
     }
 
     grid.replaceChildren();
+    const playhead = document.createElement('div');
+    playhead.id = 'bassRollPlayhead';
+    playhead.className = 'bass-roll-playhead';
+    playhead.hidden = !playback.active;
+    grid.append(playhead);
+
     sortRollNotes();
     state.rollNotes.forEach(note => {
       if (note.pitch < minPitch || note.pitch > maxPitch || note.start >= state.phrase) return;
@@ -459,10 +470,10 @@
       block.type = 'button';
       block.className = 'bass-roll-note';
       block.dataset.noteId = note.id;
-      block.style.left = `${Math.round(note.start / ROLL_STEP) * ROLL_STEP_WIDTH + 1}px`;
-      block.style.top = `${(maxPitch - note.pitch) * ROLL_ROW_HEIGHT + 1}px`;
-      block.style.width = `${Math.max(ROLL_STEP_WIDTH - 2, Math.round(note.duration / ROLL_STEP) * ROLL_STEP_WIDTH - 2)}px`;
-      block.style.height = `${ROLL_ROW_HEIGHT - 2}px`;
+      block.style.left = `${Math.round(note.start / ROLL_STEP) * stepWidth + 1}px`;
+      block.style.top = `${(maxPitch - note.pitch) * rowHeight + 1}px`;
+      block.style.width = `${Math.max(stepWidth - 2, Math.round(note.duration / ROLL_STEP) * stepWidth - 2)}px`;
+      block.style.height = `${rowHeight - 2}px`;
       block.title = `${noteName(note.pitch)} · starts on beat ${note.start + 1} · ${note.duration} beats`;
       const name = document.createElement('span');
       name.className = 'bass-roll-note-name';
@@ -473,6 +484,14 @@
       block.append(name, resize);
       grid.append(block);
     });
+
+    updateRollPlayhead(playback.playheadProgress, false);
+    if (state.rollViewportPending) {
+      requestAnimationFrame(() => {
+        scroll.scrollTop = 12 * rowHeight;
+        state.rollViewportPending = false;
+      });
+    }
   }
   function renderMode() {
 
@@ -480,7 +499,6 @@
     $('#bassProfileCard').hidden = customMode;
     $('#bassCustomCard').hidden = !customMode;
     $$('.bass-mode-tab').forEach(button => button.classList.toggle('selected', button.dataset.mode === state.mode));
-    $('#bassEditorTitle').textContent = customMode ? 'Editable orchestral bass piano roll' : 'Editable bass piano roll';
   }
   function render() {
     const project = readProject();
@@ -494,13 +512,15 @@
     $('#bassDynamics').value = state.custom.dynamics; $('#bassInversions').checked = state.custom.inversions;
     $$('.bass-phrase').forEach(button => button.classList.toggle('selected', Number(button.dataset.b) === state.phrase));
     if (!state.rollReady) syncRollFromSequence(project);
-    renderEffects(); renderRoll(); renderSummary(project);
+    $('#bassRollZoomValue').textContent = `${Math.round(state.rollZoom * 100)}%`;
+    renderEffects(); renderRoll();
   }
   function openModal() {
     stopPreview();
     state.tempo = clamp(Number(readProject().bpm) || 92, 30, 260);
     if (!state.sequence.length || state.sequence.length !== stepCount()) { if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); }
     if (!state.rollReady) syncRollFromSequence(readProject());
+    state.rollViewportPending = true;
     render(); $('#bassModal').hidden = false;
   }
   function closeModal() { stopPreview(); $('#bassModal').hidden = true; }
@@ -511,6 +531,7 @@
     const note = state.rollNotes.find(item => item.id === block.dataset.noteId);
     if (!note) return;
     const { minPitch, maxPitch } = rollRange();
+    const { stepWidth, rowHeight } = rollMetrics();
     const resizing = Boolean(event.target.closest('.bass-roll-resize'));
     const startX = event.clientX;
     const startY = event.clientY;
@@ -521,16 +542,16 @@
     block.classList.add('is-editing');
 
     const draw = () => {
-      block.style.left = `${Math.round(next.start / ROLL_STEP) * ROLL_STEP_WIDTH + 1}px`;
-      block.style.top = `${(maxPitch - next.pitch) * ROLL_ROW_HEIGHT + 1}px`;
-      block.style.width = `${Math.max(ROLL_STEP_WIDTH - 2, Math.round(next.duration / ROLL_STEP) * ROLL_STEP_WIDTH - 2)}px`;
+      block.style.left = `${Math.round(next.start / ROLL_STEP) * stepWidth + 1}px`;
+      block.style.top = `${(maxPitch - next.pitch) * rowHeight + 1}px`;
+      block.style.width = `${Math.max(stepWidth - 2, Math.round(next.duration / ROLL_STEP) * stepWidth - 2)}px`;
     };
     const move = moveEvent => {
-      const stepDelta = Math.round((moveEvent.clientX - startX) / ROLL_STEP_WIDTH);
+      const stepDelta = Math.round((moveEvent.clientX - startX) / stepWidth);
       if (resizing) {
         next.duration = clamp(original.duration + stepDelta * ROLL_STEP, ROLL_STEP, state.phrase - original.start);
       } else {
-        const pitchDelta = Math.round((moveEvent.clientY - startY) / ROLL_ROW_HEIGHT);
+        const pitchDelta = Math.round((moveEvent.clientY - startY) / rowHeight);
         next.start = clamp(original.start + stepDelta * ROLL_STEP, 0, state.phrase - original.duration);
         next.pitch = clamp(original.pitch - pitchDelta, minPitch, maxPitch);
       }
@@ -608,6 +629,40 @@
     state.manual = true; syncRollFromSequence(readProject()); status(`Processed ${tokens.length} token${tokens.length === 1 ? '' : 's'}.`); render();
   }
 
+  function adjustRollZoom(direction) {
+    state.rollZoom = clamp(Math.round((state.rollZoom + direction * 0.25) * 100) / 100, 0.75, 1.75);
+    render();
+  }
+  function updateRollPlayhead(progress, follow) {
+    const playhead = $('#bassRollPlayhead');
+    const scroll = $('#bassRollScroll');
+    if (!playhead || !scroll) return;
+    const { stepWidth } = rollMetrics();
+    const width = Math.round(state.phrase / ROLL_STEP) * stepWidth;
+    const x = clamp(progress, 0, 1) * width;
+    playhead.hidden = !playback.active;
+    playhead.style.left = `${Math.round(x)}px`;
+    if (!follow) return;
+    const target = ROLL_LABEL_WIDTH + x;
+    const leftEdge = scroll.scrollLeft + 56;
+    const rightEdge = scroll.scrollLeft + scroll.clientWidth - 72;
+    if (target < leftEdge || target > rightEdge) {
+      scroll.scrollLeft = clamp(target - scroll.clientWidth * 0.5, 0, Math.max(0, scroll.scrollWidth - scroll.clientWidth));
+    }
+  }
+  function startRollPlayhead(totalSeconds, phraseSeconds) {
+    cancelAnimationFrame(playback.playheadFrame);
+    const startedAt = performance.now() + 60;
+    const frame = now => {
+      if (!playback.active) return;
+      const elapsed = Math.max(0, (now - startedAt) / 1000);
+      playback.playheadProgress = phraseSeconds > 0 ? (elapsed % phraseSeconds) / phraseSeconds : 0;
+      updateRollPlayhead(playback.playheadProgress, true);
+      if (elapsed < totalSeconds) playback.playheadFrame = requestAnimationFrame(frame);
+    };
+    playback.playheadFrame = requestAnimationFrame(frame);
+  }
+
   function ensureAudio() {
     if (playback.context) { if (playback.context.state === 'suspended') playback.context.resume().catch(() => {}); return playback.context; }
     const AudioContextApi = window.AudioContext || window.webkitAudioContext;
@@ -623,8 +678,13 @@
     catch (_) { return null; }
   }
   function stopPreview() {
-    clearTimeout(playback.timer); playback.nodes.splice(0).forEach(node => { try { node.stop(); } catch (_) {} }); playback.nodes = []; playback.active = false;
+    clearTimeout(playback.timer);
+    cancelAnimationFrame(playback.playheadFrame);
+    playback.playheadFrame = 0;
+    playback.playheadProgress = 0;
+    playback.nodes.splice(0).forEach(node => { try { node.stop(); } catch (_) {} }); playback.nodes = []; playback.active = false;
     const button = $('#bassPreview'); if (button) { button.textContent = '▶ Preview'; button.classList.remove('is-previewing'); }
+    updateRollPlayhead(0, false);
   }
   async function preview() {
     if (playback.active) { stopPreview(); return; }
@@ -634,6 +694,7 @@
     if (!player) { status('Preview sound could not load.'); return; }
     const result = buildPlan(project); const now = playback.context.currentTime + 0.06; const seconds = secondsPerBeat(project);
     playback.active = true; $('#bassPreview').textContent = '⏹ Stop Preview'; $('#bassPreview').classList.add('is-previewing');
+    startRollPlayhead(32 * seconds, state.phrase * seconds);
     result.notes.filter(note => note.start < result.insertAt + 32).forEach(note => {
       try { const node = player.play(note.pitch, now + (note.start - result.insertAt) * seconds, { duration: Math.max(0.08, note.duration * seconds), gain: clamp(note.velocity / 127, 0.15, 0.95), attack: 0.008, release: 0.16 }); if (node && node.stop) playback.nodes.push(node); } catch (_) {}
     });
@@ -744,7 +805,7 @@
     $('#bassMutationRate').addEventListener('input', event => { state.mutation = Number(event.target.value); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`; });
     $('#bassHarmonySource').addEventListener('change', event => { state.source = event.target.value; if (!state.rollDirty) syncRollFromSequence(readProject()); render(); });
     $('#bassInstrument').addEventListener('change', event => { state.instrument = event.target.value; });
-    $('#bassRegister').addEventListener('change', event => { const previous = state.register; state.register = Number(event.target.value); shiftRollRegister(previous, state.register); render(); });
+    $('#bassRegister').addEventListener('change', event => { const previous = state.register; state.register = Number(event.target.value); shiftRollRegister(previous, state.register); state.rollViewportPending = true; render(); });
     $('#bassCustomMotion').addEventListener('change', event => { state.custom.motion = event.target.value; });
     $('#bassPedalTarget').addEventListener('change', event => { state.custom.pedal = event.target.value; });
     $('#bassArticulation').addEventListener('input', event => { state.custom.articulation = Number(event.target.value); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced'; });
@@ -753,6 +814,8 @@
     $('#bassPhraseChoices').addEventListener('click', event => { const button = event.target.closest('.bass-phrase'); if (!button) return; state.phrase = Number(button.dataset.b); if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); syncRollFromSequence(readProject()); render(); });
     [['bassSustain','sustain'],['bassEcho','echo'],['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).addEventListener('click', () => { state.effects[key] = !state.effects[key]; stopPreview(); render(); }));
     $('#bassResetRoll').addEventListener('click', resetRoll);
+    $('#bassRollZoomOut').addEventListener('click', () => adjustRollZoom(-1));
+    $('#bassRollZoomIn').addEventListener('click', () => adjustRollZoom(1));
     $('#bassRollGrid').addEventListener('pointerdown', addRollNote);
     $('#bassRollGrid').addEventListener('pointerdown', event => { const block = event.target.closest('.bass-roll-note'); if (block) beginRollEdit(event, block); });
     $('#bassRollGrid').addEventListener('contextmenu', deleteRollNote);
