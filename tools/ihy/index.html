@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.7 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.8 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
-  <link rel="stylesheet" href="./bass-generator.css?v=1.5">
+  <link rel="stylesheet" href="./bass-generator.css?v=1.8">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.7</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.8</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -90,7 +90,7 @@
             </section>
           </div>
           <div id="bassSummary" class="bass-summary"></div>
-          <section class="bass-editor"><div class="bass-grid-heading"><div class="bass-editor-controls"><h4 id="bassEditorTitle">Editable bass tune</h4><p id="bassEditorText" hidden></p><div class="bass-palette-row"><div id="bassIntervalPalette" class="dna-interval-palette"></div><div id="bassTiePalette" class="dna-tie-palette"></div></div></div></div><div class="bass-step-scroll"><div id="bassStepGrid"></div></div><div id="bassBarLabels" class="dna-bar-labels"></div></section>
+          <section class="bass-editor"><div class="bass-grid-heading"><div><h4 id="bassEditorTitle">Editable bass piano roll</h4><p class="bass-roll-help">Click empty space to add a note. Drag notes to move them, drag the right edge to change their length, and right-click a note to delete it.</p></div><button id="bassResetRoll" class="button" type="button">Reset generated</button></div><div class="bass-roll-scroll"><div id="bassRollCanvas" class="bass-roll-canvas"><div id="bassRollRuler" class="bass-roll-ruler"></div><div id="bassRollLabels" class="bass-roll-labels"></div><div id="bassRollGrid" class="bass-roll-grid"></div></div></div></section>
         </div>
       </div>
       <div id="bassResizeGrip" class="bass-modal-resize-grip" title="Resize Bass Generator" aria-label="Resize Bass Generator"></div>
@@ -103,7 +103,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.7"></script>
-  <script src="./bass-generator.js?v=1.7"></script>
+  <script src="./clear-all.js?v=1.8"></script>
+  <script src="./bass-generator.js?v=1.8"></script>
 </body>
 </html>

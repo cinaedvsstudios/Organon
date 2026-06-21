@@ -55,9 +55,15 @@
     effervescent: { name: 'Effervescent', tempo: '104–142 BPM', pool: [0,4,12], text: 'High bright offbeats without sub-bass mud.' }
   };
 
+  const ROLL_STEP = 0.25;
+  const ROLL_STEP_WIDTH = 28;
+  const ROLL_ROW_HEIGHT = 24;
+  const ROLL_LABEL_WIDTH = 54;
+
   const state = {
     mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
     source: 'key', instrument: 'contrabass_arco', register: 36, tempo: 92, sequence: [], manual: false,
+    rollNotes: [], rollReady: false, rollDirty: false,
     write: { kind: 'interval', value: 0 }, tie: 2,
     effects: { sustain: false, echo: false, chords: false },
     custom: { motion: 'pedal', pedal: 'root', articulation: 82, dynamics: 'flat', inversions: false }
@@ -270,21 +276,52 @@
     return { notes, previous: prior };
   }
   function sequenceFor(blockIndex, blockCount) { return state.mode === 'emotion' && !state.manual ? buildEmotion(state.emotionId, blockIndex, blockCount) : state.sequence; }
-  function baseNotes(project, blockStart, groupId, blockIndex, blockCount) {
-    const sequence = sequenceFor(blockIndex, blockCount);
+  function baseNotes(project, blockStart, groupId, blockIndex, blockCount, sequenceOverride = null, useSustain = state.effects.sustain) {
+    const sequence = sequenceOverride || sequenceFor(blockIndex, blockCount);
     const notes = [];
     let previous = null;
     const fixedRoot = rootAt(project, blockStart + 0.001);
     sequence.forEach((current, index) => {
       if (!current) return;
       const available = nextDistance(sequence, index);
-      const noteColumns = current.fixed ? Math.min(current.tie, sequence.length - index) : (state.effects.sustain ? available : Math.min(current.tie, available));
-      const duration = noteColumns * 0.25 * (state.effects.sustain ? 0.96 : articulationGate());
-      const result = segmentNotes(project, blockStart + index * 0.25, blockStart + index * 0.25 + duration, current, groupId, previous, fixedRoot);
+      const noteColumns = current.fixed ? Math.min(current.tie, sequence.length - index) : (useSustain ? available : Math.min(current.tie, available));
+      const duration = noteColumns * ROLL_STEP * (useSustain ? 0.96 : articulationGate());
+      const result = segmentNotes(project, blockStart + index * ROLL_STEP, blockStart + index * ROLL_STEP + duration, current, groupId, previous, fixedRoot);
       notes.push(...result.notes);
       previous = result.previous;
     });
     return notes;
+  }
+  function rollRange() {
+    const minPitch = Number(state.register);
+    return { minPitch, maxPitch: minPitch + 23 };
+  }
+  function syncRollFromSequence(project = readProject()) {
+    const notes = baseNotes(project, 0, 'bass-roll', 0, 1, state.sequence, false);
+    state.rollNotes = notes.map(note => ({
+      id: uid('bass-roll'),
+      start: Math.max(0, Number(note.start) || 0),
+      pitch: clamp(Number(note.pitch) || Number(state.register), 24, 96),
+      duration: Math.max(ROLL_STEP, Number(note.duration) || ROLL_STEP),
+      velocity: clamp(Number(note.velocity) || 88, 20, 127)
+    }));
+    state.rollReady = true;
+    state.rollDirty = false;
+  }
+  function shiftRollRegister(fromRegister, toRegister) {
+    const delta = Number(toRegister) - Number(fromRegister);
+    if (!delta || !state.rollReady) return;
+    state.rollNotes = state.rollNotes.map(note => ({ ...note, pitch: clamp(note.pitch + delta, 24, 96) }));
+  }
+  function copyRollBlock(start, groupId) {
+    return state.rollNotes.map(note => ({
+      id: uid('note'),
+      start: start + note.start,
+      pitch: note.pitch,
+      duration: note.duration,
+      velocity: note.velocity,
+      groupId
+    }));
   }
   function addChords(project, notes) {
     if (!state.effects.chords) return notes;
@@ -313,7 +350,10 @@
     });
     return output;
   }
-  function createBlock(project, start, groupId, blockIndex, blockCount) { return addEcho(addChords(project, baseNotes(project, start, groupId, blockIndex, blockCount)), start + state.phrase); }
+  function createBlock(project, start, groupId, blockIndex, blockCount) {
+    const sourceNotes = state.rollReady ? copyRollBlock(start, groupId) : baseNotes(project, start, groupId, blockIndex, blockCount);
+    return addEcho(addChords(project, sourceNotes), start + state.phrase);
+  }
   function buildPlan(project) {
     const insertAt = projectEnd(project) ? Math.ceil(projectEnd(project) / 4) * 4 : 0;
     const total = 32 * state.units;
@@ -360,46 +400,87 @@
       detail.textContent = `${activeEmotion().text} Tempo guide: ${activeEmotion().tempo}.`;
     }
   }
-  function palette(project) {
-    const choices = state.mode === 'custom'
-      ? [['degree',1,'R'], ['degree',2,'2'], ['degree',3,thirdText(project)], ['degree',4,'4'], ['degree',5,'5'], ['degree',6,'6'], ['degree',7,'7'], ['degree',8,'8']]
-      : [['interval',0,'R'], ['third',3,thirdText(project)], ['interval',5,'4'], ['interval',7,'5'], ['interval',10,'♭7'], ['interval',12,'8']];
-    const host = $('#bassIntervalPalette');
-    host.replaceChildren(...choices.map(([kind, value, label]) => { const button = document.createElement('button'); button.type = 'button'; button.className = `dna-interval-button${state.write.kind === kind && state.write.value === value ? ' selected' : ''}`; button.dataset.kind = kind; button.dataset.value = String(value); button.textContent = label; return button; }));
-  }
-  function renderTies() {
-    const host = $('#bassTiePalette');
-    host.replaceChildren(...TIES.map(tie => { const button = document.createElement('button'); button.type = 'button'; button.className = `dna-tie-button${state.tie === tie ? ' selected' : ''}`; button.dataset.tie = String(tie); button.textContent = tieText(tie); return button; }));
-  }
   function renderEffects() { [['bassSustain','sustain'], ['bassEcho','echo'], ['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).classList.toggle('selected', state.effects[key])); }
-  function renderGrid(project) {
-    const host = $('#bassStepGrid');
-    const count = stepCount();
-    host.replaceChildren();
-    [['rhythm','Rhythm','note/rest'], ['tune','Tune','interval'], ['tie','Tie','length']].forEach(([mode, title, subtitle]) => {
-      const row = document.createElement('div'); row.className = 'dna-row';
-      const label = document.createElement('div'); label.className = 'dna-row-label'; label.innerHTML = `${title}<small>${subtitle}</small>`;
-      const grid = document.createElement('div'); grid.className = 'dna-grid'; grid.style.setProperty('--dna-step-count', String(count));
-      for (let index = 0; index < count; index += 1) {
-        const current = state.sequence[index];
-        const on = Boolean(current);
-        const button = document.createElement('button'); button.type = 'button'; button.dataset.index = String(index); button.dataset.mode = mode;
-        button.className = `dna-cell dna-${mode}${on ? ' is-on' : ''}${on ? ` velocity-${current.velocity}` : ''}${index % 16 === 0 ? ' bar-start' : ''}${index % 4 === 0 ? ' beat-start' : ''}`;
-        button.textContent = mode === 'rhythm' ? (on ? (current.velocity === 3 ? '●' : current.velocity === 2 ? '•' : '·') : '') : mode === 'tune' ? (on ? cellText(project, current) : '—') : (on ? tieText(current.tie) : '—');
-        grid.append(button);
-      }
-      row.append(label, grid); host.append(row);
+  function sortRollNotes() { state.rollNotes.sort((a, b) => a.start - b.start || a.pitch - b.pitch || a.id.localeCompare(b.id)); }
+  function rollPointFromEvent(event) {
+    const grid = $('#bassRollGrid');
+    const rect = grid.getBoundingClientRect();
+    const { minPitch, maxPitch } = rollRange();
+    const steps = Math.round(state.phrase / ROLL_STEP);
+    const step = clamp(Math.floor((event.clientX - rect.left) / ROLL_STEP_WIDTH), 0, steps - 1);
+    const row = clamp(Math.floor((event.clientY - rect.top) / ROLL_ROW_HEIGHT), 0, maxPitch - minPitch);
+    return { start: step * ROLL_STEP, pitch: maxPitch - row };
+  }
+  function renderRoll() {
+    const canvas = $('#bassRollCanvas');
+    const ruler = $('#bassRollRuler');
+    const labels = $('#bassRollLabels');
+    const grid = $('#bassRollGrid');
+    const { minPitch, maxPitch } = rollRange();
+    const pitchCount = maxPitch - minPitch + 1;
+    const stepCount = Math.round(state.phrase / ROLL_STEP);
+    const gridWidth = stepCount * ROLL_STEP_WIDTH;
+    const gridHeight = pitchCount * ROLL_ROW_HEIGHT;
+
+    canvas.style.gridTemplateColumns = `${ROLL_LABEL_WIDTH}px ${gridWidth}px`;
+    canvas.style.gridTemplateRows = `28px ${gridHeight}px`;
+    canvas.style.width = `${ROLL_LABEL_WIDTH + gridWidth}px`;
+    ruler.style.width = `${gridWidth}px`;
+    labels.style.height = `${gridHeight}px`;
+    labels.style.gridTemplateRows = `repeat(${pitchCount}, ${ROLL_ROW_HEIGHT}px)`;
+    grid.style.width = `${gridWidth}px`;
+    grid.style.height = `${gridHeight}px`;
+    grid.style.setProperty('--bass-roll-step-width', `${ROLL_STEP_WIDTH}px`);
+    grid.style.setProperty('--bass-roll-row-height', `${ROLL_ROW_HEIGHT}px`);
+    grid.style.setProperty('--bass-roll-bar-width', `${ROLL_STEP_WIDTH * 16}px`);
+
+    ruler.replaceChildren();
+    for (let beat = 0; beat < state.phrase; beat += 1) {
+      const marker = document.createElement('span');
+      marker.className = beat % 4 === 0 ? 'bass-roll-bar-marker' : 'bass-roll-beat-marker';
+      marker.style.left = `${beat * 4 * ROLL_STEP_WIDTH}px`;
+      marker.textContent = beat % 4 === 0 ? `Bar ${Math.floor(beat / 4) + 1}` : String(beat + 1);
+      ruler.append(marker);
+    }
+
+    labels.replaceChildren();
+    for (let pitch = maxPitch; pitch >= minPitch; pitch -= 1) {
+      const label = document.createElement('div');
+      label.className = `bass-roll-label${mod(pitch, 12) === 1 || mod(pitch, 12) === 3 || mod(pitch, 12) === 6 || mod(pitch, 12) === 8 || mod(pitch, 12) === 10 ? ' black-key' : ''}`;
+      label.textContent = noteName(pitch);
+      labels.append(label);
+    }
+
+    grid.replaceChildren();
+    sortRollNotes();
+    state.rollNotes.forEach(note => {
+      if (note.pitch < minPitch || note.pitch > maxPitch || note.start >= state.phrase) return;
+      const block = document.createElement('button');
+      block.type = 'button';
+      block.className = 'bass-roll-note';
+      block.dataset.noteId = note.id;
+      block.style.left = `${Math.round(note.start / ROLL_STEP) * ROLL_STEP_WIDTH + 1}px`;
+      block.style.top = `${(maxPitch - note.pitch) * ROLL_ROW_HEIGHT + 1}px`;
+      block.style.width = `${Math.max(ROLL_STEP_WIDTH - 2, Math.round(note.duration / ROLL_STEP) * ROLL_STEP_WIDTH - 2)}px`;
+      block.style.height = `${ROLL_ROW_HEIGHT - 2}px`;
+      block.title = `${noteName(note.pitch)} · starts on beat ${note.start + 1} · ${note.duration} beats`;
+      const name = document.createElement('span');
+      name.className = 'bass-roll-note-name';
+      name.textContent = noteName(note.pitch);
+      const resize = document.createElement('span');
+      resize.className = 'bass-roll-resize';
+      resize.title = 'Drag to change note length';
+      block.append(name, resize);
+      grid.append(block);
     });
-    const bars = []; for (let bar = 0; bar < state.phrase / 4; bar += 1) bars.push(bar + 1);
-    $('#bassBarLabels').textContent = `Bars: ${bars.join('          ')}`;
   }
   function renderMode() {
+
     const customMode = state.mode === 'custom';
     $('#bassProfileCard').hidden = customMode;
     $('#bassCustomCard').hidden = !customMode;
     $$('.bass-mode-tab').forEach(button => button.classList.toggle('selected', button.dataset.mode === state.mode));
-    $('#bassEditorTitle').textContent = customMode ? 'Editable orchestral bass line' : 'Editable bass tune';
-    $('#bassEditorText').textContent = customMode ? 'Rhythm controls notes and rests. Tune uses diatonic degrees. Tie holds notes across sixteenth-note columns.' : 'Rhythm controls notes and rests. Tune follows the active chord root. The dynamic third becomes 3 or ♭3 from the project key.';
+    $('#bassEditorTitle').textContent = customMode ? 'Editable orchestral bass piano roll' : 'Editable bass piano roll';
   }
   function render() {
     const project = readProject();
@@ -412,29 +493,86 @@
     $('#bassArticulation').value = String(state.custom.articulation); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced';
     $('#bassDynamics').value = state.custom.dynamics; $('#bassInversions').checked = state.custom.inversions;
     $$('.bass-phrase').forEach(button => button.classList.toggle('selected', Number(button.dataset.b) === state.phrase));
-    palette(project); renderTies(); renderEffects(); renderGrid(project); renderSummary(project);
+    if (!state.rollReady) syncRollFromSequence(project);
+    renderEffects(); renderRoll(); renderSummary(project);
   }
   function openModal() {
     stopPreview();
     state.tempo = clamp(Number(readProject().bpm) || 92, 30, 260);
     if (!state.sequence.length || state.sequence.length !== stepCount()) { if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); }
+    if (!state.rollReady) syncRollFromSequence(readProject());
     render(); $('#bassModal').hidden = false;
   }
   function closeModal() { stopPreview(); $('#bassModal').hidden = true; }
-  function editCell(index, mode, rightClick) {
-    const current = state.sequence[index];
-    if (mode === 'rhythm') {
-      if (rightClick) { if (current) current.velocity = current.velocity % 3 + 1; else state.sequence[index] = cell(state.write.kind, state.write.value, 1, state.tie); }
-      else state.sequence[index] = current ? null : cell(state.write.kind, state.write.value, 2, state.tie);
-    } else if (mode === 'tune') {
-      if (rightClick) { if (current) current.velocity = current.velocity % 3 + 1; else state.sequence[index] = cell(state.write.kind, state.write.value, 1, state.tie); }
-      else state.sequence[index] = current ? { ...current, kind: state.write.kind, value: state.write.value } : cell(state.write.kind, state.write.value, 2, state.tie, state.mode === 'custom' && state.custom.motion === 'stepwise' ? { walk: true } : {});
-    } else {
-      if (!current) state.sequence[index] = cell(state.write.kind, state.write.value, 2, state.tie);
-      else if (rightClick) current.tie = TIES[(TIES.indexOf(current.tie) + 1) % TIES.length];
-      else current.tie = state.tie;
-    }
-    state.manual = true; render();
+  function beginRollEdit(event, block) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const note = state.rollNotes.find(item => item.id === block.dataset.noteId);
+    if (!note) return;
+    const { minPitch, maxPitch } = rollRange();
+    const resizing = Boolean(event.target.closest('.bass-roll-resize'));
+    const startX = event.clientX;
+    const startY = event.clientY;
+    const original = { start: note.start, pitch: note.pitch, duration: note.duration };
+    let next = { ...original };
+    block.setPointerCapture?.(event.pointerId);
+    document.body.style.userSelect = 'none';
+    block.classList.add('is-editing');
+
+    const draw = () => {
+      block.style.left = `${Math.round(next.start / ROLL_STEP) * ROLL_STEP_WIDTH + 1}px`;
+      block.style.top = `${(maxPitch - next.pitch) * ROLL_ROW_HEIGHT + 1}px`;
+      block.style.width = `${Math.max(ROLL_STEP_WIDTH - 2, Math.round(next.duration / ROLL_STEP) * ROLL_STEP_WIDTH - 2)}px`;
+    };
+    const move = moveEvent => {
+      const stepDelta = Math.round((moveEvent.clientX - startX) / ROLL_STEP_WIDTH);
+      if (resizing) {
+        next.duration = clamp(original.duration + stepDelta * ROLL_STEP, ROLL_STEP, state.phrase - original.start);
+      } else {
+        const pitchDelta = Math.round((moveEvent.clientY - startY) / ROLL_ROW_HEIGHT);
+        next.start = clamp(original.start + stepDelta * ROLL_STEP, 0, state.phrase - original.duration);
+        next.pitch = clamp(original.pitch - pitchDelta, minPitch, maxPitch);
+      }
+      draw();
+    };
+    const end = () => {
+      note.start = next.start;
+      note.pitch = next.pitch;
+      note.duration = next.duration;
+      state.rollDirty = true;
+      document.body.style.userSelect = '';
+      block.classList.remove('is-editing');
+      block.releasePointerCapture?.(event.pointerId);
+      block.removeEventListener('pointermove', move);
+      block.removeEventListener('pointerup', end);
+      block.removeEventListener('pointercancel', end);
+      render();
+    };
+    block.addEventListener('pointermove', move);
+    block.addEventListener('pointerup', end, { once: true });
+    block.addEventListener('pointercancel', end, { once: true });
+  }
+  function addRollNote(event) {
+    if (event.button !== 0 || event.target.closest('.bass-roll-note')) return;
+    const point = rollPointFromEvent(event);
+    state.rollNotes.push({ id: uid('bass-roll'), start: point.start, pitch: point.pitch, duration: ROLL_STEP, velocity: 88 });
+    state.rollReady = true;
+    state.rollDirty = true;
+    render();
+  }
+  function deleteRollNote(event) {
+    const block = event.target.closest('.bass-roll-note');
+    if (!block) return;
+    event.preventDefault();
+    state.rollNotes = state.rollNotes.filter(note => note.id !== block.dataset.noteId);
+    state.rollDirty = true;
+    render();
+  }
+  function resetRoll() {
+    syncRollFromSequence(readProject());
+    status('Restored the generated bass phrase.');
+    render();
   }
   function parseDuration(text) { const fraction = String(text).trim().match(/^1\s*\/\s*(1|2|4|8|16)$/); if (fraction) return 4 / Number(fraction[1]); const numeric = Number(text); return Number.isFinite(numeric) && numeric > 0 ? numeric : null; }
   function processPastedNotes() {
@@ -467,7 +605,7 @@
       }
       beat += duration;
     }
-    state.manual = true; status(`Processed ${tokens.length} token${tokens.length === 1 ? '' : 's'}.`); render();
+    state.manual = true; syncRollFromSequence(readProject()); status(`Processed ${tokens.length} token${tokens.length === 1 ? '' : 's'}.`); render();
   }
 
   function ensureAudio() {
@@ -584,35 +722,40 @@
       window.addEventListener('pointercancel', end, { once: true });
     });
   }
-  function setMode(mode) { state.mode = mode; if (mode === 'genre') loadGenre(); else if (mode === 'emotion') loadEmotion(); else generateCustom(); render(); }
+  function setMode(mode) {
+    state.mode = mode;
+    if (mode === 'genre') loadGenre(); else if (mode === 'emotion') loadEmotion(); else generateCustom();
+    syncRollFromSequence(readProject());
+    render();
+  }
   function bind() {
     document.addEventListener('click', event => { const trigger = event.target.closest('#quickBass'); if (!trigger) return; event.preventDefault(); event.stopImmediatePropagation(); openModal(); }, true);
     $('#bassClose').addEventListener('click', closeModal); $('#bassPreview').addEventListener('click', preview); $('#bassAdd').addEventListener('click', addToTimeline); $('#bassProcess').addEventListener('click', processPastedNotes);
     $('#bassModeTabs').addEventListener('click', event => { const button = event.target.closest('.bass-mode-tab'); if (button) setMode(button.dataset.mode); });
-    $('#bassLoadProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = Number($('#bassProfileSelect').value); loadGenre(); } else { state.emotionId = $('#bassProfileSelect').value; loadEmotion(); } render(); });
-    $('#bassRandomProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = pick(genres).id; loadGenre(); } else { state.emotionId = pick(Object.keys(emotions)); loadEmotion(); } render(); });
-    $('#bassMutate').addEventListener('click', () => { if (state.mode === 'genre') mutateGenre(); else loadEmotion(); render(); });
-    $('#bassGenerateCustom').addEventListener('click', () => { generateCustom(); render(); });
+    $('#bassLoadProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = Number($('#bassProfileSelect').value); loadGenre(); } else { state.emotionId = $('#bassProfileSelect').value; loadEmotion(); } syncRollFromSequence(readProject()); render(); });
+    $('#bassRandomProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = pick(genres).id; loadGenre(); } else { state.emotionId = pick(Object.keys(emotions)); loadEmotion(); } syncRollFromSequence(readProject()); render(); });
+    $('#bassMutate').addEventListener('click', () => { if (state.mode === 'genre') mutateGenre(); else loadEmotion(); syncRollFromSequence(readProject()); render(); });
+    $('#bassGenerateCustom').addEventListener('click', () => { generateCustom(); syncRollFromSequence(readProject()); render(); });
     $('#bassLength').addEventListener('input', event => { state.units = Number(event.target.value); render(); });
     $('#bassTempo').addEventListener('change', event => {
       state.tempo = clamp(Number(event.target.value) || state.tempo, 30, 260);
       event.target.value = String(state.tempo);
     });
     $('#bassMutationRate').addEventListener('input', event => { state.mutation = Number(event.target.value); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`; });
-    $('#bassHarmonySource').addEventListener('change', event => { state.source = event.target.value; render(); });
+    $('#bassHarmonySource').addEventListener('change', event => { state.source = event.target.value; if (!state.rollDirty) syncRollFromSequence(readProject()); render(); });
     $('#bassInstrument').addEventListener('change', event => { state.instrument = event.target.value; });
-    $('#bassRegister').addEventListener('change', event => { state.register = Number(event.target.value); render(); });
+    $('#bassRegister').addEventListener('change', event => { const previous = state.register; state.register = Number(event.target.value); shiftRollRegister(previous, state.register); render(); });
     $('#bassCustomMotion').addEventListener('change', event => { state.custom.motion = event.target.value; });
     $('#bassPedalTarget').addEventListener('change', event => { state.custom.pedal = event.target.value; });
     $('#bassArticulation').addEventListener('input', event => { state.custom.articulation = Number(event.target.value); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced'; });
     $('#bassDynamics').addEventListener('change', event => { state.custom.dynamics = event.target.value; });
     $('#bassInversions').addEventListener('change', event => { state.custom.inversions = event.target.checked; });
-    $('#bassPhraseChoices').addEventListener('click', event => { const button = event.target.closest('.bass-phrase'); if (!button) return; state.phrase = Number(button.dataset.b); if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); render(); });
+    $('#bassPhraseChoices').addEventListener('click', event => { const button = event.target.closest('.bass-phrase'); if (!button) return; state.phrase = Number(button.dataset.b); if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); syncRollFromSequence(readProject()); render(); });
     [['bassSustain','sustain'],['bassEcho','echo'],['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).addEventListener('click', () => { state.effects[key] = !state.effects[key]; stopPreview(); render(); }));
-    $('#bassIntervalPalette').addEventListener('click', event => { const button = event.target.closest('.dna-interval-button'); if (!button) return; state.write = { kind: button.dataset.kind, value: Number(button.dataset.value) }; render(); });
-    $('#bassTiePalette').addEventListener('click', event => { const button = event.target.closest('.dna-tie-button'); if (!button) return; state.tie = Number(button.dataset.tie); render(); });
-    $('#bassStepGrid').addEventListener('click', event => { const button = event.target.closest('.dna-cell'); if (button) editCell(Number(button.dataset.index), button.dataset.mode, false); });
-    $('#bassStepGrid').addEventListener('contextmenu', event => { const button = event.target.closest('.dna-cell'); if (!button) return; event.preventDefault(); editCell(Number(button.dataset.index), button.dataset.mode, true); });
+    $('#bassResetRoll').addEventListener('click', resetRoll);
+    $('#bassRollGrid').addEventListener('pointerdown', addRollNote);
+    $('#bassRollGrid').addEventListener('pointerdown', event => { const block = event.target.closest('.bass-roll-note'); if (block) beginRollEdit(event, block); });
+    $('#bassRollGrid').addEventListener('contextmenu', deleteRollNote);
     makeWindowDraggable();
   }
   loadGenre(); bind();
