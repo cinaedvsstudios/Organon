@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Organon VidCompressor</title>
+
+  <script>
+    if (window.self === window.top) {
+      window.location.href = '../../index.html';
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --stone-ochre: #e0a360;
+      --chiseled-bronze: #896b49;
+      --water-blue: #4b84bf;
+      --water-spray: #75b2de;
+      --forest-teal: #26615c;
+      --light-teal: #449e92;
+      --brand-red: #9a2f4f;
+      --slider-track: #61112e;
+      --alabaster-paper: #f5f0db;
+      --bg-nightsky: #181919;
+      --bg-card: #292a24;
+      --bg-input: rgba(24, 25, 25, 0.95);
+      --warning: #d27d6c;
+      --success: #79e3b8;
+      --font-headers: 'Cinzel', Georgia, serif;
+      --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'Geist Mono', 'Courier New', monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg-nightsky);
+      color: var(--alabaster-paper);
+      font-family: var(--font-body);
+      display: flex;
+      justify-content: center;
+    }
+
+    button, input { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 540px;
+      min-height: 100vh;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-nightsky);
+    }
+
+    .top-sticky-panel {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      padding: 18px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background-color: #d79e5c;
+      background-image: linear-gradient(rgba(224, 163, 96, 0.77), rgba(224, 163, 96, 0.77)), url('../../images/stonetext.jpg');
+      background-size: cover;
+      border-bottom: 1px solid var(--chiseled-bronze);
+      border-bottom-left-radius: 28px;
+      border-bottom-right-radius: 28px;
+      transition: padding .25s ease;
+    }
+
+    .top-sticky-panel.minimized {
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+
+    .top-sticky-panel.minimized .panel-content-hide { display: none; }
+
+    .title-pill {
+      width: 100%;
+      min-height: 42px;
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--water-spray);
+      background: rgba(24, 25, 25, .92);
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 999px;
+      font-family: var(--font-headers);
+      font-size: .82rem;
+      font-weight: 700;
+      letter-spacing: .06em;
+    }
+
+    .title-group { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .title-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .countdown-circle-indicator {
+      width: 22px;
+      height: 22px;
+      flex: 0 0 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      border: 1px solid var(--chiseled-bronze);
+      background: rgba(0, 0, 0, .62);
+      color: var(--stone-ochre);
+      font-size: .72rem;
+      font-family: var(--font-body);
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .engine-pill {
+      flex: 0 0 auto;
+      color: var(--alabaster-paper);
+      font-family: var(--font-mono);
+      font-size: .62rem;
+      letter-spacing: 0;
+      opacity: .8;
+    }
+
+    .header-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+
+    .btn-pill,
+    .small-btn {
+      min-height: 40px;
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 999px;
+      cursor: pointer;
+      transition: border-color .2s ease, background .2s ease, box-shadow .2s ease, opacity .2s ease;
+    }
+
+    .btn-pill {
+      width: 100%;
+      padding: 10px 16px;
+      color: var(--water-spray);
+      background: rgba(24, 25, 25, .92);
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .045em;
+      text-transform: uppercase;
+    }
+
+    .btn-pill:hover:not(:disabled),
+    .small-btn:hover:not(:disabled) {
+      border-color: var(--water-spray);
+      background: rgba(41, 42, 36, .98);
+      box-shadow: 0 0 12px rgba(117, 178, 222, .28);
+    }
+
+    .btn-pill:disabled,
+    .small-btn:disabled {
+      cursor: not-allowed;
+      opacity: .46;
+    }
+
+    .small-btn {
+      padding: 0 14px;
+      color: var(--alabaster-paper);
+      background: rgba(24, 25, 25, .82);
+      font-size: .72rem;
+      font-weight: 600;
+    }
+
+    .middle-scroll-panel {
+      flex: 1;
+      padding: 16px 16px 150px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: #000;
+    }
+
+    .config-card {
+      padding: 16px;
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 22px;
+      background: var(--bg-card);
+    }
+
+    h1, h2, h3, p { margin-top: 0; }
+
+    h2, h3 {
+      color: var(--stone-ochre);
+      font-family: var(--font-headers);
+      letter-spacing: .035em;
+    }
+
+    h2 { margin-bottom: 6px; font-size: 1rem; }
+    h3 { margin-bottom: 10px; font-size: .82rem; }
+
+    .muted {
+      margin-bottom: 0;
+      color: rgba(245, 240, 219, .75);
+      font-size: .8rem;
+      line-height: 1.5;
+    }
+
+    .drop-zone {
+      min-height: 170px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 20px;
+      text-align: center;
+      border: 1.5px dashed var(--chiseled-bronze);
+      border-radius: 18px;
+      background: rgba(0, 0, 0, .24);
+      transition: border-color .2s ease, background .2s ease, transform .2s ease;
+    }
+
+    .drop-zone.drag-active {
+      border-color: var(--water-spray);
+      background: rgba(75, 132, 191, .14);
+      transform: scale(1.01);
+    }
+
+    .drop-zone-icon { font-size: 2rem; line-height: 1; }
+    .drop-zone-title { font-size: .88rem; font-weight: 700; color: var(--alabaster-paper); }
+    .drop-zone-copy { margin: 0; font-size: .74rem; line-height: 1.45; color: rgba(245, 240, 219, .7); }
+    .file-input { display: none; }
+
+    .file-card {
+      display: grid;
+      grid-template-columns: 82px 1fr;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .video-thumb {
+      width: 82px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      border: 1px solid var(--chiseled-bronze);
+      border-radius: 12px;
+      background: #111;
+    }
+
+    .video-thumb video { width: 100%; height: 100%; object-fit: cover; }
+    .video-placeholder { color: var(--stone-ochre); font-size: 1.65rem; }
+
+    .file-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--alabaster-paper);
+      font-size: .84rem;
+      font-weight: 700;
+    }
+
+    .file-meta {
+      margin-top: 5px;
+      color: var(--water-spray);
+      font-family: var(--font-mono);
+      font-size: .67rem;
+      line-height: 1.55;
+    }
+
+    .access-note {
+      margin-top: 7px;
+      font-size: .67rem;
+      line-height: 1.35;
+    }
+
+    .access-note.overwrite-ready { color: var(--success); }
+    .access-note.copy-only { color: var(--warning); }
+
+    .quality-row { display: flex; justify-content: space-between; gap: 10px; align-items: flex-end; }
+    .quality-value { color: var(--water-spray); font-family: var(--font-mono); font-size: .72rem; white-space: nowrap; }
+
+    .range-wrap { margin-top: 18px; }
+
+    input[type="range"] {
+      width: 100%;
+      height: 7px;
+      margin: 0;
+      appearance: none;
+      border-radius: 999px;
+      outline: none;
+      background: linear-gradient(to right, var(--brand-red) 0%, var(--brand-red) 65%, var(--slider-track) 65%, var(--slider-track) 100%);
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 22px;
+      height: 22px;
+      appearance: none;
+      border: 2px solid var(--alabaster-paper);
+      border-radius: 50%;
+      background: var(--stone-ochre);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 19px;
+      height: 19px;
+      border: 2px solid var(--alabaster-paper);
+      border-radius: 50%;
+      background: var(--stone-ochre);
+      box-shadow: 0 1px 5px rgba(0, 0, 0, .55);
+    }
+
+    .slider-endpoints { display: flex; justify-content: space-between; margin-top: 9px; color: rgba(245,240,219,.57); font-size: .68rem; }
+
+    .compression-summary {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border: 1px solid rgba(137, 107, 73, .68);
+      border-radius: 13px;
+      background: rgba(0, 0, 0, .24);
+      color: rgba(245, 240, 219, .8);
+      font-size: .74rem;
+      line-height: 1.45;
+    }
+
+    .progress-card { display: none; }
+    .progress-card.visible { display: block; }
+
+    .progress-top { display: flex; justify-content: space-between; gap: 10px; margin-bottom: 10px; font-size: .75rem; }
+    .progress-title { color: var(--alabaster-paper); font-weight: 700; }
+    .progress-value { color: var(--water-spray); font-family: var(--font-mono); }
+
+    .progress-track { height: 9px; overflow: hidden; border-radius: 999px; background: var(--slider-track); }
+    .progress-fill { width: 0%; height: 100%; border-radius: inherit; background: var(--brand-red); transition: width .18s linear; }
+
+    .result-card { display: none; }
+    .result-card.visible { display: block; }
+
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .result-stat { padding: 10px; border: 1px solid rgba(137, 107, 73, .65); border-radius: 12px; background: rgba(0,0,0,.22); }
+    .result-label { display: block; margin-bottom: 4px; color: rgba(245,240,219,.62); font-size: .65rem; text-transform: uppercase; letter-spacing: .05em; }
+    .result-number { color: var(--water-spray); font-family: var(--font-mono); font-size: .72rem; font-weight: 700; }
+
+    .result-preview { width: 100%; max-height: 260px; margin-top: 14px; border: 1px solid var(--chiseled-bronze); border-radius: 14px; background: #000; }
+
+    .bottom-sticky-panel {
+      position: fixed;
+      z-index: 30;
+      bottom: 0;
+      left: 50%;
+      width: 100%;
+      max-width: 540px;
+      padding: 12px 16px 18px;
+      transform: translateX(-50%);
+      display: grid;
+      grid-template-columns: 1.25fr .75fr;
+      gap: 10px;
+      border-top: 1px solid var(--chiseled-bronze);
+      border-top-left-radius: 26px;
+      border-top-right-radius: 26px;
+      background-color: #d79e5c;
+      background-image: linear-gradient(rgba(224, 163, 96, .79), rgba(224, 163, 96, .79)), url('../../images/stonetext.jpg');
+      background-size: cover;
+    }
+
+    .compress-btn { color: var(--water-spray); }
+    .save-menu-btn { color: var(--alabaster-paper); }
+
+    .save-actions {
+      display: none;
+      grid-column: 1 / -1;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .save-actions.visible { display: grid; }
+    .overwrite-btn { color: var(--success); }
+    .copy-btn { color: var(--water-spray); }
+
+    .status-line {
+      min-height: 18px;
+      margin-top: -3px;
+      color: rgba(245, 240, 219, .72);
+      font-size: .71rem;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .status-line.error { color: #ff9cb3; }
+    .status-line.success { color: var(--success); }
+
+    @media (max-width: 390px) {
+      .title-pill { font-size: .74rem; }
+      .bottom-sticky-panel { grid-template-columns: 1fr; }
+      .save-actions { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="top-sticky-panel" id="top-sticky-panel">
+      <div class="title-pill">
+        <div class="title-group">
+          <div class="countdown-circle-indicator" id="countdown-circle" title="Double-click to lock the header">5</div>
+          <span class="title-text">VIDCOMPRESSOR <span style="opacity:.64;">v0.01</span></span>
+        </div>
+        <span class="engine-pill" id="engine-state">ENGINE IDLE</span>
+      </div>
+      <div class="panel-content-hide">
+        <div class="header-actions">
+          <button type="button" class="btn-pill" id="open-video-btn">Open Video</button>
+          <button type="button" class="small-btn" id="clear-btn" disabled>Clear</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="middle-scroll-panel">
+      <section class="config-card" id="import-card">
+        <h2>Video import</h2>
+        <p class="muted">Open a video to retain direct overwrite permission. Dropped videos can still be compressed and saved as a new copy.</p>
+        <div class="drop-zone" id="drop-zone" tabindex="0" role="button" aria-label="Choose a video or drop one here">
+          <div class="drop-zone-icon">🎞️</div>
+          <div class="drop-zone-title">Drop a video here</div>
+          <p class="drop-zone-copy">MP4, M4V, MOV, MKV, AVI, or WebM.<br>Nothing is uploaded; processing stays in this browser.</p>
+        </div>
+        <input class="file-input" id="file-input" type="file" accept="video/mp4,video/quicktime,video/x-m4v,video/x-matroska,video/x-msvideo,video/webm,.mp4,.m4v,.mov,.mkv,.avi,.webm">
+      </section>
+
+      <section class="config-card" id="source-card" hidden>
+        <h3>Selected file</h3>
+        <div class="file-card">
+          <div class="video-thumb"><video id="source-preview" muted playsinline preload="metadata"></video><span class="video-placeholder" id="source-placeholder">▶</span></div>
+          <div>
+            <div class="file-name" id="source-name">No video selected</div>
+            <div class="file-meta" id="source-meta">—</div>
+            <div class="access-note copy-only" id="access-note">Save a new copy will be available after compression.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-card" id="quality-card">
+        <div class="quality-row">
+          <div>
+            <h2>Compression</h2>
+            <p class="muted">One control only. Higher quality keeps more detail but produces a larger file.</p>
+          </div>
+          <span class="quality-value" id="quality-value">65 · BALANCED</span>
+        </div>
+        <div class="range-wrap">
+          <input type="range" id="quality-slider" min="0" max="100" value="65" aria-label="Compression quality">
+          <div class="slider-endpoints"><span>Smallest file</span><span>Highest quality</span></div>
+        </div>
+        <div class="compression-summary" id="compression-summary">Balanced H.264 compression with AAC audio. The original dimensions are kept.</div>
+      </section>
+
+      <section class="config-card progress-card" id="progress-card" aria-live="polite">
+        <div class="progress-top">
+          <span class="progress-title" id="progress-title">Preparing engine…</span>
+          <span class="progress-value" id="progress-value">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="muted" style="margin-top:10px;">The first run loads the local FFmpeg engine. Larger videos need browser memory while they are being processed.</p>
+      </section>
+
+      <section class="config-card result-card" id="result-card">
+        <h2>Compressed video ready</h2>
+        <p class="muted" id="result-file-name">—</p>
+        <div class="result-grid">
+          <div class="result-stat"><span class="result-label">Original</span><span class="result-number" id="result-original-size">—</span></div>
+          <div class="result-stat"><span class="result-label">Compressed</span><span class="result-number" id="result-output-size">—</span></div>
+          <div class="result-stat"><span class="result-label">Change</span><span class="result-number" id="result-change">—</span></div>
+          <div class="result-stat"><span class="result-label">Output</span><span class="result-number" id="result-format">—</span></div>
+        </div>
+        <video class="result-preview" id="result-preview" controls playsinline preload="metadata"></video>
+      </section>
+
+      <div class="status-line" id="status-line" aria-live="polite">Choose a video to start.</div>
+    </main>
+
+    <footer class="bottom-sticky-panel">
+      <button type="button" class="btn-pill compress-btn" id="compress-btn" disabled>Compress Video</button>
+      <button type="button" class="btn-pill save-menu-btn" id="show-save-actions-btn" disabled>Save Options</button>
+      <div class="save-actions" id="save-actions">
+        <button type="button" class="btn-pill overwrite-btn" id="overwrite-btn" disabled>Save Over Original</button>
+        <button type="button" class="btn-pill copy-btn" id="save-copy-btn" disabled>Save New Copy</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    (() => {
+      'use strict';
+
+      const VERSION = '0.01';
+      const SUPPORTED_EXTENSIONS = new Set(['mp4', 'm4v', 'mov', 'mkv', 'avi', 'webm']);
+      const SAME_CONTAINER_EXTENSIONS = new Set(['mp4', 'm4v', 'mov', 'mkv', 'avi']);
+
+      const elements = {
+        topStickyPanel: document.getElementById('top-sticky-panel'),
+        countdownCircle: document.getElementById('countdown-circle'),
+        engineState: document.getElementById('engine-state'),
+        openVideoButton: document.getElementById('open-video-btn'),
+        clearButton: document.getElementById('clear-btn'),
+        dropZone: document.getElementById('drop-zone'),
+        fileInput: document.getElementById('file-input'),
+        sourceCard: document.getElementById('source-card'),
+        sourcePreview: document.getElementById('source-preview'),
+        sourcePlaceholder: document.getElementById('source-placeholder'),
+        sourceName: document.getElementById('source-name'),
+        sourceMeta: document.getElementById('source-meta'),
+        accessNote: document.getElementById('access-note'),
+        qualitySlider: document.getElementById('quality-slider'),
+        qualityValue: document.getElementById('quality-value'),
+        compressionSummary: document.getElementById('compression-summary'),
+        progressCard: document.getElementById('progress-card'),
+        progressTitle: document.getElementById('progress-title'),
+        progressValue: document.getElementById('progress-value'),
+        progressFill: document.getElementById('progress-fill'),
+        resultCard: document.getElementById('result-card'),
+        resultFileName: document.getElementById('result-file-name'),
+        resultOriginalSize: document.getElementById('result-original-size'),
+        resultOutputSize: document.getElementById('result-output-size'),
+        resultChange: document.getElementById('result-change'),
+        resultFormat: document.getElementById('result-format'),
+        resultPreview: document.getElementById('result-preview'),
+        statusLine: document.getElementById('status-line'),
+        compressButton: document.getElementById('compress-btn'),
+        showSaveActionsButton: document.getElementById('show-save-actions-btn'),
+        saveActions: document.getElementById('save-actions'),
+        overwriteButton: document.getElementById('overwrite-btn'),
+        saveCopyButton: document.getElementById('save-copy-btn')
+      };
+
+      let sourceFile = null;
+      let sourceHandle = null;
+      let sourceObjectUrl = null;
+      let outputBlob = null;
+      let outputObjectUrl = null;
+      let outputFileName = '';
+      let outputCanOverwriteSource = false;
+      let ffmpeg = null;
+      let ffmpegLoaded = false;
+      let isBusy = false;
+
+      let countdownValue = 5;
+      let countdownTimer = null;
+      let panelLocked = false;
+      let panelHovered = false;
+
+      function setHubStatus(text) {
+        if (window.parent && window.parent !== window && window.parent.postMessage) {
+          window.parent.postMessage({ type: 'set-status', text }, '*');
+        }
+      }
+
+      function clearHubStatus() {
+        if (window.parent && window.parent !== window && window.parent.postMessage) {
+          window.parent.postMessage({ type: 'clear-status' }, '*');
+        }
+      }
+
+      function setStatus(text, type = '') {
+        elements.statusLine.textContent = text;
+        elements.statusLine.className = `status-line${type ? ` ${type}` : ''}`;
+        setHubStatus(text);
+      }
+
+      function updateCountdownDisplay() {
+        elements.countdownCircle.textContent = panelLocked ? '🔒' : String(countdownValue);
+      }
+
+      function resetCountdown() {
+        window.clearInterval(countdownTimer);
+        countdownValue = 5;
+        updateCountdownDisplay();
+      }
+
+      function startCountdown() {
+        if (panelLocked || panelHovered) return;
+        window.clearInterval(countdownTimer);
+        countdownTimer = window.setInterval(() => {
+          countdownValue -= 1;
+          updateCountdownDisplay();
+          if (countdownValue <= 0) {
+            window.clearInterval(countdownTimer);
+            elements.topStickyPanel.classList.add('minimized');
+          }
+        }, 1000);
+      }
+
+      function expandHeader() {
+        elements.topStickyPanel.classList.remove('minimized');
+        resetCountdown();
+      }
+
+      function formatBytes(bytes) {
+        if (!Number.isFinite(bytes) || bytes < 0) return '—';
+        if (bytes < 1024) return `${bytes} B`;
+        const units = ['KB', 'MB', 'GB'];
+        let value = bytes / 1024;
+        let unitIndex = 0;
+        while (value >= 1024 && unitIndex < units.length - 1) {
+          value /= 1024;
+          unitIndex += 1;
+        }
+        return `${value.toFixed(value >= 100 ? 0 : value >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+      }
+
+      function getExtension(fileName) {
+        const dotIndex = fileName.lastIndexOf('.');
+        return dotIndex > -1 ? fileName.slice(dotIndex + 1).toLowerCase() : '';
+      }
+
+      function getBaseName(fileName) {
+        const dotIndex = fileName.lastIndexOf('.');
+        return dotIndex > -1 ? fileName.slice(0, dotIndex) : fileName;
+      }
+
+      function getOutputPlan(file) {
+        const inputExtension = getExtension(file.name);
+        const preserveContainer = SAME_CONTAINER_EXTENSIONS.has(inputExtension);
+        const extension = preserveContainer ? inputExtension : 'mp4';
+        const mime = extension === 'mov' ? 'video/quicktime' : extension === 'mkv' ? 'video/x-matroska' : extension === 'avi' ? 'video/x-msvideo' : 'video/mp4';
+        return {
+          inputExtension,
+          extension,
+          mime,
+          canOverwrite: preserveContainer,
+          name: `${getBaseName(file.name)}-compressed.${extension}`
+        };
+      }
+
+      function getQualitySettings(value) {
+        const quality = Number(value);
+        const crf = Math.round(35 - (quality * 0.17));
+        let label = 'BALANCED';
+        let description = 'Balanced H.264 compression with AAC audio. The original dimensions are kept.';
+        let audioBitrate = '160k';
+
+        if (quality <= 20) {
+          label = 'SMALLEST FILE';
+          description = 'Strong H.264 compression for a much smaller file. Fine texture and fast movement may soften.';
+          audioBitrate = '96k';
+        } else if (quality <= 45) {
+          label = 'SMALL FILE';
+          description = 'Noticeably smaller file with moderate visual compression.';
+          audioBitrate = '128k';
+        } else if (quality <= 69) {
+          label = 'BALANCED';
+          description = 'Balanced H.264 compression with AAC audio. The original dimensions are kept.';
+          audioBitrate = '160k';
+        } else if (quality <= 84) {
+          label = 'GOOD QUALITY';
+          description = 'Gentler compression to retain more detail while still reducing the file size.';
+          audioBitrate = '160k';
+        } else {
+          label = 'HIGH QUALITY';
+          description = 'Light compression for maximum detail retention. The output may not shrink much if the original is already compressed.';
+          audioBitrate = '192k';
+        }
+
+        return { quality, crf: Math.max(18, Math.min(35, crf)), label, description, audioBitrate };
+      }
+
+      function paintQualityControl() {
+        const value = Number(elements.qualitySlider.value);
+        elements.qualitySlider.style.background = `linear-gradient(to right, var(--brand-red) 0%, var(--brand-red) ${value}%, var(--slider-track) ${value}%, var(--slider-track) 100%)`;
+        const settings = getQualitySettings(value);
+        elements.qualityValue.textContent = `${value} · ${settings.label}`;
+        elements.compressionSummary.textContent = settings.description;
+      }
+
+      function setProgress(title, percentage) {
+        const safePercentage = Math.max(0, Math.min(100, Number(percentage) || 0));
+        elements.progressCard.classList.add('visible');
+        elements.progressTitle.textContent = title;
+        elements.progressValue.textContent = `${Math.round(safePercentage)}%`;
+        elements.progressFill.style.width = `${safePercentage}%`;
+      }
+
+      function hideProgress() {
+        elements.progressCard.classList.remove('visible');
+        elements.progressFill.style.width = '0%';
+      }
+
+      function setEngineState(text) {
+        elements.engineState.textContent = text;
+      }
+
+      function setBusy(nextBusy) {
+        isBusy = nextBusy;
+        elements.openVideoButton.disabled = nextBusy;
+        elements.clearButton.disabled = nextBusy || !sourceFile;
+        elements.compressButton.disabled = nextBusy || !sourceFile;
+        elements.showSaveActionsButton.disabled = nextBusy || !outputBlob;
+        elements.overwriteButton.disabled = nextBusy || !outputBlob || !sourceHandle || !outputCanOverwriteSource;
+        elements.saveCopyButton.disabled = nextBusy || !outputBlob;
+      }
+
+      function revokeSourceObjectUrl() {
+        if (sourceObjectUrl) {
+          URL.revokeObjectURL(sourceObjectUrl);
+          sourceObjectUrl = null;
+        }
+      }
+
+      function revokeOutputObjectUrl() {
+        if (outputObjectUrl) {
+          URL.revokeObjectURL(outputObjectUrl);
+          outputObjectUrl = null;
+        }
+      }
+
+      function resetResult() {
+        revokeOutputObjectUrl();
+        outputBlob = null;
+        outputFileName = '';
+        outputCanOverwriteSource = false;
+        elements.resultCard.classList.remove('visible');
+        elements.resultPreview.removeAttribute('src');
+        elements.resultPreview.load();
+        elements.saveActions.classList.remove('visible');
+      }
+
+      function resetWorkspace() {
+        if (isBusy) return;
+        revokeSourceObjectUrl();
+        resetResult();
+        sourceFile = null;
+        sourceHandle = null;
+        elements.sourceCard.hidden = true;
+        elements.sourcePreview.removeAttribute('src');
+        elements.sourcePreview.load();
+        elements.sourcePlaceholder.hidden = false;
+        elements.fileInput.value = '';
+        hideProgress();
+        setEngineState(ffmpegLoaded ? 'ENGINE READY' : 'ENGINE IDLE');
+        setStatus('Choose a video to start.');
+        setBusy(false);
+      }
+
+      function updateAccessNote() {
+        const plan = sourceFile ? getOutputPlan(sourceFile) : null;
+        if (!sourceFile || !plan) return;
+
+        if (sourceHandle && plan.canOverwrite) {
+          elements.accessNote.textContent = 'Opened through the file picker: Save Over Original will be available after compression.';
+          elements.accessNote.className = 'access-note overwrite-ready';
+        } else if (sourceHandle && !plan.canOverwrite) {
+          elements.accessNote.textContent = `WebM is exported as MP4, so this version will save a new copy rather than overwrite the original.`;
+          elements.accessNote.className = 'access-note copy-only';
+        } else {
+          elements.accessNote.textContent = 'Dropped or standard-picked file: Save New Copy will be available after compression.';
+          elements.accessNote.className = 'access-note copy-only';
+        }
+      }
+
+      function loadSourceFile(file, handle = null) {
+        const extension = getExtension(file.name);
+        if (!SUPPORTED_EXTENSIONS.has(extension) && !file.type.startsWith('video/')) {
+          setStatus('That file does not look like a supported video.', 'error');
+          return;
+        }
+
+        revokeSourceObjectUrl();
+        resetResult();
+        sourceFile = file;
+        sourceHandle = handle;
+        sourceObjectUrl = URL.createObjectURL(file);
+
+        elements.sourcePreview.src = sourceObjectUrl;
+        elements.sourcePreview.onloadedmetadata = () => {
+          const duration = Number.isFinite(elements.sourcePreview.duration) ? `${Math.round(elements.sourcePreview.duration)} sec` : 'duration unavailable';
+          const dimensions = elements.sourcePreview.videoWidth && elements.sourcePreview.videoHeight ? `${elements.sourcePreview.videoWidth}×${elements.sourcePreview.videoHeight}` : 'dimensions unavailable';
+          elements.sourceMeta.textContent = `${formatBytes(file.size)} · ${dimensions} · ${duration}`;
+        };
+        elements.sourcePlaceholder.hidden = true;
+        elements.sourceName.textContent = file.name;
+        elements.sourceMeta.textContent = `${formatBytes(file.size)} · reading metadata…`;
+        elements.sourceCard.hidden = false;
+        updateAccessNote();
+        hideProgress();
+        setEngineState(ffmpegLoaded ? 'ENGINE READY' : 'ENGINE IDLE');
+        setStatus('Video ready. Set the compression level, then press Compress Video.');
+        setBusy(false);
+      }
+
+      function loadScript(sourceUrl) {
+        return new Promise((resolve, reject) => {
+          if (window.FFmpegWASM && window.FFmpegWASM.FFmpeg) {
+            resolve();
+            return;
+          }
+          const script = document.createElement('script');
+          script.src = sourceUrl;
+          script.async = true;
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('The local FFmpeg helper could not be loaded.'));
+          document.head.appendChild(script);
+        });
+      }
+
+      async function ensureFfmpeg() {
+        if (ffmpegLoaded && ffmpeg) return;
+
+        setEngineState('LOADING ENGINE');
+        setProgress('Loading local FFmpeg engine…', 7);
+        const ffmpegScriptUrl = new URL('./vendor/ffmpeg/ffmpeg.js', window.location.href).href;
+        const coreUrl = new URL('./vendor/ffmpeg-core/ffmpeg-core.js', window.location.href).href;
+        const wasmUrl = new URL('./vendor/ffmpeg-core/ffmpeg-core.wasm', window.location.href).href;
+
+        await loadScript(ffmpegScriptUrl);
+        if (!window.FFmpegWASM || !window.FFmpegWASM.FFmpeg) {
+          throw new Error('The FFmpeg engine was unavailable after loading.');
+        }
+
+        ffmpeg = new window.FFmpegWASM.FFmpeg();
+        ffmpeg.on('progress', ({ progress }) => {
+          const progressPercent = Math.round(Math.max(0, Math.min(1, Number(progress) || 0)) * 88) + 10;
+          setProgress('Compressing video…', progressPercent);
+        });
+
+        await ffmpeg.load({ coreURL: coreUrl, wasmURL: wasmUrl });
+        ffmpegLoaded = true;
+        setEngineState('ENGINE READY');
+        setProgress('Engine ready.', 10);
+      }
+
+      function getFfmpegNames(file) {
+        const inputExtension = getExtension(file.name) || 'mp4';
+        const safeInputName = `input.${inputExtension}`;
+        const outputPlan = getOutputPlan(file);
+        const safeOutputName = `output.${outputPlan.extension}`;
+        return { safeInputName, safeOutputName, outputPlan };
+      }
+
+      async function compressVideo() {
+        if (!sourceFile || isBusy) return;
+
+        setBusy(true);
+        resetResult();
+        setEngineState(ffmpegLoaded ? 'ENGINE READY' : 'LOADING ENGINE');
+        setStatus('Preparing the video compressor…');
+
+        let inputName = '';
+        let outputName = '';
+        try {
+          await ensureFfmpeg();
+          const settings = getQualitySettings(elements.qualitySlider.value);
+          const names = getFfmpegNames(sourceFile);
+          inputName = names.safeInputName;
+          outputName = names.safeOutputName;
+
+          setProgress('Loading video into browser memory…', 12);
+          const sourceData = new Uint8Array(await sourceFile.arrayBuffer());
+          await ffmpeg.writeFile(inputName, sourceData);
+
+          const command = [
+            '-i', inputName,
+            '-map', '0:v:0',
+            '-map', '0:a?',
+            '-map_metadata', '0',
+            '-c:v', 'libx264',
+            '-preset', 'veryfast',
+            '-crf', String(settings.crf),
+            '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac',
+            '-b:a', settings.audioBitrate
+          ];
+
+          if (['mp4', 'm4v', 'mov'].includes(names.outputPlan.extension)) {
+            command.push('-movflags', '+faststart');
+          }
+
+          command.push(outputName);
+          setProgress('Compressing video…', 14);
+          setStatus(`Compressing with ${settings.label.toLowerCase()} settings…`);
+          await ffmpeg.exec(command);
+
+          setProgress('Reading compressed video…', 95);
+          const outputData = await ffmpeg.readFile(outputName);
+          outputBlob = new Blob([outputData], { type: names.outputPlan.mime });
+          outputFileName = names.outputPlan.name;
+          outputCanOverwriteSource = Boolean(sourceHandle && names.outputPlan.canOverwrite);
+          outputObjectUrl = URL.createObjectURL(outputBlob);
+
+          elements.resultFileName.textContent = outputFileName;
+          elements.resultOriginalSize.textContent = formatBytes(sourceFile.size);
+          elements.resultOutputSize.textContent = formatBytes(outputBlob.size);
+          const difference = outputBlob.size - sourceFile.size;
+          const differenceSign = difference > 0 ? '+' : difference < 0 ? '-' : '';
+          const percentage = sourceFile.size > 0 ? Math.round((difference / sourceFile.size) * 100) : 0;
+          const percentageSign = percentage > 0 ? '+' : '';
+          elements.resultChange.textContent = `${differenceSign}${formatBytes(Math.abs(difference))} · ${percentageSign}${percentage}%`;
+          elements.resultFormat.textContent = names.outputPlan.extension.toUpperCase();
+          elements.resultPreview.src = outputObjectUrl;
+          elements.resultCard.classList.add('visible');
+          elements.saveActions.classList.add('visible');
+
+          setProgress('Compression complete.', 100);
+          hideProgress();
+          setStatus('Compressed video is ready. Choose Save Over Original or Save New Copy.', 'success');
+          setEngineState('ENGINE READY');
+
+          try {
+            await ffmpeg.deleteFile(inputName);
+            await ffmpeg.deleteFile(outputName);
+          } catch (_) {
+            // The files are temporary in the FFmpeg virtual filesystem. A cleanup failure is harmless.
+          }
+        } catch (error) {
+          console.error(error);
+          hideProgress();
+          setEngineState(ffmpegLoaded ? 'ENGINE READY' : 'ENGINE ERROR');
+          const message = error && error.message ? error.message : 'Compression failed.';
+          setStatus(`${message} Try a shorter video or a lower-resolution source if browser memory is tight.`, 'error');
+          try {
+            if (ffmpeg && inputName) await ffmpeg.deleteFile(inputName);
+            if (ffmpeg && outputName) await ffmpeg.deleteFile(outputName);
+          } catch (_) {
+            // No further action needed.
+          }
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function writeBlobToHandle(handle) {
+        const writable = await handle.createWritable();
+        await writable.write(outputBlob);
+        await writable.close();
+      }
+
+      function triggerDownload() {
+        const link = document.createElement('a');
+        link.href = outputObjectUrl;
+        link.download = outputFileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
+
+      async function saveOverOriginal() {
+        if (!outputBlob || !sourceHandle || !outputCanOverwriteSource || isBusy) return;
+        const proceed = window.confirm(`Replace “${sourceFile.name}” with the compressed version?\n\nThe original file will be overwritten.`);
+        if (!proceed) return;
+
+        try {
+          setBusy(true);
+          setStatus('Requesting permission to overwrite the original…');
+          const permission = await sourceHandle.requestPermission({ mode: 'readwrite' });
+          if (permission !== 'granted') {
+            throw new Error('Permission to overwrite the original file was not granted.');
+          }
+          await writeBlobToHandle(sourceHandle);
+          setStatus(`Saved compressed video over “${sourceFile.name}”.`, 'success');
+        } catch (error) {
+          console.error(error);
+          const message = error && error.message ? error.message : 'Could not overwrite the original file.';
+          setStatus(`${message} Use Save New Copy instead.`, 'error');
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function saveNewCopy() {
+        if (!outputBlob || isBusy) return;
+        try {
+          setBusy(true);
+          setStatus('Saving a new compressed copy…');
+          if (window.showSaveFilePicker) {
+            const extension = `.${getExtension(outputFileName) || 'mp4'}`;
+            const handle = await window.showSaveFilePicker({
+              suggestedName: outputFileName,
+              types: [{
+                description: 'Compressed video',
+                accept: { [outputBlob.type || 'video/mp4']: [extension] }
+              }]
+            });
+            await writeBlobToHandle(handle);
+            setStatus(`Saved “${outputFileName}”.`, 'success');
+          } else {
+            triggerDownload();
+            setStatus(`Your browser downloaded “${outputFileName}”.`, 'success');
+          }
+        } catch (error) {
+          if (error && error.name === 'AbortError') {
+            setStatus('Save cancelled.');
+          } else {
+            console.error(error);
+            const message = error && error.message ? error.message : 'Could not save the compressed copy.';
+            setStatus(message, 'error');
+          }
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function chooseVideoWithHandle() {
+        if (isBusy) return;
+        try {
+          if (!window.showOpenFilePicker) {
+            elements.fileInput.click();
+            return;
+          }
+          const [handle] = await window.showOpenFilePicker({
+            multiple: false,
+            types: [{
+              description: 'Video files',
+              accept: {
+                'video/*': ['.mp4', '.m4v', '.mov', '.mkv', '.avi', '.webm']
+              }
+            }]
+          });
+          const file = await handle.getFile();
+          loadSourceFile(file, handle);
+        } catch (error) {
+          if (error && error.name !== 'AbortError') {
+            console.error(error);
+            elements.fileInput.click();
+            setStatus('The browser file picker could not provide overwrite access. A new copy can still be saved after compression.');
+          }
+        }
+      }
+
+      function bindHeaderCollapse() {
+        elements.topStickyPanel.addEventListener('mouseenter', () => {
+          panelHovered = true;
+          expandHeader();
+          window.clearInterval(countdownTimer);
+        });
+
+        elements.topStickyPanel.addEventListener('mouseleave', () => {
+          panelHovered = false;
+          resetCountdown();
+          startCountdown();
+        });
+
+        elements.topStickyPanel.addEventListener('click', () => {
+          if (elements.topStickyPanel.classList.contains('minimized')) {
+            expandHeader();
+          }
+        });
+
+        elements.countdownCircle.addEventListener('dblclick', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          panelLocked = !panelLocked;
+          updateCountdownDisplay();
+          if (panelLocked) {
+            window.clearInterval(countdownTimer);
+            expandHeader();
+          } else if (!panelHovered) {
+            startCountdown();
+          }
+        });
+
+        startCountdown();
+      }
+
+      function bindEvents() {
+        elements.openVideoButton.addEventListener('click', chooseVideoWithHandle);
+        elements.clearButton.addEventListener('click', resetWorkspace);
+        elements.compressButton.addEventListener('click', compressVideo);
+        elements.showSaveActionsButton.addEventListener('click', () => {
+          elements.saveActions.classList.toggle('visible');
+        });
+        elements.overwriteButton.addEventListener('click', saveOverOriginal);
+        elements.saveCopyButton.addEventListener('click', saveNewCopy);
+        elements.qualitySlider.addEventListener('input', paintQualityControl);
+
+        elements.fileInput.addEventListener('change', () => {
+          const [file] = elements.fileInput.files;
+          if (file) loadSourceFile(file, null);
+        });
+
+        elements.dropZone.addEventListener('click', () => elements.fileInput.click());
+        elements.dropZone.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            elements.fileInput.click();
+          }
+        });
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+          elements.dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            elements.dropZone.classList.add('drag-active');
+          });
+        });
+
+        ['dragleave', 'drop'].forEach((eventName) => {
+          elements.dropZone.addEventListener(eventName, (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            elements.dropZone.classList.remove('drag-active');
+          });
+        });
+
+        elements.dropZone.addEventListener('drop', (event) => {
+          const file = event.dataTransfer && event.dataTransfer.files ? event.dataTransfer.files[0] : null;
+          if (file) loadSourceFile(file, null);
+        });
+
+        [elements.openVideoButton, elements.compressButton, elements.overwriteButton, elements.saveCopyButton].forEach((button) => {
+          button.addEventListener('mouseenter', () => setHubStatus(button.textContent.trim()));
+          button.addEventListener('mouseleave', clearHubStatus);
+        });
+
+        window.addEventListener('beforeunload', () => {
+          revokeSourceObjectUrl();
+          revokeOutputObjectUrl();
+        });
+      }
+
+      paintQualityControl();
+      bindHeaderCollapse();
+      bindEvents();
+      setBusy(false);
+      setStatus('Choose a video to start.');
+      console.info(`Organon VidCompressor v${VERSION} ready.`);
+    })();
+  </script>
+</body>
+</html>

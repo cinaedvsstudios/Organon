@@ -1,0 +1,15 @@
+THIRD-PARTY COMPONENTS
+
+This tool bundles the following local files so the compression engine is not loaded from a third-party CDN at runtime:
+
+1. @ffmpeg/ffmpeg 0.12.10
+   Files: vendor/ffmpeg/ffmpeg.js, vendor/ffmpeg/814.ffmpeg.js
+   License: MIT
+   Project: https://github.com/ffmpegwasm/ffmpeg.wasm
+
+2. @ffmpeg/core 0.12.10 (single-thread build)
+   Files: vendor/ffmpeg-core/ffmpeg-core.js, vendor/ffmpeg-core/ffmpeg-core.wasm
+   License declared by package: GPL-2.0-or-later
+   Project: https://github.com/ffmpegwasm/ffmpeg.wasm
+
+Before distributing Organon outside personal/internal use, review the licensing obligations for the bundled FFmpeg core and provide any required corresponding source/attribution.
