@@ -30,6 +30,21 @@
     });
   };
 
+  QS.findNext = () => {
+    if (!QS.state.searchMatches.length) {
+      QS.showToast('No search results in this sheet.');
+      return;
+    }
+    const nextIndex = (QS.state.searchIndex + 1) % QS.state.searchMatches.length;
+    const match = QS.state.searchMatches[nextIndex];
+    QS.setSelection(match.r, match.c);
+    QS.renderGrid();
+    QS.state.searchIndex = nextIndex;
+    QS.els.sheetGrid.querySelector(`td[data-row="${match.r}"][data-column="${match.c}"]`)
+      ?.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+    QS.setStatus(`Search result ${nextIndex + 1} of ${QS.state.searchMatches.length}`);
+  };
+
   function handleKeydown(event) {
     const target = event.target;
     if (!QS.els.modalBackdrop.hidden) return;
