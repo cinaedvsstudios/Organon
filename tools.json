@@ -3,7 +3,7 @@
   "categories": [
     {
       "id": "create",
-      "label": "AUDIO",
+      "label": "AUDIO<style id=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(220,220,220,.44),0 1px 1px rgba(0,0,0,.35)}#tool-quicksheet-split{width:167px!important;height:30px!important}#tool-quicksheet-split .dual-label-left{left:0!important;width:100%!important}#tool-quicksheet-split .dual-label-right,#tool-quicksheet-split .right-zone{display:none!important}#tool-quicksheet-split .left-zone{width:100%!important}</style>",
       "tools": [
         {
           "id": "onda-split",
@@ -28,7 +28,7 @@
         },
         {
           "id": "ihy",
-          "label": "IHY<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
+          "label": "IHY",
           "path": "tools/ihy/index.html",
           "description": "Create local sound effects, play an editable music grid, import audio references and export Ihy project JSON."
         },
@@ -46,7 +46,7 @@
       "tools": [
         {
           "id": "animation-maker",
-          "label": "ANIMATION MAKER<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
+          "label": "ANIMATION MAKER",
           "path": "tools/animation-maker/index.html",
           "description": "Create and preview animation assets from local media or image sequences."
         },
@@ -70,7 +70,7 @@
       "tools": [
         {
           "id": "alpha-isolator",
-          "label": "ALPHA ISOLATOR<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
+          "label": "ALPHA ISOLATOR",
           "path": "tools/alpha-isolator/index.html",
           "description": "Isolate, refine, and export alpha-channel image transparency."
         },
@@ -78,7 +78,7 @@
           "id": "multi-edit",
           "label": "MULTI EDIT",
           "path": "tools/multi-edit/index.html",
-          "description": "Edit and process multiple local media or asset files in one workspace."
+          "description": "Edit multiple images with colour grading, chromakey, crop and resize controls."
         },
         {
           "id": "image-tile",
@@ -118,7 +118,7 @@
       "tools": [
         {
           "id": "simple-edit",
-          "label": "SIMPLE EDIT<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
+          "label": "SIMPLE EDIT",
           "path": "tools/simple-edit/index.html",
           "description": "Quickly cut and export selected audio or video timeline segments."
         },
@@ -160,7 +160,7 @@
       "tools": [
         {
           "id": "capsularius",
-          "label": "CAPSULARIUS<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}#tool-quicksheet-split{width:167px!important;height:30px!important}#tool-quicksheet-split .dual-label-left{left:0!important;width:100%!important}#tool-quicksheet-split .dual-label-right,#tool-quicksheet-split .right-zone{display:none!important}#tool-quicksheet-split .left-zone{width:100%!important}</style>",
+          "label": "CAPSULARIUS",
           "path": "tools/capsularius/index.html",
           "description": "Open the local-first project workspace for folders and project assets."
         },
