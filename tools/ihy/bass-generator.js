@@ -63,7 +63,7 @@
   const state = {
     mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
     source: 'key', instrument: 'grand_piano', register: 36, tempo: 92, sequence: [], manual: false,
-    rollNotes: [], rollReady: false, rollDirty: false, rollZoom: 1, rollViewportPending: true,
+    rollNotes: [], rollReady: false, rollDirty: false, rollZoom: 1, rollViewportPending: true, loopPreview: false,
     write: { kind: 'interval', value: 0 }, tie: 2,
     effects: { sustain: true, echo: false, chords: false },
     custom: { motion: 'pedal', pedal: 'root', articulation: 82, dynamics: 'flat', inversions: false }
@@ -400,7 +400,20 @@
       detail.textContent = `${activeEmotion().text} Tempo guide: ${activeEmotion().tempo}.`;
     }
   }
-  function renderEffects() { [['bassSustain','sustain'], ['bassEcho','echo'], ['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).classList.toggle('selected', state.effects[key])); }
+  function renderPreviewControls() {
+    const previewButton = $('#bassPreview');
+    const stopButton = $('#bassStop');
+    const loopButton = $('#bassLoop');
+    const running = playback.active || playback.pending;
+    previewButton?.classList.toggle('is-previewing', running);
+    stopButton?.toggleAttribute('disabled', !running);
+    loopButton?.classList.toggle('selected', state.loopPreview);
+    loopButton?.setAttribute('aria-pressed', String(state.loopPreview));
+  }
+  function renderEffects() {
+    [['bassSustain','sustain'], ['bassEcho','echo'], ['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).classList.toggle('selected', state.effects[key]));
+    renderPreviewControls();
+  }
   function sortRollNotes() { state.rollNotes.sort((a, b) => a.start - b.start || a.pitch - b.pitch || a.id.localeCompare(b.id)); }
   function rollPointFromEvent(event) {
     const grid = $('#bassRollGrid');
@@ -693,38 +706,19 @@
     playback.nodes.splice(0).forEach(node => { try { node.stop(); } catch (_) {} });
     playback.nodes = [];
     playback.active = false;
-    const button = $('#bassPreview');
-    if (button) { button.textContent = '▶ Preview'; button.classList.remove('is-previewing'); }
     updateRollPlayhead(0, false);
+    renderPreviewControls();
   }
-  function restartPreviewIfRunning() {
-    if (!playback.active && !playback.pending) return;
-    stopPreview();
-    window.setTimeout(() => preview(), 0);
-  }
-  async function preview() {
-    if (playback.active || playback.pending) { stopPreview(); return; }
-
-    const request = ++playback.request;
-    const tempo = clamp(Number($('#bassTempo').value) || state.tempo, 30, 260);
-    state.tempo = tempo;
-    playback.pending = true;
-    const project = { ...readProject(), bpm: tempo };
-    const player = await loadPlayer();
-    if (request !== playback.request) return;
-    playback.pending = false;
-    if (!player) { status('Preview sound could not load.'); return; }
-
-    const result = buildPlan(project);
+  function startPreviewCycle(result, seconds) {
+    if (!playback.active) return;
+    clearTimeout(playback.timer);
+    playback.nodes = [];
     const now = playback.context.currentTime + 0.06;
-    const seconds = secondsPerBeat(project);
-    playback.active = true;
-    $('#bassPreview').textContent = '⏹ Stop Preview';
-    $('#bassPreview').classList.add('is-previewing');
-    startRollPlayhead(32 * seconds, state.phrase * seconds);
+    const cycleSeconds = 32 * seconds;
+    startRollPlayhead(cycleSeconds, state.phrase * seconds);
     result.notes.filter(note => note.start < result.insertAt + 32).forEach(note => {
       try {
-        const node = player.play(note.pitch, now + (note.start - result.insertAt) * seconds, {
+        const node = playback.player.play(note.pitch, now + (note.start - result.insertAt) * seconds, {
           duration: Math.max(0.08, note.duration * seconds),
           gain: clamp(note.velocity / 127, 0.15, 0.95),
           attack: 0.008,
@@ -733,7 +727,36 @@
         if (node && node.stop) playback.nodes.push(node);
       } catch (_) {}
     });
-    playback.timer = window.setTimeout(stopPreview, Math.min(32000, 32 * seconds * 1000 + 260));
+    playback.timer = window.setTimeout(() => {
+      if (!playback.active) return;
+      if (state.loopPreview) startPreviewCycle(result, seconds);
+      else stopPreview();
+    }, Math.round(cycleSeconds * 1000 + 260));
+  }
+  function restartPreviewIfRunning() {
+    if (!playback.active && !playback.pending) return;
+    stopPreview();
+    window.setTimeout(() => preview(), 0);
+  }
+  async function preview() {
+    if (playback.active || playback.pending) stopPreview();
+
+    const request = ++playback.request;
+    const tempo = clamp(Number($('#bassTempo').value) || state.tempo, 30, 260);
+    state.tempo = tempo;
+    playback.pending = true;
+    renderPreviewControls();
+    const project = { ...readProject(), bpm: tempo };
+    const player = await loadPlayer();
+    if (request !== playback.request) return;
+    playback.pending = false;
+    if (!player) { status('Preview sound could not load.'); renderPreviewControls(); return; }
+
+    const result = buildPlan(project);
+    const seconds = secondsPerBeat(project);
+    playback.active = true;
+    renderPreviewControls();
+    startPreviewCycle(result, seconds);
   }
   function addToTimeline() {
     const project = readProject();
@@ -826,7 +849,12 @@
   }
   function bind() {
     document.addEventListener('click', event => { const trigger = event.target.closest('#quickBass'); if (!trigger) return; event.preventDefault(); event.stopImmediatePropagation(); openModal(); }, true);
-    $('#bassClose').addEventListener('click', closeModal); $('#bassPreview').addEventListener('click', preview); $('#bassAdd').addEventListener('click', addToTimeline); $('#bassProcess').addEventListener('click', processPastedNotes);
+    $('#bassClose').addEventListener('click', closeModal);
+    $('#bassPreview').addEventListener('click', preview);
+    $('#bassStop').addEventListener('click', stopPreview);
+    $('#bassLoop').addEventListener('click', () => { state.loopPreview = !state.loopPreview; renderPreviewControls(); });
+    $('#bassAdd').addEventListener('click', addToTimeline);
+    $('#bassProcess').addEventListener('click', processPastedNotes);
     $('#bassModeTabs').addEventListener('click', event => { const button = event.target.closest('.bass-mode-tab'); if (button) setMode(button.dataset.mode); });
     $('#bassLoadProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = Number($('#bassProfileSelect').value); loadGenre(); } else { state.emotionId = $('#bassProfileSelect').value; loadEmotion(); } syncRollFromSequence(readProject()); render(); });
     $('#bassRandomProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = pick(genres).id; loadGenre(); } else { state.emotionId = pick(Object.keys(emotions)); loadEmotion(); } syncRollFromSequence(readProject()); render(); });

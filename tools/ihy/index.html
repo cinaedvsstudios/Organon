@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.11 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.12 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
-  <link rel="stylesheet" href="./bass-generator.css?v=1.11">
+  <link rel="stylesheet" href="./bass-generator.css?v=1.12">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.11</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.12</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -61,10 +61,8 @@
       <header id="bassModalHeader" class="modal-header bass-modal-header">
         <h3 id="bassModalDragTitle" class="bass-modal-drag-title" title="Drag window">＋ Bass Generator</h3>
         <div class="bass-header-actions">
-          <div id="bassModeTabs" class="bass-mode-tabs bass-header-tabs"><button class="bass-mode-tab selected" data-mode="genre" type="button">Genre</button><button class="bass-mode-tab" data-mode="emotion" type="button">Emotion</button></div>
-          <button id="bassPreview" class="button play" type="button">▶ Preview</button>
           <button id="bassAdd" class="button primary" type="button">Add to Timeline</button>
-          <button id="bassClose" class="button compact" type="button">Close</button>
+          <button id="bassClose" class="button compact bass-close-button" type="button" title="Close Bass Generator" aria-label="Close Bass Generator">❌</button>
         </div>
       </header>
       <div class="modal-body">
@@ -85,6 +83,7 @@
               <div class="bass-card-section"><span class="bass-section-label">Timeline length</span><span class="bass-length"><input id="bassLength" type="range" min="1" max="10" value="1" step="1"><output id="bassLengthValue">1 × 32 beats = 32 beats</output></span></div>
             </section>
             <section id="bassProfileCard" class="bass-card">
+              <div id="bassModeTabs" class="bass-mode-tabs bass-profile-tabs"><button class="bass-mode-tab selected" data-mode="genre" type="button">Genre</button><button class="bass-mode-tab" data-mode="emotion" type="button">Emotion</button></div>
               <h4 id="bassProfileHeading">Genre profile</h4>
               <div class="bass-profile-select"><select id="bassProfileSelect" aria-label="Bass profile"></select><button id="bassLoadProfile" class="button compact" type="button">Load</button></div>
               <p id="bassEmotionDetail" class="bass-emotion-detail" hidden></p>
@@ -93,7 +92,19 @@
             </section>
           </aside>
           <section class="bass-editor bass-roll-workspace">
-            <div class="bass-grid-heading"><div class="bass-roll-actions"><div class="bass-roll-zoom" aria-label="Bass piano roll zoom"><button id="bassRollZoomOut" class="button compact" type="button" title="Zoom out">−</button><output id="bassRollZoomValue" class="bass-roll-zoom-value">100%</output><button id="bassRollZoomIn" class="button compact" type="button" title="Zoom in">＋</button></div><button id="bassResetRoll" class="button" type="button">Reset generated</button></div></div>
+            <div class="bass-grid-heading">
+              <div class="bass-roll-toolbar">
+                <div class="bass-roll-transport" aria-label="Bass preview controls">
+                  <button id="bassPreview" class="button play" type="button">▶ Preview</button>
+                  <button id="bassStop" class="button stop bass-preview-stop" type="button" disabled>⏹ Stop</button>
+                  <button id="bassLoop" class="button bass-loop-toggle" type="button" aria-pressed="false">↻ Loop</button>
+                </div>
+                <div class="bass-roll-actions">
+                  <div class="bass-roll-zoom" aria-label="Bass piano roll zoom"><button id="bassRollZoomOut" class="button compact" type="button" title="Zoom out">−</button><output id="bassRollZoomValue" class="bass-roll-zoom-value">100%</output><button id="bassRollZoomIn" class="button compact" type="button" title="Zoom in">＋</button></div>
+                  <button id="bassResetRoll" class="button" type="button">Reset generated</button>
+                </div>
+              </div>
+            </div>
             <div id="bassRollScroll" class="bass-roll-scroll"><div id="bassRollCanvas" class="bass-roll-canvas"><div id="bassRollRuler" class="bass-roll-ruler"></div><div id="bassRollLabels" class="bass-roll-labels"></div><div id="bassRollGrid" class="bass-roll-grid"></div></div></div>
           </section>
         </div>        </div>
@@ -108,7 +119,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.11"></script>
-  <script src="./bass-generator.js?v=1.11"></script>
+  <script src="./clear-all.js?v=1.12"></script>
+  <script src="./bass-generator.js?v=1.12"></script>
 </body>
 </html>
