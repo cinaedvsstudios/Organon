@@ -1,0 +1,45 @@
+/* Visible spreadsheet scrollbars and row-header selection feedback. */
+.grid-scroll {
+  scrollbar-gutter: stable both-edges;
+  scrollbar-color: #896b49 #111211;
+  scrollbar-width: auto;
+}
+
+.grid-scroll::-webkit-scrollbar {
+  width: 14px;
+  height: 14px;
+}
+
+.grid-scroll::-webkit-scrollbar-track {
+  background: #111211;
+  border-left: 1px solid rgba(137, 107, 73, 0.68);
+  border-top: 1px solid rgba(137, 107, 73, 0.68);
+}
+
+.grid-scroll::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border: 3px solid #111211;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #b78a58, #6f5238);
+  box-shadow: inset 0 0 0 1px rgba(245, 240, 219, 0.26);
+}
+
+.grid-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #75b2de, #4b84bf);
+}
+
+.grid-scroll::-webkit-scrollbar-corner {
+  background: #1b1c19;
+  border-top: 1px solid rgba(137, 107, 73, 0.68);
+  border-left: 1px solid rgba(137, 107, 73, 0.68);
+}
+
+.sheet-grid tr:has(td.selected) .row-heading {
+  background: rgba(38, 97, 92, 0.78);
+  color: #e8fbff;
+  box-shadow: inset -2px 0 0 #75b2de;
+}
+
+.row-heading {
+  cursor: pointer;
+}
