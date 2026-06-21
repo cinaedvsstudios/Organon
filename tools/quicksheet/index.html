@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#181919">
+  <title>Quicksheet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>[hidden] { display: none !important; }</style>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="core.js" defer></script>
+  <script src="grid.js" defer></script>
+  <script src="actions.js" defer></script>
+  <script src="files.js" defer></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <div class="brand-mark">QS</div>
+        <div>
+          <h1>QUICKSHEET</h1>
+          <p>CSV · XLSX · XLS quick editor</p>
+        </div>
+      </div>
+
+      <div class="file-block" aria-live="polite">
+        <span class="file-label">FILE</span>
+        <strong id="file-name">No file open</strong>
+        <span id="dirty-indicator" class="dirty-indicator" hidden>Unsaved</span>
+      </div>
+
+      <div class="toolbar" aria-label="Quicksheet controls">
+        <button id="open-file-btn" class="tool-button primary" type="button">Open file</button>
+        <button id="paste-sheet-btn" class="tool-button" type="button">Paste sheet</button>
+        <button id="undo-btn" class="tool-button compact" type="button" title="Undo (Ctrl+Z)">↶</button>
+        <button id="redo-btn" class="tool-button compact" type="button" title="Redo (Ctrl+Y)">↷</button>
+        <button id="add-row-btn" class="tool-button" type="button">+ Row</button>
+        <button id="add-column-btn" class="tool-button" type="button">+ Column</button>
+        <label class="search-box" for="search-input">
+          <span>⌕</span>
+          <input id="search-input" type="search" placeholder="Search active sheet">
+        </label>
+        <button id="find-next-btn" class="tool-button compact" type="button" title="Next search result">↓</button>
+        <span id="search-count" class="search-count">0</span>
+        <button id="clear-btn" class="tool-button danger" type="button">Clear</button>
+        <button id="save-btn" class="tool-button primary" type="button">Save</button>
+        <button id="save-as-btn" class="tool-button" type="button">Save as</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section id="empty-state" class="empty-state" tabindex="0" aria-label="Blank Quicksheet workspace">
+        <div class="empty-card">
+          <div class="empty-icon">▦</div>
+          <h2>OPEN OR PASTE A SHEET</h2>
+          <p>Drag in a CSV, XLSX or XLS file, use <strong>Open file</strong>, or copy cells from Google Sheets / Excel and press <kbd>Ctrl</kbd> + <kbd>V</kbd>.</p>
+          <div class="empty-actions">
+            <button id="empty-open-btn" class="tool-button primary" type="button">Open file</button>
+            <button id="empty-paste-btn" class="tool-button" type="button">Paste sheet</button>
+          </div>
+          <small>Opening through the file picker enables Save over the same local file in Chrome and Edge.</small>
+        </div>
+      </section>
+
+      <section id="grid-stage" class="grid-stage" hidden>
+        <div id="filter-summary" class="filter-summary" hidden></div>
+        <div id="grid-scroll" class="grid-scroll" tabindex="0" aria-label="Editable spreadsheet grid">
+          <table id="sheet-grid" class="sheet-grid"></table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="sheetbar">
+      <div id="sheet-tabs" class="sheet-tabs" role="tablist" aria-label="Workbook sheets"></div>
+      <button id="new-sheet-btn" class="sheet-add" type="button" title="New sheet">+</button>
+      <div id="status-text" class="status-text" aria-live="polite">Ready</div>
+    </footer>
+  </div>
+
+  <input id="fallback-file-input" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden>
+
+  <div id="context-menu" class="context-menu" hidden></div>
+
+  <div id="modal-backdrop" class="modal-backdrop" hidden>
+    <section id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <header class="modal-header">
+        <h2 id="modal-title">Quicksheet</h2>
+        <button id="modal-close-btn" class="modal-close" type="button" aria-label="Close">×</button>
+      </header>
+      <div id="modal-body" class="modal-body"></div>
+      <footer id="modal-actions" class="modal-actions"></footer>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
