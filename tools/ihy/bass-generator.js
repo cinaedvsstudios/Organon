@@ -494,22 +494,15 @@
     }
   }
   function renderMode() {
-
-    const customMode = state.mode === 'custom';
-    $('#bassProfileCard').hidden = customMode;
-    $('#bassCustomCard').hidden = !customMode;
     $$('.bass-mode-tab').forEach(button => button.classList.toggle('selected', button.dataset.mode === state.mode));
   }
   function render() {
     const project = readProject();
-    renderMode(); renderGuideOptions(project); if (state.mode !== 'custom') renderProfiles();
+    renderMode(); renderGuideOptions(project); renderProfiles();
     $('#bassLength').value = String(state.units); $('#bassLengthValue').textContent = `${state.units} × 32 beats = ${state.units * 32} beats`;
     $('#bassMutationRate').value = String(state.mutation); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`;
     $('#bassTempo').value = String(state.tempo);
     $('#bassInstrument').value = state.instrument; $('#bassRegister').value = String(state.register);
-    $('#bassCustomMotion').value = state.custom.motion; $('#bassPedalTarget').value = state.custom.pedal;
-    $('#bassArticulation').value = String(state.custom.articulation); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced';
-    $('#bassDynamics').value = state.custom.dynamics; $('#bassInversions').checked = state.custom.inversions;
     $$('.bass-phrase').forEach(button => button.classList.toggle('selected', Number(button.dataset.b) === state.phrase));
     if (!state.rollReady) syncRollFromSequence(project);
     $('#bassRollZoomValue').textContent = `${Math.round(state.rollZoom * 100)}%`;
@@ -518,7 +511,7 @@
   function openModal() {
     stopPreview();
     state.tempo = clamp(Number(readProject().bpm) || 92, 30, 260);
-    if (!state.sequence.length || state.sequence.length !== stepCount()) { if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); }
+    if (!state.sequence.length || state.sequence.length !== stepCount()) { if (state.mode === 'emotion') loadEmotion(); else loadGenre(); }
     if (!state.rollReady) syncRollFromSequence(readProject());
     state.rollViewportPending = true;
     render(); $('#bassModal').hidden = false;
@@ -826,8 +819,8 @@
     });
   }
   function setMode(mode) {
-    state.mode = mode;
-    if (mode === 'genre') loadGenre(); else if (mode === 'emotion') loadEmotion(); else generateCustom();
+    state.mode = mode === 'emotion' ? 'emotion' : 'genre';
+    if (state.mode === 'emotion') loadEmotion(); else loadGenre();
     syncRollFromSequence(readProject());
     render();
   }
@@ -838,7 +831,6 @@
     $('#bassLoadProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = Number($('#bassProfileSelect').value); loadGenre(); } else { state.emotionId = $('#bassProfileSelect').value; loadEmotion(); } syncRollFromSequence(readProject()); render(); });
     $('#bassRandomProfile').addEventListener('click', () => { if (state.mode === 'genre') { state.genreId = pick(genres).id; loadGenre(); } else { state.emotionId = pick(Object.keys(emotions)); loadEmotion(); } syncRollFromSequence(readProject()); render(); });
     $('#bassMutate').addEventListener('click', () => { if (state.mode === 'genre') mutateGenre(); else loadEmotion(); syncRollFromSequence(readProject()); render(); });
-    $('#bassGenerateCustom').addEventListener('click', () => { generateCustom(); syncRollFromSequence(readProject()); render(); });
     $('#bassLength').addEventListener('input', event => { state.units = Number(event.target.value); render(); });
     let tempoRestartTimer = 0;
     const updateBassTempo = value => {
@@ -869,12 +861,7 @@
       restartPreviewIfRunning();
     });
     $('#bassRegister').addEventListener('change', event => { const previous = state.register; state.register = Number(event.target.value); shiftRollRegister(previous, state.register); state.rollViewportPending = true; render(); });
-    $('#bassCustomMotion').addEventListener('change', event => { state.custom.motion = event.target.value; });
-    $('#bassPedalTarget').addEventListener('change', event => { state.custom.pedal = event.target.value; });
-    $('#bassArticulation').addEventListener('input', event => { state.custom.articulation = Number(event.target.value); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced'; });
-    $('#bassDynamics').addEventListener('change', event => { state.custom.dynamics = event.target.value; });
-    $('#bassInversions').addEventListener('change', event => { state.custom.inversions = event.target.checked; });
-    $('#bassPhraseChoices').addEventListener('click', event => { const button = event.target.closest('.bass-phrase'); if (!button) return; state.phrase = Number(button.dataset.b); if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); syncRollFromSequence(readProject()); render(); });
+    $('#bassPhraseChoices').addEventListener('click', event => { const button = event.target.closest('.bass-phrase'); if (!button) return; state.phrase = Number(button.dataset.b); if (state.mode === 'emotion') loadEmotion(); else loadGenre(); syncRollFromSequence(readProject()); render(); });
     [['bassSustain','sustain'],['bassEcho','echo'],['bassChords','chords']].forEach(([id, key]) => $(`#${id}`).addEventListener('click', () => { state.effects[key] = !state.effects[key]; stopPreview(); render(); }));
     $('#bassResetRoll').addEventListener('click', resetRoll);
     $('#bassRollZoomOut').addEventListener('click', () => adjustRollZoom(-1));
