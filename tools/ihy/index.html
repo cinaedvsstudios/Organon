@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.6 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.7 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
   <link rel="stylesheet" href="./bass-generator.css?v=1.5">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.6</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.7</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -59,13 +59,12 @@
   <div id="bassModal" class="modal-layer" hidden>
     <section id="bassModalCard" class="modal modal-wide bass-modal">
       <header id="bassModalHeader" class="modal-header bass-modal-header">
-        <h3>＋ Bass Generator</h3>
+        <h3 id="bassModalDragTitle" class="bass-modal-drag-title" title="Drag window">＋ Bass Generator</h3>
         <div class="bass-header-actions">
           <div id="bassModeTabs" class="bass-mode-tabs bass-header-tabs"><button class="bass-mode-tab selected" data-mode="genre" type="button">Genre</button><button class="bass-mode-tab" data-mode="emotion" type="button">Emotion</button><button class="bass-mode-tab" data-mode="custom" type="button">Custom</button></div>
           <button id="bassPreview" class="button play" type="button">▶ Preview</button>
           <button id="bassAdd" class="button primary" type="button">Add to Timeline</button>
           <button id="bassClose" class="button compact" type="button">Close</button>
-          <span class="bass-drag-handle" title="Drag window">⠿</span>
         </div>
       </header>
       <div class="modal-body">
@@ -104,7 +103,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.6"></script>
-  <script src="./bass-generator.js?v=1.6"></script>
+  <script src="./clear-all.js?v=1.7"></script>
+  <script src="./bass-generator.js?v=1.7"></script>
 </body>
 </html>

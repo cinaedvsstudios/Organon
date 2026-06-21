@@ -516,26 +516,72 @@
   }
 
   function makeWindowDraggable() {
-    const card = $('#bassModalCard'), header = $('#bassModalHeader'), grip = $('#bassResizeGrip');
-    if (!card || !header || !grip) return;
-    header.addEventListener('pointerdown', event => {
-      if (event.target.closest('button,input,select,textarea,label')) return;
-      event.preventDefault();
-      const rect = card.getBoundingClientRect(); const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
-      card.style.position = 'fixed'; card.style.margin = '0';
-      card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`;
+    const card = $('#bassModalCard'), dragTitle = $('#bassModalDragTitle'), grip = $('#bassResizeGrip');
+    if (!card || !dragTitle || !grip) return;
+
+    const pinCurrentPosition = rect => {
       card.classList.add('positioned');
-      header.setPointerCapture?.(event.pointerId);
-      const move = moveEvent => { card.style.left = `${clamp(moveEvent.clientX - offsetX, 0, window.innerWidth - card.offsetWidth)}px`; card.style.top = `${clamp(moveEvent.clientY - offsetY, 0, window.innerHeight - card.offsetHeight)}px`; };
-      const end = () => { header.releasePointerCapture?.(event.pointerId); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end); };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true }); window.addEventListener('pointercancel', end, { once: true });
+      card.style.position = 'fixed';
+      card.style.inset = 'auto';
+      card.style.margin = '0';
+      card.style.right = 'auto';
+      card.style.bottom = 'auto';
+      card.style.transform = 'none';
+      card.style.left = `${Math.round(rect.left)}px`;
+      card.style.top = `${Math.round(rect.top)}px`;
+    };
+
+    dragTitle.addEventListener('pointerdown', event => {
+      if (event.button !== 0) return;
+      const rect = card.getBoundingClientRect();
+      const startX = event.clientX, startY = event.clientY;
+      const offsetX = startX - rect.left, offsetY = startY - rect.top;
+      let dragging = false;
+      dragTitle.setPointerCapture?.(event.pointerId);
+
+      const move = moveEvent => {
+        const deltaX = moveEvent.clientX - startX;
+        const deltaY = moveEvent.clientY - startY;
+        if (!dragging) {
+          if (Math.hypot(deltaX, deltaY) < 6) return;
+          dragging = true;
+          pinCurrentPosition(rect);
+          document.body.style.userSelect = 'none';
+        }
+        moveEvent.preventDefault();
+        card.style.left = `${clamp(moveEvent.clientX - offsetX, 0, window.innerWidth - card.offsetWidth)}px`;
+        card.style.top = `${clamp(moveEvent.clientY - offsetY, 0, window.innerHeight - card.offsetHeight)}px`;
+      };
+      const end = () => {
+        if (dragging) document.body.style.userSelect = '';
+        dragTitle.releasePointerCapture?.(event.pointerId);
+        dragTitle.removeEventListener('pointermove', move);
+        dragTitle.removeEventListener('pointerup', end);
+        dragTitle.removeEventListener('pointercancel', end);
+      };
+      dragTitle.addEventListener('pointermove', move);
+      dragTitle.addEventListener('pointerup', end, { once: true });
+      dragTitle.addEventListener('pointercancel', end, { once: true });
     });
+
     grip.addEventListener('pointerdown', event => {
+      event.preventDefault();
       const rect = card.getBoundingClientRect(); const startX = event.clientX, startY = event.clientY;
-      card.style.position = 'fixed'; card.style.margin = '0'; card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`; card.classList.add('positioned'); grip.classList.add('resizing');
-      const move = moveEvent => { card.style.width = `${clamp(rect.width + moveEvent.clientX - startX, 690, window.innerWidth - 20)}px`; card.style.height = `${clamp(rect.height + moveEvent.clientY - startY, 520, window.innerHeight - 20)}px`; };
-      const end = () => { grip.classList.remove('resizing'); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true });
+      pinCurrentPosition(rect);
+      grip.classList.add('resizing');
+      const move = moveEvent => {
+        card.style.width = `${clamp(rect.width + moveEvent.clientX - startX, 690, window.innerWidth - 20)}px`;
+        card.style.height = `${clamp(rect.height + moveEvent.clientY - startY, 520, window.innerHeight - 20)}px`;
+      };
+      const end = () => {
+        grip.classList.remove('resizing');
+        window.removeEventListener('pointermove', move);
+        window.removeEventListener('pointerup', end);
+        window.removeEventListener('pointercancel', end);
+      };
+      window.addEventListener('pointermove', move);
+      window.addEventListener('pointerup', end, { once: true });
+      window.addEventListener('pointercancel', end, { once: true });
     });
   }
   function setMode(mode) { state.mode = mode; if (mode === 'genre') loadGenre(); else if (mode === 'emotion') loadEmotion(); else generateCustom(); render(); }
