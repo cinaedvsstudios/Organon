@@ -35,7 +35,7 @@
         {
           "id": "audio2midi",
           "label": "AUDIO2MIDI",
-          "path": "tools/audio2midi/index.html",
+          "path": "tools/audio2midi/index.html?v=0.04",
           "description": "Convert audio material into MIDI-style note data where browser processing allows."
         }
       ]
