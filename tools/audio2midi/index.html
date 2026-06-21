@@ -27,15 +27,17 @@
         --light-teal: #449e92;
         --burgundy: #4a1525;
         --brand-red: #9a2f4f;
+        --terracotta-peach: #d27d6c;
         --alabaster-paper: #f5f0db;
         --bg-nightsky: #1e201c;
         --bg-card: #292a24;
         --bg-input: rgba(24, 25, 25, 0.95);
-
         --font-headers: 'Cinzel', Georgia, serif;
         --font-body: 'Inter', system-ui, -apple-system, sans-serif;
         --font-mono: 'Geist Mono', 'Courier New', monospace;
     }
+
+    * { box-sizing: border-box; }
 
     body {
         background-color: var(--bg-nightsky);
@@ -46,7 +48,6 @@
         min-height: 100vh;
         display: flex;
         justify-content: center;
-        box-sizing: border-box;
     }
 
     h1, h2, h3, h4 {
@@ -56,6 +57,8 @@
         letter-spacing: 0.03em;
         text-transform: uppercase;
     }
+
+    h3 { font-size: 0.98rem; margin-bottom: 12px; }
 
     input[type="text"], select {
         background-color: var(--bg-input);
@@ -69,7 +72,7 @@
         box-sizing: border-box;
         transition: all 0.2s ease-in-out;
     }
-    
+
     select {
         appearance: none;
         background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='%23e0a360'><polygon points='0,0 10,0 5,5'/></svg>");
@@ -77,282 +80,154 @@
         background-position: right 18px center;
     }
 
-    /* Range Sliders Styling */
     input[type="range"] {
         -webkit-appearance: none;
         width: 100%;
         background: transparent;
         margin: 12px 0;
     }
-    input[type="range"]:focus {
-        outline: none;
-    }
+    input[type="range"]:focus { outline: none; }
     input[type="range"]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 6px;
-        cursor: pointer;
-        background: var(--burgundy);
-        border-radius: 9999px;
+        width: 100%; height: 6px; cursor: pointer; background: var(--burgundy); border-radius: 9999px;
     }
     input[type="range"]::-webkit-slider-thumb {
-        height: 16px;
-        width: 16px;
-        border-radius: 50%;
-        background: var(--brand-red);
-        cursor: pointer;
-        -webkit-appearance: none;
-        margin-top: -5px;
-        box-shadow: 0 0 6px rgba(154, 47, 79, 0.6);
+        height: 16px; width: 16px; border-radius: 50%; background: var(--brand-red); cursor: pointer;
+        -webkit-appearance: none; margin-top: -5px; box-shadow: 0 0 6px rgba(154, 47, 79, 0.6);
     }
 
     .app-wrapper {
-        width: 100%;
-        max-width: 540px;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        box-sizing: border-box;
-        background-color: var(--bg-nightsky);
+        width: 100%; max-width: 540px; min-height: 100vh; display: flex; flex-direction: column;
+        position: relative; background-color: var(--bg-nightsky);
     }
 
-    /* Top Sticky Panel Style Rules */
     .top-sticky-panel {
-        position: sticky;
-        top: 0;
-        z-index: 100;
+        position: sticky; top: 0; z-index: 100;
         background-color: #e0a360;
         background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
-        background-size: cover;
-        padding: 16px;
-        border-bottom: 1px solid var(--chiseled-bronze);
-        border-bottom-left-radius: 28px;
-        border-bottom-right-radius: 28px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 12px;
-        transition: padding 0.3s ease-in-out;
+        background-size: cover; padding: 16px; border-bottom: 1px solid var(--chiseled-bronze);
+        border-bottom-left-radius: 28px; border-bottom-right-radius: 28px;
+        display: flex; flex-direction: column; align-items: center; gap: 12px; transition: padding 0.3s ease-in-out;
     }
-    .top-sticky-panel.minimized {
-        padding: 8px 16px !important;
-        cursor: pointer;
-    }
-    .top-sticky-panel.minimized .panel-content-hide {
-        display: none !important;
-    }
+    .top-sticky-panel.minimized { padding: 8px 16px !important; cursor: pointer; }
+    .top-sticky-panel.minimized .panel-content-hide { display: none !important; }
 
     .title-pill {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        background-color: rgba(24, 25, 25, 0.95);
-        color: var(--water-spray);
-        font-family: var(--font-headers);
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 8px 20px;
-        border-radius: 9999px;
-        border: 1px solid var(--chiseled-bronze);
-        width: 100%;
-        box-sizing: border-box;
+        display: flex; align-items: center; justify-content: space-between; background-color: rgba(24, 25, 25, 0.95);
+        color: var(--water-spray); font-family: var(--font-headers); font-size: 0.75rem; font-weight: 700;
+        padding: 8px 20px; border-radius: 9999px; border: 1px solid var(--chiseled-bronze); width: 100%;
     }
 
     .countdown-circle-indicator {
-        width: 18px;
-        height: 18px;
-        border-radius: 50%;
-        border: 1px solid var(--chiseled-bronze);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.65rem;
-        margin-right: 12px;
-        cursor: pointer;
-        background: rgba(0, 0, 0, 0.6);
-        color: var(--stone-ochre);
-        font-weight: 700;
+        width: 18px; height: 18px; border-radius: 50%; border: 1px solid var(--chiseled-bronze); display: inline-flex;
+        align-items: center; justify-content: center; font-size: 0.65rem; margin-right: 12px; cursor: pointer;
+        background: rgba(0, 0, 0, 0.6); color: var(--stone-ochre); font-weight: 700;
     }
 
-    /* Middle Layout Frame */
     .middle-scroll-panel {
-        flex: 1;
-        background-color: #000000;
-        padding: 16px 16px 140px 16px;
-        box-sizing: border-box;
-        display: flex;
-        flex-direction: column;
-        gap: 16px;
+        flex: 1; background-color: #000000; padding: 16px 16px 188px 16px; display: flex; flex-direction: column; gap: 16px;
     }
 
     .config-card {
-        background-color: var(--bg-card);
-        border: 1px solid var(--chiseled-bronze);
-        border-radius: 24px;
-        padding: 20px;
-        box-sizing: border-box;
+        background-color: var(--bg-card); border: 1px solid var(--chiseled-bronze); border-radius: 24px; padding: 20px;
     }
 
-    /* File Drop Zone UI */
+    .tool-version {
+        display: inline-flex; vertical-align: middle; margin-left: 7px; padding: 2px 7px; border-radius: 9999px;
+        font-family: var(--font-mono); font-size: 0.63rem; line-height: 1; color: var(--water-spray);
+        border: 1px solid rgba(117, 178, 222, 0.6); background: rgba(75, 132, 191, 0.15); letter-spacing: 0;
+    }
+
     .drop-zone {
-        border: 2px dashed var(--chiseled-bronze);
-        border-radius: 20px;
-        padding: 32px 16px;
-        text-align: center;
-        background: rgba(24, 25, 25, 0.4);
-        cursor: pointer;
-        transition: border-color 0.2s, background-color 0.2s;
+        border: 2px dashed var(--chiseled-bronze); border-radius: 20px; padding: 32px 16px; text-align: center;
+        background: rgba(24, 25, 25, 0.4); cursor: pointer; transition: border-color 0.2s, background-color 0.2s;
     }
-    .drop-zone.dragover {
-        border-color: var(--water-spray);
-        background: rgba(75, 132, 191, 0.1);
-    }
-    .drop-zone p {
-        margin: 0;
-        font-size: 0.9rem;
-        color: var(--alabaster-paper);
-    }
-    .drop-zone span {
-        font-size: 0.75rem;
-        color: var(--chiseled-bronze);
-        display: block;
-        margin-top: 6px;
-    }
+    .drop-zone.dragover { border-color: var(--water-spray); background: rgba(75, 132, 191, 0.1); }
+    .drop-zone p { margin: 0; font-size: 0.9rem; color: var(--alabaster-paper); }
+    .drop-zone span { font-size: 0.75rem; color: var(--chiseled-bronze); display: block; margin-top: 6px; }
 
-    /* Stem Queue Layout */
-    .stem-queue {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-top: 12px;
-    }
+    .stem-queue { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
     .stem-item {
-        background: var(--bg-input);
-        border: 1px solid var(--chiseled-bronze);
-        border-radius: 9999px;
-        padding: 6px 14px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        font-size: 0.8rem;
+        background: var(--bg-input); border: 1px solid var(--chiseled-bronze); border-radius: 9999px; padding: 6px 14px;
+        display: flex; align-items: center; justify-content: space-between; font-size: 0.8rem;
     }
-    .stem-name {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 70%;
-        font-family: var(--font-mono);
-    }
-    .stem-remove {
-        color: var(--terracotta-peach);
-        cursor: pointer;
-        font-weight: bold;
-        padding: 2px 6px;
-    }
+    .stem-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; font-family: var(--font-mono); }
+    .stem-remove { color: var(--terracotta-peach); cursor: pointer; font-weight: bold; padding: 2px 6px; border: 0; background: transparent; font-size: 1.05rem; }
 
-    .slider-row {
-        margin-bottom: 16px;
-    }
-    .slider-label-row {
-        display: flex;
-        justify-content: space-between;
-        font-size: 0.75rem;
-        color: var(--stone-ochre);
-        font-family: var(--font-mono);
-    }
+    .slider-row { margin-bottom: 16px; }
+    .slider-label-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.75rem; color: var(--stone-ochre); font-family: var(--font-mono); }
 
-    /* Toggle Switches */
-    .toggle-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 6px 0;
-    }
-    .toggle-label {
-        font-size: 0.85rem;
-    }
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 44px;
-        height: 22px;
-    }
+    .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+    .toggle-label { font-size: 0.85rem; }
+    .switch { position: relative; display: inline-block; width: 44px; height: 22px; flex: 0 0 auto; }
     .switch input { display: none; }
-    .slider-toggle {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: var(--burgundy);
-        border-radius: 34px;
-        transition: .3s;
-    }
-    .slider-toggle:before {
-        position: absolute;
-        content: "";
-        height: 16px; width: 16px;
-        left: 3px; bottom: 3px;
-        background-color: var(--alabaster-paper);
-        border-radius: 50%;
-        transition: .3s;
-    }
-    input:checked + .slider-toggle {
-        background-color: var(--brand-red);
-    }
-    input:checked + .slider-toggle:before {
-        transform: translateX(22px);
-    }
+    .slider-toggle { position: absolute; cursor: pointer; inset: 0; background-color: var(--burgundy); border-radius: 34px; transition: .3s; }
+    .slider-toggle:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--alabaster-paper); border-radius: 50%; transition: .3s; }
+    input:checked + .slider-toggle { background-color: var(--brand-red); }
+    input:checked + .slider-toggle:before { transform: translateX(22px); }
 
-    /* Bottom Actions Sticky Panel */
+    .conversion-status {
+        display: flex; gap: 12px; align-items: flex-start; border-radius: 16px; padding: 12px 14px; margin-top: 16px;
+        border: 1px solid rgba(137, 107, 73, 0.8); background: rgba(24, 25, 25, 0.65); color: var(--alabaster-paper);
+    }
+    .conversion-status.status-working { border-color: var(--water-blue); background: rgba(75, 132, 191, 0.11); }
+    .conversion-status.status-complete { border-color: var(--forest-teal); background: rgba(38, 97, 92, 0.18); }
+    .conversion-status.status-error { border-color: var(--brand-red); background: rgba(154, 47, 79, 0.16); }
+    .status-icon { width: 20px; min-width: 20px; height: 20px; margin-top: 1px; display: inline-flex; align-items: center; justify-content: center; }
+    .spinner { width: 16px; height: 16px; border: 2px solid rgba(117, 178, 222, 0.25); border-top-color: var(--water-spray); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .status-copy { min-width: 0; flex: 1; }
+    .status-title { font-size: 0.76rem; font-family: var(--font-mono); color: var(--water-spray); font-weight: 600; line-height: 1.25; }
+    .status-detail { font-size: 0.72rem; opacity: 0.8; margin-top: 3px; line-height: 1.35; }
+    .progress-track { height: 5px; border-radius: 999px; overflow: hidden; background: var(--burgundy); margin-top: 9px; }
+    .progress-fill { height: 100%; width: 0%; background: var(--brand-red); transition: width 0.18s ease; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .results-card { padding-bottom: 18px; }
+    .results-intro { font-size: 0.78rem; color: rgba(245, 240, 219, 0.75); margin: -2px 0 14px; }
+    .result-list { display: flex; flex-direction: column; gap: 14px; }
+    .empty-results { border: 1px dashed rgba(137, 107, 73, 0.7); border-radius: 16px; color: rgba(245, 240, 219, 0.58); padding: 16px; text-align: center; font-size: 0.78rem; }
+    .midi-result { border: 1px solid var(--chiseled-bronze); border-radius: 18px; background: rgba(24, 25, 25, 0.6); overflow: hidden; }
+    .midi-result.stale { border-color: var(--brand-red); }
+    .result-heading { display: flex; justify-content: space-between; gap: 10px; align-items: flex-start; padding: 13px 14px 10px; }
+    .result-file { font-family: var(--font-mono); font-size: 0.75rem; color: var(--alabaster-paper); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .result-meta { color: var(--stone-ochre); font-family: var(--font-mono); font-size: 0.64rem; margin-top: 4px; }
+    .result-badge { white-space: nowrap; font-size: 0.62rem; color: var(--water-spray); border: 1px solid rgba(117, 178, 222, 0.45); border-radius: 999px; padding: 3px 6px; font-family: var(--font-mono); }
+    .result-badge.stale { color: var(--terracotta-peach); border-color: rgba(210, 125, 108, 0.6); }
+    .roll-wrap { padding: 0 14px; }
+    .piano-roll { position: relative; height: 138px; border: 1px solid rgba(137, 107, 73, 0.65); border-radius: 11px; overflow: hidden; background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.035) 0, rgba(255,255,255,0.035) 1px, transparent 1px, transparent 12px), #151614; }
+    .piano-note { position: absolute; border-radius: 3px; min-width: 2px; background: var(--water-blue); border: 1px solid rgba(117, 178, 222, 0.7); opacity: 0.95; }
+    .roll-empty { display: flex; height: 100%; align-items: center; justify-content: center; color: rgba(245, 240, 219, 0.55); font-size: 0.72rem; }
+    .preview-controls { display: flex; gap: 8px; padding: 12px 14px 14px; }
+    .mini-btn { border: 1px solid var(--chiseled-bronze); background: rgba(41, 42, 36, 0.9); color: var(--water-spray); padding: 7px 10px; border-radius: 999px; cursor: pointer; font-family: var(--font-body); font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
+    .mini-btn.stop { color: var(--terracotta-peach); }
+    .mini-btn:hover { border-color: var(--water-spray); }
+
     .bottom-sticky-panel {
-        position: fixed;
-        bottom: 0;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100%;
-        max-width: 540px;
-        z-index: 110;
-        background-color: #e0a360;
-        background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
-        background-size: cover;
-        padding: 12px 16px 16px 16px;
-        box-sizing: border-box;
-        display: flex;
-        gap: 12px;
-        justify-content: center;
-        border-top: 1px solid var(--chiseled-bronze);
-        border-top-left-radius: 24px;
-        border-top-right-radius: 24px;
+        position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 540px; z-index: 110;
+        background-color: #e0a360; background-image: linear-gradient(rgba(224, 163, 96, 0.8), rgba(224, 163, 96, 0.8)), url('../../Images/stonetext.jpg');
+        background-size: cover; padding: 12px 16px 16px; display: flex; gap: 8px; justify-content: center;
+        border-top: 1px solid var(--chiseled-bronze); border-top-left-radius: 24px; border-top-right-radius: 24px;
     }
-
     .bottom-sticky-panel .btn-pill {
-        background-color: rgba(24, 25, 25, 0.95) !important;
-        color: var(--water-spray) !important;
-        border: 1px solid var(--chiseled-bronze) !important;
-        font-family: var(--font-body);
-        font-weight: 600;
-        font-size: 0.75rem !important;
-        text-transform: uppercase;
-        padding: 10px 20px !important;
-        border-radius: 9999px;
-        cursor: pointer;
-        flex: 2;
-        transition: all 0.25s ease-in-out;
-        letter-spacing: 0.05em;
+        background-color: rgba(24, 25, 25, 0.95) !important; color: var(--water-spray) !important; border: 1px solid var(--chiseled-bronze) !important;
+        font-family: var(--font-body); font-weight: 600; font-size: 0.68rem !important; text-transform: uppercase; padding: 10px 9px !important;
+        border-radius: 9999px; cursor: pointer; flex: 1.45; transition: all 0.25s ease-in-out; letter-spacing: 0.035em; min-width: 0;
     }
-    .bottom-sticky-panel .btn-pill.btn-reset {
-        flex: 1;
-        color: var(--terracotta-peach) !important;
-    }
-    .bottom-sticky-panel .btn-pill:hover {
-        background-color: rgba(41, 42, 36, 0.95) !important;
-        border-color: var(--water-spray) !important;
-        box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important;
+    .bottom-sticky-panel .btn-pill.btn-reset { flex: 0.75; color: var(--terracotta-peach) !important; }
+    .bottom-sticky-panel .btn-pill.btn-download { flex: 1.18; }
+    .bottom-sticky-panel .btn-pill:hover:not(:disabled) { background-color: rgba(41, 42, 36, 0.95) !important; border-color: var(--water-spray) !important; box-shadow: 0 0 12px rgba(121, 180, 227, 0.4) !important; }
+    .bottom-sticky-panel .btn-pill:disabled { opacity: 0.46; cursor: not-allowed; }
+
+    .engine-credit { margin: 0 4px; color: rgba(245, 240, 219, 0.47); font-size: 0.62rem; line-height: 1.45; text-align: center; }
+
+    @media (max-width: 380px) {
+        .bottom-sticky-panel { gap: 6px; padding-left: 10px; padding-right: 10px; }
+        .bottom-sticky-panel .btn-pill { font-size: 0.59rem !important; padding-left: 6px !important; padding-right: 6px !important; }
+        .result-heading { flex-direction: column; }
     }
     </style>
 </head>
 <body>
     <div class="app-wrapper">
-        <!-- TOP STICKY PANEL FRAME -->
         <div class="top-sticky-panel">
             <div class="title-pill">
                 <div style="display: flex; align-items: center;">
@@ -361,7 +236,7 @@
                 </div>
             </div>
             <div class="panel-content-hide" style="width:100%;">
-                <select id="preset-selector">
+                <select id="preset-selector" aria-label="Audio transcription preset">
                     <option value="polyphonic">PRESET: POLYPHONIC PIANO / GENERAL</option>
                     <option value="monophonic">PRESET: MONOPHONIC BASS LINE</option>
                     <option value="vocals">PRESET: LEAD VOCALS / MELODY</option>
@@ -370,79 +245,114 @@
             </div>
         </div>
 
-        <!-- MAIN MIDDLE SCROLL VIEWPORT -->
         <main class="middle-scroll-panel">
-            <!-- STEM INGESTION CARD -->
             <div class="config-card">
-                <h3>📁 Audio Stem Queue</h3>
+                <h3>📁 Audio Stem Queue <span class="tool-version">v0.02</span></h3>
                 <p style="font-size: 0.8rem; opacity:0.8; margin-bottom: 16px;">Upload audio components to process into parallel MIDI mappings. Max 10 stems.</p>
-                
-                <div class="drop-zone" id="drop-zone">
-                    <p>Drag & Drop Audio Files Here</p>
-                    <span>or click to browse local storage (.wav, .mp3, .m4a)</span>
+                <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Add audio files">
+                    <p>Drag &amp; Drop Audio Files Here</p>
+                    <span>or click to browse local storage (.wav, .mp3, .flac; M4A depends on browser decoding)</span>
                     <input type="file" id="file-input" multiple accept="audio/*" style="display:none;">
                 </div>
-
                 <div class="stem-queue" id="stem-queue"></div>
             </div>
 
-            <!-- ENGINE PARAMETERS CARD -->
             <div class="config-card">
                 <h3>🎛️ Analysis Adjustments</h3>
-                
-                <!-- Onset Sensitivity -->
                 <div class="slider-row">
-                    <div class="slider-label-row">
-                        <span>Onset Tracking Confidence</span>
-                        <span id="onset-val">0.50</span>
-                    </div>
+                    <div class="slider-label-row"><span>Onset Tracking Confidence</span><span id="onset-val">0.50</span></div>
                     <input type="range" id="slider-onset" min="0.05" max="0.95" step="0.05" value="0.50">
                 </div>
-
-                <!-- Frame Sensitivity -->
                 <div class="slider-row">
-                    <div class="slider-label-row">
-                        <span>Frame Note Retention</span>
-                        <span id="frame-val">0.30</span>
-                    </div>
+                    <div class="slider-label-row"><span>Frame Note Retention</span><span id="frame-val">0.30</span></div>
                     <input type="range" id="slider-frame" min="0.05" max="0.95" step="0.05" value="0.30">
                 </div>
-
-                <!-- Minimum Note Length -->
                 <div class="slider-row">
-                    <div class="slider-label-row">
-                        <span>Minimum Note Duration</span>
-                        <span id="duration-val">30 ms</span>
-                    </div>
+                    <div class="slider-label-row"><span>Minimum Note Duration</span><span id="duration-val">30 ms</span></div>
                     <input type="range" id="slider-duration" min="10" max="250" step="5" value="30">
                 </div>
-
-                <!-- Pitch Bend Logic Switch -->
                 <div class="toggle-row">
                     <span class="toggle-label">Track Continuous Pitch Bends</span>
-                    <label class="switch">
-                        <input type="checkbox" id="toggle-pitchbend">
-                        <span class="slider-toggle"></span>
-                    </label>
+                    <label class="switch"><input type="checkbox" id="toggle-pitchbend"><span class="slider-toggle"></span></label>
+                </div>
+                <div id="conversion-status" class="conversion-status" role="status" aria-live="polite">
+                    <div class="status-icon" id="status-icon">♪</div>
+                    <div class="status-copy">
+                        <div class="status-title" id="status-title">Ready to generate MIDI</div>
+                        <div class="status-detail" id="status-detail">Add one or more audio stems, then press Generate MIDI.</div>
+                        <div class="progress-track" id="progress-track" hidden><div class="progress-fill" id="progress-fill"></div></div>
+                    </div>
                 </div>
             </div>
+
+            <div class="config-card results-card">
+                <h3>🎹 Generated MIDI Preview</h3>
+                <p class="results-intro" id="results-intro">Generated results appear here. Playback is a simple browser synth preview of the MIDI notes.</p>
+                <div class="result-list" id="result-list"><div class="empty-results">No MIDI generated yet.</div></div>
+            </div>
+
+            <p class="engine-credit">Conversion uses Spotify Basic Pitch’s browser model. Audio is analysed locally in your browser; only the engine/model assets are fetched when needed.</p>
         </main>
 
-        <!-- BOTTOM FIXATION ACTION PANEL -->
         <div class="bottom-sticky-panel">
             <button type="button" class="btn-pill btn-reset" id="reset-btn">Reset</button>
-            <button type="button" class="btn-pill" id="action-btn">Convert to MIDI</button>
+            <button type="button" class="btn-pill" id="action-btn">Generate MIDI</button>
+            <button type="button" class="btn-pill btn-download" id="download-btn" disabled>Download MIDI</button>
         </div>
     </div>
 
-    <script>
-    // System Messaging Hooks
+    <script type="module">
+    const BASIC_PITCH_IMPORT_URLS = [
+        'https://cdn.jsdelivr.net/npm/@spotify/basic-pitch/+esm',
+        'https://esm.sh/@spotify/basic-pitch'
+    ];
+    const BASIC_PITCH_MODEL_URL = 'https://raw.githubusercontent.com/spotify/basic-pitch-ts/main/model/model.json';
+    const AUDIO_SAMPLE_RATE = 22050;
+    const ANNOTATIONS_FPS = Math.floor(AUDIO_SAMPLE_RATE / 256);
+
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const stemQueue = document.getElementById('stem-queue');
+    const actionBtn = document.getElementById('action-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const resultList = document.getElementById('result-list');
+    const resultsIntro = document.getElementById('results-intro');
+    const statusBox = document.getElementById('conversion-status');
+    const statusIcon = document.getElementById('status-icon');
+    const statusTitle = document.getElementById('status-title');
+    const statusDetail = document.getElementById('status-detail');
+    const progressTrack = document.getElementById('progress-track');
+    const progressFill = document.getElementById('progress-fill');
+    const onsetSlider = document.getElementById('slider-onset');
+    const frameSlider = document.getElementById('slider-frame');
+    const durationSlider = document.getElementById('slider-duration');
+    const pitchBendToggle = document.getElementById('toggle-pitchbend');
+    const presetSelector = document.getElementById('preset-selector');
+
+    let loadedFiles = [];
+    let generatedResults = [];
+    let isGenerating = false;
+    let resultsAreStale = false;
+    let basicPitchModulePromise = null;
+    let basicPitchEnginePromise = null;
+    let previewContext = null;
+    let activePreviewNodes = [];
+    let previewStopTimer = null;
+
+    const presets = {
+        polyphonic: { onset: 0.50, frame: 0.30, duration: 30, pitchBends: false },
+        monophonic: { onset: 0.35, frame: 0.25, duration: 60, pitchBends: true },
+        vocals: { onset: 0.30, frame: 0.20, duration: 80, pitchBends: true },
+        guitar: { onset: 0.45, frame: 0.25, duration: 45, pitchBends: true }
+    };
+
     function setHubStatus(text) {
         try {
             if (window.parent && window.parent.postMessage) {
-                window.parent.postMessage({ type: 'set-status', text: text }, '*');
+                window.parent.postMessage({ type: 'set-status', text }, '*');
             }
-        } catch(e) {}
+        } catch (error) {}
     }
 
     function clearHubStatus() {
@@ -450,60 +360,87 @@
             if (window.parent && window.parent.postMessage) {
                 window.parent.postMessage({ type: 'clear-status' }, '*');
             }
-        } catch(e) {}
+        } catch (error) {}
     }
 
-    // Register Status Updates on UI Hover 
     function bindHoverLog(selector, logMessage) {
         const target = document.querySelector(selector);
         if (!target) return;
         target.addEventListener('mouseenter', () => setHubStatus(logMessage));
-        target.addEventListener('mouseleave', () => clearHubStatus());
+        target.addEventListener('mouseleave', clearHubStatus);
     }
 
-    bindHoverLog('#action-btn', 'Compile stacked stem files into independent polyphonic MIDI track segments.');
-    bindHoverLog('#reset-btn', 'Purge current conversion queue workspace and restore standard parameters.');
-    bindHoverLog('#drop-zone', 'Ingest stem audio recordings. Restricted to 10 files simultaneously.');
+    bindHoverLog('#action-btn', 'Run Spotify Basic Pitch locally in this browser to generate MIDI note data from every queued audio stem.');
+    bindHoverLog('#download-btn', 'Download the completed MIDI file, or one ZIP containing separate MIDI files for every queued stem.');
+    bindHoverLog('#reset-btn', 'Clear queued files, completed MIDI previews, playback, and conversion settings.');
+    bindHoverLog('#drop-zone', 'Ingest up to ten local audio stems. WAV, MP3 and FLAC are preferred.');
 
-    // Workspace & Ingestion Handling
-    const dropZone = document.getElementById('drop-zone');
-    const fileInput = document.getElementById('file-input');
-    const stemQueue = document.getElementById('stem-queue');
-    const actionBtn = document.getElementById('action-btn');
-    const resetBtn = document.getElementById('reset-btn');
-    let loadedFiles = [];
+    function setConversionStatus(kind, title, detail, progress = null) {
+        statusBox.className = `conversion-status status-${kind}`;
+        statusTitle.textContent = title;
+        statusDetail.textContent = detail;
+        const working = kind === 'working';
+        statusIcon.innerHTML = working ? '<span class="spinner" aria-hidden="true"></span>' : (kind === 'complete' ? '✓' : kind === 'error' ? '!' : '♪');
+        progressTrack.hidden = progress === null;
+        if (progress !== null) progressFill.style.width = `${Math.max(0, Math.min(100, progress))}%`;
+    }
 
-    dropZone.addEventListener('click', () => fileInput.click());
-    
-    dropZone.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropZone.classList.add('dragover');
-    });
-    
-    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-    
-    dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        handleFiles(e.dataTransfer.files);
-    });
+    function setButtonsForState() {
+        actionBtn.disabled = isGenerating;
+        resetBtn.disabled = isGenerating;
+        downloadBtn.disabled = isGenerating || generatedResults.length === 0;
+        actionBtn.textContent = isGenerating ? 'Generating…' : generatedResults.length ? 'Regenerate MIDI' : 'Generate MIDI';
+        downloadBtn.textContent = generatedResults.length > 1 ? 'Download ZIP' : 'Download MIDI';
+    }
 
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-    });
+    function getSettings() {
+        return {
+            onsetThreshold: Number(onsetSlider.value),
+            frameThreshold: Number(frameSlider.value),
+            minDurationMs: Number(durationSlider.value),
+            includePitchBends: pitchBendToggle.checked
+        };
+    }
+
+    function updateVisibleSettings() {
+        document.getElementById('onset-val').textContent = Number(onsetSlider.value).toFixed(2);
+        document.getElementById('frame-val').textContent = Number(frameSlider.value).toFixed(2);
+        document.getElementById('duration-val').textContent = `${durationSlider.value} ms`;
+    }
+
+    function markResultsStale() {
+        if (!generatedResults.length || isGenerating) return;
+        resultsAreStale = true;
+        renderResults();
+        setConversionStatus('idle', 'Settings changed', 'The preview below uses the previous settings. Press Regenerate MIDI to apply the new values.');
+    }
+
+    function invalidateResults() {
+        if (!generatedResults.length) return;
+        stopPreview();
+        generatedResults = [];
+        resultsAreStale = false;
+        renderResults();
+        setButtonsForState();
+        setConversionStatus('idle', 'Queue changed', 'Generate MIDI again to create a result for the current stem queue.');
+    }
 
     function handleFiles(files) {
-        for (let file of files) {
+        let added = 0;
+        for (const file of files) {
+            if (!file.type.startsWith('audio/')) continue;
             if (loadedFiles.length >= 10) {
-                setHubStatus("Upload ceiling breached. Limit strictly mapped to 10 stems maximum.");
-                setTimeout(clearHubStatus, 4000);
+                setConversionStatus('error', 'Stem limit reached', 'The Audio Stem Queue accepts a maximum of ten files at once.');
                 break;
             }
-            if (!loadedFiles.some(f => f.name === file.name && f.size === file.size)) {
+            if (!loadedFiles.some(existing => existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified)) {
                 loadedFiles.push(file);
+                added++;
             }
         }
+        if (added) invalidateResults();
         renderQueue();
+        if (added) setConversionStatus('idle', `${loadedFiles.length} stem${loadedFiles.length === 1 ? '' : 's'} queued`, 'Press Generate MIDI when you are ready to run the conversion.');
     }
 
     function renderQueue() {
@@ -511,119 +448,551 @@
         loadedFiles.forEach((file, index) => {
             const item = document.createElement('div');
             item.className = 'stem-item';
-            item.innerHTML = `
-                <span class="stem-name">[${index + 1}] ${file.name}</span>
-                <span class="stem-remove" data-index="${index}">&times;</span>
-            `;
-            stemQueue.appendChild(item);
-        });
-
-        // Bind quick closures
-        document.querySelectorAll('.stem-remove').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const idx = parseInt(e.target.getAttribute('data-index'));
-                loadedFiles.splice(idx, 1);
+            const name = document.createElement('span');
+            name.className = 'stem-name';
+            name.textContent = `[${index + 1}] ${file.name}`;
+            name.title = file.name;
+            const remove = document.createElement('button');
+            remove.type = 'button';
+            remove.className = 'stem-remove';
+            remove.setAttribute('aria-label', `Remove ${file.name}`);
+            remove.textContent = '×';
+            remove.addEventListener('click', event => {
+                event.stopPropagation();
+                if (isGenerating) return;
+                loadedFiles.splice(index, 1);
+                invalidateResults();
                 renderQueue();
+                setConversionStatus('idle', loadedFiles.length ? `${loadedFiles.length} stem${loadedFiles.length === 1 ? '' : 's'} queued` : 'Queue is empty', loadedFiles.length ? 'Press Generate MIDI when ready.' : 'Add an audio file to begin.');
             });
+            item.append(name, remove);
+            stemQueue.appendChild(item);
         });
     }
 
-    // Reset Workspace Button Action Routine
-    resetBtn.addEventListener('click', () => {
+    async function importBasicPitchModule() {
+        if (basicPitchModulePromise) return basicPitchModulePromise;
+        basicPitchModulePromise = (async () => {
+            let latestError;
+            for (const importUrl of BASIC_PITCH_IMPORT_URLS) {
+                try {
+                    const module = await import(importUrl);
+                    if (module.BasicPitch && module.outputToNotesPoly && module.noteFramesToTime) return module;
+                    throw new Error('The loaded Basic Pitch package did not expose its conversion functions.');
+                } catch (error) {
+                    latestError = error;
+                }
+            }
+            throw latestError || new Error('Basic Pitch could not be loaded.');
+        })();
+        try {
+            return await basicPitchModulePromise;
+        } catch (error) {
+            basicPitchModulePromise = null;
+            throw error;
+        }
+    }
+
+    async function getBasicPitchEngine() {
+        if (basicPitchEnginePromise) return basicPitchEnginePromise;
+        basicPitchEnginePromise = (async () => {
+            const module = await importBasicPitchModule();
+            const engine = new module.BasicPitch(BASIC_PITCH_MODEL_URL);
+            await engine.model;
+            return { module, engine };
+        })();
+        try {
+            return await basicPitchEnginePromise;
+        } catch (error) {
+            basicPitchEnginePromise = null;
+            throw error;
+        }
+    }
+
+    async function decodeAndPrepareAudio(file) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass || !window.OfflineAudioContext) {
+            throw new Error('This browser does not provide the Web Audio features required for local conversion.');
+        }
+        const decodeContext = new AudioContextClass();
+        try {
+            const sourceBuffer = await decodeContext.decodeAudioData(await file.arrayBuffer());
+            const offlineLength = Math.max(1, Math.ceil(sourceBuffer.duration * AUDIO_SAMPLE_RATE));
+            const offlineContext = new OfflineAudioContext(1, offlineLength, AUDIO_SAMPLE_RATE);
+            const source = offlineContext.createBufferSource();
+            source.buffer = sourceBuffer;
+            source.connect(offlineContext.destination);
+            source.start(0);
+            return await offlineContext.startRendering();
+        } catch (error) {
+            throw new Error(`The browser could not decode “${file.name}”. Try WAV, MP3 or FLAC; M4A support depends on the browser.`);
+        } finally {
+            if (decodeContext.state !== 'closed') await decodeContext.close();
+        }
+    }
+
+    async function generateMidi() {
+        if (isGenerating) return;
+        if (!loadedFiles.length) {
+            setConversionStatus('error', 'No audio file selected', 'Add at least one audio stem before pressing Generate MIDI.');
+            return;
+        }
+
+        isGenerating = true;
+        stopPreview();
+        generatedResults = [];
+        resultsAreStale = false;
+        renderResults();
+        setButtonsForState();
+
+        try {
+            setConversionStatus('working', 'Loading Basic Pitch model', 'The transcription model is loading once into this browser. This may take a moment the first time.', 0);
+            const { module, engine } = await getBasicPitchEngine();
+            const settings = getSettings();
+
+            for (let fileIndex = 0; fileIndex < loadedFiles.length; fileIndex++) {
+                const file = loadedFiles[fileIndex];
+                const prefix = `Stem ${fileIndex + 1} of ${loadedFiles.length}`;
+                setConversionStatus('working', `${prefix}: decoding audio`, file.name, Math.round((fileIndex / loadedFiles.length) * 100));
+                const audioBuffer = await decodeAndPrepareAudio(file);
+
+                const frames = [];
+                const onsets = [];
+                const contours = [];
+                setConversionStatus('working', `${prefix}: analysing notes`, `${file.name} — Basic Pitch is processing the audio.`, Math.round((fileIndex / loadedFiles.length) * 100));
+                await engine.evaluateModel(
+                    audioBuffer,
+                    (frameSlice, onsetSlice, contourSlice) => {
+                        frames.push(...frameSlice);
+                        onsets.push(...onsetSlice);
+                        contours.push(...contourSlice);
+                    },
+                    percent => {
+                        const totalPercent = ((fileIndex + percent) / loadedFiles.length) * 100;
+                        setConversionStatus('working', `${prefix}: analysing notes`, `${file.name} — ${Math.round(percent * 100)}% complete.`, Math.round(totalPercent));
+                    }
+                );
+
+                const minNoteFrames = Math.max(1, Math.ceil((settings.minDurationMs / 1000) * ANNOTATIONS_FPS));
+                const noteFrames = module.outputToNotesPoly(
+                    frames,
+                    onsets,
+                    settings.onsetThreshold,
+                    settings.frameThreshold,
+                    minNoteFrames
+                );
+                const bendReadyNotes = settings.includePitchBends
+                    ? module.addPitchBendsToNoteEvents(contours, noteFrames)
+                    : noteFrames;
+                const notes = module.noteFramesToTime(bendReadyNotes).map(note => ({
+                    startTimeSeconds: Number(note.startTimeSeconds) || 0,
+                    durationSeconds: Math.max(0.01, Number(note.durationSeconds) || 0.01),
+                    pitchMidi: Math.max(0, Math.min(127, Math.round(Number(note.pitchMidi) || 0))),
+                    amplitude: Math.max(0, Math.min(1, Number(note.amplitude) || 0.7)),
+                    pitchBends: settings.includePitchBends && Array.isArray(note.pitchBends) ? note.pitchBends : []
+                }));
+                const filename = `${stripExtension(file.name)}.mid`;
+                const midiBytes = createMidiFile(notes, stripExtension(file.name), settings.includePitchBends);
+                generatedResults.push({ sourceName: file.name, filename, notes, duration: audioBuffer.duration, midiBytes });
+            }
+
+            renderResults();
+            setButtonsForState();
+            const count = generatedResults.length;
+            setConversionStatus('complete', 'MIDI generation complete', `${count} MIDI file${count === 1 ? '' : 's'} ready. Preview below, adjust settings and regenerate, or download now.`);
+            setHubStatus(`Audio2MIDI complete: ${count} MIDI file${count === 1 ? '' : 's'} ready for download.`);
+            setTimeout(clearHubStatus, 4500);
+        } catch (error) {
+            console.error(error);
+            generatedResults = [];
+            renderResults();
+            setConversionStatus('error', 'MIDI generation stopped', error && error.message ? error.message : 'The conversion engine encountered an unexpected error.');
+            setHubStatus('Audio2MIDI generation stopped. Check the conversion status message for details.');
+            setTimeout(clearHubStatus, 4500);
+        } finally {
+            isGenerating = false;
+            setButtonsForState();
+        }
+    }
+
+    function stripExtension(filename) {
+        return filename.replace(/\.[^/.]+$/, '') || 'audio-to-midi';
+    }
+
+    function formatSeconds(seconds) {
+        const safe = Math.max(0, Number(seconds) || 0);
+        const minutes = Math.floor(safe / 60);
+        const remaining = Math.floor(safe % 60);
+        return `${minutes}:${String(remaining).padStart(2, '0')}`;
+    }
+
+    function renderResults() {
+        resultList.innerHTML = '';
+        if (!generatedResults.length) {
+            const empty = document.createElement('div');
+            empty.className = 'empty-results';
+            empty.textContent = 'No MIDI generated yet.';
+            resultList.appendChild(empty);
+            resultsIntro.textContent = 'Generated results appear here. Playback is a simple browser synth preview of the MIDI notes.';
+            return;
+        }
+        resultsIntro.textContent = resultsAreStale
+            ? 'Settings changed after this result was generated. Preview remains available; press Regenerate MIDI to apply the new values.'
+            : 'Your completed MIDI files are ready. Playback is a simple browser synth preview of the MIDI notes.';
+
+        generatedResults.forEach((result, index) => {
+            const card = document.createElement('article');
+            card.className = `midi-result${resultsAreStale ? ' stale' : ''}`;
+
+            const heading = document.createElement('div');
+            heading.className = 'result-heading';
+            const identity = document.createElement('div');
+            const filename = document.createElement('div');
+            filename.className = 'result-file';
+            filename.textContent = result.filename;
+            filename.title = result.filename;
+            const meta = document.createElement('div');
+            meta.className = 'result-meta';
+            meta.textContent = `${result.notes.length} notes • ${formatSeconds(result.duration)} audio`;
+            identity.append(filename, meta);
+            const badge = document.createElement('span');
+            badge.className = `result-badge${resultsAreStale ? ' stale' : ''}`;
+            badge.textContent = resultsAreStale ? 'REGENERATE' : 'READY';
+            heading.append(identity, badge);
+
+            const rollWrap = document.createElement('div');
+            rollWrap.className = 'roll-wrap';
+            rollWrap.appendChild(buildPianoRoll(result));
+
+            const controls = document.createElement('div');
+            controls.className = 'preview-controls';
+            const play = document.createElement('button');
+            play.type = 'button'; play.className = 'mini-btn'; play.textContent = 'Play Preview';
+            play.addEventListener('click', () => playPreview(index));
+            const stop = document.createElement('button');
+            stop.type = 'button'; stop.className = 'mini-btn stop'; stop.textContent = 'Stop';
+            stop.addEventListener('click', stopPreview);
+            controls.append(play, stop);
+
+            card.append(heading, rollWrap, controls);
+            resultList.appendChild(card);
+        });
+    }
+
+    function buildPianoRoll(result) {
+        const roll = document.createElement('div');
+        roll.className = 'piano-roll';
+        if (!result.notes.length) {
+            const empty = document.createElement('div');
+            empty.className = 'roll-empty';
+            empty.textContent = 'No notes passed the current thresholds.';
+            roll.appendChild(empty);
+            return roll;
+        }
+        const pitches = result.notes.map(note => note.pitchMidi);
+        const minPitch = Math.max(0, Math.min(...pitches) - 2);
+        const maxPitch = Math.min(127, Math.max(...pitches) + 2);
+        const pitchSpan = Math.max(1, maxPitch - minPitch + 1);
+        const totalDuration = Math.max(0.1, ...result.notes.map(note => note.startTimeSeconds + note.durationSeconds));
+        result.notes.forEach(note => {
+            const noteEl = document.createElement('div');
+            noteEl.className = 'piano-note';
+            const top = ((maxPitch - note.pitchMidi) / pitchSpan) * 100;
+            const height = Math.max(4, 100 / pitchSpan);
+            noteEl.style.left = `${(note.startTimeSeconds / totalDuration) * 100}%`;
+            noteEl.style.width = `${Math.max(0.6, (note.durationSeconds / totalDuration) * 100)}%`;
+            noteEl.style.top = `${top}%`;
+            noteEl.style.height = `${height}%`;
+            noteEl.title = `MIDI ${note.pitchMidi} • ${note.startTimeSeconds.toFixed(2)}s • ${note.durationSeconds.toFixed(2)}s`;
+            roll.appendChild(noteEl);
+        });
+        return roll;
+    }
+
+    async function playPreview(resultIndex) {
+        const result = generatedResults[resultIndex];
+        if (!result || !result.notes.length) {
+            setConversionStatus('error', 'Nothing to preview', 'This MIDI result has no notes. Lower the thresholds and regenerate.');
+            return;
+        }
+        stopPreview();
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+            setConversionStatus('error', 'Preview unavailable', 'This browser does not support the Web Audio preview required for MIDI playback.');
+            return;
+        }
+        previewContext = previewContext || new AudioContextClass();
+        await previewContext.resume();
+        const startAt = previewContext.currentTime + 0.04;
+        let finalEnd = startAt;
+        result.notes.forEach(note => {
+            const noteStart = startAt + note.startTimeSeconds;
+            const noteEnd = noteStart + Math.max(0.04, note.durationSeconds);
+            const oscillator = previewContext.createOscillator();
+            const gain = previewContext.createGain();
+            oscillator.type = 'triangle';
+            oscillator.frequency.setValueAtTime(440 * (2 ** ((note.pitchMidi - 69) / 12)), noteStart);
+            const level = 0.028 + (note.amplitude * 0.055);
+            gain.gain.setValueAtTime(0.0001, noteStart);
+            gain.gain.exponentialRampToValueAtTime(level, noteStart + Math.min(0.015, note.durationSeconds / 3));
+            gain.gain.setValueAtTime(level, Math.max(noteStart + 0.015, noteEnd - 0.02));
+            gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+            oscillator.connect(gain).connect(previewContext.destination);
+            oscillator.start(noteStart);
+            oscillator.stop(noteEnd + 0.03);
+            activePreviewNodes.push({ oscillator, gain });
+            finalEnd = Math.max(finalEnd, noteEnd + 0.05);
+        });
+        const duration = finalEnd - previewContext.currentTime;
+        setConversionStatus('complete', 'Playing MIDI preview', `${result.filename} — ${result.notes.length} synthesised notes. This preview is MIDI data, not the original recording.`);
+        previewStopTimer = window.setTimeout(() => {
+            activePreviewNodes = [];
+            previewStopTimer = null;
+            setConversionStatus('complete', 'Preview finished', 'Your MIDI result is still ready to download or regenerate.');
+        }, Math.ceil(duration * 1000));
+    }
+
+    function stopPreview() {
+        if (previewStopTimer) window.clearTimeout(previewStopTimer);
+        previewStopTimer = null;
+        activePreviewNodes.forEach(({ oscillator, gain }) => {
+            try { gain.gain.cancelScheduledValues(0); gain.gain.setValueAtTime(0.0001, previewContext ? previewContext.currentTime : 0); oscillator.stop(); } catch (error) {}
+        });
+        activePreviewNodes = [];
+    }
+
+    function createMidiFile(notes, trackName, includePitchBends) {
+        const division = 480;
+        const ticksPerSecond = 960; // 120 BPM with 480 PPQ: exact seconds preserved by a tempo meta event.
+        const channelNotes = assignMidiChannels(notes, includePitchBends);
+        const events = [
+            { tick: 0, priority: 0, bytes: [0xff, 0x03, ...encodeText(trackName)] },
+            { tick: 0, priority: 0, bytes: [0xff, 0x51, 0x03, 0x07, 0xa1, 0x20] }
+        ];
+
+        channelNotes.forEach(note => {
+            const startTick = Math.max(0, Math.round(note.startTimeSeconds * ticksPerSecond));
+            const endTick = Math.max(startTick + 1, Math.round((note.startTimeSeconds + note.durationSeconds) * ticksPerSecond));
+            const velocity = Math.max(1, Math.min(127, Math.round(24 + note.amplitude * 100)));
+            events.push({ tick: startTick, priority: 3, bytes: [0x90 | note.channel, note.pitchMidi, velocity] });
+            if (includePitchBends && note.pitchBends && note.pitchBends.length) {
+                note.pitchBends.forEach((bend, index) => {
+                    const eventTick = Math.max(startTick, Math.min(endTick - 1, Math.round((note.startTimeSeconds + note.durationSeconds * (index / note.pitchBends.length)) * ticksPerSecond)));
+                    const bendData = encodePitchBend(bend);
+                    events.push({ tick: eventTick, priority: 2, bytes: [0xe0 | note.channel, bendData[0], bendData[1]] });
+                });
+                const resetBend = encodePitchBend(0);
+                events.push({ tick: endTick, priority: 1, bytes: [0xe0 | note.channel, resetBend[0], resetBend[1]] });
+            }
+            events.push({ tick: endTick, priority: 1, bytes: [0x80 | note.channel, note.pitchMidi, 0] });
+        });
+
+        events.sort((a, b) => a.tick - b.tick || a.priority - b.priority);
+        const trackBytes = [];
+        let previousTick = 0;
+        events.forEach(event => {
+            trackBytes.push(...encodeVariableLength(event.tick - previousTick), ...event.bytes);
+            previousTick = event.tick;
+        });
+        trackBytes.push(0x00, 0xff, 0x2f, 0x00);
+        const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x01, (division >> 8) & 0xff, division & 0xff];
+        const trackHeader = [0x4d, 0x54, 0x72, 0x6b, ...uint32BE(trackBytes.length)];
+        return new Uint8Array([...header, ...trackHeader, ...trackBytes]);
+    }
+
+    function assignMidiChannels(notes, includePitchBends) {
+        if (!includePitchBends) return notes.map(note => ({ ...note, channel: 0 }));
+        const channels = Array.from({ length: 16 }, (_, index) => index).filter(channel => channel !== 9);
+        const active = [];
+        return [...notes]
+            .sort((a, b) => a.startTimeSeconds - b.startTimeSeconds || a.pitchMidi - b.pitchMidi)
+            .map(note => {
+                const start = note.startTimeSeconds;
+                for (let i = active.length - 1; i >= 0; i--) {
+                    if (active[i].end <= start) active.splice(i, 1);
+                }
+                const used = new Set(active.map(item => item.channel));
+                const channel = channels.find(candidate => !used.has(candidate)) ?? 0;
+                active.push({ channel, end: note.startTimeSeconds + note.durationSeconds });
+                return { ...note, channel };
+            });
+    }
+
+    function encodePitchBend(semitones) {
+        const normalized = Math.max(-2, Math.min(2, Number(semitones) || 0));
+        const value = Math.max(0, Math.min(16383, Math.round(8192 + (normalized / 2) * 8191)));
+        return [value & 0x7f, (value >> 7) & 0x7f];
+    }
+
+    function encodeText(text) {
+        const bytes = Array.from(new TextEncoder().encode(String(text).slice(0, 120)));
+        return [bytes.length, ...bytes];
+    }
+
+    function encodeVariableLength(value) {
+        let buffer = value & 0x7f;
+        const bytes = [];
+        while ((value >>= 7)) {
+            buffer <<= 8;
+            buffer |= ((value & 0x7f) | 0x80);
+        }
+        while (true) {
+            bytes.push(buffer & 0xff);
+            if (buffer & 0x80) buffer >>= 8;
+            else break;
+        }
+        return bytes;
+    }
+
+    function uint32BE(value) { return [(value >>> 24) & 0xff, (value >>> 16) & 0xff, (value >>> 8) & 0xff, value & 0xff]; }
+    function uint16LE(value) { return [value & 0xff, (value >>> 8) & 0xff]; }
+    function uint32LE(value) { return [value & 0xff, (value >>> 8) & 0xff, (value >>> 16) & 0xff, (value >>> 24) & 0xff]; }
+
+    const crcTable = (() => {
+        const table = new Uint32Array(256);
+        for (let n = 0; n < 256; n++) {
+            let c = n;
+            for (let k = 0; k < 8; k++) c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
+            table[n] = c >>> 0;
+        }
+        return table;
+    })();
+
+    function crc32(bytes) {
+        let crc = 0xffffffff;
+        for (const byte of bytes) crc = crcTable[(crc ^ byte) & 0xff] ^ (crc >>> 8);
+        return (crc ^ 0xffffffff) >>> 0;
+    }
+
+    function createStoredZip(entries) {
+        const parts = [];
+        const centralDirectory = [];
+        let offset = 0;
+        entries.forEach(entry => {
+            const nameBytes = new TextEncoder().encode(entry.name);
+            const data = entry.data instanceof Uint8Array ? entry.data : new Uint8Array(entry.data);
+            const checksum = crc32(data);
+            const local = new Uint8Array([
+                0x50, 0x4b, 0x03, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, ...uint32LE(checksum), ...uint32LE(data.length), ...uint32LE(data.length),
+                ...uint16LE(nameBytes.length), 0x00, 0x00, ...nameBytes, ...data
+            ]);
+            parts.push(local);
+            centralDirectory.push(new Uint8Array([
+                0x50, 0x4b, 0x01, 0x02, 0x14, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, ...uint32LE(checksum), ...uint32LE(data.length), ...uint32LE(data.length),
+                ...uint16LE(nameBytes.length), 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, ...uint32LE(offset), ...nameBytes
+            ]));
+            offset += local.length;
+        });
+        const centralSize = centralDirectory.reduce((total, part) => total + part.length, 0);
+        const end = new Uint8Array([
+            0x50, 0x4b, 0x05, 0x06, 0x00, 0x00, 0x00, 0x00,
+            ...uint16LE(entries.length), ...uint16LE(entries.length), ...uint32LE(centralSize), ...uint32LE(offset), 0x00, 0x00
+        ]);
+        return new Blob([...parts, ...centralDirectory, end], { type: 'application/zip' });
+    }
+
+    function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+
+    function downloadResults() {
+        if (!generatedResults.length || isGenerating) return;
+        if (generatedResults.length === 1) {
+            downloadBlob(new Blob([generatedResults[0].midiBytes], { type: 'audio/midi' }), generatedResults[0].filename);
+            setConversionStatus('complete', 'MIDI download started', `${generatedResults[0].filename} was sent to your browser download queue.`);
+        } else {
+            const zip = createStoredZip(generatedResults.map(result => ({ name: result.filename, data: result.midiBytes })));
+            downloadBlob(zip, 'audio2midi-stems.zip');
+            setConversionStatus('complete', 'ZIP download started', `${generatedResults.length} separate MIDI stems were packaged into audio2midi-stems.zip.`);
+        }
+    }
+
+    function resetWorkspace() {
+        if (isGenerating) return;
+        stopPreview();
         loadedFiles = [];
+        generatedResults = [];
+        resultsAreStale = false;
+        fileInput.value = '';
+        onsetSlider.value = 0.50;
+        frameSlider.value = 0.30;
+        durationSlider.value = 30;
+        pitchBendToggle.checked = false;
+        presetSelector.value = 'polyphonic';
+        updateVisibleSettings();
         renderQueue();
-        document.getElementById('slider-onset').value = 0.50;
-        document.getElementById('slider-frame').value = 0.30;
-        document.getElementById('slider-duration').value = 30;
-        document.getElementById('toggle-pitchbend').checked = false;
-        document.getElementById('preset-selector').value = 'polyphonic';
-        
-        document.getElementById('onset-val').innerText = "0.50";
-        document.getElementById('frame-val').innerText = "0.30";
-        document.getElementById('duration-val').innerText = "30 ms";
-        
-        setHubStatus("Workspace reset completely initialized.");
+        renderResults();
+        setButtonsForState();
+        setConversionStatus('idle', 'Workspace reset', 'Add a new audio file to begin another conversion.');
+        setHubStatus('Audio2MIDI workspace reset.');
         setTimeout(clearHubStatus, 2000);
+    }
+
+    dropZone.addEventListener('click', () => { if (!isGenerating) fileInput.click(); });
+    dropZone.addEventListener('keydown', event => { if ((event.key === 'Enter' || event.key === ' ') && !isGenerating) { event.preventDefault(); fileInput.click(); } });
+    dropZone.addEventListener('dragover', event => { event.preventDefault(); if (!isGenerating) dropZone.classList.add('dragover'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', event => { event.preventDefault(); dropZone.classList.remove('dragover'); if (!isGenerating) handleFiles(event.dataTransfer.files); });
+    fileInput.addEventListener('change', event => { handleFiles(event.target.files); event.target.value = ''; });
+
+    actionBtn.addEventListener('click', generateMidi);
+    downloadBtn.addEventListener('click', downloadResults);
+    resetBtn.addEventListener('click', resetWorkspace);
+    [onsetSlider, frameSlider, durationSlider, pitchBendToggle].forEach(control => control.addEventListener('input', () => { updateVisibleSettings(); markResultsStale(); }));
+    pitchBendToggle.addEventListener('change', markResultsStale);
+    presetSelector.addEventListener('change', () => {
+        const preset = presets[presetSelector.value];
+        if (!preset) return;
+        onsetSlider.value = preset.onset;
+        frameSlider.value = preset.frame;
+        durationSlider.value = preset.duration;
+        pitchBendToggle.checked = preset.pitchBends;
+        updateVisibleSettings();
+        markResultsStale();
     });
 
-    // Realtime Value Feedback Sync
-    document.getElementById('slider-onset').addEventListener('input', (e) => {
-        document.getElementById('onset-val').innerText = parseFloat(e.target.value).toFixed(2);
-    });
-    document.getElementById('slider-frame').addEventListener('input', (e) => {
-        document.getElementById('frame-val').innerText = parseFloat(e.target.value).toFixed(2);
-    });
-    document.getElementById('slider-duration').addEventListener('input', (e) => {
-        document.getElementById('duration-val').innerText = e.target.value + " ms";
-    });
-
-    // Top Header Minimization & 5-Second Persistence Watch Logic
-    const topStickyPanel = document.querySelector(".top-sticky-panel");
-    const countdownCircle = document.getElementById("countdown-circle");
+    const topStickyPanel = document.querySelector('.top-sticky-panel');
+    const countdownCircle = document.getElementById('countdown-circle');
     let countdownVal = 5;
     let countdownInterval = null;
     let isPanelLocked = false;
     let isHoveringPanel = false;
 
-    function updateCircleDisplay() {
-        countdownCircle.innerHTML = isPanelLocked ? "🔒" : countdownVal;
-    }
-
+    function updateCircleDisplay() { countdownCircle.textContent = isPanelLocked ? '🔒' : countdownVal; }
     function startCountdown() {
         if (isPanelLocked || isHoveringPanel) return;
         clearInterval(countdownInterval);
         countdownInterval = setInterval(() => {
             countdownVal--;
             updateCircleDisplay();
-            if (countdownVal <= 0) {
-                clearInterval(countdownInterval);
-                topStickyPanel.classList.add("minimized");
-            }
+            if (countdownVal <= 0) { clearInterval(countdownInterval); topStickyPanel.classList.add('minimized'); }
         }, 1000);
     }
-
-    function resetCountdown() {
-        clearInterval(countdownInterval);
-        countdownVal = 5;
-        updateCircleDisplay();
-    }
-
-    function maximizePanel() {
-        topStickyPanel.classList.remove("minimized");
-        resetCountdown();
-    }
-
-    topStickyPanel.addEventListener("mouseenter", () => {
-        isHoveringPanel = true;
-        maximizePanel();
-        clearInterval(countdownInterval);
+    function resetCountdown() { clearInterval(countdownInterval); countdownVal = 5; updateCircleDisplay(); }
+    function maximizePanel() { topStickyPanel.classList.remove('minimized'); resetCountdown(); }
+    topStickyPanel.addEventListener('mouseenter', () => { isHoveringPanel = true; maximizePanel(); clearInterval(countdownInterval); });
+    topStickyPanel.addEventListener('mouseleave', () => { isHoveringPanel = false; resetCountdown(); startCountdown(); });
+    topStickyPanel.addEventListener('click', () => { if (topStickyPanel.classList.contains('minimized')) maximizePanel(); });
+    countdownCircle.addEventListener('dblclick', event => {
+        event.stopPropagation(); event.preventDefault(); isPanelLocked = !isPanelLocked; updateCircleDisplay();
+        if (isPanelLocked) { clearInterval(countdownInterval); maximizePanel(); }
+        else if (!isHoveringPanel) startCountdown();
     });
 
-    topStickyPanel.addEventListener("mouseleave", () => {
-        isHoveringPanel = false;
-        resetCountdown();
-        startCountdown();
-    });
-
-    topStickyPanel.addEventListener("click", () => {
-        if (topStickyPanel.classList.contains("minimized")) {
-            maximizePanel();
-        }
-    });
-
-    countdownCircle.addEventListener("dblclick", (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        isPanelLocked = !isPanelLocked;
-        updateCircleDisplay();
-        if (isPanelLocked) {
-            clearInterval(countdownInterval);
-            maximizePanel();
-        } else if (!isHoveringPanel) {
-            startCountdown();
-        }
-    });
-
+    updateVisibleSettings();
+    renderQueue();
+    renderResults();
+    setButtonsForState();
     startCountdown();
     </script>
 </body>
