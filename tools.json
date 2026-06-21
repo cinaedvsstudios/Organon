@@ -1,5 +1,5 @@
 {
-  "version": "v1.13-alpha",
+  "version": "v1.14-alpha",
   "categories": [
     {
       "id": "create",
@@ -185,11 +185,26 @@
           ]
         },
         {
-          "id": "quicksheet",
+          "id": "quicksheet-split",
           "label": "QUICKSHEET",
-          "path": "tools/quicksheet/index.html",
-          "openMode": "new-tab",
-          "description": "Open a standalone quick spreadsheet editor for CSV, XLSX and XLS files."
+          "buttonType": "dual-action-split",
+          "description": "Launch Quicksheet in a new browser tab.",
+          "splitTools": [
+            {
+              "id": "quicksheet",
+              "label": "QUICKSHEET",
+              "path": "tools/quicksheet/index.html",
+              "openMode": "new-tab",
+              "description": "Open the Quicksheet CSV, XLSX and XLS editor in a new browser tab."
+            },
+            {
+              "id": "quicksheet-new-tab",
+              "label": "↗",
+              "path": "tools/quicksheet/index.html",
+              "openMode": "new-tab",
+              "description": "Open Quicksheet in a new browser tab."
+            }
+          ]
         },
         {
           "id": "character-library",
