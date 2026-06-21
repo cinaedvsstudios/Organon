@@ -57,7 +57,7 @@
 
   const state = {
     mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
-    source: 'key', instrument: 'contrabass_arco', register: 36, sequence: [], manual: false,
+    source: 'key', instrument: 'contrabass_arco', register: 36, tempo: 92, sequence: [], manual: false,
     write: { kind: 'interval', value: 0 }, tie: 2,
     effects: { sustain: false, echo: false, chords: false },
     custom: { motion: 'pedal', pedal: 'root', articulation: 82, dynamics: 'flat', inversions: false }
@@ -406,6 +406,7 @@
     renderMode(); renderGuideOptions(project); if (state.mode !== 'custom') renderProfiles();
     $('#bassLength').value = String(state.units); $('#bassLengthValue').textContent = `${state.units} × 32 beats = ${state.units * 32} beats`;
     $('#bassMutationRate').value = String(state.mutation); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`;
+    $('#bassTempo').value = String(state.tempo);
     $('#bassInstrument').value = state.instrument; $('#bassRegister').value = String(state.register);
     $('#bassCustomMotion').value = state.custom.motion; $('#bassPedalTarget').value = state.custom.pedal;
     $('#bassArticulation').value = String(state.custom.articulation); $('#bassArticulationOutput').textContent = state.custom.articulation < 35 ? 'Staccato' : state.custom.articulation > 75 ? 'Legato' : 'Balanced';
@@ -415,6 +416,7 @@
   }
   function openModal() {
     stopPreview();
+    state.tempo = clamp(Number(readProject().bpm) || 92, 30, 260);
     if (!state.sequence.length || state.sequence.length !== stepCount()) { if (state.mode === 'genre') loadGenre(); else if (state.mode === 'emotion') loadEmotion(); else generateCustom(); }
     render(); $('#bassModal').hidden = false;
   }
@@ -488,7 +490,9 @@
   }
   async function preview() {
     if (playback.active) { stopPreview(); return; }
-    const project = readProject(); const player = await loadPlayer();
+    const tempo = clamp(Number($('#bassTempo').value) || state.tempo, 30, 260);
+    state.tempo = tempo;
+    const project = { ...readProject(), bpm: tempo }; const player = await loadPlayer();
     if (!player) { status('Preview sound could not load.'); return; }
     const result = buildPlan(project); const now = playback.context.currentTime + 0.06; const seconds = secondsPerBeat(project);
     playback.active = true; $('#bassPreview').textContent = '⏹ Stop Preview'; $('#bassPreview').classList.add('is-previewing');
@@ -498,13 +502,17 @@
     playback.timer = window.setTimeout(stopPreview, Math.min(32000, 32 * seconds * 1000 + 260));
   }
   function addToTimeline() {
-    const project = readProject(); const result = buildPlan(project);
+    const project = readProject();
+    const tempo = clamp(Number($('#bassTempo').value) || state.tempo, 30, 260);
+    const result = buildPlan({ ...project, bpm: tempo });
     if (!result.notes.length) { status('Add at least one triggered step first.'); return; }
     saveHistory(project);
+    project.bpm = tempo;
+    state.tempo = tempo;
     let track = project.tracks.find(item => /bass/i.test(item.name));
     if (!track) { track = { id: uid('track'), name: 'Bass', instrument: SAVED_INSTRUMENTS[state.instrument], color: COLORS[0], muted: false, solo: false, hidden: false, notes: [] }; project.tracks.push(track); }
     track.instrument = SAVED_INSTRUMENTS[state.instrument]; track.notes.push(...result.notes); saveProject(project);
-    sessionStorage.setItem(TOAST_KEY, `Added ${result.groups.length} bass group${result.groups.length === 1 ? '' : 's'} to the timeline.`); window.location.reload();
+    sessionStorage.setItem(TOAST_KEY, `Added ${result.groups.length} bass group${result.groups.length === 1 ? '' : 's'} to the timeline at ${tempo} BPM.`); window.location.reload();
   }
 
   function makeWindowDraggable() {
@@ -512,11 +520,14 @@
     if (!card || !header || !grip) return;
     header.addEventListener('pointerdown', event => {
       if (event.target.closest('button,input,select,textarea,label')) return;
+      event.preventDefault();
       const rect = card.getBoundingClientRect(); const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
       card.style.position = 'fixed'; card.style.margin = '0';
+      card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`;
+      header.setPointerCapture?.(event.pointerId);
       const move = moveEvent => { card.style.left = `${clamp(moveEvent.clientX - offsetX, 0, window.innerWidth - card.offsetWidth)}px`; card.style.top = `${clamp(moveEvent.clientY - offsetY, 0, window.innerHeight - card.offsetHeight)}px`; };
-      const end = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); };
-      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true });
+      const end = () => { header.releasePointerCapture?.(event.pointerId); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end); };
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true }); window.addEventListener('pointercancel', end, { once: true });
     });
     grip.addEventListener('pointerdown', event => {
       const rect = card.getBoundingClientRect(); const startX = event.clientX, startY = event.clientY;
@@ -536,6 +547,10 @@
     $('#bassMutate').addEventListener('click', () => { if (state.mode === 'genre') mutateGenre(); else loadEmotion(); render(); });
     $('#bassGenerateCustom').addEventListener('click', () => { generateCustom(); render(); });
     $('#bassLength').addEventListener('input', event => { state.units = Number(event.target.value); render(); });
+    $('#bassTempo').addEventListener('change', event => {
+      state.tempo = clamp(Number(event.target.value) || state.tempo, 30, 260);
+      event.target.value = String(state.tempo);
+    });
     $('#bassMutationRate').addEventListener('input', event => { state.mutation = Number(event.target.value); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`; });
     $('#bassHarmonySource').addEventListener('change', event => { state.source = event.target.value; render(); });
     $('#bassInstrument').addEventListener('change', event => { state.instrument = event.target.value; });

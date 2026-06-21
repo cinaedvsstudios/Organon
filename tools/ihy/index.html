@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.4 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.5 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
-  <link rel="stylesheet" href="./bass-generator.css">
+  <link rel="stylesheet" href="./bass-generator.css?v=1.5">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.4</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.5</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -80,6 +80,7 @@
             <section class="bass-card">
               <h4>Structure</h4>
               <div class="bass-card-section"><span class="bass-section-label">Phrase length</span><div id="bassPhraseChoices" class="bass-choice-row"><button class="bass-choice bass-phrase selected" data-b="8" type="button">8 beats</button><button class="bass-choice bass-phrase" data-b="16" type="button">16 beats</button><button class="bass-choice bass-phrase" data-b="32" type="button">32 beats</button></div></div>
+              <label class="bass-form-field">Bass tempo<input id="bassTempo" type="number" min="30" max="260" value="92" inputmode="numeric"></label>
               <div class="bass-card-section"><span class="bass-section-label">Live preview transforms</span><div class="bass-transform-row"><button id="bassSustain" class="bass-transform" type="button">Sustain</button><button id="bassEcho" class="bass-transform" type="button">Echo</button><button id="bassChords" class="bass-transform" type="button">Chords</button></div><p class="bass-transform-note">Transforms affect Preview immediately and remain reversible until Add to Timeline.</p></div>
               <div class="bass-card-section"><span class="bass-section-label">Timeline length</span><span class="bass-length"><input id="bassLength" type="range" min="1" max="10" value="1" step="1"><output id="bassLengthValue">1 × 32 beats = 32 beats</output></span></div>
             </section>
@@ -103,7 +104,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.2"></script>
-  <script src="./bass-generator.js?v=1.1"></script>
+  <script src="./clear-all.js?v=1.5"></script>
+  <script src="./bass-generator.js?v=1.5"></script>
 </body>
 </html>
