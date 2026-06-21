@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.9 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.10 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
   <link rel="stylesheet" href="./bass-generator.css?v=1.9">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.9</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.10</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -72,7 +72,7 @@
           <div class="bass-top-grid">
             <section class="bass-card">
               <h4>Preset</h4>
-              <label class="bass-form-field">Instrument<select id="bassInstrument"><option value="contrabass_arco">Contrabass (Arco)</option><option value="contrabass_pizz">Contrabass (Pizzicato)</option><option value="tuba">Tuba</option><option value="contrabassoon">Contrabassoon</option><option value="cello_bass">Cello Bass</option><option value="grand_piano">Grand Piano</option><option value="strings">Strings</option><option value="violin">Violin</option><option value="church_organ">Church Organ</option><option value="clarinet">Clarinet</option><option value="oboe">Oboe</option></select></label>
+              <label class="bass-form-field">Instrument<select id="bassInstrument"><option value="grand_piano" selected>Grand Piano</option><option value="contrabass_arco">Contrabass (Arco)</option><option value="contrabass_pizz">Contrabass (Pizzicato)</option><option value="tuba">Tuba</option><option value="contrabassoon">Contrabassoon</option><option value="cello_bass">Cello Bass</option><option value="strings">Strings</option><option value="violin">Violin</option><option value="church_organ">Church Organ</option><option value="clarinet">Clarinet</option><option value="oboe">Oboe</option></select></label>
               <label class="bass-form-field">Register<select id="bassRegister"><option value="24">Low — C1 to B1</option><option value="36" selected>Standard — C2 to B2</option><option value="48">High — C3 to B3</option></select></label>
               <div class="bass-parser"><span class="bass-section-label">Paste note pattern</span><textarea id="bassTextInput" placeholder="Ab1(1/4) Ab1(1/4) Eb1(1/4) R(1/4)"></textarea><button id="bassProcess" class="button" type="button">Process</button></div>
             </section>
@@ -102,7 +102,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.9"></script>
-  <script src="./bass-generator.js?v=1.9"></script>
+  <script src="./clear-all.js?v=1.10"></script>
+  <script src="./bass-generator.js?v=1.10"></script>
 </body>
 </html>

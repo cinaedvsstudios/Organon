@@ -62,13 +62,13 @@
 
   const state = {
     mode: 'genre', genreId: 1, emotionId: 'aspirational', phrase: 8, units: 1, mutation: 25,
-    source: 'key', instrument: 'contrabass_arco', register: 36, tempo: 92, sequence: [], manual: false,
+    source: 'key', instrument: 'grand_piano', register: 36, tempo: 92, sequence: [], manual: false,
     rollNotes: [], rollReady: false, rollDirty: false, rollZoom: 1, rollViewportPending: true,
     write: { kind: 'interval', value: 0 }, tie: 2,
-    effects: { sustain: false, echo: false, chords: false },
+    effects: { sustain: true, echo: false, chords: false },
     custom: { motion: 'pedal', pedal: 'root', articulation: 82, dynamics: 'flat', inversions: false }
   };
-  const playback = { context: null, gain: null, player: null, instrument: null, nodes: [], timer: 0, active: false, playheadFrame: 0, playheadProgress: 0 };
+  const playback = { context: null, gain: null, player: null, instrument: null, nodes: [], timer: 0, active: false, pending: false, request: 0, instrumentRequest: 0, playheadFrame: 0, playheadProgress: 0 };
 
   function readProject() {
     try {
@@ -671,32 +671,74 @@
     return playback.context;
   }
   async function loadPlayer() {
-    const context = ensureAudio(); if (!context || !window.Soundfont) return null;
-    if (playback.player && playback.instrument === state.instrument) return playback.player;
-    playback.instrument = state.instrument;
-    try { playback.player = await window.Soundfont.instrument(context, SOUNDFONTS[state.instrument], { soundfont: 'MusyngKite', format: 'mp3', destination: playback.gain, gain: 0.94 }); return playback.player; }
-    catch (_) { return null; }
+    const context = ensureAudio();
+    if (!context || !window.Soundfont) return null;
+
+    const instrument = state.instrument;
+    if (playback.player && playback.instrument === instrument) return playback.player;
+
+    const request = ++playback.instrumentRequest;
+    try {
+      const player = await window.Soundfont.instrument(context, SOUNDFONTS[instrument], {
+        soundfont: 'MusyngKite', format: 'mp3', destination: playback.gain, gain: 0.94
+      });
+      if (request !== playback.instrumentRequest || instrument !== state.instrument) return null;
+      playback.player = player;
+      playback.instrument = instrument;
+      return player;
+    } catch (_) {
+      return null;
+    }
   }
   function stopPreview() {
+    playback.request += 1;
+    playback.pending = false;
     clearTimeout(playback.timer);
     cancelAnimationFrame(playback.playheadFrame);
     playback.playheadFrame = 0;
     playback.playheadProgress = 0;
-    playback.nodes.splice(0).forEach(node => { try { node.stop(); } catch (_) {} }); playback.nodes = []; playback.active = false;
-    const button = $('#bassPreview'); if (button) { button.textContent = '▶ Preview'; button.classList.remove('is-previewing'); }
+    playback.nodes.splice(0).forEach(node => { try { node.stop(); } catch (_) {} });
+    playback.nodes = [];
+    playback.active = false;
+    const button = $('#bassPreview');
+    if (button) { button.textContent = '▶ Preview'; button.classList.remove('is-previewing'); }
     updateRollPlayhead(0, false);
   }
+  function restartPreviewIfRunning() {
+    if (!playback.active && !playback.pending) return;
+    stopPreview();
+    window.setTimeout(() => preview(), 0);
+  }
   async function preview() {
-    if (playback.active) { stopPreview(); return; }
+    if (playback.active || playback.pending) { stopPreview(); return; }
+
+    const request = ++playback.request;
     const tempo = clamp(Number($('#bassTempo').value) || state.tempo, 30, 260);
     state.tempo = tempo;
-    const project = { ...readProject(), bpm: tempo }; const player = await loadPlayer();
+    playback.pending = true;
+    const project = { ...readProject(), bpm: tempo };
+    const player = await loadPlayer();
+    if (request !== playback.request) return;
+    playback.pending = false;
     if (!player) { status('Preview sound could not load.'); return; }
-    const result = buildPlan(project); const now = playback.context.currentTime + 0.06; const seconds = secondsPerBeat(project);
-    playback.active = true; $('#bassPreview').textContent = '⏹ Stop Preview'; $('#bassPreview').classList.add('is-previewing');
+
+    const result = buildPlan(project);
+    const now = playback.context.currentTime + 0.06;
+    const seconds = secondsPerBeat(project);
+    playback.active = true;
+    $('#bassPreview').textContent = '⏹ Stop Preview';
+    $('#bassPreview').classList.add('is-previewing');
     startRollPlayhead(32 * seconds, state.phrase * seconds);
     result.notes.filter(note => note.start < result.insertAt + 32).forEach(note => {
-      try { const node = player.play(note.pitch, now + (note.start - result.insertAt) * seconds, { duration: Math.max(0.08, note.duration * seconds), gain: clamp(note.velocity / 127, 0.15, 0.95), attack: 0.008, release: 0.16 }); if (node && node.stop) playback.nodes.push(node); } catch (_) {}
+      try {
+        const node = player.play(note.pitch, now + (note.start - result.insertAt) * seconds, {
+          duration: Math.max(0.08, note.duration * seconds),
+          gain: clamp(note.velocity / 127, 0.15, 0.95),
+          attack: 0.008,
+          release: 0.16
+        });
+        if (node && node.stop) playback.nodes.push(node);
+      } catch (_) {}
     });
     playback.timer = window.setTimeout(stopPreview, Math.min(32000, 32 * seconds * 1000 + 260));
   }
@@ -798,13 +840,34 @@
     $('#bassMutate').addEventListener('click', () => { if (state.mode === 'genre') mutateGenre(); else loadEmotion(); syncRollFromSequence(readProject()); render(); });
     $('#bassGenerateCustom').addEventListener('click', () => { generateCustom(); syncRollFromSequence(readProject()); render(); });
     $('#bassLength').addEventListener('input', event => { state.units = Number(event.target.value); render(); });
+    let tempoRestartTimer = 0;
+    const updateBassTempo = value => {
+      const tempo = Number(value);
+      if (!Number.isFinite(tempo) || tempo < 30 || tempo > 260) return false;
+      state.tempo = tempo;
+      return true;
+    };
+    const scheduleTempoPreviewRestart = () => {
+      if (!playback.active && !playback.pending) return;
+      clearTimeout(tempoRestartTimer);
+      tempoRestartTimer = window.setTimeout(restartPreviewIfRunning, 180);
+    };
+    $('#bassTempo').addEventListener('input', event => {
+      if (updateBassTempo(event.target.value)) scheduleTempoPreviewRestart();
+    });
     $('#bassTempo').addEventListener('change', event => {
-      state.tempo = clamp(Number(event.target.value) || state.tempo, 30, 260);
+      const requested = Number(event.target.value);
+      state.tempo = clamp(Number.isFinite(requested) ? requested : state.tempo, 30, 260);
       event.target.value = String(state.tempo);
+      clearTimeout(tempoRestartTimer);
+      restartPreviewIfRunning();
     });
     $('#bassMutationRate').addEventListener('input', event => { state.mutation = Number(event.target.value); $('#bassMutationOutput').textContent = `${state.mutation}% mutation`; });
     $('#bassHarmonySource').addEventListener('change', event => { state.source = event.target.value; if (!state.rollDirty) syncRollFromSequence(readProject()); render(); });
-    $('#bassInstrument').addEventListener('change', event => { state.instrument = event.target.value; });
+    $('#bassInstrument').addEventListener('change', event => {
+      state.instrument = event.target.value;
+      restartPreviewIfRunning();
+    });
     $('#bassRegister').addEventListener('change', event => { const previous = state.register; state.register = Number(event.target.value); shiftRollRegister(previous, state.register); state.rollViewportPending = true; render(); });
     $('#bassCustomMotion').addEventListener('change', event => { state.custom.motion = event.target.value; });
     $('#bassPedalTarget').addEventListener('change', event => { state.custom.pedal = event.target.value; });
