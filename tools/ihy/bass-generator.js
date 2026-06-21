@@ -524,6 +524,7 @@
       const rect = card.getBoundingClientRect(); const offsetX = event.clientX - rect.left, offsetY = event.clientY - rect.top;
       card.style.position = 'fixed'; card.style.margin = '0';
       card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`;
+      card.classList.add('positioned');
       header.setPointerCapture?.(event.pointerId);
       const move = moveEvent => { card.style.left = `${clamp(moveEvent.clientX - offsetX, 0, window.innerWidth - card.offsetWidth)}px`; card.style.top = `${clamp(moveEvent.clientY - offsetY, 0, window.innerHeight - card.offsetHeight)}px`; };
       const end = () => { header.releasePointerCapture?.(event.pointerId); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); window.removeEventListener('pointercancel', end); };
@@ -531,7 +532,7 @@
     });
     grip.addEventListener('pointerdown', event => {
       const rect = card.getBoundingClientRect(); const startX = event.clientX, startY = event.clientY;
-      card.style.position = 'fixed'; card.style.margin = '0'; card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`; grip.classList.add('resizing');
+      card.style.position = 'fixed'; card.style.margin = '0'; card.style.left = `${rect.left}px`; card.style.top = `${rect.top}px`; card.classList.add('positioned'); grip.classList.add('resizing');
       const move = moveEvent => { card.style.width = `${clamp(rect.width + moveEvent.clientX - startX, 690, window.innerWidth - 20)}px`; card.style.height = `${clamp(rect.height + moveEvent.clientY - startY, 520, window.innerHeight - 20)}px`; };
       const end = () => { grip.classList.remove('resizing'); window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', end); };
       window.addEventListener('pointermove', move); window.addEventListener('pointerup', end, { once: true });
