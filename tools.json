@@ -1,5 +1,5 @@
 {
-  "version": "v1.15-alpha",
+  "version": "v1.16-alpha",
   "categories": [
     {
       "id": "create",
@@ -61,6 +61,12 @@
           "label": "FRAME EXTRACTOR",
           "path": "tools/frame-extractor/index.html",
           "description": "Extract still frames from local video files."
+        },
+        {
+          "id": "vidcompressor",
+          "label": "VIDCOMPRESSOR",
+          "path": "tools/vidcompressor/index.html",
+          "description": "Compress local video files with one quality-to-file-size slider, then save a new copy or overwrite the source file where browser permission allows."
         }
       ]
     },
