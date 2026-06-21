@@ -4,14 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#171817">
-  <title>Ihy v1.12 — Sound &amp; Music Workshop</title>
+  <title>Ihy v1.13 — Sound &amp; Music Workshop</title>
   <link rel="stylesheet" href="./standalone.css?v=0.43">
   <link rel="stylesheet" href="./feedback.css?v=0.47">
   <link rel="stylesheet" href="./bass-generator.css?v=1.12">
+  <link rel="stylesheet" href="./motif-generator.css?v=1.13">
 </head>
 <body>
   <header class="app-header">
-    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.12</span></div>
+    <div class="brand"><img class="brand-icon" src="./icon.png" alt="Ihy"><strong>Ihy</strong><span class="version-pill">v1.13</span></div>
     <span class="header-divider" aria-hidden="true"></span>
     <div class="project-meta">
       <label class="field composition-field"><span>Filename</span><input id="projectTitle" value="Untitled cue" maxlength="80"></label>
@@ -113,13 +114,75 @@
     </section>
   </div>
 
+
+
+  <div id="motifModal" class="modal-layer" hidden>
+    <section id="motifModalCard" class="modal modal-wide motif-modal">
+      <header class="modal-header motif-modal-header">
+        <h3 id="motifModalDragTitle" class="motif-modal-drag-title" title="Drag window">＋ Motif Generator</h3>
+        <div class="motif-header-actions">
+          <button id="motifAdd" class="button primary" type="button">Add to Timeline</button>
+          <button id="motifClose" class="button compact motif-close-button" type="button" title="Close Motif Generator" aria-label="Close Motif Generator">❌</button>
+        </div>
+      </header>
+      <div class="modal-body">
+        <div class="motif-generator-layout">
+          <aside class="motif-controls-scroll" aria-label="Motif generator controls">
+            <section class="motif-card">
+              <h4>Preset</h4>
+              <label class="motif-form-field">Instrument<select id="motifInstrument"><option value="grand_piano" selected>Grand Piano</option><option value="strings">Strings</option><option value="violin">Violin</option><option value="clarinet">Clarinet</option><option value="oboe">Oboe</option><option value="flute">Flute</option><option value="church_organ">Church Organ</option><option value="harpsichord">Harpsichord</option><option value="celesta">Celesta</option></select></label>
+              <label class="motif-form-field">Melody register<select id="motifRegister"><option value="48">Low — C3 to B4</option><option value="60" selected>Standard — C4 to B5</option><option value="72">High — C5 to B6</option></select></label>
+              <label class="motif-form-field">Motif tempo<input id="motifTempo" type="number" min="30" max="260" value="92" inputmode="numeric"></label>
+              <div class="motif-card-section"><span class="motif-section-label">Harmony guide</span><select id="motifHarmonySource"></select></div>
+              <button id="motifBassLink" class="motif-bass-link selected" type="button" aria-pressed="true">🎸 Bass Link</button>
+              <div class="motif-parser"><span class="motif-section-label">Paste note pattern</span><textarea id="motifTextInput" placeholder="A3(1/4) C4(1/4) E4(1/2)"></textarea><button id="motifProcess" class="button" type="button">Process</button></div>
+            </section>
+            <section class="motif-card">
+              <h4>Structure</h4>
+              <div class="motif-card-section"><span class="motif-section-label">Section type</span><div id="motifSectionChoices" class="motif-section-choices"><button class="motif-section-button selected" data-section="hook" type="button">Hook</button><button class="motif-section-button" data-section="verse" type="button">Verse</button><button class="motif-section-button" data-section="chorus" type="button">Chorus</button><button class="motif-section-button" data-section="bridge" type="button">Bridge</button></div></div>
+              <label class="motif-form-field">Phrase length<select id="motifPhrase"><option value="8" selected>8 beats</option><option value="16">16 beats</option><option value="32">32 beats</option></select></label>
+            </section>
+            <section class="motif-card">
+              <div id="motifModeTabs" class="motif-mode-tabs"><button class="motif-mode-tab selected" data-mode="genre" type="button">Genre</button><button class="motif-mode-tab" data-mode="emotion" type="button">Emotion</button></div>
+              <h4 id="motifProfileHeading">Genre profile</h4>
+              <div class="motif-select-row"><select id="motifProfileSelect" aria-label="Motif profile"></select><button id="motifLoadProfile" class="button compact" type="button">Load</button></div>
+              <p id="motifProfileDetail" class="motif-profile-detail" hidden></p>
+              <div class="motif-profile-actions"><button id="motifRandomProfile" class="button" type="button">Random</button><button id="motifVariant" class="button" type="button">Variant</button></div>
+              <label class="motif-form-field">Mutation amount<input id="motifMutation" type="range" min="0" max="50" value="25" step="5"><output id="motifMutationOutput" class="motif-mutation-output">25% mutation</output></label>
+            </section>
+          </aside>
+          <section class="motif-roll-workspace">
+            <div class="motif-roll-toolbar">
+              <div class="motif-roll-transport" aria-label="Motif preview controls"><button id="motifPreview" class="button play" type="button">▶ Preview</button><button id="motifStop" class="button stop motif-preview-stop" type="button" disabled>⏹ Stop</button><button id="motifLoop" class="button motif-loop-toggle" type="button" aria-pressed="false">↻ Loop</button></div>
+              <div class="motif-roll-actions"><div class="motif-roll-zoom" aria-label="Motif piano roll zoom"><button id="motifRollZoomOut" class="button compact" type="button" title="Zoom out">−</button><output id="motifRollZoomValue" class="motif-roll-zoom-value">100%</output><button id="motifRollZoomIn" class="button compact" type="button" title="Zoom in">＋</button></div><button id="motifResetRoll" class="button" type="button">Reset generated</button></div>
+            </div>
+            <div id="motifRollScroll" class="motif-roll-scroll"><div id="motifRollCanvas" class="motif-roll-canvas"><div id="motifRollRuler" class="motif-roll-ruler"></div><div id="motifRollLabels" class="motif-roll-labels"></div><div id="motifRollGrid" class="motif-roll-grid"></div></div></div>
+          </section>
+        </div>
+      </div>
+      <div id="motifResizeGrip" class="motif-modal-resize-grip" title="Resize Motif Generator" aria-label="Resize Motif Generator"></div>
+    </section>
+  </div>
+
+  <div id="motifPlacementModal" class="modal-layer motif-placement-layer" hidden>
+    <section class="modal motif-placement-modal">
+      <header class="modal-header"><h3>Import placement</h3></header>
+      <div class="modal-body"><p id="motifPlacementText"></p></div>
+      <footer class="modal-footer motif-placement-actions"><button id="motifPlacementCancel" class="button" type="button">Cancel</button><button id="motifPlacementHere" class="button" type="button">No — import here</button><button id="motifPlacementEnd" class="button primary" type="button">Yes — move to end</button></footer>
+    </section>
+  </div>
+
   <div id="renameModal" class="modal-layer" hidden><section class="modal"><header class="modal-header"><h3>Rename track</h3><span>⠿</span></header><div class="modal-body"><label class="modal-field">Track name<input id="renameInput" maxlength="60"></label></div><footer class="modal-footer"><button class="button" data-close="renameModal" type="button">Cancel</button><button class="button primary" id="renameConfirm" type="button">OK</button></footer></section></div>
   <div id="analysisModal" class="modal-layer" hidden><section class="modal modal-wide"><header class="modal-header"><h3>🔎 Project analysis</h3><span>⠿</span></header><div class="modal-body"><textarea id="analysisText" class="analysis-text" readonly spellcheck="false"></textarea></div><footer class="modal-footer"><button class="button" id="copyAnalysis" type="button">Copy report</button><button class="button primary" data-close="analysisModal" type="button">Close</button></footer></section></div>
   <div id="exportModal" class="modal-layer" hidden><section class="modal"><header class="modal-header"><h3>📤 Export composition</h3><span>⠿</span></header><div class="modal-body"><div id="exportFormats" class="format-grid"><label class="format-choice active"><input type="radio" name="exportFormat" value="json" checked>JSON</label><label class="format-choice"><input type="radio" name="exportFormat" value="midi">MIDI</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="wav">WAV</label><label class="format-choice muted-choice"><input type="radio" name="exportFormat" value="mp3">MP3</label></div><p id="exportDescription" class="export-description"></p><label class="export-check"><input id="includeMuted" type="checkbox"> Include muted tracks</label><p id="exportStatus" class="export-description"></p></div><footer class="modal-footer"><button class="button" data-close="exportModal" type="button">Close</button><button class="button primary" id="doExport" type="button">Export file</button></footer></section></div>
 
   <script src="https://cdn.jsdelivr.net/npm/soundfont-player@0.12.0/dist/soundfont-player.min.js"></script>
   <script src="./standalone.js?v=0.43"></script>
-  <script src="./clear-all.js?v=1.12"></script>
+  <script src="./clear-all.js?v=1.13"></script>
   <script src="./bass-generator.js?v=1.12"></script>
+  <script src="./motif-engine.js?v=1.13"></script>
+  <script src="./motif-roll.js?v=1.13"></script>
+  <script src="./motif-preview.js?v=1.13"></script>
+  <script src="./motif-generator.js?v=1.13"></script>
 </body>
 </html>
