@@ -165,6 +165,12 @@
     input:checked + .slider-toggle { background-color: var(--water-blue); }
     input:checked + .slider-toggle:before { transform: translateX(22px); }
 
+    .arrangement-block { margin: 4px 0 16px; padding: 15px 0 2px; border-top: 1px solid rgba(137, 107, 73, 0.52); }
+    .arrangement-summary { margin: 8px 2px 11px; color: rgba(245, 240, 219, 0.74); font-size: 0.72rem; line-height: 1.4; }
+    .arrangement-actions { display: flex; gap: 8px; margin-top: 7px; }
+    .arrangement-actions .mini-btn { flex: 1; }
+    .arrangement-hint { margin: 9px 2px 0; color: rgba(245, 240, 219, 0.53); font-size: 0.66rem; line-height: 1.42; }
+
     .conversion-status {
         display: flex; gap: 12px; align-items: flex-start; border-radius: 16px; padding: 12px 14px; margin-top: 16px;
         border: 1px solid rgba(137, 107, 73, 0.8); background: rgba(24, 25, 25, 0.65); color: var(--alabaster-paper);
@@ -200,7 +206,8 @@
     .mini-btn { border: 1px solid var(--chiseled-bronze); background: rgba(41, 42, 36, 0.9); color: var(--water-spray); padding: 7px 10px; border-radius: 999px; cursor: pointer; font-family: var(--font-body); font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; }
     .mini-btn.stop { color: var(--terracotta-peach); }
     .mini-btn.playing { color: var(--alabaster-paper); border-color: var(--water-blue); background: rgba(75, 132, 191, 0.22); }
-    .mini-btn:hover { border-color: var(--water-spray); }
+    .mini-btn:disabled { opacity: 0.48; cursor: not-allowed; }
+    .mini-btn:hover:not(:disabled) { border-color: var(--water-spray); }
 
     .bottom-sticky-panel {
         position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 540px; z-index: 110;
@@ -248,7 +255,7 @@
 
         <main class="middle-scroll-panel">
             <div class="config-card">
-                <h3>📁 Audio Stem Queue <span class="tool-version">v0.04</span></h3>
+                <h3>📁 Audio Stem Queue <span class="tool-version">v0.05</span></h3>
                 <p style="font-size: 0.8rem; opacity:0.8; margin-bottom: 16px;">Upload audio components to process into parallel MIDI mappings. Max 10 stems.</p>
                 <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Add audio files">
                     <p>Drag &amp; Drop Audio Files Here</p>
@@ -271,6 +278,29 @@
                 <div class="slider-row">
                     <div class="slider-label-row"><span>Minimum Note Duration</span><span id="duration-val">30 ms</span></div>
                     <input type="range" id="slider-duration" min="10" max="250" step="5" value="30">
+                </div>
+                <div class="arrangement-block">
+                    <div class="slider-label-row"><span>Arrangement Preset</span><span id="arrangement-name">Cinematic</span></div>
+                    <select id="arrangement-preset" aria-label="Arrangement sound preset">
+                        <option value="cinematic">CINEMATIC</option>
+                        <option value="triumphant">TRIUMPHANT</option>
+                        <option value="broadway">BROADWAY</option>
+                        <option value="country">COUNTRY</option>
+                        <option value="pop">POP</option>
+                        <option value="fantasy">FANTASY ADVENTURE</option>
+                        <option value="electronic">ELECTRONIC</option>
+                        <option value="retro">RETRO GAME</option>
+                    </select>
+                    <p class="arrangement-summary" id="arrangement-summary">Piano lead, strings, warm bass and soft brass.</p>
+                    <div class="slider-row" style="margin-bottom: 8px;">
+                        <div class="slider-label-row"><span>Arrangement Separation</span><span id="arrangement-separation-val">5 / Balanced</span></div>
+                        <input type="range" id="slider-arrangement-separation" min="0" max="10" step="1" value="5">
+                    </div>
+                    <div class="arrangement-actions">
+                        <button type="button" class="mini-btn" id="preview-arrangement-btn">Preview Arrangement</button>
+                        <button type="button" class="mini-btn stop" id="stop-arrangement-btn" disabled>Stop Preview</button>
+                    </div>
+                    <p class="arrangement-hint">0 keeps every stem on the preset’s lead sound. Higher settings separate likely bass, lead, harmony and support stems more aggressively.</p>
                 </div>
                 <div class="toggle-row">
                     <span class="toggle-label">Preserve Pitch Glides</span>
@@ -328,6 +358,12 @@
     const onsetSlider = document.getElementById('slider-onset');
     const frameSlider = document.getElementById('slider-frame');
     const durationSlider = document.getElementById('slider-duration');
+    const arrangementPresetSelector = document.getElementById('arrangement-preset');
+    const arrangementSeparationSlider = document.getElementById('slider-arrangement-separation');
+    const arrangementName = document.getElementById('arrangement-name');
+    const arrangementSummary = document.getElementById('arrangement-summary');
+    const arrangementPreviewButton = document.getElementById('preview-arrangement-btn');
+    const arrangementStopButton = document.getElementById('stop-arrangement-btn');
     const pitchBendToggle = document.getElementById('toggle-pitchbend');
     const presetSelector = document.getElementById('preset-selector');
 
@@ -348,6 +384,82 @@
         monophonic: { onset: 0.35, frame: 0.25, duration: 60, pitchBends: true },
         vocals: { onset: 0.30, frame: 0.20, duration: 80, pitchBends: true },
         guitar: { onset: 0.45, frame: 0.25, duration: 45, pitchBends: true }
+    };
+
+    const roleLabels = { lead: 'Lead', bass: 'Bass', harmony: 'Harmony', support: 'Support' };
+    const arrangementPresets = {
+        cinematic: {
+            label: 'Cinematic', summary: 'Piano lead, strings, warm bass and soft brass.',
+            roles: {
+                lead: { label: 'Grand Piano', gmProgram: 0, waveform: 'triangle', secondary: 'sine', detune: 7, filter: 4200, attack: 0.006, release: 0.22, level: 0.82 },
+                bass: { label: 'Warm Bass', gmProgram: 38, waveform: 'sine', secondary: 'triangle', detune: -7, filter: 680, attack: 0.012, release: 0.14, level: 0.93 },
+                harmony: { label: 'String Ensemble', gmProgram: 48, waveform: 'sawtooth', secondary: 'triangle', detune: 8, filter: 2350, attack: 0.15, release: 0.35, level: 0.50 },
+                support: { label: 'Soft Brass', gmProgram: 60, waveform: 'sawtooth', secondary: 'square', detune: -8, filter: 1600, attack: 0.07, release: 0.22, level: 0.46 }
+            }
+        },
+        triumphant: {
+            label: 'Triumphant', summary: 'Heroic brass lead, orchestral bass, strings and horn support.',
+            roles: {
+                lead: { label: 'Heroic Brass', gmProgram: 61, waveform: 'sawtooth', secondary: 'square', detune: 5, filter: 1950, attack: 0.045, release: 0.20, level: 0.66 },
+                bass: { label: 'Orchestral Bass', gmProgram: 58, waveform: 'triangle', secondary: 'sine', detune: -6, filter: 870, attack: 0.025, release: 0.19, level: 0.88 },
+                harmony: { label: 'Triumphant Strings', gmProgram: 48, waveform: 'sawtooth', secondary: 'triangle', detune: 10, filter: 2500, attack: 0.13, release: 0.32, level: 0.48 },
+                support: { label: 'French Horns', gmProgram: 60, waveform: 'sawtooth', secondary: 'sine', detune: -9, filter: 1400, attack: 0.065, release: 0.24, level: 0.44 }
+            }
+        },
+        broadway: {
+            label: 'Broadway', summary: 'Show piano, upright bass, theatre brass and dramatic strings.',
+            roles: {
+                lead: { label: 'Show Piano', gmProgram: 0, waveform: 'triangle', secondary: 'sine', detune: 4, filter: 3800, attack: 0.008, release: 0.19, level: 0.80 },
+                bass: { label: 'Upright Bass', gmProgram: 32, waveform: 'triangle', secondary: 'sine', detune: -5, filter: 790, attack: 0.018, release: 0.15, level: 0.91 },
+                harmony: { label: 'Theatre Brass', gmProgram: 61, waveform: 'sawtooth', secondary: 'square', detune: 7, filter: 1800, attack: 0.05, release: 0.18, level: 0.48 },
+                support: { label: 'Stage Strings', gmProgram: 48, waveform: 'sawtooth', secondary: 'triangle', detune: -8, filter: 2250, attack: 0.13, release: 0.30, level: 0.44 }
+            }
+        },
+        country: {
+            label: 'Country', summary: 'Fiddle lead, picked bass, acoustic harmony and steel-like support.',
+            roles: {
+                lead: { label: 'Fiddle Lead', gmProgram: 40, waveform: 'sawtooth', secondary: 'triangle', detune: 10, filter: 2600, attack: 0.025, release: 0.16, level: 0.56 },
+                bass: { label: 'Picked Bass', gmProgram: 33, waveform: 'triangle', secondary: 'square', detune: -6, filter: 920, attack: 0.012, release: 0.12, level: 0.90 },
+                harmony: { label: 'Acoustic Guitar', gmProgram: 24, waveform: 'triangle', secondary: 'sine', detune: 5, filter: 3100, attack: 0.008, release: 0.18, level: 0.62 },
+                support: { label: 'Steel Support', gmProgram: 25, waveform: 'sine', secondary: 'triangle', detune: -11, filter: 2150, attack: 0.055, release: 0.29, level: 0.45 }
+            }
+        },
+        pop: {
+            label: 'Pop', summary: 'Bright synth lead, synth bass, electric piano and wide pad support.',
+            roles: {
+                lead: { label: 'Bright Synth Lead', gmProgram: 81, waveform: 'sawtooth', secondary: 'square', detune: 8, filter: 2900, attack: 0.015, release: 0.16, level: 0.57 },
+                bass: { label: 'Synth Bass', gmProgram: 38, waveform: 'sine', secondary: 'square', detune: -6, filter: 760, attack: 0.009, release: 0.12, level: 0.94 },
+                harmony: { label: 'Electric Piano', gmProgram: 4, waveform: 'triangle', secondary: 'sine', detune: 6, filter: 3400, attack: 0.006, release: 0.25, level: 0.66 },
+                support: { label: 'Wide Pad', gmProgram: 88, waveform: 'sawtooth', secondary: 'sine', detune: -12, filter: 1450, attack: 0.21, release: 0.42, level: 0.38 }
+            }
+        },
+        fantasy: {
+            label: 'Fantasy Adventure', summary: 'Flute-like lead, harp/piano harmony, cello bass and strings.',
+            roles: {
+                lead: { label: 'Adventure Flute', gmProgram: 73, waveform: 'sine', secondary: 'triangle', detune: 6, filter: 3300, attack: 0.035, release: 0.22, level: 0.62 },
+                bass: { label: 'Cello Bass', gmProgram: 42, waveform: 'triangle', secondary: 'sawtooth', detune: -6, filter: 980, attack: 0.045, release: 0.25, level: 0.82 },
+                harmony: { label: 'Harp/Piano', gmProgram: 46, waveform: 'triangle', secondary: 'sine', detune: 9, filter: 3500, attack: 0.006, release: 0.27, level: 0.65 },
+                support: { label: 'Adventure Strings', gmProgram: 48, waveform: 'sawtooth', secondary: 'triangle', detune: -9, filter: 2200, attack: 0.14, release: 0.35, level: 0.42 }
+            }
+        },
+        electronic: {
+            label: 'Electronic', summary: 'Synth lead, sub bass, pluck harmony and atmospheric pad.',
+            roles: {
+                lead: { label: 'Synth Lead', gmProgram: 81, waveform: 'square', secondary: 'sawtooth', detune: 8, filter: 3000, attack: 0.008, release: 0.14, level: 0.58 },
+                bass: { label: 'Sub Bass', gmProgram: 38, waveform: 'sine', secondary: 'sine', detune: -12, filter: 520, attack: 0.010, release: 0.15, level: 0.98 },
+                harmony: { label: 'Synth Pluck', gmProgram: 80, waveform: 'square', secondary: 'triangle', detune: 5, filter: 2600, attack: 0.004, release: 0.15, level: 0.55 },
+                support: { label: 'Atmospheric Pad', gmProgram: 89, waveform: 'sawtooth', secondary: 'sine', detune: -14, filter: 1280, attack: 0.23, release: 0.50, level: 0.35 }
+            }
+        },
+        retro: {
+            label: 'Retro Game', summary: 'Chip lead, chip bass, arpeggio harmony and a soft square pad.',
+            roles: {
+                lead: { label: 'Chip Lead', gmProgram: 80, waveform: 'square', secondary: null, detune: 0, filter: 4500, attack: 0.003, release: 0.07, level: 0.47 },
+                bass: { label: 'Chip Bass', gmProgram: 38, waveform: 'square', secondary: 'sine', detune: -12, filter: 850, attack: 0.004, release: 0.08, level: 0.76 },
+                harmony: { label: 'Chip Arpeggio', gmProgram: 81, waveform: 'square', secondary: null, detune: 0, filter: 3650, attack: 0.003, release: 0.07, level: 0.40 },
+                support: { label: 'Soft Square Pad', gmProgram: 88, waveform: 'triangle', secondary: 'square', detune: -8, filter: 1450, attack: 0.12, release: 0.30, level: 0.30 }
+            }
+        }
     };
 
     function setHubStatus(text) {
@@ -401,21 +513,38 @@
             onsetThreshold: Number(onsetSlider.value),
             frameThreshold: Number(frameSlider.value),
             minDurationMs: Number(durationSlider.value),
+            arrangementPreset: arrangementPresetSelector.value,
+            arrangementSeparation: Number(arrangementSeparationSlider.value),
             includePitchBends: pitchBendToggle.checked
         };
+    }
+
+    function getArrangementPreset() {
+        return arrangementPresets[arrangementPresetSelector.value] || arrangementPresets.cinematic;
+    }
+
+    function getSeparationLabel(value) {
+        if (value === 0) return '0 / Lead Only';
+        if (value <= 3) return `${value} / Light`;
+        if (value <= 6) return `${value} / Balanced`;
+        return `${value} / Full`;
     }
 
     function updateVisibleSettings() {
         document.getElementById('onset-val').textContent = Number(onsetSlider.value).toFixed(2);
         document.getElementById('frame-val').textContent = Number(frameSlider.value).toFixed(2);
         document.getElementById('duration-val').textContent = `${durationSlider.value} ms`;
+        const palette = getArrangementPreset();
+        arrangementName.textContent = palette.label;
+        arrangementSummary.textContent = palette.summary;
+        document.getElementById('arrangement-separation-val').textContent = getSeparationLabel(Number(arrangementSeparationSlider.value));
     }
 
     function markResultsStale() {
         if (!generatedResults.length || isGenerating) return;
         resultsAreStale = true;
         renderResults();
-        setConversionStatus('idle', 'Settings changed', 'The preview below uses the previous settings. Press Regenerate MIDI to apply the new values.');
+        setConversionStatus('idle', 'Settings changed', 'The preview and instrument roles below use the previous settings. Press Regenerate MIDI to apply the new values.');
     }
 
     function invalidateResults() {
@@ -594,10 +723,21 @@
                     amplitude: Math.max(0, Math.min(1, Number(note.amplitude) || 0.7)),
                     pitchBends: settings.includePitchBends && Array.isArray(note.pitchBends) ? note.pitchBends : []
                 }));
-                const filename = `${stripExtension(file.name)}.mid`;
-                const midiBytes = createMidiFile(notes, stripExtension(file.name), settings.includePitchBends);
-                generatedResults.push({ sourceName: file.name, filename, notes, duration: audioBuffer.duration, midiBytes });
+                generatedResults.push({ sourceName: file.name, filename: '', notes, duration: audioBuffer.duration, midiBytes: null });
             }
+
+            applyArrangementAssignments(generatedResults, settings.arrangementPreset, settings.arrangementSeparation);
+            generatedResults.forEach(result => {
+                const stemName = stripExtension(result.sourceName);
+                const fileRole = `${result.roleKey}-${slugify(result.instrument.label)}`;
+                result.filename = `${stemName}_${fileRole}.mid`;
+                result.midiBytes = createMidiFile(
+                    result.notes,
+                    `${stemName} • ${roleLabels[result.roleKey]} • ${result.instrument.label}`,
+                    settings.includePitchBends,
+                    result.instrument.gmProgram
+                );
+            });
 
             renderResults();
             setButtonsForState();
@@ -616,6 +756,63 @@
             isGenerating = false;
             setButtonsForState();
         }
+    }
+
+    function median(values) {
+        if (!values.length) return 60;
+        const ordered = [...values].sort((a, b) => a - b);
+        const middle = Math.floor(ordered.length / 2);
+        return ordered.length % 2 ? ordered[middle] : (ordered[middle - 1] + ordered[middle]) / 2;
+    }
+
+    function getStemProfile(result) {
+        const notes = result.notes || [];
+        if (!notes.length) return { medianPitch: 60, pitchSpan: 0, density: 0, averageDuration: 0, chordScore: 0 };
+        const pitches = notes.map(note => note.pitchMidi);
+        const averageDuration = notes.reduce((total, note) => total + note.durationSeconds, 0) / notes.length;
+        const density = notes.length / Math.max(1, result.duration || 1);
+        const pitchSpan = Math.max(...pitches) - Math.min(...pitches);
+        return {
+            medianPitch: median(pitches),
+            pitchSpan,
+            density,
+            averageDuration,
+            chordScore: (density * Math.min(2.5, averageDuration + 0.25)) + (pitchSpan / 36)
+        };
+    }
+
+    function applyArrangementAssignments(results, presetKey, separation) {
+        const palette = arrangementPresets[presetKey] || arrangementPresets.cinematic;
+        const amount = Math.max(0, Math.min(10, Number(separation) || 0));
+        const entries = results.map(result => ({ result, profile: getStemProfile(result), roleKey: 'lead' }));
+        if (entries.length > 1 && amount > 0) {
+            const pitchSorted = [...entries].sort((a, b) => a.profile.medianPitch - b.profile.medianPitch);
+            const bassEntry = pitchSorted[0];
+            bassEntry.roleKey = 'bass';
+            const leadEntry = pitchSorted[pitchSorted.length - 1];
+            leadEntry.roleKey = 'lead';
+
+            const unassigned = entries.filter(entry => entry !== bassEntry && entry !== leadEntry);
+            if (amount >= 4 && unassigned.length) {
+                const harmonyEntry = [...unassigned].sort((a, b) => b.profile.chordScore - a.profile.chordScore)[0];
+                harmonyEntry.roleKey = 'harmony';
+            }
+            if (amount >= 7) {
+                entries.filter(entry => entry.roleKey === 'lead' && entry !== leadEntry).forEach(entry => { entry.roleKey = 'support'; });
+                entries.filter(entry => entry !== bassEntry && entry !== leadEntry && entry.roleKey === 'lead').forEach(entry => { entry.roleKey = 'support'; });
+            }
+        }
+        entries.forEach(entry => {
+            entry.result.roleKey = entry.roleKey;
+            entry.result.instrument = palette.roles[entry.roleKey] || palette.roles.lead;
+            entry.result.arrangementPreset = palette.label;
+            entry.result.arrangementSeparation = amount;
+            entry.result.profile = entry.profile;
+        });
+    }
+
+    function slugify(value) {
+        return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'instrument';
     }
 
     function stripExtension(filename) {
@@ -640,7 +837,7 @@
             return;
         }
         resultsIntro.textContent = resultsAreStale
-            ? 'Settings changed after this result was generated. Preview remains available; press Regenerate MIDI to apply the new values.'
+            ? 'Transcription or arrangement settings changed after this result was generated. Preview remains available; press Regenerate MIDI to apply the new values.'
             : 'Your completed MIDI files are ready. Playback is a simple browser synth preview of the MIDI notes.';
 
         generatedResults.forEach((result, index) => {
@@ -656,11 +853,11 @@
             filename.title = result.filename;
             const meta = document.createElement('div');
             meta.className = 'result-meta';
-            meta.textContent = `${result.notes.length} notes • ${formatSeconds(result.duration)} audio`;
+            meta.textContent = `${roleLabels[result.roleKey] || 'Lead'} • ${result.instrument ? result.instrument.label : 'Lead sound'} • ${result.notes.length} notes • ${formatSeconds(result.duration)} audio`;
             identity.append(filename, meta);
             const badge = document.createElement('span');
             badge.className = `result-badge${resultsAreStale ? ' stale' : ''}`;
-            badge.textContent = resultsAreStale ? 'REGENERATE' : 'READY';
+            badge.textContent = resultsAreStale ? 'REGENERATE' : `${(roleLabels[result.roleKey] || 'Lead').toUpperCase()} READY`;
             heading.append(identity, badge);
 
             const rollWrap = document.createElement('div');
@@ -715,6 +912,80 @@
         return roll;
     }
 
+    async function ensurePreviewAudio() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) {
+            throw new Error('This browser does not support the audio feature required for MIDI preview playback.');
+        }
+        previewContext = previewContext || new AudioContextClass();
+        await previewContext.resume();
+        if (previewContext.state !== 'running') {
+            throw new Error('The browser kept the audio preview paused. Click the page once, check the tab is not muted, then press Play Preview again.');
+        }
+        return previewContext;
+    }
+
+    function createPreviewBus(context) {
+        const masterGain = context.createGain();
+        const compressor = context.createDynamicsCompressor();
+        masterGain.gain.setValueAtTime(0.76, context.currentTime);
+        compressor.threshold.setValueAtTime(-18, context.currentTime);
+        compressor.knee.setValueAtTime(18, context.currentTime);
+        compressor.ratio.setValueAtTime(8, context.currentTime);
+        masterGain.connect(compressor).connect(context.destination);
+        return masterGain;
+    }
+
+    function scheduleInstrumentNote(context, destination, note, instrument, noteStart, noteDuration) {
+        const sound = instrument || arrangementPresets.cinematic.roles.lead;
+        const duration = Math.max(0.045, Number(noteDuration) || Number(note.durationSeconds) || 0.25);
+        const noteEnd = noteStart + duration;
+        const attack = Math.min(Math.max(0.003, sound.attack || 0.01), duration * 0.42);
+        const release = Math.min(Math.max(0.02, sound.release || 0.16), Math.max(0.025, duration * 0.48));
+        const frequency = 440 * (2 ** (((Number(note.pitchMidi) || 60) - 69) / 12));
+        const amplitude = Math.max(0.18, Math.min(1, Number(note.amplitude) || 0.7));
+        const level = Math.min(0.20, (sound.level || 0.55) * (0.035 + amplitude * 0.105));
+        const filter = context.createBiquadFilter();
+        const gain = context.createGain();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(sound.filter || 2400, noteStart);
+        filter.Q.setValueAtTime(0.6, noteStart);
+        gain.gain.setValueAtTime(0.0001, noteStart);
+        gain.gain.linearRampToValueAtTime(level, noteStart + attack);
+        gain.gain.setValueAtTime(level * 0.88, Math.max(noteStart + attack, noteEnd - release));
+        gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
+        filter.connect(gain).connect(destination);
+
+        const primary = context.createOscillator();
+        primary.type = sound.waveform || 'triangle';
+        primary.frequency.setValueAtTime(frequency, noteStart);
+        primary.connect(filter);
+        primary.start(noteStart);
+        primary.stop(noteEnd + 0.045);
+        activePreviewNodes.push({ oscillator: primary, gain });
+
+        if (sound.secondary) {
+            const secondary = context.createOscillator();
+            const secondaryGain = context.createGain();
+            secondary.type = sound.secondary;
+            secondary.frequency.setValueAtTime(frequency, noteStart);
+            secondary.detune.setValueAtTime(sound.detune || 0, noteStart);
+            secondaryGain.gain.setValueAtTime(0.32, noteStart);
+            secondary.connect(secondaryGain).connect(filter);
+            secondary.start(noteStart);
+            secondary.stop(noteEnd + 0.045);
+            activePreviewNodes.push({ oscillator: secondary, gain: secondaryGain });
+        }
+        return noteEnd;
+    }
+
+    function setArrangementPreviewState(isPlaying) {
+        arrangementPreviewButton.disabled = isPlaying;
+        arrangementPreviewButton.textContent = isPlaying ? 'Previewing…' : 'Preview Arrangement';
+        arrangementPreviewButton.classList.toggle('playing', isPlaying);
+        arrangementStopButton.disabled = !isPlaying;
+    }
+
     async function playPreview(resultIndex, button) {
         const result = generatedResults[resultIndex];
         if (!result || !result.notes.length) {
@@ -723,57 +994,19 @@
         }
 
         stopPreview(false);
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContextClass) {
-            setConversionStatus('error', 'Preview unavailable', 'This browser does not support the audio feature required for MIDI preview playback.');
-            return;
-        }
-
         try {
-            previewContext = previewContext || new AudioContextClass();
-            await previewContext.resume();
-            if (previewContext.state !== 'running') {
-                throw new Error('The browser kept the audio preview paused. Click the page once, check the tab is not muted, then press Play Preview again.');
-            }
-
+            const context = await ensurePreviewAudio();
             const firstNoteTime = Math.min(...result.notes.map(note => note.startTimeSeconds));
             const lastPreviewTime = firstNoteTime + MAX_PREVIEW_SECONDS;
             const previewNotes = result.notes.filter(note => note.startTimeSeconds < lastPreviewTime);
-            if (!previewNotes.length) {
-                throw new Error('There are no notes available in the first preview section.');
-            }
+            if (!previewNotes.length) throw new Error('There are no notes available in the first preview section.');
 
-            const masterGain = previewContext.createGain();
-            const compressor = previewContext.createDynamicsCompressor();
-            masterGain.gain.setValueAtTime(0.75, previewContext.currentTime);
-            compressor.threshold.setValueAtTime(-18, previewContext.currentTime);
-            compressor.knee.setValueAtTime(18, previewContext.currentTime);
-            compressor.ratio.setValueAtTime(8, previewContext.currentTime);
-            masterGain.connect(compressor).connect(previewContext.destination);
-
-            const startAt = previewContext.currentTime + 0.06;
+            const masterGain = createPreviewBus(context);
+            const startAt = context.currentTime + 0.07;
             let finalEnd = startAt;
             previewNotes.forEach(note => {
                 const relativeStart = Math.max(0, note.startTimeSeconds - firstNoteTime);
-                const noteStart = startAt + relativeStart;
-                const noteDuration = Math.max(0.045, note.durationSeconds);
-                const noteEnd = noteStart + noteDuration;
-                const attack = Math.min(0.02, noteDuration / 4);
-                const release = Math.min(0.05, noteDuration / 3);
-                const oscillator = previewContext.createOscillator();
-                const gain = previewContext.createGain();
-                oscillator.type = 'triangle';
-                oscillator.frequency.setValueAtTime(440 * (2 ** ((note.pitchMidi - 69) / 12)), noteStart);
-                const level = Math.min(0.22, 0.055 + (note.amplitude * 0.16));
-                gain.gain.setValueAtTime(0.0001, noteStart);
-                gain.gain.linearRampToValueAtTime(level, noteStart + attack);
-                gain.gain.setValueAtTime(level, Math.max(noteStart + attack, noteEnd - release));
-                gain.gain.exponentialRampToValueAtTime(0.0001, noteEnd);
-                oscillator.connect(gain).connect(masterGain);
-                oscillator.start(noteStart);
-                oscillator.stop(noteEnd + 0.04);
-                activePreviewNodes.push({ oscillator, gain, masterGain, compressor });
-                finalEnd = Math.max(finalEnd, noteEnd + 0.06);
+                finalEnd = Math.max(finalEnd, scheduleInstrumentNote(context, masterGain, note, result.instrument, startAt + relativeStart, note.durationSeconds));
             });
 
             if (button) {
@@ -784,20 +1017,72 @@
             }
             const previewLength = Math.min(MAX_PREVIEW_SECONDS, Math.max(0.1, finalEnd - startAt));
             const wasTrimmed = result.notes.some(note => note.startTimeSeconds >= lastPreviewTime);
-            setConversionStatus('complete', 'Playing MIDI preview', `${result.filename} — ${previewNotes.length} notes${wasTrimmed ? ` from the first ${MAX_PREVIEW_SECONDS} seconds` : ''}.`);
+            setConversionStatus('complete', 'Playing MIDI preview', `${result.filename} — ${result.instrument ? result.instrument.label : 'lead sound'} • ${previewNotes.length} notes${wasTrimmed ? ` from the first ${MAX_PREVIEW_SECONDS} seconds` : ''}.`);
             previewStopTimer = window.setTimeout(() => {
                 clearPreviewButton();
                 activePreviewNodes = [];
                 previewStopTimer = null;
                 setConversionStatus('complete', 'Preview finished', 'Your MIDI result is still ready to download or regenerate.');
-            }, Math.ceil((previewLength + 0.12) * 1000));
+            }, Math.ceil((previewLength + 0.14) * 1000));
         } catch (error) {
             console.error('MIDI preview error:', error);
             stopPreview(false);
-            const detail = error && error.message
-                ? error.message
-                : 'The browser could not start the MIDI preview.';
-            setConversionStatus('error', 'Preview could not start', detail);
+            setConversionStatus('error', 'Preview could not start', error && error.message ? error.message : 'The browser could not start the MIDI preview.');
+        }
+    }
+
+    function getArrangementDemoNotes(separation) {
+        const beat = 0.5;
+        const notes = [];
+        const roleFor = role => {
+            if (separation === 0) return 'lead';
+            if (separation <= 3) return role === 'bass' ? 'bass' : 'lead';
+            if (separation <= 6) return role === 'support' ? 'harmony' : role;
+            return role;
+        };
+        const add = (role, beatTime, pitchMidi, beats, amplitude = 0.72) => notes.push({
+            roleKey: roleFor(role), time: beatTime * beat, pitchMidi, durationSeconds: beats * beat, amplitude
+        });
+
+        // Original 10-second Organon adventure motif: not a quotation or arrangement of an existing game score.
+        [[0,69,.75],[1,72,.75],[2,76,.75],[3,74,.5],[4,72,.75],[5,69,.75],[6,71,.75],[7,74,.5],
+         [8,76,.75],[9,79,.75],[10,76,.75],[11,74,.5],[12,72,.75],[13,71,.75],[14,69,.75],[15,71,.5],
+         [16,74,.75],[17,76,.75],[18,72,.75],[19,69,1]].forEach(([time, pitch, duration]) => add('lead', time, pitch, duration, 0.92));
+
+        [[0,45,2],[2,45,2],[4,41,2],[6,41,2],[8,48,2],[10,48,2],[12,43,2],[14,43,2],[16,45,2],[18,45,2]].forEach(([time, pitch, duration]) => add('bass', time, pitch, duration, 0.78));
+
+        const harmony = [[0,[57,60,64]],[4,[53,57,60]],[8,[60,64,67]],[12,[55,59,62]],[16,[57,60,64]]];
+        harmony.forEach(([time, chord]) => chord.forEach((pitch, index) => add('harmony', time + index * 0.55, pitch, 0.42, 0.58)));
+        [[3.45,76,.45],[7.45,77,.45],[11.45,79,.45],[15.45,74,.45],[19,81,.55]].forEach(([time, pitch, duration]) => add('support', time, pitch, duration, 0.48));
+        return notes;
+    }
+
+    async function playArrangementPreview() {
+        stopPreview(false);
+        try {
+            const context = await ensurePreviewAudio();
+            const palette = getArrangementPreset();
+            const separation = Number(arrangementSeparationSlider.value);
+            const demoNotes = getArrangementDemoNotes(separation);
+            const masterGain = createPreviewBus(context);
+            const startAt = context.currentTime + 0.07;
+            let finalEnd = startAt;
+            demoNotes.forEach(note => {
+                const instrument = palette.roles[note.roleKey] || palette.roles.lead;
+                finalEnd = Math.max(finalEnd, scheduleInstrumentNote(context, masterGain, note, instrument, startAt + note.time, note.durationSeconds));
+            });
+            setArrangementPreviewState(true);
+            setConversionStatus('complete', 'Previewing arrangement', `${palette.label} • ${getSeparationLabel(separation)} • original 10-second Organon adventure motif.`);
+            previewStopTimer = window.setTimeout(() => {
+                activePreviewNodes = [];
+                previewStopTimer = null;
+                setArrangementPreviewState(false);
+                setConversionStatus('complete', 'Arrangement preview finished', 'Select another preset or separation level to compare the sound palette.');
+            }, Math.ceil((finalEnd - startAt + 0.14) * 1000));
+        } catch (error) {
+            console.error('Arrangement preview error:', error);
+            stopPreview(false);
+            setConversionStatus('error', 'Arrangement preview could not start', error && error.message ? error.message : 'The browser could not start the arrangement preview.');
         }
     }
 
@@ -821,12 +1106,13 @@
         });
         activePreviewNodes = [];
         clearPreviewButton();
+        setArrangementPreviewState(false);
         if (showStatus) {
             setConversionStatus('complete', 'Preview stopped', 'Your MIDI result is still ready to download or regenerate.');
         }
     }
 
-    function createMidiFile(notes, trackName, includePitchBends) {
+    function createMidiFile(notes, trackName, includePitchBends, gmProgram = 0) {
         const division = 480;
         const ticksPerSecond = 960; // 120 BPM with 480 PPQ: exact seconds preserved by a tempo meta event.
         const channelNotes = assignMidiChannels(notes, includePitchBends);
@@ -834,6 +1120,9 @@
             { tick: 0, priority: 0, bytes: [0xff, 0x03, ...encodeText(trackName)] },
             { tick: 0, priority: 0, bytes: [0xff, 0x51, 0x03, 0x07, 0xa1, 0x20] }
         ];
+        [...new Set(channelNotes.map(note => note.channel))].forEach(channel => {
+            events.push({ tick: 0, priority: 1, bytes: [0xc0 | channel, Math.max(0, Math.min(127, Number(gmProgram) || 0))] });
+        });
 
         channelNotes.forEach(note => {
             const startTick = Math.max(0, Math.round(note.startTimeSeconds * ticksPerSecond));
@@ -978,7 +1267,7 @@
         } else {
             const zip = createStoredZip(generatedResults.map(result => ({ name: result.filename, data: result.midiBytes })));
             downloadBlob(zip, 'audio2midi-stems.zip');
-            setConversionStatus('complete', 'ZIP download started', `${generatedResults.length} separate MIDI stems were packaged into audio2midi-stems.zip.`);
+            setConversionStatus('complete', 'ZIP download started', `${generatedResults.length} separately assigned MIDI stems were packaged into audio2midi-stems.zip.`);
         }
     }
 
@@ -992,6 +1281,8 @@
         onsetSlider.value = 0.50;
         frameSlider.value = 0.30;
         durationSlider.value = 30;
+        arrangementPresetSelector.value = 'cinematic';
+        arrangementSeparationSlider.value = 5;
         pitchBendToggle.checked = false;
         presetSelector.value = 'polyphonic';
         updateVisibleSettings();
@@ -1015,6 +1306,12 @@
     resetBtn.addEventListener('click', resetWorkspace);
     [onsetSlider, frameSlider, durationSlider, pitchBendToggle].forEach(control => control.addEventListener('input', () => { updateVisibleSettings(); markResultsStale(); }));
     pitchBendToggle.addEventListener('change', markResultsStale);
+    arrangementPresetSelector.addEventListener('change', () => { updateVisibleSettings(); markResultsStale(); });
+    arrangementSeparationSlider.addEventListener('input', () => { updateVisibleSettings(); markResultsStale(); });
+    arrangementPreviewButton.addEventListener('click', () => { void playArrangementPreview(); });
+    arrangementStopButton.addEventListener('click', () => stopPreview(true));
+    bindHoverLog('#preview-arrangement-btn', 'Play a short original Organon adventure motif using the selected sound palette and separation level.');
+    bindHoverLog('#stop-arrangement-btn', 'Stop the current MIDI or arrangement preview.');
     presetSelector.addEventListener('change', () => {
         const preset = presets[presetSelector.value];
         if (!preset) return;
@@ -1025,6 +1322,8 @@
         updateVisibleSettings();
         markResultsStale();
     });
+
+    window.addEventListener('pagehide', () => stopPreview(false));
 
     const topStickyPanel = document.querySelector('.top-sticky-panel');
     const countdownCircle = document.getElementById('countdown-circle');
@@ -1059,7 +1358,6 @@
     renderResults();
     setButtonsForState();
     startCountdown();
-    window.addEventListener('pagehide', () => stopPreview(false));
     </script>
 </body>
 </html>
