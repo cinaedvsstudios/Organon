@@ -160,9 +160,9 @@
     .toggle-label { font-size: 0.85rem; }
     .switch { position: relative; display: inline-block; width: 44px; height: 22px; flex: 0 0 auto; }
     .switch input { display: none; }
-    .slider-toggle { position: absolute; cursor: pointer; inset: 0; background-color: var(--burgundy); border-radius: 34px; transition: .3s; }
+    .slider-toggle { position: absolute; cursor: pointer; inset: 0; background-color: var(--brand-red); border-radius: 34px; transition: .3s; }
     .slider-toggle:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: var(--alabaster-paper); border-radius: 50%; transition: .3s; }
-    input:checked + .slider-toggle { background-color: var(--brand-red); }
+    input:checked + .slider-toggle { background-color: var(--water-blue); }
     input:checked + .slider-toggle:before { transform: translateX(22px); }
 
     .conversion-status {
@@ -247,7 +247,7 @@
 
         <main class="middle-scroll-panel">
             <div class="config-card">
-                <h3>📁 Audio Stem Queue <span class="tool-version">v0.02</span></h3>
+                <h3>📁 Audio Stem Queue <span class="tool-version">v0.03</span></h3>
                 <p style="font-size: 0.8rem; opacity:0.8; margin-bottom: 16px;">Upload audio components to process into parallel MIDI mappings. Max 10 stems.</p>
                 <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Add audio files">
                     <p>Drag &amp; Drop Audio Files Here</p>
@@ -260,11 +260,11 @@
             <div class="config-card">
                 <h3>🎛️ Analysis Adjustments</h3>
                 <div class="slider-row">
-                    <div class="slider-label-row"><span>Onset Tracking Confidence</span><span id="onset-val">0.50</span></div>
+                    <div class="slider-label-row"><span>Detect Note Starts</span><span id="onset-val">0.50</span></div>
                     <input type="range" id="slider-onset" min="0.05" max="0.95" step="0.05" value="0.50">
                 </div>
                 <div class="slider-row">
-                    <div class="slider-label-row"><span>Frame Note Retention</span><span id="frame-val">0.30</span></div>
+                    <div class="slider-label-row"><span>Note Sustain Threshold</span><span id="frame-val">0.30</span></div>
                     <input type="range" id="slider-frame" min="0.05" max="0.95" step="0.05" value="0.30">
                 </div>
                 <div class="slider-row">
@@ -272,7 +272,7 @@
                     <input type="range" id="slider-duration" min="10" max="250" step="5" value="30">
                 </div>
                 <div class="toggle-row">
-                    <span class="toggle-label">Track Continuous Pitch Bends</span>
+                    <span class="toggle-label">Preserve Pitch Glides</span>
                     <label class="switch"><input type="checkbox" id="toggle-pitchbend"><span class="slider-toggle"></span></label>
                 </div>
                 <div id="conversion-status" class="conversion-status" role="status" aria-live="polite">
