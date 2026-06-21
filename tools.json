@@ -1,5 +1,5 @@
 {
-  "version": "v1.14-alpha",
+  "version": "v1.15-alpha",
   "categories": [
     {
       "id": "create",
@@ -160,7 +160,7 @@
       "tools": [
         {
           "id": "capsularius",
-          "label": "CAPSULARIUS<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}</style>",
+          "label": "CAPSULARIUS<style class=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(230,230,230,.55),0 1px 1px rgba(0,0,0,.30)}#tool-quicksheet-split{width:167px!important;height:30px!important}#tool-quicksheet-split .dual-label-left{left:0!important;width:100%!important}#tool-quicksheet-split .dual-label-right,#tool-quicksheet-split .right-zone{display:none!important}#tool-quicksheet-split .left-zone{width:100%!important}</style>",
           "path": "tools/capsularius/index.html",
           "description": "Open the local-first project workspace for folders and project assets."
         },
@@ -196,13 +196,6 @@
               "path": "tools/quicksheet/index.html",
               "openMode": "new-tab",
               "description": "Open the Quicksheet CSV, XLSX and XLS editor in a new browser tab."
-            },
-            {
-              "id": "quicksheet-new-tab",
-              "label": "↗",
-              "path": "tools/quicksheet/index.html",
-              "openMode": "new-tab",
-              "description": "Open Quicksheet in a new browser tab."
             }
           ]
         },
