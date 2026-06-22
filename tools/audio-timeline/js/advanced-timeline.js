@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.09 — dynamically created timeline tracks. Project files stay in the media bin until dropped here.
+ * v0.10 — dynamically created timeline tracks with robust Project Files drag/drop support.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio'];
@@ -25,6 +25,7 @@ export class AdvancedTimeline {
         this.lanesElement = lanesElement;
         this.rulerElement = rulerElement;
         this.emptyElement = emptyElement;
+        this.panelElement = this.lanesElement?.closest('.timeline-panel') || null;
         this.onSelect = onSelect;
         this.onContextMenu = onContextMenu;
         this.onDropProjectFile = onDropProjectFile;
@@ -36,21 +37,67 @@ export class AdvancedTimeline {
         this.currentTime = 0;
         this.dragState = null;
         this.installEmptyDropTarget();
+        this.installTimelinePanelDropTarget();
+    }
+
+    getProjectFileId(event) {
+        const types = Array.from(event.dataTransfer?.types || []);
+        if (!types.includes('application/x-organon-project-file') && !types.includes('text/x-organon-project-file')) return '';
+        return event.dataTransfer.getData('application/x-organon-project-file') || event.dataTransfer.getData('text/x-organon-project-file') || event.dataTransfer.getData('text/plain');
+    }
+
+    isProjectFileDrag(event) {
+        return Boolean(this.getProjectFileId(event));
+    }
+
+    getTimelineDropStart(event) {
+        const workspace = event.target.closest?.('.lane-workspace');
+        const target = workspace || this.lanesElement;
+        const rect = target?.getBoundingClientRect();
+        if (!rect) return 0;
+        return clamp(((event.clientX - rect.left) / Math.max(1, rect.width)) * this.duration, 0, this.duration);
     }
 
     installEmptyDropTarget() {
         if (!this.emptyElement) return;
         this.emptyElement.addEventListener('dragover', (event) => {
-            if (!event.dataTransfer.types.includes('application/x-organon-project-file')) return;
+            if (!this.isProjectFileDrag(event)) return;
             event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect='copy';
             this.emptyElement.classList.add('drop-target-active');
         });
         this.emptyElement.addEventListener('dragleave', () => this.emptyElement.classList.remove('drop-target-active'));
         this.emptyElement.addEventListener('drop', (event) => {
+            const fileId = this.getProjectFileId(event);
+            if (!fileId) return;
             event.preventDefault();
+            event.stopPropagation();
             this.emptyElement.classList.remove('drop-target-active');
-            const fileId = event.dataTransfer.getData('application/x-organon-project-file');
-            if (fileId) this.onDropProjectFile?.({ fileId, trackId: null, start: 0 });
+            this.onDropProjectFile?.({ fileId, trackId: null, start: 0 });
+        });
+    }
+
+    installTimelinePanelDropTarget() {
+        if (!this.panelElement) return;
+        this.panelElement.addEventListener('dragover', (event) => {
+            if (!this.isProjectFileDrag(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect='copy';
+            this.panelElement.classList.add('drop-target-active');
+        });
+        this.panelElement.addEventListener('dragleave', (event) => {
+            if (!this.panelElement.contains(event.relatedTarget)) this.panelElement.classList.remove('drop-target-active');
+        });
+        this.panelElement.addEventListener('drop', (event) => {
+            const fileId=this.getProjectFileId(event);
+            if (!fileId) return;
+            // A workspace owns its own drop event, so the panel only creates a new
+            // matching layer when the drop lands on blank timeline space/ruler.
+            if (event.target.closest?.('.lane-workspace') || event.target.closest?.('.timeline-empty')) return;
+            event.preventDefault();
+            this.panelElement.classList.remove('drop-target-active');
+            this.onDropProjectFile?.({ fileId, trackId:null, start:this.getTimelineDropStart(event) });
         });
     }
 
@@ -155,16 +202,21 @@ export class AdvancedTimeline {
 
     installWorkspaceEvents(workspace, track) {
         workspace.addEventListener('dragover', (event) => {
-            if (!event.dataTransfer.types.includes('application/x-organon-project-file')) return;
+            if (!this.isProjectFileDrag(event)) return;
             event.preventDefault();
+            event.stopPropagation();
+            event.dataTransfer.dropEffect='copy';
             workspace.classList.add('drop-target-active');
         });
-        workspace.addEventListener('dragleave', () => workspace.classList.remove('drop-target-active'));
+        workspace.addEventListener('dragleave', (event) => {
+            if (!workspace.contains(event.relatedTarget)) workspace.classList.remove('drop-target-active');
+        });
         workspace.addEventListener('drop', (event) => {
-            event.preventDefault();
-            workspace.classList.remove('drop-target-active');
-            const fileId = event.dataTransfer.getData('application/x-organon-project-file');
+            const fileId = this.getProjectFileId(event);
             if (!fileId) return;
+            event.preventDefault();
+            event.stopPropagation();
+            workspace.classList.remove('drop-target-active');
             const rect = workspace.getBoundingClientRect();
             const start = clamp(((event.clientX - rect.left) / Math.max(1, rect.width)) * this.duration, 0, this.duration);
             this.onDropProjectFile?.({ fileId, trackId: track.id, start });

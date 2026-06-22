@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.09 — Project Files is a media bin. Files only become clips when dragged into the timeline.
+ * v0.10 — Restores reliable operating-system file drop and Project Files-to-timeline dragging.
  * Basic Mode remains completely separate and unchanged.
  */
 
@@ -90,10 +90,10 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         if (!entry) return;
         let track=getTrack(trackId);
         if (track && track.sourceName) track=null;
-        if (track && track.type!==entry.kind) {
-            elements.previewState.textContent=`${entry.name} is not the right type for ${track.label}.`;
-            return;
-        }
+        // A Project File always creates/uses a lane of its own media type. This means
+        // a file can be dropped anywhere in the timeline without being blocked by the
+        // type of a lane already underneath the pointer.
+        if (track && track.type!==entry.kind) track=null;
         if (!track) { track=createTrack(entry.kind); state.tracks.push(track); }
         await loadTrackFromFile(track,entry,start);
     }
@@ -113,7 +113,16 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
             row.className=`file-row${entry.id===state.selectedFileId?' active':''}`;
             row.draggable=true; row.tabIndex=0; row.dataset.fileId=entry.id; row.title='Drag this file to the timeline.';
             row.innerHTML=`<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${entry.kind} · ${formatFileSize(entry.file.size)} · drag to timeline</span></span>`;
-            row.addEventListener('dragstart',(event) => { state.selectedFileId=entry.id; event.dataTransfer.effectAllowed='copy'; event.dataTransfer.setData('application/x-organon-project-file',entry.id); renderFiles(); });
+            row.addEventListener('dragstart',(event) => {
+                state.selectedFileId=entry.id;
+                event.dataTransfer.effectAllowed='copy';
+                // Chromium accepts custom types, while text/plain keeps the drag
+                // transferable in browsers that filter unknown drag types.
+                event.dataTransfer.setData('application/x-organon-project-file',entry.id);
+                event.dataTransfer.setData('text/plain',entry.id);
+                event.dataTransfer.setData('text/x-organon-project-file',entry.id);
+                renderFiles();
+            });
             row.addEventListener('click',() => { state.selectedFileId=entry.id; renderFiles(); });
             row.addEventListener('keydown',(event)=> { if(event.key==='Enter'||event.key===' ') { event.preventDefault(); state.selectedFileId=entry.id; renderFiles(); } });
             elements.fileList.appendChild(row);
@@ -200,14 +209,78 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         elements.previewResizeHandle.addEventListener('pointerup',stop); elements.previewResizeHandle.addEventListener('pointercancel',stop);
     }
 
-    function installGlobalFileDrop() {
-        const show=()=>elements.dropOverlay.classList.add('visible'), hide=()=>elements.dropOverlay.classList.remove('visible');
-        window.addEventListener('dragenter',(event)=> { if(event.dataTransfer?.types.includes('Files')) { event.preventDefault(); state.dragDepth+=1; show(); } });
-        window.addEventListener('dragover',(event)=> { if(event.dataTransfer?.types.includes('Files')) event.preventDefault(); });
-        window.addEventListener('dragleave',(event)=> { if(!event.dataTransfer?.types.includes('Files')) return; state.dragDepth=Math.max(0,state.dragDepth-1); if(!state.dragDepth) hide(); });
-        window.addEventListener('drop',async(event)=> { if(!event.dataTransfer?.files?.length) return; event.preventDefault(); state.dragDepth=0; hide(); await addFiles(event.dataTransfer.files); });
-        elements.projectDropZone.addEventListener('click',()=>elements.fileInput.click()); elements.projectDropZone.addEventListener('keydown',(event)=>{ if(event.key==='Enter'||event.key===' ') { event.preventDefault(); elements.fileInput.click(); } });
+    function hasExternalFiles(event) {
+        return Array.from(event.dataTransfer?.types || []).includes('Files');
     }
+
+    function installGlobalFileDrop() {
+        const show=()=>elements.dropOverlay.classList.add('visible');
+        const hide=()=>elements.dropOverlay.classList.remove('visible');
+        const addDroppedFiles=async(event)=> {
+            if (event.__organonExternalFilesHandled) return;
+            const files=event.dataTransfer?.files;
+            if (!files?.length) return;
+            event.__organonExternalFilesHandled=true;
+            event.preventDefault();
+            // One capture-phase handler owns each external drop. Without this,
+            // a drop on the Project Files pad would be processed once globally
+            // and a second time by the pad itself.
+            event.stopPropagation();
+            state.dragDepth=0;
+            hide();
+            await addFiles(files);
+        };
+
+        // Capture phase deliberately blocks the browser from opening a dropped file
+        // before it reaches the app. Project File row drags do not contain Files,
+        // so they are left alone for the timeline module.
+        document.addEventListener('dragenter',(event)=> {
+            if (!hasExternalFiles(event)) return;
+            event.preventDefault();
+            state.dragDepth+=1;
+            show();
+        }, true);
+        document.addEventListener('dragover',(event)=> {
+            if (!hasExternalFiles(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect='copy';
+        }, true);
+        document.addEventListener('dragleave',(event)=> {
+            if (!hasExternalFiles(event)) return;
+            state.dragDepth=Math.max(0,state.dragDepth-1);
+            if (!state.dragDepth) hide();
+        }, true);
+        document.addEventListener('drop',addDroppedFiles, true);
+
+        // The Project Files pad has its own visible drop target as well. This gives
+        // the user a reliable place to aim without relying on whole-window events.
+        const zone=elements.projectDropZone;
+        zone.addEventListener('dragenter',(event)=> {
+            if (!hasExternalFiles(event)) return;
+            event.preventDefault();
+            zone.classList.add('drop-target-active');
+        });
+        zone.addEventListener('dragover',(event)=> {
+            if (!hasExternalFiles(event)) return;
+            event.preventDefault();
+            event.dataTransfer.dropEffect='copy';
+            zone.classList.add('drop-target-active');
+        });
+        zone.addEventListener('dragleave',()=>zone.classList.remove('drop-target-active'));
+        zone.addEventListener('drop',async(event)=> {
+            if (!hasExternalFiles(event)) return;
+            zone.classList.remove('drop-target-active');
+            await addDroppedFiles(event);
+        });
+        zone.addEventListener('click',()=>elements.fileInput.click());
+        zone.addEventListener('keydown',(event)=>{
+            if(event.key==='Enter'||event.key===' ') {
+                event.preventDefault();
+                elements.fileInput.click();
+            }
+        });
+    }
+
 
     elements.btnImport.addEventListener('click',()=>elements.fileInput.click()); elements.btnBrowse.addEventListener('click',browseDirectory); elements.btnHeaderBrowse.addEventListener('click',browseDirectory); elements.btnBasicMode.addEventListener('click',()=>{ window.location.href='./index.html'; });
     elements.btnClear.addEventListener('click',()=> { if(!state.files.length&&!state.tracks.length) return; if(!confirm('Clear all Project Files and all timeline clips?')) return; engine.clearAll(); state.files=[]; state.tracks=[]; state.selectedTrackId=null; state.selectedFileId=null; renderFiles(); refreshAll(); });
@@ -239,5 +312,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     elements.contextAddLayer.addEventListener('click',addLayerFromContext); elements.contextExtractAudio.addEventListener('click',async()=>{await extractAudioFromSelectedVideo(); hideContextMenu();}); elements.contextRemoveLayer.addEventListener('click',removeLayerFromContext);
     document.addEventListener('click',(event)=> { if(!elements.contextMenu.contains(event.target)) hideContextMenu(); }); document.addEventListener('keydown',(event)=> { if(event.key==='Escape')hideContextMenu(); }); window.addEventListener('beforeunload',()=>engine.destroy());
 
+    installPreviewResize();
+    installGlobalFileDrop();
     renderFiles(); refreshAll(); syncPreviewMuteButton();
 })();

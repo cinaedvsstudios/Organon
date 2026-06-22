@@ -1,22 +1,14 @@
-ORGANON ADVANCED AUDIO TIMELINE — v0.09
+ORGANON AUDIO TIMELINE — ADVANCED MODE v0.10
 
-What changed in this pass
-- Project Files is now only a media bin. Importing or dropping files never adds them to the timeline by itself.
-- Drag a file row from Project Files into the timeline to make a clip. The horizontal drop position becomes its start time.
-- Every timeline item is a movable pill. Drag the pill to move it. Drag its right edge to trim video/audio or extend/shorten a sticker/image.
-- Video clips keep their embedded audio linked to the video clip. It has a mute switch and volume control in the Video Inspector but no default audio lane.
-- Right-click a video clip and choose Extract Audio to Timeline only when you want a separately movable audio version. Extracting automatically mutes the linked video audio to avoid doubled sound.
-- Sticker tracks are always shown above video tracks. Sticker 1 is the highest visual layer.
-- Right-click a clip to add an empty same-type layer, then drag the appropriate Project File onto that new lane.
-- The right Inspector changes by selected clip type: Video, Audio, Sticker, or Project.
-- Basic Mode remains unchanged. All Advanced Mode implementation is contained in advanced.html and js/advanced-*.js.
+Rollback baseline: v0.09.
 
-Testing
-1. Extract this complete folder / zip.
-2. Open Organon as normal and select Advanced Mode, or open advanced.html through the Organon shell.
-3. Add test media to Project Files.
-4. Drag rows from Project Files to the timeline.
+Changed in v0.10:
+- Restored the missing Advanced Mode startup calls that register file dropping and preview resizing.
+- Dropping operating-system files anywhere in the window, or directly on the Project Files pad, now adds them to Project Files.
+- Project File rows now include standard drag payload fallbacks and can be dropped onto an empty timeline, an existing lane, or blank timeline space.
+- External-file drops are handled exactly once, including when aimed directly at the Project Files pad.
+- Dropping a Project File into a different-type lane creates a correctly typed new layer rather than rejecting it.
 
-Known scope
-- This pass provides advanced-mode preview playback and PNG composite snapshots.
-- Browser-native recording/export has not been reconnected to this new timeline architecture yet.
+Unchanged:
+- Basic Mode index.html and its original JavaScript remain separate and untouched.
+- Files imported into Project Files do not enter the timeline automatically.
