@@ -3,11 +3,12 @@
  * v0.10 — dynamically created timeline tracks with robust Project Files drag/drop support.
  */
 
-const GROUP_ORDER = ['sticker', 'video', 'audio'];
+const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
 const TYPE_DEFAULTS = {
-    sticker: { label: 'Sticker', subLabel: 'visual overlay', placeholder: 'Drop a sticker here', className: 'sticker' },
-    video: { label: 'Video', subLabel: 'visual clip', placeholder: 'Drop a video here', className: '' },
-    audio: { label: 'Audio', subLabel: 'voice / music', placeholder: 'Drop an audio file here', className: 'audio' }
+    sticker: { label: 'Sticker', subLabel: 'top visual overlay', placeholder: 'Drop a GIF / WebP / PNG here', className: 'sticker' },
+    video: { label: 'Video', subLabel: 'visual clip + linked sound', placeholder: 'Drop a video here', className: 'video' },
+    audio: { label: 'Audio', subLabel: 'voice / music', placeholder: 'Drop an audio file here', className: 'audio' },
+    background: { label: 'Background', subLabel: 'JPEG image — bottom layer', placeholder: 'Drop a JPEG background here', className: 'background' }
 };
 
 function escapeHtml(value) {
@@ -137,7 +138,7 @@ export class AdvancedTimeline {
     getClipDuration(track) {
         const duration = Number(track.clipDuration) || 0;
         if (duration > 0) return duration;
-        return track.type === 'sticker' ? 3 : 1;
+        return (track.type === 'sticker' || track.type === 'background') ? 3 : 1;
     }
 
     render() {
@@ -156,7 +157,11 @@ export class AdvancedTimeline {
             label.className = 'lane-name';
             const subLabel = track.type === 'sticker'
                 ? (track.order === 1 ? 'top visual layer' : `below Sticker ${track.order - 1}`)
-                : (track.type === 'video' ? 'visual clip + linked sound' : (track.extractedFrom ? 'extracted video audio' : defaults.subLabel));
+                : (track.type === 'video'
+                    ? 'visual clip + linked sound'
+                    : (track.type === 'background'
+                        ? 'JPEG image — beneath audio'
+                        : (track.extractedFrom ? 'extracted video audio' : defaults.subLabel)));
             label.innerHTML = `<span>${escapeHtml(track.label || `${defaults.label} ${track.order}`)}</span><small>${escapeHtml(subLabel)}</small>`;
 
             const workspace = document.createElement('div');
@@ -257,7 +262,7 @@ export class AdvancedTimeline {
             if (drag.mode === 'move') {
                 track.start = clamp(drag.originalStart + deltaSeconds, 0, Math.max(this.duration * 8, 300));
             } else {
-                const sourceLimit = track.type === 'sticker' ? 300 : Math.max(.15, Number(track.sourceDuration) || drag.originalDuration);
+                const sourceLimit = (track.type === 'sticker' || track.type === 'background') ? 300 : Math.max(.15, Number(track.sourceDuration) || drag.originalDuration);
                 track.clipDuration = clamp(drag.originalDuration + deltaSeconds, .15, sourceLimit);
             }
             const duration = this.getClipDuration(track);

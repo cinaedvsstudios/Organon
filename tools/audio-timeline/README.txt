@@ -12,3 +12,9 @@ Changed in v0.10:
 Unchanged:
 - Basic Mode index.html and its original JavaScript remain separate and untouched.
 - Files imported into Project Files do not enter the timeline automatically.
+
+
+v0.11
+- Project Files use blue video, red audio, and gold image cards with emoji identifiers.
+- JPEG/JPG imports are Background clips: gold, rendered behind visuals, and always grouped beneath audio at the bottom of the timeline.
+- GIF/WebP/PNG remain top-layer Sticker assets.

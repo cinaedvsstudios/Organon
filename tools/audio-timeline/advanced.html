@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Advanced Audio Timeline v0.09</title>
+<title>Organon - Advanced Audio Timeline v0.11</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -52,10 +52,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .file-list::-webkit-scrollbar-thumb,.inspector-scroll::-webkit-scrollbar-thumb,.timeline-scroll::-webkit-scrollbar-thumb { background:var(--chiseled-bronze); border-radius:999px; }
 .file-list::-webkit-scrollbar-track,.inspector-scroll::-webkit-scrollbar-track,.timeline-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.24); border-radius:999px; }
 .empty-file-list { padding:18px 11px; border:1px dashed rgba(137,107,73,.65); border-radius:14px; color:rgba(245,240,219,.58); font-size:.7rem; line-height:1.48; text-align:center; }
-.file-row { display:grid; grid-template-columns:26px minmax(0,1fr); gap:8px; width:100%; padding:8px 9px; border:1px solid rgba(137,107,73,.65); border-radius:12px; background:rgba(0,0,0,.25); color:var(--alabaster-paper); text-align:left; cursor:grab; }
+.file-row { display:grid; grid-template-columns:30px minmax(0,1fr); gap:8px; width:100%; padding:8px 9px; border:1px solid rgba(137,107,73,.65); border-radius:12px; background:rgba(0,0,0,.25); color:var(--alabaster-paper); text-align:left; cursor:grab; }
 .file-row:active { cursor:grabbing; }
-.file-row:hover,.file-row.active { border-color:var(--water-spray); background:rgba(75,132,191,.15); }
-.file-kind { display:inline-flex; align-items:center; justify-content:center; border-radius:7px; background:rgba(224,163,96,.17); color:var(--stone-ochre); font:700 .54rem var(--font-mono); }
+.file-row:hover,.file-row.active { border-color:var(--water-spray); box-shadow:0 0 0 1px rgba(117,178,222,.32); }
+.file-kind { display:inline-flex; align-items:center; justify-content:center; min-height:28px; border-radius:8px; font-size:.82rem; line-height:1; }
+.file-row.kind-video { border-color:rgba(75,132,191,.82); background:linear-gradient(90deg,rgba(75,132,191,.17),rgba(0,0,0,.22)); }
+.file-row.kind-video .file-kind { background:rgba(75,132,191,.3); color:var(--water-spray); }
+.file-row.kind-audio { border-color:rgba(154,47,79,.88); background:linear-gradient(90deg,rgba(154,47,79,.16),rgba(0,0,0,.22)); }
+.file-row.kind-audio .file-kind { background:rgba(154,47,79,.3); color:#ffb0c2; }
+.file-row.kind-sticker,.file-row.kind-background { border-color:rgba(224,163,96,.88); background:linear-gradient(90deg,rgba(224,163,96,.16),rgba(0,0,0,.22)); }
+.file-row.kind-sticker .file-kind,.file-row.kind-background .file-kind { background:rgba(224,163,96,.28); color:var(--stone-ochre); }
 .file-name { display:block; overflow:hidden; color:var(--alabaster-paper); font-size:.7rem; text-overflow:ellipsis; white-space:nowrap; }
 .file-meta { display:block; margin-top:2px; color:rgba(245,240,219,.58); font:.56rem var(--font-mono); }
 .preview-card { padding:12px; }
@@ -89,11 +95,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .lane-name small { color:rgba(245,240,219,.47); font:.49rem var(--font-mono); }
 .lane-workspace { position:relative; min-height:40px; overflow:hidden; background:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 59px,rgba(117,178,222,.07) 60px); }
 .lane-workspace.drop-target-active { background-color:rgba(75,132,191,.18); box-shadow:inset 0 0 0 2px var(--water-spray); }
-.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(224,163,96,.9); border-radius:8px; background:linear-gradient(90deg,rgba(224,163,96,.42),rgba(224,163,96,.16)); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none; }
+.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none; }
 .timeline-clip:active { cursor:grabbing; }
 .timeline-clip.selected { box-shadow:0 0 0 2px rgba(117,178,222,.88),0 0 12px rgba(117,178,222,.35); }
-.timeline-clip.audio { border-color:rgba(75,132,191,.95); background:linear-gradient(90deg,rgba(75,132,191,.4),rgba(75,132,191,.15)); }
-.timeline-clip.sticker { border-color:rgba(68,158,146,.95); background:linear-gradient(90deg,rgba(68,158,146,.4),rgba(68,158,146,.15)); }
+.timeline-clip.video { border-color:rgba(75,132,191,.95); background:linear-gradient(90deg,rgba(75,132,191,.43),rgba(75,132,191,.16)); }
+.timeline-clip.audio { border-color:rgba(154,47,79,.98); background:linear-gradient(90deg,rgba(154,47,79,.45),rgba(154,47,79,.16)); }
+.timeline-clip.sticker,.timeline-clip.background { border-color:rgba(224,163,96,.96); background:linear-gradient(90deg,rgba(224,163,96,.44),rgba(224,163,96,.16)); }
 .timeline-clip.placeholder { border-style:dashed; background:transparent; color:rgba(245,240,219,.42); cursor:default; }
 .clip-label { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; pointer-events:none; }
 .clip-resize-handle { position:absolute; top:0; right:0; bottom:0; width:10px; border-radius:0 7px 7px 0; cursor:ew-resize; touch-action:none; }
@@ -158,7 +165,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     </div>
                 </section>
                 <div class="project-summary" id="project-summary">Add files here first. They stay in Project Files until you drag them onto the timeline.</div>
-                <div class="drop-hint" id="project-drop-zone" tabindex="0">Drop video, audio, GIF, WebP or PNG here — or click to import.</div>
+                <div class="drop-hint" id="project-drop-zone" tabindex="0">Drop video, audio, GIF, WebP, PNG or JPEG here — or click to import.</div>
                 <div class="file-list" id="file-list" aria-live="polite"></div>
             </div>
         </aside>
@@ -213,6 +220,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <p class="blend-help">Blend changes the visual layer only. Preview app volume above never changes exported mix settings.</p>
                     <button type="button" class="btn btn-primary" id="btn-extract-audio">🎵 Extract Audio to Timeline</button>
                 </section>
+                <section class="control-card" id="inspector-background" hidden>
+                    <h3 id="selected-background-name">Background</h3>
+                    <p class="control-copy">JPEG backgrounds always live in the bottom timeline group, beneath audio. Drag or trim the gold pill to decide when the background is visible.</p>
+                    <div class="control-row"><span>Visible</span><button type="button" class="switch on" id="background-visible-switch" aria-label="Toggle background visibility"></button></div>
+                    <label class="control-row"><span>Blend mode</span><select class="compact-select" id="background-blend-mode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option></select></label>
+                </section>
                 <section class="control-card" id="inspector-audio" hidden>
                     <h3 id="selected-audio-name">Audio</h3>
                     <p class="control-copy">This is an independent, movable audio clip. Drag its pill to move it; pull the right edge to trim it.</p>
@@ -236,7 +249,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         </aside>
     </main>
 
-    <input type="file" id="file-input" accept="video/*,audio/*,image/gif,image/webp,image/png" multiple hidden>
+    <input type="file" id="file-input" accept="video/*,audio/*,image/gif,image/webp,image/png,image/jpeg" multiple hidden>
     <div id="media-bin" class="media-bin" aria-hidden="true"></div>
     <div class="context-menu" id="timeline-context-menu" hidden>
         <div class="context-menu-title" id="context-menu-title">Timeline clip</div>

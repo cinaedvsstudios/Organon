@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.10 — Restores reliable operating-system file drop and Project Files-to-timeline dragging.
+ * v0.11 — Colour-coded Project Files, emoji file kinds, and JPEG background layers below audio.
  * Basic Mode remains completely separate and unchanged.
  */
 
@@ -8,10 +8,11 @@ import { AdvancedTimeline } from './advanced-timeline.js';
 import { AdvancedMediaEngine } from './advanced-media-engine.js';
 
 (() => {
-    const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png)$/i;
+    const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
     const VIDEO_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv)$/i;
     const AUDIO_PATTERN = /\.(mp3|wav|m4a|aac|ogg|opus|flac)$/i;
     const STICKER_PATTERN = /\.(gif|webp|png)$/i;
+    const BACKGROUND_PATTERN = /\.(jpe?g)$/i;
     const state = { files:[], tracks:[], selectedTrackId:null, selectedFileId:null, contextTrackId:null, dragDepth:0, isSeeking:false, serial:0 };
 
     const elements = {
@@ -21,8 +22,9 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         btnPlay:document.getElementById('btn-play'), btnPreviewMute:document.getElementById('btn-preview-mute'), btnStepBack:document.getElementById('btn-step-back'), btnStepForward:document.getElementById('btn-step-forward'), btnSnapshot:document.getElementById('btn-snapshot'),
         fileInput:document.getElementById('file-input'), btnImport:document.getElementById('btn-import'), btnBrowse:document.getElementById('btn-browse'), btnHeaderBrowse:document.getElementById('btn-header-browse'), btnClear:document.getElementById('btn-clear'), btnBasicMode:document.getElementById('btn-basic-mode'), projectDropZone:document.getElementById('project-drop-zone'),
         fileList:document.getElementById('file-list'), fileCount:document.getElementById('file-count'), projectSummary:document.getElementById('project-summary'), dropOverlay:document.getElementById('project-drop-overlay'),
-        inspectorKind:document.getElementById('inspector-kind'), inspectorProject:document.getElementById('inspector-project'), inspectorVideo:document.getElementById('inspector-video'), inspectorAudio:document.getElementById('inspector-audio'), inspectorSticker:document.getElementById('inspector-sticker'),
+        inspectorKind:document.getElementById('inspector-kind'), inspectorProject:document.getElementById('inspector-project'), inspectorVideo:document.getElementById('inspector-video'), inspectorBackground:document.getElementById('inspector-background'), inspectorAudio:document.getElementById('inspector-audio'), inspectorSticker:document.getElementById('inspector-sticker'),
         selectedVideoName:document.getElementById('selected-video-name'), videoVisibleSwitch:document.getElementById('video-visible-switch'), videoAudioSwitch:document.getElementById('video-audio-switch'), videoAudioVolume:document.getElementById('video-audio-volume'), videoAudioVolumeValue:document.getElementById('video-audio-volume-value'), videoBlendMode:document.getElementById('video-blend-mode'), btnExtractAudio:document.getElementById('btn-extract-audio'),
+        selectedBackgroundName:document.getElementById('selected-background-name'), backgroundVisibleSwitch:document.getElementById('background-visible-switch'), backgroundBlendMode:document.getElementById('background-blend-mode'),
         selectedAudioName:document.getElementById('selected-audio-name'), audioAuditionSwitch:document.getElementById('audio-audition-switch'), audioTrackVolume:document.getElementById('audio-track-volume'), audioTrackVolumeValue:document.getElementById('audio-track-volume-value'),
         selectedStickerName:document.getElementById('selected-sticker-name'), stickerVisibleSwitch:document.getElementById('sticker-visible-switch'), stickerBlendMode:document.getElementById('sticker-blend-mode'), stickerTransparencyMode:document.getElementById('sticker-transparency-mode'), stickerKeyColour:document.getElementById('sticker-key-colour'), stickerKeyColourText:document.getElementById('sticker-key-colour-text'), stickerKeyTolerance:document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue:document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather:document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue:document.getElementById('sticker-edge-feather-value'),
         contextMenu:document.getElementById('timeline-context-menu'), contextMenuTitle:document.getElementById('context-menu-title'), contextAddLayer:document.getElementById('context-add-layer'), contextExtractAudio:document.getElementById('context-extract-audio'), contextRemoveLayer:document.getElementById('context-remove-layer')
@@ -46,13 +48,15 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         const name=file.name || '';
         if (file.type?.startsWith('video/') || VIDEO_PATTERN.test(name)) return 'video';
         if (file.type?.startsWith('audio/') || AUDIO_PATTERN.test(name)) return 'audio';
+        if (file.type==='image/jpeg' || BACKGROUND_PATTERN.test(name)) return 'background';
         if (file.type==='image/gif' || file.type==='image/webp' || file.type==='image/png' || STICKER_PATTERN.test(name)) return 'sticker';
         return null;
     }
-    function kindLabel(kind) { return ({ video:'VID', audio:'AUD', sticker:'STK' })[kind] || 'FILE'; }
+    function kindLabel(kind) { return ({ video:'🎬', audio:'🎵', sticker:'✨', background:'🖼️' })[kind] || '📄'; }
+    function kindName(kind) { return ({ video:'video', audio:'audio', sticker:'image / sticker', background:'jpeg background' })[kind] || 'file'; }
     function getTrack(trackId=state.selectedTrackId) { return state.tracks.find((track) => track.id===trackId) || null; }
     function getFile(fileId) { return state.files.find((file) => file.id===fileId) || null; }
-    function trackLabel(type, order) { return `${type==='sticker'?'Sticker':type==='video'?'Video':'Audio'} ${order}`; }
+    function trackLabel(type, order) { return `${type==='sticker'?'Sticker':type==='video'?'Video':type==='background'?'Background':'Audio'} ${order}`; }
     function nextOrder(type) { return state.tracks.filter((track) => track.type===type).length + 1; }
 
     function createTrack(type, extras={}) {
@@ -75,7 +79,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         track.start=Math.max(0,Number(start)||0);
         try {
             await engine.loadTrack(track,entry.file);
-            if (!track.clipDuration) track.clipDuration=track.type==='sticker'?3:track.sourceDuration||1;
+            if (!track.clipDuration) track.clipDuration=(track.type==='sticker'||track.type==='background')?3:track.sourceDuration||1;
             refreshAll();
             selectTrack(track.id);
             elements.previewState.textContent=`Loaded ${entry.name}`;
@@ -110,9 +114,9 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         }
         for (const entry of state.files) {
             const row=document.createElement('div');
-            row.className=`file-row${entry.id===state.selectedFileId?' active':''}`;
+            row.className=`file-row kind-${entry.kind}${entry.id===state.selectedFileId?' active':''}`;
             row.draggable=true; row.tabIndex=0; row.dataset.fileId=entry.id; row.title='Drag this file to the timeline.';
-            row.innerHTML=`<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${entry.kind} · ${formatFileSize(entry.file.size)} · drag to timeline</span></span>`;
+            row.innerHTML=`<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file.size)} · drag to timeline</span></span>`;
             row.addEventListener('dragstart',(event) => {
                 state.selectedFileId=entry.id;
                 event.dataTransfer.effectAllowed='copy';
@@ -158,11 +162,12 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     function syncInspector() {
         const track=getTrack();
         elements.inspectorKind.textContent=track?track.label:'Project';
-        elements.inspectorProject.hidden=Boolean(track); elements.inspectorVideo.hidden=track?.type!=='video'; elements.inspectorAudio.hidden=track?.type!=='audio'; elements.inspectorSticker.hidden=track?.type!=='sticker';
+        elements.inspectorProject.hidden=Boolean(track); elements.inspectorVideo.hidden=track?.type!=='video'; elements.inspectorBackground.hidden=track?.type!=='background'; elements.inspectorAudio.hidden=track?.type!=='audio'; elements.inspectorSticker.hidden=track?.type!=='sticker';
         if(!track) return;
         if(track.type==='video') {
             elements.selectedVideoName.textContent=track.sourceName||track.label; setSwitch(elements.videoVisibleSwitch,track.visible!==false); setSwitch(elements.videoAudioSwitch,!track.audio.muted); elements.videoAudioVolume.value=String(Math.round(track.audio.volume*100)); elements.videoAudioVolumeValue.textContent=`${Math.round(track.audio.volume*100)}%`; elements.videoBlendMode.value=track.blendMode||'source-over'; elements.btnExtractAudio.disabled=!track.file;
         }
+        if(track.type==='background') { elements.selectedBackgroundName.textContent=track.sourceName||track.label; setSwitch(elements.backgroundVisibleSwitch,track.visible!==false); elements.backgroundBlendMode.value=track.blendMode||'source-over'; }
         if(track.type==='audio') { elements.selectedAudioName.textContent=track.sourceName||track.label; setSwitch(elements.audioAuditionSwitch,!track.audio.muted); elements.audioTrackVolume.value=String(Math.round(track.audio.volume*100)); elements.audioTrackVolumeValue.textContent=`${Math.round(track.audio.volume*100)}%`; }
         if(track.type==='sticker') { const settings=track.transparency; elements.selectedStickerName.textContent=track.sourceName||track.label; setSwitch(elements.stickerVisibleSwitch,track.visible!==false); elements.stickerBlendMode.value=track.blendMode||'source-over'; elements.stickerTransparencyMode.value=settings.mode||'native'; elements.stickerKeyColour.value=settings.keyColour||'#00ff00'; elements.stickerKeyColourText.value=settings.keyColour||'#00ff00'; elements.stickerKeyTolerance.value=String(settings.tolerance??30); elements.stickerKeyToleranceValue.textContent=`${settings.tolerance??30}%`; elements.stickerEdgeFeather.value=String(settings.feather??8); elements.stickerEdgeFeatherValue.textContent=`${settings.feather??8}%`; }
     }
@@ -191,7 +196,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         selectTrack(trackId);
         state.contextTrackId=trackId; const track=getTrack(trackId); if(!track) return;
         elements.contextMenuTitle.textContent=track.sourceName||track.label;
-        elements.contextAddLayer.textContent=`➕ Add ${track.type==='sticker'?'Sticker':track.type==='video'?'Video':'Audio'} layer`;
+        elements.contextAddLayer.textContent=`➕ Add ${track.type==='sticker'?'Sticker':track.type==='video'?'Video':track.type==='background'?'Background':'Audio'} layer`;
         elements.contextExtractAudio.hidden=track.type!=='video'||!track.file;
         elements.contextMenu.hidden=false;
         const maxX=window.innerWidth-elements.contextMenu.offsetWidth-8, maxY=window.innerHeight-elements.contextMenu.offsetHeight-8;
@@ -300,7 +305,9 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     elements.videoAudioSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.audio.muted=!track.audio.muted; refreshAll(); });
     elements.videoAudioVolume.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.audio.volume=Number(elements.videoAudioVolume.value)/100; elements.videoAudioVolumeValue.textContent=`${elements.videoAudioVolume.value}%`; engine.setTracks(state.tracks); });
     elements.videoBlendMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.blendMode=elements.videoBlendMode.value; engine.renderFrame(); }); elements.btnExtractAudio.addEventListener('click',extractAudioFromSelectedVideo);
-    elements.audioAuditionSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='audio')return; track.audio.muted=!track.audio.muted; refreshAll(); });
+    elements.backgroundVisibleSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='background')return; track.visible=!track.visible; refreshAll(); });
+    elements.backgroundBlendMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='background')return; track.blendMode=elements.backgroundBlendMode.value; engine.renderFrame(); });
+        elements.audioAuditionSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='audio')return; track.audio.muted=!track.audio.muted; refreshAll(); });
     elements.audioTrackVolume.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='audio')return; track.audio.volume=Number(elements.audioTrackVolume.value)/100; elements.audioTrackVolumeValue.textContent=`${elements.audioTrackVolume.value}%`; engine.setTracks(state.tracks); });
     elements.stickerVisibleSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.visible=!track.visible; refreshAll(); });
     elements.stickerBlendMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.blendMode=elements.stickerBlendMode.value; engine.renderFrame(); });

@@ -1,0 +1,21 @@
+AUDIO TIMELINE ADVANCED MODE — CHANGE LOG
+
+Current build: v0.11
+Last known good baseline before this pass: v0.10
+
+Files touched in v0.11:
+- advanced.html
+- js/advanced-main.js
+- js/advanced-timeline.js
+- js/advanced-media-engine.js
+- README.txt
+
+Grouped changes:
+1. Project Files cards now use emoji identifiers and type colours: video blue, audio red, image/sticker/background gold.
+2. JPEG/JPG support added as Background media rather than Sticker media.
+3. Background clips remain in the lowest timeline group, beneath Audio, and composite behind Video and Sticker media.
+4. Background Inspector adds visibility and blend-mode controls.
+5. Basic Mode index.html was copied intact and is not altered.
+
+Rollback:
+- Use audio_timeline_advanced_mode_v0_10.zip to return to the earlier accepted state.

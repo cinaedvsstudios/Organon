@@ -4,7 +4,7 @@
  * Video sound is linked to its video clip. It only becomes a movable audio track when explicitly extracted.
  */
 
-const VISUAL_TYPES = new Set(['video', 'sticker']);
+const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
 const SUPPORTED_BLEND_MODES = new Set(['source-over', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn']);
 
@@ -23,6 +23,15 @@ function drawContained(context, source, width, height) {
     const sourceHeight = source.videoHeight || source.naturalHeight || source.height || 0;
     if (!sourceWidth || !sourceHeight) return;
     const scale = Math.min(width / sourceWidth, height / sourceHeight);
+    const drawWidth = sourceWidth * scale;
+    const drawHeight = sourceHeight * scale;
+    context.drawImage(source, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
+}
+function drawCovered(context, source, width, height) {
+    const sourceWidth = source.videoWidth || source.naturalWidth || source.width || 0;
+    const sourceHeight = source.videoHeight || source.naturalHeight || source.height || 0;
+    if (!sourceWidth || !sourceHeight) return;
+    const scale = Math.max(width / sourceWidth, height / sourceHeight);
     const drawWidth = sourceWidth * scale;
     const drawHeight = sourceHeight * scale;
     context.drawImage(source, (width - drawWidth) / 2, (height - drawHeight) / 2, drawWidth, drawHeight);
@@ -85,7 +94,7 @@ export class AdvancedMediaEngine {
         track.sourceName = file.name;
         track.fileType = file.type;
         try {
-            if (track.type === 'sticker') {
+            if (track.type === 'sticker' || track.type === 'background') {
                 const image = new Image();
                 image.decoding = 'async';
                 image.src = track.objectUrl;
@@ -233,14 +242,19 @@ export class AdvancedMediaEngine {
     stopRenderLoop() { if (this.frameRequest !== null) cancelAnimationFrame(this.frameRequest); this.frameRequest = null; }
 
     getVisualTracksTopToBottom() {
+        // The returned order describes the visual stack from highest to lowest.
+        // renderFrame reverses this to paint the background first, then videos,
+        // then Sticker 2 and finally Sticker 1 on top.
         const stickers = this.tracks.filter((track) => track.type === 'sticker').sort((a,b) => a.order - b.order);
         const videos = this.tracks.filter((track) => track.type === 'video').sort((a,b) => a.order - b.order);
-        return [...stickers, ...videos];
+        const backgrounds = this.tracks.filter((track) => track.type === 'background').sort((a,b) => a.order - b.order);
+        return [...stickers, ...videos, ...backgrounds];
     }
     ensureCanvasSize() {
-        const firstVideo = this.tracks.find((track) => track.type === 'video' && track.media?.videoWidth && track.media?.videoHeight);
-        const width = firstVideo?.media?.videoWidth || 1280;
-        const height = firstVideo?.media?.videoHeight || 720;
+        const visualSource = this.tracks.find((track) => track.type === 'video' && track.media?.videoWidth && track.media?.videoHeight)
+            || this.tracks.find((track) => track.type === 'background' && track.media?.naturalWidth && track.media?.naturalHeight);
+        const width = visualSource?.media?.videoWidth || visualSource?.media?.naturalWidth || 1280;
+        const height = visualSource?.media?.videoHeight || visualSource?.media?.naturalHeight || 720;
         if (this.canvas.width !== width || this.canvas.height !== height) { this.canvas.width = width; this.canvas.height = height; }
     }
 
@@ -254,6 +268,7 @@ export class AdvancedMediaEngine {
                 if (!track.media || !this.isTrackActive(track) || track.visible === false) continue;
                 this.context.save();
                 this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
+                if (track.type === 'background') drawCovered(this.context, track.media, width, height);
                 if (track.type === 'video' && track.media.readyState >= 2) drawContained(this.context, track.media, width, height);
                 if (track.type === 'sticker') this.drawSticker(track, width, height);
                 this.context.restore();
