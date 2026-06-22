@@ -132,8 +132,15 @@ h4 {
     user-select: none;
 }
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
 .nav-btn-mini {
-    margin-left: 10px;
+    margin-left: 0;
     padding: 6px 12px;
     border: 1px solid var(--chiseled-bronze);
     border-radius: 12px;
@@ -142,6 +149,7 @@ h4 {
     font: 700 0.63rem var(--font-mono);
     text-transform: uppercase;
     letter-spacing: 0.04em;
+    white-space: nowrap;
 }
 
 .nav-btn-mini:hover {
@@ -425,6 +433,12 @@ h4 {
         border-radius: 18px;
     }
 
+    .header-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        width: 100%;
+    }
+
     .nav-btn-mini {
         width: 100%;
         margin-left: 0;
@@ -446,7 +460,10 @@ h4 {
                 <div id="countdown-circle" class="countdown-circle-indicator">0</div>
                 <span>AUDIO TIMELINE</span>
             </div>
-            <button type="button" id="btn-add-media" class="nav-btn-mini">IMPORT MEDIA</button>
+            <div class="header-actions">
+                <button type="button" id="btn-add-media" class="nav-btn-mini">IMPORT MEDIA</button>
+                <button type="button" id="btn-advanced-mode" class="nav-btn-mini" onclick="window.location.href='./advanced.html'">ADVANCED MODE</button>
+            </div>
         </div>
         <div class="panel-content-hide">
             <div class="help-strip">

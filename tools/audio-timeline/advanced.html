@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Organon - Audio Timeline Advanced Mode v0.08</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+:root {
+    --stone-ochre: #e0a360;
+    --chiseled-bronze: #896b49;
+    --white-accent: #ffffff;
+    --water-blue: #4b84bf;
+    --water-spray: #75b2de;
+    --burgundy: #4a1525;
+    --brand-red: #9a2f4f;
+    --alabaster-paper: #f5f0db;
+    --bg-nightsky: #1e201c;
+    --bg-card: #292a24;
+    --bg-input: rgba(24, 25, 25, 0.95);
+    --font-headers: 'Cinzel', Georgia, serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'Geist Mono', 'Courier New', monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: #000;
+    color: var(--alabaster-paper);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+}
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--water-spray); outline-offset: 2px; }
+[hidden] { display: none !important; }
+h1, h2, h3, h4 { margin: 0; color: var(--stone-ochre); font-family: var(--font-headers); letter-spacing: .05em; text-transform: uppercase; }
+
+.advanced-app { width: min(1680px, calc(100vw - 32px)); min-height: 100vh; margin: 0 auto; padding: 10px 0 28px; }
+.top-panel {
+    display: flex; align-items: center; gap: 10px; margin: 10px 0 14px; padding: 12px 14px;
+    border: 2px solid var(--chiseled-bronze); border-radius: 0 0 26px 26px;
+    background-color: #d79e5c;
+    background-image: linear-gradient(135deg, rgba(224,163,96,.94), rgba(196,139,75,.94)), url('../../images/stonetext.jpg');
+    background-size: cover; box-shadow: 0 4px 20px rgba(0,0,0,.6);
+}
+.title-pill { display:flex; align-items:center; gap:9px; flex:1; min-width:0; padding:9px 14px; border:1px solid var(--chiseled-bronze); border-radius:999px; background:var(--bg-input); box-shadow:inset 0 2px 8px rgba(0,0,0,.5); }
+.status-dot { width:12px; height:12px; flex:0 0 12px; border-radius:50%; background:var(--water-blue); box-shadow:0 0 13px rgba(75,132,191,.8); }
+.online-label { flex:0 0 auto; color:var(--water-spray); font:700 .68rem var(--font-headers); letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
+.title-divider { color:rgba(245,240,219,.55); font:700 .76rem var(--font-headers); }
+.advanced-title { overflow:hidden; color:var(--alabaster-paper); font:700 .82rem var(--font-headers); letter-spacing:.05em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+.header-actions { display:flex; flex:0 0 auto; gap:7px; }
+.header-btn, .btn, .context-menu button {
+    display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:34px; padding:7px 10px;
+    border:1px solid var(--chiseled-bronze); border-radius:999px; background:rgba(24,25,25,.9); color:var(--water-spray);
+    font:700 .58rem var(--font-mono); letter-spacing:.05em; text-transform:uppercase; transition:.18s ease;
+}
+.header-btn:hover, .btn:hover, .context-menu button:hover { border-color:var(--water-spray); background:var(--water-blue); color:var(--white-accent); box-shadow:0 0 12px rgba(117,178,222,.28); }
+.header-btn.browse, .btn-primary { background:var(--brand-red); color:var(--white-accent); }
+.btn-danger { background:var(--burgundy); color:var(--white-accent); }
+.btn { width:100%; min-height:32px; padding:7px 9px; }
+
+.advanced-grid { display:grid; grid-template-columns:minmax(220px,290px) minmax(510px,1fr) minmax(250px,330px); gap:14px; align-items:start; }
+.column-card { min-width:0; overflow:hidden; border:1px solid var(--chiseled-bronze); border-radius:20px; background:var(--bg-card); box-shadow:0 4px 18px rgba(0,0,0,.52); }
+.column-heading { display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:52px; padding:12px 14px; border-bottom:1px dashed rgba(137,107,73,.5); background:rgba(0,0,0,.18); }
+.column-heading h2 { font-size:.88rem; }
+.micro-label { color:rgba(245,240,219,.68); font:.58rem var(--font-mono); letter-spacing:.04em; text-transform:uppercase; white-space:nowrap; }
+.column-content { padding:12px; }
+
+.project-controls { padding:9px; border:1px solid rgba(137,107,73,.72); border-radius:14px; background:rgba(0,0,0,.22); }
+.project-controls-title { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; color:var(--stone-ochre); font:700 .57rem var(--font-headers); letter-spacing:.05em; text-transform:uppercase; }
+.project-controls-title small { color:rgba(245,240,219,.52); font:.5rem var(--font-mono); }
+.file-toolbar { display:grid; grid-template-columns:1fr 1fr; gap:7px; }
+.project-summary { margin:10px 0 8px; padding:9px 10px; border:1px dashed rgba(137,107,73,.72); border-radius:13px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.72); font-size:.69rem; line-height:1.42; }
+.drop-hint { padding:10px 9px; border:1px dashed rgba(75,132,191,.7); border-radius:12px; background:rgba(75,132,191,.06); color:rgba(117,178,222,.96); font:.59rem/1.4 var(--font-mono); text-align:center; cursor:pointer; transition:.15s ease; }
+.drop-hint:hover, .drop-hint:focus-visible, .drop-hint.drop-target-active { border-color:var(--water-spray); background:rgba(75,132,191,.2); color:var(--white-accent); box-shadow:0 0 16px rgba(117,178,222,.18); }
+.drop-hint.drop-target-active { transform:scale(1.01); }
+.file-list { display:flex; flex-direction:column; gap:7px; min-height:260px; max-height:calc(100vh - 362px); margin-top:10px; overflow:auto; padding-right:2px; }
+.file-list::-webkit-scrollbar, .inspector-scroll::-webkit-scrollbar, .timeline-scroll::-webkit-scrollbar { width:9px; height:9px; }
+.file-list::-webkit-scrollbar-thumb, .inspector-scroll::-webkit-scrollbar-thumb, .timeline-scroll::-webkit-scrollbar-thumb { background:var(--chiseled-bronze); border-radius:999px; }
+.file-list::-webkit-scrollbar-track, .inspector-scroll::-webkit-scrollbar-track, .timeline-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.24); border-radius:999px; }
+.empty-file-list { padding:18px 11px; border:1px dashed rgba(137,107,73,.65); border-radius:14px; color:rgba(245,240,219,.58); font-size:.7rem; line-height:1.48; text-align:center; }
+.file-row { display:grid; grid-template-columns:26px minmax(0,1fr); gap:8px; width:100%; padding:8px 9px; border:1px solid rgba(137,107,73,.65); border-radius:12px; background:rgba(0,0,0,.25); color:var(--alabaster-paper); text-align:left; }
+.file-row:hover, .file-row.active { border-color:var(--water-spray); background:rgba(75,132,191,.15); }
+.file-kind { display:inline-flex; align-items:center; justify-content:center; border-radius:7px; background:rgba(224,163,96,.17); color:var(--stone-ochre); font:700 .54rem var(--font-mono); }
+.file-name { display:block; overflow:hidden; color:var(--alabaster-paper); font-size:.7rem; text-overflow:ellipsis; white-space:nowrap; }
+.file-meta { display:block; margin-top:2px; overflow:hidden; color:rgba(245,240,219,.58); font:.56rem var(--font-mono); text-overflow:ellipsis; white-space:nowrap; }
+
+.preview-card { padding:12px; }
+.preview-stage { position:relative; display:grid; align-self:flex-start; width:min(640px,100%); min-width:300px; min-height:169px; aspect-ratio:16/9; overflow:hidden; border:1px solid rgba(224,163,96,.75); border-radius:14px; background:#000; box-shadow:inset 0 0 22px rgba(0,0,0,.78); }
+.preview-stage.is-resizing { user-select:none; }
+#advanced-canvas { display:block; width:100%; height:100%; background:#000; }
+.preview-status { position:absolute; top:8px; right:9px; z-index:4; max-width:calc(100% - 18px); padding:4px 7px; overflow:hidden; border:1px solid rgba(137,107,73,.72); border-radius:999px; background:rgba(0,0,0,.68); color:rgba(245,240,219,.7); font:.52rem var(--font-mono); letter-spacing:.04em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; pointer-events:none; }
+.preview-empty { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; color:rgba(245,240,219,.48); font:.76rem/1.5 var(--font-body); text-align:center; pointer-events:none; }
+.preview-resize-handle { position:absolute; z-index:5; right:0; bottom:0; display:grid; width:26px; height:26px; place-items:end; padding:3px; border:0; border-radius:9px 0 13px 0; background:rgba(0,0,0,.66); color:var(--water-spray); font:.73rem var(--font-mono); cursor:nwse-resize; touch-action:none; }
+.preview-resize-handle:hover { background:rgba(75,132,191,.52); color:var(--white-accent); }
+.playback-bar { display:grid; gap:7px; margin-top:8px; padding:7px 8px; border:1px solid rgba(137,107,73,.6); border-radius:14px; background:rgba(0,0,0,.26); }
+.seek-wrap { width:100%; }
+.preview-seek, .range-control { width:100%; accent-color:var(--brand-red); }
+.transport-row { display:flex; align-items:center; gap:6px; min-width:0; }
+.transport-icon { display:inline-grid; flex:0 0 30px; width:30px; height:30px; place-items:center; padding:0; border:1px solid rgba(137,107,73,.75); border-radius:8px; background:rgba(24,25,25,.94); color:var(--alabaster-paper); font-size:.93rem; }
+.transport-icon:hover { border-color:var(--water-spray); background:rgba(75,132,191,.44); }
+.preview-volume-wrap { flex:0 1 122px; min-width:58px; }
+.preview-volume { width:100%; accent-color:var(--brand-red); }
+.time-readout { flex:1 1 92px; min-width:83px; overflow:hidden; color:var(--water-spray); font:.61rem var(--font-mono); text-align:center; text-overflow:ellipsis; white-space:nowrap; }
+
+.timeline-panel { margin-top:12px; overflow:hidden; border:1px solid var(--chiseled-bronze); border-radius:15px; background:rgba(0,0,0,.25); }
+.timeline-scroll { overflow:auto; }
+.timeline-inner { min-width:690px; }
+#timeline-lanes { display:flex; flex-direction:column; }
+.timeline-lane { display:grid; grid-template-columns:170px minmax(520px,1fr); min-height:43px; border-bottom:1px solid rgba(137,107,73,.55); background:rgba(24,25,25,.4); cursor:pointer; }
+.timeline-lane:hover, .timeline-lane.selected { background:rgba(75,132,191,.1); }
+.timeline-lane.selected .lane-name { border-left-color:var(--water-spray); }
+.lane-name { display:flex; flex-direction:column; justify-content:center; gap:1px; padding:6px 10px; border-left:3px solid rgba(224,163,96,.72); border-right:1px solid rgba(137,107,73,.68); color:var(--alabaster-paper); font:.66rem var(--font-body); }
+.lane-name small { color:rgba(245,240,219,.58); font:.53rem var(--font-mono); }
+.lane-workspace { position:relative; min-width:0; overflow:hidden; background-image:linear-gradient(to right, rgba(117,178,222,.08) 1px, transparent 1px); background-size:calc(100% / 6) 100%; }
+.playhead { position:absolute; z-index:3; top:0; bottom:0; width:2px; background:var(--brand-red); box-shadow:0 0 9px rgba(154,47,79,.85); pointer-events:none; }
+.timeline-clip { position:absolute; top:7px; height:29px; min-width:48px; overflow:hidden; padding:7px 9px; border:1px solid rgba(224,163,96,.75); border-radius:9px; background:rgba(224,163,96,.16); color:var(--alabaster-paper); font:.56rem var(--font-mono); line-height:13px; text-overflow:ellipsis; white-space:nowrap; }
+.timeline-clip.audio { border-color:rgba(117,178,222,.78); background:rgba(75,132,191,.14); }
+.timeline-clip.sticker { border-color:rgba(68,158,146,.9); background:rgba(38,97,92,.2); }
+.timeline-clip.placeholder { border-style:dashed; background:rgba(0,0,0,.18); color:rgba(245,240,219,.58); }
+#timeline-ruler { display:grid; min-width:690px; height:31px; border-top:1px solid rgba(137,107,73,.7); background:rgba(0,0,0,.34); }
+#timeline-ruler span { display:flex; align-items:center; justify-content:center; border-right:1px solid rgba(137,107,73,.4); color:rgba(245,240,219,.66); font:.56rem var(--font-mono); }
+#timeline-ruler .ruler-spacer { background:rgba(0,0,0,.25); }
+
+.inspector-scroll { max-height:calc(100vh - 126px); overflow:auto; padding:12px; }
+.inspector-empty { padding:15px 11px; border:1px dashed rgba(137,107,73,.65); border-radius:13px; color:rgba(245,240,219,.62); font:.7rem/1.5 var(--font-body); text-align:center; }
+.inspector-section { display:grid; gap:10px; margin-bottom:10px; padding:11px; border:1px solid rgba(137,107,73,.66); border-radius:14px; background:rgba(0,0,0,.22); }
+.inspector-section h3 { font-size:.69rem; }
+.inspector-copy { margin:0; color:rgba(245,240,219,.68); font-size:.68rem; line-height:1.46; }
+.inspector-field { display:grid; gap:5px; color:rgba(245,240,219,.74); font:.58rem var(--font-mono); text-transform:uppercase; }
+.inspector-select, .inspector-text { width:100%; min-height:32px; padding:7px 9px; border:1px solid rgba(137,107,73,.75); border-radius:10px; background:var(--bg-input); color:var(--alabaster-paper); font:.67rem var(--font-body); }
+.inspector-row { display:flex; align-items:center; justify-content:space-between; gap:9px; color:rgba(245,240,219,.79); font-size:.68rem; }
+.switch { position:relative; flex:0 0 42px; width:42px; height:23px; padding:0; border:1px solid rgba(137,107,73,.78); border-radius:999px; background:rgba(0,0,0,.55); }
+.switch::after { position:absolute; top:3px; left:4px; width:15px; height:15px; border-radius:50%; background:rgba(245,240,219,.62); content:''; transition:.16s ease; }
+.switch.on { background:rgba(75,132,191,.52); border-color:var(--water-spray); }
+.switch.on::after { left:21px; background:var(--water-spray); }
+.inline-range { display:grid; grid-template-columns:1fr 44px; gap:8px; align-items:center; }
+.range-value { color:var(--water-spray); font:.58rem var(--font-mono); text-align:right; }
+.color-grid { display:grid; grid-template-columns:minmax(0,1fr) 38px; gap:7px; align-items:center; }
+.color-picker { width:38px; height:32px; padding:2px; border:1px solid rgba(137,107,73,.75); border-radius:9px; background:var(--bg-input); }
+.mini-btn { min-height:31px; padding:7px 9px; border:1px solid rgba(137,107,73,.75); border-radius:999px; background:rgba(24,25,25,.92); color:var(--water-spray); font:700 .56rem var(--font-mono); letter-spacing:.04em; text-transform:uppercase; }
+.mini-btn:hover { border-color:var(--water-spray); background:rgba(75,132,191,.35); }
+
+#media-bin { display:none; }
+#project-drop-overlay { position:fixed; inset:12px; z-index:9999; display:grid; place-items:center; border:2px dashed var(--water-spray); border-radius:22px; background:rgba(10,14,16,.86); color:var(--alabaster-paper); opacity:0; visibility:hidden; pointer-events:none; transition:opacity .15s, visibility .15s; }
+#project-drop-overlay strong { display:block; margin-bottom:7px; color:var(--water-spray); font:700 1rem var(--font-headers); letter-spacing:.06em; text-align:center; text-transform:uppercase; }
+#project-drop-overlay span { display:block; color:rgba(245,240,219,.7); font:.7rem var(--font-body); text-align:center; }
+body.file-drag-active #project-drop-overlay { opacity:1; visibility:visible; }
+.context-menu { position:fixed; z-index:10000; width:min(246px, calc(100vw - 16px)); padding:8px; border:1px solid var(--water-spray); border-radius:13px; background:#20211e; box-shadow:0 10px 28px rgba(0,0,0,.7); }
+.context-menu h3 { margin:2px 4px 8px; font-size:.66rem; }
+.context-menu button { width:100%; min-height:30px; margin-top:5px; justify-content:flex-start; border-radius:9px; text-align:left; }
+.context-menu button:disabled { cursor:not-allowed; opacity:.45; }
+.footer-note { margin:9px 4px 0; color:rgba(245,240,219,.45); font:.55rem/1.45 var(--font-mono); text-align:center; }
+
+@media (max-width:1100px) { .advanced-app { width:calc(100vw - 20px); } .advanced-grid { grid-template-columns:240px minmax(480px,1fr); } .right-column { grid-column:1 / -1; } .inspector-scroll { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); max-height:none; gap:10px; } .inspector-empty { grid-column:1 / -1; } .inspector-section { margin:0; } }
+@media (max-width:780px) { .advanced-grid { grid-template-columns:1fr; } .left-column, .right-column { grid-column:auto; } .file-list { max-height:210px; } .preview-stage { width:100%; min-width:0; } .inspector-scroll { grid-template-columns:1fr; } }
+@media (max-width:500px) { .advanced-app { width:calc(100vw - 12px); padding-top:4px; } .top-panel { padding:9px; } .online-label, .title-divider { display:none; } .advanced-title { font-size:.68rem; } .header-btn { min-height:32px; padding:6px 8px; font-size:.53rem; } .transport-row { gap:4px; } .transport-icon { flex-basis:28px; width:28px; height:28px; font-size:.88rem; } .preview-volume-wrap { flex-basis:72px; } .time-readout { min-width:72px; font-size:.53rem; } }
+</style>
+</head>
+<body>
+<div class="advanced-app">
+    <header class="top-panel">
+        <div class="title-pill">
+            <span class="status-dot" aria-hidden="true"></span>
+            <span class="online-label">Organon Online</span>
+            <span class="title-divider" aria-hidden="true">—</span>
+            <span class="advanced-title">Audio Timeline — Advanced Mode</span>
+        </div>
+        <div class="header-actions">
+            <button class="header-btn" id="btn-basic-mode" type="button" title="Return to Basic Mode">↩️ <span>Basic</span></button>
+            <button class="header-btn browse" id="btn-browse-folder" type="button" title="Browse a local project folder">📁 <span>Browse</span></button>
+        </div>
+    </header>
+
+    <main class="advanced-grid">
+        <aside class="column-card left-column">
+            <div class="column-heading"><h2>Project Files</h2><span class="micro-label" id="file-count">0 media</span></div>
+            <div class="column-content">
+                <section class="project-controls" aria-label="Project-wide controls">
+                    <div class="project-controls-title"><span>Project Controls</span><small>Whole project</small></div>
+                    <div class="file-toolbar">
+                        <button class="btn" id="btn-import-files" type="button">➕ Import</button>
+                        <button class="btn btn-danger" id="btn-clear-files" type="button">🗑️ Clear</button>
+                    </div>
+                </section>
+                <input id="file-input" type="file" accept="video/*,audio/*,image/gif,image/webp,image/png" multiple hidden>
+                <div class="project-summary" id="project-summary">Drop media anywhere in this window, click the import pad, or browse a local project folder. Files stay in Project Files until you click one to place it on a matching timeline lane.</div>
+                <div id="project-drop-zone" class="drop-hint" role="button" tabindex="0" aria-label="Drop media files here or open the file chooser">Drop video, audio, GIF, WebP or PNG here — or click to import.</div>
+                <div class="file-list" id="file-list"><div class="empty-file-list">No project files yet.</div></div>
+            </div>
+        </aside>
+
+        <section class="column-card master-column">
+            <div class="preview-card">
+                <div class="preview-stage" id="preview-stage">
+                    <canvas id="advanced-canvas" width="1280" height="720"></canvas>
+                    <span class="preview-status" id="preview-state">No video loaded</span>
+                    <div class="preview-empty" id="preview-empty">Drop media into Project Files, select a Video timeline lane, then click a video to load it here.</div>
+                    <button class="preview-resize-handle" id="preview-resize-handle" type="button" aria-label="Resize preview" title="Drag to resize preview">↘</button>
+                </div>
+                <div class="playback-bar" aria-label="Preview playback controls">
+                    <div class="seek-wrap"><input class="preview-seek" id="preview-seek" type="range" min="0" max="0" step="0.001" value="0" disabled aria-label="Preview position"></div>
+                    <div class="transport-row">
+                        <button class="transport-icon" id="btn-step-back" type="button" title="Previous frame" aria-label="Previous frame">⏮️</button>
+                        <button class="transport-icon" id="btn-play" type="button" title="Play preview" aria-label="Play preview">▶️</button>
+                        <button class="transport-icon" id="btn-step-forward" type="button" title="Next frame" aria-label="Next frame">⏭️</button>
+                        <button class="transport-icon" id="btn-preview-mute" type="button" title="Mute or unmute preview sound only" aria-label="Mute or unmute preview sound only">🔊</button>
+                        <div class="preview-volume-wrap" title="Preview / app playback volume only. It does not control the encoded or exported mix."><input class="preview-volume" id="preview-volume" type="range" min="0" max="100" value="100" aria-label="Preview volume"></div>
+                        <div class="time-readout" id="time-readout">0:00 / 0:00</div>
+                        <button class="transport-icon" id="btn-snapshot" type="button" title="Save the visible preview frame as PNG" aria-label="Save current frame as PNG">🖼️</button>
+                    </div>
+                </div>
+
+                <section class="timeline-panel" aria-label="Timeline">
+                    <div class="timeline-scroll"><div class="timeline-inner"><div id="timeline-lanes"></div><div id="timeline-ruler" aria-hidden="true"></div></div></div>
+                </section>
+            </div>
+        </section>
+
+        <aside class="column-card right-column">
+            <div class="column-heading"><h2>Inspector</h2><span class="micro-label" id="inspector-kind">No selection</span></div>
+            <div class="inspector-scroll">
+                <div class="inspector-empty" id="inspector-empty">Select a timeline line to show controls for that exact Video, Video Audio, External Audio or Sticker layer.</div>
+
+                <section class="inspector-section" id="inspector-visual" hidden>
+                    <h3>Visual Layer</h3>
+                    <p class="inspector-copy" id="selected-layer-name"></p>
+                    <div class="inspector-row"><span>Visible in preview</span><button class="switch on" id="visual-visible-switch" type="button" aria-label="Toggle layer visibility"></button></div>
+                    <label class="inspector-field" for="layer-blend-mode">Blend mode
+                        <select class="inspector-select" id="layer-blend-mode">
+                            <option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option><option value="hard-light">Hard Light</option><option value="soft-light">Soft Light</option><option value="difference">Difference</option><option value="exclusion">Exclusion</option><option value="hue">Hue</option><option value="saturation">Saturation</option><option value="color">Color</option><option value="luminosity">Luminosity</option>
+                        </select>
+                    </label>
+                    <p class="inspector-copy" id="blend-help"></p>
+                </section>
+
+                <section class="inspector-section" id="inspector-video" hidden>
+                    <h3>Video Link</h3>
+                    <p class="inspector-copy" id="video-control-copy"></p>
+                    <button class="mini-btn" id="btn-select-linked-audio" type="button">Select linked video audio</button>
+                </section>
+
+                <section class="inspector-section" id="inspector-audio" hidden>
+                    <h3>Audio Layer</h3>
+                    <p class="inspector-copy" id="selected-audio-name"></p>
+                    <div class="inspector-row"><span>Audition in preview</span><button class="switch on" id="audio-audition-switch" type="button" aria-label="Toggle audio audition"></button></div>
+                    <label class="inspector-field" for="audio-track-volume">Track preview volume
+                        <span class="inline-range"><input class="range-control" id="audio-track-volume" type="range" min="0" max="100" value="100"><span class="range-value" id="audio-track-volume-value">100%</span></span>
+                    </label>
+                </section>
+
+                <section class="inspector-section" id="inspector-sticker" hidden>
+                    <h3>Sticker Transparency</h3>
+                    <p class="inspector-copy" id="sticker-control-copy"></p>
+                    <label class="inspector-field" for="sticker-transparency-mode">Transparency treatment
+                        <select class="inspector-select" id="sticker-transparency-mode"><option value="native">Native alpha / transparency</option><option value="chroma">Chroma key colour</option><option value="light">Light-background cutout</option><option value="dark">Dark-background cutout</option></select>
+                    </label>
+                    <label class="inspector-field" for="sticker-key-colour-text">Key colour
+                        <span class="color-grid"><input class="inspector-text" id="sticker-key-colour-text" type="text" value="#00ff00" maxlength="7"><input class="color-picker" id="sticker-key-colour" type="color" value="#00ff00"></span>
+                    </label>
+                    <label class="inspector-field" for="sticker-key-tolerance">Tolerance
+                        <span class="inline-range"><input class="range-control" id="sticker-key-tolerance" type="range" min="0" max="100" value="30"><span class="range-value" id="sticker-key-tolerance-value">30%</span></span>
+                    </label>
+                    <label class="inspector-field" for="sticker-edge-feather">Edge feather
+                        <span class="inline-range"><input class="range-control" id="sticker-edge-feather" type="range" min="0" max="100" value="8"><span class="range-value" id="sticker-edge-feather-value">8%</span></span>
+                    </label>
+                </section>
+            </div>
+        </aside>
+    </main>
+
+    <p class="footer-note">Advanced Mode v0.08 — separate Advanced Mode modules only. Drop/import works from Project Files, the canvas previews the active composite, and the Inspector changes with the selected timeline layer.</p>
+</div>
+
+<div id="media-bin" aria-hidden="true"></div>
+<div id="project-drop-overlay" aria-hidden="true"><div><strong>Release to add to Project Files</strong><span>Video, audio, GIF, WebP and PNG files will be added to the project bin.</span></div></div>
+<div class="context-menu" id="timeline-context-menu" hidden aria-hidden="true"><h3 id="context-menu-title">Layer options</h3><button id="context-add-layer" type="button">Add another layer</button><button id="context-remove-layer" type="button">Remove empty layer</button></div>
+
+<script type="module" src="./js/advanced-main.js"></script>
+</body>
+</html>
