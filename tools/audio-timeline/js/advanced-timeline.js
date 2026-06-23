@@ -1,6 +1,7 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.14 — pixel-based timeline scale, stable clip resizing, zoom/reset controls and type-coloured lane labels.
+ * v0.15 — playhead/end markers, clickable ruler, beat-bright clip fills,
+ * multi-selection/group movement, and stable clip split support.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
@@ -9,6 +10,13 @@ const TYPE_DEFAULTS = {
     video: { label: 'Video', subLabel: 'visual clip + linked sound', placeholder: 'Drop a video here', className: 'video' },
     audio: { label: 'Audio', subLabel: 'voice / music', placeholder: 'Drop an audio file here', className: 'audio' },
     background: { label: 'Background', subLabel: 'JPEG image — bottom layer', placeholder: 'Drop a JPEG background here', className: 'background' }
+};
+
+const TYPE_RGB = {
+    video: [75, 132, 191],
+    audio: [154, 47, 79],
+    sticker: [224, 163, 96],
+    background: [224, 163, 96]
 };
 
 function escapeHtml(value) {
@@ -21,8 +29,12 @@ function clamp(value, min, max) {
     return Math.min(max, Math.max(min, value));
 }
 
+function cssEscape(value) {
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+}
+
 export class AdvancedTimeline {
-    constructor({ lanesElement, rulerElement, emptyElement, onSelect, onContextMenu, onDropProjectFile, onTrackChange, onSeek }) {
+    constructor({ lanesElement, rulerElement, emptyElement, onSelect, onContextMenu, onDropProjectFile, onTrackChange, onSeek, onSplitAtPlayhead }) {
         this.lanesElement = lanesElement;
         this.rulerElement = rulerElement;
         this.emptyElement = emptyElement;
@@ -34,12 +46,14 @@ export class AdvancedTimeline {
         this.onDropProjectFile = onDropProjectFile;
         this.onTrackChange = onTrackChange;
         this.onSeek = onSeek;
+        this.onSplitAtPlayhead = onSplitAtPlayhead;
         this.tracks = [];
-        this.selectedTrackId = null;
+        this.selectedTrackIds = new Set();
+        this.activeProjectFileId = '';
+        this.dragState = null;
+        this.selectionMode = false;
         this.duration = 6;
         this.currentTime = 0;
-        this.dragState = null;
-        this.activeProjectFileId = '';
         this.zoom = 1;
         this.basePixelsPerSecond = 10;
         this.pixelsPerSecond = this.basePixelsPerSecond;
@@ -48,10 +62,12 @@ export class AdvancedTimeline {
         this.minimumWorkspaceWidth = 630;
         this.installEmptyDropTarget();
         this.installTimelinePanelDropTarget();
+        this.ensureMarkerLayer();
     }
 
     beginProjectFileDrag(fileId) { this.activeProjectFileId = String(fileId || ''); }
     endProjectFileDrag() { this.activeProjectFileId = ''; }
+    setSelectionMode(enabled) { this.selectionMode = Boolean(enabled); }
 
     getProjectFileId(event) {
         const transfer = event.dataTransfer;
@@ -86,51 +102,6 @@ export class AdvancedTimeline {
 
     getZoomPercent() { return Math.round(this.zoom * 100); }
 
-    getTimelineDropStart(event) {
-        const workspace = event.target.closest?.('.lane-workspace');
-        const target = workspace || this.lanesElement;
-        const rect = target?.getBoundingClientRect();
-        if (!rect) return 0;
-        const workspaceLeft = workspace ? rect.left : rect.left + this.labelWidth;
-        return clamp((event.clientX - workspaceLeft) / this.pixelsPerSecond, 0, this.getViewDuration());
-    }
-
-    installEmptyDropTarget() {
-        if (!this.emptyElement) return;
-        this.emptyElement.addEventListener('dragover', (event) => {
-            if (!this.isProjectFileDrag(event)) return;
-            event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy';
-            this.emptyElement.classList.add('drop-target-active');
-        });
-        this.emptyElement.addEventListener('dragleave', () => this.emptyElement.classList.remove('drop-target-active'));
-        this.emptyElement.addEventListener('drop', (event) => {
-            const fileId = this.getProjectFileId(event);
-            if (!fileId) return;
-            event.preventDefault(); event.stopPropagation(); this.emptyElement.classList.remove('drop-target-active');
-            this.onDropProjectFile?.({ fileId, trackId: null, start: 0 });
-            this.endProjectFileDrag();
-        });
-    }
-
-    installTimelinePanelDropTarget() {
-        if (!this.panelElement) return;
-        this.panelElement.addEventListener('dragover', (event) => {
-            if (!this.isProjectFileDrag(event)) return;
-            event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; this.panelElement.classList.add('drop-target-active');
-        });
-        this.panelElement.addEventListener('dragleave', (event) => {
-            if (!this.panelElement.contains(event.relatedTarget)) this.panelElement.classList.remove('drop-target-active');
-        });
-        this.panelElement.addEventListener('drop', (event) => {
-            const fileId = this.getProjectFileId(event);
-            if (!fileId) return;
-            if (event.target.closest?.('.lane-workspace') || event.target.closest?.('.timeline-empty')) return;
-            event.preventDefault(); this.panelElement.classList.remove('drop-target-active');
-            this.onDropProjectFile?.({ fileId, trackId: null, start: this.getTimelineDropStart(event) });
-            this.endProjectFileDrag();
-        });
-    }
-
     setTracks(tracks) {
         this.tracks = Array.isArray(tracks) ? tracks : [];
         this.ensureViewportForTime(this.getTrackEndTime(), true);
@@ -138,28 +109,23 @@ export class AdvancedTimeline {
     }
 
     setSelectedTrack(trackId) {
-        this.selectedTrackId = trackId;
+        this.setSelectedTrackIds(trackId ? [trackId] : []);
+    }
+
+    setSelectedTrackIds(trackIds) {
+        this.selectedTrackIds = new Set(Array.from(trackIds || []).filter(Boolean));
         this.applySelectionState();
     }
 
     setDuration(duration) {
-        this.duration = Math.max(6, Number(duration) || 0);
+        this.duration = Math.max(0, Number(duration) || 0);
         this.ensureViewportForTime(this.duration, true);
         this.render();
     }
 
     setCurrentTime(time) {
         this.currentTime = Math.max(0, Number(time) || 0);
-        const left = `${Math.max(0, this.currentTime * this.pixelsPerSecond)}px`;
-        this.lanesElement?.querySelectorAll('.playhead').forEach((playhead) => { playhead.style.left = left; });
-    }
-
-    getDisplayTracks() {
-        return [...this.tracks].sort((a, b) => {
-            const groupDifference = GROUP_ORDER.indexOf(a.type) - GROUP_ORDER.indexOf(b.type);
-            if (groupDifference !== 0) return groupDifference;
-            return Number(a.order) - Number(b.order);
-        });
+        this.updateMarkers();
     }
 
     getTrackById(trackId) { return this.tracks.find((track) => track.id === trackId) || null; }
@@ -173,6 +139,8 @@ export class AdvancedTimeline {
     getTrackEndTime() {
         return this.tracks.reduce((latest, track) => Math.max(latest, (Number(track.start) || 0) + this.getClipDuration(track)), 0);
     }
+
+    getCompositionEndTime() { return Math.max(0, this.getTrackEndTime()); }
 
     getViewDuration() {
         return Math.max(6, this.viewDuration, this.duration + 2, this.getTrackEndTime() + 2);
@@ -199,77 +167,208 @@ export class AdvancedTimeline {
         this.innerElement.style.setProperty('--timeline-grid-step', `${Math.max(1, this.pixelsPerSecond)}px`);
     }
 
+    getDisplayLanes() {
+        const lanes = new Map();
+        for (const track of this.tracks) {
+            const laneId = track.laneId || track.id;
+            if (!lanes.has(laneId)) {
+                lanes.set(laneId, {
+                    id: laneId,
+                    type: track.type,
+                    order: Number(track.order) || 0,
+                    label: track.laneLabel || track.label,
+                    tracks: []
+                });
+            }
+            lanes.get(laneId).tracks.push(track);
+        }
+        return [...lanes.values()]
+            .sort((a, b) => {
+                const groupDifference = GROUP_ORDER.indexOf(a.type) - GROUP_ORDER.indexOf(b.type);
+                return groupDifference || a.order - b.order;
+            })
+            .map((lane) => ({ ...lane, tracks: lane.tracks.sort((a, b) => (Number(a.start) || 0) - (Number(b.start) || 0)) }));
+    }
+
+    getWorkspaceTime(event, workspace) {
+        const rect = workspace.getBoundingClientRect();
+        return clamp((event.clientX - rect.left) / this.pixelsPerSecond, 0, this.getViewDuration());
+    }
+
+    getTimelineDropStart(event) {
+        const workspace = event.target.closest?.('.lane-workspace');
+        if (workspace) return this.getWorkspaceTime(event, workspace);
+        const rect = this.innerElement?.getBoundingClientRect();
+        if (!rect) return 0;
+        return clamp((event.clientX - rect.left - this.labelWidth) / this.pixelsPerSecond, 0, this.getViewDuration());
+    }
+
+    installEmptyDropTarget() {
+        if (!this.emptyElement) return;
+        this.emptyElement.addEventListener('dragover', (event) => {
+            if (!this.isProjectFileDrag(event)) return;
+            event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy';
+            this.emptyElement.classList.add('drop-target-active');
+        });
+        this.emptyElement.addEventListener('dragleave', () => this.emptyElement.classList.remove('drop-target-active'));
+        this.emptyElement.addEventListener('drop', (event) => {
+            const fileId = this.getProjectFileId(event);
+            if (!fileId) return;
+            event.preventDefault(); event.stopPropagation(); this.emptyElement.classList.remove('drop-target-active');
+            this.onDropProjectFile?.({ fileId, laneId: null, laneType: null, start: 0 });
+            this.endProjectFileDrag();
+        });
+    }
+
+    installTimelinePanelDropTarget() {
+        if (!this.panelElement) return;
+        this.panelElement.addEventListener('dragover', (event) => {
+            if (!this.isProjectFileDrag(event)) return;
+            event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; this.panelElement.classList.add('drop-target-active');
+        });
+        this.panelElement.addEventListener('dragleave', (event) => {
+            if (!this.panelElement.contains(event.relatedTarget)) this.panelElement.classList.remove('drop-target-active');
+        });
+        this.panelElement.addEventListener('drop', (event) => {
+            const fileId = this.getProjectFileId(event);
+            if (!fileId) return;
+            if (event.target.closest?.('.lane-workspace') || event.target.closest?.('.timeline-empty')) return;
+            event.preventDefault(); this.panelElement.classList.remove('drop-target-active');
+            this.onDropProjectFile?.({ fileId, laneId: null, laneType: null, start: this.getTimelineDropStart(event) });
+            this.endProjectFileDrag();
+        });
+    }
+
+    ensureMarkerLayer() {
+        if (!this.innerElement || this.markerLayer) return;
+        this.markerLayer = document.createElement('div');
+        this.markerLayer.className = 'timeline-marker-layer';
+        this.endMarker = document.createElement('div');
+        this.endMarker.className = 'timeline-end-marker';
+        this.endMarker.innerHTML = '<span></span>';
+        this.playheadMarker = document.createElement('div');
+        this.playheadMarker.className = 'timeline-playhead-marker';
+        this.markerLayer.append(this.endMarker, this.playheadMarker);
+        this.innerElement.appendChild(this.markerLayer);
+    }
+
+    updateMarkers() {
+        this.ensureMarkerLayer();
+        if (!this.markerLayer) return;
+        const currentLeft = this.labelWidth + Math.max(0, this.currentTime * this.pixelsPerSecond);
+        const end = this.getCompositionEndTime();
+        const endLeft = this.labelWidth + Math.max(0, end * this.pixelsPerSecond);
+        this.playheadMarker.style.left = `${currentLeft}px`;
+        this.endMarker.style.left = `${endLeft}px`;
+        this.endMarker.hidden = end <= 0;
+        const label = this.endMarker.querySelector('span');
+        if (label) label.textContent = `END ${this.formatTime(end)}`;
+    }
+
+    formatTime(seconds) {
+        const safe = Math.max(0, Number(seconds) || 0);
+        const mins = Math.floor(safe / 60);
+        return `${mins}:${Math.floor(safe % 60).toString().padStart(2, '0')}`;
+    }
+
+    getClipGradient(track) {
+        const levels = Array.isArray(track.analysis?.levels) ? track.analysis.levels : [];
+        if (!levels.length || (track.type !== 'audio' && track.type !== 'video')) return '';
+        const rgb = TYPE_RGB[track.type] || TYPE_RGB.video;
+        const count = Math.min(72, levels.length);
+        const stride = levels.length / count;
+        const stops = [];
+        for (let index = 0; index < count; index += 1) {
+            const sample = levels[Math.min(levels.length - 1, Math.floor(index * stride))] || 0;
+            const nextSample = levels[Math.min(levels.length - 1, Math.floor((index + 1) * stride))] || sample;
+            const start = (index / count) * 100;
+            const end = ((index + 1) / count) * 100;
+            const alpha = (.17 + sample * .67).toFixed(3);
+            const nextAlpha = (.17 + nextSample * .67).toFixed(3);
+            stops.push(`rgba(${rgb.join(',')},${alpha}) ${start.toFixed(2)}%`, `rgba(${rgb.join(',')},${nextAlpha}) ${end.toFixed(2)}%`);
+        }
+        return `linear-gradient(90deg, ${stops.join(',')})`;
+    }
+
     updateClipStyle(clip, track) {
         clip.style.left = `${Math.max(0, (Number(track.start) || 0) * this.pixelsPerSecond)}px`;
         clip.style.width = `${Math.max(26, this.getClipDuration(track) * this.pixelsPerSecond)}px`;
+        const gradient = this.getClipGradient(track);
+        if (gradient) clip.style.background = gradient;
+        else clip.style.removeProperty('background');
     }
 
     applySelectionState() {
-        this.lanesElement?.querySelectorAll('.timeline-lane').forEach((lane) => lane.classList.toggle('selected', lane.dataset.trackId === this.selectedTrackId));
-        this.lanesElement?.querySelectorAll('.timeline-clip').forEach((clip) => clip.classList.toggle('selected', clip.dataset.trackId === this.selectedTrackId));
+        this.lanesElement?.querySelectorAll('.timeline-lane').forEach((lane) => {
+            const hasSelected = [...lane.querySelectorAll('.timeline-clip')].some((clip) => this.selectedTrackIds.has(clip.dataset.trackId));
+            lane.classList.toggle('selected', hasSelected);
+        });
+        this.lanesElement?.querySelectorAll('.timeline-clip').forEach((clip) => {
+            clip.classList.toggle('selected', this.selectedTrackIds.has(clip.dataset.trackId));
+        });
     }
 
     render() {
         if (!this.lanesElement || !this.rulerElement) return;
         this.updateLayoutMetrics();
-        const tracks = this.getDisplayTracks();
+        const lanes = this.getDisplayLanes();
         this.lanesElement.innerHTML = '';
-        if (this.emptyElement) this.emptyElement.hidden = tracks.length > 0;
+        if (this.emptyElement) this.emptyElement.hidden = lanes.length > 0;
 
-        for (const track of tracks) {
-            const defaults = TYPE_DEFAULTS[track.type] || TYPE_DEFAULTS.video;
+        for (const laneModel of lanes) {
+            const defaults = TYPE_DEFAULTS[laneModel.type] || TYPE_DEFAULTS.video;
             const lane = document.createElement('div');
-            lane.className = `timeline-lane ${defaults.className}${track.id === this.selectedTrackId ? ' selected' : ''}`;
-            lane.dataset.trackId = track.id;
+            lane.className = `timeline-lane ${defaults.className}`;
+            lane.dataset.laneId = laneModel.id;
 
             const label = document.createElement('div');
             label.className = 'lane-name';
-            const subLabel = track.type === 'sticker'
-                ? (track.order === 1 ? 'top visual layer' : `below Sticker ${track.order - 1}`)
-                : (track.type === 'video'
-                    ? 'visual clip + linked sound'
-                    : (track.type === 'background'
-                        ? 'JPEG image — beneath audio'
-                        : (track.extractedFrom ? 'extracted video audio' : defaults.subLabel)));
-            label.innerHTML = `<span>${escapeHtml(track.label || `${defaults.label} ${track.order}`)}</span><small>${escapeHtml(subLabel)}</small>`;
+            const subLabel = laneModel.type === 'sticker'
+                ? (laneModel.order === 1 ? 'top visual layer' : `below Sticker ${laneModel.order - 1}`)
+                : (laneModel.type === 'video' ? 'visual clip + linked sound' : (laneModel.type === 'background' ? 'JPEG image — beneath audio' : defaults.subLabel));
+            label.innerHTML = `<span>${escapeHtml(laneModel.label || `${defaults.label} ${laneModel.order}`)}</span><small>${escapeHtml(subLabel)}</small>`;
 
             const workspace = document.createElement('div');
             workspace.className = 'lane-workspace';
-            workspace.dataset.trackId = track.id;
-            this.installWorkspaceEvents(workspace, track);
+            workspace.dataset.laneId = laneModel.id;
+            workspace.dataset.laneType = laneModel.type;
+            this.installWorkspaceEvents(workspace, laneModel);
 
-            const playhead = document.createElement('div');
-            playhead.className = 'playhead';
-            playhead.style.left = `${Math.max(0, this.currentTime * this.pixelsPerSecond)}px`;
-            workspace.appendChild(playhead);
+            for (const track of laneModel.tracks) {
+                const clip = document.createElement('div');
+                const hasSource = Boolean(track.sourceName);
+                clip.className = `timeline-clip ${defaults.className}${hasSource ? '' : ' placeholder'}${this.selectedTrackIds.has(track.id) ? ' selected' : ''}${track.groupId ? ' grouped' : ''}`;
+                clip.dataset.trackId = track.id;
+                this.updateClipStyle(clip, track);
 
-            const clip = document.createElement('div');
-            const hasSource = Boolean(track.sourceName);
-            clip.className = `timeline-clip ${defaults.className}${hasSource ? '' : ' placeholder'}${track.id === this.selectedTrackId ? ' selected' : ''}`;
-            clip.dataset.trackId = track.id;
-            this.updateClipStyle(clip, track);
-
-            const clipLabel = document.createElement('span');
-            clipLabel.className = 'clip-label';
-            clipLabel.textContent = hasSource ? track.sourceName : defaults.placeholder;
-            clip.appendChild(clipLabel);
-            if (hasSource) {
-                const resizeHandle = document.createElement('span');
-                resizeHandle.className = 'clip-resize-handle';
-                resizeHandle.title = 'Drag to trim or extend this clip';
-                clip.appendChild(resizeHandle);
-                this.installClipDrag(clip, workspace, track, resizeHandle);
+                const clipLabel = document.createElement('span');
+                clipLabel.className = 'clip-label';
+                clipLabel.textContent = hasSource ? track.sourceName : defaults.placeholder;
+                clip.appendChild(clipLabel);
+                if (hasSource) {
+                    const resizeHandle = document.createElement('span');
+                    resizeHandle.className = 'clip-resize-handle';
+                    resizeHandle.title = 'Drag to trim or extend this clip';
+                    clip.appendChild(resizeHandle);
+                    this.installClipDrag(clip, workspace, track, resizeHandle);
+                    clip.addEventListener('contextmenu', (event) => {
+                        event.preventDefault(); event.stopPropagation();
+                        if (event.shiftKey) this.onContextMenu?.(track.id, event.clientX, event.clientY);
+                        else this.onSplitAtPlayhead?.(track.id);
+                    });
+                }
+                workspace.appendChild(clip);
             }
-            workspace.appendChild(clip);
+
             lane.append(label, workspace);
-            lane.addEventListener('click', () => this.onSelect?.(track.id));
-            lane.addEventListener('contextmenu', (event) => { event.preventDefault(); this.onContextMenu?.(track.id, event.clientX, event.clientY); });
             this.lanesElement.appendChild(lane);
         }
         this.renderRuler();
+        this.updateMarkers();
+        this.applySelectionState();
     }
 
-    installWorkspaceEvents(workspace, track) {
+    installWorkspaceEvents(workspace, laneModel) {
         workspace.addEventListener('dragover', (event) => {
             if (!this.isProjectFileDrag(event)) return;
             event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = 'copy'; workspace.classList.add('drop-target-active');
@@ -279,17 +378,31 @@ export class AdvancedTimeline {
             const fileId = this.getProjectFileId(event);
             if (!fileId) return;
             event.preventDefault(); event.stopPropagation(); workspace.classList.remove('drop-target-active');
-            const rect = workspace.getBoundingClientRect();
-            const start = clamp((event.clientX - rect.left) / this.pixelsPerSecond, 0, this.getViewDuration());
-            this.onDropProjectFile?.({ fileId, trackId: track.id, start });
+            this.onDropProjectFile?.({ fileId, laneId: laneModel.id, laneType: laneModel.type, start: this.getWorkspaceTime(event, workspace) });
             this.endProjectFileDrag();
         });
         workspace.addEventListener('pointerdown', (event) => {
             if (event.target.closest('.timeline-clip')) return;
-            const rect = workspace.getBoundingClientRect();
-            const time = clamp((event.clientX - rect.left) / this.pixelsPerSecond, 0, this.getViewDuration());
-            this.onSelect?.(track.id); this.onSeek?.(time);
+            this.onSeek?.(this.getWorkspaceTime(event, workspace));
         });
+        workspace.addEventListener('contextmenu', (event) => {
+            if (event.target.closest('.timeline-clip')) return;
+            event.preventDefault();
+            const fallback = laneModel.tracks[0];
+            if (fallback) this.onContextMenu?.(fallback.id, event.clientX, event.clientY);
+        });
+    }
+
+    getGroupedDragTracks(track) {
+        if (!track.groupId) return [track];
+        return this.tracks.filter((candidate) => candidate.groupId === track.groupId);
+    }
+
+    updateLiveClipPositions(tracks) {
+        for (const track of tracks) {
+            const clip = this.lanesElement?.querySelector(`.timeline-clip[data-track-id="${cssEscape(track.id)}"]`);
+            if (clip) this.updateClipStyle(clip, track);
+        }
     }
 
     installClipDrag(clip, workspace, track, resizeHandle) {
@@ -305,17 +418,24 @@ export class AdvancedTimeline {
 
         clip.addEventListener('pointerdown', (event) => {
             if (event.button !== 0) return;
+            const toggleSelection = this.selectionMode || event.ctrlKey || event.metaKey;
+            if (toggleSelection) {
+                event.preventDefault(); event.stopPropagation();
+                this.onSelect?.(track.id, { toggle: true });
+                return;
+            }
             event.preventDefault(); event.stopPropagation();
             const mode = event.target === resizeHandle || event.target.closest('.clip-resize-handle') ? 'resize' : 'move';
-            this.onSelect?.(track.id);
+            this.onSelect?.(track.id, { toggle: false });
+            const movingTracks = mode === 'move' ? this.getGroupedDragTracks(track) : [track];
             this.dragState = {
                 mode,
                 track,
-                workspace,
+                movingTracks,
                 pointerId: event.pointerId,
                 startX: event.clientX,
-                originalStart: Number(track.start) || 0,
-                originalDuration: this.getClipDuration(track)
+                originalDuration: this.getClipDuration(track),
+                originalStarts: new Map(movingTracks.map((item) => [item.id, Number(item.start) || 0]))
             };
             clip.classList.add('is-dragging');
             clip.setPointerCapture?.(event.pointerId);
@@ -326,14 +446,20 @@ export class AdvancedTimeline {
             if (!drag || drag.pointerId !== event.pointerId || drag.track.id !== track.id) return;
             const deltaSeconds = (event.clientX - drag.startX) / this.pixelsPerSecond;
             if (drag.mode === 'move') {
-                track.start = clamp(drag.originalStart + deltaSeconds, 0, 36000);
+                for (const movingTrack of drag.movingTracks) {
+                    movingTrack.start = clamp((drag.originalStarts.get(movingTrack.id) || 0) + deltaSeconds, 0, 36000);
+                }
+                this.ensureViewportForTime(Math.max(...drag.movingTracks.map((item) => (Number(item.start) || 0) + this.getClipDuration(item))));
+                this.updateLayoutMetrics();
+                this.updateLiveClipPositions(drag.movingTracks);
             } else {
-                const sourceLimit = (track.type === 'sticker' || track.type === 'background') ? 300 : Math.max(.15, Number(track.sourceDuration) || drag.originalDuration);
+                const sourceLimit = (track.type === 'sticker' || track.type === 'background') ? 300 : Math.max(.15, (Number(track.sourceDuration) || drag.originalDuration) - (Number(track.sourceOffset) || 0));
                 track.clipDuration = clamp(drag.originalDuration + deltaSeconds, .15, sourceLimit);
+                this.ensureViewportForTime((Number(track.start) || 0) + this.getClipDuration(track));
+                this.updateLayoutMetrics();
+                this.updateClipStyle(clip, track);
             }
-            this.ensureViewportForTime((Number(track.start) || 0) + this.getClipDuration(track));
-            this.updateLayoutMetrics();
-            this.updateClipStyle(clip, track);
+            this.updateMarkers();
             this.onTrackChange?.(track, { live: true });
         });
         clip.addEventListener('pointerup', stop);
@@ -357,7 +483,16 @@ export class AdvancedTimeline {
         this.rulerElement.innerHTML = '<span class="ruler-spacer"></span>';
         for (let index = 0; index < marks; index += 1) {
             const second = Math.round(index * step);
-            this.rulerElement.insertAdjacentHTML('beforeend', `<span>${second}s</span>`);
+            const mark = document.createElement('span');
+            mark.textContent = `${second}s`;
+            mark.dataset.time = String(second);
+            this.rulerElement.appendChild(mark);
         }
+        this.rulerElement.onpointerdown = (event) => {
+            if (event.target.closest('.ruler-spacer')) return;
+            const rect = this.rulerElement.getBoundingClientRect();
+            const time = clamp((event.clientX - rect.left - this.labelWidth) / this.pixelsPerSecond, 0, this.getViewDuration());
+            this.onSeek?.(time);
+        };
     }
 }

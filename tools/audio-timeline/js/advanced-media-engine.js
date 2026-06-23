@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED MEDIA ENGINE
- * v0.14 — independent media playback/compositor with project-selected output resolution and per-layer opacity.
+ * v0.15 — adds source offsets for real split clips, audio fade envelopes and lightweight beat/loudness analysis.
  * Video sound is linked to its video clip. It only becomes a movable audio track when explicitly extracted.
  */
 
@@ -64,6 +64,7 @@ export class AdvancedMediaEngine {
         this.outputHeight = Math.max(64, Math.round(Number(canvas.height) || 720));
         this.stickerWorkCanvas = document.createElement('canvas');
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
+        this.analysisContext = null;
     }
 
     async ensureAudioGraph() {
@@ -87,7 +88,7 @@ export class AdvancedMediaEngine {
 
     setTracks(tracks) {
         this.tracks = Array.isArray(tracks) ? tracks : [];
-        this.syncAudioSettings();
+        this.syncAudioSettings(this.currentTime);
         this.emitDuration();
         this.renderFrame();
     }
@@ -103,6 +104,7 @@ export class AdvancedMediaEngine {
         if (!track || !file) throw new Error('A track and a source file are required.');
         this.detachTrack(track, false);
         track.file = file;
+        track.sourceOffset = Math.max(0, Number(track.sourceOffset) || 0);
         track.objectUrl = URL.createObjectURL(file);
         track.sourceName = file.name;
         track.fileType = file.type;
@@ -149,6 +151,43 @@ export class AdvancedMediaEngine {
         return track;
     }
 
+    async analyzeTrackAudio(track, file) {
+        if (!track || !file || (track.type !== 'audio' && track.type !== 'video')) return null;
+        try {
+            if (!this.analysisContext) this.analysisContext = new (window.AudioContext || window.webkitAudioContext)();
+            const raw = await file.arrayBuffer();
+            const buffer = await this.analysisContext.decodeAudioData(raw.slice(0));
+            const source = buffer.getChannelData(0);
+            const bucketCount = clamp(Math.round(Math.max(36, Math.min(180, buffer.duration * 14))), 36, 180);
+            const windowSize = Math.max(1, Math.floor(source.length / bucketCount));
+            const energies = [];
+            for (let bucket = 0; bucket < bucketCount; bucket += 1) {
+                const start = bucket * windowSize;
+                const end = Math.min(source.length, start + windowSize);
+                let sum = 0;
+                for (let index = start; index < end; index += 1) sum += source[index] * source[index];
+                energies.push(Math.sqrt(sum / Math.max(1, end - start)));
+            }
+            const ordered = [...energies].sort((a, b) => a - b);
+            const floor = ordered[Math.floor(ordered.length * .12)] || 0;
+            const ceiling = Math.max(floor + .00001, ordered[Math.floor(ordered.length * .92)] || 1);
+            const levels = energies.map((value, index) => {
+                let normalised = clamp((value - floor) / (ceiling - floor), 0, 1);
+                const previous = energies[index - 1] ?? value;
+                const next = energies[index + 1] ?? value;
+                const isPeak = value >= previous && value >= next && normalised > .58;
+                if (isPeak) normalised = clamp(normalised * 1.2, 0, 1);
+                return Number(normalised.toFixed(3));
+            });
+            track.analysis = { levels, sampleCount: bucketCount, analysed: true };
+            return track.analysis;
+        } catch (error) {
+            console.warn(`Could not analyse ${file.name || 'audio'}:`, error);
+            track.analysis = null;
+            return null;
+        }
+    }
+
     async connectAudioTrack(track, mediaElement) {
         await this.ensureAudioGraph();
         track.audioNode = this.audioContext.createMediaElementSource(mediaElement);
@@ -174,13 +213,30 @@ export class AdvancedMediaEngine {
 
     clearAll() { this.pause(); this.tracks.forEach((track) => this.detachTrack(track, false)); this.tracks = []; this.currentTime = 0; this.emitDuration(); this.emitTime(); this.renderFrame(); }
 
-    syncAudioSettings() {
+    getAudioFadeGain(track, time = this.currentTime) {
+        if (!AUDIO_TYPES.has(track.type)) return 0;
+        const duration = Math.max(0, Number(track.clipDuration) || 0);
+        const localTime = clamp((Number(time) || 0) - (Number(track.start) || 0), 0, duration);
+        const fadeIn = clamp(Number(track.audio?.fadeIn) || 0, 0, duration);
+        const fadeOut = clamp(Number(track.audio?.fadeOut) || 0, 0, duration);
+        let envelope = 1;
+        if (fadeIn > 0) envelope = Math.min(envelope, clamp(localTime / fadeIn, 0, 1));
+        if (fadeOut > 0) envelope = Math.min(envelope, clamp((duration - localTime) / fadeOut, 0, 1));
+        return envelope;
+    }
+
+    syncAudioSettings(time = this.currentTime) {
         for (const track of this.tracks) {
             if (!AUDIO_TYPES.has(track.type) || !track.gainNode) continue;
             const muted = Boolean(track.audio?.muted);
             const volume = clamp(Number(track.audio?.volume ?? 1), 0, 1);
-            track.gainNode.gain.value = muted ? 0 : volume;
+            const envelope = this.isTrackActive(track, time) ? this.getAudioFadeGain(track, time) : 0;
+            track.gainNode.gain.value = muted ? 0 : volume * envelope;
         }
+    }
+
+    updateAudioFades(time = this.currentTime) {
+        this.syncAudioSettings(time);
     }
 
     setPreviewVolume(value) { this.previewVolume = clamp(Number(value), 0, 1); if (this.previewVolume > 0) this.previewMuted = false; this.applyPreviewGain(); }
@@ -194,7 +250,7 @@ export class AdvancedMediaEngine {
         return Boolean(track.sourceName) && time >= start && time <= start + duration;
     }
     setTrackMediaTime(track, time) {
-        const localTime = clamp(time - (Number(track.start) || 0), 0, Math.max(0, Number(track.sourceDuration) || 0));
+        const localTime = clamp((Number(track.sourceOffset) || 0) + time - (Number(track.start) || 0), 0, Math.max(0, Number(track.sourceDuration) || 0));
         if (track.type === 'video') {
             try { track.media.currentTime = localTime; } catch (_) { /* no-op */ }
             try { track.soundMedia.currentTime = localTime; } catch (_) { /* no-op */ }
@@ -216,6 +272,7 @@ export class AdvancedMediaEngine {
                 else { await track.media.play(); }
             } catch (error) { console.warn(`Could not play ${track.sourceName}:`, error); }
         }
+        this.updateAudioFades(time);
         this.playStartTimeline = time;
         this.playStartClock = this.audioContext.currentTime;
         this.isPlaying = true;
@@ -248,7 +305,7 @@ export class AdvancedMediaEngine {
             const duration = this.getTimelineDuration();
             this.currentTime = this.getCurrentTime();
             if (duration > 0 && this.currentTime >= duration) { this.currentTime = duration; this.pause(); return; }
-            this.emitTime(); this.renderFrame(); this.frameRequest = requestAnimationFrame(render);
+            this.updateAudioFades(this.currentTime); this.emitTime(); this.renderFrame(); this.frameRequest = requestAnimationFrame(render);
         };
         this.frameRequest = requestAnimationFrame(render);
     }
@@ -317,5 +374,5 @@ export class AdvancedMediaEngine {
     }
     emitTime() { this.onTimeChange?.({ currentTime:this.currentTime, duration:this.getTimelineDuration() }); }
     emitDuration() { this.onDurationChange?.(this.getTimelineDuration()); }
-    destroy() { this.clearAll(); try { this.previewGain?.disconnect(); } catch (_) {} this.audioContext?.close?.(); }
+    destroy() { this.clearAll(); try { this.previewGain?.disconnect(); } catch (_) {} this.audioContext?.close?.(); this.analysisContext?.close?.(); }
 }

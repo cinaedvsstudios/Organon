@@ -1,5 +1,5 @@
-v0.14
-Baseline: v0.13
+v0.15
+Baseline: v0.14
 
 Files changed:
 - advanced.html
@@ -8,9 +8,14 @@ Files changed:
 - js/advanced-media-engine.js
 
 Changes:
-- Added opacity sliders to the Video, Sticker and Background inspectors; they change the live canvas and PNG snapshot.
-- Rebuilt the timeline coordinate system around a fixed pixel-per-second scale. Moving/resizing no longer changes left/width percentages during the drag.
-- Added 25%–400% timeline zoom plus reset.
-- Matched lane label colours to media type.
+- Added a full-height red now line and a separate gold END marker across all lanes and the ruler.
+- Ruler marks and empty lane space now seek the current timeline time when clicked.
+- Added lightweight local audio-energy analysis for imported audio/video. Timeline bars use a brighter fill at loud / likely beat points.
+- Added proper source offsets so a split clip continues at the correct point in its original media.
+- Right-click a clip to split it at the now line; Shift+right-click keeps the layer-action menu available.
+- Added Split All, multi-select mode and grouped clip movement to the zoom toolbar.
+- Added audio fade-in / fade-out controls in seconds and live preview gain envelopes.
+- Reworked the timeline view to support multiple clips on the same lane, including split segments.
+- Centred the resizable preview in the main workspace.
 
-Rollback: use v0.13 if this pass needs to be reverted.
+Rollback: use v0.14 if this pass needs to be reverted.
