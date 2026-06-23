@@ -1,3 +1,8 @@
+v0.19
+- Restored external OS/File Explorer drag-and-drop importing anywhere in Advanced Mode.
+- Uses FileList plus DataTransferItem fallback, and listeners on window/document/body/overlay for direct and iframe use.
+- Keeps the v0.18 pointer-driven Project Files → timeline drag unchanged.
+
 v0.18
 Baseline: v0.17
 

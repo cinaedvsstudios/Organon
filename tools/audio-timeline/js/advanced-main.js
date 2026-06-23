@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.18 — fixes Project Files dragging with a pointer-driven drag path.
+ * v0.19 — restores robust OS/File Explorer drop import without changing the Project Files → timeline pointer drag.
  * Basic Mode is untouched.
  */
 
@@ -622,7 +622,27 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         elements.previewResizeHandle.addEventListener('pointerup', stop); elements.previewResizeHandle.addEventListener('pointercancel', stop);
     }
 
-    function hasExternalFiles(event) { return Array.from(event.dataTransfer?.types || []).includes('Files'); }
+    function getDroppedFiles(event) {
+        const transfer = event?.dataTransfer;
+        if (!transfer) return [];
+
+        const directFiles = Array.from(transfer.files || []);
+        if (directFiles.length) return directFiles;
+
+        return Array.from(transfer.items || [])
+            .filter((item) => item.kind === 'file')
+            .map((item) => item.getAsFile?.())
+            .filter(Boolean);
+    }
+
+    function hasExternalFiles(event) {
+        const transfer = event?.dataTransfer;
+        if (!transfer) return false;
+        if (Array.from(transfer.files || []).length) return true;
+        if (Array.from(transfer.items || []).some((item) => item.kind === 'file')) return true;
+        return Array.from(transfer.types || []).some((type) => type === 'Files' || type === 'application/x-moz-file');
+    }
+
     async function browseDirectory() {
         if (!window.showDirectoryPicker) { elements.fileInput.click(); return; }
         try {
@@ -632,23 +652,108 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         } catch (error) { if (error.name !== 'AbortError') { console.warn(error); elements.previewState.textContent = 'Folder browse was unavailable. Use Import instead.'; } }
     }
     function installGlobalFileDrop() {
-        const show = () => elements.dropOverlay.classList.add('visible');
-        const hide = () => elements.dropOverlay.classList.remove('visible');
-        const addDroppedFiles = async (event) => {
-            if (event.__organonExternalFilesHandled || !event.dataTransfer?.files?.length) return;
-            event.__organonExternalFilesHandled = true; event.preventDefault(); event.stopPropagation(); state.dragDepth = 0; hide(); await addFiles(event.dataTransfer.files);
-        };
-        document.addEventListener('dragenter', (event) => { if (!hasExternalFiles(event)) return; event.preventDefault(); state.dragDepth += 1; show(); }, true);
-        document.addEventListener('dragover', (event) => { if (!hasExternalFiles(event)) return; event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; }, true);
-        document.addEventListener('dragleave', (event) => { if (!hasExternalFiles(event)) return; state.dragDepth = Math.max(0, state.dragDepth - 1); if (!state.dragDepth) hide(); }, true);
-        document.addEventListener('drop', addDroppedFiles, true);
+        const overlay = elements.dropOverlay;
         const zone = elements.projectDropZone;
-        zone.addEventListener('dragenter', (event) => { if (!hasExternalFiles(event)) return; event.preventDefault(); zone.classList.add('drop-target-active'); });
-        zone.addEventListener('dragover', (event) => { if (!hasExternalFiles(event)) return; event.preventDefault(); event.dataTransfer.dropEffect = 'copy'; zone.classList.add('drop-target-active'); });
-        zone.addEventListener('dragleave', () => zone.classList.remove('drop-target-active'));
-        zone.addEventListener('drop', async (event) => { zone.classList.remove('drop-target-active'); await addDroppedFiles(event); });
-        zone.addEventListener('click', (event) => { if (!event.target.closest('.file-row')) elements.fileInput.click(); });
-        zone.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); elements.fileInput.click(); } });
+        let externalDropActive = false;
+        let processingDrop = false;
+
+        const show = () => {
+            externalDropActive = true;
+            overlay?.classList.add('visible');
+        };
+        const hide = () => {
+            externalDropActive = false;
+            state.dragDepth = 0;
+            overlay?.classList.remove('visible');
+            zone?.classList.remove('drop-target-active');
+        };
+        const stopBrowserFileOpen = (event) => {
+            if (!hasExternalFiles(event)) return false;
+            event.preventDefault();
+            event.stopPropagation();
+            return true;
+        };
+        const addDroppedFiles = async (event) => {
+            const files = getDroppedFiles(event);
+            if (!files.length || processingDrop) return false;
+            processingDrop = true;
+            event.preventDefault();
+            event.stopPropagation();
+            hide();
+            try {
+                await addFiles(files);
+                showToast(`Added ${files.length} file${files.length === 1 ? '' : 's'} to Project Files`);
+            } finally {
+                // Drop events can arrive through both window and document in Chromium.
+                // Keep the lock only for this event turn, then permit the next OS drop.
+                window.setTimeout(() => { processingDrop = false; }, 0);
+            }
+            return true;
+        };
+
+        const onDragEnter = (event) => {
+            if (!stopBrowserFileOpen(event)) return;
+            state.dragDepth += 1;
+            show();
+        };
+        const onDragOver = (event) => {
+            if (!stopBrowserFileOpen(event)) return;
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+            show();
+        };
+        const onDragLeave = (event) => {
+            if (!hasExternalFiles(event)) return;
+            state.dragDepth = Math.max(0, state.dragDepth - 1);
+            // A relatedTarget outside the document is the reliable signal on Chromium.
+            if (!event.relatedTarget || state.dragDepth === 0) hide();
+        };
+        const onDrop = (event) => {
+            if (!hasExternalFiles(event) && !getDroppedFiles(event).length) return;
+            void addDroppedFiles(event);
+        };
+
+        // File Explorer drops need a canceling dragover listener on the actual browsing
+        // context. Register on window, document, body and the visible drop overlay so
+        // this works both opened directly and inside the Organon iframe.
+        for (const target of [window, document, document.body]) {
+            if (!target) continue;
+            target.addEventListener('dragenter', onDragEnter, true);
+            target.addEventListener('dragover', onDragOver, true);
+            target.addEventListener('dragleave', onDragLeave, true);
+            target.addEventListener('drop', onDrop, true);
+        }
+
+        if (overlay) {
+            overlay.addEventListener('dragenter', onDragEnter);
+            overlay.addEventListener('dragover', onDragOver);
+            overlay.addEventListener('dragleave', onDragLeave);
+            overlay.addEventListener('drop', onDrop);
+        }
+
+        if (zone) {
+            zone.addEventListener('dragenter', (event) => {
+                if (!stopBrowserFileOpen(event)) return;
+                zone.classList.add('drop-target-active');
+                show();
+            });
+            zone.addEventListener('dragover', (event) => {
+                if (!stopBrowserFileOpen(event)) return;
+                if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+                zone.classList.add('drop-target-active');
+                show();
+            });
+            zone.addEventListener('dragleave', (event) => {
+                if (!zone.contains(event.relatedTarget)) zone.classList.remove('drop-target-active');
+            });
+            zone.addEventListener('drop', onDrop);
+            zone.addEventListener('click', (event) => { if (!event.target.closest('.file-row')) elements.fileInput.click(); });
+            zone.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); elements.fileInput.click(); } });
+        }
+
+        // Stops the browser opening a dropped video/audio file if it lands during an
+        // iframe edge transition where a dragleave fires before the drop.
+        window.addEventListener('dragend', hide, true);
+        window.addEventListener('blur', () => { if (externalDropActive) hide(); });
     }
 
     function syncTimelineZoom() { const percent = timeline.getZoomPercent(); elements.timelineZoom.value = String(percent); elements.timelineZoomValue.textContent = `${percent}%`; }
@@ -751,5 +856,5 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     window.addEventListener('beforeunload', () => engine.destroy());
 
     installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
-    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.18 loaded — drag Project Files directly onto the timeline'));
+    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.19 loaded — drop new files anywhere, then drag Project Files onto the timeline'));
 })();
