@@ -1,26 +1,14 @@
-AUDIO TIMELINE ADVANCED MODE — CHANGE LOG
+AUDIO TIMELINE — ADVANCED MODE
 
-Current build: v0.12
-Last known good baseline before this pass: v0.10
+Version 0.13
 
-Files touched in v0.11:
-- advanced.html
-- js/advanced-main.js
-- js/advanced-timeline.js
-- js/advanced-media-engine.js
-- README.txt
+Changes
+- Added a visible v0.13 badge in the Advanced Audio Timeline header.
+- Added a startup toast confirming the loaded Advanced Mode version.
+- Removed the Project Files explanatory/drop copy requested in the last pass.
+- Rebuilt Project Files as one black Media Bin card containing the draggable file pills. The bin remains clickable and accepts operating-system file drops.
+- Added project-wide Canvas Dimensions controls in the left panel. Width and height apply to the actual compositor canvas and update the preview aspect ratio.
+- Coalesced live timeline drag compositor redraws to one animation frame, preventing repeated render calls per pointer event.
 
-Grouped changes:
-1. Project Files cards now use emoji identifiers and type colours: video blue, audio red, image/sticker/background gold.
-2. JPEG/JPG support added as Background media rather than Sticker media.
-3. Background clips remain in the lowest timeline group, beneath Audio, and composite behind Video and Sticker media.
-4. Background Inspector adds visibility and blend-mode controls.
-5. Basic Mode index.html was copied intact and is not altered.
-
-Rollback:
-- Use audio_timeline_advanced_mode_v0_10.zip to return to the earlier accepted state.
-
-V0.12
-- Fixed Project Files-to-timeline dragging.
-- Removed file-list redraw during dragstart, which cancelled native drag in Chromium.
-- Added persistent active project-file drag state so timeline drop targets can accept the drag before browser data is readable.
+Rollback baseline
+- v0.12 remains untouched in the prior package.

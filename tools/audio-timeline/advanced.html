@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Advanced Audio Timeline v0.12</title>
+<title>Organon - Advanced Audio Timeline v0.13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -28,6 +28,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .online-label { flex:0 0 auto; color:var(--water-spray); font:700 .68rem var(--font-headers); letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
 .title-divider { color:rgba(245,240,219,.55); font:700 .76rem var(--font-headers); }
 .advanced-title { overflow:hidden; color:var(--alabaster-paper); font:700 .82rem var(--font-headers); letter-spacing:.05em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+.version-badge { flex:0 0 auto; padding:3px 7px; border:1px solid rgba(137,107,73,.78); border-radius:999px; background:rgba(0,0,0,.38); color:var(--stone-ochre); font:.52rem var(--font-mono); letter-spacing:.04em; }
 .header-actions { display:flex; flex:0 0 auto; gap:7px; }
 .header-btn,.btn,.context-menu button { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:32px; padding:7px 10px; border:1px solid var(--chiseled-bronze); border-radius:999px; background:rgba(24,25,25,.9); color:var(--water-spray); font:700 .58rem var(--font-mono); letter-spacing:.05em; text-transform:uppercase; transition:.18s ease; }
 .header-btn:hover,.btn:hover,.context-menu button:hover { border-color:var(--water-spray); background:var(--water-blue); color:var(--white-accent); box-shadow:0 0 12px rgba(117,178,222,.28); }
@@ -44,10 +45,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .project-controls-title { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; color:var(--stone-ochre); font:700 .57rem var(--font-headers); letter-spacing:.05em; text-transform:uppercase; }
 .project-controls-title small { color:rgba(245,240,219,.52); font:.5rem var(--font-mono); }
 .file-toolbar { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
-.project-summary { margin:10px 0 8px; padding:9px 10px; border:1px dashed rgba(137,107,73,.72); border-radius:13px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.72); font-size:.67rem; line-height:1.42; }
-.drop-hint { padding:10px 9px; border:1px dashed rgba(75,132,191,.7); border-radius:12px; background:rgba(75,132,191,.06); color:rgba(117,178,222,.96); font:.59rem/1.4 var(--font-mono); text-align:center; cursor:pointer; transition:.15s ease; }
-.drop-hint:hover,.drop-hint:focus-visible,.drop-hint.drop-target-active { border-color:var(--water-spray); background:rgba(75,132,191,.2); color:var(--white-accent); box-shadow:0 0 16px rgba(117,178,222,.18); }
-.file-list { display:flex; flex-direction:column; gap:7px; min-height:260px; max-height:calc(100vh - 292px); margin-top:10px; overflow:auto; padding-right:2px; }
+.canvas-settings { margin-top:10px; padding:9px; border:1px solid rgba(137,107,73,.72); border-radius:14px; background:rgba(0,0,0,.22); }
+.canvas-settings-title { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; color:var(--stone-ochre); font:700 .57rem var(--font-headers); letter-spacing:.05em; text-transform:uppercase; }
+.canvas-settings-title small { color:rgba(245,240,219,.52); font:.5rem var(--font-mono); }
+.dimension-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto; gap:6px; align-items:end; }
+.dimension-field { display:grid; gap:4px; color:rgba(245,240,219,.62); font:.51rem var(--font-mono); text-transform:uppercase; }
+.dimension-input { width:100%; min-width:0; height:31px; padding:6px 8px; border:1px solid rgba(137,107,73,.8); border-radius:9px; outline:0; background:var(--bg-input); color:var(--alabaster-paper); font:.62rem var(--font-mono); }
+.dimension-input:focus { border-color:var(--water-spray); }
+.dimension-apply { width:auto; min-width:56px; min-height:31px; padding:6px 8px; }
+.file-list-card { min-height:260px; max-height:calc(100vh - 348px); margin-top:10px; overflow:hidden; border:1px solid rgba(137,107,73,.78); border-radius:14px; background:#070807; box-shadow:inset 0 0 18px rgba(0,0,0,.66); cursor:copy; transition:.15s ease; }
+.file-list-card:hover,.file-list-card:focus-visible,.file-list-card.drop-target-active { border-color:var(--water-spray); box-shadow:inset 0 0 18px rgba(0,0,0,.66),0 0 14px rgba(117,178,222,.18); }
+.file-list { display:flex; flex-direction:column; gap:7px; min-height:260px; max-height:calc(100vh - 348px); overflow:auto; padding:9px; }
 .file-list::-webkit-scrollbar,.inspector-scroll::-webkit-scrollbar,.timeline-scroll::-webkit-scrollbar { width:9px; height:9px; }
 .file-list::-webkit-scrollbar-thumb,.inspector-scroll::-webkit-scrollbar-thumb,.timeline-scroll::-webkit-scrollbar-thumb { background:var(--chiseled-bronze); border-radius:999px; }
 .file-list::-webkit-scrollbar-track,.inspector-scroll::-webkit-scrollbar-track,.timeline-scroll::-webkit-scrollbar-track { background:rgba(0,0,0,.24); border-radius:999px; }
@@ -95,7 +103,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .lane-name small { color:rgba(245,240,219,.47); font:.49rem var(--font-mono); }
 .lane-workspace { position:relative; min-height:40px; overflow:hidden; background:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 59px,rgba(117,178,222,.07) 60px); }
 .lane-workspace.drop-target-active { background-color:rgba(75,132,191,.18); box-shadow:inset 0 0 0 2px var(--water-spray); }
-.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none; }
+.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none;  will-change:left,width; }
 .timeline-clip:active { cursor:grabbing; }
 .timeline-clip.selected { box-shadow:0 0 0 2px rgba(117,178,222,.88),0 0 12px rgba(117,178,222,.35); }
 .timeline-clip.video { border-color:rgba(75,132,191,.95); background:linear-gradient(90deg,rgba(75,132,191,.43),rgba(75,132,191,.16)); }
@@ -132,6 +140,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .project-drop-overlay { position:fixed; inset:0; z-index:100; display:none; place-items:center; padding:24px; background:rgba(0,0,0,.65); backdrop-filter:blur(3px); pointer-events:none; }
 .project-drop-overlay.visible { display:grid; }
 .project-drop-overlay div { max-width:540px; padding:28px; border:2px dashed var(--water-spray); border-radius:22px; background:rgba(24,25,25,.93); color:var(--white-accent); font:.9rem/1.5 var(--font-headers); letter-spacing:.04em; text-align:center; text-transform:uppercase; box-shadow:0 0 28px rgba(117,178,222,.25); }
+.app-toast { position:fixed; top:18px; left:50%; z-index:120; max-width:calc(100vw - 32px); padding:9px 13px; border:1px solid var(--water-spray); border-radius:999px; background:rgba(17,19,17,.96); color:var(--white-accent); font:700 .62rem var(--font-mono); letter-spacing:.04em; text-align:center; box-shadow:0 0 22px rgba(117,178,222,.32); opacity:0; pointer-events:none; transform:translate(-50%,-14px); transition:opacity .22s ease,transform .22s ease; }
+.app-toast.visible { opacity:1; transform:translate(-50%,0); }
 .media-bin { display:none; }
 @media (max-width:1120px) { .advanced-grid { grid-template-columns:minmax(210px,270px) minmax(500px,1fr); } .right-column { grid-column:1/-1; } .inspector-scroll { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); max-height:none; } }
 @media (max-width:760px) { .advanced-app { width:100%; padding:0 8px 20px; } .top-panel { margin:0 0 10px; border-radius:0 0 20px 20px; } .online-label,.title-divider { display:none; } .advanced-grid { grid-template-columns:1fr; } .right-column { grid-column:auto; } .preview-stage { width:100%; min-width:0; } .inspector-scroll { display:flex; } .header-btn { min-height:30px; padding:6px 8px; } .header-btn span { display:none; } .file-toolbar { grid-template-columns:1fr 1fr 1fr; } }
@@ -144,7 +154,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <span class="status-dot" aria-hidden="true"></span>
             <span class="online-label">Organon Online</span>
             <span class="title-divider">—</span>
-            <span class="advanced-title">Advanced Audio Timeline</span>
+            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.13">v0.13</span>
         </div>
         <div class="header-actions">
             <button type="button" class="header-btn" id="btn-basic-mode" title="Return to Basic Mode">↩️ <span>Basic</span></button>
@@ -164,9 +174,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <button type="button" class="btn btn-danger" id="btn-clear">🗑 Clear</button>
                     </div>
                 </section>
-                <div class="project-summary" id="project-summary">Add files here first. They stay in Project Files until you drag them onto the timeline.</div>
-                <div class="drop-hint" id="project-drop-zone" tabindex="0">Drop video, audio, GIF, WebP, PNG or JPEG here — or click to import.</div>
-                <div class="file-list" id="file-list" aria-live="polite"></div>
+                <section class="canvas-settings" aria-label="Canvas dimensions">
+                    <div class="canvas-settings-title"><span>Canvas dimensions</span><small id="canvas-aspect-label">16:9</small></div>
+                    <div class="dimension-grid">
+                        <label class="dimension-field"><span>W</span><input class="dimension-input" id="canvas-width" type="number" min="64" max="7680" step="1" value="1280" inputmode="numeric" aria-label="Output width"></label>
+                        <label class="dimension-field"><span>H</span><input class="dimension-input" id="canvas-height" type="number" min="64" max="7680" step="1" value="720" inputmode="numeric" aria-label="Output height"></label>
+                        <button type="button" class="btn dimension-apply" id="btn-apply-canvas" title="Apply canvas dimensions">✓</button>
+                    </div>
+                </section>
+                <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
+                    <div class="file-list" id="file-list" aria-live="polite"></div>
+                </div>
             </div>
         </aside>
 
@@ -258,6 +276,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         <button type="button" class="danger" id="context-remove-layer">🗑 Remove layer</button>
     </div>
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
+    <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
 </div>
 <script type="module" src="./js/advanced-main.js"></script>
 </body>

@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED MEDIA ENGINE
- * v0.09 — independent media playback/compositor for Advanced Mode.
+ * v0.13 — independent media playback/compositor with project-selected output resolution.
  * Video sound is linked to its video clip. It only becomes a movable audio track when explicitly extracted.
  */
 
@@ -60,6 +60,8 @@ export class AdvancedMediaEngine {
         this.previewMuted = false;
         this.audioContext = null;
         this.previewGain = null;
+        this.outputWidth = Math.max(64, Math.round(Number(canvas.width) || 1280));
+        this.outputHeight = Math.max(64, Math.round(Number(canvas.height) || 720));
         this.stickerWorkCanvas = document.createElement('canvas');
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
     }
@@ -70,6 +72,17 @@ export class AdvancedMediaEngine {
         this.previewGain = this.audioContext.createGain();
         this.previewGain.connect(this.audioContext.destination);
         this.applyPreviewGain();
+    }
+
+    setCanvasResolution(width, height) {
+        this.outputWidth = clamp(Math.round(Number(width) || 1280), 64, 7680);
+        this.outputHeight = clamp(Math.round(Number(height) || 720), 64, 7680);
+        if (this.canvas.width !== this.outputWidth || this.canvas.height !== this.outputHeight) {
+            this.canvas.width = this.outputWidth;
+            this.canvas.height = this.outputHeight;
+        }
+        this.renderFrame();
+        return { width:this.outputWidth, height:this.outputHeight };
     }
 
     setTracks(tracks) {
@@ -251,11 +264,10 @@ export class AdvancedMediaEngine {
         return [...stickers, ...videos, ...backgrounds];
     }
     ensureCanvasSize() {
-        const visualSource = this.tracks.find((track) => track.type === 'video' && track.media?.videoWidth && track.media?.videoHeight)
-            || this.tracks.find((track) => track.type === 'background' && track.media?.naturalWidth && track.media?.naturalHeight);
-        const width = visualSource?.media?.videoWidth || visualSource?.media?.naturalWidth || 1280;
-        const height = visualSource?.media?.videoHeight || visualSource?.media?.naturalHeight || 720;
-        if (this.canvas.width !== width || this.canvas.height !== height) { this.canvas.width = width; this.canvas.height = height; }
+        if (this.canvas.width !== this.outputWidth || this.canvas.height !== this.outputHeight) {
+            this.canvas.width = this.outputWidth;
+            this.canvas.height = this.outputHeight;
+        }
     }
 
     renderFrame() {

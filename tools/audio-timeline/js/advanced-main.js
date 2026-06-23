@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.12 — fixed draggable Project File rows using persistent drag state and non-destructive dragstart handling.
+ * v0.13 — output dimensions, startup version toast, black Project Files bin, and throttled timeline-drag rendering.
  * Basic Mode remains completely separate and unchanged.
  */
 
@@ -13,15 +13,15 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     const AUDIO_PATTERN = /\.(mp3|wav|m4a|aac|ogg|opus|flac)$/i;
     const STICKER_PATTERN = /\.(gif|webp|png)$/i;
     const BACKGROUND_PATTERN = /\.(jpe?g)$/i;
-    const state = { files:[], tracks:[], selectedTrackId:null, selectedFileId:null, contextTrackId:null, dragDepth:0, isSeeking:false, serial:0 };
+    const state = { files:[], tracks:[], selectedTrackId:null, selectedFileId:null, contextTrackId:null, dragDepth:0, isSeeking:false, serial:0, liveRenderRequest:null, toastTimer:null };
 
     const elements = {
         app: document.getElementById('advanced-app'), canvas:document.getElementById('advanced-canvas'), mediaBin:document.getElementById('media-bin'),
         previewStage:document.getElementById('preview-stage'), previewResizeHandle:document.getElementById('preview-resize-handle'), previewEmpty:document.getElementById('preview-empty'), previewState:document.getElementById('preview-state'),
         previewSeek:document.getElementById('preview-seek'), previewVolume:document.getElementById('preview-volume'), timeReadout:document.getElementById('time-readout'),
         btnPlay:document.getElementById('btn-play'), btnPreviewMute:document.getElementById('btn-preview-mute'), btnStepBack:document.getElementById('btn-step-back'), btnStepForward:document.getElementById('btn-step-forward'), btnSnapshot:document.getElementById('btn-snapshot'),
-        fileInput:document.getElementById('file-input'), btnImport:document.getElementById('btn-import'), btnBrowse:document.getElementById('btn-browse'), btnHeaderBrowse:document.getElementById('btn-header-browse'), btnClear:document.getElementById('btn-clear'), btnBasicMode:document.getElementById('btn-basic-mode'), projectDropZone:document.getElementById('project-drop-zone'),
-        fileList:document.getElementById('file-list'), fileCount:document.getElementById('file-count'), projectSummary:document.getElementById('project-summary'), dropOverlay:document.getElementById('project-drop-overlay'),
+        fileInput:document.getElementById('file-input'), btnImport:document.getElementById('btn-import'), btnBrowse:document.getElementById('btn-browse'), btnHeaderBrowse:document.getElementById('btn-header-browse'), btnClear:document.getElementById('btn-clear'), btnBasicMode:document.getElementById('btn-basic-mode'),
+        fileList:document.getElementById('file-list'), fileCount:document.getElementById('file-count'), projectDropZone:document.getElementById('project-drop-zone'), dropOverlay:document.getElementById('project-drop-overlay'), canvasWidth:document.getElementById('canvas-width'), canvasHeight:document.getElementById('canvas-height'), canvasAspectLabel:document.getElementById('canvas-aspect-label'), btnApplyCanvas:document.getElementById('btn-apply-canvas'), toast:document.getElementById('app-toast'),
         inspectorKind:document.getElementById('inspector-kind'), inspectorProject:document.getElementById('inspector-project'), inspectorVideo:document.getElementById('inspector-video'), inspectorBackground:document.getElementById('inspector-background'), inspectorAudio:document.getElementById('inspector-audio'), inspectorSticker:document.getElementById('inspector-sticker'),
         selectedVideoName:document.getElementById('selected-video-name'), videoVisibleSwitch:document.getElementById('video-visible-switch'), videoAudioSwitch:document.getElementById('video-audio-switch'), videoAudioVolume:document.getElementById('video-audio-volume'), videoAudioVolumeValue:document.getElementById('video-audio-volume-value'), videoBlendMode:document.getElementById('video-blend-mode'), btnExtractAudio:document.getElementById('btn-extract-audio'),
         selectedBackgroundName:document.getElementById('selected-background-name'), backgroundVisibleSwitch:document.getElementById('background-visible-switch'), backgroundBlendMode:document.getElementById('background-blend-mode'),
@@ -102,12 +102,28 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         await loadTrackFromFile(track,entry,start);
     }
 
+    function greatestCommonDivisor(a,b) { let x=Math.abs(a), y=Math.abs(b); while(y) [x,y]=[y,x%y]; return x || 1; }
+    function updateCanvasAspectLabel(width,height) { const divisor=greatestCommonDivisor(width,height); elements.canvasAspectLabel.textContent=`${Math.round(width/divisor)}:${Math.round(height/divisor)}`; }
+    function applyCanvasResolution({ announce=false } = {}) {
+        const width=clamp(Math.round(Number(elements.canvasWidth.value)||1280),64,7680);
+        const height=clamp(Math.round(Number(elements.canvasHeight.value)||720),64,7680);
+        elements.canvasWidth.value=String(width); elements.canvasHeight.value=String(height);
+        engine.setCanvasResolution(width,height);
+        elements.previewStage.style.aspectRatio=`${width} / ${height}`;
+        updateCanvasAspectLabel(width,height);
+        if (announce) { elements.previewState.textContent=`Canvas set to ${width} × ${height}`; showToast(`Canvas set to ${width} × ${height}`); }
+    }
+    function showToast(message, duration=3200) {
+        if (!elements.toast) return;
+        clearTimeout(state.toastTimer);
+        elements.toast.textContent=message;
+        elements.toast.classList.add('visible');
+        state.toastTimer=setTimeout(()=>elements.toast.classList.remove('visible'),duration);
+    }
+
     function renderFiles() {
         elements.fileList.innerHTML='';
         elements.fileCount.textContent=`${state.files.length} media`;
-        elements.projectSummary.textContent = state.files.length
-            ? `${state.files.length} file${state.files.length===1?'':'s'} in Project Files. Drag a file row onto the timeline to make a movable clip.`
-            : 'Add files here first. They stay in Project Files until you drag them onto the timeline.';
         if (!state.files.length) {
             elements.fileList.innerHTML='<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
             return;
@@ -180,9 +196,19 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     function refreshAll() { engine.setTracks(state.tracks); timeline.setTracks(state.tracks); timeline.setSelectedTrack(state.selectedTrackId); syncInspector(); }
     function onTimelineTrackChanged(track, detail = {}) {
         if (detail.live) {
-            // Track objects are shared with the engine. Avoid rebuilding the timeline during a pointer drag.
-            engine.renderFrame();
+            // Pointer events can arrive much faster than display frames. The clip itself
+            // moves immediately in the timeline; compositor redraw is coalesced to one
+            // requestAnimationFrame so dragging does not repeatedly repaint the canvas.
+            if (state.liveRenderRequest !== null) return;
+            state.liveRenderRequest=requestAnimationFrame(()=> {
+                state.liveRenderRequest=null;
+                engine.renderFrame();
+            });
             return;
+        }
+        if (state.liveRenderRequest !== null) {
+            cancelAnimationFrame(state.liveRenderRequest);
+            state.liveRenderRequest=null;
         }
         engine.setTracks(state.tracks);
         timeline.setDuration(engine.getTimelineDuration());
@@ -283,7 +309,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
             zone.classList.remove('drop-target-active');
             await addDroppedFiles(event);
         });
-        zone.addEventListener('click',()=>elements.fileInput.click());
+        zone.addEventListener('click',(event)=> { if(event.target.closest('.file-row')) return; elements.fileInput.click(); });
         zone.addEventListener('keydown',(event)=>{
             if(event.key==='Enter'||event.key===' ') {
                 event.preventDefault();
@@ -292,6 +318,12 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         });
     }
 
+
+    elements.btnApplyCanvas.addEventListener('click',()=>applyCanvasResolution({ announce:true }));
+    for (const dimensionInput of [elements.canvasWidth,elements.canvasHeight]) {
+        dimensionInput.addEventListener('change',()=>applyCanvasResolution({ announce:true }));
+        dimensionInput.addEventListener('keydown',(event)=> { if(event.key==='Enter') { event.preventDefault(); applyCanvasResolution({ announce:true }); } });
+    }
 
     elements.btnImport.addEventListener('click',()=>elements.fileInput.click()); elements.btnBrowse.addEventListener('click',browseDirectory); elements.btnHeaderBrowse.addEventListener('click',browseDirectory); elements.btnBasicMode.addEventListener('click',()=>{ window.location.href='./index.html'; });
     elements.btnClear.addEventListener('click',()=> { if(!state.files.length&&!state.tracks.length) return; if(!confirm('Clear all Project Files and all timeline clips?')) return; engine.clearAll(); state.files=[]; state.tracks=[]; state.selectedTrackId=null; state.selectedFileId=null; renderFiles(); refreshAll(); });
@@ -327,5 +359,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
 
     installPreviewResize();
     installGlobalFileDrop();
+    applyCanvasResolution();
     renderFiles(); refreshAll(); syncPreviewMuteButton();
+    requestAnimationFrame(()=>showToast('Advanced Audio Timeline v0.13 loaded'));
 })();
