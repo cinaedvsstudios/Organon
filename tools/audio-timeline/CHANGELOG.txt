@@ -1,5 +1,5 @@
-v0.17
-Baseline: v0.16
+v0.18
+Baseline: v0.17
 
 Files changed:
 - advanced.html
@@ -9,10 +9,9 @@ Files changed:
 - README.txt
 
 Changes:
-- New videos always receive their own video lane instead of being placed over an existing video.
-- Moved video clips are automatically shifted to a free video lane if a same-lane overlap occurs.
-- Added magnetic start/end snapping between video clips during horizontal drag.
-- Replaced the ambiguous red now line with a sky-blue current-time marker.
-- Added media-colour clip-end boundaries; the composition END marker inherits the colour of the latest-ending clip.
+- Replaced Project Files native HTML drag with a pointer-driven drag system, so dragging file pills into the timeline no longer depends on browser custom MIME handling.
+- Added a visible floating drag ghost and live drop highlighting for timeline lanes/panel.
+- Restored simple click-to-select behaviour for Project File pills without triggering import.
+- Kept the v0.17 lane separation, snapping, end markers, current-time marker, and Basic Mode untouched.
 
-Rollback: use v0.16 if this pass needs to be reverted.
+Rollback: use v0.17 if this pass needs to be reverted.

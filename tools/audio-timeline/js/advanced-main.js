@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.17 — separate video lanes, magnetic video snapping, and colour-matched clip end markers.
+ * v0.18 — fixes Project Files dragging with a pointer-driven drag path.
  * Basic Mode is untouched.
  */
 
@@ -208,6 +208,14 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         });
     }
 
+    function makeProjectFileDragGhost(entry) {
+        const ghost = document.createElement('div');
+        ghost.className = `project-file-drag-ghost kind-${entry.kind}`;
+        ghost.innerHTML = `<span>${kindLabel(entry.kind)}</span><strong>${escapeHtml(entry.name)}</strong>`;
+        document.body.appendChild(ghost);
+        return ghost;
+    }
+
     function renderFiles() {
         elements.fileList.innerHTML = '';
         elements.fileCount.textContent = `${state.files.length} media`;
@@ -218,20 +226,80 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         for (const entry of state.files) {
             const row = document.createElement('div');
             row.className = `file-row kind-${entry.kind}${entry.id === state.selectedFileId ? ' active' : ''}`;
-            row.draggable = true; row.tabIndex = 0; row.dataset.fileId = entry.id; row.title = 'Drag this file to the timeline.';
+            // Native HTML drag was unreliable after the v0.17 lane update in some Chromium builds.
+            // The pointer drag below deliberately owns Project File placement instead.
+            row.draggable = false;
+            row.tabIndex = 0;
+            row.dataset.fileId = entry.id;
+            row.title = 'Drag this file to the timeline.';
             row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file.size)} · drag to timeline</span></span>`;
-            row.addEventListener('dragstart', (event) => {
-                state.selectedFileId = entry.id;
-                event.dataTransfer.effectAllowed = 'copy';
-                event.dataTransfer.setData('application/x-organon-project-file', entry.id);
-                event.dataTransfer.setData('text/x-organon-project-file', entry.id);
-                event.dataTransfer.setData('text/plain', entry.id);
-                timeline.beginProjectFileDrag(entry.id);
-                row.classList.add('is-dragging');
+
+            let pointerDrag = null;
+            let suppressClick = false;
+
+            const clearPointerDrag = () => {
+                if (!pointerDrag) return;
+                try { row.releasePointerCapture?.(pointerDrag.pointerId); } catch (_) { /* no-op */ }
+                pointerDrag.ghost?.remove();
+                row.classList.remove('is-dragging');
+                timeline.clearProjectFileDropHighlights?.();
+                timeline.endProjectFileDrag();
+                pointerDrag = null;
+            };
+
+            const movePointerDrag = (event) => {
+                if (!pointerDrag || pointerDrag.pointerId !== event.pointerId) return;
+                const distance = Math.hypot(event.clientX - pointerDrag.startX, event.clientY - pointerDrag.startY);
+                if (!pointerDrag.started && distance < 6) return;
+                if (!pointerDrag.started) {
+                    pointerDrag.started = true;
+                    suppressClick = true;
+                    state.selectedFileId = entry.id;
+                    timeline.beginProjectFileDrag(entry.id);
+                    pointerDrag.ghost = makeProjectFileDragGhost(entry);
+                    row.classList.add('is-dragging');
+                }
+                event.preventDefault();
+                pointerDrag.ghost.style.transform = `translate(${Math.round(event.clientX + 14)}px, ${Math.round(event.clientY + 14)}px)`;
+                const validTarget = timeline.updateProjectFilePointerDropHover?.(event.clientX, event.clientY);
+                pointerDrag.ghost.classList.toggle('can-drop', Boolean(validTarget));
+            };
+
+            const finishPointerDrag = (event) => {
+                if (!pointerDrag || pointerDrag.pointerId !== event.pointerId) return;
+                const wasDragging = pointerDrag.started;
+                if (wasDragging) {
+                    event.preventDefault();
+                    const placed = timeline.dropProjectFileAtPoint?.(entry.id, event.clientX, event.clientY);
+                    if (!placed) showToast('Drop Project Files onto the timeline area');
+                }
+                clearPointerDrag();
+                if (wasDragging) setTimeout(() => { suppressClick = false; }, 0);
+            };
+
+            row.addEventListener('pointerdown', (event) => {
+                if (event.button !== 0) return;
+                pointerDrag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, started: false, ghost: null };
+                row.setPointerCapture?.(event.pointerId);
             });
-            row.addEventListener('dragend', () => { timeline.endProjectFileDrag(); row.classList.remove('is-dragging'); });
-            row.addEventListener('click', () => { state.selectedFileId = entry.id; renderFiles(); });
-            row.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); state.selectedFileId = entry.id; renderFiles(); } });
+            row.addEventListener('pointermove', movePointerDrag);
+            row.addEventListener('pointerup', finishPointerDrag);
+            row.addEventListener('pointercancel', clearPointerDrag);
+            row.addEventListener('lostpointercapture', () => {
+                if (pointerDrag?.started) clearPointerDrag();
+            });
+            row.addEventListener('click', () => {
+                if (suppressClick) return;
+                state.selectedFileId = entry.id;
+                renderFiles();
+            });
+            row.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    state.selectedFileId = entry.id;
+                    renderFiles();
+                }
+            });
             elements.fileList.appendChild(row);
         }
     }
@@ -683,5 +751,5 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     window.addEventListener('beforeunload', () => engine.destroy());
 
     installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
-    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.17 loaded'));
+    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.18 loaded — drag Project Files directly onto the timeline'));
 })();

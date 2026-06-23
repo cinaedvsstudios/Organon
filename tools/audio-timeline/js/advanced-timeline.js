@@ -1,7 +1,7 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.17 — blue now line, per-clip colour end boundaries, non-overlapping video lanes,
- * and magnetic video edge snapping.
+ * v0.18 — preserves v0.17 timeline behaviour and adds a pointer-based Project Files drop path.
+ * This avoids browser drag-and-drop MIME inconsistencies for file rows.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
@@ -223,6 +223,59 @@ export class AdvancedTimeline {
         const rect = this.innerElement?.getBoundingClientRect();
         if (!rect) return 0;
         return clamp((event.clientX - rect.left - this.labelWidth) / this.pixelsPerSecond, 0, this.getViewDuration());
+    }
+
+    clearProjectFileDropHighlights() {
+        this.panelElement?.classList.remove('drop-target-active');
+        this.emptyElement?.classList.remove('drop-target-active');
+        this.lanesElement?.querySelectorAll('.lane-workspace.drop-target-active').forEach((workspace) => workspace.classList.remove('drop-target-active'));
+    }
+
+    getProjectFileDropTargetAtPoint(clientX, clientY) {
+        const target = document.elementFromPoint(clientX, clientY);
+        if (!target) return null;
+        const workspace = target.closest?.('.lane-workspace');
+        if (workspace) {
+            return {
+                laneId: workspace.dataset.laneId || null,
+                laneType: workspace.dataset.laneType || null,
+                start: this.getWorkspaceTime({ clientX }, workspace),
+                highlight: workspace
+            };
+        }
+        if (target.closest?.('.timeline-empty')) {
+            return { laneId: null, laneType: null, start: 0, highlight: this.emptyElement };
+        }
+        const panel = target.closest?.('.timeline-panel');
+        if (panel) {
+            const rect = this.innerElement?.getBoundingClientRect();
+            const start = rect
+                ? clamp((clientX - rect.left - this.labelWidth) / this.pixelsPerSecond, 0, this.getViewDuration())
+                : 0;
+            return { laneId: null, laneType: null, start, highlight: this.panelElement };
+        }
+        return null;
+    }
+
+    updateProjectFilePointerDropHover(clientX, clientY) {
+        this.clearProjectFileDropHighlights();
+        const target = this.getProjectFileDropTargetAtPoint(clientX, clientY);
+        target?.highlight?.classList.add('drop-target-active');
+        return Boolean(target);
+    }
+
+    dropProjectFileAtPoint(fileId, clientX, clientY) {
+        const target = this.getProjectFileDropTargetAtPoint(clientX, clientY);
+        this.clearProjectFileDropHighlights();
+        if (!fileId || !target) return false;
+        this.onDropProjectFile?.({
+            fileId,
+            laneId: target.laneId,
+            laneType: target.laneType,
+            start: target.start
+        });
+        this.endProjectFileDrag();
+        return true;
     }
 
     installEmptyDropTarget() {
