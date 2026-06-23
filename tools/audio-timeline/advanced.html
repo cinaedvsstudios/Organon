@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Advanced Audio Timeline v0.22</title>
+<title>Organon - Advanced Audio Timeline v0.23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -28,6 +28,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .online-label { flex:0 0 auto; color:var(--water-spray); font:700 .68rem var(--font-headers); letter-spacing:.07em; text-transform:uppercase; white-space:nowrap; }
 .title-divider { color:rgba(245,240,219,.55); font:700 .76rem var(--font-headers); }
 .advanced-title { overflow:hidden; color:var(--alabaster-paper); font:700 .82rem var(--font-headers); letter-spacing:.05em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+.build-marker{display:inline-flex;align-items:center;margin-left:6px;padding:2px 6px;border:1px solid rgba(117,178,222,.75);border-radius:999px;color:var(--water-spray);font:700 .48rem var(--font-mono);letter-spacing:.08em;}
 .version-badge { flex:0 0 auto; padding:3px 7px; border:1px solid rgba(137,107,73,.78); border-radius:999px; background:rgba(0,0,0,.38); color:var(--stone-ochre); font:.52rem var(--font-mono); letter-spacing:.04em; }
 .header-actions { display:flex; flex:0 0 auto; gap:7px; }
 .header-btn,.btn,.context-menu button { display:inline-flex; align-items:center; justify-content:center; gap:5px; min-height:32px; padding:7px 10px; border:1px solid var(--chiseled-bronze); border-radius:999px; background:rgba(24,25,25,.9); color:var(--water-spray); font:700 .58rem var(--font-mono); letter-spacing:.05em; text-transform:uppercase; transition:.18s ease; }
@@ -189,7 +190,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <span class="status-dot" aria-hidden="true"></span>
             <span class="online-label">Organon Online</span>
             <span class="title-divider">—</span>
-            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.20">v0.21</span>
+            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.23 fresh build">v0.23</span><span class="build-marker" title="Fresh module filenames: v0.23">FRESH</span>
         </div>
         <div class="header-actions">
             <button type="button" class="header-btn" id="btn-basic-mode" title="Return to Basic Mode">↩️ <span>Basic</span></button>
@@ -335,6 +336,6 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./js/advanced-main.js"></script>
+<script type="module" src="./js/advanced-main-v0.23.js"></script>
 </body>
 </html>

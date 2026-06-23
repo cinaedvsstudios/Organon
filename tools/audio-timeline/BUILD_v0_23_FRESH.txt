@@ -1,0 +1,4 @@
+BUILD: AUDIO TIMELINE ADVANCED MODE v0.23 FRESH
+UTC build marker: 2026-06-23
+This package intentionally uses NEW JS filenames to defeat cached old module files.
+Copy advanced.html and the complete js folder into tools/audio-timeline/.
