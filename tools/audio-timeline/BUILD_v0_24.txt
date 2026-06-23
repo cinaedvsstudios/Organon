@@ -1,0 +1,8 @@
+v0.24
+
+Changed from v0.23:
+- File Explorer drag/drop now hooks directly to the Organon #basin-frame iframe element as well as the Advanced document.
+- Preview resize uses window-level pointer movement so it keeps tracking after the pointer leaves the handle.
+- Added preview zoom (50–200%) in the preview top-right.
+- Added Duplicate and Delete controls plus Delete/Backspace keyboard deletion of selected clips.
+- All modules use v0.24 filenames to avoid browser module cache reuse.

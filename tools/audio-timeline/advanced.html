@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Advanced Audio Timeline v0.23</title>
+<title>Organon - Advanced Audio Timeline v0.24</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -81,10 +81,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .file-name { display:block; overflow:hidden; color:var(--alabaster-paper); font-size:.7rem; text-overflow:ellipsis; white-space:nowrap; }
 .file-meta { display:block; margin-top:2px; color:rgba(245,240,219,.58); font:.56rem var(--font-mono); }
 .preview-card { padding:12px; }
-.preview-stage { position:relative; display:grid; align-self:flex-start; width:min(640px,100%); min-width:300px; min-height:169px; aspect-ratio:16/9; overflow:hidden; border:1px solid rgba(224,163,96,.75); border-radius:14px; background:#000; box-shadow:inset 0 0 22px rgba(0,0,0,.78); }
+.preview-stage { --preview-zoom:1; position:relative; display:grid; width:640px; max-width:100%; min-width:300px; min-height:169px; margin:0 auto; aspect-ratio:16/9; overflow:hidden; border:1px solid rgba(224,163,96,.75); border-radius:14px; background:#000; box-shadow:inset 0 0 22px rgba(0,0,0,.78); }
 .preview-stage.is-resizing { user-select:none; }
-#advanced-canvas { display:block; width:100%; height:100%; background:#000; }
-.preview-status { position:absolute; top:8px; right:9px; z-index:4; max-width:calc(100% - 18px); padding:4px 7px; overflow:hidden; border:1px solid rgba(137,107,73,.72); border-radius:999px; background:rgba(0,0,0,.68); color:rgba(245,240,219,.7); font:.52rem var(--font-mono); letter-spacing:.04em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; pointer-events:none; }
+#advanced-canvas { display:block; width:100%; height:100%; background:#000; transform:scale(var(--preview-zoom)); transform-origin:center center; will-change:transform; }
+.preview-status { position:absolute; top:8px; left:9px; z-index:4; max-width:calc(100% - 188px); padding:4px 7px; overflow:hidden; border:1px solid rgba(137,107,73,.72); border-radius:999px; background:rgba(0,0,0,.68); color:rgba(245,240,219,.7); font:.52rem var(--font-mono); letter-spacing:.04em; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; pointer-events:none; }
+.preview-zoom-controls { position:absolute; top:7px; right:7px; z-index:6; display:flex; align-items:center; gap:5px; padding:3px 5px 3px 7px; border:1px solid rgba(137,107,73,.72); border-radius:999px; background:rgba(0,0,0,.72); color:var(--water-spray); font:.5rem var(--font-mono); letter-spacing:.04em; text-transform:uppercase; }
+.preview-zoom-controls input { width:78px; height:12px; margin:0; accent-color:var(--water-spray); cursor:pointer; }
+.preview-zoom-controls output { min-width:28px; color:var(--water-spray); text-align:right; }
+.preview-zoom-reset { width:20px; height:20px; padding:0; border:0; border-radius:50%; background:transparent; color:var(--stone-ochre); cursor:pointer; font:.75rem/1 var(--font-mono); }
+.preview-zoom-reset:hover { background:rgba(75,132,191,.28); color:var(--white-accent); }
 .preview-empty { position:absolute; inset:0; z-index:3; display:grid; place-items:center; padding:24px; color:rgba(245,240,219,.48); font:.76rem/1.5 var(--font-body); text-align:center; pointer-events:none; }
 .preview-resize-handle { position:absolute; z-index:5; right:0; bottom:0; display:grid; width:26px; height:26px; place-items:end; padding:3px; border:0; border-radius:9px 0 13px 0; background:rgba(0,0,0,.66); color:var(--water-spray); font:.73rem var(--font-mono); cursor:nwse-resize; touch-action:none; }
 .playback-bar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px 9px; align-items:center; margin-top:8px; padding:6px 8px; border:1px solid rgba(137,107,73,.7); border-radius:12px; background:#080908; }
@@ -107,6 +112,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .timeline-zoom-controls { flex:0 1 auto; margin-left:auto; }
 .timeline-tool,.timeline-zoom-reset { width:auto; min-width:31px; min-height:24px; padding:4px 7px; font-size:.57rem; white-space:nowrap; }
 .timeline-tool:disabled { cursor:not-allowed; opacity:.42; }
+.timeline-tool.btn-danger { background:var(--burgundy); color:var(--white-accent); }
 .timeline-zoom-label { color:rgba(245,240,219,.68); font:.54rem var(--font-mono); letter-spacing:.05em; text-transform:uppercase; }
 .timeline-zoom { width:clamp(100px,20vw,178px); height:14px; margin:0; accent-color:var(--water-spray); cursor:pointer; }
 .timeline-zoom-value { min-width:34px; color:var(--water-spray); font:.56rem var(--font-mono); text-align:right; }
@@ -190,7 +196,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <span class="status-dot" aria-hidden="true"></span>
             <span class="online-label">Organon Online</span>
             <span class="title-divider">—</span>
-            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.23 fresh build">v0.23</span><span class="build-marker" title="Fresh module filenames: v0.23">FRESH</span>
+            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.24 drop, resize and selection controls">v0.24</span><span class="build-marker" title="v0.24: iframe file drop, preview resize, zoom, delete and duplicate">FIX</span>
         </div>
         <div class="header-actions">
             <button type="button" class="header-btn" id="btn-basic-mode" title="Return to Basic Mode">↩️ <span>Basic</span></button>
@@ -228,6 +234,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <div class="preview-card">
                 <div class="preview-stage" id="preview-stage">
                     <canvas id="advanced-canvas" width="1280" height="720"></canvas>
+                    <div class="preview-zoom-controls" aria-label="Preview zoom">
+                        <span>Zoom</span>
+                        <input id="preview-zoom" type="range" min="50" max="200" value="100" step="5" aria-label="Preview zoom">
+                        <output id="preview-zoom-value">100%</output>
+                        <button type="button" class="preview-zoom-reset" id="btn-reset-preview-zoom" title="Reset preview zoom" aria-label="Reset preview zoom">↺</button>
+                    </div>
                     <div class="preview-status" id="preview-state">No timeline media</div>
                     <div class="preview-empty" id="preview-empty">Drag a Project File onto the timeline. Select a video clip to preview it here.</div>
                     <button type="button" class="preview-resize-handle" id="preview-resize-handle" title="Resize preview" aria-label="Resize preview">↘</button>
@@ -252,6 +264,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <button type="button" class="btn timeline-tool" id="btn-split-all" title="Split every clip crossing the now line">✂️ Split all</button>
                             <button type="button" class="btn timeline-tool" id="btn-selection-mode" title="Select multiple clips" aria-label="Toggle select mode" aria-pressed="false">☝️ Select</button>
                             <button type="button" class="btn timeline-tool" id="btn-group-selection" title="Select two or more clips first" aria-label="Group selected clips" disabled>👏 Group</button>
+                            <button type="button" class="btn timeline-tool" id="btn-duplicate-selection" title="Select one or more clips first" aria-label="Duplicate selected clips" disabled>⧉ Duplicate</button>
+                            <button type="button" class="btn timeline-tool btn-danger" id="btn-delete-selection" title="Select one or more clips first" aria-label="Delete selected clips" disabled>🗑 Delete</button>
                         </div>
                         <div class="timeline-zoom-controls" aria-label="Timeline zoom controls">
                             <span class="timeline-zoom-label">Zoom</span>
@@ -336,6 +350,6 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./js/advanced-main-v0.23.js"></script>
+<script type="module" src="./js/advanced-main-v0.24.js"></script>
 </body>
 </html>
