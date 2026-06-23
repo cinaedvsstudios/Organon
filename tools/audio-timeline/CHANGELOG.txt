@@ -1,3 +1,21 @@
+v0.21
+Baseline: v0.20
+
+Files changed:
+- advanced.html
+- js/advanced-timeline.js
+- js/advanced-media-engine.js
+- README.txt
+- CHANGELOG.txt
+
+Changes:
+- Restored the full-height blue now/playhead marker above all timeline lanes.
+- Added full-lane clip-end lines in the clip type colour.
+- Changed loudness-gradient drawing to select only the source section inside the resized clip.
+- Confirmed all media is always played at 1x; resizing only trims/crops the source end.
+
+Rollback: use v0.20 if this pass needs to be reverted.
+
 v0.20
 Baseline: v0.19
 

@@ -119,11 +119,11 @@ export class AdvancedMediaEngine {
                 if (!Number(track.clipDuration)) track.clipDuration = 3;
             } else if (track.type === 'video') {
                 const visual = document.createElement('video');
-                visual.preload = 'auto'; visual.playsInline = true; visual.muted = true; visual.src = track.objectUrl;
+                visual.preload = 'auto'; visual.playsInline = true; visual.muted = true; visual.playbackRate = 1; visual.src = track.objectUrl;
                 this.mediaBin.appendChild(visual);
                 await waitForEvent(visual, 'loadedmetadata');
                 const sound = document.createElement('audio');
-                sound.preload = 'auto'; sound.src = track.objectUrl;
+                sound.preload = 'auto'; sound.playbackRate = 1; sound.src = track.objectUrl;
                 this.mediaBin.appendChild(sound);
                 await waitForEvent(sound, 'loadedmetadata');
                 track.media = visual;
@@ -133,7 +133,7 @@ export class AdvancedMediaEngine {
                 await this.connectAudioTrack(track, sound);
             } else if (track.type === 'audio') {
                 const audio = document.createElement('audio');
-                audio.preload = 'auto'; audio.src = track.objectUrl;
+                audio.preload = 'auto'; audio.playbackRate = 1; audio.src = track.objectUrl;
                 this.mediaBin.appendChild(audio);
                 await waitForEvent(audio, 'loadedmetadata');
                 track.media = audio;

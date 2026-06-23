@@ -1,7 +1,7 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.18 — preserves v0.17 timeline behaviour and adds a pointer-based Project Files drop path.
- * This avoids browser drag-and-drop MIME inconsistencies for file rows.
+ * v0.21 — timeline rendering: fixed playhead layering and source-cropped loudness gradients.
+ * Resizing a clip trims its source range; it never changes media playback speed.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
@@ -351,13 +351,24 @@ export class AdvancedTimeline {
     getClipGradient(track) {
         const levels = Array.isArray(track.analysis?.levels) ? track.analysis.levels : [];
         if (!levels.length || (track.type !== 'audio' && track.type !== 'video')) return '';
+
+        // Analysis data belongs to the *original* source. A trimmed clip must only
+        // show the matching source slice, at the same density per second. It is not
+        // a speed change and it must not stretch the full-source beat pattern.
+        const sourceDuration = Math.max(.001, Number(track.sourceDuration) || this.getClipDuration(track));
+        const sourceOffset = clamp(Number(track.sourceOffset) || 0, 0, sourceDuration);
+        const usableDuration = Math.max(.001, Math.min(this.getClipDuration(track), sourceDuration - sourceOffset));
+        const firstIndex = clamp(Math.floor((sourceOffset / sourceDuration) * levels.length), 0, Math.max(0, levels.length - 1));
+        const lastIndexExclusive = clamp(Math.ceil(((sourceOffset + usableDuration) / sourceDuration) * levels.length), firstIndex + 1, levels.length);
+        const visibleLevels = levels.slice(firstIndex, lastIndexExclusive);
+
         const rgb = TYPE_RGB[track.type] || TYPE_RGB.video;
-        const count = Math.min(72, levels.length);
-        const stride = levels.length / count;
+        const count = Math.min(72, visibleLevels.length);
+        const stride = visibleLevels.length / count;
         const stops = [];
         for (let index = 0; index < count; index += 1) {
-            const sample = levels[Math.min(levels.length - 1, Math.floor(index * stride))] || 0;
-            const nextSample = levels[Math.min(levels.length - 1, Math.floor((index + 1) * stride))] || sample;
+            const sample = visibleLevels[Math.min(visibleLevels.length - 1, Math.floor(index * stride))] || 0;
+            const nextSample = visibleLevels[Math.min(visibleLevels.length - 1, Math.floor((index + 1) * stride))] || sample;
             const start = (index / count) * 100;
             const end = ((index + 1) / count) * 100;
             const alpha = (.17 + sample * .67).toFixed(3);
@@ -516,7 +527,7 @@ export class AdvancedTimeline {
             if (!drag || drag.pointerId !== event.pointerId || drag.track.id !== track.id) return;
             try { clip.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
             this.dragState = null;
-            clip.classList.remove('is-dragging', 'is-snapping');
+            clip.classList.remove('is-dragging', 'is-snapping', 'is-trimming');
             this.onTrackChange?.(track, { live: false });
             this.render();
         };
@@ -544,6 +555,7 @@ export class AdvancedTimeline {
                 originalStarts: new Map(movingTracks.map((item) => [item.id, Number(item.start) || 0]))
             };
             clip.classList.add('is-dragging');
+            clip.classList.toggle('is-trimming', mode === 'resize');
             clip.setPointerCapture?.(event.pointerId);
         });
 
@@ -564,6 +576,7 @@ export class AdvancedTimeline {
                 this.updateLiveClipPositions(drag.movingTracks);
             } else {
                 const sourceLimit = (track.type === 'sticker' || track.type === 'background') ? 300 : Math.max(.15, (Number(track.sourceDuration) || drag.originalDuration) - (Number(track.sourceOffset) || 0));
+                // Right-edge resize is a trim/crop: sourceOffset stays fixed and only the source end moves.
                 track.clipDuration = clamp(drag.originalDuration + deltaSeconds, .15, sourceLimit);
                 this.ensureViewportForTime((Number(track.start) || 0) + this.getClipDuration(track));
                 this.updateLayoutMetrics();
