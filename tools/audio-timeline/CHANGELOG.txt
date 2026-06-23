@@ -1,14 +1,16 @@
-AUDIO TIMELINE — ADVANCED MODE
+v0.14
+Baseline: v0.13
 
-Version 0.13
+Files changed:
+- advanced.html
+- js/advanced-main.js
+- js/advanced-timeline.js
+- js/advanced-media-engine.js
 
-Changes
-- Added a visible v0.13 badge in the Advanced Audio Timeline header.
-- Added a startup toast confirming the loaded Advanced Mode version.
-- Removed the Project Files explanatory/drop copy requested in the last pass.
-- Rebuilt Project Files as one black Media Bin card containing the draggable file pills. The bin remains clickable and accepts operating-system file drops.
-- Added project-wide Canvas Dimensions controls in the left panel. Width and height apply to the actual compositor canvas and update the preview aspect ratio.
-- Coalesced live timeline drag compositor redraws to one animation frame, preventing repeated render calls per pointer event.
+Changes:
+- Added opacity sliders to the Video, Sticker and Background inspectors; they change the live canvas and PNG snapshot.
+- Rebuilt the timeline coordinate system around a fixed pixel-per-second scale. Moving/resizing no longer changes left/width percentages during the drag.
+- Added 25%–400% timeline zoom plus reset.
+- Matched lane label colours to media type.
 
-Rollback baseline
-- v0.12 remains untouched in the prior package.
+Rollback: use v0.13 if this pass needs to be reverted.

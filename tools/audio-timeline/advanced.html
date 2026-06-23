@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Advanced Audio Timeline v0.13</title>
+<title>Organon - Advanced Audio Timeline v0.14</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -92,18 +92,26 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .preview-volume-wrap { display:flex; align-items:center; min-width:88px; margin-left:1px; }
 .preview-volume { width:min(106px,14vw); min-width:58px; height:14px; margin:0; cursor:pointer; accent-color:var(--water-spray); }
 .time-readout { flex:0 0 auto; margin-left:auto; color:var(--water-spray); font:.64rem var(--font-mono); white-space:nowrap; }
-.timeline-panel { margin-top:11px; border:1px solid rgba(137,107,73,.86); border-radius:14px; overflow:hidden; background:#121310; }
+.timeline-panel { position:relative; margin-top:11px; border:1px solid rgba(137,107,73,.86); border-radius:14px; overflow:hidden; background:#121310; }
+.timeline-zoom-bar { display:flex; align-items:center; justify-content:flex-end; gap:7px; min-height:29px; padding:5px 8px; border-bottom:1px solid rgba(137,107,73,.42); background:rgba(0,0,0,.3); }
+.timeline-zoom-label { color:rgba(245,240,219,.68); font:.54rem var(--font-mono); letter-spacing:.05em; text-transform:uppercase; }
+.timeline-zoom { width:clamp(100px,20vw,178px); height:14px; margin:0; accent-color:var(--water-spray); cursor:pointer; }
+.timeline-zoom-value { min-width:34px; color:var(--water-spray); font:.56rem var(--font-mono); text-align:right; }
+.timeline-zoom-reset { width:auto; min-width:31px; min-height:24px; padding:4px 7px; font-size:.66rem; }
 .timeline-empty { display:grid; min-height:106px; place-items:center; padding:20px; border-bottom:1px solid rgba(137,107,73,.36); color:rgba(245,240,219,.55); font:.68rem/1.45 var(--font-body); text-align:center; }
 .timeline-empty.drop-target-active { background:rgba(75,132,191,.16); color:var(--white-accent); box-shadow:inset 0 0 0 2px var(--water-spray); }
-.timeline-scroll { overflow-x:auto; }
-.timeline-inner { min-width:780px; }
-.timeline-lane { display:grid; grid-template-columns:150px minmax(630px,1fr); min-height:40px; border-bottom:1px solid rgba(137,107,73,.36); }
+.timeline-scroll { overflow-x:auto; overflow-y:hidden; scrollbar-gutter:stable; }
+.timeline-inner { --lane-label-width:150px; --timeline-workspace-width:630px; --timeline-total-width:780px; width:var(--timeline-total-width); min-width:var(--timeline-total-width); }
+.timeline-lane { display:grid; grid-template-columns:var(--lane-label-width) var(--timeline-workspace-width); min-height:40px; border-bottom:1px solid rgba(137,107,73,.36); }
 .timeline-lane.selected .lane-name { background:rgba(75,132,191,.2); }
 .lane-name { display:flex; flex-direction:column; justify-content:center; gap:1px; padding:4px 8px; border-right:1px solid rgba(137,107,73,.45); background:rgba(0,0,0,.25); color:var(--alabaster-paper); font-size:.61rem; line-height:1.15; }
-.lane-name small { color:rgba(245,240,219,.47); font:.49rem var(--font-mono); }
-.lane-workspace { position:relative; min-height:40px; overflow:hidden; background:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) 59px,rgba(117,178,222,.07) 60px); }
+.lane-name small { color:currentColor; font:.49rem var(--font-mono); opacity:.62; }
+.timeline-lane.video .lane-name { color:var(--water-spray); border-left:3px solid var(--water-blue); }
+.timeline-lane.audio .lane-name { color:#ffb0c2; border-left:3px solid var(--brand-red); }
+.timeline-lane.sticker .lane-name,.timeline-lane.background .lane-name { color:var(--stone-ochre); border-left:3px solid var(--stone-ochre); }
+.lane-workspace { position:relative; min-height:40px; overflow:hidden; background-color:#121310; background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) calc(var(--timeline-grid-step,10px) - 1px),rgba(117,178,222,.09) var(--timeline-grid-step,10px)); background-size:var(--timeline-grid-step,10px) 100%; }
 .lane-workspace.drop-target-active { background-color:rgba(75,132,191,.18); box-shadow:inset 0 0 0 2px var(--water-spray); }
-.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none;  will-change:left,width; }
+.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none; will-change:transform,width; }
 .timeline-clip:active { cursor:grabbing; }
 .timeline-clip.selected { box-shadow:0 0 0 2px rgba(117,178,222,.88),0 0 12px rgba(117,178,222,.35); }
 .timeline-clip.video { border-color:rgba(75,132,191,.95); background:linear-gradient(90deg,rgba(75,132,191,.43),rgba(75,132,191,.16)); }
@@ -111,10 +119,10 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .timeline-clip.sticker,.timeline-clip.background { border-color:rgba(224,163,96,.96); background:linear-gradient(90deg,rgba(224,163,96,.44),rgba(224,163,96,.16)); }
 .timeline-clip.placeholder { border-style:dashed; background:transparent; color:rgba(245,240,219,.42); cursor:default; }
 .clip-label { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; pointer-events:none; }
-.clip-resize-handle { position:absolute; top:0; right:0; bottom:0; width:10px; border-radius:0 7px 7px 0; cursor:ew-resize; touch-action:none; }
+.clip-resize-handle { position:absolute; top:0; right:0; bottom:0; width:13px; border-radius:0 7px 7px 0; cursor:ew-resize; touch-action:none; }
 .clip-resize-handle:hover { background:rgba(245,240,219,.22); }
 .playhead { position:absolute; top:0; bottom:0; left:0; width:2px; z-index:5; background:var(--brand-red); box-shadow:0 0 6px rgba(154,47,79,.9); pointer-events:none; }
-.timeline-ruler { display:grid; height:25px; border-top:1px solid rgba(137,107,73,.44); color:rgba(245,240,219,.52); font:.55rem var(--font-mono); background:repeating-linear-gradient(90deg,transparent 0,transparent 59px,rgba(117,178,222,.15) 60px); }
+.timeline-ruler { display:grid; height:25px; border-top:1px solid rgba(137,107,73,.44); color:rgba(245,240,219,.52); font:.55rem var(--font-mono); background:#0d0e0c; }
 .timeline-ruler span { display:flex; align-items:center; justify-content:flex-start; padding:5px 0 0 7px; border-left:1px solid rgba(137,107,73,.24); }
 .timeline-ruler .ruler-spacer { border-left:0; }
 .inspector-scroll { display:flex; flex-direction:column; gap:9px; max-height:calc(100vh - 190px); overflow:auto; padding-right:2px; }
@@ -154,7 +162,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <span class="status-dot" aria-hidden="true"></span>
             <span class="online-label">Organon Online</span>
             <span class="title-divider">—</span>
-            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.13">v0.13</span>
+            <span class="advanced-title">Advanced Audio Timeline</span><span class="version-badge" aria-label="Version 0.14">v0.14</span>
         </div>
         <div class="header-actions">
             <button type="button" class="header-btn" id="btn-basic-mode" title="Return to Basic Mode">↩️ <span>Basic</span></button>
@@ -209,6 +217,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     </div>
                 </div>
                 <section class="timeline-panel" id="timeline-panel">
+                    <div class="timeline-zoom-bar" aria-label="Timeline zoom controls">
+                        <span class="timeline-zoom-label">Zoom</span>
+                        <input class="timeline-zoom" id="timeline-zoom" type="range" min="25" max="400" value="100" step="5" aria-label="Timeline zoom">
+                        <span class="timeline-zoom-value" id="timeline-zoom-value">100%</span>
+                        <button type="button" class="btn timeline-zoom-reset" id="btn-reset-timeline-zoom" title="Reset timeline zoom" aria-label="Reset timeline zoom">↺</button>
+                    </div>
                     <div class="timeline-empty" id="timeline-empty">Drag a Project File here to create a movable clip. Videos keep their own sound by default; use <strong>Extract Audio</strong> from a video’s right-click menu only when you need a separate audio clip.</div>
                     <div class="timeline-scroll">
                         <div class="timeline-inner">
@@ -234,6 +248,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <div class="control-row"><span>Video audio</span><button type="button" class="switch on" id="video-audio-switch" aria-label="Toggle video embedded audio"></button></div>
                     <div class="control-row"><span>Audio volume</span><span class="value-pill" id="video-audio-volume-value">100%</span></div>
                     <input type="range" class="range-control" id="video-audio-volume" min="0" max="100" value="100" aria-label="Video embedded audio volume">
+                    <div class="control-row"><span>Opacity</span><span class="value-pill" id="video-opacity-value">100%</span></div>
+                    <input type="range" class="range-control" id="video-opacity" min="0" max="100" value="100" aria-label="Video opacity">
                     <label class="control-row"><span>Blend mode</span><select class="compact-select" id="video-blend-mode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option></select></label>
                     <p class="blend-help">Blend changes the visual layer only. Preview app volume above never changes exported mix settings.</p>
                     <button type="button" class="btn btn-primary" id="btn-extract-audio">🎵 Extract Audio to Timeline</button>
@@ -242,6 +258,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <h3 id="selected-background-name">Background</h3>
                     <p class="control-copy">JPEG backgrounds always live in the bottom timeline group, beneath audio. Drag or trim the gold pill to decide when the background is visible.</p>
                     <div class="control-row"><span>Visible</span><button type="button" class="switch on" id="background-visible-switch" aria-label="Toggle background visibility"></button></div>
+                    <div class="control-row"><span>Opacity</span><span class="value-pill" id="background-opacity-value">100%</span></div>
+                    <input type="range" class="range-control" id="background-opacity" min="0" max="100" value="100" aria-label="Background opacity">
                     <label class="control-row"><span>Blend mode</span><select class="compact-select" id="background-blend-mode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option></select></label>
                 </section>
                 <section class="control-card" id="inspector-audio" hidden>
@@ -255,6 +273,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <h3 id="selected-sticker-name">Sticker</h3>
                     <p class="control-copy">Sticker lanes are always above video lanes. Sticker 1 is the highest visible layer.</p>
                     <div class="control-row"><span>Visible</span><button type="button" class="switch on" id="sticker-visible-switch" aria-label="Toggle sticker visibility"></button></div>
+                    <div class="control-row"><span>Opacity</span><span class="value-pill" id="sticker-opacity-value">100%</span></div>
+                    <input type="range" class="range-control" id="sticker-opacity" min="0" max="100" value="100" aria-label="Sticker opacity">
                     <label class="control-row"><span>Blend mode</span><select class="compact-select" id="sticker-blend-mode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option></select></label>
                     <label class="control-row"><span>Transparency</span><select class="compact-select" id="sticker-transparency-mode"><option value="native">Native alpha</option><option value="chroma">Chroma key</option><option value="light">Cut light background</option><option value="dark">Cut dark background</option></select></label>
                     <div class="control-row"><span>Key colour</span><span class="inline-inputs"><input type="color" class="color-input" id="sticker-key-colour" value="#00ff00"><input type="text" class="compact-input" id="sticker-key-colour-text" value="#00ff00"></span></div>

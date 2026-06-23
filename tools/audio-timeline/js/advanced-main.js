@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.13 — output dimensions, startup version toast, black Project Files bin, and throttled timeline-drag rendering.
+ * v0.14 — visual opacity, pixel-accurate timeline zoom and stable trim resizing.
  * Basic Mode remains completely separate and unchanged.
  */
 
@@ -21,12 +21,12 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         previewSeek:document.getElementById('preview-seek'), previewVolume:document.getElementById('preview-volume'), timeReadout:document.getElementById('time-readout'),
         btnPlay:document.getElementById('btn-play'), btnPreviewMute:document.getElementById('btn-preview-mute'), btnStepBack:document.getElementById('btn-step-back'), btnStepForward:document.getElementById('btn-step-forward'), btnSnapshot:document.getElementById('btn-snapshot'),
         fileInput:document.getElementById('file-input'), btnImport:document.getElementById('btn-import'), btnBrowse:document.getElementById('btn-browse'), btnHeaderBrowse:document.getElementById('btn-header-browse'), btnClear:document.getElementById('btn-clear'), btnBasicMode:document.getElementById('btn-basic-mode'),
-        fileList:document.getElementById('file-list'), fileCount:document.getElementById('file-count'), projectDropZone:document.getElementById('project-drop-zone'), dropOverlay:document.getElementById('project-drop-overlay'), canvasWidth:document.getElementById('canvas-width'), canvasHeight:document.getElementById('canvas-height'), canvasAspectLabel:document.getElementById('canvas-aspect-label'), btnApplyCanvas:document.getElementById('btn-apply-canvas'), toast:document.getElementById('app-toast'),
+        fileList:document.getElementById('file-list'), fileCount:document.getElementById('file-count'), projectDropZone:document.getElementById('project-drop-zone'), dropOverlay:document.getElementById('project-drop-overlay'), canvasWidth:document.getElementById('canvas-width'), canvasHeight:document.getElementById('canvas-height'), canvasAspectLabel:document.getElementById('canvas-aspect-label'), btnApplyCanvas:document.getElementById('btn-apply-canvas'), toast:document.getElementById('app-toast'), timelineZoom:document.getElementById('timeline-zoom'), timelineZoomValue:document.getElementById('timeline-zoom-value'), btnResetTimelineZoom:document.getElementById('btn-reset-timeline-zoom'),
         inspectorKind:document.getElementById('inspector-kind'), inspectorProject:document.getElementById('inspector-project'), inspectorVideo:document.getElementById('inspector-video'), inspectorBackground:document.getElementById('inspector-background'), inspectorAudio:document.getElementById('inspector-audio'), inspectorSticker:document.getElementById('inspector-sticker'),
-        selectedVideoName:document.getElementById('selected-video-name'), videoVisibleSwitch:document.getElementById('video-visible-switch'), videoAudioSwitch:document.getElementById('video-audio-switch'), videoAudioVolume:document.getElementById('video-audio-volume'), videoAudioVolumeValue:document.getElementById('video-audio-volume-value'), videoBlendMode:document.getElementById('video-blend-mode'), btnExtractAudio:document.getElementById('btn-extract-audio'),
-        selectedBackgroundName:document.getElementById('selected-background-name'), backgroundVisibleSwitch:document.getElementById('background-visible-switch'), backgroundBlendMode:document.getElementById('background-blend-mode'),
+        selectedVideoName:document.getElementById('selected-video-name'), videoVisibleSwitch:document.getElementById('video-visible-switch'), videoAudioSwitch:document.getElementById('video-audio-switch'), videoAudioVolume:document.getElementById('video-audio-volume'), videoAudioVolumeValue:document.getElementById('video-audio-volume-value'), videoOpacity:document.getElementById('video-opacity'), videoOpacityValue:document.getElementById('video-opacity-value'), videoBlendMode:document.getElementById('video-blend-mode'), btnExtractAudio:document.getElementById('btn-extract-audio'),
+        selectedBackgroundName:document.getElementById('selected-background-name'), backgroundVisibleSwitch:document.getElementById('background-visible-switch'), backgroundOpacity:document.getElementById('background-opacity'), backgroundOpacityValue:document.getElementById('background-opacity-value'), backgroundBlendMode:document.getElementById('background-blend-mode'),
         selectedAudioName:document.getElementById('selected-audio-name'), audioAuditionSwitch:document.getElementById('audio-audition-switch'), audioTrackVolume:document.getElementById('audio-track-volume'), audioTrackVolumeValue:document.getElementById('audio-track-volume-value'),
-        selectedStickerName:document.getElementById('selected-sticker-name'), stickerVisibleSwitch:document.getElementById('sticker-visible-switch'), stickerBlendMode:document.getElementById('sticker-blend-mode'), stickerTransparencyMode:document.getElementById('sticker-transparency-mode'), stickerKeyColour:document.getElementById('sticker-key-colour'), stickerKeyColourText:document.getElementById('sticker-key-colour-text'), stickerKeyTolerance:document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue:document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather:document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue:document.getElementById('sticker-edge-feather-value'),
+        selectedStickerName:document.getElementById('selected-sticker-name'), stickerVisibleSwitch:document.getElementById('sticker-visible-switch'), stickerOpacity:document.getElementById('sticker-opacity'), stickerOpacityValue:document.getElementById('sticker-opacity-value'), stickerBlendMode:document.getElementById('sticker-blend-mode'), stickerTransparencyMode:document.getElementById('sticker-transparency-mode'), stickerKeyColour:document.getElementById('sticker-key-colour'), stickerKeyColourText:document.getElementById('sticker-key-colour-text'), stickerKeyTolerance:document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue:document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather:document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue:document.getElementById('sticker-edge-feather-value'),
         contextMenu:document.getElementById('timeline-context-menu'), contextMenuTitle:document.getElementById('context-menu-title'), contextAddLayer:document.getElementById('context-add-layer'), contextExtractAudio:document.getElementById('context-extract-audio'), contextRemoveLayer:document.getElementById('context-remove-layer')
     };
 
@@ -63,7 +63,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         const order=nextOrder(type);
         return {
             id:`${type}-${Date.now()}-${++state.serial}`, type, order, label:trackLabel(type,order), start:0, sourceDuration:0, clipDuration:0,
-            sourceName:'', file:null, visible:true, blendMode:'source-over', audio:{ volume:1, muted:false }, transparency:{ mode:'native', keyColour:'#00ff00', tolerance:30, feather:8 }, ...extras
+            sourceName:'', file:null, visible:true, opacity:1, blendMode:'source-over', audio:{ volume:1, muted:false }, transparency:{ mode:'native', keyColour:'#00ff00', tolerance:30, feather:8 }, ...extras
         };
     }
 
@@ -187,11 +187,12 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         elements.inspectorProject.hidden=Boolean(track); elements.inspectorVideo.hidden=track?.type!=='video'; elements.inspectorBackground.hidden=track?.type!=='background'; elements.inspectorAudio.hidden=track?.type!=='audio'; elements.inspectorSticker.hidden=track?.type!=='sticker';
         if(!track) return;
         if(track.type==='video') {
-            elements.selectedVideoName.textContent=track.sourceName||track.label; setSwitch(elements.videoVisibleSwitch,track.visible!==false); setSwitch(elements.videoAudioSwitch,!track.audio.muted); elements.videoAudioVolume.value=String(Math.round(track.audio.volume*100)); elements.videoAudioVolumeValue.textContent=`${Math.round(track.audio.volume*100)}%`; elements.videoBlendMode.value=track.blendMode||'source-over'; elements.btnExtractAudio.disabled=!track.file;
+            const opacity=Math.round((track.opacity ?? 1)*100);
+            elements.selectedVideoName.textContent=track.sourceName||track.label; setSwitch(elements.videoVisibleSwitch,track.visible!==false); setSwitch(elements.videoAudioSwitch,!track.audio.muted); elements.videoAudioVolume.value=String(Math.round(track.audio.volume*100)); elements.videoAudioVolumeValue.textContent=`${Math.round(track.audio.volume*100)}%`; elements.videoOpacity.value=String(opacity); elements.videoOpacityValue.textContent=`${opacity}%`; elements.videoBlendMode.value=track.blendMode||'source-over'; elements.btnExtractAudio.disabled=!track.file;
         }
-        if(track.type==='background') { elements.selectedBackgroundName.textContent=track.sourceName||track.label; setSwitch(elements.backgroundVisibleSwitch,track.visible!==false); elements.backgroundBlendMode.value=track.blendMode||'source-over'; }
+        if(track.type==='background') { const opacity=Math.round((track.opacity ?? 1)*100); elements.selectedBackgroundName.textContent=track.sourceName||track.label; setSwitch(elements.backgroundVisibleSwitch,track.visible!==false); elements.backgroundOpacity.value=String(opacity); elements.backgroundOpacityValue.textContent=`${opacity}%`; elements.backgroundBlendMode.value=track.blendMode||'source-over'; }
         if(track.type==='audio') { elements.selectedAudioName.textContent=track.sourceName||track.label; setSwitch(elements.audioAuditionSwitch,!track.audio.muted); elements.audioTrackVolume.value=String(Math.round(track.audio.volume*100)); elements.audioTrackVolumeValue.textContent=`${Math.round(track.audio.volume*100)}%`; }
-        if(track.type==='sticker') { const settings=track.transparency; elements.selectedStickerName.textContent=track.sourceName||track.label; setSwitch(elements.stickerVisibleSwitch,track.visible!==false); elements.stickerBlendMode.value=track.blendMode||'source-over'; elements.stickerTransparencyMode.value=settings.mode||'native'; elements.stickerKeyColour.value=settings.keyColour||'#00ff00'; elements.stickerKeyColourText.value=settings.keyColour||'#00ff00'; elements.stickerKeyTolerance.value=String(settings.tolerance??30); elements.stickerKeyToleranceValue.textContent=`${settings.tolerance??30}%`; elements.stickerEdgeFeather.value=String(settings.feather??8); elements.stickerEdgeFeatherValue.textContent=`${settings.feather??8}%`; }
+        if(track.type==='sticker') { const settings=track.transparency; const opacity=Math.round((track.opacity ?? 1)*100); elements.selectedStickerName.textContent=track.sourceName||track.label; setSwitch(elements.stickerVisibleSwitch,track.visible!==false); elements.stickerOpacity.value=String(opacity); elements.stickerOpacityValue.textContent=`${opacity}%`; elements.stickerBlendMode.value=track.blendMode||'source-over'; elements.stickerTransparencyMode.value=settings.mode||'native'; elements.stickerKeyColour.value=settings.keyColour||'#00ff00'; elements.stickerKeyColourText.value=settings.keyColour||'#00ff00'; elements.stickerKeyTolerance.value=String(settings.tolerance??30); elements.stickerKeyToleranceValue.textContent=`${settings.tolerance??30}%`; elements.stickerEdgeFeather.value=String(settings.feather??8); elements.stickerEdgeFeatherValue.textContent=`${settings.feather??8}%`; }
     }
     function refreshAll() { engine.setTracks(state.tracks); timeline.setTracks(state.tracks); timeline.setSelectedTrack(state.selectedTrackId); syncInspector(); }
     function onTimelineTrackChanged(track, detail = {}) {
@@ -325,6 +326,14 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         dimensionInput.addEventListener('keydown',(event)=> { if(event.key==='Enter') { event.preventDefault(); applyCanvasResolution({ announce:true }); } });
     }
 
+    function syncTimelineZoom() {
+        const percent=timeline.getZoomPercent();
+        elements.timelineZoom.value=String(percent);
+        elements.timelineZoomValue.textContent=`${percent}%`;
+    }
+    elements.timelineZoom.addEventListener('input',()=> { timeline.setZoom(Number(elements.timelineZoom.value)/100); syncTimelineZoom(); });
+    elements.btnResetTimelineZoom.addEventListener('click',()=> { timeline.resetZoom(); syncTimelineZoom(); showToast('Timeline zoom reset'); });
+
     elements.btnImport.addEventListener('click',()=>elements.fileInput.click()); elements.btnBrowse.addEventListener('click',browseDirectory); elements.btnHeaderBrowse.addEventListener('click',browseDirectory); elements.btnBasicMode.addEventListener('click',()=>{ window.location.href='./index.html'; });
     elements.btnClear.addEventListener('click',()=> { if(!state.files.length&&!state.tracks.length) return; if(!confirm('Clear all Project Files and all timeline clips?')) return; engine.clearAll(); state.files=[]; state.tracks=[]; state.selectedTrackId=null; state.selectedFileId=null; renderFiles(); refreshAll(); });
     elements.fileInput.addEventListener('change',async(event)=> { await addFiles(event.target.files); event.target.value=''; });
@@ -342,12 +351,15 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     elements.videoVisibleSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.visible=!track.visible; refreshAll(); });
     elements.videoAudioSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.audio.muted=!track.audio.muted; refreshAll(); });
     elements.videoAudioVolume.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.audio.volume=Number(elements.videoAudioVolume.value)/100; elements.videoAudioVolumeValue.textContent=`${elements.videoAudioVolume.value}%`; engine.setTracks(state.tracks); });
+    elements.videoOpacity.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.opacity=Number(elements.videoOpacity.value)/100; elements.videoOpacityValue.textContent=`${elements.videoOpacity.value}%`; engine.renderFrame(); });
     elements.videoBlendMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='video')return; track.blendMode=elements.videoBlendMode.value; engine.renderFrame(); }); elements.btnExtractAudio.addEventListener('click',extractAudioFromSelectedVideo);
     elements.backgroundVisibleSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='background')return; track.visible=!track.visible; refreshAll(); });
+    elements.backgroundOpacity.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='background')return; track.opacity=Number(elements.backgroundOpacity.value)/100; elements.backgroundOpacityValue.textContent=`${elements.backgroundOpacity.value}%`; engine.renderFrame(); });
     elements.backgroundBlendMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='background')return; track.blendMode=elements.backgroundBlendMode.value; engine.renderFrame(); });
         elements.audioAuditionSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='audio')return; track.audio.muted=!track.audio.muted; refreshAll(); });
     elements.audioTrackVolume.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='audio')return; track.audio.volume=Number(elements.audioTrackVolume.value)/100; elements.audioTrackVolumeValue.textContent=`${elements.audioTrackVolume.value}%`; engine.setTracks(state.tracks); });
     elements.stickerVisibleSwitch.addEventListener('click',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.visible=!track.visible; refreshAll(); });
+    elements.stickerOpacity.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.opacity=Number(elements.stickerOpacity.value)/100; elements.stickerOpacityValue.textContent=`${elements.stickerOpacity.value}%`; engine.renderFrame(); });
     elements.stickerBlendMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.blendMode=elements.stickerBlendMode.value; engine.renderFrame(); });
     elements.stickerTransparencyMode.addEventListener('change',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.transparency.mode=elements.stickerTransparencyMode.value; engine.renderFrame(); });
     elements.stickerKeyColour.addEventListener('input',()=> { const track=getTrack(); if(!track||track.type!=='sticker')return; track.transparency.keyColour=elements.stickerKeyColour.value; elements.stickerKeyColourText.value=track.transparency.keyColour; engine.renderFrame(); });
@@ -360,6 +372,6 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     installPreviewResize();
     installGlobalFileDrop();
     applyCanvasResolution();
-    renderFiles(); refreshAll(); syncPreviewMuteButton();
-    requestAnimationFrame(()=>showToast('Advanced Audio Timeline v0.13 loaded'));
+    renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom();
+    requestAnimationFrame(()=>showToast('Advanced Audio Timeline v0.14 loaded'));
 })();

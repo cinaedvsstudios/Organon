@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED MEDIA ENGINE
- * v0.13 — independent media playback/compositor with project-selected output resolution.
+ * v0.14 — independent media playback/compositor with project-selected output resolution and per-layer opacity.
  * Video sound is linked to its video clip. It only becomes a movable audio track when explicitly extracted.
  */
 
@@ -280,6 +280,7 @@ export class AdvancedMediaEngine {
                 if (!track.media || !this.isTrackActive(track) || track.visible === false) continue;
                 this.context.save();
                 this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
+                this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1);
                 if (track.type === 'background') drawCovered(this.context, track.media, width, height);
                 if (track.type === 'video' && track.media.readyState >= 2) drawContained(this.context, track.media, width, height);
                 if (track.type === 'sticker') this.drawSticker(track, width, height);
