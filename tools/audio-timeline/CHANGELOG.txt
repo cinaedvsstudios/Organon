@@ -1,3 +1,20 @@
+v0.20
+Baseline: v0.19
+
+Files changed:
+- advanced.html
+- js/advanced-main.js
+- README.txt
+- CHANGELOG.txt
+
+Changes:
+- Replaced duplicate/nested OS File Explorer drop handlers with one guarded import flow.
+- The overlay is now visual only and cannot become the drop target.
+- Added same-origin parent Hub/iframe listeners so an OS drop arriving on the iframe edge is imported by Advanced Mode.
+- Local document, direct-open and Hub iframe usage all cancel the browser default file-open action.
+
+Rollback: use v0.19 if this pass needs to be reverted.
+
 v0.19
 - Restored external OS/File Explorer drag-and-drop importing anywhere in Advanced Mode.
 - Uses FileList plus DataTransferItem fallback, and listeners on window/document/body/overlay for direct and iframe use.

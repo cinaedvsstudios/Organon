@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.19 — restores robust OS/File Explorer drop import without changing the Project Files → timeline pointer drag.
+ * v0.20 — repairs OS/File Explorer drop import across the Advanced Mode iframe boundary.
  * Basic Mode is untouched.
  */
 
@@ -652,106 +652,131 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         } catch (error) { if (error.name !== 'AbortError') { console.warn(error); elements.previewState.textContent = 'Folder browse was unavailable. Use Import instead.'; } }
     }
     function installGlobalFileDrop() {
+        /*
+         * External File Explorer / Finder drop import.
+         *
+         * The previous versions registered the same drop handler on several nested
+         * targets and turned the full-page overlay into the event target while a drag
+         * was in progress. In the Organon iframe this can race with the Hub iframe,
+         * leaving the child page with the visual overlay but no delivered FileList.
+         *
+         * This version has one import path. It listens inside Advanced Mode and, when
+         * same-origin access is available, also on the parent iframe element/window.
+         * The overlay is visual only; it never intercepts the OS drop event.
+         */
         const overlay = elements.dropOverlay;
         const zone = elements.projectDropZone;
         let externalDropActive = false;
         let processingDrop = false;
+        let leaveTimer = null;
 
         const show = () => {
             externalDropActive = true;
+            window.clearTimeout(leaveTimer);
             overlay?.classList.add('visible');
         };
         const hide = () => {
             externalDropActive = false;
             state.dragDepth = 0;
+            window.clearTimeout(leaveTimer);
             overlay?.classList.remove('visible');
             zone?.classList.remove('drop-target-active');
         };
-        const stopBrowserFileOpen = (event) => {
+        const scheduleHide = () => {
+            window.clearTimeout(leaveTimer);
+            leaveTimer = window.setTimeout(hide, 80);
+        };
+        const claimExternalFileEvent = (event) => {
             if (!hasExternalFiles(event)) return false;
             event.preventDefault();
-            event.stopPropagation();
+            // Do not stop propagation here. The iframe element, parent Hub and child
+            // document may all see one OS drag; each needs the default browser open
+            // behaviour cancelled, while the lock below ensures only one import.
             return true;
         };
-        const addDroppedFiles = async (event) => {
+        const importDroppedFiles = async (event) => {
             const files = getDroppedFiles(event);
             if (!files.length || processingDrop) return false;
             processingDrop = true;
             event.preventDefault();
-            event.stopPropagation();
             hide();
             try {
                 await addFiles(files);
                 showToast(`Added ${files.length} file${files.length === 1 ? '' : 's'} to Project Files`);
+            } catch (error) {
+                console.error('Dropped file import failed:', error);
+                elements.previewState.textContent = 'Could not import those dropped files. Use + Import as a fallback.';
             } finally {
-                // Drop events can arrive through both window and document in Chromium.
-                // Keep the lock only for this event turn, then permit the next OS drop.
-                window.setTimeout(() => { processingDrop = false; }, 0);
+                window.setTimeout(() => { processingDrop = false; }, 150);
             }
             return true;
         };
-
         const onDragEnter = (event) => {
-            if (!stopBrowserFileOpen(event)) return;
+            if (!claimExternalFileEvent(event)) return;
             state.dragDepth += 1;
             show();
         };
         const onDragOver = (event) => {
-            if (!stopBrowserFileOpen(event)) return;
+            if (!claimExternalFileEvent(event)) return;
             if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
             show();
         };
         const onDragLeave = (event) => {
             if (!hasExternalFiles(event)) return;
             state.dragDepth = Math.max(0, state.dragDepth - 1);
-            // A relatedTarget outside the document is the reliable signal on Chromium.
-            if (!event.relatedTarget || state.dragDepth === 0) hide();
+            if (!event.relatedTarget || state.dragDepth === 0) scheduleHide();
         };
         const onDrop = (event) => {
+            // Always cancel a drop with files, even where FileList is temporarily
+            // empty until the browser reaches the iframe target.
             if (!hasExternalFiles(event) && !getDroppedFiles(event).length) return;
-            void addDroppedFiles(event);
+            event.preventDefault();
+            void importDroppedFiles(event);
         };
 
-        // File Explorer drops need a canceling dragover listener on the actual browsing
-        // context. Register on window, document, body and the visible drop overlay so
-        // this works both opened directly and inside the Organon iframe.
-        for (const target of [window, document, document.body]) {
-            if (!target) continue;
+        const localTargets = [window, document, document.documentElement, document.body, zone].filter(Boolean);
+        for (const target of localTargets) {
             target.addEventListener('dragenter', onDragEnter, true);
             target.addEventListener('dragover', onDragOver, true);
             target.addEventListener('dragleave', onDragLeave, true);
             target.addEventListener('drop', onDrop, true);
         }
 
-        if (overlay) {
-            overlay.addEventListener('dragenter', onDragEnter);
-            overlay.addEventListener('dragover', onDragOver);
-            overlay.addEventListener('dragleave', onDragLeave);
-            overlay.addEventListener('drop', onDrop);
+        // Advanced Mode normally runs in the Organon Hub iframe. Same-origin parent
+        // listeners catch an Explorer drop that lands on the iframe border before the
+        // browser forwards it into this document. Direct-open use simply skips this.
+        try {
+            const parentWindow = window.top;
+            const frameElement = window.frameElement;
+            if (parentWindow && parentWindow !== window) {
+                for (const target of [parentWindow, parentWindow.document, frameElement].filter(Boolean)) {
+                    target.addEventListener('dragenter', onDragEnter, true);
+                    target.addEventListener('dragover', onDragOver, true);
+                    target.addEventListener('dragleave', onDragLeave, true);
+                    target.addEventListener('drop', onDrop, true);
+                }
+            }
+        } catch (_) {
+            // Cross-origin embedding is not expected for Organon, but local/direct
+            // Advanced Mode remains fully supported by the local listeners above.
         }
 
         if (zone) {
-            zone.addEventListener('dragenter', (event) => {
-                if (!stopBrowserFileOpen(event)) return;
-                zone.classList.add('drop-target-active');
-                show();
-            });
-            zone.addEventListener('dragover', (event) => {
-                if (!stopBrowserFileOpen(event)) return;
-                if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
-                zone.classList.add('drop-target-active');
-                show();
-            });
+            zone.addEventListener('dragenter', () => zone.classList.add('drop-target-active'));
             zone.addEventListener('dragleave', (event) => {
                 if (!zone.contains(event.relatedTarget)) zone.classList.remove('drop-target-active');
             });
-            zone.addEventListener('drop', onDrop);
-            zone.addEventListener('click', (event) => { if (!event.target.closest('.file-row')) elements.fileInput.click(); });
-            zone.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); elements.fileInput.click(); } });
+            zone.addEventListener('click', (event) => {
+                if (!event.target.closest('.file-row')) elements.fileInput.click();
+            });
+            zone.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    elements.fileInput.click();
+                }
+            });
         }
 
-        // Stops the browser opening a dropped video/audio file if it lands during an
-        // iframe edge transition where a dragleave fires before the drop.
         window.addEventListener('dragend', hide, true);
         window.addEventListener('blur', () => { if (externalDropActive) hide(); });
     }
@@ -856,5 +881,5 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     window.addEventListener('beforeunload', () => engine.destroy());
 
     installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
-    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.19 loaded — drop new files anywhere, then drag Project Files onto the timeline'));
+    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.20 loaded — drop new files anywhere, then drag Project Files onto the timeline'));
 })();
