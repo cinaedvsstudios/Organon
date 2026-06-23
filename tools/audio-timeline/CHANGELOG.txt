@@ -1,21 +1,18 @@
-v0.15
-Baseline: v0.14
+v0.17
+Baseline: v0.16
 
 Files changed:
 - advanced.html
 - js/advanced-main.js
 - js/advanced-timeline.js
-- js/advanced-media-engine.js
+- CHANGELOG.txt
+- README.txt
 
 Changes:
-- Added a full-height red now line and a separate gold END marker across all lanes and the ruler.
-- Ruler marks and empty lane space now seek the current timeline time when clicked.
-- Added lightweight local audio-energy analysis for imported audio/video. Timeline bars use a brighter fill at loud / likely beat points.
-- Added proper source offsets so a split clip continues at the correct point in its original media.
-- Right-click a clip to split it at the now line; Shift+right-click keeps the layer-action menu available.
-- Added Split All, multi-select mode and grouped clip movement to the zoom toolbar.
-- Added audio fade-in / fade-out controls in seconds and live preview gain envelopes.
-- Reworked the timeline view to support multiple clips on the same lane, including split segments.
-- Centred the resizable preview in the main workspace.
+- New videos always receive their own video lane instead of being placed over an existing video.
+- Moved video clips are automatically shifted to a free video lane if a same-lane overlap occurs.
+- Added magnetic start/end snapping between video clips during horizontal drag.
+- Replaced the ambiguous red now line with a sky-blue current-time marker.
+- Added media-colour clip-end boundaries; the composition END marker inherits the colour of the latest-ending clip.
 
-Rollback: use v0.14 if this pass needs to be reverted.
+Rollback: use v0.16 if this pass needs to be reverted.

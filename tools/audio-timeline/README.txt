@@ -1,17 +1,11 @@
-Organon Advanced Audio Timeline v0.15
+Organon Advanced Audio Timeline v0.17
 
 This package contains Advanced Mode plus the untouched Basic Mode index.html.
 
-New in v0.15:
-- One vertical red now line runs through every timeline lane and the bottom ruler.
-- A gold END line marks the exact end of the overall timeline, and the preview readout shows current time / composition end time.
-- Clicking anywhere on a ruler time mark or an empty part of a lane moves the now line.
-- Video and audio clips are analysed after import. Their bars brighten at higher-energy / likely beat sections, so likely transition points are visible at a glance.
-- Right-click a clip to split it at the now line. Hold Shift while right-clicking to open the existing layer menu.
-- Split All cuts every clip crossing the now line.
-- Select mode (☝️) supports multi-clip selection. Group (👏) links the selected clips so dragging one moves them together.
-- Audio Inspector now has fade-in and fade-out sliders in seconds.
-- Split clips remain in the same timeline lane instead of creating a new row.
-- The preview is centred inside the middle workspace.
+New in v0.17:
+- Every new video is placed in its own video lane by default, so videos cannot overlap on the same visual layer.
+- Moving a video into an overlap automatically moves it to a clear video lane.
+- Video clips magnetically snap to the start or end of other video clips while they are dragged.
+- The current-time line is sky blue. Each clip has a full-lane-height end boundary in its own media colour, and the composition END marker adopts the colour of the latest-ending clip.
 
 Use the entire extracted folder, including js/. Open it through the Organon hub as before.

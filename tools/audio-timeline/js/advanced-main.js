@@ -1,7 +1,7 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.15 — composition end marker, beat-aware clip fills, clip splitting,
- * multi-select/group movement and audio fade controls. Basic Mode is untouched.
+ * v0.17 — separate video lanes, magnetic video snapping, and colour-matched clip end markers.
+ * Basic Mode is untouched.
  */
 
 import { AdvancedTimeline } from './advanced-timeline.js';
@@ -16,7 +16,8 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     const state = {
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
-        toastTimer: null, selectionMode: false
+        toastTimer: null, selectionMode: false,
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false
     };
 
     const elements = {
@@ -27,7 +28,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnBasicMode: document.getElementById('btn-basic-mode'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'),
-        toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'),
+        toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
@@ -53,6 +54,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         onContextMenu: openContextMenu,
         onDropProjectFile: placeProjectFile,
         onTrackChange: onTimelineTrackChanged,
+        onTrackInteractionStart: (track, detail) => recordHistory(`${detail.mode === 'resize' ? 'Trim' : 'Move'} ${track.sourceName || track.laneLabel}`),
         onSeek: (time) => engine.seek(time),
         onSplitAtPlayhead: splitTrackAtNow
     });
@@ -124,6 +126,88 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         state.toastTimer = setTimeout(() => elements.toast.classList.remove('visible'), duration);
     }
 
+    function cloneTrackForHistory(track) {
+        const { audio = {}, transparency = {}, analysis = null, ...rest } = track;
+        return {
+            ...rest,
+            audio: { ...audio },
+            transparency: { ...transparency },
+            analysis: analysis ? { ...analysis, levels: Array.isArray(analysis.levels) ? [...analysis.levels] : analysis.levels } : null
+        };
+    }
+
+    function captureHistorySnapshot() {
+        return {
+            files: state.files.map((entry) => ({ ...entry })),
+            tracks: state.tracks.map(cloneTrackForHistory),
+            selectedTrackIds: [...state.selectedTrackIds],
+            selectedTrackId: state.selectedTrackId,
+            selectedFileId: state.selectedFileId,
+            currentTime: engine.currentTime
+        };
+    }
+
+    function updateHistoryButtons() {
+        const canUndo = state.history.undo.length > 0;
+        const canRedo = state.history.redo.length > 0;
+        elements.btnUndo.disabled = !canUndo;
+        elements.btnRedo.disabled = !canRedo;
+        elements.btnUndo.title = canUndo ? `Undo ${state.history.undo[state.history.undo.length - 1].label}` : 'Nothing to undo';
+        elements.btnRedo.title = canRedo ? `Redo ${state.history.redo[state.history.redo.length - 1].label}` : 'Nothing to redo';
+    }
+
+    function recordHistory(label = 'timeline edit') {
+        if (state.historyRestoring) return;
+        state.history.undo.push({ label, snapshot: captureHistorySnapshot() });
+        if (state.history.undo.length > state.history.limit) state.history.undo.shift();
+        state.history.redo = [];
+        updateHistoryButtons();
+    }
+
+    async function restoreHistorySnapshot(snapshot) {
+        if (!snapshot) return;
+        state.historyRestoring = true;
+        try {
+            engine.pause();
+            state.files = snapshot.files.map((entry) => ({ ...entry }));
+            state.tracks = snapshot.tracks.map(cloneTrackForHistory);
+            state.selectedTrackIds = new Set(snapshot.selectedTrackIds || []);
+            state.selectedTrackId = snapshot.selectedTrackId || [...state.selectedTrackIds][0] || null;
+            state.selectedFileId = snapshot.selectedFileId || null;
+            renderFiles();
+            refreshAll();
+            await engine.seek(Number(snapshot.currentTime) || 0);
+        } finally {
+            state.historyRestoring = false;
+        }
+    }
+
+    async function undoTimelineEdit() {
+        const entry = state.history.undo.pop();
+        if (!entry) return;
+        state.history.redo.push({ label: entry.label, snapshot: captureHistorySnapshot() });
+        await restoreHistorySnapshot(entry.snapshot);
+        updateHistoryButtons();
+        showToast(`Undid ${entry.label}`);
+    }
+
+    async function redoTimelineEdit() {
+        const entry = state.history.redo.pop();
+        if (!entry) return;
+        state.history.undo.push({ label: entry.label, snapshot: captureHistorySnapshot() });
+        await restoreHistorySnapshot(entry.snapshot);
+        updateHistoryButtons();
+        showToast(`Redid ${entry.label}`);
+    }
+
+    function registerInspectorHistory(control, label) {
+        if (!control) return;
+        control.addEventListener('pointerdown', () => recordHistory(label));
+        control.addEventListener('keydown', (event) => {
+            if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown', 'Enter', ' '].includes(event.key)) recordHistory(label);
+        });
+    }
+
     function renderFiles() {
         elements.fileList.innerHTML = '';
         elements.fileCount.textContent = `${state.files.length} media`;
@@ -161,6 +245,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
             if (!duplicate) usable.push({ id: `file-${Date.now()}-${++state.serial}`, file, name: file.name, kind });
         }
         if (!usable.length) { elements.previewState.textContent = 'No supported media files found.'; return; }
+        recordHistory(`Import ${usable.length} project file${usable.length === 1 ? '' : 's'}`);
         state.files.push(...usable);
         renderFiles();
         elements.previewState.textContent = `Added ${usable.length} file${usable.length === 1 ? '' : 's'} to Project Files`;
@@ -281,15 +366,61 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         }
     }
 
+    function clipsOverlap(first, second, epsilon = 0.001) {
+        const firstStart = Number(first.start) || 0;
+        const firstEnd = firstStart + Math.max(0, Number(first.clipDuration) || 0);
+        const secondStart = Number(second.start) || 0;
+        const secondEnd = secondStart + Math.max(0, Number(second.clipDuration) || 0);
+        return firstStart < secondEnd - epsilon && firstEnd > secondStart + epsilon;
+    }
+
+    function getVideoLaneModels() {
+        const lanes = new Map();
+        for (const track of state.tracks.filter((item) => item.type === 'video')) {
+            const laneId = track.laneId || track.id;
+            if (!lanes.has(laneId)) lanes.set(laneId, { laneId, laneLabel: track.laneLabel, order: Number(track.order) || 0 });
+        }
+        return [...lanes.values()].sort((a, b) => a.order - b.order);
+    }
+
+    function setTrackToNewVideoLane(track) {
+        const order = nextLaneOrder('video');
+        track.laneId = `video-lane-${Date.now()}-${++state.serial}`;
+        track.laneLabel = laneName('video', order);
+        track.label = laneName('video', order);
+        track.order = order;
+        return track;
+    }
+
+    function resolveVideoOverlap(track) {
+        if (!track || track.type !== 'video' || !track.sourceName) return false;
+        const conflicts = state.tracks.filter((candidate) => candidate.type === 'video' && candidate.id !== track.id && candidate.laneId === track.laneId && candidate.sourceName && clipsOverlap(track, candidate));
+        if (!conflicts.length) return false;
+        const freeLane = getVideoLaneModels().find((lane) => !state.tracks.some((candidate) => candidate.type === 'video' && candidate.id !== track.id && candidate.laneId === lane.laneId && candidate.sourceName && clipsOverlap(track, candidate)));
+        if (freeLane) {
+            track.laneId = freeLane.laneId;
+            track.laneLabel = freeLane.laneLabel;
+            track.label = freeLane.laneLabel;
+            track.order = freeLane.order;
+        } else {
+            setTrackToNewVideoLane(track);
+        }
+        return true;
+    }
+
     async function placeProjectFile({ fileId, laneId, laneType, start }) {
         const entry = getFile(fileId);
         if (!entry) return;
+        recordHistory(`Place ${entry.name}`);
         const laneTracks = laneId ? state.tracks.filter((track) => track.laneId === laneId) : [];
-        let track = laneTracks.find((candidate) => !candidate.sourceName && candidate.type === entry.kind) || null;
-        if (!track && laneTracks.length && laneType === entry.kind) {
-            const lane = laneTracks[0];
-            track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
-            state.tracks.push(track);
+        let track = null;
+        if (entry.kind !== 'video') {
+            track = laneTracks.find((candidate) => !candidate.sourceName && candidate.type === entry.kind) || null;
+            if (!track && laneTracks.length && laneType === entry.kind) {
+                const lane = laneTracks[0];
+                track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
+                state.tracks.push(track);
+            }
         }
         if (!track) { track = createTrack(entry.kind); state.tracks.push(track); }
         await loadTrackFromFile(track, entry, start);
@@ -302,14 +433,18 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
             return;
         }
         if (state.liveRenderRequest !== null) { cancelAnimationFrame(state.liveRenderRequest); state.liveRenderRequest = null; }
+        const relocated = resolveVideoOverlap(track);
         engine.setTracks(state.tracks);
+        timeline.setTracks(state.tracks);
         timeline.setDuration(engine.getTimelineDuration());
         syncInspector();
+        if (relocated) showToast(`${track.sourceName || 'Video'} moved to ${track.laneLabel} so video clips do not overlap`);
     }
 
     async function extractAudioFromSelectedVideo() {
         const video = getTrack();
         if (!video || video.type !== 'video' || !video.file) return;
+        recordHistory(`Extract audio from ${video.sourceName || video.laneLabel}`);
         const audio = createTrack('audio', { extractedFrom: video.id, start: video.start, sourceOffset: video.sourceOffset, clipDuration: video.clipDuration, label: `Extracted Audio ${nextLaneOrder('audio')}` });
         state.tracks.push(audio); video.audio.muted = true;
         await loadTrackFromFile(audio, { file: video.file, name: video.sourceName }, video.start);
@@ -323,9 +458,10 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         return Boolean(track?.file && time > start + .04 && time < end - .04);
     }
 
-    async function splitTrackAtNow(trackId) {
+    async function splitTrackAtNow(trackId, { record = true } = {}) {
         const track = getTrack(trackId);
         if (!canSplitTrack(track)) { showToast('Move the now line inside a clip before splitting'); return false; }
+        if (record) recordHistory(`Split ${track.sourceName || track.laneLabel}`);
         const cutTime = engine.currentTime;
         const leftDuration = cutTime - track.start;
         const rightDuration = track.clipDuration - leftDuration;
@@ -358,13 +494,15 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     async function splitAllAtNow() {
         const targetIds = state.tracks.filter((track) => canSplitTrack(track)).map((track) => track.id);
         if (!targetIds.length) { showToast('No clips cross the now line'); return; }
-        for (const id of targetIds) await splitTrackAtNow(id);
+        recordHistory(`Split all at ${formatTime(engine.currentTime)}`);
+        for (const id of targetIds) await splitTrackAtNow(id, { record: false });
         showToast(`Split ${targetIds.length} clip${targetIds.length === 1 ? '' : 's'} at ${formatTime(engine.currentTime)}`);
     }
 
     function groupSelectedTracks() {
         const selected = state.tracks.filter((track) => state.selectedTrackIds.has(track.id));
         if (selected.length < 2) { showToast('Select two or more clips before grouping'); return; }
+        recordHistory(`Group ${selected.length} clips`);
         const groupId = `group-${Date.now()}-${++state.serial}`;
         selected.forEach((track) => { track.groupId = groupId; });
         timeline.setTracks(state.tracks);
@@ -389,11 +527,12 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     function hideContextMenu() { elements.contextMenu.hidden = true; state.contextTrackId = null; }
     function addLayerFromContext() {
         const track = getTrack(state.contextTrackId); if (!track) return;
+        recordHistory(`Add ${track.type} layer`);
         const newTrack = createTrack(track.type); state.tracks.push(newTrack); refreshAll(); selectTrack(newTrack.id); hideContextMenu();
     }
     function removeLayerFromContext() {
         const track = getTrack(state.contextTrackId); if (!track) return;
-        engine.detachTrack(track, false);
+        recordHistory(`Remove ${track.sourceName || track.laneLabel}`);
         state.tracks = state.tracks.filter((item) => item.id !== track.id);
         state.selectedTrackIds.delete(track.id); state.selectedTrackId = [...state.selectedTrackIds][0] || null;
         refreshAll(); hideContextMenu();
@@ -457,6 +596,8 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
         input.addEventListener('change', () => applyCanvasResolution({ announce: true }));
         input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); applyCanvasResolution({ announce: true }); } });
     }
+    elements.btnUndo.addEventListener('click', () => { undoTimelineEdit(); });
+    elements.btnRedo.addEventListener('click', () => { redoTimelineEdit(); });
     elements.timelineZoom.addEventListener('input', () => { timeline.setZoom(Number(elements.timelineZoom.value) / 100); syncTimelineZoom(); });
     elements.btnResetTimelineZoom.addEventListener('click', () => { timeline.resetZoom(); syncTimelineZoom(); showToast('Timeline zoom reset'); });
     elements.btnSplitAll.addEventListener('click', splitAllAtNow);
@@ -469,7 +610,8 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     elements.btnClear.addEventListener('click', () => {
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
-        engine.clearAll(); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll();
+        recordHistory('Clear project');
+        engine.pause(); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
@@ -483,23 +625,23 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     elements.previewSeek.addEventListener('input', (event) => engine.seek(Number(event.target.value)));
     elements.previewSeek.addEventListener('change', (event) => { state.isSeeking = false; engine.seek(Number(event.target.value)); });
 
-    elements.videoVisibleSwitch.addEventListener('click', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.visible = !track.visible; refreshAll(); });
-    elements.videoAudioSwitch.addEventListener('click', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
+    elements.videoVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle video visibility'); const track = getTrack(); if (!track || track.type !== 'video') return; track.visible = !track.visible; refreshAll(); });
+    elements.videoAudioSwitch.addEventListener('click', () => { recordHistory('Toggle linked video audio'); const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
     elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; engine.syncAudioSettings(); });
     elements.videoOpacity.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.opacity = Number(elements.videoOpacity.value) / 100; elements.videoOpacityValue.textContent = `${elements.videoOpacity.value}%`; engine.renderFrame(); });
     elements.videoBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.blendMode = elements.videoBlendMode.value; engine.renderFrame(); });
     elements.btnExtractAudio.addEventListener('click', extractAudioFromSelectedVideo);
 
-    elements.backgroundVisibleSwitch.addEventListener('click', () => { const track = getTrack(); if (!track || track.type !== 'background') return; track.visible = !track.visible; refreshAll(); });
+    elements.backgroundVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle background visibility'); const track = getTrack(); if (!track || track.type !== 'background') return; track.visible = !track.visible; refreshAll(); });
     elements.backgroundOpacity.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'background') return; track.opacity = Number(elements.backgroundOpacity.value) / 100; elements.backgroundOpacityValue.textContent = `${elements.backgroundOpacity.value}%`; engine.renderFrame(); });
     elements.backgroundBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'background') return; track.blendMode = elements.backgroundBlendMode.value; engine.renderFrame(); });
 
-    elements.audioAuditionSwitch.addEventListener('click', () => { const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
+    elements.audioAuditionSwitch.addEventListener('click', () => { recordHistory('Toggle audio audition'); const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
     elements.audioTrackVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.volume = Number(elements.audioTrackVolume.value) / 100; elements.audioTrackVolumeValue.textContent = `${elements.audioTrackVolume.value}%`; engine.syncAudioSettings(); });
     elements.audioFadeIn.addEventListener('input', () => updateAudioFade('fadeIn', elements.audioFadeIn, elements.audioFadeInValue));
     elements.audioFadeOut.addEventListener('input', () => updateAudioFade('fadeOut', elements.audioFadeOut, elements.audioFadeOutValue));
 
-    elements.stickerVisibleSwitch.addEventListener('click', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.visible = !track.visible; refreshAll(); });
+    elements.stickerVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle sticker visibility'); const track = getTrack(); if (!track || track.type !== 'sticker') return; track.visible = !track.visible; refreshAll(); });
     elements.stickerOpacity.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.opacity = Number(elements.stickerOpacity.value) / 100; elements.stickerOpacityValue.textContent = `${elements.stickerOpacity.value}%`; engine.renderFrame(); });
     elements.stickerBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.blendMode = elements.stickerBlendMode.value; engine.renderFrame(); });
     elements.stickerTransparencyMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.mode = elements.stickerTransparencyMode.value; engine.renderFrame(); });
@@ -508,14 +650,38 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     elements.stickerKeyTolerance.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.tolerance = Number(elements.stickerKeyTolerance.value); elements.stickerKeyToleranceValue.textContent = `${track.transparency.tolerance}%`; engine.renderFrame(); });
     elements.stickerEdgeFeather.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.feather = Number(elements.stickerEdgeFeather.value); elements.stickerEdgeFeatherValue.textContent = `${track.transparency.feather}%`; engine.renderFrame(); });
 
+    registerInspectorHistory(elements.videoAudioVolume, 'Change video audio volume');
+    registerInspectorHistory(elements.videoOpacity, 'Change video opacity');
+    registerInspectorHistory(elements.videoBlendMode, 'Change video blend mode');
+    registerInspectorHistory(elements.backgroundOpacity, 'Change background opacity');
+    registerInspectorHistory(elements.backgroundBlendMode, 'Change background blend mode');
+    registerInspectorHistory(elements.audioTrackVolume, 'Change audio volume');
+    registerInspectorHistory(elements.audioFadeIn, 'Change audio fade in');
+    registerInspectorHistory(elements.audioFadeOut, 'Change audio fade out');
+    registerInspectorHistory(elements.stickerOpacity, 'Change sticker opacity');
+    registerInspectorHistory(elements.stickerBlendMode, 'Change sticker blend mode');
+    registerInspectorHistory(elements.stickerTransparencyMode, 'Change sticker transparency');
+    registerInspectorHistory(elements.stickerKeyColour, 'Change sticker key colour');
+    registerInspectorHistory(elements.stickerKeyColourText, 'Change sticker key colour');
+    registerInspectorHistory(elements.stickerKeyTolerance, 'Change sticker tolerance');
+    registerInspectorHistory(elements.stickerEdgeFeather, 'Change sticker feather');
+
     elements.contextSplitNow.addEventListener('click', async () => { await splitTrackAtNow(state.contextTrackId); hideContextMenu(); });
     elements.contextAddLayer.addEventListener('click', addLayerFromContext);
     elements.contextExtractAudio.addEventListener('click', async () => { await extractAudioFromSelectedVideo(); hideContextMenu(); });
     elements.contextRemoveLayer.addEventListener('click', removeLayerFromContext);
     document.addEventListener('click', (event) => { if (!elements.contextMenu.contains(event.target)) hideContextMenu(); });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') hideContextMenu(); });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') hideContextMenu();
+        const modifier = event.ctrlKey || event.metaKey;
+        const target = event.target;
+        const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement;
+        if (!modifier || isTyping) return;
+        if (event.key.toLowerCase() === 'z' && !event.shiftKey) { event.preventDefault(); undoTimelineEdit(); }
+        if ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y') { event.preventDefault(); redoTimelineEdit(); }
+    });
     window.addEventListener('beforeunload', () => engine.destroy());
 
-    installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom(); syncSelectionTools();
-    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.15 loaded'));
+    installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
+    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.17 loaded'));
 })();

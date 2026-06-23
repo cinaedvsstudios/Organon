@@ -1,7 +1,7 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.15 — playhead/end markers, clickable ruler, beat-bright clip fills,
- * multi-selection/group movement, and stable clip split support.
+ * v0.17 — blue now line, per-clip colour end boundaries, non-overlapping video lanes,
+ * and magnetic video edge snapping.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
@@ -19,6 +19,13 @@ const TYPE_RGB = {
     background: [224, 163, 96]
 };
 
+const TYPE_CSS_COLOUR = {
+    video: 'rgb(75 132 191)',
+    audio: 'rgb(154 47 79)',
+    sticker: 'rgb(224 163 96)',
+    background: 'rgb(224 163 96)'
+};
+
 function escapeHtml(value) {
     return String(value).replace(/[&<>'"]/g, (character) => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
@@ -34,7 +41,7 @@ function cssEscape(value) {
 }
 
 export class AdvancedTimeline {
-    constructor({ lanesElement, rulerElement, emptyElement, onSelect, onContextMenu, onDropProjectFile, onTrackChange, onSeek, onSplitAtPlayhead }) {
+    constructor({ lanesElement, rulerElement, emptyElement, onSelect, onContextMenu, onDropProjectFile, onTrackChange, onTrackInteractionStart, onSeek, onSplitAtPlayhead }) {
         this.lanesElement = lanesElement;
         this.rulerElement = rulerElement;
         this.emptyElement = emptyElement;
@@ -45,6 +52,7 @@ export class AdvancedTimeline {
         this.onContextMenu = onContextMenu;
         this.onDropProjectFile = onDropProjectFile;
         this.onTrackChange = onTrackChange;
+        this.onTrackInteractionStart = onTrackInteractionStart;
         this.onSeek = onSeek;
         this.onSplitAtPlayhead = onSplitAtPlayhead;
         this.tracks = [];
@@ -141,6 +149,20 @@ export class AdvancedTimeline {
     }
 
     getCompositionEndTime() { return Math.max(0, this.getTrackEndTime()); }
+
+    getLatestEndingTrack() {
+        let latest = null;
+        let latestEnd = -Infinity;
+        for (const track of this.tracks) {
+            if (!track?.sourceName) continue;
+            const end = (Number(track.start) || 0) + this.getClipDuration(track);
+            if (end > latestEnd) {
+                latest = track;
+                latestEnd = end;
+            }
+        }
+        return latest;
+    }
 
     getViewDuration() {
         return Math.max(6, this.viewDuration, this.duration + 2, this.getTrackEndTime() + 2);
@@ -258,8 +280,10 @@ export class AdvancedTimeline {
         const currentLeft = this.labelWidth + Math.max(0, this.currentTime * this.pixelsPerSecond);
         const end = this.getCompositionEndTime();
         const endLeft = this.labelWidth + Math.max(0, end * this.pixelsPerSecond);
+        const endingTrack = this.getLatestEndingTrack();
         this.playheadMarker.style.left = `${currentLeft}px`;
         this.endMarker.style.left = `${endLeft}px`;
+        this.endMarker.style.setProperty('--end-marker-colour', TYPE_CSS_COLOUR[endingTrack?.type] || TYPE_CSS_COLOUR.sticker);
         this.endMarker.hidden = end <= 0;
         const label = this.endMarker.querySelector('span');
         if (label) label.textContent = `END ${this.formatTime(end)}`;
@@ -293,6 +317,7 @@ export class AdvancedTimeline {
     updateClipStyle(clip, track) {
         clip.style.left = `${Math.max(0, (Number(track.start) || 0) * this.pixelsPerSecond)}px`;
         clip.style.width = `${Math.max(26, this.getClipDuration(track) * this.pixelsPerSecond)}px`;
+        clip.style.setProperty('--clip-colour', TYPE_CSS_COLOUR[track.type] || TYPE_CSS_COLOUR.sticker);
         const gradient = this.getClipGradient(track);
         if (gradient) clip.style.background = gradient;
         else clip.style.removeProperty('background');
@@ -346,6 +371,10 @@ export class AdvancedTimeline {
                 clipLabel.textContent = hasSource ? track.sourceName : defaults.placeholder;
                 clip.appendChild(clipLabel);
                 if (hasSource) {
+                    const clipEndMarker = document.createElement('span');
+                    clipEndMarker.className = 'clip-end-marker';
+                    clipEndMarker.title = 'Clip end';
+                    clip.appendChild(clipEndMarker);
                     const resizeHandle = document.createElement('span');
                     resizeHandle.className = 'clip-resize-handle';
                     resizeHandle.title = 'Drag to trim or extend this clip';
@@ -405,13 +434,36 @@ export class AdvancedTimeline {
         }
     }
 
+    getVideoSnapResult(track, desiredStart, movingTracks = []) {
+        if (track.type !== 'video') return { start: desiredStart, snapped: false };
+        const movingIds = new Set(movingTracks.map((item) => item.id));
+        const duration = this.getClipDuration(track);
+        const threshold = Math.max(0.06, 10 / this.pixelsPerSecond);
+        let best = { start: desiredStart, snapped: false, distance: Infinity };
+        const candidatePoints = [0];
+        for (const candidate of this.tracks) {
+            if (candidate.type !== 'video' || !candidate.sourceName || movingIds.has(candidate.id)) continue;
+            candidatePoints.push(Number(candidate.start) || 0, (Number(candidate.start) || 0) + this.getClipDuration(candidate));
+        }
+        for (const boundary of candidatePoints) {
+            for (const movingBoundary of [desiredStart, desiredStart + duration]) {
+                const delta = boundary - movingBoundary;
+                const distance = Math.abs(delta);
+                if (distance <= threshold && distance < best.distance) {
+                    best = { start: Math.max(0, desiredStart + delta), snapped: true, distance };
+                }
+            }
+        }
+        return best;
+    }
+
     installClipDrag(clip, workspace, track, resizeHandle) {
         const stop = (event) => {
             const drag = this.dragState;
             if (!drag || drag.pointerId !== event.pointerId || drag.track.id !== track.id) return;
             try { clip.releasePointerCapture?.(event.pointerId); } catch (_) { /* no-op */ }
             this.dragState = null;
-            clip.classList.remove('is-dragging');
+            clip.classList.remove('is-dragging', 'is-snapping');
             this.onTrackChange?.(track, { live: false });
             this.render();
         };
@@ -427,6 +479,7 @@ export class AdvancedTimeline {
             event.preventDefault(); event.stopPropagation();
             const mode = event.target === resizeHandle || event.target.closest('.clip-resize-handle') ? 'resize' : 'move';
             this.onSelect?.(track.id, { toggle: false });
+            this.onTrackInteractionStart?.(track, { mode });
             const movingTracks = mode === 'move' ? this.getGroupedDragTracks(track) : [track];
             this.dragState = {
                 mode,
@@ -446,8 +499,12 @@ export class AdvancedTimeline {
             if (!drag || drag.pointerId !== event.pointerId || drag.track.id !== track.id) return;
             const deltaSeconds = (event.clientX - drag.startX) / this.pixelsPerSecond;
             if (drag.mode === 'move') {
+                const desiredStart = clamp((drag.originalStarts.get(track.id) || 0) + deltaSeconds, 0, 36000);
+                const snap = this.getVideoSnapResult(track, desiredStart, drag.movingTracks);
+                const effectiveDelta = snap.start - (drag.originalStarts.get(track.id) || 0);
+                clip.classList.toggle('is-snapping', snap.snapped);
                 for (const movingTrack of drag.movingTracks) {
-                    movingTrack.start = clamp((drag.originalStarts.get(movingTrack.id) || 0) + deltaSeconds, 0, 36000);
+                    movingTrack.start = clamp((drag.originalStarts.get(movingTrack.id) || 0) + effectiveDelta, 0, 36000);
                 }
                 this.ensureViewportForTime(Math.max(...drag.movingTracks.map((item) => (Number(item.start) || 0) + this.getClipDuration(item))));
                 this.updateLayoutMetrics();
