@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Advanced Audio Timeline v0.21</title>
+<title>Organon - Advanced Audio Timeline v0.22</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -131,15 +131,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .timeline-lane.sticker .lane-name,.timeline-lane.background .lane-name { color:var(--stone-ochre); border-left:3px solid var(--stone-ochre); }
 .lane-workspace { position:relative; min-height:40px; overflow:hidden; background-color:#121310; background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.018) 0,rgba(255,255,255,.018) calc(var(--timeline-grid-step,10px) - 1px),rgba(117,178,222,.09) var(--timeline-grid-step,10px)); background-size:var(--timeline-grid-step,10px) 100%; }
 .lane-workspace.drop-target-active { background-color:rgba(75,132,191,.18); box-shadow:inset 0 0 0 2px var(--water-spray); }
-.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none; will-change:transform,width; }
+.timeline-clip { position:absolute; top:5px; display:flex; align-items:center; height:29px; min-width:26px; padding:6px 15px 6px 8px; overflow:visible; border:1px solid rgba(137,107,73,.9); border-radius:8px; background:rgba(0,0,0,.25); color:rgba(245,240,219,.9); font:.55rem/1.2 var(--font-mono); cursor:grab; user-select:none; touch-action:none; will-change:transform,width; isolation:isolate; }
 .timeline-clip:active { cursor:grabbing; }
 .timeline-clip.selected { box-shadow:0 0 0 2px rgba(117,178,222,.88),0 0 12px rgba(117,178,222,.35); }
 .timeline-clip.video { border-color:rgba(75,132,191,.95); background:linear-gradient(90deg,rgba(75,132,191,.43),rgba(75,132,191,.16)); }
 .timeline-clip.audio { border-color:rgba(154,47,79,.98); background:linear-gradient(90deg,rgba(154,47,79,.45),rgba(154,47,79,.16)); }
 .timeline-clip.sticker,.timeline-clip.background { border-color:rgba(224,163,96,.96); background:linear-gradient(90deg,rgba(224,163,96,.44),rgba(224,163,96,.16)); }
 .timeline-clip.placeholder { border-style:dashed; background:transparent; color:rgba(245,240,219,.42); cursor:default; }
-.clip-label { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; pointer-events:none; }
-.clip-resize-handle { position:absolute; top:0; right:0; bottom:0; width:13px; border-radius:0 7px 7px 0; cursor:ew-resize; touch-action:none; }
+/* The peak strip lives in source-time pixels. The clip is a viewport onto it, so a trim crops peaks instead of stretching them. */
+.clip-analysis-viewport { position:absolute; z-index:0; inset:1px; overflow:hidden; border-radius:7px; pointer-events:none; }
+.clip-analysis-strip { position:absolute; top:0; bottom:0; left:0; }
+.clip-analysis-segment { position:absolute; top:0; bottom:0; min-width:1px; background:var(--analysis-colour,rgba(117,178,222,.35)); mix-blend-mode:screen; }
+.clip-label { position:relative; z-index:2; display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; pointer-events:none; text-shadow:0 1px 1px rgba(0,0,0,.72); }
+.clip-resize-handle { position:absolute; z-index:4; top:0; right:0; bottom:0; width:13px; border-radius:0 7px 7px 0; cursor:ew-resize; touch-action:none; }
 .clip-resize-handle:hover { background:rgba(245,240,219,.22); }
 /* Every clip gets its own exact-colour end line. It fills its lane height without covering the resize grip. */
 .clip-end-marker { position:absolute; z-index:4; top:-5px; right:-2px; bottom:-5px; width:2px; border-radius:999px; background:var(--clip-colour); box-shadow:0 0 7px var(--clip-colour); pointer-events:none; }

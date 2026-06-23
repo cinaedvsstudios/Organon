@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.20 — repairs OS/File Explorer drop import across the Advanced Mode iframe boundary.
+ * v0.22 — robust File Explorer/Finder import bridge plus crop-safe source peak analysis.
  * Basic Mode is untouched.
  */
 
@@ -653,123 +653,176 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     }
     function installGlobalFileDrop() {
         /*
-         * External File Explorer / Finder drop import.
-         *
-         * The previous versions registered the same drop handler on several nested
-         * targets and turned the full-page overlay into the event target while a drag
-         * was in progress. In the Organon iframe this can race with the Hub iframe,
-         * leaving the child page with the visual overlay but no delivered FileList.
-         *
-         * This version has one import path. It listens inside Advanced Mode and, when
-         * same-origin access is available, also on the parent iframe element/window.
-         * The overlay is visual only; it never intercepts the OS drop event.
+         * External Explorer / Finder imports are deliberately separated from the
+         * Project Files -> Timeline pointer drag. This bridge gives an embedded
+         * advanced page its own top-window drop target, so an OS file drop cannot be
+         * swallowed by the Organon hub iframe before Advanced Mode sees the FileList.
          */
-        const overlay = elements.dropOverlay;
-        const zone = elements.projectDropZone;
-        let externalDropActive = false;
+        const localOverlay = elements.dropOverlay;
+        const localZone = elements.projectDropZone;
         let processingDrop = false;
-        let leaveTimer = null;
+        let localDepth = 0;
+        let localLeaveTimer = null;
+        let parentBridge = null;
+        let cleanupParentBridge = null;
 
-        const show = () => {
-            externalDropActive = true;
-            window.clearTimeout(leaveTimer);
-            overlay?.classList.add('visible');
-        };
-        const hide = () => {
-            externalDropActive = false;
-            state.dragDepth = 0;
-            window.clearTimeout(leaveTimer);
-            overlay?.classList.remove('visible');
-            zone?.classList.remove('drop-target-active');
-        };
-        const scheduleHide = () => {
-            window.clearTimeout(leaveTimer);
-            leaveTimer = window.setTimeout(hide, 80);
-        };
-        const claimExternalFileEvent = (event) => {
-            if (!hasExternalFiles(event)) return false;
-            event.preventDefault();
-            // Do not stop propagation here. The iframe element, parent Hub and child
-            // document may all see one OS drag; each needs the default browser open
-            // behaviour cancelled, while the lock below ensures only one import.
-            return true;
-        };
-        const importDroppedFiles = async (event) => {
-            const files = getDroppedFiles(event);
-            if (!files.length || processingDrop) return false;
+        const importExternalFiles = async (files, source = 'drop') => {
+            const safeFiles = Array.from(files || []).filter(Boolean);
+            if (!safeFiles.length || processingDrop) return false;
             processingDrop = true;
-            event.preventDefault();
-            hide();
             try {
-                await addFiles(files);
-                showToast(`Added ${files.length} file${files.length === 1 ? '' : 's'} to Project Files`);
+                await addFiles(safeFiles);
+                showToast(`Imported ${safeFiles.length} file${safeFiles.length === 1 ? '' : 's'} from ${source}`);
+                return true;
             } catch (error) {
-                console.error('Dropped file import failed:', error);
-                elements.previewState.textContent = 'Could not import those dropped files. Use + Import as a fallback.';
+                console.error('External file import failed:', error);
+                elements.previewState.textContent = 'Could not import those files. Use + Import as a fallback.';
+                return false;
             } finally {
-                window.setTimeout(() => { processingDrop = false; }, 150);
+                window.setTimeout(() => { processingDrop = false; }, 0);
             }
-            return true;
         };
-        const onDragEnter = (event) => {
-            if (!claimExternalFileEvent(event)) return;
-            state.dragDepth += 1;
-            show();
+
+        const stopLocalDropDisplay = () => {
+            localDepth = 0;
+            window.clearTimeout(localLeaveTimer);
+            localOverlay?.classList.remove('visible');
+            localZone?.classList.remove('drop-target-active');
         };
-        const onDragOver = (event) => {
-            if (!claimExternalFileEvent(event)) return;
-            if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
-            show();
+        const showLocalDropDisplay = () => {
+            window.clearTimeout(localLeaveTimer);
+            localOverlay?.classList.add('visible');
+            localZone?.classList.add('drop-target-active');
         };
-        const onDragLeave = (event) => {
-            if (!hasExternalFiles(event)) return;
-            state.dragDepth = Math.max(0, state.dragDepth - 1);
-            if (!event.relatedTarget || state.dragDepth === 0) scheduleHide();
-        };
-        const onDrop = (event) => {
-            // Always cancel a drop with files, even where FileList is temporarily
-            // empty until the browser reaches the iframe target.
-            if (!hasExternalFiles(event) && !getDroppedFiles(event).length) return;
+        const localFilesEvent = (event) => hasExternalFiles(event) || getDroppedFiles(event).length > 0;
+        const onLocalDragEnter = (event) => {
+            if (!localFilesEvent(event)) return;
             event.preventDefault();
-            void importDroppedFiles(event);
+            localDepth += 1;
+            showLocalDropDisplay();
+        };
+        const onLocalDragOver = (event) => {
+            if (!localFilesEvent(event)) return;
+            event.preventDefault();
+            if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+            showLocalDropDisplay();
+        };
+        const onLocalDragLeave = (event) => {
+            if (!localFilesEvent(event)) return;
+            localDepth = Math.max(0, localDepth - 1);
+            if (!event.relatedTarget || localDepth === 0) {
+                window.clearTimeout(localLeaveTimer);
+                localLeaveTimer = window.setTimeout(stopLocalDropDisplay, 120);
+            }
+        };
+        const onLocalDrop = (event) => {
+            const files = getDroppedFiles(event);
+            if (!files.length) return;
+            event.preventDefault();
+            event.stopPropagation();
+            stopLocalDropDisplay();
+            void importExternalFiles(files, 'File Explorer');
         };
 
-        const localTargets = [window, document, document.documentElement, document.body, zone].filter(Boolean);
-        for (const target of localTargets) {
-            target.addEventListener('dragenter', onDragEnter, true);
-            target.addEventListener('dragover', onDragOver, true);
-            target.addEventListener('dragleave', onDragLeave, true);
-            target.addEventListener('drop', onDrop, true);
-        }
+        // One local document-level route: no duplicated nested listeners and no
+        // overlay target that can consume the browser's actual FileList.
+        document.addEventListener('dragenter', onLocalDragEnter, true);
+        document.addEventListener('dragover', onLocalDragOver, true);
+        document.addEventListener('dragleave', onLocalDragLeave, true);
+        document.addEventListener('drop', onLocalDrop, true);
+        window.addEventListener('dragend', stopLocalDropDisplay, true);
+        window.addEventListener('blur', stopLocalDropDisplay);
 
-        // Advanced Mode normally runs in the Organon Hub iframe. Same-origin parent
-        // listeners catch an Explorer drop that lands on the iframe border before the
-        // browser forwards it into this document. Direct-open use simply skips this.
+        // When the tool is inside the Organon hub iframe, create a temporary real
+        // drop target in the parent document. The parent-level target receives OS
+        // File Explorer drops before the iframe boundary, then calls this page's
+        // normal addFiles() closure with the actual File objects.
         try {
             const parentWindow = window.top;
-            const frameElement = window.frameElement;
-            if (parentWindow && parentWindow !== window) {
-                for (const target of [parentWindow, parentWindow.document, frameElement].filter(Boolean)) {
-                    target.addEventListener('dragenter', onDragEnter, true);
-                    target.addEventListener('dragover', onDragOver, true);
-                    target.addEventListener('dragleave', onDragLeave, true);
-                    target.addEventListener('drop', onDrop, true);
-                }
+            const parentDocument = parentWindow && parentWindow !== window ? parentWindow.document : null;
+            if (parentDocument?.body) {
+                parentBridge = parentDocument.createElement('div');
+                parentBridge.id = `organon-advanced-drop-bridge-${Date.now()}`;
+                parentBridge.setAttribute('aria-hidden', 'true');
+                Object.assign(parentBridge.style, {
+                    position: 'fixed', inset: '0', zIndex: '2147483647', display: 'none',
+                    alignItems: 'center', justifyContent: 'center', padding: '24px',
+                    background: 'rgba(0,0,0,.70)', backdropFilter: 'blur(3px)',
+                    color: '#ffffff', fontFamily: 'Inter, system-ui, sans-serif',
+                    pointerEvents: 'auto', cursor: 'copy'
+                });
+                const bridgeCard = parentDocument.createElement('div');
+                bridgeCard.textContent = 'DROP FILES TO ADD THEM TO PROJECT FILES';
+                Object.assign(bridgeCard.style, {
+                    padding: '25px 30px', border: '2px dashed #75b2de', borderRadius: '20px',
+                    background: 'rgba(24,25,25,.96)', boxShadow: '0 0 28px rgba(117,178,222,.28)',
+                    fontWeight: '700', fontSize: '14px', letterSpacing: '.06em', textAlign: 'center'
+                });
+                parentBridge.appendChild(bridgeCard);
+                parentDocument.body.appendChild(parentBridge);
+
+                let parentLeaveTimer = null;
+                const bridgeHasFiles = (event) => hasExternalFiles(event) || getDroppedFiles(event).length > 0;
+                const showBridge = (event) => {
+                    if (!bridgeHasFiles(event)) return;
+                    event.preventDefault();
+                    parentWindow.clearTimeout(parentLeaveTimer);
+                    parentBridge.style.display = 'flex';
+                    if (event.dataTransfer) event.dataTransfer.dropEffect = 'copy';
+                };
+                const hideBridge = () => {
+                    parentWindow.clearTimeout(parentLeaveTimer);
+                    if (parentBridge) parentBridge.style.display = 'none';
+                };
+                const scheduleBridgeHide = (event) => {
+                    if (!bridgeHasFiles(event)) return;
+                    if (event.relatedTarget) return;
+                    parentWindow.clearTimeout(parentLeaveTimer);
+                    parentLeaveTimer = parentWindow.setTimeout(hideBridge, 120);
+                };
+                const receiveParentFiles = (event) => {
+                    const files = getDroppedFiles(event);
+                    if (!files.length) return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    hideBridge();
+                    stopLocalDropDisplay();
+                    void importExternalFiles(files, 'File Explorer');
+                };
+
+                parentDocument.addEventListener('dragenter', showBridge, true);
+                parentDocument.addEventListener('dragover', showBridge, true);
+                parentDocument.addEventListener('dragleave', scheduleBridgeHide, true);
+                parentDocument.addEventListener('drop', receiveParentFiles, true);
+                parentBridge.addEventListener('dragenter', showBridge);
+                parentBridge.addEventListener('dragover', showBridge);
+                parentBridge.addEventListener('dragleave', scheduleBridgeHide);
+                parentBridge.addEventListener('drop', receiveParentFiles);
+                parentWindow.addEventListener('dragend', hideBridge, true);
+                parentWindow.addEventListener('blur', hideBridge);
+
+                cleanupParentBridge = () => {
+                    parentDocument.removeEventListener('dragenter', showBridge, true);
+                    parentDocument.removeEventListener('dragover', showBridge, true);
+                    parentDocument.removeEventListener('dragleave', scheduleBridgeHide, true);
+                    parentDocument.removeEventListener('drop', receiveParentFiles, true);
+                    parentWindow.removeEventListener('dragend', hideBridge, true);
+                    parentWindow.removeEventListener('blur', hideBridge);
+                    parentBridge?.remove();
+                    parentBridge = null;
+                };
             }
-        } catch (_) {
-            // Cross-origin embedding is not expected for Organon, but local/direct
-            // Advanced Mode remains fully supported by the local listeners above.
+        } catch (error) {
+            // Direct-open or cross-origin embedding: the child document listeners
+            // above still handle normal local-window File Explorer drops.
+            console.debug('Parent drop bridge unavailable:', error);
         }
 
-        if (zone) {
-            zone.addEventListener('dragenter', () => zone.classList.add('drop-target-active'));
-            zone.addEventListener('dragleave', (event) => {
-                if (!zone.contains(event.relatedTarget)) zone.classList.remove('drop-target-active');
-            });
-            zone.addEventListener('click', (event) => {
+        if (localZone) {
+            localZone.addEventListener('click', (event) => {
                 if (!event.target.closest('.file-row')) elements.fileInput.click();
             });
-            zone.addEventListener('keydown', (event) => {
+            localZone.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
                     elements.fileInput.click();
@@ -777,8 +830,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
             });
         }
 
-        window.addEventListener('dragend', hide, true);
-        window.addEventListener('blur', () => { if (externalDropActive) hide(); });
+        window.addEventListener('beforeunload', () => cleanupParentBridge?.(), { once: true });
     }
 
     function syncTimelineZoom() { const percent = timeline.getZoomPercent(); elements.timelineZoom.value = String(percent); elements.timelineZoomValue.textContent = `${percent}%`; }
@@ -881,5 +933,5 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
     window.addEventListener('beforeunload', () => engine.destroy());
 
     installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
-    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.20 loaded — drop new files anywhere, then drag Project Files onto the timeline'));
+    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.22 loaded — drop new files anywhere, then drag Project Files onto the timeline'));
 })();

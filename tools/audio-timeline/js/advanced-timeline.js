@@ -1,7 +1,7 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.21 — timeline rendering: fixed playhead layering and source-cropped loudness gradients.
- * Resizing a clip trims its source range; it never changes media playback speed.
+ * v0.22 — source-pixel peak strips. Trimming is a real crop: peak positions never scale.
+ * Resizing a clip changes only sourceOut / clipDuration; playback remains 1× speed.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
@@ -348,43 +348,75 @@ export class AdvancedTimeline {
         return `${mins}:${Math.floor(safe % 60).toString().padStart(2, '0')}`;
     }
 
-    getClipGradient(track) {
+    getAnalysisStyleSignature(track) {
         const levels = Array.isArray(track.analysis?.levels) ? track.analysis.levels : [];
-        if (!levels.length || (track.type !== 'audio' && track.type !== 'video')) return '';
+        return [
+            track.type,
+            levels.length,
+            Number(track.sourceDuration) || 0,
+            this.pixelsPerSecond
+        ].join('|');
+    }
 
-        // Analysis data belongs to the *original* source. A trimmed clip must only
-        // show the matching source slice, at the same density per second. It is not
-        // a speed change and it must not stretch the full-source beat pattern.
+    updateClipAnalysisStrip(clip, track) {
+        const levels = Array.isArray(track.analysis?.levels) ? track.analysis.levels : [];
+        let viewport = clip.querySelector('.clip-analysis-viewport');
+        if (!viewport) {
+            viewport = document.createElement('span');
+            viewport.className = 'clip-analysis-viewport';
+            const strip = document.createElement('span');
+            strip.className = 'clip-analysis-strip';
+            viewport.appendChild(strip);
+            clip.prepend(viewport);
+        }
+        const strip = viewport.firstElementChild;
+        if (!strip) return;
+
+        if (!levels.length || (track.type !== 'audio' && track.type !== 'video')) {
+            viewport.hidden = true;
+            return;
+        }
+        viewport.hidden = false;
+
         const sourceDuration = Math.max(.001, Number(track.sourceDuration) || this.getClipDuration(track));
         const sourceOffset = clamp(Number(track.sourceOffset) || 0, 0, sourceDuration);
-        const usableDuration = Math.max(.001, Math.min(this.getClipDuration(track), sourceDuration - sourceOffset));
-        const firstIndex = clamp(Math.floor((sourceOffset / sourceDuration) * levels.length), 0, Math.max(0, levels.length - 1));
-        const lastIndexExclusive = clamp(Math.ceil(((sourceOffset + usableDuration) / sourceDuration) * levels.length), firstIndex + 1, levels.length);
-        const visibleLevels = levels.slice(firstIndex, lastIndexExclusive);
+        const signature = this.getAnalysisStyleSignature(track);
+        const fullSourceWidth = Math.max(1, sourceDuration * this.pixelsPerSecond);
 
-        const rgb = TYPE_RGB[track.type] || TYPE_RGB.video;
-        const count = Math.min(72, visibleLevels.length);
-        const stride = visibleLevels.length / count;
-        const stops = [];
-        for (let index = 0; index < count; index += 1) {
-            const sample = visibleLevels[Math.min(visibleLevels.length - 1, Math.floor(index * stride))] || 0;
-            const nextSample = visibleLevels[Math.min(visibleLevels.length - 1, Math.floor((index + 1) * stride))] || sample;
-            const start = (index / count) * 100;
-            const end = ((index + 1) / count) * 100;
-            const alpha = (.17 + sample * .67).toFixed(3);
-            const nextAlpha = (.17 + nextSample * .67).toFixed(3);
-            stops.push(`rgba(${rgb.join(',')},${alpha}) ${start.toFixed(2)}%`, `rgba(${rgb.join(',')},${nextAlpha}) ${end.toFixed(2)}%`);
+        // Rebuild only if the source analysis or timeline zoom changed. Right-edge
+        // trimming changes the viewport width automatically; it does not scale or
+        // recompute the strip, which is the essential crop behaviour.
+        if (strip.dataset.signature !== signature) {
+            strip.dataset.signature = signature;
+            strip.replaceChildren();
+            const rgb = TYPE_RGB[track.type] || TYPE_RGB.video;
+            const segmentDuration = sourceDuration / levels.length;
+            for (let index = 0; index < levels.length; index += 1) {
+                const level = clamp(Number(levels[index]) || 0, 0, 1);
+                const segment = document.createElement('span');
+                segment.className = 'clip-analysis-segment';
+                segment.style.left = `${index * segmentDuration * this.pixelsPerSecond}px`;
+                segment.style.width = `${Math.max(1, segmentDuration * this.pixelsPerSecond + .6)}px`;
+                // Quiet material stays subtle. Loud peaks brighten in their exact
+                // original source position, rather than being percentage-mapped into
+                // whatever width the user has trimmed the clip to.
+                const alpha = (.06 + level * .72).toFixed(3);
+                segment.style.setProperty('--analysis-colour', `rgba(${rgb.join(',')},${alpha})`);
+                strip.appendChild(segment);
+            }
         }
-        return `linear-gradient(90deg, ${stops.join(',')})`;
+        strip.style.width = `${fullSourceWidth}px`;
+        strip.style.transform = `translateX(${-sourceOffset * this.pixelsPerSecond}px)`;
     }
 
     updateClipStyle(clip, track) {
         clip.style.left = `${Math.max(0, (Number(track.start) || 0) * this.pixelsPerSecond)}px`;
         clip.style.width = `${Math.max(26, this.getClipDuration(track) * this.pixelsPerSecond)}px`;
         clip.style.setProperty('--clip-colour', TYPE_CSS_COLOUR[track.type] || TYPE_CSS_COLOUR.sticker);
-        const gradient = this.getClipGradient(track);
-        if (gradient) clip.style.background = gradient;
-        else clip.style.removeProperty('background');
+        // Never set a percentage-based analysis gradient on the clip itself. That
+        // would stretch every peak when the right edge is trimmed.
+        clip.style.removeProperty('background-image');
+        this.updateClipAnalysisStrip(clip, track);
     }
 
     applySelectionState() {

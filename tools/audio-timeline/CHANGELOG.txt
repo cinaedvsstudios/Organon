@@ -1,57 +1,23 @@
-v0.21
-Baseline: v0.20
+AUDIO TIMELINE — ADVANCED MODE
 
-Files changed:
-- advanced.html
-- js/advanced-timeline.js
-- js/advanced-media-engine.js
-- README.txt
-- CHANGELOG.txt
+v0.22 — Current build
 
-Changes:
-- Restored the full-height blue now/playhead marker above all timeline lanes.
-- Added full-lane clip-end lines in the clip type colour.
-- Changed loudness-gradient drawing to select only the source section inside the resized clip.
-- Confirmed all media is always played at 1x; resizing only trims/crops the source end.
+Rollback baseline: v0.21.
 
-Rollback: use v0.20 if this pass needs to be reverted.
-
-v0.20
-Baseline: v0.19
-
-Files changed:
-- advanced.html
-- js/advanced-main.js
-- README.txt
-- CHANGELOG.txt
-
-Changes:
-- Replaced duplicate/nested OS File Explorer drop handlers with one guarded import flow.
-- The overlay is now visual only and cannot become the drop target.
-- Added same-origin parent Hub/iframe listeners so an OS drop arriving on the iframe edge is imported by Advanced Mode.
-- Local document, direct-open and Hub iframe usage all cancel the browser default file-open action.
-
-Rollback: use v0.19 if this pass needs to be reverted.
-
-v0.19
-- Restored external OS/File Explorer drag-and-drop importing anywhere in Advanced Mode.
-- Uses FileList plus DataTransferItem fallback, and listeners on window/document/body/overlay for direct and iframe use.
-- Keeps the v0.18 pointer-driven Project Files → timeline drag unchanged.
-
-v0.18
-Baseline: v0.17
-
-Files changed:
+Changed files:
 - advanced.html
 - js/advanced-main.js
 - js/advanced-timeline.js
-- CHANGELOG.txt
-- README.txt
 
-Changes:
-- Replaced Project Files native HTML drag with a pointer-driven drag system, so dragging file pills into the timeline no longer depends on browser custom MIME handling.
-- Added a visible floating drag ghost and live drop highlighting for timeline lanes/panel.
-- Restored simple click-to-select behaviour for Project File pills without triggering import.
-- Kept the v0.17 lane separation, snapping, end markers, current-time marker, and Basic Mode untouched.
-
-Rollback: use v0.17 if this pass needs to be reverted.
+Changes in this pass:
+1. Replaced percentage-based loudness gradients with a source-pixel peak strip inside each video/audio clip.
+   - The strip is measured from the original source timeline.
+   - Right-edge resizing now crops the visible source window.
+   - Peak positions do not scale, compress or shift when a clip is trimmed.
+   - sourceOffset still shifts the crop correctly after a split.
+2. Rebuilt external File Explorer / Finder import handling.
+   - One child-document import route for direct Advanced Mode use.
+   - A temporary parent-window drop bridge is created when Advanced Mode is embedded in the same-origin Organon hub iframe.
+   - The bridge is a real parent-level drop target, so it can receive OS files before the iframe boundary swallows them.
+   - External imports remain separate from Project Files -> Timeline dragging.
+3. Basic Mode files remain untouched.
