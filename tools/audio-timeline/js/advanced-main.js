@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
- * v0.11 — Colour-coded Project Files, emoji file kinds, and JPEG background layers below audio.
+ * v0.12 — fixed draggable Project File rows using persistent drag state and non-destructive dragstart handling.
  * Basic Mode remains completely separate and unchanged.
  */
 
@@ -120,12 +120,18 @@ import { AdvancedMediaEngine } from './advanced-media-engine.js';
             row.addEventListener('dragstart',(event) => {
                 state.selectedFileId=entry.id;
                 event.dataTransfer.effectAllowed='copy';
-                // Chromium accepts custom types, while text/plain keeps the drag
-                // transferable in browsers that filter unknown drag types.
+                // Keep both a custom type and a plain-text fallback. Do not redraw
+                // Project Files here: removing the source node during dragstart
+                // cancels the native drag in Chromium.
                 event.dataTransfer.setData('application/x-organon-project-file',entry.id);
-                event.dataTransfer.setData('text/plain',entry.id);
                 event.dataTransfer.setData('text/x-organon-project-file',entry.id);
-                renderFiles();
+                event.dataTransfer.setData('text/plain',entry.id);
+                timeline.beginProjectFileDrag(entry.id);
+                row.classList.add('is-dragging');
+            });
+            row.addEventListener('dragend',() => {
+                timeline.endProjectFileDrag();
+                row.classList.remove('is-dragging');
             });
             row.addEventListener('click',() => { state.selectedFileId=entry.id; renderFiles(); });
             row.addEventListener('keydown',(event)=> { if(event.key==='Enter'||event.key===' ') { event.preventDefault(); state.selectedFileId=entry.id; renderFiles(); } });

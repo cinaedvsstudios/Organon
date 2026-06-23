@@ -1,6 +1,6 @@
 /**
  * ORGANON STUDIO: ADVANCED TIMELINE VIEW
- * v0.10 — dynamically created timeline tracks with robust Project Files drag/drop support.
+ * v0.12 — reliable Project Files-to-timeline dragging without browser drag-data read restrictions.
  */
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
@@ -37,18 +37,46 @@ export class AdvancedTimeline {
         this.duration = 6;
         this.currentTime = 0;
         this.dragState = null;
+        // Browsers deliberately hide DataTransfer.getData() during dragover.
+        // Keep the current Project File ID here as a safe fallback until drop.
+        this.activeProjectFileId = '';
         this.installEmptyDropTarget();
         this.installTimelinePanelDropTarget();
     }
 
+    beginProjectFileDrag(fileId) {
+        this.activeProjectFileId = String(fileId || '');
+    }
+
+    endProjectFileDrag() {
+        this.activeProjectFileId = '';
+    }
+
     getProjectFileId(event) {
-        const types = Array.from(event.dataTransfer?.types || []);
-        if (!types.includes('application/x-organon-project-file') && !types.includes('text/x-organon-project-file')) return '';
-        return event.dataTransfer.getData('application/x-organon-project-file') || event.dataTransfer.getData('text/x-organon-project-file') || event.dataTransfer.getData('text/plain');
+        const transfer = event.dataTransfer;
+        const types = Array.from(transfer?.types || []);
+        const hasProjectType = types.includes('application/x-organon-project-file') || types.includes('text/x-organon-project-file');
+
+        // Reading drag data is reliable only during drop.  During dragover this
+        // usually returns an empty string in Chromium, so the active fallback is
+        // intentionally used there as well.
+        let value = '';
+        if (hasProjectType && transfer) {
+            value = transfer.getData('application/x-organon-project-file')
+                || transfer.getData('text/x-organon-project-file')
+                || transfer.getData('text/plain');
+        }
+
+        return value || this.activeProjectFileId;
     }
 
     isProjectFileDrag(event) {
-        return Boolean(this.getProjectFileId(event));
+        const types = Array.from(event.dataTransfer?.types || []);
+        return Boolean(
+            this.activeProjectFileId
+            || types.includes('application/x-organon-project-file')
+            || types.includes('text/x-organon-project-file')
+        );
     }
 
     getTimelineDropStart(event) {
@@ -76,6 +104,7 @@ export class AdvancedTimeline {
             event.stopPropagation();
             this.emptyElement.classList.remove('drop-target-active');
             this.onDropProjectFile?.({ fileId, trackId: null, start: 0 });
+            this.endProjectFileDrag();
         });
     }
 
@@ -99,6 +128,7 @@ export class AdvancedTimeline {
             event.preventDefault();
             this.panelElement.classList.remove('drop-target-active');
             this.onDropProjectFile?.({ fileId, trackId:null, start:this.getTimelineDropStart(event) });
+            this.endProjectFileDrag();
         });
     }
 
@@ -225,6 +255,7 @@ export class AdvancedTimeline {
             const rect = workspace.getBoundingClientRect();
             const start = clamp(((event.clientX - rect.left) / Math.max(1, rect.width)) * this.duration, 0, this.duration);
             this.onDropProjectFile?.({ fileId, trackId: track.id, start });
+            this.endProjectFileDrag();
         });
         workspace.addEventListener('pointerdown', (event) => {
             if (event.target.closest('.timeline-clip')) return;

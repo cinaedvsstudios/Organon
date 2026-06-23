@@ -1,6 +1,6 @@
 AUDIO TIMELINE ADVANCED MODE — CHANGE LOG
 
-Current build: v0.11
+Current build: v0.12
 Last known good baseline before this pass: v0.10
 
 Files touched in v0.11:
@@ -19,3 +19,8 @@ Grouped changes:
 
 Rollback:
 - Use audio_timeline_advanced_mode_v0_10.zip to return to the earlier accepted state.
+
+V0.12
+- Fixed Project Files-to-timeline dragging.
+- Removed file-list redraw during dragstart, which cancelled native drag in Chromium.
+- Added persistent active project-file drag state so timeline drop targets can accept the drag before browser data is readable.

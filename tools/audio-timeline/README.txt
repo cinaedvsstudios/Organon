@@ -14,7 +14,11 @@ Unchanged:
 - Files imported into Project Files do not enter the timeline automatically.
 
 
-v0.11
+v0.12
 - Project Files use blue video, red audio, and gold image cards with emoji identifiers.
 - JPEG/JPG imports are Background clips: gold, rendered behind visuals, and always grouped beneath audio at the bottom of the timeline.
 - GIF/WebP/PNG remain top-layer Sticker assets.
+
+
+V0.12 FIX
+Project File rows can now be dragged reliably onto the timeline. The implementation keeps the dragged DOM row in place, stores the active file ID for dragover/drop, and does not depend on DataTransfer.getData() during dragover.
