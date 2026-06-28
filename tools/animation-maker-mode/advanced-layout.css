@@ -1,0 +1,20 @@
+@media (min-width: 881px) {
+  body.is-advanced-mode .app-wrapper {
+    width: calc(100vw - 48px);
+    max-width: 1480px;
+    margin: 0 auto;
+  }
+
+  body.is-advanced-mode .middle-scroll-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    align-items: start;
+    gap: 22px;
+    padding: 24px 26px 170px;
+  }
+
+  body.is-advanced-mode #queue-card,
+  body.is-advanced-mode #output-card {
+    grid-column: 1 / -1;
+  }
+}
