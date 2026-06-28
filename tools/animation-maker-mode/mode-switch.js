@@ -65,5 +65,10 @@
 
   const workspace = document.createElement('script');
   workspace.src = '../animation-maker-mode/advanced-workspace.js';
+  workspace.addEventListener('load', () => {
+    const repair = document.createElement('script');
+    repair.src = '../animation-maker-mode/advanced-repair.js';
+    document.head.appendChild(repair);
+  });
   document.head.appendChild(workspace);
 })();
