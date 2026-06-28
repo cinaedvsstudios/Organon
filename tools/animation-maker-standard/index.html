@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Organon - Animation Maker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gifshot/0.4.5/gifshot.min.js"></script>
+<script src="../animation-maker/gifshot-local-fallback.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link rel="stylesheet" href="../animation-maker/styles.css">
+<link rel="stylesheet" href="../animation-maker/clips.css">
+<link rel="stylesheet" href="../animation-maker/enhancements.css">
+<link rel="stylesheet" href="../animation-maker-mode/mode.css">
+</head>
+<body data-animation-maker-mode="standard">
+<div class="app-wrapper">
+<header class="top-sticky-panel" id="top-panel">
+<div class="title-pill"><div class="title-left"><div id="countdown-circle" class="countdown-circle-indicator">5</div><span>ANIMATION MAKER</span></div><div class="mode-actions"><button type="button" id="btn-convert-movie" class="nav-btn-mini">ADD VIDEO CLIPS</button><button type="button" id="btn-animation-mode" class="nav-btn-mini mode-switch-btn">ADVANCED MODE</button></div></div>
+<div class="panel-content-hide upload-wrap"><label for="image-picker" class="file-upload-label" id="upload-label">🏛️ UPLOAD IMAGES / ANIMATED GIF / WEBP</label><input type="file" id="image-picker" multiple accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"><input type="file" id="video-picker" multiple accept="video/mp4,video/webm,video/quicktime,video/x-m4v"></div>
+</header>
+<main class="middle-scroll-panel"></main>
+<footer class="bottom-sticky-panel"></footer>
+</div>
+<script src="../animation-maker-mode/mode-switch.js"></script>
+</body>
+</html>
