@@ -22,5 +22,10 @@
 
   const workspaceScript = document.createElement('script');
   workspaceScript.src = '../animation-maker-mode/advanced-workspace.js';
+  workspaceScript.addEventListener('load', () => {
+    const effectsScript = document.createElement('script');
+    effectsScript.src = '../animation-maker-mode/advanced-effects.js';
+    document.head.append(effectsScript);
+  });
   document.head.append(workspaceScript);
 })();
