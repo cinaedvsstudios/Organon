@@ -1,4 +1,5 @@
 @import url('./advanced-layout.css');
+@import url('./advanced-editor-operations.css');
 
 .mode-actions {
   display: flex;
