@@ -23,6 +23,14 @@
   border-color: var(--water-spray) !important;
 }
 
+body.is-advanced-mode.advanced-workspace-locked .top-sticky-panel {
+  padding: 8px 26px !important;
+}
+
+body.is-advanced-mode.advanced-workspace-locked .top-sticky-panel .panel-content-hide {
+  display: none !important;
+}
+
 @media (max-width: 680px) {
   .title-pill {
     gap: 6px;
