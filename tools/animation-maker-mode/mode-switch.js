@@ -13,16 +13,22 @@
     title.textContent = advanced ? 'ANIMATION MAKER — ADVANCED' : 'ANIMATION MAKER';
   }
 
-  if (!button) return;
+  if (button) {
+    button.textContent = advanced ? 'STANDARD MODE' : 'ADVANCED MODE';
+    button.title = advanced
+      ? 'Return to the compact Animation Maker workspace'
+      : 'Open the wide desktop Animation Maker workspace';
 
-  button.textContent = advanced ? 'STANDARD MODE' : 'ADVANCED MODE';
-  button.title = advanced
-    ? 'Return to the compact Animation Maker workspace'
-    : 'Open the wide desktop Animation Maker workspace';
+    button.addEventListener('click', () => {
+      window.location.assign(advanced
+        ? './index.html'
+        : '../animation-maker-advanced/index.html');
+    });
+  }
 
-  button.addEventListener('click', () => {
-    window.location.assign(advanced
-      ? './index.html'
-      : '../animation-maker-advanced/index.html');
-  });
+  if (advanced) {
+    const advancedWorkspace = document.createElement('script');
+    advancedWorkspace.src = '../animation-maker-mode/advanced-workspace.js';
+    document.head.appendChild(advancedWorkspace);
+  }
 })();
