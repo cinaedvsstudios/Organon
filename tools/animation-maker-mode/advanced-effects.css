@@ -1,0 +1,196 @@
+body.is-advanced-mode .animation-effects-card {
+  min-width: 0;
+}
+
+body.is-advanced-mode .animation-effects-card h3 {
+  margin-bottom: 8px;
+}
+
+body.is-advanced-mode .animation-effects-card .help-text {
+  margin: 0 0 15px;
+}
+
+body.is-advanced-mode .effects-section {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(137, 107, 73, .42);
+}
+
+body.is-advanced-mode .effects-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 11px;
+}
+
+body.is-advanced-mode .effects-section-heading h4 {
+  margin: 0;
+}
+
+body.is-advanced-mode #effects-frame-estimate,
+body.is-advanced-mode #effects-fade-summary {
+  color: var(--water-spray);
+  font: .63rem var(--font-mono);
+  white-space: nowrap;
+}
+
+body.is-advanced-mode .effects-control-row {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+body.is-advanced-mode .effects-control-row > label {
+  display: grid;
+  gap: 5px;
+  color: var(--stone-ochre);
+  font: 700 .59rem var(--font-headers);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+body.is-advanced-mode .effects-control-row select,
+body.is-advanced-mode .effects-control-row input[type="number"] {
+  min-width: 118px;
+  min-height: 32px;
+  padding: 6px 8px;
+  border: 1px solid rgba(137, 107, 73, .7);
+  border-radius: 7px;
+  background: #20211d;
+  color: var(--alabaster-paper);
+  font: .69rem var(--font-mono);
+}
+
+body.is-advanced-mode .effects-hold-row {
+  margin-top: 10px;
+}
+
+body.is-advanced-mode .effects-hold-row input[type="number"] {
+  min-width: 78px;
+  width: 78px;
+}
+
+body.is-advanced-mode .effects-note {
+  padding-bottom: 8px;
+  color: rgba(245,240,219,.56);
+  font: .61rem/1.4 var(--font-body);
+}
+
+body.is-advanced-mode .effects-fade-row {
+  align-items: center;
+}
+
+body.is-advanced-mode .effects-toggle {
+  display: inline-flex !important;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 7px !important;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(137, 107, 73, .65);
+  border-radius: 7px;
+  background: #20211d;
+  color: var(--alabaster-paper) !important;
+}
+
+body.is-advanced-mode .effects-toggle input {
+  accent-color: var(--water-blue);
+}
+
+body.is-advanced-mode .effects-range {
+  display: flex !important;
+  align-items: center;
+  gap: 9px !important;
+  min-width: 255px;
+}
+
+body.is-advanced-mode .effects-range input {
+  flex: 1;
+}
+
+body.is-advanced-mode .effects-range b {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border: 1px solid rgba(117,178,222,.55);
+  border-radius: 50%;
+  background: rgba(75,132,191,.18);
+  color: var(--water-spray);
+  font: .68rem var(--font-mono);
+}
+
+body.is-advanced-mode .effects-sliders {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+body.is-advanced-mode .effects-sliders label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 7px;
+  padding: 9px;
+  border: 1px solid rgba(137,107,73,.42);
+  border-radius: 8px;
+  background: rgba(0,0,0,.12);
+  color: var(--stone-ochre);
+  font: 700 .58rem/1.2 var(--font-headers);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+body.is-advanced-mode .effects-sliders input {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+body.is-advanced-mode .effects-sliders b {
+  color: var(--water-spray);
+  font: .68rem var(--font-mono);
+}
+
+body.is-advanced-mode .effects-bottom-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 15px;
+  padding-top: 14px;
+  border-top: 1px dashed rgba(137,107,73,.42);
+}
+
+body.is-advanced-mode #effects-output-note {
+  color: rgba(245,240,219,.58);
+  font: .6rem/1.4 var(--font-body);
+  text-align: right;
+}
+
+@media (max-width: 1180px) {
+  body.is-advanced-mode .effects-sliders {
+    grid-template-columns: repeat(3, minmax(120px, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  body.is-advanced-mode .effects-section-heading,
+  body.is-advanced-mode .effects-bottom-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.is-advanced-mode .effects-sliders {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+  }
+
+  body.is-advanced-mode .effects-range {
+    min-width: 100%;
+  }
+
+  body.is-advanced-mode #effects-output-note {
+    text-align: left;
+  }
+}
