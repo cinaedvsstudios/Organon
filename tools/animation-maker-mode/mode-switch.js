@@ -25,9 +25,16 @@
     document.head.append(script);
   };
 
+  if (isAdvanced && !document.querySelector('link[data-advanced-transform-styles]')) {
+    const transformStyles = document.createElement('link');
+    transformStyles.rel = 'stylesheet';
+    transformStyles.href = '../animation-maker-mode/advanced-transform.css';
+    transformStyles.dataset.advancedTransformStyles = 'true';
+    document.head.append(transformStyles);
+  }
+
   loadScript('../animation-maker-mode/webp-export.js', () => {
     if (!isAdvanced) return;
-
     loadScript('../animation-maker-mode/advanced-workspace.js', () => {
       loadScript('../animation-maker-mode/advanced-effects.js', () => {
         loadScript('../animation-maker-mode/advanced-effects-layout.js', () => {});
