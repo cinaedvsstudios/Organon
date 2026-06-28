@@ -3,7 +3,7 @@
   "categories": [
     {
       "id": "create",
-      "label": "AUDIO<style id=\"organon-button-text-contrast\">.org-btn-unified span,.org-btn-dual-action .dual-label{text-shadow:0 0 1px rgba(220,220,220,.44),0 1px 1px rgba(0,0,0,.35)}#tool-quicksheet-split{width:167px!important;height:30px!important}#tool-quicksheet-split .dual-label-left{left:0!important;width:100%!important}#tool-quicksheet-split .dual-label-right,#tool-quicksheet-split .right-zone{display:none!important}#tool-quicksheet-split .left-zone{width:100%!important}</style>",
+      "label": "AUDIO",
       "tools": [
         {
           "id": "onda-split",
@@ -47,8 +47,8 @@
         {
           "id": "animation-maker",
           "label": "ANIMATION MAKER",
-          "path": "tools/animation-maker/index.html",
-          "description": "Create and preview animation assets from local media or image sequences."
+          "path": "tools/animation-maker-standard/index.html",
+          "description": "Create and preview animation assets from local media or image sequences. Advanced Mode opens the wide desktop workspace."
         },
         {
           "id": "audio-timeline",
