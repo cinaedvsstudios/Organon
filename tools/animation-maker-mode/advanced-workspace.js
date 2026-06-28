@@ -9,6 +9,7 @@
     selectionEnabled: false,
     selection: { active: false, x: 0, y: 0, w: 0, h: 0, dragging: false, dragMode: 'create', startX: 0, startY: 0, lastX: 0, lastY: 0 },
     grid: { visible: false, scale: 1 },
+    frameOverrides: new Map(),
     bottomTimer: null,
     editorOpened: false
   };
@@ -30,12 +31,86 @@
 
   if (!queueCard || !frameGrid || !imagePicker || !editorModal || !editorWindow || !editorButton || !editorNav || !editorHeader || !editorTools || !canvas || !canvasViewport || !topPanel || !bottomPanel || !title) return;
 
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
+
   const notify = (text) => {
     try { window.parent.postMessage({ type: 'set-status', text }, '*'); } catch (error) {}
     window.setTimeout(() => { try { window.parent.postMessage({ type: 'clear-status' }, '*'); } catch (error) {} }, 3600);
   };
 
-  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  function copyCanvas(source, width = source.width, height = source.height) {
+    const output = document.createElement('canvas');
+    output.width = width;
+    output.height = height;
+    output.getContext('2d').drawImage(source, 0, 0, width, height);
+    return output;
+  }
+
+  function currentFrameIndex() {
+    const match = ($('editor-frame-number')?.textContent || '').match(/FRAME\s+(\d+)/i);
+    return match ? Math.max(0, parseInt(match[1], 10) - 1) : 0;
+  }
+
+  function currentOverride(index = currentFrameIndex(), fallback = canvas) {
+    const override = state.frameOverrides.get(index);
+    return override ? copyCanvas(override, fallback.width, fallback.height) : copyCanvas(fallback);
+  }
+
+  function drawOverride(index = currentFrameIndex()) {
+    const override = state.frameOverrides.get(index);
+    if (!override || !canvas.width || !canvas.height) return;
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(override, 0, 0, canvas.width, canvas.height);
+    updateOverlays();
+  }
+
+  function scheduleOverride(index = currentFrameIndex()) {
+    [20, 85, 180].forEach((delayMs) => {
+      window.setTimeout(() => {
+        if (index === currentFrameIndex()) drawOverride(index);
+      }, delayMs);
+    });
+  }
+
+  function saveOverride(index, source) {
+    state.frameOverrides.set(index, copyCanvas(source));
+    drawOverride(index);
+    scheduleOverride(index);
+  }
+
+  function regionFor(source) {
+    const selection = state.selection;
+    if (!selection.active || selection.w <= .004 || selection.h <= .004) {
+      return { x: 0, y: 0, w: source.width, h: source.height, full: true };
+    }
+    const x = Math.round(selection.x * source.width);
+    const y = Math.round(selection.y * source.height);
+    const w = Math.max(1, Math.round(selection.w * source.width));
+    const h = Math.max(1, Math.round(selection.h * source.height));
+    return { x, y, w, h, full: false };
+  }
+
+  function loadImage(source) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('The clipboard image could not be read.'));
+      image.src = source;
+    });
+  }
+
+  async function clipboardImage() {
+    if (!navigator.clipboard?.read) throw new Error('Clipboard image access is unavailable in this browser.');
+    const items = await navigator.clipboard.read();
+    for (const item of items) {
+      const type = item.types.find((entry) => entry.startsWith('image/'));
+      if (!type) continue;
+      return { blob: await item.getType(type), type };
+    }
+    throw new Error('No image was found in the clipboard.');
+  }
 
   function keepVisible(element) {
     if (!element) return;
@@ -58,27 +133,141 @@
   }
 
   async function pasteFrames() {
-    if (!navigator.clipboard?.read) {
-      notify('Clipboard image access is unavailable in this browser.');
-      return;
-    }
-
     try {
-      const items = await navigator.clipboard.read();
-      const files = [];
-      for (const item of items) {
-        const type = item.types.find((entry) => entry.startsWith('image/'));
-        if (!type) continue;
-        const blob = await item.getType(type);
-        const suffix = type.split('/')[1] === 'jpeg' ? 'jpg' : type.split('/')[1];
-        files.push(new File([blob], `clipboard-frame-${Date.now()}-${files.length + 1}.${suffix}`, { type }));
-      }
-      if (!files.length) return notify('No image was found in the clipboard.');
-      importFiles(files);
-      notify(`${files.length} clipboard frame${files.length === 1 ? '' : 's'} added.`);
+      const { blob, type } = await clipboardImage();
+      const suffix = type.split('/')[1] === 'jpeg' ? 'jpg' : type.split('/')[1];
+      importFiles([new File([blob], `clipboard-frame-${Date.now()}.${suffix}`, { type })]);
+      notify('Clipboard frame added to the sequence.');
     } catch (error) {
-      notify('Clipboard permission was blocked. Copy an image, then press Ctrl+V in this workspace.');
+      notify(error.message);
     }
+  }
+
+  async function pasteIntoFrame() {
+    try {
+      const { blob } = await clipboardImage();
+      const url = URL.createObjectURL(blob);
+      const image = await loadImage(url);
+      URL.revokeObjectURL(url);
+      const index = currentFrameIndex();
+      const output = currentOverride(index);
+      const region = regionFor(output);
+      const context = output.getContext('2d');
+      context.clearRect(region.x, region.y, region.w, region.h);
+      context.drawImage(image, region.x, region.y, region.w, region.h);
+      saveOverride(index, output);
+      notify(region.full ? 'Clipboard image pasted into the current frame.' : 'Clipboard image pasted into the selection.');
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+
+  async function pasteAsNewFrame() {
+    try {
+      const { blob, type } = await clipboardImage();
+      const suffix = type.split('/')[1] === 'jpeg' ? 'jpg' : type.split('/')[1];
+      importFiles([new File([blob], `pasted-frame-${Date.now()}.${suffix}`, { type })]);
+      notify('Clipboard image added as a new frame at the end of the sequence.');
+    } catch (error) {
+      notify(error.message);
+    }
+  }
+
+  function copyVisibleFrame() {
+    if (!canvas.width || !canvas.height) return notify('Load a frame before copying.');
+    const source = currentOverride();
+    const region = regionFor(source);
+    const result = document.createElement('canvas');
+    result.width = region.w;
+    result.height = region.h;
+    result.getContext('2d').drawImage(source, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+
+    result.toBlob(async (blob) => {
+      try {
+        if (!blob || !navigator.clipboard || !window.ClipboardItem) throw new Error('Clipboard write unavailable');
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        notify(state.selection.active ? 'Selection copied.' : 'Current frame copied.');
+      } catch (error) {
+        notify('Browser clipboard write was blocked.');
+      }
+    }, 'image/png');
+  }
+
+  function clearCurrentFrame() {
+    if (!canvas.width || !canvas.height) return notify('Load a frame before clearing.');
+    const index = currentFrameIndex();
+    const output = currentOverride(index);
+    const region = regionFor(output);
+    output.getContext('2d').clearRect(region.x, region.y, region.w, region.h);
+    saveOverride(index, output);
+    notify(region.full ? 'Current frame cleared.' : 'Selection cleared in the current frame.');
+  }
+
+  function scaleCurrentFrame() {
+    if (!canvas.width || !canvas.height) return notify('Load a frame before scaling.');
+    const answer = window.prompt('Scale the current frame or selection to what percentage?', '100');
+    if (answer === null) return;
+    const amount = Number(answer);
+    if (!Number.isFinite(amount) || amount < 1 || amount > 1000) return notify('Enter a scale from 1% to 1000%.');
+
+    const index = currentFrameIndex();
+    const output = currentOverride(index);
+    const region = regionFor(output);
+    const source = document.createElement('canvas');
+    source.width = region.w;
+    source.height = region.h;
+    source.getContext('2d').drawImage(output, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+
+    const context = output.getContext('2d');
+    context.save();
+    context.beginPath();
+    context.rect(region.x, region.y, region.w, region.h);
+    context.clip();
+    context.clearRect(region.x, region.y, region.w, region.h);
+    context.translate(region.x + region.w / 2, region.y + region.h / 2);
+    const factor = amount / 100;
+    context.scale(factor, factor);
+    context.drawImage(source, -region.w / 2, -region.h / 2);
+    context.restore();
+
+    saveOverride(index, output);
+    notify(`Scaled ${region.full ? 'current frame' : 'selection'} to ${amount}%.`);
+  }
+
+  function rotateCurrentFrame() {
+    if (!canvas.width || !canvas.height) return notify('Load a frame before rotating.');
+    const answer = window.prompt('Rotate the current frame or selection by how many degrees?', '0');
+    if (answer === null) return;
+    const degrees = Number(answer);
+    if (!Number.isFinite(degrees) || degrees < -3600 || degrees > 3600) return notify('Enter an angle from -3600° to 3600°.');
+
+    const index = currentFrameIndex();
+    const output = currentOverride(index);
+    const region = regionFor(output);
+    const source = document.createElement('canvas');
+    source.width = region.w;
+    source.height = region.h;
+    source.getContext('2d').drawImage(output, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+
+    const context = output.getContext('2d');
+    context.save();
+    context.beginPath();
+    context.rect(region.x, region.y, region.w, region.h);
+    context.clip();
+    context.clearRect(region.x, region.y, region.w, region.h);
+    context.translate(region.x + region.w / 2, region.y + region.h / 2);
+    context.rotate(degrees * Math.PI / 180);
+    context.drawImage(source, -region.w / 2, -region.h / 2);
+    context.restore();
+
+    saveOverride(index, output);
+    notify(`Rotated ${region.full ? 'current frame' : 'selection'} by ${degrees}°.`);
+  }
+
+  function realignCurrentFrame() {
+    const alignButton = [...document.querySelectorAll('.frame-align-btn')][currentFrameIndex()];
+    if (alignButton) alignButton.click();
+    else notify('Load a frame before realigning.');
   }
 
   function initCards() {
@@ -91,7 +280,6 @@
       row.className = 'advanced-card-heading';
       heading.parentNode.insertBefore(row, heading);
       row.appendChild(heading);
-
       const pasteButton = document.createElement('button');
       pasteButton.type = 'button';
       pasteButton.id = 'paste-clipboard-frames';
@@ -112,7 +300,6 @@
 
     const host = editorCard.querySelector('.advanced-inline-editor-host');
     if (!host.contains(editorWindow)) host.appendChild(editorWindow);
-
     editorModal.hidden = false;
     editorModal.classList.add('advanced-inline-editor');
     editorWindow.querySelector('.editor-close')?.setAttribute('hidden', '');
@@ -142,51 +329,9 @@
     const webpHeading = $('advanced-webp-card')?.querySelector('h3');
     const outputHeading = $('output-card')?.querySelector('h3');
     if (adjustHeading) adjustHeading.textContent = '3. Visual Adjustments';
-    if (settingsHeading) settingsHeading.textContent = '4. Animation Settings';
-    if (webpHeading) webpHeading.textContent = '5. WebP Advanced Settings';
-    if (outputHeading) outputHeading.textContent = '6. Synthesized Core Output';
-  }
-
-  function currentFrameIndex() {
-    const match = ($('editor-frame-number')?.textContent || '').match(/FRAME\s+(\d+)/i);
-    return match ? Math.max(0, parseInt(match[1], 10) - 1) : 0;
-  }
-
-  function copyVisibleFrame() {
-    if (!canvas.width || !canvas.height) return notify('Load a frame before copying.');
-    const source = document.createElement('canvas');
-    source.width = canvas.width;
-    source.height = canvas.height;
-    source.getContext('2d').drawImage(canvas, 0, 0);
-
-    const selection = state.selection;
-    let result = source;
-    if (selection.active && selection.w > .004 && selection.h > .004) {
-      const x = Math.round(selection.x * source.width);
-      const y = Math.round(selection.y * source.height);
-      const width = Math.max(1, Math.round(selection.w * source.width));
-      const height = Math.max(1, Math.round(selection.h * source.height));
-      result = document.createElement('canvas');
-      result.width = width;
-      result.height = height;
-      result.getContext('2d').drawImage(source, x, y, width, height, 0, 0, width, height);
-    }
-
-    result.toBlob(async (blob) => {
-      try {
-        if (!blob || !navigator.clipboard || !window.ClipboardItem) throw new Error('Clipboard write unavailable');
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        notify(state.selection.active ? 'Selection copied.' : 'Current frame copied.');
-      } catch (error) {
-        notify('Browser clipboard write was blocked.');
-      }
-    }, 'image/png');
-  }
-
-  function realignCurrentFrame() {
-    const alignButton = [...document.querySelectorAll('.frame-align-btn')][currentFrameIndex()];
-    if (alignButton) alignButton.click();
-    else notify('Load a frame before realigning.');
+    if (settingsHeading) settingsHeading.textContent = '5. Animation Settings';
+    if (webpHeading) webpHeading.textContent = '6. WebP Advanced Settings';
+    if (outputHeading) outputHeading.textContent = '7. Synthesized Core Output';
   }
 
   function initEditorToolbar() {
@@ -198,7 +343,6 @@
     const cutoutPanel = $('cutout-panel');
     const paintPanel = $('paint-panel');
     const movingPanel = $('moving-panel');
-
     if (!titleNode || !viewControls || !toolGrid || !targetMode || !modeGroup || !cutoutPanel || !paintPanel || !movingPanel) return;
 
     editorHeader.querySelector('.advanced-editor-menu')?.remove();
@@ -213,9 +357,14 @@
 
     const actions = document.createElement('div');
     actions.className = 'advanced-editor-actions';
-    actions.innerHTML = '<button type="button" disabled title="Part of the next editor engine pass">PASTE INTO FRAME</button><button type="button" disabled title="Part of the next editor engine pass">PASTE AS NEW FRAME</button><button type="button" id="advanced-copy-frame">COPY</button><button type="button" disabled title="Part of the next editor engine pass">CLEAR</button><button type="button" disabled title="Part of the next editor engine pass">SCALE</button><button type="button" disabled title="Part of the next editor engine pass">ROTATE</button><button type="button" id="advanced-realign-frame">REALIGN</button>';
+    actions.innerHTML = '<button type="button" id="advanced-paste-into">PASTE INTO FRAME</button><button type="button" id="advanced-paste-new">PASTE AS NEW FRAME</button><button type="button" id="advanced-copy-frame">COPY</button><button type="button" id="advanced-clear-frame">CLEAR</button><button type="button" id="advanced-scale-frame">SCALE</button><button type="button" id="advanced-rotate-frame">ROTATE</button><button type="button" id="advanced-realign-frame">REALIGN</button>';
     editorNav.insertBefore(actions, viewControls);
+    $('advanced-paste-into')?.addEventListener('click', pasteIntoFrame);
+    $('advanced-paste-new')?.addEventListener('click', pasteAsNewFrame);
     $('advanced-copy-frame')?.addEventListener('click', copyVisibleFrame);
+    $('advanced-clear-frame')?.addEventListener('click', clearCurrentFrame);
+    $('advanced-scale-frame')?.addEventListener('click', scaleCurrentFrame);
+    $('advanced-rotate-frame')?.addEventListener('click', rotateCurrentFrame);
     $('advanced-realign-frame')?.addEventListener('click', realignCurrentFrame);
 
     const toolStrip = document.createElement('div');
@@ -232,6 +381,10 @@
     if (clearAll) {
       clearAll.classList.add('advanced-clear-all');
       viewControls.appendChild(clearAll);
+      clearAll.addEventListener('click', () => {
+        state.frameOverrides.clear();
+        window.setTimeout(() => scheduleOverride(), 30);
+      });
     }
 
     modeGroup.querySelector('h4').textContent = 'Move Selection';
@@ -277,19 +430,16 @@
       paintPanel.hidden = mode !== 'paint';
       movingPanel.hidden = true;
       targetMode.hidden = true;
-
       if (mode === 'paint') {
         showTools(['brush', 'bucket']);
         click('#target-mode [data-target="paint"]');
         click('#tool-grid [data-tool="brush"]');
       }
-
       if (mode === 'select') {
         showTools(['pan', 'rect', 'lasso', 'polygon']);
         click('#target-mode [data-target="cutout"]');
         click('#tool-grid [data-tool="rect"]');
       }
-
       updateOverlays();
     }
 
@@ -335,7 +485,6 @@
     const selectionOverlay = ensureOverlay('advanced-selection-box', '<span>SELECTION</span>');
     const canvasRect = canvas.getBoundingClientRect();
     const viewportRect = canvasViewport.getBoundingClientRect();
-
     if (!canvas.width || !canvas.height || !canvasRect.width || !canvasRect.height) return;
 
     const left = canvasRect.left - viewportRect.left;
@@ -351,7 +500,6 @@
     const selected = selection.active && selection.w > .004 && selection.h > .004;
     selectionOverlay.hidden = !selected;
     if (!selected) return;
-
     selectionOverlay.style.left = `${left + selection.x * canvasRect.width}px`;
     selectionOverlay.style.top = `${top + selection.y * canvasRect.height}px`;
     selectionOverlay.style.width = `${selection.w * canvasRect.width}px`;
@@ -363,7 +511,6 @@
       const rect = canvas.getBoundingClientRect();
       return { x: clamp((event.clientX - rect.left) / rect.width, 0, 1), y: clamp((event.clientY - rect.top) / rect.height, 0, 1) };
     };
-
     const selectionContains = (point) => {
       const selection = state.selection;
       return selection.active && point.x >= selection.x && point.x <= selection.x + selection.w && point.y >= selection.y && point.y <= selection.y + selection.h;
@@ -377,7 +524,6 @@
       const selection = state.selection;
       selection.dragging = true;
       canvas.setPointerCapture?.(event.pointerId);
-
       if (selectionContains(point)) {
         selection.dragMode = 'move';
         selection.lastX = point.x;
@@ -401,7 +547,6 @@
       event.preventDefault();
       event.stopImmediatePropagation();
       const point = pointFor(event);
-
       if (selection.dragMode === 'move') {
         selection.x = clamp(selection.x + point.x - selection.lastX, 0, 1 - selection.w);
         selection.y = clamp(selection.y + point.y - selection.lastY, 0, 1 - selection.h);
@@ -444,7 +589,6 @@
       }
       state.bottomTimer = window.setTimeout(() => bottomPanel.classList.add('is-auto-hidden'), 2200);
     };
-
     bottomPanel.addEventListener('mouseenter', show);
     bottomPanel.addEventListener('mouseleave', hideLater);
     bottomPanel.addEventListener('focusin', show);
@@ -465,7 +609,6 @@
     lock.title = 'Lock the top and bottom panels out of the workspace';
     lock.setAttribute('aria-pressed', 'false');
     title.insertAdjacentElement('afterend', lock);
-
     lock.addEventListener('click', (event) => {
       event.stopPropagation();
       const next = !document.body.classList.contains('advanced-workspace-locked');
@@ -490,6 +633,12 @@
     notify(`${files.length} pasted frame${files.length === 1 ? '' : 's'} added.`);
   });
 
+  window.AnimationMakerAdvanced = {
+    hasFrameEdits: () => state.frameOverrides.size > 0,
+    getFrameCanvas: (index, fallback) => state.frameOverrides.has(index) ? copyCanvas(state.frameOverrides.get(index), fallback.width, fallback.height) : copyCanvas(fallback),
+    redrawCurrent: () => scheduleOverride()
+  };
+
   initCards();
   initEditorToolbar();
   initSelection();
@@ -497,8 +646,12 @@
   initLock();
 
   ['editor-next', 'editor-prev', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-reset', 'view-final', 'view-original'].forEach((id) => {
-    $(id)?.addEventListener('click', () => window.setTimeout(updateOverlays, 40));
+    $(id)?.addEventListener('click', () => {
+      window.setTimeout(updateOverlays, 40);
+      scheduleOverride();
+    });
   });
+  canvas.addEventListener('pointerup', () => scheduleOverride());
   new ResizeObserver(updateOverlays).observe(canvasViewport);
   window.addEventListener('resize', updateOverlays);
   updateOverlays();
