@@ -7,8 +7,9 @@
   const queueCard = $('queue-card');
   const editorButton = $('open-editor-btn');
   const imagePicker = $('image-picker');
+  const frameGrid = $('frame-grid');
 
-  if (!queueCard || !editorButton || !imagePicker) return;
+  if (!queueCard || !editorButton || !imagePicker || !frameGrid) return;
 
   function setHubStatus(text) {
     try {
@@ -110,36 +111,84 @@
   }
 
   function createEditorCard() {
-    if ($('advanced-editor-card')) return;
+    if ($('advanced-editor-card')) return $('advanced-editor-card');
 
     const editorCard = document.createElement('section');
     editorCard.id = 'advanced-editor-card';
     editorCard.className = 'config-card advanced-editor-card';
-    editorCard.innerHTML = `
-      <div class="advanced-card-heading">
-        <h3>2. Frame Editor</h3>
-        <button type="button" class="mini-action" id="advanced-open-editor">OPEN FRAME EDITOR</button>
-      </div>
-      <div class="advanced-editor-placeholder">
-        <div class="advanced-editor-placeholder-icon">✦</div>
-        <div>
-          <strong>EDITOR WORKSPACE</strong>
-          <p>Load frames above, then open the editor to cut out, paint, align and refine the sequence.</p>
-        </div>
-      </div>
-    `;
-
+    editorCard.innerHTML = '<div class="advanced-card-heading"><h3>2. Frame Editor</h3></div><div class="advanced-inline-editor-host"></div>';
     queueCard.insertAdjacentElement('afterend', editorCard);
+    return editorCard;
+  }
 
-    const launchButton = $('advanced-open-editor');
-    const syncEditorButton = () => {
-      launchButton.disabled = editorButton.disabled;
-      editorCard.classList.toggle('is-ready', !editorButton.disabled);
+  function embedFullEditor() {
+    const editorCard = createEditorCard();
+    const editorModal = $('frame-editor-modal');
+    const editorWindow = $('editor-window');
+    const inlineHost = editorCard.querySelector('.advanced-inline-editor-host');
+
+    if (!editorModal || !editorWindow || !inlineHost || editorCard.dataset.editorEmbedded === 'true') return editorCard;
+
+    editorModal.hidden = false;
+    editorModal.classList.add('advanced-inline-editor-host-modal');
+    inlineHost.appendChild(editorWindow);
+    editorCard.dataset.editorEmbedded = 'true';
+
+    const headerClose = editorWindow.querySelector('.editor-close');
+    const applyClose = editorWindow.querySelector('.editor-footer [data-close="frame-editor-modal"]');
+    if (headerClose) headerClose.hidden = true;
+    if (applyClose) applyClose.hidden = true;
+
+    const keepEditorMounted = () => {
+      if (editorModal.hidden) editorModal.hidden = false;
+    };
+    new MutationObserver(keepEditorMounted).observe(editorModal, { attributes: true, attributeFilter: ['hidden'] });
+
+    let initialised = false;
+    const syncEditor = () => {
+      const ready = !editorButton.disabled && Boolean(frameGrid.querySelector('.frame-thumb-wrapper'));
+      editorCard.classList.toggle('has-frames', ready);
+      editorCard.dataset.editorState = ready ? 'ready' : 'empty';
+
+      if (ready && !initialised) {
+        initialised = true;
+        window.requestAnimationFrame(() => editorButton.click());
+      }
     };
 
-    launchButton.addEventListener('click', () => editorButton.click());
-    new MutationObserver(syncEditorButton).observe(editorButton, { attributes: true, attributeFilter: ['disabled'] });
-    syncEditorButton();
+    new MutationObserver(syncEditor).observe(editorButton, { attributes: true, attributeFilter: ['disabled'] });
+    new MutationObserver(syncEditor).observe(frameGrid, { childList: true, subtree: true });
+    syncEditor();
+    return editorCard;
+  }
+
+  function addBottomPanelAutoHide() {
+    const panel = document.querySelector('.bottom-sticky-panel');
+    if (!panel || panel.dataset.autoHideBound === 'true') return;
+
+    panel.dataset.autoHideBound = 'true';
+    panel.classList.add('advanced-auto-panel');
+    let timer = null;
+
+    const show = () => {
+      window.clearTimeout(timer);
+      panel.classList.remove('is-auto-hidden');
+    };
+
+    const hideLater = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => panel.classList.add('is-auto-hidden'), 2200);
+    };
+
+    panel.addEventListener('mouseenter', show);
+    panel.addEventListener('mouseleave', hideLater);
+    panel.addEventListener('focusin', show);
+    panel.addEventListener('focusout', hideLater);
+    document.addEventListener('pointermove', (event) => {
+      if (event.clientY >= window.innerHeight - 40) show();
+    }, { passive: true });
+
+    hideLater();
   }
 
   function renumberVisibleCards() {
@@ -169,6 +218,7 @@
 
   keepAdvancedCardsVisible();
   addQueueHeaderControls();
-  createEditorCard();
+  embedFullEditor();
+  addBottomPanelAutoHide();
   renumberVisibleCards();
 })();
