@@ -1,3 +1,114 @@
+body.is-advanced-mode #queue-card .frame-queue-grid:empty {
+  min-height: 168px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed rgba(117, 178, 222, .52);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, .2);
+}
+
+body.is-advanced-mode #queue-card .frame-queue-grid:empty::before {
+  content: 'NO FRAMES LOADED — UPLOAD, PASTE FROM CLIPBOARD, OR ADD VIDEO CLIPS';
+  max-width: 520px;
+  padding: 20px;
+  color: var(--water-spray);
+  font: .76rem/1.55 var(--font-mono);
+  letter-spacing: .04em;
+  text-align: center;
+}
+
+body.is-advanced-mode .advanced-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(137, 107, 73, .4);
+}
+
+body.is-advanced-mode .advanced-card-heading h3 {
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+body.is-advanced-mode .advanced-paste-btn {
+  background: var(--forest-teal);
+  border-color: var(--water-blue);
+  white-space: nowrap;
+}
+
+body.is-advanced-mode .advanced-editor-card {
+  display: block;
+}
+
+body.is-advanced-mode .advanced-editor-placeholder {
+  min-height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 28px;
+  border: 1px dashed rgba(117, 178, 222, .52);
+  border-radius: 14px;
+  background-color: #171816;
+  background-image: linear-gradient(45deg, rgba(34,37,33,.55) 25%, transparent 25%), linear-gradient(-45deg, rgba(34,37,33,.55) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(34,37,33,.55) 75%), linear-gradient(-45deg, transparent 75%, rgba(34,37,33,.55) 75%);
+  background-size: 28px 28px;
+  background-position: 0 0, 0 14px, 14px -14px, -14px 0;
+  color: rgba(245,240,219,.72);
+  text-align: left;
+}
+
+body.is-advanced-mode .advanced-editor-placeholder-icon {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border: 1px solid var(--water-blue);
+  border-radius: 50%;
+  background: rgba(38, 97, 92, .48);
+  color: var(--water-spray);
+  font-size: 1.7rem;
+}
+
+body.is-advanced-mode .advanced-editor-placeholder strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--water-spray);
+  font: 700 .82rem var(--font-headers);
+  letter-spacing: .06em;
+}
+
+body.is-advanced-mode .advanced-editor-placeholder p {
+  max-width: 620px;
+  margin: 0;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+body.is-advanced-mode .advanced-editor-card:not(.is-ready) .advanced-editor-placeholder {
+  opacity: .7;
+}
+
+body.is-advanced-mode #compiled-viewport:empty {
+  min-height: 170px;
+  border: 1px dashed rgba(137, 107, 73, .42);
+  border-radius: 12px;
+}
+
+body.is-advanced-mode #compiled-viewport:empty::before {
+  content: 'RENDERED ANIMATION PREVIEW APPEARS HERE';
+  padding: 20px;
+  color: rgba(117, 178, 222, .74);
+  font: .72rem var(--font-mono);
+  letter-spacing: .04em;
+  text-align: center;
+}
+
 @media (min-width: 881px) {
   body.is-advanced-mode {
     display: block;
@@ -30,6 +141,7 @@
   }
 
   body.is-advanced-mode #queue-card,
+  body.is-advanced-mode #advanced-editor-card,
   body.is-advanced-mode #output-card {
     grid-column: 1 / -1;
   }
@@ -57,5 +169,22 @@
   body.is-advanced-mode .output-viewport img,
   body.is-advanced-mode .preview-checker img {
     max-height: 500px;
+  }
+}
+
+@media (max-width: 680px) {
+  body.is-advanced-mode .advanced-card-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.is-advanced-mode .advanced-card-heading .mini-action {
+    width: 100%;
+  }
+
+  body.is-advanced-mode .advanced-editor-placeholder {
+    min-height: 180px;
+    align-items: flex-start;
+    flex-direction: column;
   }
 }
