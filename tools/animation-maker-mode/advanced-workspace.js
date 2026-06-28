@@ -10,6 +10,7 @@
     selection: { active: false, x: 0, y: 0, w: 0, h: 0, dragging: false, dragMode: 'create', startX: 0, startY: 0, lastX: 0, lastY: 0 },
     grid: { visible: false, scale: 1 },
     frameOverrides: new Map(),
+    transform: { type: null, index: null, base: null, open: false },
     bottomTimer: null,
     editorOpened: false
   };
@@ -32,7 +33,6 @@
   if (!queueCard || !frameGrid || !imagePicker || !editorModal || !editorWindow || !editorButton || !editorNav || !editorHeader || !editorTools || !canvas || !canvasViewport || !topPanel || !bottomPanel || !title) return;
 
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
-  const wait = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
   const notify = (text) => {
     try { window.parent.postMessage({ type: 'set-status', text }, '*'); } catch (error) {}
@@ -69,7 +69,7 @@
   function scheduleOverride(index = currentFrameIndex()) {
     [20, 85, 180].forEach((delayMs) => {
       window.setTimeout(() => {
-        if (index === currentFrameIndex()) drawOverride(index);
+        if (index === currentFrameIndex() && !state.transform.open) drawOverride(index);
       }, delayMs);
     });
   }
@@ -181,7 +181,6 @@
     result.width = region.w;
     result.height = region.h;
     result.getContext('2d').drawImage(source, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
-
     result.toBlob(async (blob) => {
       try {
         if (!blob || !navigator.clipboard || !window.ClipboardItem) throw new Error('Clipboard write unavailable');
@@ -203,21 +202,13 @@
     notify(region.full ? 'Current frame cleared.' : 'Selection cleared in the current frame.');
   }
 
-  function scaleCurrentFrame() {
-    if (!canvas.width || !canvas.height) return notify('Load a frame before scaling.');
-    const answer = window.prompt('Scale the current frame or selection to what percentage?', '100');
-    if (answer === null) return;
-    const amount = Number(answer);
-    if (!Number.isFinite(amount) || amount < 1 || amount > 1000) return notify('Enter a scale from 1% to 1000%.');
-
-    const index = currentFrameIndex();
-    const output = currentOverride(index);
+  function applyTransform(source, type, value) {
+    const output = copyCanvas(source);
     const region = regionFor(output);
-    const source = document.createElement('canvas');
-    source.width = region.w;
-    source.height = region.h;
-    source.getContext('2d').drawImage(output, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
-
+    const crop = document.createElement('canvas');
+    crop.width = region.w;
+    crop.height = region.h;
+    crop.getContext('2d').drawImage(source, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
     const context = output.getContext('2d');
     context.save();
     context.beginPath();
@@ -225,43 +216,86 @@
     context.clip();
     context.clearRect(region.x, region.y, region.w, region.h);
     context.translate(region.x + region.w / 2, region.y + region.h / 2);
-    const factor = amount / 100;
-    context.scale(factor, factor);
-    context.drawImage(source, -region.w / 2, -region.h / 2);
+    if (type === 'scale') context.scale(value / 100, value / 100);
+    if (type === 'rotate') context.rotate(value * Math.PI / 180);
+    context.drawImage(crop, -region.w / 2, -region.h / 2);
     context.restore();
-
-    saveOverride(index, output);
-    notify(`Scaled ${region.full ? 'current frame' : 'selection'} to ${amount}%.`);
+    return output;
   }
 
-  function rotateCurrentFrame() {
-    if (!canvas.width || !canvas.height) return notify('Load a frame before rotating.');
-    const answer = window.prompt('Rotate the current frame or selection by how many degrees?', '0');
-    if (answer === null) return;
-    const degrees = Number(answer);
-    if (!Number.isFinite(degrees) || degrees < -3600 || degrees > 3600) return notify('Enter an angle from -3600° to 3600°.');
+  function transformControls() {
+    return $('advanced-transform-panel');
+  }
 
-    const index = currentFrameIndex();
-    const output = currentOverride(index);
-    const region = regionFor(output);
-    const source = document.createElement('canvas');
-    source.width = region.w;
-    source.height = region.h;
-    source.getContext('2d').drawImage(output, region.x, region.y, region.w, region.h, 0, 0, region.w, region.h);
+  function closeTransform(commit) {
+    const panel = transformControls();
+    if (!state.transform.open) return;
+    const index = state.transform.index;
+    const type = state.transform.type;
+    const slider = $('advanced-transform-slider');
+    const value = Number(slider?.value || 0);
+    if (commit) {
+      saveOverride(index, applyTransform(state.transform.base, type, value));
+      notify(type === 'scale' ? `Scaled ${state.selection.active ? 'selection' : 'current frame'} to ${value}%.` : `Rotated ${state.selection.active ? 'selection' : 'current frame'} by ${value}°.`);
+    } else if (index === currentFrameIndex()) {
+      const existing = state.frameOverrides.get(index);
+      if (existing) drawOverride(index);
+      else {
+        const original = copyCanvas(state.transform.base);
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(original, 0, 0, canvas.width, canvas.height);
+        updateOverlays();
+      }
+    }
+    state.transform = { type: null, index: null, base: null, open: false };
+    if (panel) panel.hidden = true;
+  }
 
-    const context = output.getContext('2d');
-    context.save();
-    context.beginPath();
-    context.rect(region.x, region.y, region.w, region.h);
-    context.clip();
-    context.clearRect(region.x, region.y, region.w, region.h);
-    context.translate(region.x + region.w / 2, region.y + region.h / 2);
-    context.rotate(degrees * Math.PI / 180);
-    context.drawImage(source, -region.w / 2, -region.h / 2);
-    context.restore();
+  function previewTransform() {
+    if (!state.transform.open || state.transform.index !== currentFrameIndex()) return;
+    const slider = $('advanced-transform-slider');
+    const value = Number(slider?.value || 0);
+    const readout = $('advanced-transform-value');
+    if (readout) readout.textContent = state.transform.type === 'scale' ? `${value}%` : `${value}°`;
+    const preview = applyTransform(state.transform.base, state.transform.type, value);
+    const context = canvas.getContext('2d');
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(preview, 0, 0, canvas.width, canvas.height);
+    updateOverlays();
+  }
 
-    saveOverride(index, output);
-    notify(`Rotated ${region.full ? 'current frame' : 'selection'} by ${degrees}°.`);
+  function openTransform(type) {
+    if (!canvas.width || !canvas.height) return notify('Load a frame before transforming.');
+    const panel = transformControls();
+    if (!panel) return;
+    if (state.transform.open) closeTransform(false);
+    state.transform = {
+      type,
+      index: currentFrameIndex(),
+      base: currentOverride(),
+      open: true
+    };
+    const slider = $('advanced-transform-slider');
+    const title = $('advanced-transform-title');
+    const readout = $('advanced-transform-value');
+    if (type === 'scale') {
+      title.textContent = state.selection.active ? 'SCALE SELECTION' : 'SCALE FRAME';
+      slider.min = '10';
+      slider.max = '300';
+      slider.step = '1';
+      slider.value = '100';
+      readout.textContent = '100%';
+    } else {
+      title.textContent = state.selection.active ? 'ROTATE SELECTION' : 'ROTATE FRAME';
+      slider.min = '-180';
+      slider.max = '180';
+      slider.step = '1';
+      slider.value = '0';
+      readout.textContent = '0°';
+    }
+    panel.hidden = false;
+    previewTransform();
   }
 
   function realignCurrentFrame() {
@@ -272,7 +306,6 @@
 
   function initCards() {
     ['queue-card', 'advanced-webp-card', 'output-card'].forEach((id) => keepVisible($(id)));
-
     const heading = queueCard.querySelector('h3');
     if (heading && !$('paste-clipboard-frames')) {
       heading.textContent = '1. Frames & Sequence';
@@ -297,17 +330,13 @@
       editorCard.innerHTML = '<div class="advanced-card-heading"><h3>2. Frame Editor</h3></div><div class="advanced-inline-editor-host"></div>';
       queueCard.insertAdjacentElement('afterend', editorCard);
     }
-
     const host = editorCard.querySelector('.advanced-inline-editor-host');
     if (!host.contains(editorWindow)) host.appendChild(editorWindow);
     editorModal.hidden = false;
     editorModal.classList.add('advanced-inline-editor');
     editorWindow.querySelector('.editor-close')?.setAttribute('hidden', '');
     editorWindow.querySelector('.editor-footer [data-close="frame-editor-modal"]')?.setAttribute('hidden', '');
-
-    new MutationObserver(() => {
-      if (editorModal.hidden) editorModal.hidden = false;
-    }).observe(editorModal, { attributes: true, attributeFilter: ['hidden'] });
+    new MutationObserver(() => { if (editorModal.hidden) editorModal.hidden = false; }).observe(editorModal, { attributes: true, attributeFilter: ['hidden'] });
 
     const updateReadyState = () => {
       const ready = !editorButton.disabled && Boolean(frameGrid.querySelector('.frame-thumb-wrapper'));
@@ -319,7 +348,6 @@
       }
       updateOverlays();
     };
-
     new MutationObserver(updateReadyState).observe(frameGrid, { childList: true, subtree: true });
     new MutationObserver(updateReadyState).observe(editorButton, { attributes: true, attributeFilter: ['disabled'] });
     updateReadyState();
@@ -349,6 +377,7 @@
     editorNav.querySelector('.advanced-editor-actions')?.remove();
     editorNav.querySelector('.advanced-tool-strip')?.remove();
     editorNav.querySelector('.advanced-grid-controls')?.remove();
+    editorNav.querySelector('.advanced-transform-panel')?.remove();
 
     const menu = document.createElement('div');
     menu.className = 'advanced-editor-menu';
@@ -363,9 +392,19 @@
     $('advanced-paste-new')?.addEventListener('click', pasteAsNewFrame);
     $('advanced-copy-frame')?.addEventListener('click', copyVisibleFrame);
     $('advanced-clear-frame')?.addEventListener('click', clearCurrentFrame);
-    $('advanced-scale-frame')?.addEventListener('click', scaleCurrentFrame);
-    $('advanced-rotate-frame')?.addEventListener('click', rotateCurrentFrame);
+    $('advanced-scale-frame')?.addEventListener('click', () => openTransform('scale'));
+    $('advanced-rotate-frame')?.addEventListener('click', () => openTransform('rotate'));
     $('advanced-realign-frame')?.addEventListener('click', realignCurrentFrame);
+
+    const transformPanel = document.createElement('div');
+    transformPanel.className = 'advanced-transform-panel';
+    transformPanel.id = 'advanced-transform-panel';
+    transformPanel.hidden = true;
+    transformPanel.innerHTML = '<span id="advanced-transform-title">TRANSFORM</span><input type="range" id="advanced-transform-slider"><b id="advanced-transform-value">0</b><button type="button" id="advanced-transform-apply">APPLY</button><button type="button" id="advanced-transform-cancel">CANCEL</button>';
+    editorNav.insertBefore(transformPanel, viewControls);
+    $('advanced-transform-slider')?.addEventListener('input', previewTransform);
+    $('advanced-transform-apply')?.addEventListener('click', () => closeTransform(true));
+    $('advanced-transform-cancel')?.addEventListener('click', () => closeTransform(false));
 
     const toolStrip = document.createElement('div');
     toolStrip.className = 'advanced-tool-strip';
@@ -383,6 +422,7 @@
       viewControls.appendChild(clearAll);
       clearAll.addEventListener('click', () => {
         state.frameOverrides.clear();
+        closeTransform(false);
         window.setTimeout(() => scheduleOverride(), 30);
       });
     }
@@ -396,14 +436,12 @@
       selectionControls.innerHTML = '<button type="button" id="advanced-move-selection">MOVE SELECTION</button><button type="button" id="advanced-clear-selection">CLEAR SELECTION</button><p class="tool-tip-text">Turn this on, then drag in the canvas to create or reposition one persistent selection.</p>';
       modeGroup.appendChild(selectionControls);
     }
-
     $('advanced-move-selection')?.addEventListener('click', () => {
       state.selectionEnabled = !state.selectionEnabled;
       const button = $('advanced-move-selection');
       button.classList.toggle('active', state.selectionEnabled);
       button.textContent = state.selectionEnabled ? 'MOVE SELECTION: ON' : 'MOVE SELECTION';
     });
-
     $('advanced-clear-selection')?.addEventListener('click', () => {
       state.selection.active = false;
       state.selectionEnabled = false;
@@ -418,8 +456,8 @@
     const nativeTools = [...toolGrid.querySelectorAll('[data-tool]')];
     const showTools = (allowed) => nativeTools.forEach((tool) => { tool.hidden = !allowed.includes(tool.dataset.tool); });
     const click = (selector) => document.querySelector(selector)?.click();
-
     function setEditorMode(mode) {
+      if (state.transform.open) closeTransform(false);
       state.editorMode = mode;
       menu.querySelectorAll('[data-editor-mode]').forEach((button) => button.classList.toggle('active', button.dataset.editorMode === mode));
       actions.hidden = mode !== 'edit';
@@ -442,30 +480,25 @@
       }
       updateOverlays();
     }
-
     menu.addEventListener('click', (event) => {
       const mode = event.target.closest('[data-editor-mode]')?.dataset.editorMode;
       if (mode) setEditorMode(mode);
     });
-
     $('advanced-grid-toggle')?.addEventListener('click', () => {
       state.grid.visible = !state.grid.visible;
       $('advanced-grid-toggle').classList.toggle('active', state.grid.visible);
       updateOverlays();
     });
-
     $('advanced-grid-size')?.addEventListener('click', () => {
       const popover = $('advanced-grid-size-popover');
       if (popover) popover.hidden = !popover.hidden;
     });
-
     $('advanced-grid-size-slider')?.addEventListener('input', (event) => {
       state.grid.scale = Number(event.target.value) || 1;
       const value = $('advanced-grid-size-value');
       if (value) value.textContent = `${state.grid.scale}×`;
       updateOverlays();
     });
-
     setEditorMode('edit');
   }
 
@@ -486,7 +519,6 @@
     const canvasRect = canvas.getBoundingClientRect();
     const viewportRect = canvasViewport.getBoundingClientRect();
     if (!canvas.width || !canvas.height || !canvasRect.width || !canvasRect.height) return;
-
     const left = canvasRect.left - viewportRect.left;
     const top = canvasRect.top - viewportRect.top;
     gridOverlay.style.left = `${left}px`;
@@ -495,7 +527,6 @@
     gridOverlay.style.height = `${canvasRect.height}px`;
     gridOverlay.style.backgroundSize = `${Math.max(2, canvasRect.width / canvas.width * 10 * state.grid.scale)}px ${Math.max(2, canvasRect.height / canvas.height * 10 * state.grid.scale)}px`;
     gridOverlay.hidden = !state.grid.visible;
-
     const selection = state.selection;
     const selected = selection.active && selection.w > .004 && selection.h > .004;
     selectionOverlay.hidden = !selected;
@@ -515,7 +546,6 @@
       const selection = state.selection;
       return selection.active && point.x >= selection.x && point.x <= selection.x + selection.w && point.y >= selection.y && point.y <= selection.y + selection.h;
     };
-
     canvas.addEventListener('pointerdown', (event) => {
       if (state.editorMode !== 'select' || !state.selectionEnabled) return;
       event.preventDefault();
@@ -540,7 +570,6 @@
       }
       updateOverlays();
     }, true);
-
     canvas.addEventListener('pointermove', (event) => {
       const selection = state.selection;
       if (!selection.dragging || state.editorMode !== 'select' || !state.selectionEnabled) return;
@@ -560,7 +589,6 @@
       }
       updateOverlays();
     }, true);
-
     const finish = (event) => {
       const selection = state.selection;
       if (!selection.dragging) return;
@@ -644,9 +672,9 @@
   initSelection();
   initBottomPanel();
   initLock();
-
   ['editor-next', 'editor-prev', 'zoom-in', 'zoom-out', 'zoom-fit', 'zoom-reset', 'view-final', 'view-original'].forEach((id) => {
     $(id)?.addEventListener('click', () => {
+      if (state.transform.open) closeTransform(false);
       window.setTimeout(updateOverlays, 40);
       scheduleOverride();
     });
