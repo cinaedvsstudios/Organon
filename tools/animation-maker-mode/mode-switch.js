@@ -18,19 +18,20 @@
     });
   }
 
-  if (!isAdvanced) return;
+  const loadScript = (src, onload) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.addEventListener('load', onload, { once: true });
+    document.head.append(script);
+  };
 
-  const workspaceScript = document.createElement('script');
-  workspaceScript.src = '../animation-maker-mode/advanced-workspace.js';
-  workspaceScript.addEventListener('load', () => {
-    const effectsScript = document.createElement('script');
-    effectsScript.src = '../animation-maker-mode/advanced-effects.js';
-    effectsScript.addEventListener('load', () => {
-      const orderingScript = document.createElement('script');
-      orderingScript.src = '../animation-maker-mode/advanced-effects-layout.js';
-      document.head.append(orderingScript);
+  loadScript('../animation-maker-mode/webp-export.js', () => {
+    if (!isAdvanced) return;
+
+    loadScript('../animation-maker-mode/advanced-workspace.js', () => {
+      loadScript('../animation-maker-mode/advanced-effects.js', () => {
+        loadScript('../animation-maker-mode/advanced-effects-layout.js', () => {});
+      });
     });
-    document.head.append(effectsScript);
   });
-  document.head.append(workspaceScript);
 })();
