@@ -1,8 +1,20 @@
 @media (min-width: 881px) {
+  body.is-advanced-mode {
+    display: block;
+  }
+
   body.is-advanced-mode .app-wrapper {
     width: calc(100vw - 48px);
     max-width: 1480px;
     margin: 0 auto;
+  }
+
+  body.is-advanced-mode .top-sticky-panel {
+    padding: 18px 26px;
+  }
+
+  body.is-advanced-mode .title-pill {
+    font-size: .98rem;
   }
 
   body.is-advanced-mode .middle-scroll-panel {
@@ -13,8 +25,37 @@
     padding: 24px 26px 170px;
   }
 
+  body.is-advanced-mode .middle-scroll-panel > .config-card {
+    margin: 0;
+  }
+
   body.is-advanced-mode #queue-card,
   body.is-advanced-mode #output-card {
     grid-column: 1 / -1;
+  }
+
+  body.is-advanced-mode #queue-card .frame-queue-grid {
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  }
+
+  body.is-advanced-mode .bottom-sticky-panel {
+    width: calc(100vw - 48px);
+    max-width: 1480px;
+    padding: 14px 26px;
+  }
+
+  body.is-advanced-mode .editor-window {
+    width: calc(100vw - 48px);
+    max-width: 1480px;
+    height: min(920px, calc(100vh - 48px));
+  }
+
+  body.is-advanced-mode .editor-tools {
+    flex-basis: 320px;
+  }
+
+  body.is-advanced-mode .output-viewport img,
+  body.is-advanced-mode .preview-checker img {
+    max-height: 500px;
   }
 }
