@@ -25,6 +25,11 @@
   workspaceScript.addEventListener('load', () => {
     const effectsScript = document.createElement('script');
     effectsScript.src = '../animation-maker-mode/advanced-effects.js';
+    effectsScript.addEventListener('load', () => {
+      const orderingScript = document.createElement('script');
+      orderingScript.src = '../animation-maker-mode/advanced-effects-layout.js';
+      document.head.append(orderingScript);
+    });
     document.head.append(effectsScript);
   });
   document.head.append(workspaceScript);
