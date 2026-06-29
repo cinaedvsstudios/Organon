@@ -111,6 +111,12 @@
           "description": "Slice icon sheets or source graphics into individual icon assets."
         },
         {
+          "id": "imgautocut",
+          "label": "AUTO CUT",
+          "path": "tools/imgautocut/index.html",
+          "description": "Detect transparency islands, sort them into rows, name them in bulk, and export isolated PNG or WebP assets."
+        },
+        {
           "id": "bulk-convert",
           "label": "BULK CONVERT",
           "path": "tools/bulk-convert/index.html",
