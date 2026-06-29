@@ -1,26 +1,31 @@
 (() => {
   'use strict';
 
-  const advancedRequested = new URLSearchParams(location.search).get('mode') === 'advanced';
-  if (advancedRequested) {
-    location.replace('../animation-maker-advanced/advanced.html');
-    return;
-  }
-
+  const advanced = new URLSearchParams(location.search).get('mode') === 'advanced';
   const title = document.querySelector('.title-left span');
-  const modeButton = document.getElementById('btn-animation-mode');
-  document.body.dataset.animationMakerMode = 'standard';
-  document.title = 'Organon - Animation Maker';
-  if (title) title.textContent = 'ANIMATION MAKER';
+  const button = document.getElementById('btn-animation-mode');
 
-  if (modeButton) {
-    modeButton.textContent = 'ADVANCED MODE';
-    modeButton.addEventListener('click', () => {
-      location.href = '../animation-maker-advanced/advanced.html';
+  document.body.classList.toggle('is-advanced-mode', advanced);
+  document.body.dataset.animationMakerMode = advanced ? 'advanced' : 'standard';
+  document.title = advanced ? 'Organon - Animation Maker Advanced' : 'Organon - Animation Maker';
+  if (title) title.textContent = advanced ? 'ANIMATION MAKER — ADVANCED' : 'ANIMATION MAKER';
+
+  if (button) {
+    button.textContent = advanced ? 'STANDARD MODE' : 'ADVANCED MODE';
+    button.addEventListener('click', () => {
+      location.href = advanced ? './index.html' : '../animation-maker-advanced/index.html';
     });
   }
 
-  const webpScript = document.createElement('script');
-  webpScript.src = '../animation-maker-mode/webp-export.js';
-  document.head.append(webpScript);
+  const load = (src, done) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.addEventListener('load', done, { once: true });
+    document.head.append(script);
+  };
+
+  load('../animation-maker-mode/webp-export.js', () => {
+    if (!advanced) return;
+    load('../animation-maker-mode/advanced-workspace.js', () => {});
+  });
 })();
