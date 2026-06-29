@@ -1,3 +1,5 @@
+@import url('./advanced-layout.css');
+
 .mode-actions {
   display: flex;
   align-items: center;
@@ -6,9 +8,7 @@
   flex: 0 0 auto;
 }
 
-.mode-actions .nav-btn-mini {
-  margin-left: 0;
-}
+.mode-actions .nav-btn-mini { margin-left: 0; }
 
 .mode-switch-btn {
   background: var(--forest-teal) !important;
@@ -22,21 +22,8 @@
 }
 
 @media (max-width: 680px) {
-  .title-pill {
-    gap: 6px;
-    padding: 8px 10px !important;
-  }
-
-  .mode-actions {
-    gap: 4px;
-  }
-
-  .mode-actions .nav-btn-mini {
-    padding: 5px 6px !important;
-    font-size: .52rem !important;
-  }
-
-  .title-left span {
-    font-size: .7rem;
-  }
+  .title-pill { gap: 6px; padding: 8px 10px !important; }
+  .mode-actions { gap: 4px; }
+  .mode-actions .nav-btn-mini { padding: 5px 6px !important; font-size: .52rem !important; }
+  .title-left span { font-size: .7rem; }
 }
