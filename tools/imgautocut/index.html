@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Organon ImgAutoCut</title>
+  <script>
+    if (window.self === window.top) window.location.href = '../../index.html';
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-wrapper">
+    <header class="top-sticky-panel" id="top-sticky-panel">
+      <div class="title-pill">
+        <div class="title-group">
+          <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the panel">5</button>
+          <span>IMGAUTOCUT WIZARD</span>
+        </div>
+        <span class="header-status" id="header-status">NO SHEET</span>
+      </div>
+
+      <div class="panel-content-hide controls-grid">
+        <label class="input-label file-label">
+          <span>Source sheet</span>
+          <span class="file-pill"><span id="source-file-name">Browse or paste an image</span><button type="button" id="browse-source" class="mini-button">BROWSE</button></span>
+          <input id="source-file" type="file" accept="image/png,image/webp,image/jpeg,image/gif,image/bmp,image/*" hidden>
+        </label>
+
+        <label class="input-label">
+          <span>File prefix</span>
+          <input id="file-prefix" type="text" value="asset" maxlength="80" spellcheck="false" autocomplete="off">
+        </label>
+
+        <label class="input-label range-label">
+          <span>Alpha threshold <strong id="threshold-value">10</strong></span>
+          <input id="alpha-threshold" type="range" min="0" max="254" value="10">
+        </label>
+
+        <label class="input-label range-label">
+          <span>Row tolerance <strong id="row-tolerance-value">20 px</strong></span>
+          <input id="row-tolerance" type="range" min="0" max="120" value="20">
+        </label>
+      </div>
+    </header>
+
+    <main class="middle-scroll-panel">
+      <section class="config-card workspace-card">
+        <div class="section-heading-row">
+          <div>
+            <h1>Sheet Workspace</h1>
+            <p id="workspace-summary">Load a transparent image sheet. You can drag it here, browse for it, or paste it from the clipboard.</p>
+          </div>
+          <div class="slice-stat" id="slice-stat">0 ASSETS</div>
+        </div>
+
+        <div class="canvas-stage" id="drop-zone" tabindex="0" aria-label="Image sheet workspace">
+          <canvas id="workspace-canvas"></canvas>
+          <div class="empty-state" id="empty-state">
+            <strong>DROP IMAGE SHEET</strong>
+            <span>or paste an image directly into this workspace</span>
+            <button type="button" id="empty-browse" class="action-button primary">BROWSE FILES</button>
+          </div>
+        </div>
+
+        <div class="selection-info" id="selection-info">No slices are selected.</div>
+
+        <div class="macro-grid">
+          <button type="button" class="action-button" id="select-all">SELECT ALL</button>
+          <button type="button" class="action-button" id="clear-selection">CLEAR</button>
+          <button type="button" class="action-button" id="invert-selection">INVERT</button>
+          <button type="button" class="action-button" id="toggle-multi">MULTI: OFF</button>
+          <button type="button" class="action-button" id="uniform-size">MAKE SAME SIZE</button>
+          <button type="button" class="action-button danger-outline" id="reset-scan">RESET SCAN</button>
+        </div>
+      </section>
+
+      <section class="config-card details-card">
+        <div class="section-heading-row compact">
+          <div>
+            <h2>Detection &amp; Naming Ledger</h2>
+            <p>Each detected island is sorted by row, then left to right. Paste a multi-line name list into any name field to distribute it down the ledger.</p>
+          </div>
+          <button type="button" class="action-button" id="toggle-ledger">OPEN LEDGER</button>
+        </div>
+
+        <div class="detected-meta" id="detected-meta">
+          <span>ALPHA &gt; <strong>10</strong></span>
+          <span>ROW TOLERANCE <strong>20 PX</strong></span>
+          <span>MASKED EXPORT READY</span>
+        </div>
+
+        <div class="ledger-shell" id="ledger-shell" hidden>
+          <div class="ledger-note">The compact preview is shown above. Manual boxes are teal and excluded from global uniform-sizing changes.</div>
+          <div class="ledger-table-wrap">
+            <table class="ledger-table">
+              <thead>
+                <tr><th>#</th><th>File name</th><th>Canvas</th><th>State</th></tr>
+              </thead>
+              <tbody id="ledger-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-sticky-panel">
+      <label class="export-select-wrap">
+        <span>FORMAT</span>
+        <select id="export-format" aria-label="Export format">
+          <option value="png">PNG</option>
+          <option value="webp">WEBP</option>
+        </select>
+      </label>
+      <button type="button" class="btn-pill" id="export-assets">EXPORT DETECTED ASSETS</button>
+    </footer>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
