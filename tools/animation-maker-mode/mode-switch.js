@@ -13,7 +13,7 @@
   if (button) {
     button.textContent = advanced ? 'STANDARD MODE' : 'ADVANCED MODE';
     button.addEventListener('click', () => {
-      location.href = advanced ? './index.html' : '../animation-maker-advanced/index.html';
+      location.href = advanced ? './index.html' : './index.html?mode=advanced';
     });
   }
 
