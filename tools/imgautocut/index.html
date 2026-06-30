@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon ImgAutoCut</title>
+  <title>Organon ImgAutoCut v1.01</title>
   <script>
     if (window.self === window.top) window.location.href = '../../index.html';
   </script>
@@ -18,7 +18,7 @@
       <div class="title-pill">
         <div class="title-group">
           <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the panel">5</button>
-          <span>IMGAUTOCUT WIZARD</span>
+          <span>IMGAUTOCUT WIZARD · V1.01</span>
         </div>
         <span class="header-status" id="header-status">NO SHEET</span>
       </div>
@@ -75,6 +75,18 @@
           <button type="button" class="action-button" id="toggle-multi">MULTI: OFF</button>
           <button type="button" class="action-button" id="uniform-size">MAKE SAME SIZE</button>
           <button type="button" class="action-button danger-outline" id="reset-scan">RESET SCAN</button>
+          <button type="button" class="action-button manager-toggle" id="manage-selections">ADD / REMOVE</button>
+        </div>
+
+        <div class="selection-manager" id="selection-manager" hidden>
+          <div class="selection-manager-heading">
+            <div>
+              <h2>Selection Manager</h2>
+              <p>Remove unwanted detected artefacts, or add a manual box for anything the alpha scan missed.</p>
+            </div>
+            <button type="button" class="action-button manager-add-button" id="add-selection">+ ADD BOX</button>
+          </div>
+          <div class="selection-manager-list" id="selection-manager-list"></div>
         </div>
       </section>
 
