@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble Riser — Full Workspace Bridge</title>
+<style>
+  html, body, iframe { width: 100%; height: 100%; margin: 0; border: 0; overflow: hidden; background: #000; }
+  iframe { display: block; }
+</style>
+</head>
+<body>
+<iframe id="bubble-riser-frame" src="index-v5.html?build=20260630-0209" title="Bubble Riser"></iframe>
+<script>
+(() => {
+  'use strict';
+  const BUILD = 'BUILD 2026.06.30.0209';
+  const frame = document.getElementById('bubble-riser-frame');
+  let hubMobileStateBeforeWide = null;
+
+  function setHubMobileFrame(enabled) {
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.document.body.classList.toggle('force-mobile-view', enabled);
+        window.parent.localStorage.setItem('organon_force_mobile_view', enabled ? 'true' : 'false');
+      }
+    } catch (error) {
+      console.warn('Could not change the outer Organon frame.', error);
+    }
+
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({
+        type: 'set-workspace-mode',
+        mode: enabled ? 'compact' : 'wide',
+        tool: 'bubble-riser'
+      }, '*');
+    }
+  }
+
+  function forwardHubStatus(data) {
+    if (window.parent && window.parent !== window) window.parent.postMessage(data, '*');
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== frame.contentWindow || !event.data) return;
+    if (event.data.type === 'set-status' || event.data.type === 'clear-status') forwardHubStatus(event.data);
+  });
+
+  function installBridge(doc) {
+    const app = doc.getElementById('app');
+    const wideButton = doc.getElementById('wide');
+    const titleLeft = doc.querySelector('.title-left');
+    const dock = doc.getElementById('dock');
+    if (!app || !wideButton || !titleLeft || !dock) return;
+
+    const badge = doc.createElement('span');
+    badge.textContent = BUILD;
+    badge.className = 'bubble-bridge-build';
+    titleLeft.appendChild(badge);
+
+    const style = doc.createElement('style');
+    style.textContent = `
+      .bubble-bridge-build {
+        display: inline-flex;
+        align-items: center;
+        min-height: 20px;
+        padding: 3px 7px;
+        border: 1px solid rgba(121,227,184,.70);
+        border-radius: 999px;
+        color: #79e3b8;
+        background: rgba(38,97,92,.23);
+        font: 700 .55rem var(--mono);
+        letter-spacing: .04em;
+        white-space: nowrap;
+      }
+      .dock::before { content: 'FULL BRIDGE ACTIVE'; }
+      @media (max-width: 650px) { .bubble-bridge-build { display:none; } }
+    `;
+    doc.head.appendChild(style);
+
+    wideButton.addEventListener('click', () => {
+      window.setTimeout(() => {
+        const nowWide = app.classList.contains('wide');
+        if (nowWide) {
+          try {
+            hubMobileStateBeforeWide = window.parent.document.body.classList.contains('force-mobile-view');
+          } catch (_) {
+            hubMobileStateBeforeWide = null;
+          }
+          setHubMobileFrame(false);
+        } else if (hubMobileStateBeforeWide !== null) {
+          setHubMobileFrame(hubMobileStateBeforeWide);
+        }
+      }, 0);
+    });
+
+    wideButton.addEventListener('mouseenter', () => forwardHubStatus({ type:'set-status', text:'FULL widens both Bubble Riser and the outer Organon workspace.' }));
+    wideButton.addEventListener('mouseleave', () => forwardHubStatus({ type:'clear-status' }));
+  }
+
+  frame.addEventListener('load', () => {
+    try { installBridge(frame.contentDocument); }
+    catch (error) { console.error('Bubble Riser full-workspace bridge could not initialise.', error); }
+  });
+})();
+</script>
+</body>
+</html>
