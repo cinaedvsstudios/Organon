@@ -3,64 +3,743 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bubble Riser</title>
-<style>html,body{margin:0;width:100%;height:100%;background:#000;color:#f5f0db;font-family:system-ui,sans-serif}.loading{display:grid;place-items:center;height:100%;font-size:.8rem;letter-spacing:.05em}</style>
+<title>Organon — Bubble Riser</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Geist+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ochre:#e0a360; --bronze:#896b49; --blue:#75b2de; --ink:#181919;
+  --card:#292a24; --paper:#f5f0db; --red:#9a2f4f; --track:#61112e;
+  --green:#79e3b8; --warn:#f0b58b; --font-h:'Cinzel',Georgia,serif;
+  --font:'Inter',system-ui,sans-serif; --mono:'Geist Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:#000;color:var(--paper);font-family:var(--font)}
+body{display:flex;justify-content:center}
+button,input,select{font:inherit}
+button{touch-action:manipulation}
+.app{width:100%;max-width:540px;min-height:100vh;background:var(--ink);transition:max-width .22s ease}
+.app.wide{max-width:1480px;height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden}
+.topbar{position:sticky;top:0;z-index:20;padding:14px 16px;background:#d79e5c linear-gradient(rgba(224,163,96,.76),rgba(224,163,96,.76)),url('../../images/stonetext.jpg');background-size:cover;border-bottom:1px solid var(--bronze);border-radius:0 0 26px 26px;box-shadow:0 6px 20px rgba(0,0,0,.38)}
+.title-pill{min-height:42px;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 13px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.92);color:var(--blue);font:700 .8rem var(--font-h);letter-spacing:.06em}
+.title-side{display:flex;align-items:center;gap:9px;min-width:0}.title-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.build{padding:3px 7px;border:1px solid rgba(224,163,96,.7);border-radius:999px;background:rgba(224,163,96,.11);color:var(--ochre);font:700 .53rem var(--mono);letter-spacing:.04em;white-space:nowrap}
+.tool-tag{color:rgba(245,240,219,.72);font:.59rem var(--mono);white-space:nowrap}
+.workspace-btn{min-height:27px;padding:4px 10px;border:1px solid rgba(117,178,222,.72);border-radius:999px;background:rgba(75,132,191,.16);color:var(--blue);cursor:pointer;font:700 .59rem var(--mono);letter-spacing:.04em}
+.workspace-btn:hover{border-color:var(--paper);background:rgba(75,132,191,.34)}
+.workspace-btn[aria-pressed=true]{border-color:var(--ochre);background:rgba(224,163,96,.20);color:var(--ochre)}
+.workspace{display:grid;gap:14px;padding:15px 16px 82px;background:#000}
+.card,.controls-panel{padding:14px;border:1px solid var(--bronze);border-radius:18px;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.28)}
+.compact-output{display:block}.wide-output{display:none}
+.canvas-card{display:flex;flex-direction:column}.card-head{display:flex;align-items:center;justify-content:space-between;gap:9px;margin-bottom:12px}.card-head h1,.card-head h2,.card-head h3{margin:0;color:var(--ochre);font:700 .8rem var(--font-h);letter-spacing:.045em}
+.chip{padding:4px 8px;border:1px solid rgba(121,227,184,.4);border-radius:999px;background:rgba(38,97,92,.22);color:var(--green);font:.58rem var(--mono);text-transform:uppercase;white-space:nowrap}
+.preview-stage{display:grid;place-items:center;min-height:210px;overflow:hidden;border:1px solid rgba(137,107,73,.78);border-radius:16px;background:#000;box-shadow:inset 0 0 18px rgba(255,255,255,.025)}
+#canvas{display:block;width:100%;height:auto;max-height:min(54vh,500px);background:#000;object-fit:contain}
+.preview-meta{display:flex;justify-content:space-between;gap:10px;margin-top:10px;color:rgba(245,240,219,.66);font:.62rem var(--mono)}.preview-meta span:last-child{text-align:right}
+.preview-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.btn,.tab{min-height:35px;padding:8px 10px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.9);color:var(--blue);cursor:pointer;font-size:.64rem;font-weight:600;letter-spacing:.035em;text-transform:uppercase}
+.btn:hover:not(:disabled),.tab:hover{border-color:var(--blue);background:rgba(41,42,36,.98)}.btn.alt{color:var(--ochre)}.btn.active{border-color:var(--red);background:rgba(74,21,37,.76);color:var(--paper)}
+.controls-panel{min-width:0}.tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-bottom:14px}.tab{min-height:39px;font:700 .61rem var(--font-h)}.tab.active{border-color:var(--ochre);background:rgba(224,163,96,.16);color:var(--ochre)}
+.section{padding-top:15px;margin-top:15px;border-top:1px dashed rgba(137,107,73,.72)}.section:first-of-type{padding-top:0;margin-top:0;border-top:0}.subhead{margin:15px 0 10px;padding-top:14px;border-top:1px dashed rgba(137,107,73,.58);color:var(--ochre);font:700 .7rem var(--font-h);letter-spacing:.045em}
+.output-note,.helper{margin:8px 0 0;color:rgba(245,240,219,.60);font-size:.67rem;line-height:1.42}.output-note{margin:0 0 10px}
+.output-grid,.range-grid,.color-grid{display:grid;gap:12px}.output-grid{grid-template-columns:1fr 1fr}.range-grid{grid-template-columns:1fr}.color-grid{grid-template-columns:1fr 1fr;gap:10px}
+.field label,.range-label{display:flex;justify-content:space-between;gap:8px;color:var(--paper);font:.64rem var(--font-h);letter-spacing:.035em;text-transform:uppercase}.field label{margin-bottom:5px}.range-label span:last-child{min-width:52px;color:var(--blue);font-family:var(--mono);text-align:right;letter-spacing:0}
+.webp-lock{display:flex;align-items:center;min-height:35px;padding:8px 12px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.95);color:var(--green);font:.68rem var(--mono)}.select-wrap{position:relative}.select-wrap:after{content:'⌄';position:absolute;right:13px;top:50%;transform:translateY(-55%);color:var(--blue);pointer-events:none}.select-wrap select{width:100%;min-height:35px;padding:8px 33px 8px 11px;border:1px solid var(--bronze);border-radius:999px;outline:none;appearance:none;background:rgba(24,25,25,.95);color:var(--paper);font-size:.68rem}
+.toggle-line{display:flex;align-items:center;justify-content:space-between;min-height:35px;padding:0 11px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.95);color:var(--paper);font:.64rem var(--font-h);letter-spacing:.035em;text-transform:uppercase}.toggle-line input{width:16px;height:16px;accent-color:var(--red);cursor:pointer}
+.color-field{display:flex;align-items:center;justify-content:space-between;min-height:39px;padding:7px 10px;border:1px solid var(--bronze);border-radius:14px;background:rgba(24,25,25,.75)}.color-field label{color:var(--paper);font:.64rem var(--font-h);letter-spacing:.035em;text-transform:uppercase}.color-field input{width:31px;height:23px;padding:0;border:0;background:transparent;cursor:pointer}
+input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px 0 0;appearance:none;background:transparent;cursor:pointer}input[type=range]::-webkit-slider-runnable-track{height:5px;border:1px solid rgba(137,107,73,.65);border-radius:999px;background:linear-gradient(to right,var(--red) 0 var(--progress),var(--track) var(--progress) 100%)}input[type=range]::-webkit-slider-thumb{width:15px;height:15px;margin-top:-6px;appearance:none;border:1px solid var(--ochre);border-radius:50%;background:var(--paper);box-shadow:0 0 8px rgba(224,163,96,.35)}input[type=range]::-moz-range-track{height:5px;border:1px solid rgba(137,107,73,.65);border-radius:999px;background:var(--track)}input[type=range]::-moz-range-progress{height:5px;border-radius:999px;background:var(--red)}input[type=range]::-moz-range-thumb{width:13px;height:13px;border:1px solid var(--ochre);border-radius:50%;background:var(--paper)}
+.dock{position:fixed;left:50%;bottom:0;z-index:30;width:100%;max-width:540px;padding:10px 14px 14px;transform:translateX(-50%);display:flex;justify-content:center;background:#d79e5c linear-gradient(rgba(224,163,96,.79),rgba(224,163,96,.79)),url('../../images/stonetext.jpg');background-size:cover;border-top:1px solid var(--bronze);border-radius:24px 24px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.35);transition:transform .28s ease}.dock.hidden{transform:translate(-50%,calc(100% - 32px))}.dock-reveal{position:absolute;top:0;left:50%;width:108px;min-height:32px;transform:translateX(-50%);border:1px solid var(--bronze);border-top:0;border-radius:0 0 999px 999px;background:rgba(24,25,25,.94);color:var(--ochre);font:700 .58rem var(--mono);letter-spacing:.06em;opacity:0;pointer-events:none;cursor:pointer;transition:opacity .18s ease}.dock.hidden .dock-reveal{opacity:1;pointer-events:auto}.dock:before{content:'';position:absolute;top:0;left:50%;width:78px;height:8px;transform:translateX(-50%);border-radius:0 0 999px 999px;background:rgba(24,25,25,.78);pointer-events:none}
+.export{width:min(520px,100%);min-height:42px;padding:8px 18px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.94);color:var(--paper);cursor:pointer;font-size:.71rem;font-weight:700;letter-spacing:.035em;text-transform:uppercase}.export:hover:not(:disabled){border-color:var(--blue);box-shadow:0 0 12px rgba(121,180,227,.22)}.export:disabled{opacity:.62;cursor:wait}.export.busy{border-color:var(--warn);color:var(--warn);background:rgba(74,21,37,.9)}
+.toast{position:fixed;right:12px;bottom:74px;z-index:60;max-width:min(430px,calc(100vw - 24px));padding:10px 13px;border:1px solid var(--bronze);border-radius:14px;background:rgba(24,25,25,.96);color:var(--paper);box-shadow:0 10px 30px rgba(0,0,0,.44);font-size:.71rem;line-height:1.35;opacity:0;pointer-events:none;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.toast.good{border-color:rgba(121,227,184,.65);color:var(--green)}.toast.warn{border-color:var(--warn);color:var(--warn)}
+@media(min-width:860px){
+  .app.wide .topbar{position:relative;flex:0 0 auto;padding:8px 16px}
+  .app.wide .workspace{flex:1 1 auto;min-height:0;grid-template-columns:minmax(460px,.93fr) minmax(560px,1.27fr);grid-template-rows:minmax(0,1fr);align-items:stretch;gap:18px;padding:18px clamp(18px,2.4vw,36px) 76px;overflow:hidden}
+  .app.wide .compact-output{display:none}.app.wide .wide-output{display:block}
+  .app.wide .controls-panel{grid-column:1;grid-row:1;min-height:0;height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:16px}
+  .app.wide .canvas-card{grid-column:2;grid-row:1;min-height:0;height:100%}.app.wide .preview-stage{flex:1 1 auto;min-height:0}.app.wide #canvas{max-height:100%}
+  .app.wide .range-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;row-gap:12px}.app.wide .helper{grid-column:1/-1}.app.wide .dock{max-width:1480px}
+}
+@media(max-width:650px){.build,.tool-tag{display:none}.output-grid,.color-grid{grid-template-columns:1fr}.preview-actions{grid-template-columns:1fr}.workspace-btn .wide-word{display:none}.workspace-btn{width:28px;padding:4px}.title-pill{gap:6px}}
+</style>
 </head>
-<body><div class="loading">LOADING BUBBLE RISER…</div>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="title-pill">
+      <div class="title-side"><span class="title-name">BUBBLE RISER</span><span class="build">BUILD 2026.06.30.1236</span></div>
+      <div class="title-side"><span class="tool-tag">PARTICLE EFFECT</span><button id="workspace-button" class="workspace-btn" type="button" aria-pressed="false">⛶ <span class="wide-word">FULL</span></button></div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="card compact-output" aria-label="Output settings"><div id="compact-output"></div></section>
+    <section class="card canvas-card" aria-label="Live canvas preview">
+      <div class="card-head"><h1>Live Canvas</h1><span class="chip" id="preview-state">Running</span></div>
+      <div class="preview-stage"><canvas id="canvas" width="1920" height="1080"></canvas></div>
+      <div class="preview-meta"><span id="resolution-meta">1920 × 1080</span><span id="effect-meta">Bubble field · seed 41827</span></div>
+      <div class="preview-actions"><button class="btn" id="pause-button" type="button">Pause</button><button class="btn alt" id="new-seed-button" type="button">New field</button><button class="btn alt" id="reset-time-button" type="button">Reset time</button></div>
+    </section>
+
+    <aside class="controls-panel" aria-label="Bubble Riser controls">
+      <section class="wide-output" aria-label="Output settings"><div id="wide-output"></div></section>
+      <section class="section">
+        <div class="tabs" id="mode-tabs">
+          <button class="tab active" type="button" data-mode="field">Bubble Field</button>
+          <button class="tab" type="button" data-mode="emission">Bubble Emission</button>
+          <button class="tab" type="button" data-mode="orbit">Bubble Orbit</button>
+          <button class="tab" type="button" data-mode="explosion">Bubble Explosion</button>
+        </div>
+        <div id="mode-controls"></div>
+      </section>
+      <section class="section"><div class="card-head"><h2>Global Motion</h2><span class="chip">All bubbles</span></div><div class="range-grid" id="motion-controls"></div><p class="helper">Global speed changes how fast bubbles travel through their path. Speed curve shapes that movement: left is fast → slow, right is slow → fast. Bubble lifetime controls whether they burst early or survive to the full path.</p></section>
+      <section class="section"><div class="card-head"><h2>General Appearance</h2><span class="chip">Colour</span></div><div class="color-grid"><div class="color-field"><label for="tint">Bubble tint</label><input id="tint" type="color" value="#dff7ff"></div><div class="color-field"><label>Effect seed</label><span id="seed-readout" style="color:var(--blue);font:500 .62rem var(--mono)">41827</span></div></div><div class="range-grid" id="appearance-controls" style="margin-top:14px"></div><p class="helper">Rainbow mixes a moving spectrum with the tint. At 0%, every bubble uses only your tint.</p></section>
+    </aside>
+  </main>
+
+  <footer class="dock" id="dock"><button class="dock-reveal" id="dock-reveal" type="button" aria-label="Show export button">EXPORT</button><button class="export" id="export-button" type="button">Download Animated WebP — 6s · 24 FPS · Loop</button></footer>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
-(async () => {
+(() => {
   'use strict';
-  const BUILD = '2026.06.30.1127';
-  const sourceUrl = 'index-v10.html?build=20260630-0439';
+  const BUILD = '2026.06.30.1423';
+  const SETTINGS_KEY = 'organon_bubble_riser_settings_v1';
+  const HOST_WIDE_CLASS = 'organon-bubble-riser-wide';
+  const HOST_WIDE_STYLE_ID = 'organon-bubble-riser-wide-style';
+  const WEBP_FRAME_LIMIT = 240;
+    const TAU = Math.PI * 2;
 
-  try {
-    let html = await fetch(sourceUrl, { cache: 'no-store' }).then((response) => {
-      if (!response.ok) throw new Error(`Could not load Bubble Riser (${response.status}).`);
-      return response.text();
-    });
+  const $ = (id) => document.getElementById(id);
+  const app = $('app');
+  const canvas = $('canvas');
+  const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+  const el = {
+    compactOutput: $('compact-output'), wideOutput: $('wide-output'), modeTabs: $('mode-tabs'),
+    modeControls: $('mode-controls'), motionControls: $('motion-controls'), appearanceControls: $('appearance-controls'),
+    tint: $('tint'), seedReadout: $('seed-readout'), previewState: $('preview-state'),
+    resolutionMeta: $('resolution-meta'), effectMeta: $('effect-meta'), pause: $('pause-button'),
+    newSeed: $('new-seed-button'), resetTime: $('reset-time-button'), workspace: $('workspace-button'),
+    dock: $('dock'), dockReveal: $('dock-reveal'), export: $('export-button'), toast: $('toast')
+  };
 
-    html = html.replaceAll('BUILD 2026.06.30.0439', `BUILD ${BUILD}`);
-    html = html.replace("const BUILD = '2026.06.30.0439';", `const BUILD = '${BUILD}';`);
+  const defaultStream = (index) => ({
+    originX: 12 + index * 11, originY: 105, particles: 26, length: 760,
+    spread: 28, direction: index % 2 ? 18 : -18, speed: 1, volatility: 1, spacing: 34
+  });
 
-    html = html.replace('</style>', `
-      .dock.hidden { transform: translate(-50%, calc(100% - 32px)) !important; }
-      .dock-reveal { position:absolute; top:0; left:50%; width:108px; min-height:32px; transform:translateX(-50%); border:1px solid var(--bronze); border-top:0; border-radius:0 0 999px 999px; background:rgba(24,25,25,.94); color:var(--ochre); font:700 .58rem var(--mono); letter-spacing:.06em; opacity:0; pointer-events:none; cursor:pointer; transition:opacity .18s ease; }
-      .dock.hidden .dock-reveal { opacity:1; pointer-events:auto; }
-      .dock:before { pointer-events:none; }
-    </style>`);
+  const defaults = {
+    seed: 41827, mode: 'field',
+    output: { resolution: '1920x1080', format: 'webp', duration: 6, fps: 24, loop: true },
+    motion: { speed: 1, speedCurve: 0, lifetime: 1, direction: 0, volatility: 1, wobble: 1 },
+    appearance: { tint: '#dff7ff', rainbow: 0, brightness: 1, opacity: .68, rim: 1, glow: .32, highlight: .72 },
+    field: {
+      ambient: 120, ambientMin: 1, ambientMax: 8, streams: 2, streamMin: 1, streamMax: 7,
+      selectedStream: 0, streamList: Array.from({ length: 8 }, (_, index) => defaultStream(index))
+    },
+    emission: { shape: 'stream', originX: 50, originY: 90, count: 90, min: 1, max: 8, direction: 0, spread: 28, speed: 1, volatility: 1, spacing: 26, length: 800 },
+    orbit: { originX: 50, originY: 52, count: 160, min: 1, max: 11, direction: 0, spread: 180, speed: 1, volatility: 1, radius: 700 },
+    explosion: { originX: 50, originY: 52, count: 160, min: 1, max: 11, direction: 0, spread: 180, speed: 1, volatility: 1, startRadius: 0, endRadius: 700 }
+  };
 
-    html = html.replace(
-      '<footer class="dock" id="dock"><button class="export" id="export-button" type="button">Download MP4 — 6s · 24 FPS · Loop</button></footer>',
-      '<footer class="dock" id="dock"><button class="dock-reveal" id="dock-reveal" type="button" aria-label="Show export button">EXPORT</button><button class="export" id="export-button" type="button">Download MP4 — 6s · 24 FPS · Loop</button></footer>'
-    );
+  let state = structuredClone(defaults);
+  let isPaused = false;
+  let pauseTime = 0;
+  let startTime = performance.now();
+  let isWide = false;
+  let isExporting = false;
+  let dockTimer = null;
+  let toastTimer = null;
 
-    html = html.replace(
-      "dock: $('dock'), export: $('export-button'), toast: $('toast')",
-      "dock: $('dock'), dockReveal: $('dock-reveal'), export: $('export-button'), toast: $('toast')"
-    );
-
-    html = html.replace(
-      "return `<div class=\"card-head\"><h2>Bubble Explosion</h2><span class=\"chip\">Burst</span></div><div class=\"range-grid\">\n      ${rangeControl('ex-origin-x', 'Burst X', 'explosion.originX', 0, 100, 1, '%')}\n      ${rangeControl('ex-origin-y', 'Burst Y', 'explosion.originY', 0, 110, 1, '%')}\n      ${rangeControl('ex-count', 'Burst bubbles', 'explosion.count', 1, 700, 1)}\n      ${rangeControl('ex-min', 'Burst min size', 'explosion.min', .5, 20, .5, ' px')}\n      ${rangeControl('ex-max', 'Burst max size', 'explosion.max', 1, 60, 1, ' px')}\n      ${rangeControl('ex-direction', 'Burst direction', 'explosion.direction', -180, 180, 1, '°')}\n      ${rangeControl('ex-spread', 'Burst spread', 'explosion.spread', 5, 360, 1, '°')}\n      ${rangeControl('ex-speed', 'Burst speed', 'explosion.speed', .05, 5, .05, '×')}\n      ${rangeControl('ex-volatility', 'Burst volatility', 'explosion.volatility', 0, 5, .1)}\n      ${rangeControl('ex-radius', 'Burst radius', 'explosion.radius', 80, 1900, 10, ' px')}\n    </div><p class=\"helper\">A burst begins and ends on black in Loop mode, so it is safe for opening-box, spell and impact effects.</p>`;",
-      "return `<div class=\"card-head\"><h2>Bubble Explosion</h2><span class=\"chip\">Burst</span></div>\n      <div class=\"subhead\">Explosion bubble size</div><div class=\"range-grid\">\n        ${rangeControl('ex-min', 'Bubble min size', 'explosion.min', .5, 20, .5, ' px')}\n        ${rangeControl('ex-max', 'Bubble max size', 'explosion.max', 1, 60, 1, ' px')}\n      </div>\n      <div class=\"subhead\">Explosion controls</div><div class=\"range-grid\">\n        ${rangeControl('ex-count', 'Explosion bubbles', 'explosion.count', 1, 700, 1)}\n        ${rangeControl('ex-origin-x', 'Burst X', 'explosion.originX', 0, 100, 1, '%')}\n        ${rangeControl('ex-origin-y', 'Burst Y', 'explosion.originY', 0, 110, 1, '%')}\n        ${rangeControl('ex-direction', 'Burst direction', 'explosion.direction', -180, 180, 1, '°')}\n        ${rangeControl('ex-spread', 'Burst spread', 'explosion.spread', 5, 360, 1, '°')}\n        ${rangeControl('ex-speed', 'Burst speed', 'explosion.speed', .05, 5, .05, '×')}\n        ${rangeControl('ex-volatility', 'Burst volatility', 'explosion.volatility', 0, 5, .1)}\n        ${rangeControl('ex-radius', 'Burst radius', 'explosion.radius', 80, 1900, 10, ' px')}\n      </div><p class=\"helper\">A burst begins and ends on black in Loop mode, so it is safe for opening-box, spell and impact effects.</p>`;"
-    );
-
-    html = html.replace(
-      "el.export.addEventListener('click', exportEffect);\n    el.dock.addEventListener('mouseenter', showDock); el.dock.addEventListener('mouseleave', hideDockSoon);\n    document.addEventListener('mousemove', (event) => { if (event.clientY > window.innerHeight - 32) showDock(); });\n    document.addEventListener('touchstart', (event) => { if (event.touches[0] && event.touches[0].clientY > window.innerHeight - 55) showDock(); }, { passive: true });",
-      "el.export.addEventListener('click', exportEffect);\n    el.dockReveal.addEventListener('click', showDock);\n    el.dock.addEventListener('mouseenter', showDock); el.dock.addEventListener('mouseleave', hideDockSoon);\n    el.dock.addEventListener('focusin', showDock); el.dock.addEventListener('focusout', hideDockSoon);\n    document.addEventListener('mousemove', (event) => { if (event.clientY > window.innerHeight - 40) showDock(); });\n    document.addEventListener('touchstart', (event) => { if (event.touches[0] && event.touches[0].clientY > window.innerHeight - 60) showDock(); }, { passive: true });"
-    );
-
-    html = html.replace(
-      'renderOutputControls(); renderControls(); setCanvasSize(); bindStaticEvents(); hideDockSoon(); requestAnimationFrame(renderAnimation);',
-      'renderOutputControls(); renderControls(); setCanvasSize(); bindStaticEvents(); setTimeout(hideDockSoon, 5000); requestAnimationFrame(renderAnimation);'
-    );
-
-    document.open();
-    document.write(html);
-    document.close();
-  } catch (error) {
-    document.body.innerHTML = `<div class="loading">${String(error.message || error)}</div>`;
-    console.error(error);
+  function merge(target, source) {
+    for (const key of Object.keys(source || {})) {
+      if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+        target[key] ??= {};
+        merge(target[key], source[key]);
+      } else target[key] = source[key];
+    }
+    return target;
   }
+
+  function loadState() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+      if (saved && typeof saved === 'object') {
+        // v11 called the orbit-like effect “explosion”. Preserve the user’s saved version
+        // as Bubble Orbit, then initialise the new genuine Bubble Explosion separately.
+        if (!saved.orbit && saved.explosion && Object.hasOwn(saved.explosion, 'radius')) {
+          saved.orbit = structuredClone(saved.explosion);
+          saved.explosion = structuredClone(defaults.explosion);
+        }
+        if (saved.mode === 'explosion' && saved.orbit) saved.mode = 'orbit';
+        state = merge(structuredClone(defaults), saved);
+      }
+    } catch (_) {}
+    state.motion.speedCurve ??= 0;
+    state.motion.lifetime ??= 1;
+    state.output.format = 'webp';
+    while (state.field.streamList.length < 8) state.field.streamList.push(defaultStream(state.field.streamList.length));
+  }
+
+  function saveState() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(state)); } catch (_) {} }
+  function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+  function mod(value, divisor) { return ((value % divisor) + divisor) % divisor; }
+  function fract(value) { return value - Math.floor(value); }
+  function smooth(value) { value = clamp(value, 0, 1); return value * value * (3 - 2 * value); }
+
+  function seeded(seed, a, b = 0) {
+    let x = (seed ^ Math.imul(a + 1, 0x9E3779B1) ^ Math.imul(b + 11, 0x85EBCA77)) >>> 0;
+    x ^= x >>> 16; x = Math.imul(x, 0x7FEB352D); x ^= x >>> 15; x = Math.imul(x, 0x846CA68B); x ^= x >>> 16;
+    return (x >>> 0) / 4294967296;
+  }
+
+  function getOutputSize() { return state.output.resolution.split('x').map(Number); }
+  function referenceScale(targetCanvas = canvas) { return Math.min(targetCanvas.width, targetCanvas.height) / 1080; }
+  function outputCycle() { return state.output.loop ? Math.max(.5, state.output.duration) : 10; }
+  function pathValue(path) { return path.split('.').reduce((value, key) => value[key], state); }
+  function setPath(path, value) { const keys = path.split('.'); let target = state; for (let i = 0; i < keys.length - 1; i += 1) target = target[keys[i]]; target[keys.at(-1)] = value; }
+
+  function notifyHub(text) { if (window.parent !== window) window.parent.postMessage({ type: 'set-status', text }, '*'); }
+  function clearHub() { if (window.parent !== window) window.parent.postMessage({ type: 'clear-status' }, '*'); }
+
+  function ensureHostWideStyle() {
+    if (window.parent === window) return;
+    try {
+      const hostDocument = window.parent.document;
+      if (hostDocument.getElementById(HOST_WIDE_STYLE_ID)) return;
+      const style = hostDocument.createElement('style');
+      style.id = HOST_WIDE_STYLE_ID;
+      style.textContent = `
+        body.${HOST_WIDE_CLASS}.force-mobile-view .l1-header,
+        body.${HOST_WIDE_CLASS}.force-mobile-view .divider-l1-l2,
+        body.${HOST_WIDE_CLASS}.force-mobile-view #l2-wrapper,
+        body.${HOST_WIDE_CLASS}.force-mobile-view #l3-wrapper,
+        body.${HOST_WIDE_CLASS}.force-mobile-view .basin-content-wrapper,
+        body.${HOST_WIDE_CLASS} .l1-header,
+        body.${HOST_WIDE_CLASS} .divider-l1-l2,
+        body.${HOST_WIDE_CLASS} #l2-wrapper,
+        body.${HOST_WIDE_CLASS} #l3-wrapper,
+        body.${HOST_WIDE_CLASS} .basin-content-wrapper {
+          width: 100% !important;
+          max-width: none !important;
+          align-self: stretch !important;
+        }
+        body.${HOST_WIDE_CLASS}.force-mobile-view .basin-iframe,
+        body.${HOST_WIDE_CLASS} .basin-iframe {
+          width: 100% !important;
+          max-width: none !important;
+          margin: 0 !important;
+        }
+      `;
+      hostDocument.head.appendChild(style);
+    } catch (_) {}
+  }
+
+  function setHostWide(enabled) {
+    if (window.parent === window) return;
+    try {
+      ensureHostWideStyle();
+      window.parent.document.body.classList.toggle(HOST_WIDE_CLASS, enabled);
+      window.parent.dispatchEvent(new Event('resize'));
+    } catch (_) {}
+  }
+
+  function clearHostWide() { setHostWide(false); }
+  window.addEventListener('pagehide', clearHostWide);
+  window.addEventListener('beforeunload', clearHostWide);
+
+  function outputControlsTemplate() {
+    return `
+      <div class="card-head"><h2>Output</h2><span class="chip">Render</span></div>
+      <p class="output-note">Loop makes the first and last render state match. The saved file is an animated WebP with the black bubble canvas only.</p>
+      <div class="output-grid">
+        <div class="field"><label>Canvas size</label><div class="select-wrap"><select data-output="resolution">
+          <option value="1280x720">1280 × 720 — HD</option><option value="1920x1080">1920 × 1080 — Full HD</option><option value="2560x1440">2560 × 1440 — QHD</option><option value="3840x2160">3840 × 2160 — 4K</option><option value="1080x1080">1080 × 1080 — Square</option><option value="1080x1350">1080 × 1350 — Portrait</option><option value="1080x1920">1080 × 1920 — Reel / Story</option>
+        </select></div></div>
+        <div class="field"><label>Export format</label><div class="webp-lock">Animated WebP — Looping</div></div>
+        <div class="field"><label>Duration <span data-duration-label></span></label><input data-output="duration" type="range" min="2" max="20" step="1"></div>
+        <div class="field"><label>Frame rate</label><div class="select-wrap"><select data-output="fps"><option value="24">24 FPS</option><option value="30">30 FPS</option><option value="60">60 FPS</option></select></div></div>
+        <label class="toggle-line"><span>Loop seamlessly</span><input data-output="loop" type="checkbox"></label>
+      </div>`;
+  }
+
+  function rangeControl(id, label, path, min, max, step, suffix = '') {
+    const value = Number(pathValue(path));
+    const progress = ((value - min) / (max - min)) * 100;
+    return `<div class="range-control"><div class="range-label"><span>${label}</span><span id="value-${id}">${formatControlValue(value, step, suffix)}</span></div><input id="${id}" data-path="${path}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" style="--progress:${progress}%" data-suffix="${suffix}"></div>`;
+  }
+
+  function formatControlValue(value, step, suffix) {
+    const precision = step < 1 ? Math.min(2, (String(step).split('.')[1] || '').length) : 0;
+    if (suffix === '%') return `${Math.round(value * 100)}%`;
+    return `${Number(value).toFixed(precision)}${suffix}`;
+  }
+
+  function modeControlsTemplate() {
+    const field = state.field, emission = state.emission, orbit = state.orbit, explosion = state.explosion;
+    if (state.mode === 'field') {
+      let html = `<div class="card-head"><h2>Bubble Field</h2><span class="chip">Layered</span></div>
+        <div class="subhead">Ambient bubbles</div><div class="range-grid">
+          ${rangeControl('ambient-count', 'Ambient bubbles', 'field.ambient', 0, 600, 1)}
+          ${rangeControl('ambient-min', 'Ambient min size', 'field.ambientMin', .5, 20, .5, ' px')}
+          ${rangeControl('ambient-max', 'Ambient max size', 'field.ambientMax', 1, 48, 1, ' px')}
+        </div><div class="subhead">Bubble streams</div><div class="range-grid">
+          ${rangeControl('stream-count', 'Streams', 'field.streams', 0, 8, 1)}
+          ${rangeControl('stream-min', 'Stream min size', 'field.streamMin', .5, 20, .5, ' px')}
+          ${rangeControl('stream-max', 'Stream max size', 'field.streamMax', 1, 48, 1, ' px')}
+        </div>`;
+      if (field.streams > 0) {
+        const stream = field.streamList[field.selectedStream];
+        html += `<div class="subhead">Selected stream</div><div class="field"><label>Edit stream</label><div class="select-wrap"><select id="stream-select">${Array.from({ length: field.streams }, (_, index) => `<option value="${index}" ${index === field.selectedStream ? 'selected' : ''}>Stream ${index + 1}</option>`).join('')}</select></div></div>
+          <div class="range-grid" style="margin-top:14px">
+            ${streamRange('stream-origin-x', 'Origin X', 'originX', 0, 100, 1, '%')}
+            ${streamRange('stream-origin-y', 'Origin Y', 'originY', 0, 110, 1, '%')}
+            ${streamRange('stream-particles', 'Bubbles per stream', 'particles', 2, 140, 1)}
+            ${streamRange('stream-length', 'Visible length', 'length', 80, 1900, 10, ' px')}
+            ${streamRange('stream-spread', 'Stream spread', 'spread', 0, 360, 1, ' px')}
+            ${streamRange('stream-direction', 'Stream direction', 'direction', -180, 180, 1, '°')}
+            ${streamRange('stream-speed', 'Stream speed', 'speed', .05, 5, .05, '×')}
+            ${streamRange('stream-volatility', 'Stream volatility', 'volatility', 0, 5, .1)}
+            ${streamRange('stream-spacing', 'Bubble spacing', 'spacing', 6, 260, 1, ' px')}
+          </div><p class="helper">Spacing creates irregular offsets rather than a permanent dotted rail. Bubble lifetime applies here too: lower values make them fade and burst earlier.</p>`;
+      } else html += '<p class="helper">Set Streams above zero to create independently editable directional streams.</p>';
+      return html;
+    }
+    if (state.mode === 'emission') {
+      return `<div class="card-head"><h2>Bubble Emission</h2><span class="chip">Emitter</span></div>
+        <div class="field"><label>Emission shape</label><div class="select-wrap"><select id="emission-shape"><option value="stream" ${emission.shape === 'stream' ? 'selected' : ''}>Straight stream</option><option value="cone" ${emission.shape === 'cone' ? 'selected' : ''}>Cone</option><option value="sphere" ${emission.shape === 'sphere' ? 'selected' : ''}>Full sphere</option></select></div></div>
+        <div class="range-grid" style="margin-top:14px">
+          ${rangeControl('em-origin-x', 'Emitter X', 'emission.originX', 0, 100, 1, '%')}
+          ${rangeControl('em-origin-y', 'Emitter Y', 'emission.originY', 0, 110, 1, '%')}
+          ${rangeControl('em-count', 'Emission bubbles', 'emission.count', 1, 450, 1)}
+          ${rangeControl('em-min', 'Emission min size', 'emission.min', .5, 20, .5, ' px')}
+          ${rangeControl('em-max', 'Emission max size', 'emission.max', 1, 48, 1, ' px')}
+          ${rangeControl('em-direction', 'Emission direction', 'emission.direction', -180, 180, 1, '°')}
+          ${rangeControl('em-spread', 'Cone / sphere spread', 'emission.spread', 0, 360, 1, '°')}
+          ${rangeControl('em-speed', 'Emission speed', 'emission.speed', .05, 5, .05, '×')}
+          ${rangeControl('em-volatility', 'Emission volatility', 'emission.volatility', 0, 5, .1)}
+          ${rangeControl('em-spacing', 'Emission spacing', 'emission.spacing', 4, 240, 1, ' px')}
+          ${rangeControl('em-length', 'Emission length', 'emission.length', 80, 1900, 10, ' px')}
+        </div><p class="helper">One source continually emits bubbles. Stream uses one direction, Cone fans outward, and Full sphere emits in every direction.</p>`;
+    }
+    if (state.mode === 'orbit') {
+      return `<div class="card-head"><h2>Bubble Orbit</h2><span class="chip">Original</span></div>
+        <div class="range-grid">
+          ${rangeControl('orbit-origin-x', 'Orbit X', 'orbit.originX', 0, 100, 1, '%')}
+          ${rangeControl('orbit-origin-y', 'Orbit Y', 'orbit.originY', 0, 110, 1, '%')}
+          ${rangeControl('orbit-count', 'Orbit bubbles', 'orbit.count', 1, 700, 1)}
+          ${rangeControl('orbit-min', 'Bubble min size', 'orbit.min', .5, 20, .5, ' px')}
+          ${rangeControl('orbit-max', 'Bubble max size', 'orbit.max', 1, 60, 1, ' px')}
+          ${rangeControl('orbit-direction', 'Orbit direction', 'orbit.direction', -180, 180, 1, '°')}
+          ${rangeControl('orbit-spread', 'Orbit spread', 'orbit.spread', 5, 360, 1, '°')}
+          ${rangeControl('orbit-speed', 'Orbit speed', 'orbit.speed', .05, 5, .05, '×')}
+          ${rangeControl('orbit-volatility', 'Orbit turbulence', 'orbit.volatility', 0, 5, .1)}
+          ${rangeControl('orbit-radius', 'Orbit radius', 'orbit.radius', 80, 1900, 10, ' px')}
+        </div><p class="helper">This is the original effect you liked. It has been renamed because it reads as an orbital / electron-style effect rather than a true explosion.</p>`;
+    }
+    return `<div class="card-head"><h2>Bubble Explosion</h2><span class="chip">Burst</span></div>
+      <div class="subhead">Explosion bubble size</div><div class="range-grid">
+        ${rangeControl('ex-min', 'Bubble min size', 'explosion.min', .5, 20, .5, ' px')}
+        ${rangeControl('ex-max', 'Bubble max size', 'explosion.max', 1, 60, 1, ' px')}
+      </div>
+      <div class="subhead">Explosion travel</div><div class="range-grid">
+        ${rangeControl('ex-start-radius', 'Start radius', 'explosion.startRadius', 0, 1200, 10, ' px')}
+        ${rangeControl('ex-end-radius', 'End radius', 'explosion.endRadius', 0, 2200, 10, ' px')}
+        ${rangeControl('ex-speed', 'Explosion speed', 'explosion.speed', .05, 5, .05, '×')}
+        ${rangeControl('ex-volatility', 'Explosion turbulence', 'explosion.volatility', 0, 5, .1)}
+      </div>
+      <div class="subhead">Explosion placement</div><div class="range-grid">
+        ${rangeControl('ex-count', 'Explosion bubbles', 'explosion.count', 1, 700, 1)}
+        ${rangeControl('ex-origin-x', 'Burst X', 'explosion.originX', 0, 100, 1, '%')}
+        ${rangeControl('ex-origin-y', 'Burst Y', 'explosion.originY', 0, 110, 1, '%')}
+        ${rangeControl('ex-direction', 'Burst direction', 'explosion.direction', -180, 180, 1, '°')}
+        ${rangeControl('ex-spread', 'Burst spread', 'explosion.spread', 5, 360, 1, '°')}
+      </div><p class="helper">Start radius sets how far from the centre bubbles already exist. End radius is where the burst finishes. Bubble lifetime lets the burst fade early or complete its full expansion.</p>`;
+  }
+
+  function streamRange(id, label, key, min, max, step, suffix = '') {
+    const value = Number(state.field.streamList[state.field.selectedStream][key]);
+    const progress = ((value - min) / (max - min)) * 100;
+    return `<div class="range-control"><div class="range-label"><span>${label}</span><span id="value-${id}">${formatControlValue(value, step, suffix)}</span></div><input id="${id}" data-stream-key="${key}" type="range" min="${min}" max="${max}" step="${step}" value="${value}" style="--progress:${progress}%" data-suffix="${suffix}"></div>`;
+  }
+
+  function speedCurveControl() {
+    const value = Number(state.motion.speedCurve);
+    const progress = ((value + 1) / 2) * 100;
+    const label = value < -.025 ? `${Math.round(Math.abs(value) * 100)}% fast → slow` : value > .025 ? `${Math.round(value * 100)}% slow → fast` : 'Linear';
+    return `<div class="range-control"><div class="range-label"><span>Speed curve</span><span id="value-global-speed-curve">${label}</span></div><input id="global-speed-curve" data-path="motion.speedCurve" data-display="speed-curve" type="range" min="-1" max="1" step=".05" value="${value}" style="--progress:${progress}%"></div>`;
+  }
+
+  function renderControls() {
+    el.modeControls.innerHTML = modeControlsTemplate();
+    el.motionControls.innerHTML = [
+      rangeControl('global-speed', 'Global speed', 'motion.speed', .05, 5, .05, '×'),
+      speedCurveControl(),
+      rangeControl('global-lifetime', 'Bubble lifetime', 'motion.lifetime', .10, 1, .01, '%'),
+      rangeControl('global-direction', 'Global direction', 'motion.direction', -88, 88, 1, '°'),
+      rangeControl('global-volatility', 'Global volatility', 'motion.volatility', 0, 5, .1),
+      rangeControl('global-wobble', 'Wobble scale', 'motion.wobble', 0, 4, .05, '×')
+    ].join('');
+    el.appearanceControls.innerHTML = [
+      rangeControl('rainbow', 'Rainbow effect', 'appearance.rainbow', 0, 1, .01, '%'),
+      rangeControl('brightness', 'Brightness', 'appearance.brightness', .1, 2, .01, '×'),
+      rangeControl('opacity', 'Overall opacity', 'appearance.opacity', .02, 1, .01, '%'),
+      rangeControl('rim', 'Rim thickness', 'appearance.rim', .25, 4, .05, ' px'),
+      rangeControl('glow', 'Glow', 'appearance.glow', 0, 1, .01, '%'),
+      rangeControl('highlight', 'Highlight', 'appearance.highlight', 0, 1, .01, '%')
+    ].join('');
+    el.modeTabs.querySelectorAll('[data-mode]').forEach((button) => button.classList.toggle('active', button.dataset.mode === state.mode));
+    bindDynamicControls();
+    refreshStaticUI();
+  }
+
+  function renderOutputControls() {
+    el.compactOutput.innerHTML = outputControlsTemplate();
+    el.wideOutput.innerHTML = outputControlsTemplate();
+    document.querySelectorAll('[data-output]').forEach((input) => {
+      const key = input.dataset.output;
+      if (input.type === 'checkbox') input.checked = Boolean(state.output[key]);
+      else input.value = String(state.output[key]);
+      input.addEventListener(input.type === 'checkbox' ? 'change' : 'input', () => {
+        if (input.type === 'checkbox') state.output[key] = input.checked;
+        else state.output[key] = key === 'duration' || key === 'fps' ? Number(input.value) : input.value;
+        enforceOutputLimits();
+        syncOutputControls();
+        saveState();
+        if (key === 'resolution') setCanvasSize();
+        refreshStaticUI();
+      });
+    });
+    syncOutputControls();
+  }
+
+  function syncOutputControls() {
+    document.querySelectorAll('[data-output]').forEach((input) => {
+      const key = input.dataset.output;
+      if (input.type === 'checkbox') input.checked = Boolean(state.output[key]);
+      else input.value = String(state.output[key]);
+    });
+    document.querySelectorAll('[data-duration-label]').forEach((node) => { node.textContent = `${state.output.duration.toFixed(1)}s`; });
+  }
+
+  function enforceOutputLimits() {
+    const maxDuration = Math.max(2, Math.floor(WEBP_FRAME_LIMIT / state.output.fps));
+    state.output.duration = clamp(state.output.duration, 2, maxDuration);
+    document.querySelectorAll('[data-output="duration"]').forEach((input) => { input.max = String(maxDuration); });
+  }
+
+  function bindDynamicControls() {
+    document.querySelectorAll('[data-path]').forEach((input) => {
+      input.addEventListener('input', () => {
+        setPath(input.dataset.path, Number(input.value));
+        validateState(); saveState(); updateRangeControl(input); refreshStaticUI();
+        if (input.dataset.path === 'field.streams') renderControls();
+      });
+    });
+    document.querySelectorAll('[data-stream-key]').forEach((input) => {
+      input.addEventListener('input', () => {
+        state.field.streamList[state.field.selectedStream][input.dataset.streamKey] = Number(input.value);
+        saveState(); updateRangeControl(input); refreshStaticUI();
+      });
+    });
+    $('stream-select')?.addEventListener('change', (event) => { state.field.selectedStream = Number(event.target.value); saveState(); renderControls(); });
+    $('emission-shape')?.addEventListener('change', (event) => { state.emission.shape = event.target.value; saveState(); });
+  }
+
+  function updateRangeControl(input) {
+    const min = Number(input.min), max = Number(input.max), value = Number(input.value);
+    input.style.setProperty('--progress', `${((value - min) / (max - min)) * 100}%`);
+    const output = $(`value-${input.id}`);
+    if (!output) return;
+    if (input.dataset.display === 'speed-curve') {
+      output.textContent = value < -.025 ? `${Math.round(Math.abs(value) * 100)}% fast → slow` : value > .025 ? `${Math.round(value * 100)}% slow → fast` : 'Linear';
+      return;
+    }
+    const suffix = input.dataset.suffix || '';
+    output.textContent = formatControlValue(value, Number(input.step), suffix);
+  }
+
+  function validateState() {
+    const field = state.field;
+    field.streams = Math.round(field.streams);
+    field.selectedStream = clamp(field.selectedStream, 0, Math.max(0, field.streams - 1));
+    field.ambientMax = Math.max(field.ambientMin, field.ambientMax);
+    field.streamMax = Math.max(field.streamMin, field.streamMax);
+    state.emission.max = Math.max(state.emission.min, state.emission.max);
+    state.orbit.max = Math.max(state.orbit.min, state.orbit.max);
+    state.explosion.max = Math.max(state.explosion.min, state.explosion.max);
+    state.explosion.endRadius = Math.max(state.explosion.startRadius, state.explosion.endRadius);
+    state.motion.lifetime = clamp(state.motion.lifetime, .10, 1);
+    state.motion.speedCurve = clamp(state.motion.speedCurve, -1, 1);
+  }
+
+  function refreshStaticUI() {
+    el.tint.value = state.appearance.tint;
+    el.seedReadout.textContent = String(state.seed);
+    const [width, height] = getOutputSize();
+    el.resolutionMeta.textContent = `${width.toLocaleString()} × ${height.toLocaleString()}`;
+    const label = state.mode === 'field' ? 'Bubble field' : state.mode === 'emission' ? 'Bubble emission' : state.mode === 'orbit' ? 'Bubble orbit' : 'Bubble explosion';
+    el.effectMeta.textContent = `${label} · seed ${state.seed}`;
+    el.pause.textContent = isPaused ? 'Resume' : 'Pause';
+    el.pause.classList.toggle('active', isPaused);
+    el.previewState.textContent = isPaused ? 'Paused' : 'Running';
+    el.export.textContent = `Download Animated WebP — ${state.output.duration}s · ${state.output.fps} FPS${state.output.loop ? ' · Loop' : ''}`;
+    document.querySelectorAll('input[type="range"]').forEach(updateRangeControl);
+    syncOutputControls();
+  }
+
+  function setCanvasSize() {
+    const [width, height] = getOutputSize();
+    canvas.width = width; canvas.height = height;
+    refreshStaticUI();
+  }
+
+  function rgbFromHex(hex) { const value = parseInt(hex.slice(1), 16); return [(value >> 16) & 255, (value >> 8) & 255, value & 255]; }
+  function hslToRgb(h, s, l) {
+    s /= 100; l /= 100; const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+    let r = 0, g = 0, b = 0; if (h < 60) [r, g, b] = [c, x, 0]; else if (h < 120) [r, g, b] = [x, c, 0]; else if (h < 180) [r, g, b] = [0, c, x]; else if (h < 240) [r, g, b] = [0, x, c]; else if (h < 300) [r, g, b] = [x, 0, c]; else [r, g, b] = [c, 0, x]; return [(r + m) * 255, (g + m) * 255, (b + m) * 255];
+  }
+  function mixColor(a, b, amount) { return a.map((value, index) => Math.round(value + (b[index] - value) * amount)); }
+  function bubbleColour(index, time, alpha) {
+    const base = rgbFromHex(state.appearance.tint);
+    const rainbow = hslToRgb(mod(index * 47 + time * 31, 360), 88, 66);
+    const colour = mixColor(base, rainbow, state.appearance.rainbow).map((value) => clamp(Math.round(value * state.appearance.brightness), 0, 255));
+    return [...colour, alpha];
+  }
+
+  function drawBubble(context, x, y, radius, index, time, alpha) {
+    if (alpha <= .001 || radius <= .1) return;
+    const [red, green, blue, opacity] = bubbleColour(index, time, alpha);
+    context.save(); context.translate(x, y);
+    if (state.appearance.glow > 0) {
+      context.shadowBlur = radius * 2.6 * state.appearance.glow;
+      context.shadowColor = `rgba(${red},${green},${blue},${opacity * state.appearance.glow})`;
+    }
+    context.beginPath(); context.arc(0, 0, radius, 0, TAU);
+    context.lineWidth = Math.max(.25, state.appearance.rim * referenceScale(context.canvas));
+    context.strokeStyle = `rgba(${red},${green},${blue},${opacity})`; context.stroke();
+    if (state.appearance.highlight > 0 && radius > 1) {
+      context.shadowBlur = 0; context.beginPath(); context.arc(-radius * .30, -radius * .30, Math.max(.3, radius * .19), 0, TAU);
+      context.fillStyle = `rgba(255,255,255,${opacity * state.appearance.highlight})`; context.fill();
+    }
+    context.restore();
+  }
+
+  function globalVector(extraDirection = 0) {
+    const angle = (state.motion.direction + extraDirection) * Math.PI / 180;
+    return { x: Math.sin(angle), y: -Math.cos(angle) };
+  }
+
+  function perpendicular(vector) { return { x: -vector.y, y: vector.x }; }
+
+  function applySpeedCurve(progress) {
+    const curve = Number(state.motion.speedCurve) || 0;
+    if (curve < -.001) return 1 - Math.pow(1 - progress, 1 + Math.abs(curve) * 3);
+    if (curve > .001) return Math.pow(progress, 1 + curve * 3);
+    return progress;
+  }
+
+  function particleClock(time, index, channel = 0, phaseOffset = 0) {
+    const raw = fract(time / outputCycle() + seeded(state.seed, index, channel) + phaseOffset);
+    const lifetime = clamp(state.motion.lifetime, .10, 1);
+    if (raw >= lifetime) return { progress: 1, opacity: 0, raw };
+    const lifetimeProgress = raw / lifetime;
+    const fade = smooth(lifetimeProgress / .08) * (1 - smooth((lifetimeProgress - .80) / .20));
+    return { progress: applySpeedCurve(lifetimeProgress), opacity: fade, raw };
+  }
+
+  function sharedClock(time) {
+    const raw = fract(time / outputCycle());
+    const lifetime = clamp(state.motion.lifetime, .10, 1);
+    if (raw >= lifetime) return { progress: 1, opacity: 0, raw };
+    const lifetimeProgress = raw / lifetime;
+    const fade = smooth(lifetimeProgress / .08) * (1 - smooth((lifetimeProgress - .80) / .20));
+    return { progress: applySpeedCurve(lifetimeProgress), opacity: fade, raw };
+  }
+
+  function fadeAtEnds(distance, length, edge = .13) {
+    return Math.min(1, distance / Math.max(1, length * edge)) * Math.min(1, (length - distance) / Math.max(1, length * edge));
+  }
+
+  function renderAmbient(context, time) {
+    const { width, height } = context.canvas, field = state.field, motion = state.motion, scale = referenceScale(context.canvas);
+    const direction = globalVector(), sideways = perpendicular(direction), travel = Math.hypot(width, height) * 1.42;
+    for (let index = 0; index < field.ambient; index += 1) {
+      const id = 1000 + index, clock = particleClock(time, id, 1), baseSide = seeded(state.seed, id, 3) * Math.hypot(width, height) * 1.15 - Math.hypot(width, height) * .575;
+      const wobble = Math.sin(clock.progress * TAU * (1.1 + seeded(state.seed, id, 4) * 1.8) + seeded(state.seed, id, 5) * TAU) * (8 + seeded(state.seed, id, 6) * 34) * scale * motion.volatility * motion.wobble;
+      const along = -travel * .5 + clock.progress * travel * motion.speed;
+      const x = width * .5 + direction.x * along + sideways.x * (baseSide + wobble);
+      const y = height * .5 + direction.y * along + sideways.y * (baseSide + wobble);
+      const radius = (field.ambientMin + (field.ambientMax - field.ambientMin) * seeded(state.seed, id, 7)) * scale;
+      const alpha = state.appearance.opacity * (.34 + seeded(state.seed, id, 8) * .66) * clock.opacity;
+      drawBubble(context, x, y, radius, id, time, alpha);
+    }
+  }
+
+  function renderStreams(context, time) {
+    const { width, height } = context.canvas, field = state.field, motion = state.motion, scale = referenceScale(context.canvas);
+    for (let streamIndex = 0; streamIndex < field.streams; streamIndex += 1) {
+      const stream = field.streamList[streamIndex], origin = { x: width * stream.originX / 100, y: height * stream.originY / 100 }, vector = globalVector(stream.direction), side = perpendicular(vector);
+      const length = stream.length * scale;
+      for (let particle = 0; particle < stream.particles; particle += 1) {
+        const id = 20000 + streamIndex * 1000 + particle;
+        const phaseOffset = particle * stream.spacing / Math.max(length, 1) + (seeded(state.seed, id, 1) - .5) * .20;
+        const clock = particleClock(time, id, 2, phaseOffset);
+        const distance = clock.progress * length * motion.speed * stream.speed;
+        const staticSide = (seeded(state.seed, id, 3) - .5) * stream.spread * scale;
+        const wobble = Math.sin(clock.progress * TAU * (1.1 + seeded(state.seed, id, 4) * 2.2) + seeded(state.seed, id, 5) * TAU) * stream.spread * .24 * scale * stream.volatility * motion.volatility * motion.wobble;
+        const x = origin.x + vector.x * distance + side.x * (staticSide + wobble), y = origin.y + vector.y * distance + side.y * (staticSide + wobble);
+        const radius = (field.streamMin + (field.streamMax - field.streamMin) * seeded(state.seed, id, 6)) * scale;
+        const alpha = state.appearance.opacity * (.42 + seeded(state.seed, id, 7) * .58) * clock.opacity * fadeAtEnds(Math.min(distance, length), length);
+        drawBubble(context, x, y, radius, id, time, alpha);
+      }
+    }
+  }
+
+  function renderEmission(context, time) {
+    const { width, height } = context.canvas, emitter = state.emission, motion = state.motion, scale = referenceScale(context.canvas), origin = { x: width * emitter.originX / 100, y: height * emitter.originY / 100 };
+    const length = emitter.length * scale;
+    for (let particle = 0; particle < emitter.count; particle += 1) {
+      const id = 50000 + particle, base = seeded(state.seed, id, 1), phaseOffset = particle * emitter.spacing / Math.max(length, 1);
+      const clock = particleClock(time, id, 2, phaseOffset);
+      let direction = emitter.direction + motion.direction;
+      if (emitter.shape === 'stream') direction += (base - .5) * Math.min(14, emitter.spread * .08);
+      else if (emitter.shape === 'cone') direction += (base - .5) * emitter.spread;
+      else direction = base * 360;
+      const angle = direction * Math.PI / 180, vector = { x: Math.sin(angle), y: -Math.cos(angle) }, side = perpendicular(vector), distance = clock.progress * length * motion.speed * emitter.speed;
+      const wobble = Math.sin(clock.progress * TAU * (1 + seeded(state.seed, id, 3) * 2) + seeded(state.seed, id, 4) * TAU) * emitter.spread * .17 * scale * emitter.volatility * motion.volatility * motion.wobble;
+      const x = origin.x + vector.x * distance + side.x * wobble, y = origin.y + vector.y * distance + side.y * wobble;
+      const radius = (emitter.min + (emitter.max - emitter.min) * seeded(state.seed, id, 5)) * scale;
+      const alpha = state.appearance.opacity * (.40 + seeded(state.seed, id, 6) * .60) * clock.opacity * fadeAtEnds(Math.min(distance, length), length);
+      drawBubble(context, x, y, radius, id, time, alpha);
+    }
+  }
+
+  function renderOrbit(context, time) {
+    const { width, height } = context.canvas, orbit = state.orbit, motion = state.motion, scale = referenceScale(context.canvas), origin = { x: width * orbit.originX / 100, y: height * orbit.originY / 100 };
+    const clock = sharedClock(time), fade = clock.opacity;
+    for (let particle = 0; particle < orbit.count; particle += 1) {
+      const id = 80000 + particle, angle = (motion.direction + orbit.direction + (seeded(state.seed, id, 1) - .5) * orbit.spread) * Math.PI / 180;
+      const vector = { x: Math.sin(angle), y: -Math.cos(angle) }, side = perpendicular(vector);
+      const distance = clock.progress * orbit.radius * scale * motion.speed * orbit.speed * (.45 + seeded(state.seed, id, 2) * .75);
+      const wobble = Math.sin(clock.progress * TAU * (1 + seeded(state.seed, id, 3) * 3) + seeded(state.seed, id, 4) * TAU) * orbit.volatility * 28 * scale * motion.volatility * motion.wobble;
+      const x = origin.x + vector.x * distance + side.x * wobble, y = origin.y + vector.y * distance + side.y * wobble;
+      const radius = (orbit.min + (orbit.max - orbit.min) * seeded(state.seed, id, 5)) * scale;
+      const alpha = state.appearance.opacity * (.36 + seeded(state.seed, id, 6) * .64) * fade;
+      drawBubble(context, x, y, radius, id, time, alpha);
+    }
+  }
+
+  function renderExplosion(context, time) {
+    const { width, height } = context.canvas, burst = state.explosion, motion = state.motion, scale = referenceScale(context.canvas), origin = { x: width * burst.originX / 100, y: height * burst.originY / 100 };
+    const clock = sharedClock(time), fade = clock.opacity;
+    for (let particle = 0; particle < burst.count; particle += 1) {
+      const id = 110000 + particle, angle = (motion.direction + burst.direction + (seeded(state.seed, id, 1) - .5) * burst.spread) * Math.PI / 180;
+      const vector = { x: Math.sin(angle), y: -Math.cos(angle) }, side = perpendicular(vector), variation = .55 + seeded(state.seed, id, 2) * .65;
+      const start = burst.startRadius * scale, end = burst.endRadius * scale * variation, distance = start + (end - start) * clock.progress * motion.speed * burst.speed;
+      const wobble = Math.sin(clock.progress * TAU * (1 + seeded(state.seed, id, 3) * 3) + seeded(state.seed, id, 4) * TAU) * burst.volatility * 30 * scale * motion.volatility * motion.wobble;
+      const x = origin.x + vector.x * distance + side.x * wobble, y = origin.y + vector.y * distance + side.y * wobble;
+      const radius = (burst.min + (burst.max - burst.min) * seeded(state.seed, id, 5)) * scale;
+      const alpha = state.appearance.opacity * (.36 + seeded(state.seed, id, 6) * .64) * fade;
+      drawBubble(context, x, y, radius, id, time, alpha);
+    }
+  }
+
+  function renderScene(context, time) {
+    context.fillStyle = '#000'; context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    if (state.mode === 'field') { renderAmbient(context, time); renderStreams(context, time); }
+    else if (state.mode === 'emission') renderEmission(context, time);
+    else if (state.mode === 'orbit') renderOrbit(context, time);
+    else renderExplosion(context, time);
+  }
+
+  function renderAnimation(now) {
+    if (!isExporting) renderScene(ctx, isPaused ? pauseTime : (now - startTime) / 1000);
+    requestAnimationFrame(renderAnimation);
+  }
+
+  function setPaused(next) {
+    if (next === isPaused) return;
+    if (next) pauseTime = (performance.now() - startTime) / 1000;
+    else startTime = performance.now() - pauseTime;
+    isPaused = next; refreshStaticUI();
+  }
+
+  function setWide(next) {
+    if (next === isWide) return;
+    isWide = next; app.classList.toggle('wide', next); el.workspace.setAttribute('aria-pressed', String(next));
+    el.workspace.innerHTML = next ? '⛶ <span class="wide-word">COMPACT</span>' : '⛶ <span class="wide-word">FULL</span>';
+    setHostWide(next);
+    showToast(next ? 'Full workspace enabled. The left controls column scrolls independently.' : 'Compact workspace restored.', 'good');
+  }
+
+  function showToast(message, tone = '') {
+    clearTimeout(toastTimer); el.toast.textContent = message; el.toast.className = `toast show ${tone}`.trim();
+    toastTimer = setTimeout(() => { el.toast.className = 'toast'; }, 3600);
+  }
+  function showDock() { clearTimeout(dockTimer); el.dock.classList.remove('hidden'); }
+  function hideDockSoon() { clearTimeout(dockTimer); dockTimer = setTimeout(() => el.dock.classList.add('hidden'), 2500); }
+
+  function makeExportCanvas() { const [width, height] = getOutputSize(); const exportCanvas = document.createElement('canvas'); exportCanvas.width = width; exportCanvas.height = height; return exportCanvas; }
+  function downloadBlob(blob, filename) { const url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = filename; anchor.style.display = 'none'; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 2500); }
+  function setExportProgress(current, total, label) { el.export.textContent = `${label} — ${Math.round((current / total) * 100)}%`; }
+
+  function concatenate(parts) { const length = parts.reduce((sum, part) => sum + part.length, 0), output = new Uint8Array(length); let offset = 0; for (const part of parts) { output.set(part, offset); offset += part.length; } return output; }
+  function riffChunk(id, payload) { const pad = payload.byteLength % 2, output = new Uint8Array(8 + payload.byteLength + pad), view = new DataView(output.buffer); for (let index = 0; index < 4; index += 1) output[index] = id.charCodeAt(index); view.setUint32(4, payload.byteLength, true); output.set(new Uint8Array(payload), 8); return output; }
+  function writeUint24(view, offset, value) { view.setUint8(offset, value & 255); view.setUint8(offset + 1, (value >> 8) & 255); view.setUint8(offset + 2, (value >> 16) & 255); }
+  function webpPayload(buffer) { const data = new Uint8Array(buffer); if (String.fromCharCode(...data.slice(0, 4)) !== 'RIFF' || String.fromCharCode(...data.slice(8, 12)) !== 'WEBP') throw new Error('WebP frame encoding failed.'); return data.slice(12); }
+  function makeVp8x(width, height) { const payload = new Uint8Array(10), view = new DataView(payload.buffer); payload[0] = 18; writeUint24(view, 4, width - 1); writeUint24(view, 7, height - 1); return riffChunk('VP8X', payload); }
+  function makeAnim() { return riffChunk('ANIM', new Uint8Array(6)); }
+  function makeAnimFrame(payload, width, height, milliseconds) { const header = new Uint8Array(16), view = new DataView(header.buffer); writeUint24(view, 0, 0); writeUint24(view, 3, 0); writeUint24(view, 6, width - 1); writeUint24(view, 9, height - 1); writeUint24(view, 12, Math.max(1, Math.round(milliseconds))); header[15] = 2; return riffChunk('ANMF', concatenate([header, payload])); }
+
+  async function exportWebP() {
+    const [width, height] = getOutputSize(), fps = state.output.fps, frameCount = Math.max(1, Math.round(state.output.duration * fps));
+    if (frameCount > WEBP_FRAME_LIMIT) throw new Error(`Animated WebP is limited to ${WEBP_FRAME_LIMIT} frames. Reduce duration or frame rate.`);
+    const exportCanvas = makeExportCanvas(), exportContext = exportCanvas.getContext('2d', { alpha: false }), parts = [makeVp8x(width, height), makeAnim()];
+    for (let index = 0; index < frameCount; index += 1) {
+      renderScene(exportContext, index / fps);
+      const blob = await new Promise((resolve) => exportCanvas.toBlob(resolve, 'image/webp', .92)); if (!blob) throw new Error('WebP frame encoding failed.');
+      parts.push(makeAnimFrame(webpPayload(await blob.arrayBuffer()), width, height, 1000 / fps));
+      setExportProgress(index + 1, frameCount, 'Encoding WebP'); await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    const body = concatenate(parts), header = new Uint8Array(12), view = new DataView(header.buffer); header.set([82, 73, 70, 70]); view.setUint32(4, body.length + 4, true); header.set([87, 69, 66, 80], 8); return new Blob([header, body], { type: 'image/webp' });
+  }
+
+  async function exportEffect() {
+    if (isExporting) return; isExporting = true; el.export.disabled = true; el.export.classList.add('busy'); showDock(); notifyHub('RENDERING BUBBLE EFFECT');
+    try {
+      const blob = await exportWebP();
+      downloadBlob(blob, `bubble-riser_${state.mode}_${state.output.resolution}_${state.output.duration}s_${state.output.fps}fps.webp`);
+      showToast('Export complete. The saved file contains only the bubble effect on pure black.', 'good');
+    } catch (error) {
+      console.error(error); showToast(error.message || 'Export failed.', 'warn');
+    } finally {
+      isExporting = false; el.export.disabled = false; el.export.classList.remove('busy'); refreshStaticUI(); clearHub(); hideDockSoon();
+    }
+  }
+
+  function bindStaticEvents() {
+    el.modeTabs.addEventListener('click', (event) => { const tab = event.target.closest('[data-mode]'); if (!tab) return; state.mode = tab.dataset.mode; saveState(); renderControls(); refreshStaticUI(); });
+    el.tint.addEventListener('input', () => { state.appearance.tint = el.tint.value; saveState(); });
+    el.pause.addEventListener('click', () => setPaused(!isPaused));
+    el.newSeed.addEventListener('click', () => { state.seed = Math.floor(Math.random() * 90000) + 10000; saveState(); refreshStaticUI(); showToast(`New deterministic field created: seed ${state.seed}`, 'good'); });
+    el.resetTime.addEventListener('click', () => { pauseTime = 0; startTime = performance.now(); renderScene(ctx, 0); });
+    el.workspace.addEventListener('click', () => setWide(!isWide));
+    el.export.addEventListener('click', exportEffect);
+    el.dockReveal.addEventListener('click', showDock);
+    el.dock.addEventListener('mouseenter', showDock); el.dock.addEventListener('mouseleave', hideDockSoon);
+    el.dock.addEventListener('focusin', showDock); el.dock.addEventListener('focusout', hideDockSoon);
+    document.addEventListener('mousemove', (event) => { if (event.clientY > window.innerHeight - 40) showDock(); });
+    document.addEventListener('touchstart', (event) => { if (event.touches[0] && event.touches[0].clientY > window.innerHeight - 60) showDock(); }, { passive: true });
+    el.workspace.addEventListener('mouseenter', () => notifyHub('Toggle the Bubble Riser full workspace.')); el.workspace.addEventListener('mouseleave', clearHub);
+    el.export.addEventListener('mouseenter', () => notifyHub('Render and download the current bubble effect.')); el.export.addEventListener('mouseleave', clearHub);
+  }
+
+  function initialise() {
+    loadState(); validateState(); renderOutputControls(); renderControls(); setCanvasSize(); bindStaticEvents(); setTimeout(hideDockSoon, 5000); requestAnimationFrame(renderAnimation);
+  }
+
+  initialise();
 })();
 </script>
 </body>
