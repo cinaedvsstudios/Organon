@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble Riser</title>
+<style>html,body{margin:0;width:100%;height:100%;background:#000;color:#f5f0db;font-family:system-ui,sans-serif}.loading{display:grid;place-items:center;height:100%;font-size:.8rem;letter-spacing:.05em}</style>
+</head>
+<body><div class="loading">LOADING BUBBLE RISER…</div>
+<script>
+(async () => {
+  'use strict';
+  const BUILD = '2026.06.30.1127';
+  const sourceUrl = 'index-v10.html?build=20260630-0439';
+
+  try {
+    let html = await fetch(sourceUrl, { cache: 'no-store' }).then((response) => {
+      if (!response.ok) throw new Error(`Could not load Bubble Riser (${response.status}).`);
+      return response.text();
+    });
+
+    html = html.replaceAll('BUILD 2026.06.30.0439', `BUILD ${BUILD}`);
+    html = html.replace("const BUILD = '2026.06.30.0439';", `const BUILD = '${BUILD}';`);
+
+    html = html.replace('</style>', `
+      .dock.hidden { transform: translate(-50%, calc(100% - 32px)) !important; }
+      .dock-reveal { position:absolute; top:0; left:50%; width:108px; min-height:32px; transform:translateX(-50%); border:1px solid var(--bronze); border-top:0; border-radius:0 0 999px 999px; background:rgba(24,25,25,.94); color:var(--ochre); font:700 .58rem var(--mono); letter-spacing:.06em; opacity:0; pointer-events:none; cursor:pointer; transition:opacity .18s ease; }
+      .dock.hidden .dock-reveal { opacity:1; pointer-events:auto; }
+      .dock:before { pointer-events:none; }
+    </style>`);
+
+    html = html.replace(
+      '<footer class="dock" id="dock"><button class="export" id="export-button" type="button">Download MP4 — 6s · 24 FPS · Loop</button></footer>',
+      '<footer class="dock" id="dock"><button class="dock-reveal" id="dock-reveal" type="button" aria-label="Show export button">EXPORT</button><button class="export" id="export-button" type="button">Download MP4 — 6s · 24 FPS · Loop</button></footer>'
+    );
+
+    html = html.replace(
+      "dock: $('dock'), export: $('export-button'), toast: $('toast')",
+      "dock: $('dock'), dockReveal: $('dock-reveal'), export: $('export-button'), toast: $('toast')"
+    );
+
+    html = html.replace(
+      "return `<div class=\"card-head\"><h2>Bubble Explosion</h2><span class=\"chip\">Burst</span></div><div class=\"range-grid\">\n      ${rangeControl('ex-origin-x', 'Burst X', 'explosion.originX', 0, 100, 1, '%')}\n      ${rangeControl('ex-origin-y', 'Burst Y', 'explosion.originY', 0, 110, 1, '%')}\n      ${rangeControl('ex-count', 'Burst bubbles', 'explosion.count', 1, 700, 1)}\n      ${rangeControl('ex-min', 'Burst min size', 'explosion.min', .5, 20, .5, ' px')}\n      ${rangeControl('ex-max', 'Burst max size', 'explosion.max', 1, 60, 1, ' px')}\n      ${rangeControl('ex-direction', 'Burst direction', 'explosion.direction', -180, 180, 1, '°')}\n      ${rangeControl('ex-spread', 'Burst spread', 'explosion.spread', 5, 360, 1, '°')}\n      ${rangeControl('ex-speed', 'Burst speed', 'explosion.speed', .05, 5, .05, '×')}\n      ${rangeControl('ex-volatility', 'Burst volatility', 'explosion.volatility', 0, 5, .1)}\n      ${rangeControl('ex-radius', 'Burst radius', 'explosion.radius', 80, 1900, 10, ' px')}\n    </div><p class=\"helper\">A burst begins and ends on black in Loop mode, so it is safe for opening-box, spell and impact effects.</p>`;",
+      "return `<div class=\"card-head\"><h2>Bubble Explosion</h2><span class=\"chip\">Burst</span></div>\n      <div class=\"subhead\">Explosion bubble size</div><div class=\"range-grid\">\n        ${rangeControl('ex-min', 'Bubble min size', 'explosion.min', .5, 20, .5, ' px')}\n        ${rangeControl('ex-max', 'Bubble max size', 'explosion.max', 1, 60, 1, ' px')}\n      </div>\n      <div class=\"subhead\">Explosion controls</div><div class=\"range-grid\">\n        ${rangeControl('ex-count', 'Explosion bubbles', 'explosion.count', 1, 700, 1)}\n        ${rangeControl('ex-origin-x', 'Burst X', 'explosion.originX', 0, 100, 1, '%')}\n        ${rangeControl('ex-origin-y', 'Burst Y', 'explosion.originY', 0, 110, 1, '%')}\n        ${rangeControl('ex-direction', 'Burst direction', 'explosion.direction', -180, 180, 1, '°')}\n        ${rangeControl('ex-spread', 'Burst spread', 'explosion.spread', 5, 360, 1, '°')}\n        ${rangeControl('ex-speed', 'Burst speed', 'explosion.speed', .05, 5, .05, '×')}\n        ${rangeControl('ex-volatility', 'Burst volatility', 'explosion.volatility', 0, 5, .1)}\n        ${rangeControl('ex-radius', 'Burst radius', 'explosion.radius', 80, 1900, 10, ' px')}\n      </div><p class=\"helper\">A burst begins and ends on black in Loop mode, so it is safe for opening-box, spell and impact effects.</p>`;"
+    );
+
+    html = html.replace(
+      "el.export.addEventListener('click', exportEffect);\n    el.dock.addEventListener('mouseenter', showDock); el.dock.addEventListener('mouseleave', hideDockSoon);\n    document.addEventListener('mousemove', (event) => { if (event.clientY > window.innerHeight - 32) showDock(); });\n    document.addEventListener('touchstart', (event) => { if (event.touches[0] && event.touches[0].clientY > window.innerHeight - 55) showDock(); }, { passive: true });",
+      "el.export.addEventListener('click', exportEffect);\n    el.dockReveal.addEventListener('click', showDock);\n    el.dock.addEventListener('mouseenter', showDock); el.dock.addEventListener('mouseleave', hideDockSoon);\n    el.dock.addEventListener('focusin', showDock); el.dock.addEventListener('focusout', hideDockSoon);\n    document.addEventListener('mousemove', (event) => { if (event.clientY > window.innerHeight - 40) showDock(); });\n    document.addEventListener('touchstart', (event) => { if (event.touches[0] && event.touches[0].clientY > window.innerHeight - 60) showDock(); }, { passive: true });"
+    );
+
+    html = html.replace(
+      'renderOutputControls(); renderControls(); setCanvasSize(); bindStaticEvents(); hideDockSoon(); requestAnimationFrame(renderAnimation);',
+      'renderOutputControls(); renderControls(); setCanvasSize(); bindStaticEvents(); setTimeout(hideDockSoon, 5000); requestAnimationFrame(renderAnimation);'
+    );
+
+    document.open();
+    document.write(html);
+    document.close();
+  } catch (error) {
+    document.body.innerHTML = `<div class="loading">${String(error.message || error)}</div>`;
+    console.error(error);
+  }
+})();
+</script>
+</body>
+</html>
