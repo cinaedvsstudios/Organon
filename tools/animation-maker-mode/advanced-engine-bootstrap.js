@@ -22,6 +22,6 @@
   document.addEventListener('dragover',(event)=>{const files=[...(event.dataTransfer?.files||[])];if(!files.some((file)=>file.type.startsWith('image/')))return;event.preventDefault();document.querySelector('.ag-app').classList.add('ag-drop-active');});
   document.addEventListener('dragleave',()=>document.querySelector('.ag-app')?.classList.remove('ag-drop-active'));
   document.addEventListener('drop',(event)=>{const files=[...(event.dataTransfer?.files||[])];if(!files.some((file)=>file.type.startsWith('image/')))return;event.preventDefault();document.querySelector('.ag-app')?.classList.remove('ag-drop-active');E.importImages(files,state.activeGroupId);});
-  document.addEventListener('paste',(event)=>{if(document.activeElement?.matches('input,textarea,select'))return;const files=[...(event.clipboardData?.files||[])].filter((file)=>file.type.startsWith('image/'));if(!files.length)return;event.preventDefault();E.importImages(files,state.activeGroupId);});
+  document.addEventListener('paste',(event)=>{if(document.activeElement?.matches('input,textarea,select'))return;if(E.frame()&&['edit','paint','select'].includes(state.mode))return;const files=[...(event.clipboardData?.files||[])].filter((file)=>file.type.startsWith('image/'));if(!files.length)return;event.preventDefault();E.importImages(files,state.activeGroupId);});
   E.renderAll();
 })();
