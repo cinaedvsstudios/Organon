@@ -26,8 +26,10 @@
 
   if (isAdvanced) {
     addScript('../animation-maker-mode/advanced-groups-v2.js', () => {
-      addScript('../animation-maker-mode/advanced-groups-format.js', () => {
-        addScript('../animation-maker-mode/advanced-bottom-bar.js');
+      addScript('../animation-maker-mode/advanced-editor-startup.js', () => {
+        addScript('../animation-maker-mode/advanced-groups-format.js', () => {
+          addScript('../animation-maker-mode/advanced-bottom-bar.js');
+        });
       });
     });
   } else {
