@@ -1,0 +1,21 @@
+(() => {
+  'use strict';
+  const E=window.OrganonAnimationAdvanced;
+  if(!E)return;
+  const {state,$,clamp}=E,canvas=$('ag-canvas'),wrap=$('ag-canvas-wrap'),box=$('ag-selection-box');
+  const point=(event)=>{const rect=canvas.getBoundingClientRect();return{x:clamp((event.clientX-rect.left)/rect.width,0,1),y:clamp((event.clientY-rect.top)/rect.height,0,1)};};
+  E.updateSelection=()=>{const s=state.selection,rect=canvas.getBoundingClientRect(),outer=wrap.getBoundingClientRect(),shown=s.active&&s.w>.004&&s.h>.004;box.hidden=!shown;if(!shown)return;box.style.left=`${rect.left-outer.left+s.x*rect.width}px`;box.style.top=`${rect.top-outer.top+s.y*rect.height}px`;box.style.width=`${s.w*rect.width}px`;box.style.height=`${s.h*rect.height}px`;};
+  const beginSelect=(event)=>{const s=state.selection,p=point(event);s.dragging=true;canvas.setPointerCapture?.(event.pointerId);const inside=s.active&&p.x>=s.x&&p.x<=s.x+s.w&&p.y>=s.y&&p.y<=s.y+s.h;if(inside){s.mode='move';s.lastX=p.x;s.lastY=p.y;}else{s.mode='create';s.active=true;s.startX=p.x;s.startY=p.y;s.x=p.x;s.y=p.y;s.w=0;s.h=0;}E.updateSelection();};
+  const moveSelect=(event)=>{const s=state.selection;if(!s.dragging)return;const p=point(event);if(s.mode==='move'){s.x=clamp(s.x+p.x-s.lastX,0,1-s.w);s.y=clamp(s.y+p.y-s.lastY,0,1-s.h);s.lastX=p.x;s.lastY=p.y;}else{s.x=Math.min(s.startX,p.x);s.y=Math.min(s.startY,p.y);s.w=Math.abs(p.x-s.startX);s.h=Math.abs(p.y-s.startY);}E.updateSelection();};
+  const finishSelect=(event)=>{const s=state.selection;if(!s.dragging)return;s.dragging=false;canvas.releasePointerCapture?.(event.pointerId);if(s.w<=.004||s.h<=.004)s.active=false;E.updateSelection();};
+  const beginPaint=async(event)=>{const source=await E.editable();if(!source||state.mode!=='paint')return;E.snapshot();state.paint={active:true,canvas:source,last:point(event),colour:$('ag-brush-colour').value,size:Number($('ag-brush-size').value)};canvas.setPointerCapture?.(event.pointerId);};
+  const movePaint=(event)=>{const paint=state.paint;if(!paint?.active)return;const next=point(event),c=paint.canvas.getContext('2d');c.save();c.lineWidth=paint.size;c.lineCap='round';c.lineJoin='round';c.strokeStyle=paint.colour;c.globalCompositeOperation=$('ag-eraser').checked?'destination-out':'source-over';c.beginPath();c.moveTo(paint.last.x*paint.canvas.width,paint.last.y*paint.canvas.height);c.lineTo(next.x*paint.canvas.width,next.y*paint.canvas.height);c.stroke();c.restore();paint.last=next;canvas.width=paint.canvas.width;canvas.height=paint.canvas.height;canvas.getContext('2d').drawImage(paint.canvas,0,0);E.updateSelection();};
+  const finishPaint=(event)=>{const paint=state.paint;if(!paint?.active)return;canvas.releasePointerCapture?.(event.pointerId);state.paint=null;E.commit(paint.canvas,'Paint applied.');};
+  canvas.addEventListener('pointerdown',(event)=>{if(state.mode==='paint'){event.preventDefault();beginPaint(event);return;}if(state.mode==='select'&&state.selection.enabled){event.preventDefault();beginSelect(event);}});
+  canvas.addEventListener('pointermove',(event)=>{if(state.mode==='paint')movePaint(event);else if(state.mode==='select')moveSelect(event);});
+  canvas.addEventListener('pointerup',(event)=>{if(state.mode==='paint')finishPaint(event);else if(state.mode==='select')finishSelect(event);});canvas.addEventListener('pointercancel',(event)=>{if(state.mode==='paint')finishPaint(event);else if(state.mode==='select')finishSelect(event);});
+  $('ag-brush-size').addEventListener('input',(event)=>$('ag-brush-size-output').textContent=`${event.target.value} px`);
+  $('ag-select-toggle').addEventListener('click',()=>{state.selection.enabled=!state.selection.enabled;$('ag-select-toggle').classList.toggle('active',state.selection.enabled);$('ag-select-toggle').textContent=state.selection.enabled?'DRAW / MOVE SELECTION: ON':'DRAW / MOVE SELECTION';});
+  $('ag-select-clear').addEventListener('click',()=>{state.selection.active=false;state.selection.enabled=false;$('ag-select-toggle').classList.remove('active');$('ag-select-toggle').textContent='DRAW / MOVE SELECTION';E.updateSelection();});
+  new ResizeObserver(E.updateSelection).observe(wrap);window.addEventListener('resize',E.updateSelection);
+})();
