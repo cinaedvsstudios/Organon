@@ -1,5 +1,5 @@
 {
-  "version": "v1.16-alpha",
+  "version": "v1.17-alpha",
   "categories": [
     {
       "id": "create",
@@ -67,6 +67,12 @@
           "label": "VIDCOMPRESSOR",
           "path": "tools/vidcompressor/index.html",
           "description": "Compress local video files with one quality-to-file-size slider, then save a new copy or overwrite the source file where browser permission allows."
+        },
+        {
+          "id": "bubble-riser",
+          "label": "BUBBLE RISER",
+          "path": "tools/bubble-riser/index.html",
+          "description": "Generate monochrome deep-ocean bubbles on a pure black canvas, then export MP4 or animated WebP effects."
         }
       ]
     },
