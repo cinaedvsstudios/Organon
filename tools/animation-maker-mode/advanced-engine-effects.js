@@ -1,0 +1,16 @@
+(() => {
+  'use strict';
+  const E=window.OrganonAnimationAdvanced;
+  if(!E)return;
+  const {state,$,copy,defaults}=E;
+  const $$=(q,r=document)=>[...r.querySelectorAll(q)];
+  const fields=[['brightness','Brightness',0,200,100,'%'],['contrast','Contrast',0,200,100,'%'],['exposure','Exposure',-100,100,0,''],['hue','Hue',-180,180,0,'°'],['saturation','Saturation',0,200,100,'%'],['temperature','Temperature',-100,100,0,''],['tint','Tint',-100,100,0,''],['opacity','Opacity',0,100,100,'%'],['blur','Blur',0,20,0,' px'],['sharpen','Sharpen',0,10,0,''],['grayscale','Grayscale',0,100,0,'%'],['sepia','Sepia',0,100,0,'%'],['invert','Invert',0,100,0,'%']];
+  const targets=(hostId,set)=>{const host=$(hostId);if(!host)return;if(state.activeGroupId)set.add(state.activeGroupId);host.innerHTML=state.groups.map((g)=>`<label><input type="checkbox" value="${g.id}" ${set.has(g.id)?'checked':''}><span>${g.name}${g.id===state.activeGroupId?' — Current Group':''}</span></label>`).join('');$$('input',host).forEach((input)=>input.addEventListener('change',()=>{if(input.checked)set.add(input.value);else if(input.value!==state.activeGroupId)set.delete(input.value);else input.checked=true;}));};
+  E.renderEffects=()=>{fields.forEach(([key,label,min,max,value,suffix])=>{const input=$(`ag-effect-${key}`),out=$(`ag-effect-${key}-output`);if(input){input.value=state.draft[key];out.textContent=`${state.draft[key]}${suffix}`;}});targets('ag-effect-targets',state.effectTargets);};
+  fields.forEach(([key,label,min,max,value,suffix])=>{const host=$('ag-effect-controls'),wrap=document.createElement('div');wrap.className='ag-control';wrap.innerHTML=`<label>${label}<output id="ag-effect-${key}-output">${value}${suffix}</output></label><input id="ag-effect-${key}" type="range" min="${min}" max="${max}" value="${value}">`;host.appendChild(wrap);$(`ag-effect-${key}`).addEventListener('input',(event)=>{state.draft[key]=Number(event.target.value);$(`ag-effect-${key}-output`).textContent=`${event.target.value}${suffix}`;E.renderCanvas();});});
+  E.setMode=(mode)=>{state.mode=mode;if(['edit','paint','select'].includes(mode))state.view='original';$$('[data-mode]').forEach((button)=>button.classList.toggle('active',button.dataset.mode===mode));$('ag-edit-panel').classList.toggle('ag-hidden',mode!=='edit');$('ag-paint-panel').classList.toggle('ag-hidden',mode!=='paint');$('ag-select-panel').classList.toggle('ag-hidden',mode!=='select');$('ag-effects-panel').classList.toggle('ag-hidden',mode!=='effects');$('ag-animation-panel').classList.toggle('ag-hidden',mode!=='animations');if(mode==='effects'){state.draft=copy(E.group()?.effects||defaults());E.renderEffects();}if(mode==='animations')targets('ag-animation-targets',state.animationTargets);E.renderCanvas();};
+  $$('[data-mode]').forEach((button)=>button.addEventListener('click',()=>E.setMode(button.dataset.mode)));
+  $('ag-effect-apply').addEventListener('click',()=>{const ids=[...state.effectTargets];ids.forEach((id)=>{const g=E.group(id);if(g)g.effects=copy(state.draft);});E.status(`Effects applied to ${ids.length} group${ids.length===1?'':'s'}.`);E.renderAll();});
+  $('ag-effect-reset').addEventListener('click',()=>{state.draft=defaults();E.renderEffects();E.renderCanvas();});
+  E.renderAnimationTargets=()=>targets('ag-animation-targets',state.animationTargets);
+})();
