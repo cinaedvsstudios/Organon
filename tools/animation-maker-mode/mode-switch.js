@@ -14,7 +14,7 @@
   if (modeButton) {
     modeButton.textContent = isAdvanced ? 'STANDARD MODE' : 'ADVANCED MODE';
     modeButton.addEventListener('click', () => {
-      location.href = isAdvanced ? './index.html' : '../animation-maker-advanced/index.html';
+      location.href = isAdvanced ? './index.html' : './index.html?mode=advanced';
     });
   }
 
