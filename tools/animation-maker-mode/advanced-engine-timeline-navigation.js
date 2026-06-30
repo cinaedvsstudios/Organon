@@ -15,6 +15,12 @@
   const replacementPlay = play.cloneNode(true);
   play.replaceWith(replacementPlay);
 
+  E.stopPlayback = () => {
+    if (state.playTimer) window.clearInterval(state.playTimer);
+    state.playTimer = null;
+    replacementPlay.textContent = '▶ PLAY';
+  };
+
   const setTimelineFrame = (amount) => {
     const group = E.group();
     if (!group?.frames.length) return;
@@ -40,9 +46,7 @@
   next.addEventListener('click', () => setTimelineFrame(1));
   replacementPlay.addEventListener('click', () => {
     if (state.playTimer) {
-      window.clearInterval(state.playTimer);
-      state.playTimer = null;
-      replacementPlay.textContent = '▶ PLAY';
+      E.stopPlayback();
       return;
     }
     replacementPlay.textContent = '❚❚ PAUSE';
