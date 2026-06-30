@@ -1,0 +1,45 @@
+input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px 0 0;appearance:none;background:transparent;cursor:pointer}input[type=range]::-webkit-slider-runnable-track{height:5px;border:1px solid rgba(137,107,73,.65);border-radius:999px;background:linear-gradient(to right,var(--red) 0 var(--progress),var(--track) var(--progress) 100%)}input[type=range]::-webkit-slider-thumb{width:15px;height:15px;margin-top:-6px;appearance:none;border:1px solid var(--ochre);border-radius:50%;background:var(--paper);box-shadow:0 0 8px rgba(224,163,96,.35)}input[type=range]::-moz-range-track{height:5px;border:1px solid rgba(137,107,73,.65);border-radius:999px;background:var(--track)}input[type=range]::-moz-range-progress{height:5px;border-radius:999px;background:var(--red)}input[type=range]::-moz-range-thumb{width:13px;height:13px;border:1px solid var(--ochre);border-radius:50%;background:var(--paper)}
+.dock{position:fixed;left:50%;bottom:0;z-index:30;width:100%;max-width:540px;padding:10px 14px 14px;transform:translateX(-50%);display:flex;justify-content:center;background:#d79e5c linear-gradient(rgba(224,163,96,.79),rgba(224,163,96,.79)),url('../../images/stonetext.jpg');background-size:cover;border-top:1px solid var(--bronze);border-radius:24px 24px 0 0;box-shadow:0 -6px 20px rgba(0,0,0,.35);transition:transform .28s ease}.dock.hidden{transform:translate(-50%,calc(100% - 32px))}.dock-reveal{position:absolute;top:0;left:50%;width:108px;min-height:32px;transform:translateX(-50%);border:1px solid var(--bronze);border-top:0;border-radius:0 0 999px 999px;background:rgba(24,25,25,.94);color:var(--ochre);font:700 .58rem var(--mono);letter-spacing:.06em;opacity:0;pointer-events:none;cursor:pointer;transition:opacity .18s ease}.dock.hidden .dock-reveal{opacity:1;pointer-events:auto}.dock:before{content:'';position:absolute;top:0;left:50%;width:78px;height:8px;transform:translateX(-50%);border-radius:0 0 999px 999px;background:rgba(24,25,25,.78);pointer-events:none}
+.export{width:min(520px,100%);min-height:42px;padding:8px 18px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.94);color:var(--paper);cursor:pointer;font-size:.71rem;font-weight:700;letter-spacing:.035em;text-transform:uppercase}.export:hover:not(:disabled){border-color:var(--blue);box-shadow:0 0 12px rgba(121,180,227,.22)}.export:disabled{opacity:.62;cursor:wait}.export.busy{border-color:var(--warn);color:var(--warn);background:rgba(74,21,37,.9)}
+.toast{position:fixed;right:12px;bottom:74px;z-index:60;max-width:min(430px,calc(100vw - 24px));padding:10px 13px;border:1px solid var(--bronze);border-radius:14px;background:rgba(24,25,25,.96);color:var(--paper);box-shadow:0 10px 30px rgba(0,0,0,.44);font-size:.71rem;line-height:1.35;opacity:0;pointer-events:none;transform:translateY(10px);transition:.2s}.toast.show{opacity:1;transform:translateY(0)}.toast.good{border-color:rgba(121,227,184,.65);color:var(--green)}.toast.warn{border-color:var(--warn);color:var(--warn)}
+@media(min-width:860px){
+  .app.wide .topbar{position:relative;flex:0 0 auto;padding:8px 16px}
+  .app.wide .workspace{flex:1 1 auto;min-height:0;grid-template-columns:minmax(460px,.93fr) minmax(560px,1.27fr);grid-template-rows:minmax(0,1fr);align-items:stretch;gap:18px;padding:18px clamp(18px,2.4vw,36px) 76px;overflow:hidden}
+  .app.wide .compact-output{display:none}.app.wide .wide-output{display:block}
+  .app.wide .controls-panel{grid-column:1;grid-row:1;min-height:0;height:100%;overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:16px}
+  .app.wide .canvas-card{grid-column:2;grid-row:1;min-height:0;height:100%}.app.wide .preview-stage{flex:1 1 auto;min-height:0}.app.wide #canvas{max-height:100%}
+  .app.wide .range-grid{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:18px;row-gap:12px}.app.wide .helper{grid-column:1/-1}.app.wide .dock{max-width:1480px}
+}
+@media(max-width:650px){.build,.tool-tag{display:none}.output-grid,.color-grid{grid-template-columns:1fr}.preview-actions{grid-template-columns:1fr}.workspace-btn .wide-word{display:none}.workspace-btn{width:28px;padding:4px}.title-pill{gap:6px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="title-pill">
+      <div class="title-side"><span class="title-name">BUBBLE RISER</span><span class="build">BUILD 2026.06.30.1236</span></div>
+      <div class="title-side"><span class="tool-tag">PARTICLE EFFECT</span><button id="workspace-button" class="workspace-btn" type="button" aria-pressed="false">⛶ <span class="wide-word">FULL</span></button></div>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <section class="card compact-output" aria-label="Output settings"><div id="compact-output"></div></section>
+    <section class="card canvas-card" aria-label="Live canvas preview">
+      <div class="card-head"><h1>Live Canvas</h1><span class="chip" id="preview-state">Running</span></div>
+      <div class="preview-stage"><canvas id="canvas" width="1920" height="1080"></canvas></div>
+      <div class="preview-meta"><span id="resolution-meta">1920 × 1080</span><span id="effect-meta">Bubble field · seed 41827</span></div>
+      <div class="preview-actions"><button class="btn" id="pause-button" type="button">Pause</button><button class="btn alt" id="new-seed-button" type="button">New field</button><button class="btn alt" id="reset-time-button" type="button">Reset time</button></div>
+    </section>
+
+    <aside class="controls-panel" aria-label="Bubble Riser controls">
+      <section class="wide-output" aria-label="Output settings"><div id="wide-output"></div></section>
+      <section class="section">
+        <div class="tabs" id="mode-tabs">
+          <button class="tab active" type="button" data-mode="field">Bubble Field</button>
+          <button class="tab" type="button" data-mode="emission">Bubble Emission</button>
+          <button class="tab" type="button" data-mode="orbit">Bubble Orbit</button>
+          <button class="tab" type="button" data-mode="explosion">Bubble Explosion</button>
+        </div>
+        <div id="mode-controls"></div>
+      </section>
+      <section class="section"><div class="card-head"><h2>Global Motion</h2><span class="chip">All bubbles</span></div><div class="range-grid" id="motion-controls"></div><p class="helper">Global speed changes how fast bubbles travel through their path. Speed curve shapes that movement: left is fast → slow, right is slow → fast. Bubble lifetime controls whether they burst early or survive to the full path.</p></section>
