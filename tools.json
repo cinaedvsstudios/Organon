@@ -1,5 +1,5 @@
 {
-  "version": "v1.18-alpha",
+  "version": "v1.19-alpha",
   "categories": [
     {
       "id": "create",
@@ -27,7 +27,7 @@
         {"id":"audio-timeline","label":"AUDIO TIMELINE","path":"tools/audio-timeline/index.html","description":"Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id":"frame-extractor","label":"FRAME EXTRACTOR","path":"tools/frame-extractor/index.html","description":"Extract still frames from local video files."},
         {"id":"vidcompressor","label":"VIDCOMPRESSOR","path":"tools/vidcompressor/index.html","description":"Compress local video files with one quality-to-file-size slider, then save a new copy or overwrite the source file where browser permission allows."},
-        {"id":"bubble-riser","label":"BUBBLE RISER","path":"tools/bubble-riser/index-v2.html","description":"Generate monochrome deep-ocean bubbles on a pure black canvas, then export MP4 or animated WebP effects."}
+        {"id":"bubble-riser","label":"BUBBLE RISER","path":"tools/bubble-riser/index-v3.html","description":"Generate monochrome deep-ocean bubbles on a pure black canvas, then export MP4 or animated WebP effects."}
       ]
     },
     {
