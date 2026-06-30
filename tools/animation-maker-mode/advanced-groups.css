@@ -40,8 +40,8 @@ body.is-advanced-mode .ag-target-list label{display:flex;align-items:center;gap:
 body.is-advanced-mode .ag-target-list input{accent-color:var(--water-blue)}
 body.is-advanced-mode .ag-apply-btn{min-height:34px;border-color:var(--water-blue)!important;background:var(--forest-teal)!important}
 body.is-advanced-mode .ag-placeholder{padding:9px;border:1px dashed var(--terracotta-peach);border-radius:8px;color:var(--terracotta-peach);font:.63rem/1.4 var(--font-body)}
-body.is-advanced-mode #ag-selection-overlay{position:absolute;z-index:14;pointer-events:none;border:2px dashed var(--water-spray);background:rgba(75,132,191,.14);box-shadow:0 0 0 1px rgba(0,0,0,.75) inset}
-body.is-advanced-mode #ag-selection-overlay[hidden]{display:none!important}
+body.is-advanced-mode #ag-selection-overlay,body.is-advanced-mode #ag-v2-selection{position:absolute;z-index:14;pointer-events:none;border:2px dashed var(--water-spray);background:rgba(75,132,191,.14);box-shadow:0 0 0 1px rgba(0,0,0,.75) inset}
+body.is-advanced-mode #ag-selection-overlay[hidden],body.is-advanced-mode #ag-v2-selection[hidden]{display:none!important}
 body.is-advanced-mode .ag-drop-active{outline:2px solid var(--water-spray);outline-offset:-4px;background-color:rgba(75,132,191,.2)!important}
 body.is-advanced-mode #animation-effects-card .ag-output-effects{display:grid;gap:10px}
 body.is-advanced-mode #animation-effects-card .ag-effects-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
