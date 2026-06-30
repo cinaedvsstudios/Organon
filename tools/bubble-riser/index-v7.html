@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubble Riser</title>
+<style>
+html,body,iframe{width:100%;height:100%;margin:0;border:0;overflow:hidden;background:#000}
+iframe{display:block}
+</style>
+</head>
+<body>
+<iframe id="bubble-riser" src="index-v5.html?build=20260630-0409" title="Bubble Riser"></iframe>
+<script>
+(() => {
+  'use strict';
+  const frame = document.getElementById('bubble-riser');
+  let forceMobileBeforeFull = null;
+
+  function setOuterMobileFrame(enabled) {
+    try {
+      const host = window.parent;
+      if (!host || host === window) return;
+      host.document.body.classList.toggle('force-mobile-view', enabled);
+      host.localStorage.setItem('organon_force_mobile_view', enabled ? 'true' : 'false');
+    } catch (error) {
+      console.warn('Bubble Riser could not update the outer Organon frame.', error);
+    }
+  }
+
+  function forwardStatus(event) {
+    if (window.parent && window.parent !== window && event.data) {
+      window.parent.postMessage(event.data, '*');
+    }
+  }
+
+  window.addEventListener('message', (event) => {
+    if (event.source !== frame.contentWindow || !event.data) return;
+    if (event.data.type === 'set-status' || event.data.type === 'clear-status') forwardStatus(event);
+  });
+
+  frame.addEventListener('load', () => {
+    const doc = frame.contentDocument;
+    const app = doc.getElementById('app');
+    const fullButton = doc.getElementById('wide');
+    if (!app || !fullButton) return;
+
+    // Replace the old visible build marker only. This wrapper draws no panels, badges,
+    // dock text or CSS inside the app, so it cannot interfere with the module layout.
+    doc.querySelectorAll('.build, .build-dock').forEach((node) => {
+      node.textContent = 'BUILD 2026.06.30.0409';
+    });
+
+    // Capture phase runs before Bubble Riser toggles its own .wide class.
+    // That lets us switch the outer Organon mobile frame using the intended next state.
+    fullButton.addEventListener('click', () => {
+      const willBeWide = !app.classList.contains('wide');
+      if (willBeWide) {
+        try {
+          forceMobileBeforeFull = window.parent.document.body.classList.contains('force-mobile-view');
+        } catch (_) {
+          forceMobileBeforeFull = null;
+        }
+        setOuterMobileFrame(false);
+      } else if (forceMobileBeforeFull !== null) {
+        setOuterMobileFrame(forceMobileBeforeFull);
+      }
+    }, true);
+  });
+})();
+</script>
+</body>
+</html>
