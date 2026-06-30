@@ -25,7 +25,7 @@
   };
 
   if (isAdvanced) {
-    addScript('../animation-maker-mode/advanced-groups.js', () => {
+    addScript('../animation-maker-mode/advanced-groups-v2.js', () => {
       addScript('../animation-maker-mode/advanced-groups-format.js', () => {
         addScript('../animation-maker-mode/advanced-bottom-bar.js');
       });
