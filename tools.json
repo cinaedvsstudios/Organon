@@ -1,5 +1,5 @@
 {
-  "version": "v1.19-alpha",
+  "version": "v1.20-alpha",
   "categories": [
     {
       "id": "create",
@@ -27,7 +27,7 @@
         {"id":"audio-timeline","label":"AUDIO TIMELINE","path":"tools/audio-timeline/index.html","description":"Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id":"frame-extractor","label":"FRAME EXTRACTOR","path":"tools/frame-extractor/index.html","description":"Extract still frames from local video files."},
         {"id":"vidcompressor","label":"VIDCOMPRESSOR","path":"tools/vidcompressor/index.html","description":"Compress local video files with one quality-to-file-size slider, then save a new copy or overwrite the source file where browser permission allows."},
-        {"id":"bubble-riser","label":"BUBBLE RISER","path":"tools/bubble-riser/index-v3.html","description":"Generate monochrome deep-ocean bubbles on a pure black canvas, then export MP4 or animated WebP effects."}
+        {"id":"bubble-riser","label":"BUBBLE RISER","path":"tools/bubble-riser/index-v5.html?build=20260630-0140","description":"Create loopable black-background bubble fields, bubble streams, emitters and explosion bursts, then export MP4 or animated WebP."}
       ]
     },
     {
@@ -61,17 +61,8 @@
       "label": "WORKSPACE",
       "tools": [
         {"id":"capsularius","label":"CAPSULARIUS","path":"tools/capsularius/index.html","description":"Open the local-first project workspace for folders and project assets."},
-        {
-          "id":"code-repo-split","label":"CODE EDITOR | REPOSITORY","buttonType":"code-repo-split","description":"Open the code editor or repository from the split copper button.",
-          "splitTools":[
-            {"id":"code-writer","label":"CODE EDITOR","path":"tools/code-writer/index.html","description":"Open the Organon code editor workspace."},
-            {"id":"repository","label":"REPOSITORY","path":"tools/repository/index.html","description":"Open the Organon UI repository."}
-          ]
-        },
-        {
-          "id":"quicksheet-split","label":"QUICKSHEET","buttonType":"dual-action-split","description":"Launch Quicksheet in a new browser tab.",
-          "splitTools":[{"id":"quicksheet","label":"QUICKSHEET","path":"tools/quicksheet/index.html","openMode":"new-tab","description":"Open the Quicksheet CSV, XLSX and XLS editor in a new browser tab."}]
-        },
+        {"id":"code-repo-split","label":"CODE EDITOR | REPOSITORY","buttonType":"code-repo-split","description":"Open the code editor or repository from the split copper button.","splitTools":[{"id":"code-writer","label":"CODE EDITOR","path":"tools/code-writer/index.html","description":"Open the Organon code editor workspace."},{"id":"repository","label":"REPOSITORY","path":"tools/repository/index.html","description":"Open the Organon UI repository."}]},
+        {"id":"quicksheet-split","label":"QUICKSHEET","buttonType":"dual-action-split","description":"Launch Quicksheet in a new browser tab.","splitTools":[{"id":"quicksheet","label":"QUICKSHEET","path":"tools/quicksheet/index.html","openMode":"new-tab","description":"Open the Quicksheet CSV, XLSX and XLS editor in a new browser tab."}]},
         {"id":"character-library","label":"CHARACTER LIBRARY","path":"tools/character-library/index.html","description":"Browse and manage the global character library sheet metadata."}
       ]
     }
