@@ -45,7 +45,7 @@ button{touch-action:manipulation}
 .output-note,.helper{margin:8px 0 0;color:rgba(245,240,219,.60);font-size:.67rem;line-height:1.42}.output-note{margin:0 0 10px}
 .output-grid,.range-grid,.color-grid{display:grid;gap:12px}.output-grid{grid-template-columns:1fr 1fr}.range-grid{grid-template-columns:1fr}.color-grid{grid-template-columns:1fr 1fr;gap:10px}
 .field label,.range-label{display:flex;justify-content:space-between;gap:8px;color:var(--paper);font:.64rem var(--font-h);letter-spacing:.035em;text-transform:uppercase}.field label{margin-bottom:5px}.range-label span:last-child{min-width:52px;color:var(--blue);font-family:var(--mono);text-align:right;letter-spacing:0}
-.webp-lock{display:flex;align-items:center;min-height:35px;padding:8px 12px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.95);color:var(--green);font:.68rem var(--mono)}.select-wrap{position:relative}.select-wrap:after{content:'⌄';position:absolute;right:13px;top:50%;transform:translateY(-55%);color:var(--blue);pointer-events:none}.select-wrap select{width:100%;min-height:35px;padding:8px 33px 8px 11px;border:1px solid var(--bronze);border-radius:999px;outline:none;appearance:none;background:rgba(24,25,25,.95);color:var(--paper);font-size:.68rem}
+.select-wrap{position:relative}.select-wrap:after{content:'⌄';position:absolute;right:13px;top:50%;transform:translateY(-55%);color:var(--blue);pointer-events:none}.select-wrap select{width:100%;min-height:35px;padding:8px 33px 8px 11px;border:1px solid var(--bronze);border-radius:999px;outline:none;appearance:none;background:rgba(24,25,25,.95);color:var(--paper);font-size:.68rem}
 .toggle-line{display:flex;align-items:center;justify-content:space-between;min-height:35px;padding:0 11px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.95);color:var(--paper);font:.64rem var(--font-h);letter-spacing:.035em;text-transform:uppercase}.toggle-line input{width:16px;height:16px;accent-color:var(--red);cursor:pointer}
 .color-field{display:flex;align-items:center;justify-content:space-between;min-height:39px;padding:7px 10px;border:1px solid var(--bronze);border-radius:14px;background:rgba(24,25,25,.75)}.color-field label{color:var(--paper);font:.64rem var(--font-h);letter-spacing:.035em;text-transform:uppercase}.color-field input{width:31px;height:23px;padding:0;border:0;background:transparent;cursor:pointer}
 input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px 0 0;appearance:none;background:transparent;cursor:pointer}input[type=range]::-webkit-slider-runnable-track{height:5px;border:1px solid rgba(137,107,73,.65);border-radius:999px;background:linear-gradient(to right,var(--red) 0 var(--progress),var(--track) var(--progress) 100%)}input[type=range]::-webkit-slider-thumb{width:15px;height:15px;margin-top:-6px;appearance:none;border:1px solid var(--ochre);border-radius:50%;background:var(--paper);box-shadow:0 0 8px rgba(224,163,96,.35)}input[type=range]::-moz-range-track{height:5px;border:1px solid rgba(137,107,73,.65);border-radius:999px;background:var(--track)}input[type=range]::-moz-range-progress{height:5px;border-radius:999px;background:var(--red)}input[type=range]::-moz-range-thumb{width:13px;height:13px;border:1px solid var(--ochre);border-radius:50%;background:var(--paper)}
@@ -67,7 +67,7 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
 <div class="app" id="app">
   <header class="topbar">
     <div class="title-pill">
-      <div class="title-side"><span class="title-name">BUBBLE RISER</span><span class="build">BUILD 2026.06.30.1236</span></div>
+      <div class="title-side"><span class="title-name">BUBBLE RISER</span><span class="build">BUILD 2026.06.30.1206</span></div>
       <div class="title-side"><span class="tool-tag">PARTICLE EFFECT</span><button id="workspace-button" class="workspace-btn" type="button" aria-pressed="false">⛶ <span class="wide-word">FULL</span></button></div>
     </div>
   </header>
@@ -97,18 +97,18 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
     </aside>
   </main>
 
-  <footer class="dock" id="dock"><button class="dock-reveal" id="dock-reveal" type="button" aria-label="Show export button">EXPORT</button><button class="export" id="export-button" type="button">Download Animated WebP — 6s · 24 FPS · Loop</button></footer>
+  <footer class="dock" id="dock"><button class="dock-reveal" id="dock-reveal" type="button" aria-label="Show export button">EXPORT</button><button class="export" id="export-button" type="button">Download WebM — 6s · 24 FPS · Loop</button></footer>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script>
 (() => {
   'use strict';
-  const BUILD = '2026.06.30.1423';
+  const BUILD = '2026.06.30.1206';
   const SETTINGS_KEY = 'organon_bubble_riser_settings_v1';
   const HOST_WIDE_CLASS = 'organon-bubble-riser-wide';
   const HOST_WIDE_STYLE_ID = 'organon-bubble-riser-wide-style';
   const WEBP_FRAME_LIMIT = 240;
-    const TAU = Math.PI * 2;
+  const TAU = Math.PI * 2;
 
   const $ = (id) => document.getElementById(id);
   const app = $('app');
@@ -130,7 +130,7 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
 
   const defaults = {
     seed: 41827, mode: 'field',
-    output: { resolution: '1920x1080', format: 'webp', duration: 6, fps: 24, loop: true },
+    output: { resolution: '1920x1080', format: 'webm', duration: 6, fps: 24, loop: true },
     motion: { speed: 1, speedCurve: 0, lifetime: 1, direction: 0, volatility: 1, wobble: 1 },
     appearance: { tint: '#dff7ff', rainbow: 0, brightness: 1, opacity: .68, rim: 1, glow: .32, highlight: .72 },
     field: {
@@ -177,7 +177,6 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
     } catch (_) {}
     state.motion.speedCurve ??= 0;
     state.motion.lifetime ??= 1;
-    state.output.format = 'webp';
     while (state.field.streamList.length < 8) state.field.streamList.push(defaultStream(state.field.streamList.length));
   }
 
@@ -251,12 +250,12 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
   function outputControlsTemplate() {
     return `
       <div class="card-head"><h2>Output</h2><span class="chip">Render</span></div>
-      <p class="output-note">Loop makes the first and last render state match. The saved file is an animated WebP with the black bubble canvas only.</p>
+      <p class="output-note">The saved file is a reliable WebM video with the black bubble canvas only. Loop makes the first and last render state match.</p>
       <div class="output-grid">
         <div class="field"><label>Canvas size</label><div class="select-wrap"><select data-output="resolution">
           <option value="1280x720">1280 × 720 — HD</option><option value="1920x1080">1920 × 1080 — Full HD</option><option value="2560x1440">2560 × 1440 — QHD</option><option value="3840x2160">3840 × 2160 — 4K</option><option value="1080x1080">1080 × 1080 — Square</option><option value="1080x1350">1080 × 1350 — Portrait</option><option value="1080x1920">1080 × 1920 — Reel / Story</option>
         </select></div></div>
-        <div class="field"><label>Export format</label><div class="webp-lock">Animated WebP — Looping</div></div>
+        <div class="field"><label>Export format</label><div class="webp-lock">WebM — Native browser video</div></div>
         <div class="field"><label>Duration <span data-duration-label></span></label><input data-output="duration" type="range" min="2" max="20" step="1"></div>
         <div class="field"><label>Frame rate</label><div class="select-wrap"><select data-output="fps"><option value="24">24 FPS</option><option value="30">30 FPS</option><option value="60">60 FPS</option></select></div></div>
         <label class="toggle-line"><span>Loop seamlessly</span><input data-output="loop" type="checkbox"></label>
@@ -423,7 +422,7 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
   }
 
   function enforceOutputLimits() {
-    const maxDuration = Math.max(2, Math.floor(WEBP_FRAME_LIMIT / state.output.fps));
+    const maxDuration = 20;
     state.output.duration = clamp(state.output.duration, 2, maxDuration);
     document.querySelectorAll('[data-output="duration"]').forEach((input) => { input.max = String(maxDuration); });
   }
@@ -483,7 +482,7 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
     el.pause.textContent = isPaused ? 'Resume' : 'Pause';
     el.pause.classList.toggle('active', isPaused);
     el.previewState.textContent = isPaused ? 'Paused' : 'Running';
-    el.export.textContent = `Download Animated WebP — ${state.output.duration}s · ${state.output.fps} FPS${state.output.loop ? ' · Loop' : ''}`;
+    el.export.textContent = `Download WebM — ${state.output.duration}s · ${state.output.fps} FPS${state.output.loop ? ' · Loop' : ''}`;
     document.querySelectorAll('input[type="range"]').forEach(updateRangeControl);
     syncOutputControls();
   }
@@ -684,37 +683,79 @@ input[type=range]{--progress:50%;display:block;width:100%;height:18px;margin:5px
   function downloadBlob(blob, filename) { const url = URL.createObjectURL(blob), anchor = document.createElement('a'); anchor.href = url; anchor.download = filename; anchor.style.display = 'none'; document.body.appendChild(anchor); anchor.click(); anchor.remove(); setTimeout(() => URL.revokeObjectURL(url), 2500); }
   function setExportProgress(current, total, label) { el.export.textContent = `${label} — ${Math.round((current / total) * 100)}%`; }
 
-  function concatenate(parts) { const length = parts.reduce((sum, part) => sum + part.length, 0), output = new Uint8Array(length); let offset = 0; for (const part of parts) { output.set(part, offset); offset += part.length; } return output; }
-  function riffChunk(id, payload) { const pad = payload.byteLength % 2, output = new Uint8Array(8 + payload.byteLength + pad), view = new DataView(output.buffer); for (let index = 0; index < 4; index += 1) output[index] = id.charCodeAt(index); view.setUint32(4, payload.byteLength, true); output.set(new Uint8Array(payload), 8); return output; }
-  function writeUint24(view, offset, value) { view.setUint8(offset, value & 255); view.setUint8(offset + 1, (value >> 8) & 255); view.setUint8(offset + 2, (value >> 16) & 255); }
-  function webpPayload(buffer) { const data = new Uint8Array(buffer); if (String.fromCharCode(...data.slice(0, 4)) !== 'RIFF' || String.fromCharCode(...data.slice(8, 12)) !== 'WEBP') throw new Error('WebP frame encoding failed.'); return data.slice(12); }
-  function makeVp8x(width, height) { const payload = new Uint8Array(10), view = new DataView(payload.buffer); payload[0] = 18; writeUint24(view, 4, width - 1); writeUint24(view, 7, height - 1); return riffChunk('VP8X', payload); }
-  function makeAnim() { return riffChunk('ANIM', new Uint8Array(6)); }
-  function makeAnimFrame(payload, width, height, milliseconds) { const header = new Uint8Array(16), view = new DataView(header.buffer); writeUint24(view, 0, 0); writeUint24(view, 3, 0); writeUint24(view, 6, width - 1); writeUint24(view, 9, height - 1); writeUint24(view, 12, Math.max(1, Math.round(milliseconds))); header[15] = 2; return riffChunk('ANMF', concatenate([header, payload])); }
+  function supportedWebMMimeType() {
+    const choices = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
+    return choices.find((type) => !window.MediaRecorder || MediaRecorder.isTypeSupported(type)) || '';
+  }
 
-  async function exportWebP() {
-    const [width, height] = getOutputSize(), fps = state.output.fps, frameCount = Math.max(1, Math.round(state.output.duration * fps));
-    if (frameCount > WEBP_FRAME_LIMIT) throw new Error(`Animated WebP is limited to ${WEBP_FRAME_LIMIT} frames. Reduce duration or frame rate.`);
-    const exportCanvas = makeExportCanvas(), exportContext = exportCanvas.getContext('2d', { alpha: false }), parts = [makeVp8x(width, height), makeAnim()];
-    for (let index = 0; index < frameCount; index += 1) {
-      renderScene(exportContext, index / fps);
-      const blob = await new Promise((resolve) => exportCanvas.toBlob(resolve, 'image/webp', .92)); if (!blob) throw new Error('WebP frame encoding failed.');
-      parts.push(makeAnimFrame(webpPayload(await blob.arrayBuffer()), width, height, 1000 / fps));
-      setExportProgress(index + 1, frameCount, 'Encoding WebP'); await new Promise((resolve) => setTimeout(resolve, 0));
+  async function exportWebM() {
+    if (!('MediaRecorder' in window) || !HTMLCanvasElement.prototype.captureStream) {
+      throw new Error('This browser cannot create native WebM video. Use current Chrome or Edge.');
     }
-    const body = concatenate(parts), header = new Uint8Array(12), view = new DataView(header.buffer); header.set([82, 73, 70, 70]); view.setUint32(4, body.length + 4, true); header.set([87, 69, 66, 80], 8); return new Blob([header, body], { type: 'image/webp' });
+    const [width, height] = getOutputSize();
+    const fps = state.output.fps;
+    const frameCount = Math.max(1, Math.round(state.output.duration * fps));
+    const exportCanvas = makeExportCanvas();
+    const exportContext = exportCanvas.getContext('2d', { alpha: false });
+    const stream = exportCanvas.captureStream(0);
+    const track = stream.getVideoTracks()[0];
+    const mimeType = supportedWebMMimeType();
+    const recorder = new MediaRecorder(stream, {
+      mimeType: mimeType || undefined,
+      videoBitsPerSecond: Math.max(1_500_000, Math.round(width * height * fps * .08))
+    });
+    const chunks = [];
+
+    return await new Promise((resolve, reject) => {
+      let stopped = false;
+      recorder.addEventListener('dataavailable', (event) => { if (event.data && event.data.size) chunks.push(event.data); });
+      recorder.addEventListener('error', (event) => reject(event.error || new Error('WebM recording failed.')), { once: true });
+      recorder.addEventListener('stop', () => {
+        if (stopped) return;
+        stopped = true;
+        track?.stop();
+        const type = recorder.mimeType || 'video/webm';
+        resolve(new Blob(chunks, { type }));
+      }, { once: true });
+
+      recorder.start();
+      let frame = 0;
+      const step = () => {
+        renderScene(exportContext, frame / fps);
+        if (typeof track.requestFrame === 'function') track.requestFrame();
+        setExportProgress(frame + 1, frameCount, 'Recording WebM');
+        frame += 1;
+        if (frame < frameCount) {
+          window.setTimeout(step, 1000 / fps);
+        } else {
+          window.setTimeout(() => recorder.stop(), Math.max(30, 1000 / fps));
+        }
+      };
+      step();
+    });
   }
 
   async function exportEffect() {
-    if (isExporting) return; isExporting = true; el.export.disabled = true; el.export.classList.add('busy'); showDock(); notifyHub('RENDERING BUBBLE EFFECT');
+    if (isExporting) return;
+    isExporting = true;
+    el.export.disabled = true;
+    el.export.classList.add('busy');
+    showDock();
+    notifyHub('RECORDING BUBBLE EFFECT');
     try {
-      const blob = await exportWebP();
-      downloadBlob(blob, `bubble-riser_${state.mode}_${state.output.resolution}_${state.output.duration}s_${state.output.fps}fps.webp`);
-      showToast('Export complete. The saved file contains only the bubble effect on pure black.', 'good');
+      const blob = await exportWebM();
+      downloadBlob(blob, `bubble-riser_${state.mode}_${state.output.resolution}_${state.output.duration}s_${state.output.fps}fps.webm`);
+      showToast('Export complete. The saved WebM contains only the bubble effect on pure black.', 'good');
     } catch (error) {
-      console.error(error); showToast(error.message || 'Export failed.', 'warn');
+      console.error(error);
+      showToast(error.message || 'Export failed.', 'warn');
     } finally {
-      isExporting = false; el.export.disabled = false; el.export.classList.remove('busy'); refreshStaticUI(); clearHub(); hideDockSoon();
+      isExporting = false;
+      el.export.disabled = false;
+      el.export.classList.remove('busy');
+      refreshStaticUI();
+      clearHub();
+      hideDockSoon();
     }
   }
 
