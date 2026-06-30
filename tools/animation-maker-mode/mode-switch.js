@@ -51,6 +51,7 @@
     'advanced-engine-navigation.js',
     'advanced-engine-animation.js',
     'advanced-engine-output.js',
+    'advanced-engine-strobe.js',
     'advanced-engine-global-visuals.js',
     'advanced-engine-export-gifzip.js',
     'advanced-engine-export-webp.js',
