@@ -9,5 +9,5 @@
   $('ag-new-group').addEventListener('click',()=>{const g=E.addGroup();state.effectTargets=new Set([g.id]);state.animationTargets=new Set([g.id]);E.status(`${g.name} created.`);E.renderAll();});
   $('ag-import-target').addEventListener('change',(event)=>E.setActive(event.target.value));
   $('ag-import').addEventListener('change',(event)=>{E.importImages(event.target.files,$('ag-import-target').value).finally(()=>{event.target.value='';});});
-  $('ag-mode-switch').addEventListener('click',()=>{location.href='./index.html';});
+  $('ag-mode-switch').addEventListener('click',()=>{location.href='../animation-maker-standard/index.html';});
 })();
