@@ -19,7 +19,8 @@
       const pixel=composite.getContext('2d').getImageData(2,2,1,1).data;
       if(pixel[0]<240||pixel[1]>15||pixel[2]>15)throw new Error('Layer order check failed.');
       const output=await E.outputFrames();
-      if(!output.length||output[0].width!==4||output[0].height!==4)throw new Error('Output pipeline check failed.');
+      const size=Number(document.getElementById('ag-size').value);
+      if(!output.length||output[0].width!==size||output[0].height!==size)throw new Error('Output pipeline check failed.');
       Object.assign(state,saved);
       E.renderAll();
       E.status('Advanced Mode ready.');
