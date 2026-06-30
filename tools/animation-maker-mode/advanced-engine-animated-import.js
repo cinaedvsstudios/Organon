@@ -1,16 +1,17 @@
 (() => {
   'use strict';
+
   const E = window.OrganonAnimationAdvanced;
   if (!E) return;
 
   const input = document.getElementById('ag-import');
-  if (input) input.accept = 'image/png,image/jpeg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp';
+  if (input) input.accept = 'image/png,image/jpeg,image/gif,image/webp,video/mp4,video/webm,video/quicktime,.png,.jpg,.jpeg,.gif,.webp,.mp4,.webm,.mov';
 
   const isAnimated = (file) => /image\/(gif|webp)/i.test(file.type || '') || /\.(gif|webp)$/i.test(file.name || '');
   const typeFor = (file) => /\.gif$/i.test(file.name || '') || /image\/gif/i.test(file.type || '') ? 'image/gif' : 'image/webp';
   const baseName = (name) => String(name || 'imported-animation').replace(/\.(gif|webp)$/i, '');
   const median = (values) => {
-    const ordered = values.filter(Number.isFinite).sort((a, b) => a - b);
+    const ordered = values.filter(Number.isFinite).sort((left, right) => left - right);
     return ordered.length ? ordered[Math.floor(ordered.length / 2)] : 100;
   };
 
@@ -22,6 +23,7 @@
   const decodeAnimation = async (file) => {
     const type = typeFor(file);
     if (!(await canDecode(type))) throw new Error('This browser cannot extract animated GIF/WebP frames. Use a current Chrome or Edge browser.');
+
     const decoder = new ImageDecoder({ data: new Uint8Array(await file.arrayBuffer()), type, preferAnimation: true });
     await decoder.tracks.ready;
     const track = decoder.tracks.selectedTrack;
@@ -61,7 +63,7 @@
   };
 
   E.importImages = async (files, groupId = E.state.activeGroupId) => {
-    const items = [...files].filter((file) => file.type.startsWith('image/') || /\.(png|jpe?g|gif|webp)$/i.test(file.name || ''));
+    const items = [...files].filter((file) => E.isImageFile(file));
     if (!items.length) return E.status('No image files were found.');
 
     let group = E.group(groupId);
