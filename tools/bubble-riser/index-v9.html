@@ -29,9 +29,6 @@ iframe{display:block}
         previousMobile = body.classList.contains('force-mobile-view');
         body.classList.remove('force-mobile-view');
         host.localStorage.setItem('organon_force_mobile_view', 'false');
-
-        // These inline overrides are deliberate: they guarantee the tool gets a real
-        // desktop viewport even if the hub's saved mobile rule has not reflowed yet.
         if (basin) {
           basin.style.width = '100%';
           basin.style.maxWidth = 'none';
@@ -68,9 +65,7 @@ iframe{display:block}
   }
 
   function forwardStatus(event) {
-    if (window.top && window.top !== window && event.data) {
-      window.top.postMessage(event.data, '*');
-    }
+    if (window.top && window.top !== window && event.data) window.top.postMessage(event.data, '*');
   }
 
   window.addEventListener('message', (event) => {
@@ -84,7 +79,12 @@ iframe{display:block}
     const fullButton = doc.getElementById('wide');
     if (!app || !fullButton) return;
 
-    // Capture phase runs before Bubble Riser changes its own layout.
+    // One visible build marker only: replace the app's existing marker, do not add UI.
+    doc.querySelectorAll('.build, .build-dock').forEach((node) => {
+      node.textContent = 'BUILD 2026.06.30.0427';
+    });
+
+    // Capture phase runs before Bubble Riser changes its own .wide state.
     fullButton.addEventListener('click', () => {
       outerWorkspace(!app.classList.contains('wide'));
     }, true);
