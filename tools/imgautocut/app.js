@@ -9,7 +9,8 @@
     rowTolerance: $('#row-tolerance'), rowToleranceValue: $('#row-tolerance-value'), dropZone: $('#drop-zone'), canvas: $('#workspace-canvas'),
     emptyState: $('#empty-state'), workspaceSummary: $('#workspace-summary'), sliceStat: $('#slice-stat'), selectionInfo: $('#selection-info'),
     selectAll: $('#select-all'), clearSelection: $('#clear-selection'), invertSelection: $('#invert-selection'), toggleMulti: $('#toggle-multi'),
-    uniformSize: $('#uniform-size'), resetScan: $('#reset-scan'), toggleLedger: $('#toggle-ledger'), ledgerShell: $('#ledger-shell'),
+    uniformSize: $('#uniform-size'), resetScan: $('#reset-scan'), manageSelections: $('#manage-selections'), selectionManager: $('#selection-manager'),
+    addSelection: $('#add-selection'), selectionManagerList: $('#selection-manager-list'), toggleLedger: $('#toggle-ledger'), ledgerShell: $('#ledger-shell'),
     ledgerBody: $('#ledger-body'), detectedMeta: $('#detected-meta'), exportFormat: $('#export-format'), exportAssets: $('#export-assets'), toast: $('#toast')
   };
 
@@ -71,12 +72,17 @@
     return `${safe || fallback}.${extension}`;
   }
   function makeSlice(bounds, index) {
-    return { id: `slice-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`, x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h,
-      ox: bounds.x, oy: bounds.y, ow: bounds.w, oh: bounds.h, pixelCount: bounds.pixelCount || 0, selected: false, manual: false, name: '' };
+    return {
+      id: `slice-${Date.now()}-${index}-${Math.random().toString(16).slice(2)}`,
+      x: bounds.x, y: bounds.y, w: bounds.w, h: bounds.h,
+      ox: bounds.x, oy: bounds.y, ow: bounds.w, oh: bounds.h,
+      pixelCount: bounds.pixelCount || 0, selected: false, manual: false, manualAdded: false, name: ''
+    };
   }
-  function cloneForReset(slice) { return { ...slice, x: slice.ox, y: slice.oy, w: slice.ow, h: slice.oh, selected: false, manual: false }; }
+  function cloneForReset(slice) {
+    return { ...slice, x: slice.ox, y: slice.oy, w: slice.ow, h: slice.oh, selected: false, manual: false, manualAdded: false };
+  }
 
-  // Run-length component scanner: scans every alpha row but avoids a full visited-pixel allocation.
   function detectAlphaIslands(imageData, width, height, threshold) {
     const data = imageData.data, parent = [], rank = [], x1 = [], y1 = [], x2 = [], y2 = [], pixels = [];
     let componentCount = 0, previousRuns = [];
@@ -134,7 +140,7 @@
     setHeaderStatus('SCANNING'); setHubStatus('ImgAutoCut: scanning the source alpha channel.');
     refs.workspaceSummary.textContent = 'Reading alpha data and grouping independent visual islands…'; await nextFrame();
     const islands = detectAlphaIslands(state.sourceImageData, state.sourceWidth, state.sourceHeight, alphaThreshold());
-    const ordered = sortIslandsByRows(islands, rowTolerance()), priorNames = preserveNames ? state.slices.map((slice) => slice.name) : [];
+    const ordered = sortIslandsByRows(islands, rowTolerance()), priorNames = preserveNames ? state.slices.filter((slice) => !slice.manualAdded).map((slice) => slice.name) : [];
     state.slices = ordered.map((bounds, index) => { const slice = makeSlice(bounds, index); slice.name = priorNames[index] || ''; return slice; });
     state.originalSlices = state.slices.map((slice) => ({ ...slice })); refreshAll(); setHeaderStatus(state.slices.length ? 'READY' : 'NO ISLANDS');
     const details = state.slices.length === 1 ? '1 independent asset detected.' : `${state.slices.length} independent assets detected.`;
@@ -143,14 +149,26 @@
   }
 
   function selectedSlices() { return state.slices.filter((slice) => slice.selected); }
-  function updateSliceStats() { const count = state.slices.length; refs.sliceStat.textContent = `${count} ${count === 1 ? 'ASSET' : 'ASSETS'}`; refs.toggleLedger.textContent = refs.ledgerShell.hidden ? 'OPEN LEDGER' : 'CLOSE LEDGER'; }
-  function updateSelectionInfo() {
-    const selected = selectedSlices(), manual = state.slices.filter((slice) => slice.manual).length;
-    refs.selectionInfo.textContent = state.slices.length ? [`${selected.length} selected`, `${state.slices.length} detected`, manual ? `${manual} manual / macro-locked` : 'all boxes auto-managed'].join(' · ') : 'No slices are selected.';
-    refs.toggleMulti.textContent = `MULTI: ${state.multiSelect ? 'ON' : 'OFF'}`; refs.toggleMulti.classList.toggle('active', state.multiSelect);
+  function updateSliceStats() {
+    const count = state.slices.length;
+    refs.sliceStat.textContent = `${count} ${count === 1 ? 'ASSET' : 'ASSETS'}`;
+    refs.toggleLedger.textContent = refs.ledgerShell.hidden ? 'OPEN LEDGER' : 'CLOSE LEDGER';
   }
-  function selectionChanged() { renderCanvas(); updateSelectionInfo(); }
-  function refreshAll() { renderCanvas(); renderLedger(); updateSliceStats(); updateSelectionInfo(); }
+  function updateSelectionInfo() {
+    const selected = selectedSlices();
+    const manualAdded = state.slices.filter((slice) => slice.manualAdded).length;
+    const macroLocked = state.slices.filter((slice) => slice.manual && !slice.manualAdded).length;
+    const detected = state.slices.length - manualAdded;
+    const summary = [`${selected.length} selected`, `${detected} detected`];
+    if (manualAdded) summary.push(`${manualAdded} added manually`);
+    if (macroLocked) summary.push(`${macroLocked} manual / macro-locked`);
+    refs.selectionInfo.textContent = state.slices.length ? summary.join(' · ') : 'No slices are selected.';
+    refs.toggleMulti.textContent = `MULTI: ${state.multiSelect ? 'ON' : 'OFF'}`;
+    refs.toggleMulti.classList.toggle('active', state.multiSelect);
+    refs.manageSelections.classList.toggle('active', !refs.selectionManager.hidden);
+  }
+  function selectionChanged() { renderCanvas(); renderSelectionManager(); updateSelectionInfo(); }
+  function refreshAll() { renderCanvas(); renderLedger(); renderSelectionManager(); updateSliceStats(); updateSelectionInfo(); }
 
   function checkerboard(width, height) {
     const cell = 12;
@@ -172,7 +190,7 @@
     state.slices.forEach((slice, index) => {
       const x = slice.x * scale, y = slice.y * scale, w = slice.w * scale, h = slice.h * scale, accent = slice.manual ? '#449e92' : '#75b2de';
       ctx.save(); ctx.lineWidth = slice.selected ? 2.5 : 1.25; ctx.strokeStyle = accent; ctx.fillStyle = slice.selected ? 'rgba(117,178,222,.14)' : 'rgba(0,0,0,.04)'; ctx.fillRect(x, y, w, h); ctx.strokeRect(x, y, w, h);
-      ctx.font = '600 10px Geist Mono, monospace'; const label = String(index + 1), tagW = Math.max(18, ctx.measureText(label).width + 8);
+      ctx.font = '600 10px Geist Mono, monospace'; const label = slice.manualAdded ? 'M' : String(index + 1), tagW = Math.max(18, ctx.measureText(label).width + 8);
       ctx.fillStyle = accent; ctx.fillRect(x, Math.max(0, y - 14), tagW, 14); ctx.fillStyle = '#101211'; ctx.fillText(label, x + 4, Math.max(10, y - 4));
       if (slice.selected) {
         ctx.fillStyle = '#f5f0db'; ctx.strokeStyle = accent; ctx.lineWidth = 1;
@@ -184,12 +202,33 @@
   function renderLedger() {
     refs.ledgerBody.innerHTML = state.slices.map((slice, index) => {
       const generated = sanitizeFilename(slice.name, index, refs.exportFormat.value).replace(/\.(png|webp)$/i, '');
-      return `<tr data-slice-id="${escapedText(slice.id)}"><td>${index + 1}</td><td><input type="text" class="ledger-name" data-index="${index}" value="${escapedText(slice.name || generated)}" aria-label="File name for asset ${index + 1}" spellcheck="false" autocomplete="off"></td><td>${Math.round(slice.w)} × ${Math.round(slice.h)}</td><td><span class="${slice.manual ? 'state-manual' : 'state-auto'}">${slice.manual ? 'MANUAL' : 'AUTO'}</span></td></tr>`;
+      const stateText = slice.manualAdded ? 'MANUAL BOX' : (slice.manual ? 'MANUAL' : 'AUTO');
+      return `<tr data-slice-id="${escapedText(slice.id)}"><td>${index + 1}</td><td><input type="text" class="ledger-name" data-index="${index}" value="${escapedText(slice.name || generated)}" aria-label="File name for asset ${index + 1}" spellcheck="false" autocomplete="off"></td><td>${Math.round(slice.w)} × ${Math.round(slice.h)}</td><td><span class="${slice.manual ? 'state-manual' : 'state-auto'}">${stateText}</span></td></tr>`;
     }).join('') || '<tr><td colspan="4">No image islands are available yet.</td></tr>';
+  }
+  function renderSelectionManager() {
+    if (!refs.selectionManagerList) return;
+    if (!state.image) {
+      refs.selectionManagerList.innerHTML = '<div class="selection-manager-empty">Load an image sheet before adding or removing selections.</div>';
+      return;
+    }
+    refs.selectionManagerList.innerHTML = state.slices.map((slice, index) => {
+      const kind = slice.manualAdded ? 'MANUAL BOX' : (slice.manual ? 'ADJUSTED' : 'AUTO');
+      const kindClass = slice.manual ? 'manual' : 'auto';
+      const generatedName = sanitizeFilename(slice.name, index, refs.exportFormat.value).replace(/\.(png|webp)$/i, '');
+      const displayName = slice.name || generatedName;
+      return `<div class="selection-manager-row${slice.selected ? ' is-selected' : ''}" data-slice-id="${escapedText(slice.id)}">
+        <span class="selection-manager-number">${slice.manualAdded ? 'M' : index + 1}</span>
+        <button type="button" class="selection-manager-focus" data-focus-slice="${escapedText(slice.id)}" title="Select this box in the workspace"><span class="selection-manager-name">${escapedText(displayName)}</span></button>
+        <span class="selection-manager-dimensions">${Math.round(slice.w)} × ${Math.round(slice.h)}</span>
+        <span class="selection-manager-state ${kindClass}">${kind}</span>
+        <button type="button" class="selection-delete" data-remove-slice="${escapedText(slice.id)}" title="Delete this selection" aria-label="Delete selection ${index + 1}">🗑</button>
+      </div>`;
+    }).join('') || '<div class="selection-manager-empty">There are no selections left. Use + ADD BOX to create one.</div>';
   }
   function distributeNames(startIndex, text) {
     const names = text.replace(/\r/g, '').split('\n').map((line) => line.trim()).filter(Boolean); if (!names.length) return;
-    names.forEach((name, offset) => { const target = state.slices[startIndex + offset]; if (target) target.name = name; }); renderLedger();
+    names.forEach((name, offset) => { const target = state.slices[startIndex + offset]; if (target) target.name = name; }); renderLedger(); renderSelectionManager();
     toast(`${Math.min(names.length, Math.max(0, state.slices.length - startIndex))} ledger names applied.`); setHubStatus('ImgAutoCut: distributed pasted names through the ledger.'); setTimeout(clearHubStatus, 1200);
   }
 
@@ -199,7 +238,7 @@
     return null;
   }
   function handleAtPoint(slice, point) {
-    const threshold = 8 / state.view.scale, candidates = [ { mode: 'nw', x: slice.x, y: slice.y }, { mode: 'ne', x: slice.x + slice.w, y: slice.y }, { mode: 'sw', x: slice.x, y: slice.y + slice.h }, { mode: 'se', x: slice.x + slice.w, y: slice.y + slice.h } ];
+    const threshold = 8 / state.view.scale, candidates = [{ mode: 'nw', x: slice.x, y: slice.y }, { mode: 'ne', x: slice.x + slice.w, y: slice.y }, { mode: 'sw', x: slice.x, y: slice.y + slice.h }, { mode: 'se', x: slice.x + slice.w, y: slice.y + slice.h }];
     return candidates.find((candidate) => Math.abs(point.x - candidate.x) <= threshold && Math.abs(point.y - candidate.y) <= threshold) || null;
   }
   function selectSlice(slice, additive) { if (!additive) state.slices.forEach((item) => { item.selected = false; }); slice.selected = additive ? !slice.selected : true; selectionChanged(); }
@@ -212,6 +251,13 @@
     state.pointer = { slice: hit.slice, mode: handle ? handle.mode : 'move', startPoint: point, startBox: { x: hit.slice.x, y: hit.slice.y, w: hit.slice.w, h: hit.slice.h } };
     refs.canvas.setPointerCapture?.(event.pointerId);
   }
+  function clampManualBox(slice) {
+    if (!slice.manualAdded) return;
+    slice.w = Math.min(Math.max(1, slice.w), state.sourceWidth);
+    slice.h = Math.min(Math.max(1, slice.h), state.sourceHeight);
+    slice.x = Math.min(Math.max(0, slice.x), Math.max(0, state.sourceWidth - slice.w));
+    slice.y = Math.min(Math.max(0, slice.y), Math.max(0, state.sourceHeight - slice.h));
+  }
   function pointerMove(event) {
     if (!state.pointer) return; event.preventDefault(); const point = imagePointFromEvent(event), { slice, mode, startPoint, startBox } = state.pointer, dx = point.x - startPoint.x, dy = point.y - startPoint.y, minimum = 1;
     if (mode === 'move') { slice.x = startBox.x + dx; slice.y = startBox.y + dy; }
@@ -222,7 +268,7 @@
       if (mode.includes('n')) { y = startBox.y + dy; h = Math.max(minimum, startBox.h - dy); if (h === minimum) y = startBox.y + startBox.h - minimum; }
       slice.x = x; slice.y = y; slice.w = w; slice.h = h;
     }
-    slice.manual = true; renderCanvas(); renderLedger(); updateSelectionInfo();
+    slice.manual = true; clampManualBox(slice); renderCanvas(); renderLedger(); renderSelectionManager(); updateSelectionInfo();
   }
   function pointerUp(event) { if (!state.pointer) return; refs.canvas.releasePointerCapture?.(event.pointerId); state.pointer = null; }
   function setCursor(event) { if (!state.image || state.pointer) return; const point = imagePointFromEvent(event), hit = sliceAtPoint(point); refs.canvas.style.cursor = !hit ? 'crosshair' : (handleAtPoint(hit.slice, point) ? `${handleAtPoint(hit.slice, point).mode}-resize` : 'move'); }
@@ -235,14 +281,52 @@
     targets.forEach((slice) => { const centreX = slice.x + (slice.w / 2), centreY = slice.y + (slice.h / 2); slice.x = centreX - (maxW / 2); slice.y = centreY - (maxH / 2); slice.w = maxW; slice.h = maxH; });
     refreshAll(); toast(`${targets.length} boxes padded and centred to ${Math.round(maxW)} × ${Math.round(maxH)}.`); setHubStatus('ImgAutoCut: selected automatic boxes now share a uniform transparent canvas.'); setTimeout(clearHubStatus, 1600);
   }
-  function resetScan() { if (!state.sourceImageData) return; state.slices = state.originalSlices.map(cloneForReset); refreshAll(); toast('Manual moves, resizes, and selections were reset to the last alpha scan.'); setHubStatus('ImgAutoCut: reset to the pure alpha-detected slice layout.'); setTimeout(clearHubStatus, 1400); }
+  function resetScan() {
+    if (!state.sourceImageData) return;
+    state.slices = state.originalSlices.map(cloneForReset);
+    refreshAll(); toast('Manual boxes, moves, resizes, and selections were reset to the last alpha scan.'); setHubStatus('ImgAutoCut: reset to the pure alpha-detected slice layout.'); setTimeout(clearHubStatus, 1400);
+  }
+  function addManualSelection() {
+    if (!state.image) { toast('Load an image sheet before adding a manual box.'); return; }
+    const width = Math.max(16, Math.min(Math.round(state.sourceWidth * .22), 240));
+    const height = Math.max(16, Math.min(Math.round(state.sourceHeight * .22), 240));
+    const gap = Math.max(8, Math.round(Math.min(state.sourceWidth, state.sourceHeight) * .02));
+    const lowestBox = state.slices.reduce((lowest, slice) => Math.max(lowest, slice.y + slice.h), 0);
+    const x = Math.max(0, Math.min(Math.round((state.sourceWidth - width) / 2), state.sourceWidth - width));
+    const y = Math.max(0, Math.min(Math.round(lowestBox + gap), state.sourceHeight - height));
+    const slice = makeSlice({ x, y, w: width, h: height, pixelCount: 0 }, state.slices.length);
+    slice.manual = true; slice.manualAdded = true; slice.selected = true;
+    state.slices.forEach((item) => { item.selected = false; });
+    state.slices.push(slice);
+    refreshAll();
+    toast('Manual box added. Drag it over the missing asset, then resize its corner handles.');
+    setHubStatus('ImgAutoCut: added a manual selection box.'); setTimeout(clearHubStatus, 1500);
+  }
+  function removeSlice(id) {
+    const index = state.slices.findIndex((slice) => slice.id === id);
+    if (index < 0) return;
+    const [removed] = state.slices.splice(index, 1);
+    refreshAll();
+    toast(`${removed.manualAdded ? 'Manual box' : 'Detected selection'} removed. Reset Scan restores the original alpha scan.`);
+    setHubStatus('ImgAutoCut: selection removed from this working sheet.'); setTimeout(clearHubStatus, 1500);
+  }
+  function focusSlice(id) {
+    const slice = state.slices.find((item) => item.id === id);
+    if (!slice) return;
+    state.slices.forEach((item) => { item.selected = item === slice; });
+    selectionChanged();
+    refs.dropZone.focus({ preventScroll: true });
+  }
 
   function blobFromCanvas(canvas, type, quality) { return new Promise((resolve) => canvas.toBlob(resolve, type, quality)); }
   async function renderSliceBlob(slice, type) {
     const width = Math.max(1, Math.ceil(slice.w)), height = Math.max(1, Math.ceil(slice.h)), canvas = document.createElement('canvas');
     canvas.width = width; canvas.height = height; const exportCtx = canvas.getContext('2d'); exportCtx.clearRect(0, 0, width, height);
-    // Mask guard: the original island is the only copied source region, even if the visible output box overlaps neighbours.
-    exportCtx.drawImage(sourceCanvas, slice.ox, slice.oy, slice.ow, slice.oh, slice.ox - slice.x, slice.oy - slice.y, slice.ow, slice.oh);
+    if (slice.manualAdded) {
+      exportCtx.drawImage(sourceCanvas, Math.round(slice.x), Math.round(slice.y), Math.ceil(slice.w), Math.ceil(slice.h), 0, 0, width, height);
+    } else {
+      exportCtx.drawImage(sourceCanvas, slice.ox, slice.oy, slice.ow, slice.oh, slice.ox - slice.x, slice.oy - slice.y, slice.ow, slice.oh);
+    }
     return blobFromCanvas(canvas, type, .92);
   }
   function exportTargets() { const chosen = selectedSlices(); return chosen.length ? chosen : state.slices; }
@@ -251,7 +335,7 @@
     const targets = exportTargets();
     if (!state.image || !targets.length) { toast('Load a sheet and detect at least one asset before exporting.'); return; }
     const extension = refs.exportFormat.value, type = extension === 'webp' ? 'image/webp' : 'image/png', total = targets.length;
-    refs.exportAssets.disabled = true; setHeaderStatus('EXPORTING'); setHubStatus(`ImgAutoCut: preparing ${total} masked ${extension.toUpperCase()} asset${total === 1 ? '' : 's'}.`);
+    refs.exportAssets.disabled = true; setHeaderStatus('EXPORTING'); setHubStatus(`ImgAutoCut: preparing ${total} ${extension.toUpperCase()} asset${total === 1 ? '' : 's'}.`);
     try {
       const files = [];
       for (let index = 0; index < targets.length; index += 1) {
@@ -264,7 +348,7 @@
           for (let index = 0; index < files.length; index += 1) {
             refs.exportAssets.textContent = `SAVING ${index + 1} / ${total}`; const fileHandle = await directoryHandle.getFileHandle(files[index].name, { create: true }); const writer = await fileHandle.createWritable(); await writer.write(files[index].blob); await writer.close();
           }
-          toast(`${total} asset${total === 1 ? '' : 's'} saved to the chosen folder.`); setHubStatus(`ImgAutoCut: saved ${total} masked files to the selected folder.`); return;
+          toast(`${total} asset${total === 1 ? '' : 's'} saved to the chosen folder.`); setHubStatus(`ImgAutoCut: saved ${total} files to the selected folder.`); return;
         } catch (error) {
           if (error?.name === 'AbortError') { toast('Folder selection cancelled. Nothing was exported.'); setHubStatus('ImgAutoCut: export cancelled before files were written.'); return; }
           console.warn('Folder export unavailable; using browser downloads.', error); toast('Folder saving was unavailable, so browser downloads are starting.');
@@ -291,31 +375,81 @@
     finally { URL.revokeObjectURL(objectUrl); }
   }
 
-  function bindInputs() {
-    refs.browseSource.addEventListener('click', (event) => { event.preventDefault(); refs.sourceFile.click(); }); refs.emptyBrowse.addEventListener('click', () => refs.sourceFile.click());
-    refs.sourceFile.addEventListener('change', () => { const [file] = refs.sourceFile.files; if (file) loadSourceImage(file, file.name); });
-    refs.alphaThreshold.addEventListener('input', updateControlLabels); refs.alphaThreshold.addEventListener('change', () => { if (state.sourceImageData) scanSourceImage({ preserveNames: true }); });
-    refs.rowTolerance.addEventListener('input', () => {
-      updateControlLabels(); if (!state.sourceImageData) return;
-      const ordered = sortIslandsByRows(state.slices.map((slice) => ({ x: slice.ox, y: slice.oy, w: slice.ow, h: slice.oh, pixelCount: slice.pixelCount })), rowTolerance());
-      const nameMap = new Map(state.slices.map((slice) => [`${slice.ox},${slice.oy},${slice.ow},${slice.oh}`, slice.name]));
-      const currentByOrigin = new Map(state.slices.map((slice) => [`${slice.ox},${slice.oy},${slice.ow},${slice.oh}`, slice]));
-      state.slices = ordered.map((bounds, index) => { const key = `${bounds.x},${bounds.y},${bounds.w},${bounds.h}`, existing = currentByOrigin.get(key), slice = existing ? { ...existing } : makeSlice(bounds, index); slice.name = nameMap.get(key) || slice.name || ''; return slice; });
-      state.originalSlices = state.slices.map((slice) => ({ ...slice })); refreshAll();
+  function reorderByTolerance() {
+    if (!state.sourceImageData) return;
+    const manualBoxes = state.slices.filter((slice) => slice.manualAdded);
+    const autoSlices = state.slices.filter((slice) => !slice.manualAdded);
+    const ordered = sortIslandsByRows(autoSlices.map((slice) => ({ x: slice.ox, y: slice.oy, w: slice.ow, h: slice.oh, pixelCount: slice.pixelCount })), rowTolerance());
+    const nameMap = new Map(autoSlices.map((slice) => [`${slice.ox},${slice.oy},${slice.ow},${slice.oh}`, slice.name]));
+    const currentByOrigin = new Map(autoSlices.map((slice) => [`${slice.ox},${slice.oy},${slice.ow},${slice.oh}`, slice]));
+    const reordered = ordered.map((bounds, index) => {
+      const key = `${bounds.x},${bounds.y},${bounds.w},${bounds.h}`;
+      const existing = currentByOrigin.get(key);
+      const slice = existing ? { ...existing } : makeSlice(bounds, index);
+      slice.name = nameMap.get(key) || slice.name || '';
+      return slice;
     });
-    refs.selectAll.addEventListener('click', () => setAllSelected(true)); refs.clearSelection.addEventListener('click', () => setAllSelected(false));
+    state.slices = [...reordered, ...manualBoxes];
+    state.originalSlices = reordered.map((slice) => ({ ...slice, selected: false }));
+    refreshAll();
+  }
+
+  function bindInputs() {
+    refs.browseSource.addEventListener('click', (event) => { event.preventDefault(); refs.sourceFile.click(); });
+    refs.emptyBrowse.addEventListener('click', () => refs.sourceFile.click());
+    refs.sourceFile.addEventListener('change', () => { const [file] = refs.sourceFile.files; if (file) loadSourceImage(file, file.name); });
+    refs.alphaThreshold.addEventListener('input', updateControlLabels);
+    refs.alphaThreshold.addEventListener('change', () => { if (state.sourceImageData) scanSourceImage({ preserveNames: true }); });
+    refs.rowTolerance.addEventListener('input', () => { updateControlLabels(); reorderByTolerance(); });
+    refs.selectAll.addEventListener('click', () => setAllSelected(true));
+    refs.clearSelection.addEventListener('click', () => setAllSelected(false));
     refs.invertSelection.addEventListener('click', () => { state.slices.forEach((slice) => { slice.selected = !slice.selected; }); selectionChanged(); });
     refs.toggleMulti.addEventListener('click', () => { state.multiSelect = !state.multiSelect; updateSelectionInfo(); toast(state.multiSelect ? 'Multi-select is on. Click boxes to add or remove them.' : 'Multi-select is off.'); });
-    refs.uniformSize.addEventListener('click', makeUniformSize); refs.resetScan.addEventListener('click', resetScan);
-    refs.toggleLedger.addEventListener('click', () => { refs.ledgerShell.hidden = !refs.ledgerShell.hidden; updateSliceStats(); }); refs.exportFormat.addEventListener('change', renderLedger); refs.exportAssets.addEventListener('click', exportAssets);
-    refs.ledgerBody.addEventListener('input', (event) => { const input = event.target.closest('.ledger-name'); if (input && state.slices[Number(input.dataset.index)]) state.slices[Number(input.dataset.index)].name = input.value; });
-    refs.ledgerBody.addEventListener('paste', (event) => { const input = event.target.closest('.ledger-name'); if (!input) return; const pasted = event.clipboardData?.getData('text/plain') || ''; if (!pasted.includes('\n')) return; event.preventDefault(); distributeNames(Number(input.dataset.index), pasted); });
-    refs.dropZone.addEventListener('dragover', (event) => { event.preventDefault(); refs.dropZone.classList.add('dragover'); }); refs.dropZone.addEventListener('dragleave', () => refs.dropZone.classList.remove('dragover'));
+    refs.uniformSize.addEventListener('click', makeUniformSize);
+    refs.resetScan.addEventListener('click', resetScan);
+    refs.manageSelections.addEventListener('click', () => { refs.selectionManager.hidden = !refs.selectionManager.hidden; updateSelectionInfo(); });
+    refs.addSelection.addEventListener('click', addManualSelection);
+    refs.selectionManagerList.addEventListener('click', (event) => {
+      const deleteButton = event.target.closest('[data-remove-slice]');
+      if (deleteButton) { removeSlice(deleteButton.dataset.removeSlice); return; }
+      const focusButton = event.target.closest('[data-focus-slice]');
+      if (focusButton) focusSlice(focusButton.dataset.focusSlice);
+    });
+    refs.toggleLedger.addEventListener('click', () => { refs.ledgerShell.hidden = !refs.ledgerShell.hidden; updateSliceStats(); });
+    refs.exportFormat.addEventListener('change', () => { renderLedger(); renderSelectionManager(); });
+    refs.exportAssets.addEventListener('click', exportAssets);
+    refs.ledgerBody.addEventListener('input', (event) => {
+      const input = event.target.closest('.ledger-name');
+      if (input && state.slices[Number(input.dataset.index)]) {
+        state.slices[Number(input.dataset.index)].name = input.value;
+        renderSelectionManager();
+      }
+    });
+    refs.ledgerBody.addEventListener('paste', (event) => {
+      const input = event.target.closest('.ledger-name'); if (!input) return;
+      const pasted = event.clipboardData?.getData('text/plain') || ''; if (!pasted.includes('\n')) return;
+      event.preventDefault(); distributeNames(Number(input.dataset.index), pasted);
+    });
+    refs.dropZone.addEventListener('dragover', (event) => { event.preventDefault(); refs.dropZone.classList.add('dragover'); });
+    refs.dropZone.addEventListener('dragleave', () => refs.dropZone.classList.remove('dragover'));
     refs.dropZone.addEventListener('drop', (event) => { event.preventDefault(); refs.dropZone.classList.remove('dragover'); const [file] = event.dataTransfer?.files || []; if (file) loadSourceImage(file, file.name); });
-    document.addEventListener('paste', (event) => { if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return; const imageItem = [...(event.clipboardData?.items || [])].find((item) => item.type.startsWith('image/')); if (imageItem) { event.preventDefault(); loadSourceImage(imageItem.getAsFile(), 'Clipboard image'); } });
-    refs.canvas.addEventListener('pointerdown', pointerDown); refs.canvas.addEventListener('pointermove', pointerMove); refs.canvas.addEventListener('pointerup', pointerUp); refs.canvas.addEventListener('pointercancel', pointerUp); refs.canvas.addEventListener('pointerleave', () => { if (!state.pointer) refs.canvas.style.cursor = 'crosshair'; }); refs.canvas.addEventListener('pointermove', setCursor);
-    window.addEventListener('resize', renderCanvas); if ('ResizeObserver' in window) { state.resizeObserver = new ResizeObserver(renderCanvas); state.resizeObserver.observe(refs.dropZone); }
+    document.addEventListener('paste', (event) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+      const imageItem = [...(event.clipboardData?.items || [])].find((item) => item.type.startsWith('image/'));
+      if (imageItem) { event.preventDefault(); loadSourceImage(imageItem.getAsFile(), 'Clipboard image'); }
+    });
+    refs.canvas.addEventListener('pointerdown', pointerDown);
+    refs.canvas.addEventListener('pointermove', pointerMove);
+    refs.canvas.addEventListener('pointerup', pointerUp);
+    refs.canvas.addEventListener('pointercancel', pointerUp);
+    refs.canvas.addEventListener('pointerleave', () => { if (!state.pointer) refs.canvas.style.cursor = 'crosshair'; });
+    refs.canvas.addEventListener('pointermove', setCursor);
+    window.addEventListener('resize', renderCanvas);
+    if ('ResizeObserver' in window) { state.resizeObserver = new ResizeObserver(renderCanvas); state.resizeObserver.observe(refs.dropZone); }
   }
-  function init() { initHeader(); updateControlLabels(); bindInputs(); setHubStatus('ImgAutoCut Wizard ready: load a transparent source sheet.'); setTimeout(clearHubStatus, 900); }
+  function init() {
+    initHeader(); updateControlLabels(); bindInputs(); renderSelectionManager();
+    setHubStatus('ImgAutoCut Wizard ready: load a transparent source sheet.'); setTimeout(clearHubStatus, 900);
+  }
   init();
 })();
