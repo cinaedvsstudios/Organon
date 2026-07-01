@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>SimpleSprite v0.01</title>
+  <link rel="stylesheet" href="simplesprite.css">
+</head>
+<body>
+  <main class="app-shell" aria-label="SimpleSprite sprite cropper">
+    <header class="app-header">
+      <div>
+        <p class="eyebrow">ORGANON TOOL · V0.01</p>
+        <h1>SimpleSprite</h1>
+        <p class="header-note">Pick an image, drag it into place, erase temporary areas, then build a numbered transparent PNG set.</p>
+      </div>
+      <div id="app-status" class="app-status" role="status" aria-live="polite">Drop source images to begin.</div>
+    </header>
+
+    <section class="workspace-grid">
+      <aside class="sidebar left-sidebar" aria-label="Source images and canvas controls">
+        <section class="panel-card source-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">1 · SOURCES</p>
+              <h2>Image tray</h2>
+            </div>
+            <button id="clear-sources-btn" class="quiet-button" type="button" title="Remove every imported source image">Clear</button>
+          </div>
+
+          <label id="drop-zone" class="drop-zone" for="file-input">
+            <input id="file-input" type="file" accept="image/*" multiple hidden>
+            <span class="drop-icon" aria-hidden="true">+</span>
+            <strong>Drop image files here</strong>
+            <span>or click to browse</span>
+          </label>
+
+          <div id="source-list" class="source-list" aria-live="polite">
+            <p class="empty-copy">Imported images will appear here as draggable thumbnails.</p>
+          </div>
+        </section>
+
+        <section class="panel-card controls-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">2 · CANVAS CONTROLS</p>
+              <h2>Crop settings</h2>
+            </div>
+          </div>
+
+          <div class="control-grid dimensions-grid">
+            <label class="field-label" for="canvas-width">
+              <span>Width</span>
+              <input id="canvas-width" type="number" min="1" max="8192" value="256" inputmode="numeric">
+            </label>
+            <label class="field-label" for="canvas-height">
+              <span>Height</span>
+              <input id="canvas-height" type="number" min="1" max="8192" value="256" inputmode="numeric">
+            </label>
+          </div>
+
+          <div class="range-control">
+            <div class="range-heading">
+              <label for="grid-size">Grid size</label>
+              <output id="grid-size-value" for="grid-size">32 px</output>
+            </div>
+            <input id="grid-size" type="range" min="4" max="256" step="1" value="32">
+          </div>
+
+          <div class="grid-colour-control">
+            <span class="mini-label">Grid colour</span>
+            <div id="grid-colours" class="colour-buttons" role="group" aria-label="Grid colour">
+              <button type="button" class="colour-button" data-colour="#e24a59" aria-label="Red grid" title="Red grid"><i style="--swatch:#e24a59"></i></button>
+              <button type="button" class="colour-button" data-colour="#57c785" aria-label="Green grid" title="Green grid"><i style="--swatch:#57c785"></i></button>
+              <button type="button" class="colour-button" data-colour="#000000" aria-label="Black grid" title="Black grid"><i style="--swatch:#000000"></i></button>
+              <button type="button" class="colour-button is-active" data-colour="#ffffff" aria-label="White grid" title="White grid"><i style="--swatch:#ffffff"></i></button>
+            </div>
+          </div>
+
+          <div class="range-control">
+            <div class="range-heading">
+              <label for="zoom-range">Image scale</label>
+              <output id="zoom-value" for="zoom-range">100%</output>
+            </div>
+            <input id="zoom-range" type="range" min="25" max="400" step="1" value="100">
+          </div>
+
+          <div class="canvas-tools-row">
+            <button id="recenter-btn" class="secondary-button" type="button">Recenter image</button>
+            <button id="reset-transparency-btn" class="secondary-button" type="button">Reset transparency</button>
+          </div>
+
+          <div class="eraser-box">
+            <div class="eraser-heading">
+              <div>
+                <span class="mini-label">Temporary transparency</span>
+                <p>Turn on the eraser, then drag on the crop canvas.</p>
+              </div>
+              <button id="eraser-toggle" class="tool-toggle" type="button" aria-pressed="false">Eraser off</button>
+            </div>
+            <div class="range-control eraser-size-control">
+              <div class="range-heading">
+                <label for="eraser-size">Brush size</label>
+                <output id="eraser-size-value" for="eraser-size">24 px</output>
+              </div>
+              <input id="eraser-size" type="range" min="1" max="512" step="1" value="24">
+            </div>
+          </div>
+
+          <button id="set-sprite-btn" class="primary-button" type="button">Set sprite →</button>
+        </section>
+      </aside>
+
+      <section class="canvas-column" aria-label="Sprite crop canvas">
+        <div class="canvas-toolbar">
+          <div>
+            <p class="panel-kicker">3 · POSITION &amp; PREVIEW</p>
+            <h2>Crop canvas</h2>
+          </div>
+          <p id="canvas-instruction" class="canvas-instruction">Choose a source thumbnail, then drag the image to position it.</p>
+        </div>
+
+        <div id="canvas-stage" class="canvas-stage">
+          <div id="canvas-frame" class="canvas-frame checkerboard" aria-label="Sprite crop canvas">
+            <canvas id="sprite-canvas" width="256" height="256"></canvas>
+            <canvas id="grid-canvas" width="256" height="256" aria-hidden="true"></canvas>
+            <div id="canvas-empty-state" class="canvas-empty-state">Drop an image into the tray, then click or drag its thumbnail here.</div>
+          </div>
+        </div>
+
+        <div class="canvas-footer">
+          <span>Drag on the canvas to move the source image.</span>
+          <span>Use the scale slider or mouse wheel to zoom.</span>
+          <span>Grid lines are preview-only and never export.</span>
+        </div>
+      </section>
+
+      <aside class="sidebar right-sidebar" aria-label="Sprite set and export">
+        <section class="panel-card sprite-set-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">4 · SPRITE SET</p>
+              <h2>Ready sprites</h2>
+            </div>
+            <span id="sprite-count" class="count-badge">0</span>
+          </div>
+
+          <div id="sprite-list" class="sprite-list" aria-live="polite">
+            <p class="empty-copy">Each crop you set will appear in a numbered box here.</p>
+          </div>
+          <button id="clear-sprites-btn" class="quiet-button full-width" type="button">Clear set</button>
+        </section>
+
+        <section class="panel-card export-card">
+          <div class="panel-heading">
+            <div>
+              <p class="panel-kicker">5 · EXPORT</p>
+              <h2>Download set</h2>
+            </div>
+          </div>
+
+          <label class="field-label" for="file-prefix">
+            <span>Set name</span>
+            <input id="file-prefix" type="text" value="sprite" maxlength="80" autocomplete="off" spellcheck="false">
+          </label>
+          <p class="export-note">Files export as <code id="filename-example">sprite_01.png</code>, <code>sprite_02.png</code>, and so on.</p>
+          <p id="folder-note" class="folder-note">Click Download Set, choose a folder, and the full numbered PNG set will save there.</p>
+          <button id="download-set-btn" class="primary-button" type="button">Download set</button>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="simplesprite.js"></script>
+</body>
+</html>
