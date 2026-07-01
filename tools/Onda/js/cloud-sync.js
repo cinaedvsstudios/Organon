@@ -1,38 +1,27 @@
 (function () {
     'use strict';
 
-    const CLOUD_CONFIG_KEY = 'ondaCloudSyncConfigV1';
-    const CLOUD_LAST_STATUS_KEY = 'ondaCloudSyncLastStatusV1';
-    const CLOUD_SETUP_DISMISSED_KEY = 'ondaCloudSetupDismissedV1';
+    const CONFIG_KEY = 'ondaCloudSyncConfigV1';
+    const STATUS_KEY = 'ondaCloudSyncLastStatusV1';
+    const DISMISSED_KEY = 'ondaCloudSetupDismissedV1';
     const DEFAULT_ENDPOINT = '/.netlify/functions/onda-sync';
     const REQUEST_TIMEOUT_MS = 15000;
-    const PASSWORD_CREDENTIAL_ID = 'onda-cloud-sync';
-    const PASSWORD_CREDENTIAL_NAME = 'Onda Cloud Sync';
+    const CREDENTIAL_ID = 'onda-cloud-sync';
+    const CREDENTIAL_NAME = 'Onda Cloud Sync';
 
-    let selectedCloudDeviceId = '';
-    let lastDeviceList = [];
+    let selectedDeviceId = '';
+    let knownDevices = [];
     let sessionSecret = '';
-    let credentialRestoreAttempted = false;
+    let attemptedCredentialRestore = false;
 
-    function $(id) {
-        return document.getElementById(id);
-    }
+    const byId = (id) => document.getElementById(id);
 
-    function safeJsonParse(raw, fallback = null) {
+    function parseJson(value, fallback) {
         try {
-            return raw ? JSON.parse(raw) : fallback;
+            return value ? JSON.parse(value) : fallback;
         } catch (error) {
             return fallback;
         }
-    }
-
-    function sanitizeDeviceId(value) {
-        return String(value || '')
-            .trim()
-            .toLowerCase()
-            .replace(/[^a-z0-9_-]+/g, '-')
-            .replace(/^-+|-+$/g, '')
-            .slice(0, 48);
     }
 
     function escapeHtml(value) {
@@ -44,106 +33,107 @@
             .replace(/'/g, '&#39;');
     }
 
-    function getRawCloudConfig() {
-        return safeJsonParse(localStorage.getItem(CLOUD_CONFIG_KEY), {}) || {};
+    function sanitizeDeviceId(value) {
+        return String(value || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9_-]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 48);
     }
 
-    function loadCloudConfig() {
-        const rawConfig = getRawCloudConfig();
-        const legacySecret = typeof rawConfig.secret === 'string' ? rawConfig.secret.trim() : '';
+    function readRawConfig() {
+        return parseJson(localStorage.getItem(CONFIG_KEY), {}) || {};
+    }
 
-        // Old Onda versions stored the server secret in localStorage. Keep it for
-        // this tab only so existing users are not immediately locked out, then
-        // remove it from persistent browser storage.
-        if (legacySecret && !sessionSecret) {
-            sessionSecret = legacySecret;
-            const migrated = { ...rawConfig };
-            delete migrated.secret;
-            localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(migrated));
-        }
-
+    function readConfig() {
+        const raw = readRawConfig();
         return {
-            endpoint: rawConfig.endpoint || DEFAULT_ENDPOINT,
-            deviceId: rawConfig.deviceId || '',
-            deviceLabel: rawConfig.deviceLabel || '',
-            autoCheckOnStartup: rawConfig.autoCheckOnStartup !== false,
-            updatedAt: rawConfig.updatedAt || ''
+            endpoint: raw.endpoint || DEFAULT_ENDPOINT,
+            deviceId: raw.deviceId || '',
+            deviceLabel: raw.deviceLabel || '',
+            autoCheckOnStartup: raw.autoCheckOnStartup !== false
         };
     }
 
-    function saveCloudConfig(nextConfig = {}) {
-        const current = loadCloudConfig();
-        const merged = {
-            ...current,
-            ...nextConfig,
-            endpoint: nextConfig.endpoint || current.endpoint || DEFAULT_ENDPOINT,
+    function writeConfig(changes) {
+        const raw = readRawConfig();
+        const next = {
+            ...raw,
+            ...changes,
+            endpoint: changes?.endpoint || raw.endpoint || DEFAULT_ENDPOINT,
             updatedAt: new Date().toISOString()
         };
-        delete merged.secret;
-        localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(merged));
-        updateCloudStatusLine();
-        return merged;
+        delete next.secret;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(next));
+        updateStatusSummary();
+        return readConfig();
     }
 
-    function getSecretInput() {
-        return $('onda-cloud-secret-input');
+    function readLegacySecret() {
+        const secret = readRawConfig().secret;
+        return typeof secret === 'string' ? secret.trim() : '';
     }
 
-    function setSessionSecret(value) {
+    function clearLegacySecret() {
+        const raw = readRawConfig();
+        if (!Object.prototype.hasOwnProperty.call(raw, 'secret')) return;
+        delete raw.secret;
+        localStorage.setItem(CONFIG_KEY, JSON.stringify(raw));
+    }
+
+    function secretInput() {
+        return byId('onda-cloud-secret-input');
+    }
+
+    function rememberSecretForSession(value) {
         const secret = String(value || '').trim();
         if (secret) sessionSecret = secret;
         return sessionSecret;
     }
 
-    function getSessionSecret() {
-        const inputValue = getSecretInput()?.value || '';
-        if (inputValue.trim()) setSessionSecret(inputValue);
-        return sessionSecret;
+    function currentSecret() {
+        const typed = secretInput()?.value || '';
+        if (typed.trim()) return rememberSecretForSession(typed);
+        if (sessionSecret) return sessionSecret;
+        const legacy = readLegacySecret();
+        if (legacy) return rememberSecretForSession(legacy);
+        return '';
     }
 
-    function configurePasswordManagerField() {
-        const input = getSecretInput();
+    function preparePasswordField() {
+        const input = secretInput();
         if (!input) return;
-
         input.name = 'onda-cloud-secret';
         input.autocomplete = 'current-password';
         input.removeAttribute('data-1p-ignore');
         input.removeAttribute('data-bwignore');
         input.removeAttribute('data-form-type');
         input.removeAttribute('data-lpignore');
-        input.setAttribute('aria-label', 'Onda Cloud Sync secret');
-
-        input.addEventListener('input', () => {
-            setSessionSecret(input.value);
-        });
+        input.addEventListener('input', () => rememberSecretForSession(input.value));
     }
 
     async function restoreSecretFromPasswordManager() {
-        const input = getSecretInput();
-        if (input?.value?.trim()) return setSessionSecret(input.value);
-        if (sessionSecret) return sessionSecret;
-        if (credentialRestoreAttempted) return '';
-        credentialRestoreAttempted = true;
-
+        if (currentSecret() || attemptedCredentialRestore) return currentSecret();
+        attemptedCredentialRestore = true;
         if (!navigator.credentials || typeof window.PasswordCredential !== 'function') return '';
 
         try {
             const credential = await navigator.credentials.get({ password: true, mediation: 'optional' });
-            if (!credential || credential.id !== PASSWORD_CREDENTIAL_ID || !credential.password) return '';
-            if (input) input.value = credential.password;
-            return setSessionSecret(credential.password);
+            if (!credential || credential.id !== CREDENTIAL_ID || !credential.password) return '';
+            if (secretInput()) secretInput().value = credential.password;
+            return rememberSecretForSession(credential.password);
         } catch (error) {
             return '';
         }
     }
 
-    async function rememberSecretInPasswordManager(secret) {
+    async function storeSecretInPasswordManager(secret) {
         if (!secret || !navigator.credentials || typeof window.PasswordCredential !== 'function') return false;
-
         try {
             const credential = new window.PasswordCredential({
-                id: PASSWORD_CREDENTIAL_ID,
-                name: PASSWORD_CREDENTIAL_NAME,
+                id: CREDENTIAL_ID,
+                name: CREDENTIAL_NAME,
                 password: secret
             });
             await navigator.credentials.store(credential);
@@ -153,41 +143,41 @@
         }
     }
 
-    async function requireCloudSecret() {
-        const immediate = getSessionSecret();
-        if (immediate) return immediate;
+    async function requireSecret() {
+        const alreadyKnown = currentSecret();
+        if (alreadyKnown) return alreadyKnown;
         const restored = await restoreSecretFromPasswordManager();
         if (restored) return restored;
-        throw new Error('Enter the Onda sync secret first. Chrome can save it after you choose Save Setup.');
+        throw new Error('Enter the Onda sync secret first. Save Setup asks Chrome to remember it.');
     }
 
-    function setCloudStatus(message, isError = false) {
+    function setStatus(message, isError) {
         const status = {
             message: String(message || ''),
             isError: !!isError,
             at: new Date().toISOString()
         };
+        localStorage.setItem(STATUS_KEY, JSON.stringify(status));
 
-        localStorage.setItem(CLOUD_LAST_STATUS_KEY, JSON.stringify(status));
-        const popupBox = $('onda-cloud-status-box');
-        if (popupBox) {
-            popupBox.innerHTML = `${isError ? '⚠️' : '☁️'} ${escapeHtml(status.message)}<br><span class="onda-cloud-status-time">${new Date(status.at).toLocaleString()}</span>`;
-            popupBox.classList.toggle('is-error', status.isError);
+        const popup = byId('onda-cloud-status-box');
+        if (popup) {
+            popup.innerHTML = `${status.isError ? '⚠️' : '☁️'} ${escapeHtml(status.message)}<br><span class="onda-cloud-status-time">${new Date(status.at).toLocaleString()}</span>`;
+            popup.classList.toggle('is-error', status.isError);
         }
 
-        const settingsBox = $('settings-cloud-status');
-        if (settingsBox) {
-            settingsBox.textContent = `${isError ? 'Cloud error: ' : 'Cloud status: '}${status.message}`;
-            settingsBox.classList.toggle('is-error', status.isError);
+        const settingsStatus = byId('settings-cloud-status');
+        if (settingsStatus) {
+            settingsStatus.textContent = `${status.isError ? 'Cloud error: ' : 'Cloud status: '}${status.message}`;
+            settingsStatus.classList.toggle('is-error', status.isError);
         }
 
-        updateCloudStatusLine();
-        if (typeof showToast === 'function') showToast(status.message);
+        updateStatusSummary();
+        if (typeof window.showToast === 'function') window.showToast(status.message);
     }
 
-    function updateCloudStatusLine() {
-        const config = loadCloudConfig();
-        const last = safeJsonParse(localStorage.getItem(CLOUD_LAST_STATUS_KEY), null);
+    function updateStatusSummary() {
+        const config = readConfig();
+        const last = parseJson(localStorage.getItem(STATUS_KEY), null);
         const device = config.deviceId ? `${config.deviceLabel || config.deviceId} (${config.deviceId})` : 'not set';
         const lastText = last ? `${last.message} · ${new Date(last.at).toLocaleString()}` : 'No cloud sync yet.';
 
@@ -195,358 +185,321 @@
             element.innerHTML = `Device: <strong>${escapeHtml(device)}</strong><br>Last cloud action: ${escapeHtml(lastText)}`;
         });
 
-        const settingsBox = $('settings-cloud-status');
-        if (settingsBox && !last) settingsBox.textContent = `Cloud device: ${device}`;
+        const settingsStatus = byId('settings-cloud-status');
+        if (settingsStatus && !last) settingsStatus.textContent = `Cloud device: ${device}`;
     }
 
-    async function cloudRequest(action, extra = {}) {
-        const config = loadCloudConfig();
-        const secret = extra.secret || await requireCloudSecret();
+    async function request(action, payload) {
+        const config = readConfig();
+        const secret = payload?.secret || await requireSecret();
         const controller = new AbortController();
-        const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+        const timer = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
         try {
             const response = await fetch(config.endpoint || DEFAULT_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action, ...extra, secret }),
+                body: JSON.stringify({ action, ...payload, secret }),
                 signal: controller.signal
             });
             const text = await response.text();
-            let data = null;
-            try {
-                data = text ? JSON.parse(text) : null;
-            } catch (error) {
-                data = null;
-            }
-
+            const data = parseJson(text, null);
             if (!response.ok || !data || data.ok === false) {
-                if (!data) {
-                    throw new Error(`Cloud endpoint returned an invalid response (HTTP ${response.status}). Confirm the Netlify site is deploying tools/Onda and its function bundle.`);
-                }
-                throw new Error(data.error || `Cloud request failed with HTTP ${response.status}.`);
+                throw new Error(data?.error || `Cloud request failed with HTTP ${response.status}. Confirm Netlify is deploying tools/Onda and its function bundle.`);
             }
-
             return data;
         } catch (error) {
-            if (error?.name === 'AbortError') {
-                throw new Error('Cloud request timed out. Check your connection, then try again.');
-            }
+            if (error?.name === 'AbortError') throw new Error('Cloud request timed out. Check the connection and try again.');
             throw error;
         } finally {
-            window.clearTimeout(timeout);
+            window.clearTimeout(timer);
         }
     }
 
-    function getCurrentBackupPayload() {
-        if (typeof saveLocalUiStateCheckpoint === 'function') saveLocalUiStateCheckpoint('cloud-sync-before-build');
-        if (typeof buildEverythingExport === 'function') return buildEverythingExport();
-        if (typeof buildLibraryExport === 'function') {
+    function getBackupPayload() {
+        if (typeof window.saveLocalUiStateCheckpoint === 'function') window.saveLocalUiStateCheckpoint('cloud-sync-before-build');
+        if (typeof window.buildEverythingExport === 'function') return window.buildEverythingExport();
+        if (typeof window.buildLibraryExport === 'function') {
             return {
                 app: 'Onda Media Player',
                 type: 'onda-full-backup',
                 version: 1,
                 exportedAt: new Date().toISOString(),
-                library: buildLibraryExport({ streamingOnly: false })
+                library: window.buildLibraryExport({ streamingOnly: false })
             };
         }
         throw new Error('This Onda build does not expose a backup builder.');
     }
 
-    function applyCloudBackupPayload(payload) {
+    function applyBackupPayload(payload) {
         if (!payload || typeof payload !== 'object') throw new Error('Cloud profile had no usable backup JSON.');
-        if (typeof applyImportedSettingsJson === 'function') {
-            applyImportedSettingsJson(payload);
-        } else if (payload.library && typeof importOndaLibrary === 'function') {
-            importOndaLibrary(payload.library);
-        } else if (payload.type === 'onda-library' && typeof importOndaLibrary === 'function') {
-            importOndaLibrary(payload);
+        if (typeof window.applyImportedSettingsJson === 'function') {
+            window.applyImportedSettingsJson(payload);
+        } else if (payload.library && typeof window.importOndaLibrary === 'function') {
+            window.importOndaLibrary(payload.library);
+        } else if (payload.type === 'onda-library' && typeof window.importOndaLibrary === 'function') {
+            window.importOndaLibrary(payload);
         } else {
             throw new Error('This Onda build does not expose an import function.');
         }
-        if (typeof saveActiveLibraryState === 'function') saveActiveLibraryState('cloud-load-device');
-        if (typeof flushActiveLibraryState === 'function') flushActiveLibraryState('cloud-load-device-flush');
+        if (typeof window.saveActiveLibraryState === 'function') window.saveActiveLibraryState('cloud-load-device');
+        if (typeof window.flushActiveLibraryState === 'function') window.flushActiveLibraryState('cloud-load-device-flush');
     }
 
-    function getLibraryTrackCount() {
+    function trackCount() {
         try {
             if (window.virtualLibrary && typeof window.virtualLibrary === 'object') return Object.keys(window.virtualLibrary).length;
         } catch (error) {}
-        try {
-            const raw = localStorage.getItem('ondaActiveLibraryV1') || localStorage.getItem('ondaActiveLibraryLastGoodV1') || localStorage.getItem('ondaActiveLibraryBackupV1');
-            const parsed = safeJsonParse(raw, null);
-            const tracks = parsed?.library?.tracks || parsed?.tracks || null;
-            return tracks && typeof tracks === 'object' ? Object.keys(tracks).length : 0;
-        } catch (error) {
-            return 0;
-        }
+        const raw = localStorage.getItem('ondaActiveLibraryV1') || localStorage.getItem('ondaActiveLibraryLastGoodV1') || localStorage.getItem('ondaActiveLibraryBackupV1');
+        const parsed = parseJson(raw, null);
+        const tracks = parsed?.library?.tracks || parsed?.tracks;
+        return tracks && typeof tracks === 'object' ? Object.keys(tracks).length : 0;
     }
 
-    function hasAnyLocalOndaState() {
-        const importantKeys = [
+    function hasLocalState() {
+        return [
             'ondaActiveLibraryV1',
             'ondaActiveLibraryBackupV1',
             'ondaActiveLibraryLastGoodV1',
             'ondaVisualizerPresetsV1',
             'ondaActiveVisualizerStackV1',
-            CLOUD_CONFIG_KEY
-        ];
-        return importantKeys.some((key) => !!localStorage.getItem(key)) || getLibraryTrackCount() > 0;
+            CONFIG_KEY
+        ].some((key) => !!localStorage.getItem(key)) || trackCount() > 0;
     }
 
-    async function openSetupWizard(reason = '') {
-        const overlay = $('onda-cloud-modal-overlay');
-        const modal = $('onda-cloud-setup-modal');
-        const config = loadCloudConfig();
-        selectedCloudDeviceId = config.deviceId || selectedCloudDeviceId || '';
+    async function openSetupWizard(reason) {
+        const config = readConfig();
+        selectedDeviceId = config.deviceId || selectedDeviceId || '';
+        if (byId('onda-cloud-device-id')) byId('onda-cloud-device-id').value = config.deviceId || '';
+        if (byId('onda-cloud-device-label')) byId('onda-cloud-device-label').value = config.deviceLabel || '';
 
-        if ($('onda-cloud-device-id')) $('onda-cloud-device-id').value = config.deviceId || '';
-        if ($('onda-cloud-device-label')) $('onda-cloud-device-label').value = config.deviceLabel || '';
-
-        const warning = $('onda-cloud-startup-warning');
+        const warning = byId('onda-cloud-startup-warning');
         if (warning) {
             warning.classList.toggle('u-hidden', !reason);
             warning.textContent = reason || '';
         }
 
-        if (overlay) overlay.classList.add('open');
-        if (modal) modal.classList.add('open');
-        updateCloudStatusLine();
+        byId('onda-cloud-modal-overlay')?.classList.add('open');
+        byId('onda-cloud-setup-modal')?.classList.add('open');
+        updateStatusSummary();
         await restoreSecretFromPasswordManager();
     }
 
     function closeSetupWizard() {
-        $('onda-cloud-modal-overlay')?.classList.remove('open');
-        $('onda-cloud-setup-modal')?.classList.remove('open');
-        localStorage.setItem(CLOUD_SETUP_DISMISSED_KEY, new Date().toISOString());
+        byId('onda-cloud-modal-overlay')?.classList.remove('open');
+        byId('onda-cloud-setup-modal')?.classList.remove('open');
+        localStorage.setItem(DISMISSED_KEY, new Date().toISOString());
     }
 
-    function renderDeviceList(devices = lastDeviceList) {
-        const list = $('onda-cloud-device-list');
+    function renderDeviceList(devices) {
+        const list = byId('onda-cloud-device-list');
         if (!list) return;
+        knownDevices = Array.isArray(devices) ? devices : [];
 
-        lastDeviceList = Array.isArray(devices) ? devices : [];
-        if (!lastDeviceList.length) {
+        if (!knownDevices.length) {
             list.innerHTML = '<div class="onda-cloud-device-meta">No cloud device profiles found yet. Create one below, for example phone, laptop, or work-laptop.</div>';
             return;
         }
 
         list.innerHTML = '';
-        lastDeviceList.forEach((device) => {
+        knownDevices.forEach((device) => {
             const id = sanitizeDeviceId(device.id || device.deviceId || '');
             if (!id) return;
-            const label = device.label || device.deviceLabel || id;
-            const updated = device.lastSync || device.updatedAt || device.savedAt || '';
-            const tracks = Number.isFinite(Number(device.trackCount)) ? `${device.trackCount} tracks` : 'track count unknown';
+            const label = String(device.label || device.deviceLabel || id);
+            const date = device.lastSync || device.updatedAt || device.savedAt || '';
+            const count = Number.isFinite(Number(device.trackCount)) ? `${device.trackCount} tracks` : 'track count unknown';
             const row = document.createElement('div');
-            row.className = `onda-cloud-device-row${selectedCloudDeviceId === id ? ' selected' : ''}`;
-            row.dataset.deviceId = id;
-            row.dataset.deviceLabel = label;
+            row.className = `onda-cloud-device-row${selectedDeviceId === id ? ' selected' : ''}`;
             row.innerHTML = `
                 <div class="onda-cloud-device-marker">◉</div>
                 <div>
                     <div class="onda-cloud-device-name">${escapeHtml(label)}</div>
-                    <div class="onda-cloud-device-meta">${escapeHtml(id)} · ${escapeHtml(tracks)}${updated ? ` · ${escapeHtml(new Date(updated).toLocaleString())}` : ''}</div>
+                    <div class="onda-cloud-device-meta">${escapeHtml(id)} · ${escapeHtml(count)}${date ? ` · ${escapeHtml(new Date(date).toLocaleString())}` : ''}</div>
                 </div>
-                <button class="btn-pill" type="button">Use</button>
+                <button type="button" class="btn-pill">Use</button>
             `;
-            const useButton = row.querySelector('button');
-            useButton?.addEventListener('click', (event) => {
+            row.addEventListener('click', () => chooseDevice(id, label));
+            row.querySelector('button')?.addEventListener('click', (event) => {
+                event.preventDefault();
                 event.stopPropagation();
                 chooseDevice(id, label);
             });
-            row.addEventListener('click', () => chooseDevice(id, label));
             list.appendChild(row);
         });
     }
 
-    function chooseDevice(id, label = '') {
-        selectedCloudDeviceId = sanitizeDeviceId(id);
-        const deviceLabel = String(label || selectedCloudDeviceId).trim() || selectedCloudDeviceId;
-        if (!selectedCloudDeviceId) return;
-
-        if ($('onda-cloud-device-id')) $('onda-cloud-device-id').value = selectedCloudDeviceId;
-        if ($('onda-cloud-device-label')) $('onda-cloud-device-label').value = deviceLabel;
-        saveCloudConfig({ deviceId: selectedCloudDeviceId, deviceLabel });
-        renderDeviceList(lastDeviceList);
-        setCloudStatus(`Selected cloud device ${deviceLabel}.`);
+    function chooseDevice(id, label) {
+        selectedDeviceId = sanitizeDeviceId(id);
+        if (!selectedDeviceId) return;
+        const deviceLabel = String(label || selectedDeviceId).trim() || selectedDeviceId;
+        if (byId('onda-cloud-device-id')) byId('onda-cloud-device-id').value = selectedDeviceId;
+        if (byId('onda-cloud-device-label')) byId('onda-cloud-device-label').value = deviceLabel;
+        writeConfig({ deviceId: selectedDeviceId, deviceLabel });
+        renderDeviceList(knownDevices);
+        setStatus(`Selected cloud device ${deviceLabel}.`);
     }
 
-    async function listCloudDevices() {
+    async function listDevices() {
         try {
-            const secret = await requireCloudSecret();
-            const result = await cloudRequest('list-devices', { secret });
+            const secret = await requireSecret();
+            const result = await request('list-devices', { secret });
             renderDeviceList(result.devices || []);
-            setCloudStatus(`Loaded ${result.devices?.length || 0} cloud device profile(s).`);
+            setStatus(`Loaded ${result.devices?.length || 0} cloud device profile(s).`);
         } catch (error) {
-            setCloudStatus(error.message || String(error), true);
+            setStatus(error.message || String(error), true);
         }
     }
 
-    async function saveSetupFromFields({ announce = true } = {}) {
+    async function saveSetup({ announce = true } = {}) {
         try {
-            const secret = await requireCloudSecret();
-            const deviceId = sanitizeDeviceId($('onda-cloud-device-id')?.value || selectedCloudDeviceId || '');
-            const deviceLabel = ($('onda-cloud-device-label')?.value || deviceId).trim() || deviceId;
+            const secret = await requireSecret();
+            const deviceId = sanitizeDeviceId(byId('onda-cloud-device-id')?.value || selectedDeviceId);
+            const deviceLabel = String(byId('onda-cloud-device-label')?.value || deviceId).trim() || deviceId;
+            if (!deviceId) throw new Error('Choose or type a device profile id first.');
 
-            if (!deviceId) {
-                setCloudStatus('Choose or type a device profile id first.', true);
-                return null;
-            }
+            selectedDeviceId = deviceId;
+            const savedToPasswordManager = await storeSecretInPasswordManager(secret);
+            if (savedToPasswordManager) clearLegacySecret();
+            writeConfig({ deviceId, deviceLabel });
 
-            selectedCloudDeviceId = deviceId;
-            const config = saveCloudConfig({ deviceId, deviceLabel });
-            const passwordSaved = await rememberSecretInPasswordManager(secret);
             if (announce) {
-                setCloudStatus(passwordSaved
+                setStatus(savedToPasswordManager
                     ? `Setup saved for ${deviceLabel}. Chrome password storage was requested.`
-                    : `Setup saved for ${deviceLabel}. Chrome may offer to save the secret when you submit the field.`);
+                    : `Setup saved for ${deviceLabel}. This browser did not confirm password-manager storage yet.`);
             }
-            return config;
+            return readConfig();
         } catch (error) {
-            setCloudStatus(error.message || String(error), true);
+            setStatus(error.message || String(error), true);
             return null;
         }
     }
 
-    async function testCloudConnection() {
+    async function testConnection() {
         try {
-            const secret = await requireCloudSecret();
-            const result = await cloudRequest('test', { secret });
-            setCloudStatus(result.message || 'Connection OK.');
+            const secret = await requireSecret();
+            const result = await request('test', { secret });
+            setStatus(result.message || 'Connection OK.');
         } catch (error) {
-            setCloudStatus(error.message || String(error), true);
+            setStatus(error.message || String(error), true);
         }
     }
 
-    async function saveCurrentDeviceToCloud() {
+    async function saveDevice() {
         try {
-            const config = await saveSetupFromFields({ announce: false });
+            const config = await saveSetup({ announce: false });
             if (!config?.deviceId) {
                 await openSetupWizard('Choose a device profile before saving to cloud.');
                 return;
             }
-
-            const payload = getCurrentBackupPayload();
-            const trackCount = payload?.library?.tracks ? Object.keys(payload.library.tracks).length : getLibraryTrackCount();
-            const result = await cloudRequest('save-device', {
+            const data = getBackupPayload();
+            const count = data?.library?.tracks ? Object.keys(data.library.tracks).length : trackCount();
+            const result = await request('save-device', {
                 deviceId: config.deviceId,
                 deviceLabel: config.deviceLabel || config.deviceId,
-                data: payload,
-                trackCount,
+                data,
+                trackCount: count,
                 createSnapshot: true
             });
-            renderDeviceList(result.devices || lastDeviceList);
-            setCloudStatus(`Saved ${config.deviceLabel || config.deviceId} to cloud · ${result.trackCount ?? trackCount} tracks.`);
+            renderDeviceList(result.devices || knownDevices);
+            setStatus(`Saved ${config.deviceLabel || config.deviceId} to cloud · ${result.trackCount ?? count} tracks.`);
         } catch (error) {
-            setCloudStatus(error.message || String(error), true);
+            setStatus(error.message || String(error), true);
         }
     }
 
-    async function loadSelectedDeviceFromCloud() {
+    async function loadDevice() {
         try {
-            const secret = await requireCloudSecret();
-            const fieldDevice = sanitizeDeviceId($('onda-cloud-device-id')?.value || selectedCloudDeviceId || loadCloudConfig().deviceId);
-            const fieldLabel = ($('onda-cloud-device-label')?.value || fieldDevice).trim() || fieldDevice;
-            if (!fieldDevice) {
+            const secret = await requireSecret();
+            const config = readConfig();
+            const deviceId = sanitizeDeviceId(byId('onda-cloud-device-id')?.value || selectedDeviceId || config.deviceId);
+            const deviceLabel = String(byId('onda-cloud-device-label')?.value || config.deviceLabel || deviceId).trim() || deviceId;
+            if (!deviceId) {
                 await openSetupWizard('Choose a device profile before loading from cloud.');
                 return;
             }
 
-            saveCloudConfig({ deviceId: fieldDevice, deviceLabel: fieldLabel });
-            const result = await cloudRequest('load-device', { deviceId: fieldDevice, secret });
+            writeConfig({ deviceId, deviceLabel });
+            const result = await request('load-device', { deviceId, secret });
             if (!result.data) throw new Error('No backup exists for that device profile yet.');
-            const ok = window.confirm(`Load cloud library for ${fieldLabel}? This restores the catalogue, playlists, settings and artwork references. Audio files stay local to this device and may need relinking.`);
-            if (!ok) return;
 
-            applyCloudBackupPayload(result.data);
-            setCloudStatus(`Loaded ${fieldLabel} from cloud. Local audio files were not transferred.`);
+            const confirmed = window.confirm(`Load cloud library for ${deviceLabel}? This restores catalogue, playlists, settings and artwork references. Audio files stay local to this device and may need relinking.`);
+            if (!confirmed) return;
+
+            applyBackupPayload(result.data);
+            setStatus(`Loaded ${deviceLabel} from cloud. Local audio files were not transferred.`);
             closeSetupWizard();
         } catch (error) {
-            setCloudStatus(error.message || String(error), true);
+            setStatus(error.message || String(error), true);
         }
     }
 
-    function maybeShowSetupOnStartup() {
-        const config = loadCloudConfig();
-        const hasConfig = !!config.deviceId;
-        const hasState = hasAnyLocalOndaState();
-        const trackCount = getLibraryTrackCount();
-        const dismissedAt = Date.parse(localStorage.getItem(CLOUD_SETUP_DISMISSED_KEY) || '');
-        const dismissedRecently = Number.isFinite(dismissedAt) && (Date.now() - dismissedAt < 1000 * 60 * 60 * 18);
+    function maybePromptOnStartup() {
+        const config = readConfig();
+        const dismissedAt = Date.parse(localStorage.getItem(DISMISSED_KEY) || '');
+        const dismissedRecently = Number.isFinite(dismissedAt) && (Date.now() - dismissedAt < 18 * 60 * 60 * 1000);
 
-        if (!hasConfig && !dismissedRecently) {
+        if (!config.deviceId && !dismissedRecently) {
             openSetupWizard('First setup: choose this browser device profile and enter the sync secret. Onda uploads JSON library data only; audio stays local.');
             return;
         }
-        if (hasConfig && !hasState && !dismissedRecently) {
-            openSetupWizard('No local Onda library/settings were found in this browser. You can load the selected cloud device profile or continue empty.');
+        if (config.deviceId && !hasLocalState() && !dismissedRecently) {
+            openSetupWizard('No local Onda library/settings were found in this browser. Load the selected cloud profile or continue empty.');
             return;
         }
-        if (hasConfig && trackCount === 0 && !dismissedRecently) {
+        if (config.deviceId && trackCount() === 0 && !dismissedRecently) {
             openSetupWizard('This browser currently has 0 library tracks. You can load the selected device profile from cloud before continuing.');
         }
     }
 
-    function openSetupFromAnywhere(reason = '') {
-        openSetupWizard(reason);
-    }
-
-    function bindCloudEvents() {
-        $('onda-cloud-close-setup')?.addEventListener('click', closeSetupWizard);
-        $('onda-cloud-modal-overlay')?.addEventListener('click', closeSetupWizard);
-        $('onda-cloud-test-btn')?.addEventListener('click', testCloudConnection);
-        $('onda-cloud-list-btn')?.addEventListener('click', listCloudDevices);
-        $('onda-cloud-save-setup-btn')?.addEventListener('click', async () => {
-            const config = await saveSetupFromFields();
-            if (config) closeSetupWizard();
+    function bindEvents() {
+        byId('onda-cloud-close-setup')?.addEventListener('click', closeSetupWizard);
+        byId('onda-cloud-modal-overlay')?.addEventListener('click', closeSetupWizard);
+        byId('onda-cloud-test-btn')?.addEventListener('click', testConnection);
+        byId('onda-cloud-list-btn')?.addEventListener('click', listDevices);
+        byId('onda-cloud-save-setup-btn')?.addEventListener('click', async () => {
+            if (await saveSetup()) closeSetupWizard();
         });
-        $('onda-cloud-save-device-btn')?.addEventListener('click', saveCurrentDeviceToCloud);
-        $('onda-cloud-load-device-btn')?.addEventListener('click', loadSelectedDeviceFromCloud);
-        $('onda-cloud-continue-local-btn')?.addEventListener('click', closeSetupWizard);
-        $('onda-cloud-toggle-secret-btn')?.addEventListener('click', () => {
-            const input = getSecretInput();
+        byId('onda-cloud-save-device-btn')?.addEventListener('click', saveDevice);
+        byId('onda-cloud-load-device-btn')?.addEventListener('click', loadDevice);
+        byId('onda-cloud-continue-local-btn')?.addEventListener('click', closeSetupWizard);
+        byId('onda-cloud-toggle-secret-btn')?.addEventListener('click', () => {
+            const input = secretInput();
             if (!input) return;
             input.type = input.type === 'password' ? 'text' : 'password';
-            $('onda-cloud-toggle-secret-btn').textContent = input.type === 'password' ? 'Show Secret' : 'Hide Secret';
+            byId('onda-cloud-toggle-secret-btn').textContent = input.type === 'password' ? 'Show Secret' : 'Hide Secret';
         });
 
-        $('btn-open-cloud-setup-from-settings')?.addEventListener('click', () => openSetupFromAnywhere(''));
-        $('btn-settings-cloud-save')?.addEventListener('click', saveCurrentDeviceToCloud);
-        $('btn-db-save-cloud')?.addEventListener('click', saveCurrentDeviceToCloud);
-        $('btn-db-load-cloud')?.addEventListener('click', () => {
-            const config = loadCloudConfig();
-            if (!config.deviceId) openSetupFromAnywhere('Choose a cloud device profile before loading.');
-            else loadSelectedDeviceFromCloud();
+        byId('btn-open-cloud-setup-from-settings')?.addEventListener('click', () => openSetupWizard(''));
+        byId('btn-settings-cloud-save')?.addEventListener('click', saveDevice);
+        byId('btn-db-save-cloud')?.addEventListener('click', saveDevice);
+        byId('btn-db-load-cloud')?.addEventListener('click', () => {
+            if (!readConfig().deviceId) openSetupWizard('Choose a cloud device profile before loading.');
+            else loadDevice();
         });
 
-        $('onda-cloud-device-id')?.addEventListener('input', (event) => {
-            selectedCloudDeviceId = sanitizeDeviceId(event.target.value);
+        byId('onda-cloud-device-id')?.addEventListener('input', (event) => {
+            selectedDeviceId = sanitizeDeviceId(event.target.value);
         });
     }
 
-    function initCloudSyncUI() {
-        configurePasswordManagerField();
-        const config = loadCloudConfig();
-        selectedCloudDeviceId = config.deviceId || '';
-        bindCloudEvents();
-        updateCloudStatusLine();
+    function init() {
+        preparePasswordField();
+        selectedDeviceId = readConfig().deviceId || '';
+        bindEvents();
+        updateStatusSummary();
         renderDeviceList([]);
-        window.setTimeout(maybeShowSetupOnStartup, 1400);
+        window.setTimeout(maybePromptOnStartup, 1400);
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initCloudSyncUI);
-    } else {
-        initCloudSyncUI();
-    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
 
     window.OndaCloudSync = {
         openSetupWizard,
-        listCloudDevices,
-        saveCurrentDeviceToCloud,
-        loadSelectedDeviceFromCloud,
-        loadCloudConfig,
+        listDevices,
+        saveDevice,
+        loadDevice,
+        readConfig,
         chooseDevice
     };
 })();
