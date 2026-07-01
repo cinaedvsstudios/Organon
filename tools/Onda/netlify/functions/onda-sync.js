@@ -12,17 +12,11 @@ const jsonHeaders = {
 };
 
 function response(statusCode, body) {
-  return {
-    statusCode,
-    headers: jsonHeaders,
-    body: JSON.stringify(body)
-  };
+  return { statusCode, headers: jsonHeaders, body: JSON.stringify(body) };
 }
 
 function sanitizeDeviceId(value) {
-  return String(value || '')
-    .trim()
-    .toLowerCase()
+  return String(value || '').trim().toLowerCase()
     .replace(/[^a-z0-9_-]+/g, '-')
     .replace(/^-+|-+$/g, '')
     .slice(0, 48);
@@ -40,19 +34,14 @@ function getTrackCountFromBackup(data) {
 
 async function getBlobStore() {
   const { getStore } = await import('@netlify/blobs');
-
   const siteID = process.env.ONDA_NETLIFY_SITE_ID || process.env.NETLIFY_SITE_ID || process.env.SITE_ID || '';
   const token = process.env.ONDA_NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN || '';
-
-  if (siteID && token) {
-    return getStore({ name: STORE_NAME, siteID, token });
-  }
+  if (siteID && token) return getStore({ name: STORE_NAME, siteID, token });
 
   try {
     return getStore(STORE_NAME);
   } catch (error) {
-    const hint = 'Automatic Netlify Blobs context was not available. Add ONDA_NETLIFY_SITE_ID and ONDA_NETLIFY_TOKEN as environment variables, then redeploy.';
-    error.message = `${error.message} ${hint}`;
+    error.message = `${error.message} Automatic Netlify Blobs context was not available. Add ONDA_NETLIFY_SITE_ID and ONDA_NETLIFY_TOKEN as environment variables, then redeploy.`;
     throw error;
   }
 }
@@ -68,31 +57,22 @@ async function setJson(store, key, value) {
 
 async function getManifest(store) {
   const manifest = await getJson(store, MANIFEST_KEY, { devices: [] });
-  if (!manifest || !Array.isArray(manifest.devices)) return { devices: [] };
-  return manifest;
+  return manifest && Array.isArray(manifest.devices) ? manifest : { devices: [] };
 }
 
 async function saveManifest(store, manifest) {
-  const clean = {
-    version: 1,
-    updatedAt: new Date().toISOString(),
-    devices: Array.isArray(manifest.devices) ? manifest.devices : []
-  };
+  const clean = { version: 1, updatedAt: new Date().toISOString(), devices: Array.isArray(manifest.devices) ? manifest.devices : [] };
   await setJson(store, MANIFEST_KEY, clean);
   return clean;
 }
 
 async function listDevicesFromBlobs(store) {
   const listed = await store.list({ prefix: 'devices/' });
-  const blobs = Array.isArray(listed?.blobs) ? listed.blobs : [];
   const ids = new Set();
-
-  blobs.forEach((blob) => {
-    const key = blob.key || '';
-    const match = key.match(/^devices\/([^/]+)\/full-backup$/);
+  (Array.isArray(listed?.blobs) ? listed.blobs : []).forEach((blob) => {
+    const match = String(blob.key || '').match(/^devices\/([^/]+)\/full-backup$/);
     if (match && match[1] !== 'index') ids.add(match[1]);
   });
-
   return Array.from(ids).map((id) => ({ id, label: id, key: `devices/${id}/full-backup` }));
 }
 
@@ -100,7 +80,6 @@ async function upsertDeviceManifest(store, { id, label, trackCount }) {
   const manifest = await getManifest(store);
   const now = new Date().toISOString();
   const devices = manifest.devices.filter((device) => device.id !== id);
-
   devices.push({
     id,
     label: label || id,
@@ -109,25 +88,17 @@ async function upsertDeviceManifest(store, { id, label, trackCount }) {
     lastSync: now,
     updatedAt: now
   });
-
   devices.sort((a, b) => String(a.label || a.id).localeCompare(String(b.label || b.id)));
   return saveManifest(store, { devices });
 }
 
 async function verifyBlobStore(store) {
-  // A store object can be created even when the deployed function lacks usable
-  // Blob credentials. A real read is required before reporting success.
   await store.get(MANIFEST_KEY, { type: 'json' });
 }
 
 exports.handler = async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: jsonHeaders, body: '' };
-  }
-
-  if (event.httpMethod !== 'POST') {
-    return response(405, { ok: false, error: 'Use POST.' });
-  }
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: jsonHeaders, body: '' };
+  if (event.httpMethod !== 'POST') return response(405, { ok: false, error: 'Use POST.' });
 
   let body;
   try {
@@ -137,15 +108,9 @@ exports.handler = async function handler(event) {
   }
 
   const expectedSecret = process.env.ONDA_SYNC_SECRET || '';
-  if (!expectedSecret) {
-    return response(500, { ok: false, error: 'ONDA_SYNC_SECRET is not configured in Netlify environment variables.' });
-  }
+  if (!expectedSecret) return response(500, { ok: false, error: 'ONDA_SYNC_SECRET is not configured in Netlify environment variables.' });
+  if (!body.secret || body.secret !== expectedSecret) return response(401, { ok: false, error: 'Invalid Onda sync secret.' });
 
-  if (!body.secret || body.secret !== expectedSecret) {
-    return response(401, { ok: false, error: 'Invalid Onda sync secret.' });
-  }
-
-  const action = String(body.action || '').trim();
   let store;
   try {
     store = await getBlobStore();
@@ -154,6 +119,7 @@ exports.handler = async function handler(event) {
   }
 
   try {
+    const action = String(body.action || '').trim();
     if (action === 'test') {
       await verifyBlobStore(store);
       return response(200, { ok: true, message: 'Onda cloud sync function and Blob store are connected.' });
@@ -161,8 +127,7 @@ exports.handler = async function handler(event) {
 
     if (action === 'list-devices') {
       const manifest = await getManifest(store);
-      const fallbackDevices = manifest.devices.length ? [] : await listDevicesFromBlobs(store);
-      const devices = manifest.devices.length ? manifest.devices : fallbackDevices;
+      const devices = manifest.devices.length ? manifest.devices : await listDevicesFromBlobs(store);
       return response(200, { ok: true, devices });
     }
 
@@ -183,31 +148,17 @@ exports.handler = async function handler(event) {
           trackCount
         }
       };
-
       const key = `devices/${deviceId}/full-backup`;
       await setJson(store, key, envelope);
 
       let snapshotKey = null;
       if (body.createSnapshot) {
-        const safeTimestamp = now.replace(/[:.]/g, '-');
-        snapshotKey = `snapshots/${deviceId}/${safeTimestamp}`;
+        snapshotKey = `snapshots/${deviceId}/${now.replace(/[:.]/g, '-')}`;
         await setJson(store, snapshotKey, envelope);
       }
 
-      const manifest = await upsertDeviceManifest(store, {
-        id: deviceId,
-        label: body.deviceLabel || deviceId,
-        trackCount
-      });
-
-      return response(200, {
-        ok: true,
-        key,
-        snapshotKey,
-        trackCount,
-        devices: manifest.devices,
-        savedAt: now
-      });
+      const manifest = await upsertDeviceManifest(store, { id: deviceId, label: body.deviceLabel || deviceId, trackCount });
+      return response(200, { ok: true, key, snapshotKey, trackCount, devices: manifest.devices, savedAt: now });
     }
 
     if (action === 'load-device') {
