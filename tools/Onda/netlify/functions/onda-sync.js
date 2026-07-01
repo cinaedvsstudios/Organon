@@ -41,10 +41,6 @@ function getTrackCountFromBackup(data) {
 async function getBlobStore() {
   const { getStore } = await import('@netlify/blobs');
 
-  // Netlify normally injects the Blobs site context automatically for Functions.
-  // Some monorepo/manual-upgrade deployments do not expose that context, which causes:
-  // "The environment has not been configured to use Netlify Blobs... supply siteID, token".
-  // These optional environment variables let Onda fall back to explicit server-side credentials.
   const siteID = process.env.ONDA_NETLIFY_SITE_ID || process.env.NETLIFY_SITE_ID || process.env.SITE_ID || '';
   const token = process.env.ONDA_NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN || '';
 
@@ -62,12 +58,8 @@ async function getBlobStore() {
 }
 
 async function getJson(store, key, fallback = null) {
-  try {
-    const value = await store.get(key, { type: 'json' });
-    return value || fallback;
-  } catch (error) {
-    return fallback;
-  }
+  const value = await store.get(key, { type: 'json' });
+  return value || fallback;
 }
 
 async function setJson(store, key, value) {
@@ -91,25 +83,24 @@ async function saveManifest(store, manifest) {
 }
 
 async function listDevicesFromBlobs(store) {
-  try {
-    const listed = await store.list({ prefix: 'devices/' });
-    const blobs = Array.isArray(listed?.blobs) ? listed.blobs : [];
-    const ids = new Set();
-    blobs.forEach((blob) => {
-      const key = blob.key || '';
-      const match = key.match(/^devices\/([^/]+)\/full-backup$/);
-      if (match && match[1] !== 'index') ids.add(match[1]);
-    });
-    return Array.from(ids).map((id) => ({ id, label: id, key: `devices/${id}/full-backup` }));
-  } catch (error) {
-    return [];
-  }
+  const listed = await store.list({ prefix: 'devices/' });
+  const blobs = Array.isArray(listed?.blobs) ? listed.blobs : [];
+  const ids = new Set();
+
+  blobs.forEach((blob) => {
+    const key = blob.key || '';
+    const match = key.match(/^devices\/([^/]+)\/full-backup$/);
+    if (match && match[1] !== 'index') ids.add(match[1]);
+  });
+
+  return Array.from(ids).map((id) => ({ id, label: id, key: `devices/${id}/full-backup` }));
 }
 
 async function upsertDeviceManifest(store, { id, label, trackCount }) {
   const manifest = await getManifest(store);
   const now = new Date().toISOString();
   const devices = manifest.devices.filter((device) => device.id !== id);
+
   devices.push({
     id,
     label: label || id,
@@ -118,8 +109,15 @@ async function upsertDeviceManifest(store, { id, label, trackCount }) {
     lastSync: now,
     updatedAt: now
   });
+
   devices.sort((a, b) => String(a.label || a.id).localeCompare(String(b.label || b.id)));
   return saveManifest(store, { devices });
+}
+
+async function verifyBlobStore(store) {
+  // A store object can be created even when the deployed function lacks usable
+  // Blob credentials. A real read is required before reporting success.
+  await store.get(MANIFEST_KEY, { type: 'json' });
 }
 
 exports.handler = async function handler(event) {
@@ -157,7 +155,8 @@ exports.handler = async function handler(event) {
 
   try {
     if (action === 'test') {
-      return response(200, { ok: true, message: 'Onda cloud sync function is connected.' });
+      await verifyBlobStore(store);
+      return response(200, { ok: true, message: 'Onda cloud sync function and Blob store are connected.' });
     }
 
     if (action === 'list-devices') {
