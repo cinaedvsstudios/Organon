@@ -1,998 +1,179 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organon Timeline Slicer</title>
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* ==========================================================
-           ORGANON BRAND PALETTE & TIMELINE STYLE SPECIFICATIONS
-           ========================================================== */
-        :root {
-            --stone-ochre: #e0a360;             /* Warm Sandstone */
-            --chiseled-bronze: #896b49;         /* Border Bronze */
-            --white-accent: #ffffff;            /* Pure White */
-            --water-blue: #4b84bf;              /* Flowing Blue Accent */
-            --water-spray: #75b2de;             /* Sky Blue Accent */
-            --forest-teal: #26615c;             /* Deep Forest Teal */
-            --light-teal: #449e92;              /* Spliced Active Teal */
-            --burgundy: #4a1525;                /* Warning Deep Burgundy */
-            --brand-red: #9a2f4f;               /* Active Element Ruby Red */
-            --terracotta-peach: #d27d6c;        /* Soft Terracotta/Peach */
-            --alabaster-paper: #f5f0db;         /* Pure Primary Copy */
-            --bg-nightsky: #121311;             /* Deep Space Black backdrop */
-            --bg-card: #1c1d18;                 /* Charcoal Stone Card */
-        }
-
-        body {
-            background-color: var(--bg-nightsky);
-            color: var(--alabaster-paper);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow-x: hidden;
-            user-select: none;
-        }
-
-        /* Top Panel Sandstone Style */
-        .sandstone-panel {
-            background: linear-gradient(135deg, #1c1d18 0%, #292a24 100%);
-            border: 2px solid var(--chiseled-bronze);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .sandstone-panel.minimized {
-            transform: translateY(-80%);
-            opacity: 0.85;
-        }
-
-        /* Countdown Circle Style */
-        .timer-circle-svg {
-            transform: rotate(-90deg);
-        }
-
-        .timer-circle-bg {
-            fill: none;
-            stroke: rgba(137, 107, 73, 0.2);
-            stroke-width: 4;
-        }
-
-        .timer-circle-progress {
-            fill: none;
-            stroke: var(--stone-ochre);
-            stroke-width: 4;
-            stroke-linecap: round;
-            stroke-dasharray: 100;
-            stroke-dashoffset: 0;
-            transition: stroke-dashoffset 0.1s linear;
-        }
-
-        /* Custom Context Menu */
-        .organon-context-menu {
-            background: rgba(28, 29, 24, 0.95);
-            border: 1px solid var(--stone-ochre);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.8);
-            backdrop-filter: blur(12px);
-            border-radius: 8px;
-            overflow: hidden;
-            animation: contextMenuFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        @keyframes contextMenuFadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .context-menu-item {
-            padding: 10px 16px;
-            font-size: 13px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: var(--alabaster-paper);
-        }
-
-        .context-menu-item:hover {
-            background: rgba(224, 163, 96, 0.15);
-            color: var(--white-accent);
-        }
-
-        /* Custom Scrollbars */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #000000;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--chiseled-bronze);
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--stone-ochre);
-        }
-
-        /* Timeline Hashed Patterns for deleted segments */
-        .deleted-pattern {
-            background-color: var(--burgundy);
-            background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0, 0, 0, 0.4) 10px, rgba(0, 0, 0, 0.4) 20px);
-            opacity: 0.6;
-        }
-
-        /* Segment glow animation */
-        .selected-segment-glow {
-            box-shadow: 0 0 15px var(--water-blue);
-            border-color: var(--water-spray) !important;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>SimpleSprite v0.02</title>
+  <link rel="stylesheet" href="simplesprite.css">
 </head>
-<body class="flex flex-col h-screen select-none relative overflow-hidden">
+<body>
+  <main class="app-shell" aria-label="SimpleSprite sprite cropper">
+    <header class="app-header">
+      <div class="app-title-row">
+        <h1>SimpleSprite</h1>
+        <span class="version-pill">V0.02</span>
+      </div>
+      <div id="app-status" class="app-status" role="status" aria-live="polite">Drop source images to begin.</div>
+    </header>
 
-    <!-- PORTAL LOG & HUB HANDSHAKE HEADER STATUS -->
-    <div id="status-ticker" class="absolute top-2 left-4 text-xs tracking-widest text-[#896b49] z-50 pointer-events-none transition-all">
-        ENGINE READY // WAITING FOR TIMELINE IMPORT
-    </div>
-
-    <!-- MAIN CONTAINER (Wrapped to 540px limit internally for elegant focus or adaptive layouts) -->
-    <div class="flex-1 flex flex-col h-full relative z-10">
-
-        <!-- PANEL 1: TOP STICKY PANEL (Minimizable Control Hub) -->
-        <div id="top-panel" class="sandstone-panel w-full max-w-[580px] mx-auto absolute top-0 left-0 right-0 z-40 rounded-b-xl px-5 py-4 flex flex-col gap-3">
-            <div class="flex justify-between items-center border-b border-[#896b49]/30 pb-2">
-                <div class="flex items-center gap-2">
-                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-[#e0a360] animate-pulse"></span>
-                    <h1 class="text-sm font-bold tracking-widest text-[#e0a360]">ORGANON SLICER HUB</h1>
-                </div>
-
-                <!-- 5-Second Circular Progress Countdown Timer -->
-                <div class="flex items-center gap-3">
-                    <span id="lock-indicator" class="text-[10px] tracking-widest text-slate-400">AUTO-HIDE</span>
-                    <div id="countdown-trigger" class="relative w-8 h-8 cursor-pointer flex items-center justify-center hover:scale-105 active:scale-95 transition-transform" title="Double click to lock control panel">
-                        <svg class="timer-circle-svg w-8 h-8">
-                            <circle class="timer-circle-bg" cx="16" cy="16" r="13" />
-                            <circle id="timer-progress" class="timer-circle-progress" cx="16" cy="16" r="13" />
-                        </svg>
-                        <div id="lock-icon" class="absolute inset-0 flex items-center justify-center text-[10px] text-[#e0a360]">
-                            ⏱️
-                        </div>
-                    </div>
-                </div>
+    <section class="workspace-grid">
+      <aside class="sidebar left-sidebar" aria-label="Source images and canvas controls">
+        <section class="panel-card source-card">
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
+              <p class="panel-kicker">1 · SOURCES</p>
+              <h2>Image tray</h2>
             </div>
+            <button id="clear-sources-btn" class="quiet-button" type="button" title="Remove every imported source image">Clear</button>
+          </div>
 
-            <!-- Import and Quick Actions inside the Top Sticky Control Panel -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div class="relative">
-                    <label class="block text-[11px] uppercase tracking-wider text-[#896b49] mb-1">Load Media File</label>
-                    <div class="relative flex items-center justify-center border border-dashed border-[#896b49]/60 hover:border-[#e0a360] rounded-lg p-3 transition-colors bg-[#121311] cursor-pointer">
-                        <input type="file" id="media-file-input" accept="audio/*, video/*" class="absolute inset-0 opacity-0 cursor-pointer" />
-                        <div class="text-center">
-                            <p class="text-xs text-[#e0a360] font-medium" id="upload-hint">🎵 Drag or select file</p>
-                            <p class="text-[10px] text-gray-500 mt-0.5">MP3, WAV, MP4, WebM etc.</p>
-                        </div>
-                    </div>
-                </div>
+          <label id="drop-zone" class="drop-zone" for="file-input">
+            <input id="file-input" type="file" accept="image/*" multiple hidden>
+            <span class="drop-icon" aria-hidden="true">+</span>
+            <strong>Drop image files here</strong>
+            <span>or click to browse</span>
+          </label>
 
-                <div class="flex flex-col justify-end gap-2">
-                    <div class="flex gap-2">
-                        <button id="btn-load-demo" class="flex-1 bg-[#26615c] hover:bg-[#449e92] text-[#f5f0db] text-xs font-semibold py-2 px-3 rounded-lg border border-[#449e92]/30 transition-colors flex items-center justify-center gap-1">
-                            🚀 Load Demo Sample
-                        </button>
-                    </div>
-                    <div class="text-right text-[11px] text-[#896b49] font-mono" id="media-meta-display">
-                        NO FILE ACTIVE // IDLE
-                    </div>
-                </div>
+          <div id="source-list" class="source-list" aria-live="polite">
+            <p class="empty-copy">Imported images will appear here as draggable thumbnails.</p>
+          </div>
+        </section>
+
+        <section class="panel-card controls-card">
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
+              <p class="panel-kicker">2 · CANVAS CONTROLS</p>
+              <h2>Crop settings</h2>
             </div>
-        </div>
+          </div>
 
-        <!-- PANEL 2: MIDDLE WORKSPACE (Main Dark Viewer & Timeline Engine) -->
-        <div class="flex-1 bg-black flex flex-col justify-center items-center pt-28 pb-20 px-4 relative overflow-hidden">
-            <!-- Dynamic Media Stage/Canvas Background Elements -->
-            <div class="absolute inset-0 pointer-events-none opacity-5 flex items-center justify-center">
-                <div class="w-96 h-96 rounded-full bg-[#449e92] blur-3xl"></div>
+          <div class="control-grid dimensions-grid">
+            <label class="field-label" for="canvas-width">
+              <span>Width</span>
+              <input id="canvas-width" type="number" min="1" max="8192" value="256" inputmode="numeric">
+            </label>
+            <label class="field-label" for="canvas-height">
+              <span>Height</span>
+              <input id="canvas-height" type="number" min="1" max="8192" value="256" inputmode="numeric">
+            </label>
+          </div>
+
+          <div class="range-control">
+            <div class="range-heading">
+              <label for="grid-size">Grid size</label>
+              <output id="grid-size-value" for="grid-size">32 px</output>
             </div>
+            <input id="grid-size" type="range" min="4" max="256" step="1" value="32">
+          </div>
 
-            <!-- Main Media Preview Canvas -->
-            <div class="w-full max-w-[800px] aspect-video bg-[#121311] rounded-xl border border-[#896b49]/30 flex flex-col items-center justify-center overflow-hidden relative group shadow-2xl">
-                <!-- Video Element (Hidden unless video file imported) -->
-                <video id="timeline-video-player" class="w-full h-full object-contain hidden" crossorigin="anonymous"></video>
-
-                <!-- Audio Waveform Visualizer Wrapper (Shown by default or if audio loaded) -->
-                <div id="audio-visualizer-container" class="absolute inset-0 flex flex-col justify-center items-center p-6">
-                    <canvas id="waveform-canvas" class="w-full h-48 opacity-80"></canvas>
-                    <div class="absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs text-[#896b49] font-mono">
-                        <span id="playback-time">0:00.00</span>
-                        <span class="text-xs text-center text-[#e0a360]/70 select-none">Right-click segments on the timeline below to Slice & Save</span>
-                        <span id="total-duration">0:00.00</span>
-                    </div>
-                </div>
-
-                <!-- Overlay Slice/Export Capture Feedback Modal (Silently runs on playback captures) -->
-                <div id="slice-progress-overlay" class="absolute inset-0 bg-black/90 backdrop-blur-md hidden flex-col justify-center items-center z-30">
-                    <div class="w-16 h-16 border-4 border-t-[#e0a360] border-r-transparent border-b-[#896b49] border-l-transparent rounded-full animate-spin mb-4"></div>
-                    <p class="text-sm tracking-widest text-[#e0a360] font-mono animate-pulse">EXTRACTING TIME SEGMENT...</p>
-                    <p class="text-xs text-gray-400 mt-2" id="slice-progress-details">Extracting frames and compiling raw buffer arrays...</p>
-                </div>
+          <div class="grid-colour-control">
+            <span class="mini-label">Grid colour</span>
+            <div id="grid-colours" class="colour-buttons" role="group" aria-label="Grid colour">
+              <button type="button" class="colour-button" data-colour="#e24a59" aria-label="Red grid" title="Red grid"><i style="--swatch:#e24a59"></i></button>
+              <button type="button" class="colour-button" data-colour="#57c785" aria-label="Green grid" title="Green grid"><i style="--swatch:#57c785"></i></button>
+              <button type="button" class="colour-button" data-colour="#000000" aria-label="Black grid" title="Black grid"><i style="--swatch:#000000"></i></button>
+              <button type="button" class="colour-button is-active" data-colour="#ffffff" aria-label="White grid" title="White grid"><i style="--swatch:#ffffff"></i></button>
             </div>
+          </div>
 
-            <!-- Timeline Control Panel / Playback Scrub Bar -->
-            <div class="w-full max-w-[800px] mt-4 flex flex-col gap-2">
-                <div class="flex items-center gap-4 bg-[#1c1d18] border border-[#896b49]/40 rounded-xl px-4 py-3">
-                    <!-- Playback Controls -->
-                    <div class="flex items-center gap-2">
-                        <button id="btn-play-pause" class="w-10 h-10 rounded-full bg-[#e0a360] hover:bg-[#ffffff] text-black flex items-center justify-center font-bold text-lg transition-colors shadow-lg shadow-[#e0a360]/20">
-                            ▶
-                        </button>
-                        <button id="btn-add-cut" class="bg-[#9a2f4f] hover:bg-[#Brand-red] text-white text-xs font-semibold px-4 py-2.5 rounded-lg border border-red-500/20 flex items-center gap-1.5 transition-all transform active:scale-95" title="Make a split slice at current playhead location (Press C)">
-                            ✂️ Split / Cut
-                        </button>
-                    </div>
-
-                    <!-- Visual Segment Track Viewport -->
-                    <div class="flex-1 relative h-10 bg-[#000000] rounded-lg border border-[#896b49]/30 overflow-hidden" id="timeline-track-container">
-                        <!-- Interactive Playhead Marker -->
-                        <div id="timeline-playhead" class="absolute top-0 bottom-0 w-0.5 bg-red-500 shadow-md shadow-red-500/50 z-30 cursor-ew-resize">
-                            <div class="w-3 h-3 bg-red-500 absolute -top-1 -left-[5px] rounded-full"></div>
-                        </div>
-
-                        <!-- Dynamic Interactive Cut Segment Blocks (Rendered in Real-Time) -->
-                        <div id="segment-blocks-layer" class="absolute inset-0 w-full h-full flex z-10"></div>
-                    </div>
-                </div>
+          <div class="range-control">
+            <div class="range-heading">
+              <label for="zoom-range">Image scale</label>
+              <output id="zoom-value" for="zoom-range">100%</output>
             </div>
-        </div>
+            <input id="zoom-range" type="range" min="25" max="400" step="1" value="100">
+          </div>
 
-        <!-- PANEL 3: BOTTOM CONTROL PILL -->
-        <div class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-40 w-full max-w-[540px] px-4">
-            <div class="bg-[#1c1d18]/90 border border-[#896b49] backdrop-blur-md rounded-full shadow-2xl px-6 py-3 flex items-center justify-between gap-4">
-                <div class="text-xs text-gray-400 font-mono">
-                    <span id="active-segments-count" class="text-[#e0a360] font-bold">1</span> Active Segment(s)
-                </div>
-                <div class="flex gap-2">
-                    <button id="btn-reset-timeline" class="bg-[#4a1525] hover:bg-red-950 text-white text-xs font-semibold px-4 py-2 rounded-full border border-red-500/20 transition-all">
-                        Reset Cuts
-                    </button>
-                    <button id="btn-compile-timeline" class="bg-gradient-to-r from-[#e0a360] to-[#896b49] hover:from-white hover:to-white hover:text-black text-black text-xs font-bold px-6 py-2 rounded-full shadow-lg transition-all flex items-center gap-1">
-                        📦 Save All Slices
-                    </button>
-                </div>
+          <div class="canvas-tools-row">
+            <button id="recenter-btn" class="secondary-button" type="button">Recenter image</button>
+            <button id="reset-transparency-btn" class="secondary-button" type="button">Reset transparency</button>
+          </div>
+
+          <div class="eraser-box">
+            <div class="eraser-heading">
+              <div>
+                <span class="mini-label">Temporary transparency</span>
+                <p>Turn on the eraser, then drag on the crop canvas.</p>
+              </div>
+              <button id="eraser-toggle" class="tool-toggle" type="button" aria-pressed="false">Eraser off</button>
             </div>
+            <div class="range-control eraser-size-control">
+              <div class="range-heading">
+                <label for="eraser-size">Brush size</label>
+                <output id="eraser-size-value" for="eraser-size">24 px</output>
+              </div>
+              <input id="eraser-size" type="range" min="1" max="512" step="1" value="24">
+            </div>
+          </div>
+
+          <div class="action-stack">
+            <button id="auto-next-btn" class="secondary-button full-width" type="button">Auto next sprite</button>
+            <button id="set-sprite-btn" class="primary-button" type="button">Set sprite →</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="canvas-column" aria-label="Sprite crop canvas">
+        <div class="canvas-toolbar compact-heading">
+          <div class="heading-inline">
+            <p class="panel-kicker">3 · POSITION &amp; PREVIEW</p>
+            <h2>Crop canvas</h2>
+          </div>
+          <p id="canvas-instruction" class="canvas-instruction">Choose a source thumbnail, then drag the image to position it.</p>
         </div>
 
-    </div>
-
-    <!-- CUSTOM ORGANON TIMELINE CONTEXT MENU -->
-    <div id="organon-custom-menu" class="organon-context-menu absolute z-50 w-52 py-1 hidden">
-        <div class="px-3 py-1.5 text-[10px] uppercase tracking-wider text-[#896b49] border-b border-[#896b49]/20 font-mono" id="context-segment-title">
-            Segment 1 Options
+        <div id="canvas-stage" class="canvas-stage">
+          <div id="canvas-frame" class="canvas-frame checkerboard" aria-label="Sprite crop canvas">
+            <canvas id="sprite-canvas" width="256" height="256"></canvas>
+            <canvas id="grid-canvas" width="256" height="256" aria-hidden="true"></canvas>
+            <div id="canvas-empty-state" class="canvas-empty-state">Drop an image into the tray, then click or drag its thumbnail here.</div>
+          </div>
         </div>
-        <div id="ctx-play" class="context-menu-item">
-            <span>▶️</span> Play Segment Range
+
+        <div class="canvas-footer">
+          <span>Drag on the canvas to move the source image.</span>
+          <span>Use the scale slider or mouse wheel to zoom.</span>
+          <span>Grid lines are preview-only and never export.</span>
         </div>
-        <div id="ctx-save" class="context-menu-item font-semibold text-[#e0a360]">
-            <span>💾</span> Save Selection (Download)
-        </div>
-        <div id="ctx-delete" class="context-menu-item text-red-400 hover:text-red-300">
-            <span>❌</span> Toggle / Mute Section
-        </div>
-    </div>
-
-    <!-- JS ENGINE LOGIC -->
-    <script>
-        /* ==========================================================
-           CORE ENGINE ARCHITECTURE
-           ========================================================== */
-        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'organon-slicer';
-        
-        // Media Variables
-        let audioContext = null;
-        let decodedAudioBuffer = null;
-        let activeFile = null;
-        let fileType = null; // 'audio' or 'video'
-        let duration = 0;
-        let isPlaying = false;
-        let currentPlayheadTime = 0;
-        let animationFrameId = null;
-
-        // Timeline Splits
-        // Segment Array format: [{ start: 0, end: totalDuration, active: true, id: uuid }]
-        let segments = [];
-        let selectedSegmentIndex = null;
-
-        // UI Element References
-        const fileInput = document.getElementById('media-file-input');
-        const uploadHint = document.getElementById('upload-hint');
-        const metaDisplay = document.getElementById('media-meta-display');
-        const btnLoadDemo = document.getElementById('btn-load-demo');
-        const videoPlayer = document.getElementById('timeline-video-player');
-        const audioContainer = document.getElementById('audio-visualizer-container');
-        const waveformCanvas = document.getElementById('waveform-canvas');
-        const waveformCtx = waveformCanvas.getContext('2d');
-        const playbackTimeLabel = document.getElementById('playback-time');
-        const totalDurationLabel = document.getElementById('total-duration');
-        const btnPlayPause = document.getElementById('btn-play-pause');
-        const btnAddCut = document.getElementById('btn-add-cut');
-        const playhead = document.getElementById('timeline-playhead');
-        const segmentBlocksLayer = document.getElementById('segment-blocks-layer');
-        const timelineTrackContainer = document.getElementById('timeline-track-container');
-        const activeSegmentsCountLabel = document.getElementById('active-segments-count');
-        const btnResetTimeline = document.getElementById('btn-reset-timeline');
-        const btnCompileTimeline = document.getElementById('btn-compile-timeline');
-        const customMenu = document.getElementById('organon-custom-menu');
-        const statusTicker = document.getElementById('status-ticker');
-        const sliceProgressOverlay = document.getElementById('slice-progress-overlay');
-        const sliceProgressDetails = document.getElementById('slice-progress-details');
-
-        // Custom Hub Message Push Utility
-        function setHubStatus(message) {
-            statusTicker.innerHTML = `ENGINE: ${message.toUpperCase()}`;
-            if (window.parent && window.parent.postMessage) {
-                window.parent.postMessage({ type: 'STATUS', text: message }, '*');
-            }
-        }
-
-        /* ==========================================================
-           5-SECOND AUTO-MINIMIZE TIMER COMPONENT (PANEL 1)
-           ========================================================== */
-        const topPanel = document.getElementById('top-panel');
-        const timerProgressCircle = document.getElementById('timer-progress');
-        const lockIcon = document.getElementById('lock-icon');
-        const lockIndicator = document.getElementById('lock-indicator');
-
-        let isPanelLocked = false;
-        let isHoveringPanel = false;
-        let countdownTimer = null;
-        let panelTimeout = 5000; // 5 seconds
-        let remainingTime = 5000;
-        let tickInterval = 100;
-
-        function startCountdown() {
-            if (isPanelLocked) return;
-            clearInterval(countdownTimer);
-            remainingTime = panelTimeout;
-            countdownTimer = setInterval(() => {
-                if (!isHoveringPanel && !isPanelLocked) {
-                    remainingTime -= tickInterval;
-                    const percent = (remainingTime / panelTimeout) * 100;
-                    timerProgressCircle.style.strokeDashoffset = 100 - percent;
-
-                    if (remainingTime <= 0) {
-                        clearInterval(countdownTimer);
-                        minimizePanel();
-                    }
-                }
-            }, tickInterval);
-        }
-
-        function resetCountdown() {
-            timerProgressCircle.style.strokeDashoffset = 0;
-            remainingTime = panelTimeout;
-        }
-
-        function minimizePanel() {
-            if (!isPanelLocked) {
-                topPanel.classList.add('minimized');
-                setHubStatus("Dashboard Auto-Hidden (Hover over top panel to maximize)");
-            }
-        }
-
-        function maximizePanel() {
-            topPanel.classList.remove('minimized');
-        }
-
-        topPanel.addEventListener('mouseenter', () => {
-            isHoveringPanel = true;
-            maximizePanel();
-            resetCountdown();
-        });
-
-        topPanel.addEventListener('mouseleave', () => {
-            isHoveringPanel = false;
-            startCountdown();
-        });
-
-        // Toggle Lock status on Double Clicking Countdown icon
-        document.getElementById('countdown-trigger').addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            isPanelLocked = !isPanelLocked;
-            if (isPanelLocked) {
-                lockIcon.textContent = "🔒";
-                lockIndicator.textContent = "LOCKED";
-                lockIndicator.classList.add("text-[#e0a360]");
-                maximizePanel();
-                clearInterval(countdownTimer);
-            } else {
-                lockIcon.textContent = "⏱️";
-                lockIndicator.textContent = "AUTO-HIDE";
-                lockIndicator.classList.remove("text-[#e0a360]");
-                startCountdown();
-            }
-        });
-
-        // Initialize top bar automatic timer setup
-        startCountdown();
-
-        /* ==========================================================
-           FILE LOADING AND DISPATCH ENGINE
-           ========================================================== */
-        fileInput.addEventListener('change', handleFileImport);
-
-        function handleFileImport(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            loadMediaFile(file);
-        }
-
-        async function loadMediaFile(file) {
-            activeFile = file;
-            fileType = file.type.startsWith('video/') ? 'video' : 'audio';
-            uploadHint.textContent = `📁 ${file.name.substring(0, 18)}...`;
-            metaDisplay.innerHTML = `${file.type.toUpperCase()}<br>${(file.size / (1024 * 1024)).toFixed(2)} MB`;
-            setHubStatus(`Processing file: ${file.name}`);
-
-            // Initialize/Clear visual tracks
-            segments = [];
-            isPlaying = false;
-            currentPlayheadTime = 0;
-            videoPlayer.pause();
-            btnPlayPause.textContent = "▶";
-
-            if (fileType === 'video') {
-                // Configure video engine
-                videoPlayer.classList.remove('hidden');
-                audioContainer.classList.add('bg-black/80'); // Dark overlay back-pane
-                
-                const objectURL = URL.createObjectURL(file);
-                videoPlayer.src = objectURL;
-                videoPlayer.load();
-
-                videoPlayer.onloadedmetadata = () => {
-                    duration = videoPlayer.duration;
-                    totalDurationLabel.textContent = formatTime(duration);
-                    playbackTimeLabel.textContent = "0:00.00";
-                    initializeDefaultSegments();
-                    drawDummyWaveform();
-                    setHubStatus(`Video Loaded Successfully (${duration.toFixed(2)}s)`);
-                };
-            } else {
-                // Configure audio engine
-                videoPlayer.classList.add('hidden');
-                audioContainer.classList.remove('bg-black/80');
-
-                setHubStatus("Decoding audio buffer. Please wait...");
-                const arrayBuffer = await file.arrayBuffer();
-                
-                // AudioContext initialized lazily
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-
-                try {
-                    decodedAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                    duration = decodedAudioBuffer.duration;
-                    totalDurationLabel.textContent = formatTime(duration);
-                    playbackTimeLabel.textContent = "0:00.00";
-                    initializeDefaultSegments();
-                    renderAudioWaveform(decodedAudioBuffer);
-                    setHubStatus("Audio Loaded & Processed Instantly");
-                } catch (error) {
-                    console.error(error);
-                    setHubStatus("Error decoding audio buffer track");
-                }
-            }
-        }
-
-        /* ==========================================================
-           DEMO SAMPLE GENERATOR (Offline Friendly Synthesizer)
-           ========================================================== */
-        btnLoadDemo.addEventListener('click', generateDemoTrack);
-
-        async function generateDemoTrack() {
-            setHubStatus("Synthesizing premium demo electronic loop...");
-            
-            // Build offline audio buffer
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-
-            const sampleRate = audioContext.sampleRate;
-            const lengthSeconds = 12.0; // 12s demo loop
-            const buffer = audioContext.createBuffer(2, sampleRate * lengthSeconds, sampleRate);
-
-            // Channel synth mapping
-            for (let channel = 0; channel < 2; channel++) {
-                const data = buffer.getChannelData(channel);
-                for (let i = 0; i < data.length; i++) {
-                    const t = i / sampleRate;
-                    // Synth components: Base frequency with rhythmic gating pulses
-                    const synthFreq = 110 + (Math.sin(2 * Math.PI * 0.25 * t) * 30);
-                    const kickPulse = Math.sin(2 * Math.PI * synthFreq * t) * Math.exp(-4 * (t % 0.5));
-                    const snarePulse = (Math.random() - 0.5) * 0.3 * Math.exp(-6 * ((t + 0.25) % 0.5));
-                    data[i] = Math.max(-1, Math.min(1, kickPulse + snarePulse));
-                }
-            }
-
-            decodedAudioBuffer = buffer;
-            duration = lengthSeconds;
-            fileType = 'audio';
-            activeFile = new File([new Blob()], "organon_demo_beat.wav", { type: "audio/wav" });
-
-            videoPlayer.classList.add('hidden');
-            audioContainer.classList.remove('bg-black/80');
-            uploadHint.textContent = "🔥 demo_loop.wav";
-            metaDisplay.innerHTML = "DEMO AUDIO TRACK<br>12.0 Seconds";
-
-            playbackTimeLabel.textContent = "0:00.00";
-            totalDurationLabel.textContent = formatTime(duration);
-
-            initializeDefaultSegments();
-            renderAudioWaveform(decodedAudioBuffer);
-            setHubStatus("Loaded local 12-second rhythm track");
-        }
-
-        /* ==========================================================
-           WAVEFORM GRAPHICS GENERATION (Canvas Engine)
-           ========================================================== */
-        function drawDummyWaveform() {
-            const width = waveformCanvas.width = waveformCanvas.parentElement.clientWidth;
-            const height = waveformCanvas.height = 180;
-            waveformCtx.clearRect(0, 0, width, height);
-            
-            // Draw visual techno grid styling
-            waveformCtx.strokeStyle = 'rgba(137, 107, 73, 0.15)';
-            waveformCtx.lineWidth = 1;
-            for (let i = 0; i < width; i += 30) {
-                waveformCtx.beginPath();
-                waveformCtx.moveTo(i, 0);
-                waveformCtx.lineTo(i, height);
-                waveformCtx.stroke();
-            }
-        }
-
-        function renderAudioWaveform(audioBuffer) {
-            const width = waveformCanvas.width = waveformCanvas.parentElement.clientWidth;
-            const height = waveformCanvas.height = 180;
-            const data = audioBuffer.getChannelData(0);
-            const step = Math.ceil(data.length / width);
-            const amp = height / 2;
-
-            waveformCtx.clearRect(0, 0, width, height);
-
-            // Grid lines
-            waveformCtx.strokeStyle = 'rgba(137, 107, 73, 0.15)';
-            waveformCtx.lineWidth = 1;
-            for (let i = 0; i < width; i += 40) {
-                waveformCtx.beginPath();
-                waveformCtx.moveTo(i, 0);
-                waveformCtx.lineTo(i, height);
-                waveformCtx.stroke();
-            }
-
-            // Draw audio peaks
-            waveformCtx.beginPath();
-            waveformCtx.strokeStyle = '#e0a360';
-            waveformCtx.lineWidth = 2;
-
-            for (let i = 0; i < width; i++) {
-                let min = 1.0;
-                let max = -1.0;
-                for (let j = 0; j < step; j++) {
-                    const datum = data[(i * step) + j];
-                    if (datum < min) min = datum;
-                    if (datum > max) max = datum;
-                }
-                waveformCtx.moveTo(i, amp + (min * amp));
-                waveformCtx.lineTo(i, amp + (max * amp));
-            }
-            waveformCtx.stroke();
-        }
-
-        /* ==========================================================
-           TIMELINE CUT SECTIONS IMPLEMENTATION
-           ========================================================== */
-        function initializeDefaultSegments() {
-            segments = [{
-                id: crypto.randomUUID(),
-                start: 0,
-                end: duration,
-                active: true
-            }];
-            updateTimelineRenderer();
-        }
-
-        // Segment block click/right-click listener to allow selection/cutting
-        function updateTimelineRenderer() {
-            segmentBlocksLayer.innerHTML = '';
-            
-            let activeCount = 0;
-
-            segments.forEach((seg, idx) => {
-                if (seg.active) activeCount++;
-
-                const block = document.createElement('div');
-                const startPercent = (seg.start / duration) * 100;
-                const endPercent = (seg.end / duration) * 100;
-                const widthPercent = endPercent - startPercent;
-
-                block.style.left = `${startPercent}%`;
-                block.style.width = `${widthPercent}%`;
-                block.className = `absolute top-0 bottom-0 border-r border-black/40 flex flex-col justify-between p-1 select-none transition-all cursor-pointer ${
-                    seg.active ? 'bg-[#26615c]/80 hover:bg-[#449e92]/70 text-[#f5f0db]' : 'deleted-pattern text-slate-500'
-                }`;
-
-                // Mark visually if selected
-                if (selectedSegmentIndex === idx) {
-                    block.classList.add('selected-segment-glow');
-                }
-
-                // Inner detail text
-                block.innerHTML = `
-                    <div class="text-[9px] tracking-wider truncate font-bold font-mono px-1">
-                        S${idx + 1} [${formatTime(seg.start)}-${formatTime(seg.end)}]
-                    </div>
-                `;
-
-                // Handle clicking to select section and seek playhead
-                block.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    selectedSegmentIndex = idx;
-                    currentPlayheadTime = seg.start;
-                    if (fileType === 'video') {
-                        videoPlayer.currentTime = seg.start;
-                    }
-                    updateTimelineRenderer();
-                    updatePlayheadVisual();
-                    setHubStatus(`Selected segment S${idx+1}`);
-                });
-
-                // Context Menu trigger (Right Click)
-                block.addEventListener('contextmenu', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    selectedSegmentIndex = idx;
-                    showContextMenu(e.clientX, e.clientY, idx);
-                });
-
-                segmentBlocksLayer.appendChild(block);
-            });
-
-            activeSegmentsCountLabel.textContent = activeCount;
-        }
-
-        // Add cut at playhead
-        btnAddCut.addEventListener('click', performTimelineSplit);
-        window.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 'c') {
-                performTimelineSplit();
-            }
-        });
-
-        function performTimelineSplit() {
-            if (duration === 0) return;
-            const cutPoint = currentPlayheadTime;
-
-            // Find segment containing the current timeline split marker
-            const targetSegIdx = segments.findIndex(s => cutPoint > s.start && cutPoint < s.end);
-
-            if (targetSegIdx !== -1) {
-                const targetSeg = segments[targetSegIdx];
-                const segmentLeft = {
-                    id: crypto.randomUUID(),
-                    start: targetSeg.start,
-                    end: cutPoint,
-                    active: targetSeg.active
-                };
-                const segmentRight = {
-                    id: crypto.randomUUID(),
-                    start: cutPoint,
-                    end: targetSeg.end,
-                    active: targetSeg.active
-                };
-
-                // Splice segments replacing old target
-                segments.splice(targetSegIdx, 1, segmentLeft, segmentRight);
-                updateTimelineRenderer();
-                setHubStatus(`Timeline Cut placed cleanly at ${formatTime(cutPoint)}`);
-            } else {
-                setHubStatus("Cannot place cut at playhead limit coordinates");
-            }
-        }
-
-        /* ==========================================================
-           PLAYBACK SCRUBBER ENGINE
-           ========================================================== */
-        btnPlayPause.addEventListener('click', togglePlayback);
-
-        function togglePlayback() {
-            if (duration === 0) return;
-            isPlaying = !isPlaying;
-
-            if (isPlaying) {
-                btnPlayPause.textContent = "⏸";
-                if (fileType === 'video') {
-                    videoPlayer.currentTime = currentPlayheadTime;
-                    videoPlayer.play();
-                }
-                playbackTick();
-            } else {
-                btnPlayPause.textContent = "▶";
-                if (fileType === 'video') {
-                    videoPlayer.pause();
-                }
-                cancelAnimationFrame(animationFrameId);
-            }
-        }
-
-        function playbackTick() {
-            if (!isPlaying) return;
-
-            if (fileType === 'video') {
-                currentPlayheadTime = videoPlayer.currentTime;
-                if (videoPlayer.ended || currentPlayheadTime >= duration) {
-                    isPlaying = false;
-                    btnPlayPause.textContent = "▶";
-                    currentPlayheadTime = 0;
-                }
-            } else {
-                // Approximate timer frame step
-                currentPlayheadTime += 0.016; // 60fps average tick rate
-                if (currentPlayheadTime >= duration) {
-                    isPlaying = false;
-                    btnPlayPause.textContent = "▶";
-                    currentPlayheadTime = 0;
-                }
-            }
-
-            updatePlayheadVisual();
-
-            if (isPlaying) {
-                animationFrameId = requestAnimationFrame(playbackTick);
-            }
-        }
-
-        function updatePlayheadVisual() {
-            const percent = (currentPlayheadTime / duration) * 100;
-            playhead.style.left = `${percent}%`;
-            playbackTimeLabel.textContent = formatTime(currentPlayheadTime);
-        }
-
-        // Seek timeline track by clicking directly inside tracker layer
-        timelineTrackContainer.addEventListener('mousedown', (e) => {
-            if (duration === 0) return;
-            const rect = timelineTrackContainer.getBoundingClientRect();
-            const clickX = e.clientX - rect.left;
-            const ratio = clickX / rect.width;
-            currentPlayheadTime = ratio * duration;
-            
-            if (fileType === 'video') {
-                videoPlayer.currentTime = currentPlayheadTime;
-            }
-            updatePlayheadVisual();
-        });
-
-        /* ==========================================================
-           CUSTOM RIGHT-CLICK CONTEXT MENU INTERFACES
-           ========================================================== */
-        function showContextMenu(x, y, index) {
-            const seg = segments[index];
-            document.getElementById('context-segment-title').textContent = `Segment ${index + 1} Actions`;
-            
-            // Toggle active delete text styling
-            document.getElementById('ctx-delete').innerHTML = seg.active 
-                ? '<span>❌</span> Deactivate (Mute / Ignore)' 
-                : '<span>✅</span> Reactivate Segment';
-
-            // Center context menu nicely at viewport bounds
-            customMenu.style.left = `${x}px`;
-            customMenu.style.top = `${y}px`;
-            customMenu.classList.remove('hidden');
-        }
-
-        // Click outside closes custom menu
-        window.addEventListener('click', () => {
-            customMenu.classList.add('hidden');
-        });
-
-        // Context actions implementation
-        document.getElementById('ctx-play').addEventListener('click', () => {
-            if (selectedSegmentIndex === null) return;
-            const seg = segments[selectedSegmentIndex];
-            currentPlayheadTime = seg.start;
-            if (fileType === 'video') {
-                videoPlayer.currentTime = seg.start;
-            }
-            updatePlayheadVisual();
-            if (!isPlaying) togglePlayback();
-            setHubStatus(`Previewing Segment ${selectedSegmentIndex + 1}`);
-        });
-
-        document.getElementById('ctx-delete').addEventListener('click', () => {
-            if (selectedSegmentIndex === null) return;
-            segments[selectedSegmentIndex].active = !segments[selectedSegmentIndex].active;
-            updateTimelineRenderer();
-            setHubStatus(`Toggled block S${selectedSegmentIndex + 1}`);
-        });
-
-        document.getElementById('ctx-save').addEventListener('click', () => {
-            if (selectedSegmentIndex === null) return;
-            saveIndividualSegment(selectedSegmentIndex);
-        });
-
-        btnResetTimeline.addEventListener('click', () => {
-            initializeDefaultSegments();
-            setHubStatus("Timeline splits reset");
-        });
-
-        /* ==========================================================
-           BINARY EXPORT & TRANSCODER ENGINE (Direct File Generation)
-           ========================================================== */
-        btnCompileTimeline.addEventListener('click', async () => {
-            const activeSegments = segments.filter(s => s.active);
-            if (activeSegments.length === 0) {
-                setHubStatus("No active slices selected to compile.");
-                return;
-            }
-            setHubStatus("Compiling all active visual sections...");
-            for (let i = 0; i < segments.length; i++) {
-                if (segments[i].active) {
-                    await saveIndividualSegment(i);
-                }
-            }
-        });
-
-        async function saveIndividualSegment(index) {
-            const seg = segments[index];
-            const start = seg.start;
-            const end = seg.end;
-            const clipDuration = end - start;
-
-            // Trigger visual progress modal
-            sliceProgressOverlay.classList.remove('hidden');
-            sliceProgressDetails.textContent = `Rendering segment S${index+1} (${start.toFixed(2)}s to ${end.toFixed(2)}s)...`;
-
-            try {
-                if (fileType === 'audio' && decodedAudioBuffer) {
-                    // Fast PCM slice-render into WAV format
-                    const slicedBlob = audioBufferToWav(decodedAudioBuffer, start, end);
-                    triggerDirectDownload(slicedBlob, `organon_clip_${index+1}.wav`);
-                    setHubStatus(`Successfully exported segment ${index+1} as WAV`);
-                } else if (fileType === 'video' && activeFile) {
-                    // Video segment dynamic recording capture
-                    const videoBlob = await captureVideoTrackSegment(start, end);
-                    triggerDirectDownload(videoBlob, `organon_video_clip_${index+1}.webm`);
-                    setHubStatus(`Successfully captured video segment ${index+1}`);
-                }
-            } catch (err) {
-                console.error(err);
-                setHubStatus("Failed to extract target selection timeline block.");
-            } finally {
-                sliceProgressOverlay.classList.add('hidden');
-            }
-        }
-
-        /* ==========================================================
-           WAV ENCODER (100% OFFLINE HIGH-FIDELITY CD QUALITY CODES)
-           ========================================================== */
-        function audioBufferToWav(buffer, startOffset, endOffset) {
-            const startSample = Math.floor(startOffset * buffer.sampleRate);
-            const endSample = Math.min(Math.floor(endOffset * buffer.sampleRate), buffer.length);
-            const numFrames = endSample - startSample;
-            const numChannels = buffer.numberOfChannels;
-            const sampleRate = buffer.sampleRate;
-            
-            const bufferLen = numFrames * numChannels * 2;
-            const fileBuffer = new ArrayBuffer(44 + bufferLen);
-            const view = new DataView(fileBuffer);
-            
-            // Header configuration blocks
-            writeString(view, 0, 'RIFF');
-            view.setUint32(4, 36 + bufferLen, true);
-            writeString(view, 8, 'WAVE');
-            writeString(view, 12, 'fmt ');
-            view.setUint32(16, 16, true);
-            view.setUint16(20, 1, true); // Raw PCM Linear formats
-            view.setUint16(22, numChannels, true);
-            view.setUint32(24, sampleRate, true);
-            view.setUint32(28, sampleRate * numChannels * 2, true);
-            view.setUint16(32, numChannels * 2, true);
-            view.setUint16(34, 16, true);
-            writeString(view, 36, 'data');
-            view.setUint32(40, bufferLen, true);
-            
-            // Write direct 16-bit audio channel streams
-            let offset = 44;
-            for (let i = startSample; i < endSample; i++) {
-                for (let channel = 0; channel < numChannels; channel++) {
-                    let sample = buffer.getChannelData(channel)[i];
-                    // Clean clip/clamp values to avoid distortion bounds
-                    sample = Math.max(-1, Math.min(1, sample));
-                    const val = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
-                    view.setInt16(offset, val, true);
-                    offset += 2;
-                }
-            }
-            return new Blob([fileBuffer], { type: 'audio/wav' });
-        }
-
-        function writeString(view, offset, string) {
-            for (let i = 0; i < string.length; i++) {
-                view.setUint8(offset + i, string.charCodeAt(i));
-            }
-        }
-
-        /* ==========================================================
-           VIDEO FRAME/AUDIO MEDIARECORDER REAL-TIME SPLITTER
-           ========================================================== */
-        async function captureVideoTrackSegment(start, end) {
-            return new Promise((resolve, reject) => {
-                videoPlayer.pause();
-                videoPlayer.currentTime = start;
-                videoPlayer.muted = false;
-
-                const stream = videoPlayer.captureStream ? videoPlayer.captureStream() : videoPlayer.mozCaptureStream();
-                const options = { mimeType: 'video/webm;codecs=vp9,opus' };
-                let recorder;
-
-                try {
-                    recorder = new MediaRecorder(stream, options);
-                } catch(e) {
-                    // Fallback configuration parameters
-                    recorder = new MediaRecorder(stream);
-                }
-
-                const chunks = [];
-                recorder.ondataavailable = (e) => {
-                    if (e.data.size > 0) chunks.push(e.data);
-                };
-
-                recorder.onstop = () => {
-                    const blob = new Blob(chunks, { type: 'video/webm' });
-                    resolve(blob);
-                };
-
-                // Playback monitor logic specifically timing split point
-                videoPlayer.onseeked = () => {
-                    videoPlayer.onseeked = null; // Unbind to prevent continuous calls
-                    videoPlayer.play();
-                    recorder.start();
-
-                    const monitorInterval = setInterval(() => {
-                        if (videoPlayer.currentTime >= end || videoPlayer.ended) {
-                            clearInterval(monitorInterval);
-                            recorder.stop();
-                            videoPlayer.pause();
-                        }
-                    }, 50);
-                };
-            });
-        }
-
-        // Direct Download Link builder
-        function triggerDirectDownload(blob, fileName) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        }
-
-        /* ==========================================================
-           UTILITY MATHEMATICAL FORMATTERS
-           ========================================================== */
-        function formatTime(secs) {
-            if (isNaN(secs)) return "0:00.00";
-            const minutes = Math.floor(secs / 60);
-            const seconds = Math.floor(secs % 60);
-            const centiseconds = Math.floor((secs % 1) * 100);
-            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}.${centiseconds < 10 ? '0' : ''}${centiseconds}`;
-        }
-    </script>
+      </section>
+
+      <aside class="sidebar right-sidebar" aria-label="Sprite set and export">
+        <section class="panel-card sprite-set-card">
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
+              <p class="panel-kicker">4 · SPRITE SET</p>
+              <h2>Ready sprites</h2>
+            </div>
+            <span id="sprite-count" class="count-badge">0</span>
+          </div>
+
+          <div id="sprite-list" class="sprite-list" aria-live="polite">
+            <p class="empty-copy">Each crop you set will appear in a numbered box here.</p>
+          </div>
+          <button id="clear-sprites-btn" class="quiet-button full-width" type="button">Clear set</button>
+        </section>
+
+        <section class="panel-card export-card">
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
+              <p class="panel-kicker">5 · EXPORT</p>
+              <h2>Download set</h2>
+            </div>
+          </div>
+
+          <label class="field-label" for="file-prefix">
+            <span>Set name</span>
+            <input id="file-prefix" type="text" value="sprite" maxlength="80" autocomplete="off" spellcheck="false">
+          </label>
+          <p class="export-note">Files export as <code id="filename-example">sprite_01.png</code>, <code>sprite_02.png</code>, and so on.</p>
+          <p id="folder-note" class="folder-note">Click Download Set, choose a folder, and the full numbered PNG set will save there.</p>
+          <button id="download-set-btn" class="primary-button" type="button">Download set</button>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="simplesprite.js"></script>
 </body>
 </html>
