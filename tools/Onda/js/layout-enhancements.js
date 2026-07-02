@@ -81,6 +81,11 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
             const active = card.dataset.settingsCard === knownTab;
             card.classList.toggle('active', active);
             card.hidden = !active;
+            // The legacy layout CSS can override the HTML hidden attribute, so
+            // force the actual display value as well.
+            card.style.display = active
+                ? (card.classList.contains('control-row') ? 'flex' : 'block')
+                : 'none';
         });
     }
 
