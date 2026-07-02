@@ -1,0 +1,124 @@
+name: Onda unused-file audit
+
+on:
+  push:
+    branches:
+      - cleanup/onda-unused-files-20260702
+    paths:
+      - tools/Onda/.run-unused-audit
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/onda-unused-files-20260702
+          fetch-depth: 0
+
+      - name: Build runtime reachability audit
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path('tools/Onda').resolve()
+          files = sorted(p for p in root.rglob('*') if p.is_file() and '.git' not in p.parts)
+          rels = {p.relative_to(root).as_posix(): p for p in files}
+          text_exts = {'.html', '.css', '.js', '.json', '.toml', '.txt', '.md', '.mjs', '.cjs'}
+
+          def read_text(path):
+              try:
+                  return path.read_text(encoding='utf-8')
+              except Exception:
+                  return ''
+
+          def normalise_ref(raw, source):
+              raw = raw.strip().strip('"\'')
+              if not raw or raw.startswith(('#', 'data:', 'http:', 'https:', '//', 'mailto:', 'tel:')):
+                  return None
+              raw = raw.split('#', 1)[0].split('?', 1)[0]
+              if raw.startswith('/'):
+                  return None
+              target = (source.parent / raw).resolve()
+              try:
+                  return target.relative_to(root).as_posix()
+              except ValueError:
+                  return None
+
+          patterns = [
+              re.compile(r'<(?:script|link|img|source|audio|video)[^>]+(?:src|href)=["\']([^"\']+)["\']', re.I),
+              re.compile(r'@import\s+(?:url\()?\s*["\']?([^"\')\s]+)', re.I),
+              re.compile(r'url\(\s*["\']?([^"\')]+)', re.I),
+              re.compile(r'(?:import\s*(?:\(|[^;]*?from\s*)|require\s*\()["\']([^"\']+)["\']', re.I),
+              re.compile(r'(?:href|src)\s*=\s*["\']([^"\']+)["\']', re.I),
+              re.compile(r'["\']((?:css|js|netlify/functions)/[^"\']+)["\']', re.I),
+          ]
+
+          entries = {
+              'index.html',
+              'netlify.toml',
+              'package.json',
+              'netlify/functions/onda-sync.js',
+          }
+          reachable = set()
+          queue = [entry for entry in entries if entry in rels]
+          edges = {}
+
+          while queue:
+              rel = queue.pop(0)
+              if rel in reachable:
+                  continue
+              reachable.add(rel)
+              path = rels[rel]
+              if path.suffix.lower() not in text_exts:
+                  continue
+              content = read_text(path)
+              refs = set()
+              for pattern in patterns:
+                  for match in pattern.findall(content):
+                      candidate = normalise_ref(match, path)
+                      if candidate in rels:
+                          refs.add(candidate)
+              edges[rel] = sorted(refs)
+              for target in refs:
+                  if target not in reachable:
+                      queue.append(target)
+
+          ignored = {
+              '.run-unused-audit',
+              'UNUSED_FILE_AUDIT.md',
+          }
+          candidates = [rel for rel in sorted(rels) if rel not in reachable and rel not in ignored]
+          report = []
+          report.append('# Onda unused-file audit')
+          report.append('')
+          report.append('This report is generated from the runtime entry points: `index.html`, `netlify.toml`, `package.json`, and `netlify/functions/onda-sync.js`. A file is listed as a deletion candidate only when no runtime-reachable file references its path.')
+          report.append('')
+          report.append('## Runtime-reachable files')
+          report.append('')
+          report.extend(f'- `{rel}`' for rel in sorted(reachable))
+          report.append('')
+          report.append('## Unreferenced deletion candidates')
+          report.append('')
+          report.extend(f'- `{rel}`' for rel in candidates) if candidates else report.append('- None found.')
+          report.append('')
+          report.append('## Notes')
+          report.append('')
+          report.append('- This is static reachability only. It intentionally does not delete anything by itself.')
+          report.append('- Files referenced by dynamic strings are included when the string contains a local `css/`, `js/`, or `netlify/functions/` path.')
+          (root / 'UNUSED_FILE_AUDIT.md').write_text('\n'.join(report) + '\n', encoding='utf-8')
+          PY
+
+      - name: Commit audit report and remove temporary trigger
+        run: |
+          rm tools/Onda/.run-unused-audit
+          rm .github/workflows/onda-unused-audit.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/Onda/UNUSED_FILE_AUDIT.md tools/Onda/.run-unused-audit .github/workflows/onda-unused-audit.yml
+          git commit -m "Audit Onda runtime file references"
+          git push origin HEAD:cleanup/onda-unused-files-20260702
