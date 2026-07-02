@@ -1,0 +1,335 @@
+name: One-time Onda core repair
+
+on:
+  push:
+    branches:
+      - fix/onda-cloud-sync-core-20260701
+    paths:
+      - tools/Onda/.run-core-repair
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/onda-cloud-sync-core-20260701
+          fetch-depth: 0
+
+      - name: Apply targeted Onda source repairs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_exact(text, old, new, label, required=True):
+              count = text.count(old)
+              if required and count != 1:
+                  raise RuntimeError(f'{label}: expected exactly one match, found {count}')
+              if count:
+                  text = text.replace(old, new, 1)
+              return text
+
+          core_path = Path('tools/Onda/js/app-core.js')
+          css_path = Path('tools/Onda/css/responsive.css')
+          html_path = Path('tools/Onda/index.html')
+
+          core = core_path.read_text(encoding='utf-8')
+          css = css_path.read_text(encoding='utf-8')
+          html = html_path.read_text(encoding='utf-8')
+
+          # Remove the unused speed control from static UI and eliminate its event wiring.
+          html, removed_speed_button = re.subn(
+              r'\n\s*<button class="utility-btn speed-glyph" data-tooltip="Cycle Speed" id="btn-speed-cycle">🚀</button>',
+              '',
+              html,
+              count=1,
+          )
+          if removed_speed_button != 1:
+              raise RuntimeError(f'Speed button: expected one static button, found {removed_speed_button}')
+
+          core = replace_exact(
+              core,
+              "        const btnSpeedCycle = document.getElementById('btn-speed-cycle');\n",
+              "",
+              'speed button reference',
+          )
+          core = replace_exact(
+              core,
+              '''        btnSpeedCycle.addEventListener('click', () => {
+            currentSpeedIdx = (currentSpeedIdx + 1) % speedCycles.length;
+            const chosenSpeed = speedCycles[currentSpeedIdx];
+            
+            activeAudio.playbackRate = chosenSpeed;
+            speedSlider.value = chosenSpeed;
+            document.getElementById('speed-readout').innerText = chosenSpeed.toFixed(1) + "x";
+            
+            btnSpeedCycle.innerText = `🚀${chosenSpeed.toFixed(1).replace('.0', '')}`;
+            showToast(`Speed set to ${chosenSpeed.toFixed(1)}x`);
+        });
+
+''',
+              "",
+              'speed button listener',
+          )
+          core = replace_exact(
+              core,
+              "            if (btnSpeedCycle) btnSpeedCycle.innerText = `🚀${val.toFixed(1).replace('.0', '')}`;\n",
+              "",
+              'speed button slider rewrite',
+          )
+
+          # Restore genuine Library selection mode instead of always forcing it off.
+          core = replace_exact(
+              core,
+              '''        function toggleLibrarySelectMode(force = null) {
+            isLibrarySelectMode = false;
+            setLibraryActionPanel('select');
+            updateBulkActionUI();
+            renderLibraryManager();
+        }
+''',
+              '''        function toggleLibrarySelectMode(force = null) {
+            const next = typeof force === 'boolean' ? force : !isLibrarySelectMode;
+            isLibrarySelectMode = next;
+            if (!next) selectedLibraryIds.clear();
+            setLibraryActionPanel('select');
+            updateBulkActionUI();
+            renderLibraryManager();
+        }
+''',
+              'library select toggle',
+          )
+
+          # Prevent stale async local/MIDI loads from winning after a newer track has been selected.
+          core = replace_exact(
+              core,
+              "        let currentFile = null;\n",
+              "        let currentFile = null;\n        let trackLoadRequestId = 0;\n",
+              'track request state',
+          )
+          core = replace_exact(
+              core,
+              '''        async function loadTrack(file) {
+            currentFile = file;
+
+            if (window.OndaMidi) window.OndaMidi.stopForTrackChange();
+            localAudio.pause();
+            streamAudio.pause();
+''',
+              '''        function releaseLocalObjectUrl() {
+            if (localAudio.src && localAudio.src.startsWith('blob:')) {
+                URL.revokeObjectURL(localAudio.src);
+            }
+            localAudio.removeAttribute('src');
+        }
+
+        async function loadTrack(file) {
+            const requestId = ++trackLoadRequestId;
+            currentFile = file;
+
+            if (window.OndaMidi) window.OndaMidi.stopForTrackChange();
+            localAudio.pause();
+            streamAudio.pause();
+            releaseLocalObjectUrl();
+''',
+              'track load start',
+          )
+          core = replace_exact(
+              core,
+              '''                    blob = await hydrateLocalAudioBlob(key);
+                    if (blob) {
+                        file.blobFile = blob;
+                        meta.blobFile = blob;
+                    }
+''',
+              '''                    blob = await hydrateLocalAudioBlob(key);
+                    if (requestId !== trackLoadRequestId) return;
+                    if (blob) {
+                        file.blobFile = blob;
+                        meta.blobFile = blob;
+                    }
+''',
+              'midi hydration request guard',
+          )
+          core = replace_exact(
+              core,
+              '''                    await window.OndaMidi.load(blob, meta);
+                } catch (err) {
+''',
+              '''                    await window.OndaMidi.load(blob, meta);
+                    if (requestId !== trackLoadRequestId) return;
+                } catch (err) {
+''',
+              'midi load request guard',
+          )
+          core = replace_exact(
+              core,
+              '''                    blob = await hydrateLocalAudioBlob(key);
+                    if (blob) {
+                        file.blobFile = blob;
+                        meta.blobFile = blob;
+                    }
+''',
+              '''                    blob = await hydrateLocalAudioBlob(key);
+                    if (requestId !== trackLoadRequestId) return;
+                    if (blob) {
+                        file.blobFile = blob;
+                        meta.blobFile = blob;
+                    }
+''',
+              'local hydration request guard',
+          )
+          core = replace_exact(
+              core,
+              '''                if (activeAudio.src && activeAudio.src.startsWith('blob:')) {
+                    URL.revokeObjectURL(activeAudio.src);
+                }
+                activeAudio.src = URL.createObjectURL(blob);
+''',
+              '''                activeAudio.src = URL.createObjectURL(blob);
+''',
+              'local object URL cleanup',
+          )
+          core = replace_exact(
+              core,
+              '''            activeAudio.playbackRate = parseFloat(speedSlider.value);
+            updateMetadataUI();
+            startVisualizer();
+            playAudio();
+''',
+              '''            if (requestId !== trackLoadRequestId) return;
+            activeAudio.playbackRate = parseFloat(speedSlider.value);
+            updateMetadataUI();
+            startVisualizer();
+            playAudio();
+''',
+              'final track request guard',
+          )
+
+          # Remove inline playlist-name JavaScript and bind actions against the live name variable.
+          old_header = '''                    <button type="button" class="btn-pill btn-jump-playlist" onclick="jumpToPlayingSongInPlaylist()" title="Jump to playing track">🎯</button>
+                    <button type="button" class="btn-pill btn-edit-playlist" onclick="openPlaylistEditModal('${escapeHtml(name).replace(/'/g, "\\'")}')" title="Edit playlist">✏️</button>
+'''
+          new_header = '''                    <button type="button" class="btn-pill btn-jump-playlist" data-playlist-action="jump" title="Jump to playing track">🎯</button>
+                    <button type="button" class="btn-pill btn-edit-playlist" data-playlist-action="edit" title="Edit playlist">✏️</button>
+'''
+          core = replace_exact(core, old_header, new_header, 'now playing inline playlist handlers')
+          core = replace_exact(
+              core,
+              '''            panel.appendChild(header);
+
+            const list = document.createElement('div');
+''',
+              '''            panel.appendChild(header);
+            header.querySelector('[data-playlist-action="jump"]')?.addEventListener('click', jumpToPlayingSongInPlaylist);
+            header.querySelector('[data-playlist-action="edit"]')?.addEventListener('click', () => openPlaylistEditModal(name));
+
+            const list = document.createElement('div');
+''',
+              'now playing playlist action listeners',
+          )
+
+          # Fix malformed nested playlist-edit row markup.
+          core = replace_exact(
+              core,
+              '''                    <div class="library-row-main">
+                        <div class="library-row-main playlist-edit-row-main">
+''',
+              '''                    <div class="library-row-main playlist-edit-row-main">
+''',
+              'playlist edit row nesting start',
+          )
+          core = replace_exact(
+              core,
+              '''                        </div>
+                        <div class="library-row-buttons">
+''',
+              '''                        <div class="library-row-buttons">
+''',
+              'playlist edit row nesting middle',
+          )
+          core = replace_exact(
+              core,
+              '''                        </div>
+                    </div>`;
+''',
+              '''                        </div>`;
+''',
+              'playlist edit row nesting end',
+          )
+
+          # Canonical mobile action labels remain real button text; remove the pseudo-icon layer that doubled them.
+          core = replace_exact(
+              core,
+              '''                    <button class="btn-pill btn-history-play btn-onda-row-play" data-track-id="${trackId}">Play</button>
+                    <button class="btn-pill btn-history-info" data-track-id="${trackId}">Info</button>
+                    <button class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}">+ Playlist</button>
+''',
+              '''                    <button class="btn-pill btn-history-play btn-onda-row-play" data-track-id="${trackId}" title="Play">▶️</button>
+                    <button class="btn-pill btn-history-info" data-track-id="${trackId}" title="Info">ℹ️</button>
+                    <button class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist">➕</button>
+''',
+              'history action icons',
+          )
+
+          css = css.replace('''    font-size: 0;
+    height: 42px;
+''', '''    font-size: 1.08rem;
+    height: 42px;
+''', 1)
+          for action in ('btn-play-playlist', 'btn-shuffle-playlist', 'btn-edit-playlist'):
+              css, count = re.subn(
+                  rf'\n  \.playlist-row-tools \.{action}::after,\.playlist-row-tools #[^{{]+\{{\n    content: "[^"]+";\n    font-size: 1\.08rem;\n  \}}\n',
+                  '\n',
+                  css,
+                  count=1,
+              )
+              if count != 1:
+                  raise RuntimeError(f'playlist pseudo icon {action}: expected one match, found {count}')
+
+          mobile_button_rule = '''  font-size: 0;
+  height: 34px;
+'''
+          if mobile_button_rule not in css:
+              raise RuntimeError('mobile action button font-size rule not found')
+          css = css.replace(mobile_button_rule, '''  font-size: 1.05rem;
+  height: 34px;
+''', 1)
+          for marker in ('btn-onda-row-play::before', 'btn-history-info::before', 'btn-onda-add-playlist::before'):
+              start = css.find(f'body.onda-force-mobile-mode .library-row-buttons .{marker}')
+              if start == -1:
+                  raise RuntimeError(f'mobile pseudo icon block missing: {marker}')
+              end = css.find('\n}\n', start)
+              if end == -1:
+                  raise RuntimeError(f'mobile pseudo icon block end missing: {marker}')
+              css = css[:start] + css[end + 3:]
+
+          core_path.write_text(core, encoding='utf-8')
+          css_path.write_text(css, encoding='utf-8')
+          html_path.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Static syntax checks
+        run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/cloud-sync.js
+          node --check tools/Onda/js/layout-enhancements.js
+          node --check tools/Onda/netlify/functions/onda-sync.js
+          ! grep -R "btn-speed-cycle" -n tools/Onda/index.html tools/Onda/js/app-core.js
+          ! grep -R "onclick=\"openPlaylistEditModal" -n tools/Onda/js/app-core.js
+
+      - name: Commit generated source changes
+        run: |
+          if git diff --quiet; then
+            echo "No source changes produced."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/Onda/index.html tools/Onda/js/app-core.js tools/Onda/css/responsive.css
+          git commit -m "Fix Onda core controls and mobile icon duplication"
+          git push origin HEAD:fix/onda-cloud-sync-core-20260701
