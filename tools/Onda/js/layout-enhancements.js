@@ -86,9 +86,6 @@
         const transport = document.getElementById('start-controls-pill');
         if (transport) transport.classList.add('onda-transport-pill');
 
-        // The speed feature remains available through the Settings speed slider only.
-        document.getElementById('btn-speed-cycle')?.remove();
-
         bindOnce(
             document.getElementById('btn-toggle-layout-mode'),
             'click',

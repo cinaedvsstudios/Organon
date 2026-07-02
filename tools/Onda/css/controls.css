@@ -146,10 +146,6 @@
   font-size: 1.35rem;
 }
 
-/* Playback-speed cycling is intentionally removed from the UI. The normal speed slider remains in Settings. */
-#btn-speed-cycle {
-  display: none;
-}
 
 .inline-button-row {
   display: flex;
