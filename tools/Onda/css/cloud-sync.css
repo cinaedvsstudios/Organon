@@ -1,9 +1,8 @@
 /* Netlify Cloud Sync setup and device-sync UI only. */
 
-
 body.onda-force-mobile-mode #onda-mobile-save-cloud,
-        body.onda-force-mobile-mode #onda-mobile-load-cloud,
-        body.onda-force-mobile-mode .onda-cloud-mobile-btn {
+body.onda-force-mobile-mode #onda-mobile-load-cloud,
+body.onda-force-mobile-mode .onda-cloud-mobile-btn {
   display: none;
 }
 
@@ -27,7 +26,7 @@ body.onda-force-mobile-mode #onda-mobile-save-cloud,
 }
 
 .onda-cloud-help,
-    .onda-cloud-status {
+.onda-cloud-status {
   color: var(--chiseled-bronze, #896b49);
   font-size: 0.74rem;
   line-height: 1.35;
@@ -117,7 +116,7 @@ body.onda-force-mobile-mode #onda-mobile-save-cloud,
 }
 
 .onda-cloud-field input,
-    .onda-cloud-field select {
+.onda-cloud-field select {
   background: var(--bg-nightsky, #1e201c);
   border: 1px solid var(--chiseled-bronze, #896b49);
   border-radius: 10px;
@@ -199,16 +198,6 @@ body.onda-force-mobile-mode #onda-mobile-save-cloud,
   min-width: 30px;
 }
 
-
-
-
-
-
-
-
-
-
-
 .onda-cloud-status.is-error {
   color: var(--terracotta-peach, #d27d6c);
 }
@@ -220,4 +209,74 @@ body.onda-force-mobile-mode #onda-mobile-save-cloud,
 .onda-cloud-device-marker {
   color: var(--stone-ochre, #e0a360);
   font-size: 1.2rem;
+}
+
+/* Last-loaded mobile UI corrections. These override legacy responsive passes without changing desktop rules. */
+@media (max-width: 768px) {
+  body.onda-force-mobile-mode .playlist-row {
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content > div:last-child {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-title {
+    overflow-wrap: normal;
+    white-space: normal;
+    word-break: normal;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-count {
+    white-space: nowrap;
+  }
+
+  body.onda-force-mobile-mode #db-library-results .library-row-buttons {
+    gap: 10px;
+  }
+
+  body.onda-force-mobile-mode #db-library-results .library-row-buttons .btn-pill {
+    align-items: center;
+    color: var(--water-spray);
+    display: inline-flex;
+    flex: 0 0 44px;
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
+    font-size: 1.3rem;
+    font-variant-emoji: emoji;
+    height: 44px;
+    justify-content: center;
+    line-height: 1;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
+    text-indent: 0;
+    width: 44px;
+  }
+
+  body.onda-force-mobile-mode #db-library-results .library-row-buttons .btn-pill::before,
+  body.onda-force-mobile-mode #db-library-results .library-row-buttons .btn-pill::after {
+    content: none;
+    display: none;
+  }
+
+  body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill {
+    color: var(--water-spray);
+    font-family: "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", system-ui, sans-serif;
+    font-size: 1.18rem;
+    font-variant-emoji: emoji;
+  }
+
+  body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::before,
+  body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::after {
+    content: none;
+    display: none;
+  }
 }
