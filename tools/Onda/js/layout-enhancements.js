@@ -1,4 +1,4 @@
-/* Onda layout and control bindings that run after the main player script. */
+/* Onda layout controls: persistent layout mode, fullscreen, and player shell state. */
 (function () {
     'use strict';
 
@@ -54,32 +54,10 @@
         }
     }
 
-    function bindOnce(button, eventName, handler, bindingName, options) {
+    function bindOnce(button, eventName, handler, bindingName) {
         if (!button || button.dataset[bindingName] === '1') return;
-        button.addEventListener(eventName, handler, options);
+        button.addEventListener(eventName, handler);
         button.dataset[bindingName] = '1';
-    }
-
-    function toggleLibrarySelectModeFromControl(event) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-
-        try {
-            const next = !isLibrarySelectMode;
-            isLibrarySelectMode = next;
-            if (!next) selectedLibraryIds.clear();
-            setLibraryActionPanel('select');
-            updateBulkActionUI();
-            renderLibraryManager();
-
-            const button = event.currentTarget;
-            button.classList.toggle('active', next);
-            button.setAttribute('aria-pressed', String(next));
-            safeToast(next ? 'Library selection mode on.' : 'Library selection mode off.');
-        } catch (error) {
-            console.error('Could not change Library selection mode:', error);
-            safeToast('Library selection mode could not be changed.');
-        }
     }
 
     function initLayoutControls() {
@@ -97,13 +75,6 @@
             'click',
             toggleFullscreenMode,
             'ondaFullscreenBound'
-        );
-        bindOnce(
-            document.getElementById('btn-db-select-mode'),
-            'click',
-            toggleLibrarySelectModeFromControl,
-            'ondaSelectModeBound',
-            true
         );
 
         applySavedDesktopMode();
