@@ -60,6 +60,93 @@
     border-radius: 999px;
   }
 
+  /* The Select and Settings action panels move below the Library search bar on
+     phones. They keep the original buttons and handlers, but use a horizontal
+     swipe strip instead of the desktop left sidebar. */
+  body.onda-force-mobile-mode #library-manager-drawer .library-manager-content {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-sidebar {
+    display: block !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+    order: 0;
+    overflow: visible !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-panel {
+    background: transparent !important;
+    border: 0 !important;
+    display: block !important;
+    padding: 0 12px 8px !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section:not(.active) {
+    display: none !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section.active {
+    display: block !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section h3,
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-selection-summary {
+    display: none !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-select-panel {
+    background: transparent !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    padding: 3px 0 9px !important;
+    scrollbar-color: var(--water-spray) transparent;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack::-webkit-scrollbar,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions::-webkit-scrollbar {
+    display: block;
+    height: 5px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack::-webkit-scrollbar-thumb,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions::-webkit-scrollbar-thumb {
+    background: var(--water-blue);
+    border-radius: 999px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack .btn-pill,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions .btn-pill {
+    flex: 0 0 auto !important;
+    min-height: 38px;
+    padding: 7px 13px;
+    white-space: nowrap;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-results-panel {
+    order: 1;
+  }
+
   /* A three-column grid prevents the View control from squeezing playlist
      titles down to one character per line. */
   body.onda-force-mobile-mode .playlist-row {
