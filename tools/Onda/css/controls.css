@@ -1,6 +1,5 @@
 /* Shared buttons, pills, tabs, and control elements. */
 
-
 #organon-bottom-panel .btn-pill {
   background-color: rgba(24, 25, 25, 0.9);
   border: 1px solid var(--chiseled-bronze);
@@ -66,7 +65,10 @@
   display: flex;
   gap: 4px;
   padding: 4px;
+  position: sticky;
+  top: 0;
   width: 100%;
+  z-index: 95;
 }
 
 .mode-tab-btn {
@@ -133,24 +135,20 @@
 }
 
 #btn-repeat-one .utility-mini-word,
-        #btn-repeat-all .utility-mini-word {
+#btn-repeat-all .utility-mini-word {
   display: none;
 }
 
 #btn-repeat-one,
-        #btn-repeat-all,
-        #btn-shuffle,
-        #btn-speed-cycle,
-        #btn-toggle-advanced {
+#btn-repeat-all,
+#btn-shuffle,
+#btn-toggle-advanced {
   font-size: 1.35rem;
 }
 
-#btn-speed-cycle,
-        body.onda-force-mobile-mode #btn-speed-cycle,
-        body.onda-force-desktop-mode #btn-speed-cycle,
-        body.onda-force-mobile-mode #end-utilities-pill #btn-speed-cycle,
-        body.onda-force-desktop-mode #end-utilities-pill #btn-speed-cycle {
-  font-size: 1.25rem;
+/* Playback-speed cycling is intentionally removed from the UI. The normal speed slider remains in Settings. */
+#btn-speed-cycle {
+  display: none;
 }
 
 .inline-button-row {
@@ -183,10 +181,18 @@
   padding: 4px 12px;
 }
 
+/* Playlist action icons are real button content. Mobile must not add a second pseudo-icon. */
+@media (max-width: 768px) {
+  .playlist-row-tools .btn-pill {
+    font-size: 1.08rem !important;
+  }
 
-/* Desktop workspace tabs stay visible while the workspace scrolls. */
-.workspace-mode-bar {
-  position: sticky;
-  top: 0;
-  z-index: 95;
+  .playlist-row-tools .btn-play-playlist::after,
+  .playlist-row-tools #btn-detail-play-playlist::after,
+  .playlist-row-tools .btn-shuffle-playlist::after,
+  .playlist-row-tools #btn-detail-shuffle-playlist::after,
+  .playlist-row-tools .btn-edit-playlist::after,
+  .playlist-row-tools #btn-detail-edit-playlist::after {
+    content: none !important;
+  }
 }
