@@ -1,0 +1,83 @@
+name: Delete unused Onda files
+
+on:
+  push:
+    branches:
+      - cleanup/onda-unused-files-20260702
+    paths:
+      - tools/Onda/.run-delete-unused
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: cleanup/onda-unused-files-20260702
+          fetch-depth: 0
+
+      - name: Delete confirmed unreachable Onda files
+        run: |
+          rm -f \
+            tools/Onda/CHANGE_LIST.txt \
+            tools/Onda/CLEAN_SOURCE_MAP.md \
+            tools/Onda/CLEAN_VERIFY_REPORT.json \
+            tools/Onda/CLOUD_SYNC_FIX_STATUS.md \
+            tools/Onda/DESKTOP_FIX_PASS2_REPORT.json \
+            tools/Onda/DESKTOP_FIX_REPORT.json \
+            tools/Onda/MOBILE_FIX_PASS1_REPORT.json \
+            tools/Onda/MOBILE_FIX_PASS3_REPORT.json \
+            tools/Onda/MOBILE_FIX_PASS4_REPORT.json \
+            tools/Onda/MOBILE_FIX_PASS5_REPORT.json \
+            tools/Onda/MOBILE_FIX_PASS6_REPORT.json \
+            tools/Onda/MODULAR_SOURCE_MAP.md \
+            tools/Onda/STRICT_UI_CLEANUP_REPORT.json \
+            tools/Onda/backup.zip \
+            tools/Onda/css/00-tokens-base.css \
+            tools/Onda/css/01-buttons-controls.css \
+            tools/Onda/css/02-settings-modals.css \
+            tools/Onda/css/03-visualizer-import.css \
+            tools/Onda/css/04-history.css \
+            tools/Onda/css/05-library-drawer.css \
+            tools/Onda/css/06-playlists-now-playing.css \
+            tools/Onda/css/07-responsive-mobile.css \
+            tools/Onda/css/08-playlist-refinements.css \
+            tools/Onda/css/09-ui-direct-edit-v3.css \
+            tools/Onda/css/10-ui-direct-edit-v4.css \
+            tools/Onda/css/11-v17-acceptance-fixes.css \
+            tools/Onda/css/12-cloud-sync.css \
+            tools/Onda/js/00-app-core.js \
+            tools/Onda/js/10-cloud-sync-ui.js \
+            tools/Onda/js/20-ui-layout-v3.js \
+            tools/Onda/js/21-ui-layout-v4.js \
+            tools/Onda/onda-mobile-library-patch.css \
+            tools/Onda/onda-mobile-library-patch.js \
+            tools/Onda/placeholder.jpg \
+            tools/Onda/UNUSED_FILE_AUDIT.md
+
+      - name: Validate retained runtime files
+        run: |
+          test -f tools/Onda/index.html
+          test -f tools/Onda/onda-midi.js
+          test -f tools/Onda/js/app-core.js
+          test -f tools/Onda/js/cloud-sync.js
+          test -f tools/Onda/js/layout-enhancements.js
+          test -f tools/Onda/css/final-ui-fixes.css
+          test -f tools/Onda/netlify/functions/onda-sync.js
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/cloud-sync.js
+          node --check tools/Onda/js/layout-enhancements.js
+          node --check tools/Onda/netlify/functions/onda-sync.js
+          ! grep -R "00-app-core\|10-cloud-sync-ui\|20-ui-layout-v3\|21-ui-layout-v4\|onda-mobile-library-patch\|00-tokens-base\|01-buttons-controls\|02-settings-modals\|03-visualizer-import\|04-history\|05-library-drawer\|06-playlists-now-playing\|07-responsive-mobile\|08-playlist-refinements\|09-ui-direct-edit-v3\|10-ui-direct-edit-v4\|11-v17-acceptance-fixes\|12-cloud-sync" -n tools/Onda/index.html tools/Onda/js tools/Onda/css --exclude='final-ui-fixes.css'
+
+      - name: Commit cleanup and remove temporary runner
+        run: |
+          rm -f tools/Onda/.run-delete-unused .github/workflows/onda-delete-unused.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A tools/Onda .github/workflows/onda-delete-unused.yml
+          git commit -m "Remove obsolete Onda reports, backups and duplicate modules"
+          git push origin HEAD:cleanup/onda-unused-files-20260702
