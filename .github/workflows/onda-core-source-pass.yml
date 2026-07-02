@@ -1,0 +1,37 @@
+name: Onda direct core source pass
+
+on:
+  push:
+    branches:
+      - fix/onda-cloud-sync-core-20260701
+    paths:
+      - tools/Onda/repair_onda_core.py
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/onda-cloud-sync-core-20260701
+          fetch-depth: 0
+      - name: Apply source pass
+        run: python3 tools/Onda/repair_onda_core.py
+      - name: Validate changed JavaScript
+        run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/00-app-core.js
+          node --check tools/Onda/js/layout-enhancements.js
+          ! grep -R "btnSpeedCycle\|speedCycles\|currentSpeedIdx" -n tools/Onda/js/app-core.js tools/Onda/js/00-app-core.js
+          ! grep -R "btn-speed-cycle" -n tools/Onda/index.html tools/Onda/js/app-core.js tools/Onda/js/00-app-core.js tools/Onda/js/layout-enhancements.js
+      - name: Commit direct source pass
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm tools/Onda/repair_onda_core.py .github/workflows/onda-core-source-pass.yml
+          git add tools/Onda/index.html tools/Onda/js/app-core.js tools/Onda/js/00-app-core.js tools/Onda/js/layout-enhancements.js tools/Onda/css/responsive.css tools/Onda/css/controls.css tools/Onda/repair_onda_core.py .github/workflows/onda-core-source-pass.yml
+          git commit -m "Apply Onda direct core source pass"
+          git push origin HEAD:fix/onda-cloud-sync-core-20260701
