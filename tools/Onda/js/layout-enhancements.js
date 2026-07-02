@@ -1,4 +1,7 @@
 /* Onda layout controls and lightweight Settings tab routing. */
+/* Compatibility bridge for an older settings-export field while app-core cleanup lands. */
+var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.currentSpeedIdx : 0;
+
 (function () {
     'use strict';
 
