@@ -93,7 +93,8 @@
         const btnPlay = document.getElementById('btn-play');
         const btnPause = document.getElementById('btn-pause');
         const btnPrev = document.getElementById('btn-prev');
-        const btnNext = document.getElementById('btn-next');        const seekBar = document.getElementById('seek-bar');
+        const btnNext = document.getElementById('btn-next');
+        const seekBar = document.getElementById('seek-bar');
         const timeCurrent = document.getElementById('time-current');
         const timeTotal = document.getElementById('time-total');
         
@@ -3816,7 +3817,8 @@
             const val = parseFloat(e.target.value);
             activeAudio.playbackRate = val;
             const speedReadout = document.getElementById('speed-readout');
-            if (speedReadout) speedReadout.innerText = val.toFixed(1) + "x";        });
+            if (speedReadout) speedReadout.innerText = val.toFixed(1) + "x";
+        });
 
         initVisualizerComposerUI();
         restoreLocalUiScreen();
