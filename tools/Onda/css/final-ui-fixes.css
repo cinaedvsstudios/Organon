@@ -1,0 +1,97 @@
+/* Onda final UI corrections: settings category visibility and phone layout. */
+
+/* The settings cards must never all remain visible because legacy display rules
+   override the browser's default [hidden] behaviour in some builds. */
+#settings-popup .settings-card[hidden] {
+  display: none !important;
+}
+
+#settings-popup .settings-card.active:not(.control-row) {
+  display: block;
+}
+
+#settings-popup .control-row.settings-card.active {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  /* Keep the settings body independently scrollable inside the modal. */
+  body.onda-force-mobile-mode #settings-popup {
+    max-height: calc(100dvh - 28px);
+    overflow: hidden;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body {
+    box-sizing: border-box;
+    max-height: calc(100dvh - 82px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    padding-right: 12px;
+    scrollbar-color: var(--water-spray) rgba(0, 0, 0, 0.34);
+    scrollbar-width: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body::-webkit-scrollbar {
+    display: block;
+    width: 10px;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.34);
+    border-radius: 999px;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body::-webkit-scrollbar-thumb {
+    background: var(--water-spray);
+    border: 2px solid var(--bg-card);
+    border-radius: 999px;
+  }
+
+  /* A three-column grid prevents the View control from squeezing playlist
+     titles down to one character per line. */
+  body.onda-force-mobile-mode .playlist-row {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    grid-template-areas: "thumb text tools";
+    padding: 10px 12px;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content {
+    display: contents;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content .playlist-thumb {
+    grid-area: thumb;
+    height: 56px;
+    width: 56px;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content > div:last-child {
+    grid-area: text;
+    min-width: 0;
+  }
+
+  body.onda-force-mobile-mode .playlist-row .playlist-row-tools {
+    grid-area: tools;
+    justify-self: end;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-title {
+    line-height: 1.2;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-count {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
