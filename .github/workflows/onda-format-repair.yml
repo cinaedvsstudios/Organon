@@ -1,0 +1,29 @@
+name: Onda source formatting repair
+
+on:
+  push:
+    branches:
+      - fix/onda-cloud-sync-core-20260701
+    paths:
+      - tools/Onda/repair_onda_format.py
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/onda-cloud-sync-core-20260701
+      - run: python3 tools/Onda/repair_onda_format.py
+      - run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/00-app-core.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm tools/Onda/repair_onda_format.py .github/workflows/onda-format-repair.yml
+          git add tools/Onda/js/app-core.js tools/Onda/js/00-app-core.js tools/Onda/repair_onda_format.py .github/workflows/onda-format-repair.yml
+          git commit -m "Format Onda direct core source pass"
+          git push origin HEAD:fix/onda-cloud-sync-core-20260701
