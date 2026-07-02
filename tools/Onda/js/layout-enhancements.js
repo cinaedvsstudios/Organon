@@ -7,6 +7,7 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
 
     const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
     const MOBILE_BREAKPOINT = 768;
+    const UI_FIXES_STYLESHEET_ID = 'onda-final-ui-fixes';
 
     function safeToast(message) {
         if (typeof window.showToast === 'function') window.showToast(message);
@@ -14,6 +15,15 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
 
     function isNaturallyMobile() {
         return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+    }
+
+    function ensureUiFixStylesheet() {
+        if (document.getElementById(UI_FIXES_STYLESHEET_ID)) return;
+        const stylesheet = document.createElement('link');
+        stylesheet.id = UI_FIXES_STYLESHEET_ID;
+        stylesheet.rel = 'stylesheet';
+        stylesheet.href = 'css/final-ui-fixes.css';
+        document.head.appendChild(stylesheet);
     }
 
     function applySavedLayoutMode() {
@@ -81,8 +91,6 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
             const active = card.dataset.settingsCard === knownTab;
             card.classList.toggle('active', active);
             card.hidden = !active;
-            // The legacy layout CSS can override the HTML hidden attribute, so
-            // force the actual display value as well.
             card.style.display = active
                 ? (card.classList.contains('control-row') ? 'flex' : 'block')
                 : 'none';
@@ -96,6 +104,8 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
     }
 
     function initLayoutControls() {
+        ensureUiFixStylesheet();
+
         const transport = document.getElementById('start-controls-pill');
         if (transport) transport.classList.add('onda-transport-pill');
 
