@@ -1,21 +1,24 @@
-# Onda Cloud Sync fix status
+# Onda Cloud Sync and core repair status
 
 Baseline branch: `baseline/onda-general-working-2026-07-01`
 Working branch: `fix/onda-cloud-sync-core-20260701`
 
 ## Included in this branch
 
-- Removed the old layout-enhancement row-action injector. It created and rewrote controls after the main app rendered them, which was a source of duplicate or conflicting row controls.
-- Kept the layout helper limited to the bottom layout toggle, fullscreen toggle, and transport-shell class.
+- Removed the old layout-enhancement row-action injector that created or rewrote controls after the main app rendered them.
+- Kept the layout helper limited to layout mode, fullscreen, and the transport-shell class. Library Select is again owned by `app-core.js`.
 - Rebuilt `js/cloud-sync.js` around the static Cloud Sync UI already present in `index.html`; it no longer injects a settings card or installs a document-wide click handler.
-- Cloud Sync keeps device-profile choice in `ondaCloudSyncConfigV1` and mirrors it to the old Storage Health keys so both views agree.
-- The selected device is restored on the next visit.
-- Existing legacy secret storage remains available only as a transition fallback. Once Chrome password credential storage succeeds during Save Setup, the secret is removed from localStorage.
-- Cloud requests now have a 15-second timeout and return visible errors for missing Netlify function deployment, invalid server responses, invalid secret, and Blob-store failures.
-- The Netlify function now tests a real Blob-store read before reporting a successful connection and stops converting storage errors into an empty device list.
+- Cloud Sync stores and restores the selected device profile, and mirrors it to the existing Storage Health keys so both views agree.
+- Existing localStorage secret data is a migration fallback only. After Chrome Password Credential storage succeeds during Save Setup, the persistent secret is removed from localStorage.
+- Cloud requests now have a 15-second timeout and readable error states for an invalid secret, missing function deployment, invalid server response, and Blob-store failure.
+- The Netlify function now performs a real Blob-store read before reporting connection success and no longer converts Blob-store failures into an empty device list.
+- Removed the speed-cycle button and its obsolete JavaScript state/listener from the active player source. The Settings speed slider remains.
+- Repaired Library Select mode so it genuinely toggles and clears selection when turned off.
+- Added a request identifier to asynchronous track loading so a stale file or MIDI hydration result cannot overwrite a newer track selection.
+- Removed the malformed nested playlist-edit row markup.
+- Removed mobile CSS pseudo-icons that were layered over real playlist and row action icons, which caused doubled symbols on mobile.
 
-## Not yet altered in this branch
+## Still required before merge
 
-- The responsive stylesheet still contains legacy mobile pseudo-icon rules. The row-action injector removal removes one confirmed duplication source, but the remaining icon styling must be consolidated in the canonical responsive rules before release.
-- `js/app-core.js` still needs a separate targeted pass for Select-mode state, speed-button text state, playlist-name escaping, and asynchronous track-load cancellation.
-- No deployment, browser preview, or visual test was run from this environment.
+- Deploy the branch to Netlify and perform real device-list, remembered-device, save, and load testing against the function and Blob store.
+- No browser preview or visual testing was run from this environment.
