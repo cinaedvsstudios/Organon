@@ -27,12 +27,8 @@
         let playlistTracks = [];
         let currentTrackIndex = -1;
         let currentFile = null;
+        let trackLoadRequestId = 0;
         let isSeeking = false;
-
-        // Custom Play Speed cycles ⚡
-        const speedCycles = [1.0, 1.5, 2.0, 2.5];
-        let currentSpeedIdx = 0;
-
         let playButtonHoldTimeout;
         let isHoldingPlay = false;
         let preHoldSpeed = 1.0;
@@ -98,7 +94,6 @@
         const btnPause = document.getElementById('btn-pause');
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
-        const btnSpeedCycle = document.getElementById('btn-speed-cycle');
         const seekBar = document.getElementById('seek-bar');
         const timeCurrent = document.getElementById('time-current');
         const timeTotal = document.getElementById('time-total');
@@ -1233,7 +1228,9 @@
         }
 
         function toggleLibrarySelectMode(force = null) {
-            isLibrarySelectMode = false;
+            const next = typeof force === 'boolean' ? force : !isLibrarySelectMode;
+            isLibrarySelectMode = next;
+            if (!next) selectedLibraryIds.clear();
             setLibraryActionPanel('select');
             updateBulkActionUI();
             renderLibraryManager();
@@ -3087,7 +3084,10 @@
         }
 
         async function loadTrack(file) {
+            const requestId = ++trackLoadRequestId;
             currentFile = file;
+            if (localAudio.src && localAudio.src.startsWith('blob:')) URL.revokeObjectURL(localAudio.src);
+            localAudio.removeAttribute('src');
 
             if (window.OndaMidi) window.OndaMidi.stopForTrackChange();
             localAudio.pause();
@@ -3128,6 +3128,7 @@
                 if (!blob) {
                     showToast('Restoring cached MIDI file...');
                     blob = await hydrateLocalAudioBlob(key);
+                    if (requestId !== trackLoadRequestId) return;
                     if (blob) {
                         file.blobFile = blob;
                         meta.blobFile = blob;
@@ -3142,6 +3143,7 @@
                 }
                 try {
                     await window.OndaMidi.load(blob, meta);
+                    if (requestId !== trackLoadRequestId) return;
                 } catch (err) {
                     console.error('MIDI load failed:', err);
                     updateMetadataUI();
@@ -3159,6 +3161,7 @@
                 if (!blob) {
                     showToast('Restoring cached local audio...');
                     blob = await hydrateLocalAudioBlob(key);
+                    if (requestId !== trackLoadRequestId) return;
                     if (blob) {
                         file.blobFile = blob;
                         meta.blobFile = blob;
@@ -3657,19 +3660,6 @@
             }
             switchTrack(nextIndex);
         }
-
-        btnSpeedCycle.addEventListener('click', () => {
-            currentSpeedIdx = (currentSpeedIdx + 1) % speedCycles.length;
-            const chosenSpeed = speedCycles[currentSpeedIdx];
-            
-            activeAudio.playbackRate = chosenSpeed;
-            speedSlider.value = chosenSpeed;
-            document.getElementById('speed-readout').innerText = chosenSpeed.toFixed(1) + "x";
-            
-            btnSpeedCycle.innerText = `🚀${chosenSpeed.toFixed(1).replace('.0', '')}`;
-            showToast(`Speed set to ${chosenSpeed.toFixed(1)}x`);
-        });
-
         function formatTime(seconds) {
             if (isNaN(seconds)) return "0:00";
             const m = Math.floor(seconds / 60);
@@ -3828,7 +3818,6 @@
             activeAudio.playbackRate = val;
             const speedReadout = document.getElementById('speed-readout');
             if (speedReadout) speedReadout.innerText = val.toFixed(1) + "x";
-            if (btnSpeedCycle) btnSpeedCycle.innerText = `🚀${val.toFixed(1).replace('.0', '')}`;
         });
 
         initVisualizerComposerUI();
@@ -4462,19 +4451,16 @@
                 row.className = 'library-result-row playlist-edit-row';
                 row.dataset.trackId = trackId;
                 row.innerHTML = `
-                    <div class="library-row-main">
-                        <div class="library-row-main playlist-edit-row-main">
+                    <div class="library-row-main playlist-edit-row-main">
                             <input type="checkbox" class="playlist-edit-track-check" data-track-id="${escapeHtml(trackId)}">
                             <div>
                                 <div class="library-track-title">${index + 1}. ${escapeHtml(meta ? getDisplayTitle(meta) : trackId)}</div>
                                 <div class="library-track-meta">${escapeHtml(meta?.fileName || 'Missing library record')} · ${escapeHtml(meta ? sourceStatus(meta) : 'missing')}</div>
                             </div>
-                        </div>
                         <div class="library-row-buttons">
                             ${meta ? `<button type="button" class="btn-pill btn-playlist-edit-play" data-track-id="${escapeHtml(trackId)}">Play</button>` : ''}
                             <button type="button" class="btn-pill btn-playlist-edit-remove btn-danger" data-track-id="${escapeHtml(trackId)}">Remove</button>
-                        </div>
-                    </div>`;
+                        </div>`;
                 list.appendChild(row);
             });
         }
