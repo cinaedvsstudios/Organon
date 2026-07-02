@@ -1,0 +1,35 @@
+name: Onda mobile UI repair
+
+on:
+  push:
+    branches:
+      - fix/onda-cloud-sync-core-20260701
+    paths:
+      - tools/Onda/repair_mobile_ui.py
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/onda-cloud-sync-core-20260701
+      - name: Apply targeted mobile UI source fixes
+        run: python3 tools/Onda/repair_mobile_ui.py
+      - name: Static checks
+        run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/00-app-core.js
+          node --check tools/Onda/js/layout-enhancements.js
+          ! grep -R "currentSpeedIdx\|speedCycleIndex" -n tools/Onda/js/app-core.js tools/Onda/js/00-app-core.js
+      - name: Commit repair and remove temporary runner
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm tools/Onda/repair_mobile_ui.py .github/workflows/onda-mobile-ui-repair.yml
+          git add tools/Onda/css/responsive.css tools/Onda/js/app-core.js tools/Onda/js/00-app-core.js tools/Onda/repair_mobile_ui.py .github/workflows/onda-mobile-ui-repair.yml
+          git commit -m "Fix Onda mobile layout and library controls"
+          git push origin HEAD:fix/onda-cloud-sync-core-20260701
