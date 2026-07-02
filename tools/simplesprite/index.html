@@ -4,16 +4,15 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
-  <title>SimpleSprite v0.01</title>
+  <title>SimpleSprite v0.03</title>
   <link rel="stylesheet" href="simplesprite.css">
 </head>
 <body>
   <main class="app-shell" aria-label="SimpleSprite sprite cropper">
     <header class="app-header">
-      <div>
-        <p class="eyebrow">ORGANON TOOL · V0.01</p>
+      <div class="app-title-row">
         <h1>SimpleSprite</h1>
-        <p class="header-note">Pick an image, drag it into place, erase temporary areas, then build a numbered transparent PNG set.</p>
+        <span class="version-pill">V0.03</span>
       </div>
       <div id="app-status" class="app-status" role="status" aria-live="polite">Drop source images to begin.</div>
     </header>
@@ -21,8 +20,8 @@
     <section class="workspace-grid">
       <aside class="sidebar left-sidebar" aria-label="Source images and canvas controls">
         <section class="panel-card source-card">
-          <div class="panel-heading">
-            <div>
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
               <p class="panel-kicker">1 · SOURCES</p>
               <h2>Image tray</h2>
             </div>
@@ -42,8 +41,8 @@
         </section>
 
         <section class="panel-card controls-card">
-          <div class="panel-heading">
-            <div>
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
               <p class="panel-kicker">2 · CANVAS CONTROLS</p>
               <h2>Crop settings</h2>
             </div>
@@ -108,13 +107,16 @@
             </div>
           </div>
 
-          <button id="set-sprite-btn" class="primary-button" type="button">Set sprite →</button>
+          <div class="action-stack">
+            <button id="auto-next-btn" class="secondary-button full-width" type="button">Auto next sprite</button>
+            <button id="set-sprite-btn" class="primary-button" type="button">Set sprite →</button>
+          </div>
         </section>
       </aside>
 
       <section class="canvas-column" aria-label="Sprite crop canvas">
-        <div class="canvas-toolbar">
-          <div>
+        <div class="canvas-toolbar compact-heading">
+          <div class="heading-inline">
             <p class="panel-kicker">3 · POSITION &amp; PREVIEW</p>
             <h2>Crop canvas</h2>
           </div>
@@ -124,7 +126,9 @@
         <div id="canvas-stage" class="canvas-stage">
           <div id="canvas-frame" class="canvas-frame checkerboard" aria-label="Sprite crop canvas">
             <canvas id="sprite-canvas" width="256" height="256"></canvas>
+            <canvas id="overlay-canvas" width="256" height="256" aria-hidden="true"></canvas>
             <canvas id="grid-canvas" width="256" height="256" aria-hidden="true"></canvas>
+            <div id="eraser-cursor" class="eraser-cursor" aria-hidden="true"></div>
             <div id="canvas-empty-state" class="canvas-empty-state">Drop an image into the tray, then click or drag its thumbnail here.</div>
           </div>
         </div>
@@ -138,8 +142,8 @@
 
       <aside class="sidebar right-sidebar" aria-label="Sprite set and export">
         <section class="panel-card sprite-set-card">
-          <div class="panel-heading">
-            <div>
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
               <p class="panel-kicker">4 · SPRITE SET</p>
               <h2>Ready sprites</h2>
             </div>
@@ -153,8 +157,8 @@
         </section>
 
         <section class="panel-card export-card">
-          <div class="panel-heading">
-            <div>
+          <div class="panel-heading compact-heading">
+            <div class="heading-inline">
               <p class="panel-kicker">5 · EXPORT</p>
               <h2>Download set</h2>
             </div>
