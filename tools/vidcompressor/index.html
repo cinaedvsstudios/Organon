@@ -1,117 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<meta content="dark" name="color-scheme"/>
-<title>Organon VidCompressor</title>
-<script>
-if (window.self === window.top) {
-window.location.href = '../../index.html';
-}
-</script>
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&amp;family=Inter:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
-<link href="vidcompressor-v002.css" rel="stylesheet"/>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark">
+  <title>Organon VidCompressor</title>
+  <script>
+    if (window.self === window.top) {
+      window.location.href = '../../index.html';
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="vidcompressor-v003.css" rel="stylesheet">
 </head>
 <body>
-<div class="app-wrapper">
-<header class="top-sticky-panel" id="top-sticky-panel">
-<div class="title-pill">
-<div class="title-group">
-<div class="countdown-circle-indicator" id="countdown-circle" title="Double-click to lock the header">5</div>
-<span class="title-text">VIDCOMPRESSOR <span style="opacity:.64;">v0.02</span></span>
-</div>
-<span class="engine-pill" id="engine-state">ENGINE IDLE</span>
-</div>
-<div class="panel-content-hide">
-<div class="header-actions">
-<button class="btn-pill" id="open-video-btn" type="button">Open Video</button>
-<button class="small-btn" disabled="" id="clear-btn" type="button">Clear</button>
-</div>
-</div>
-</header>
-<main class="middle-scroll-panel">
-<section class="config-card" id="import-card">
-<h2>Video import</h2>
-<p class="muted">Open a video to retain direct overwrite permission. Dropped videos can still be compressed and saved as a new copy.</p>
-<div aria-label="Choose a video or drop one here" class="drop-zone" id="drop-zone" role="button" tabindex="0">
-<div class="drop-zone-icon">🎞️</div>
-<div class="drop-zone-title">Drop a video here</div>
-<p class="drop-zone-copy">MP4, M4V, MOV, MKV, AVI, WebM, or OGV.<br/>Nothing is uploaded; processing stays in this browser.</p>
-</div>
-<input accept="video/mp4,video/quicktime,video/x-m4v,video/x-matroska,video/x-msvideo,video/webm,video/ogg,.mp4,.m4v,.mov,.mkv,.avi,.webm,.ogv,.ogg" class="file-input" id="file-input" type="file"/>
-</section>
-<section class="config-card" hidden="" id="source-card">
-<h3>Selected file</h3>
-<div class="file-card">
-<div class="video-thumb"><video id="source-preview" muted="" playsinline="" preload="metadata"></video><span class="video-placeholder" id="source-placeholder">▶</span></div>
-<div>
-<div class="file-name" id="source-name">No video selected</div>
-<div class="file-meta" id="source-meta">—</div>
-<div class="access-note copy-only" id="access-note">Save a new copy will be available after compression.</div>
-</div>
-</div>
-</section>
-<section class="config-card" id="format-card">
-<h2>Output format</h2>
-<label class="field-label" for="output-format">Video container and codecs</label>
-<select class="format-select" id="output-format">
-<option value="auto">Keep source format where supported</option>
-<option value="mp4">MP4 — H.264 video + AAC audio</option>
-<option value="ogv">OGV — Theora video + Vorbis audio</option>
-</select>
-<p class="format-help" id="format-help">Keeps compatible source containers. WebM is converted to MP4.</p>
-</section>
-<section class="config-card" id="quality-card">
-<div class="quality-row">
-<div>
-<h2>Compression</h2>
-<p class="muted">Higher quality keeps more detail but produces a larger file.</p>
-</div>
-<span class="quality-value" id="quality-value">65 · BALANCED</span>
-</div>
-<div class="range-wrap">
-<input aria-label="Compression quality" id="quality-slider" max="100" min="0" type="range" value="65"/>
-<div class="slider-endpoints"><span>Smallest file</span><span>Highest quality</span></div>
-</div>
-<div class="compression-summary" id="compression-summary">Balanced H.264 compression with AAC audio. The original dimensions are kept.</div>
-</section>
-<section aria-live="polite" class="config-card progress-card" id="progress-card">
-<div class="progress-top">
-<span class="progress-title" id="progress-title">Preparing engine…</span>
-<span class="progress-value" id="progress-value">0%</span>
-</div>
-<div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
-<p class="muted" style="margin-top:10px;">The first run loads the local FFmpeg engine. Larger videos need browser memory while they are being processed.</p>
-</section>
-<section class="config-card result-card" id="result-card">
-<h2>Compressed video ready</h2>
-<p class="muted" id="result-file-name">—</p>
-<div class="result-grid">
-<div class="result-stat"><span class="result-label">Original</span><span class="result-number" id="result-original-size">—</span></div>
-<div class="result-stat"><span class="result-label">Compressed</span><span class="result-number" id="result-output-size">—</span></div>
-<div class="result-stat"><span class="result-label">Change</span><span class="result-number" id="result-change">—</span></div>
-<div class="result-stat"><span class="result-label">Output</span><span class="result-number" id="result-format">—</span></div>
-</div>
-<video class="result-preview" controls="" id="result-preview" playsinline="" preload="metadata"></video>
-<p class="preview-note" hidden="" id="result-preview-note">OGV preview is not supported by this browser. The generated file can still be saved and used normally.</p>
-</section>
-<div aria-live="polite" class="status-line" id="status-line">Choose a video to start.</div>
-</main>
-<footer class="bottom-sticky-panel">
-<button class="btn-pill compress-btn" disabled="" id="compress-btn" type="button">Compress Video</button>
-<button class="btn-pill save-menu-btn" disabled="" id="show-save-actions-btn" type="button">Save Options</button>
-<div class="save-actions" id="save-actions">
-<button class="btn-pill overwrite-btn" disabled="" id="overwrite-btn" type="button">Save Over Original</button>
-<button class="btn-pill copy-btn" disabled="" id="save-copy-btn" type="button">Save New Copy</button>
-</div>
-</footer>
-</div>
-<script src="vidcompressor-v002-part1.js"></script>
-<script src="vidcompressor-v002-part2.js"></script>
-<script src="vidcompressor-v002-part3.js"></script>
-<script src="vidcompressor-v002-part4.js"></script>
+  <div class="app-wrapper">
+    <header class="top-sticky-panel" id="top-sticky-panel">
+      <div class="title-pill">
+        <div class="title-group">
+          <div class="countdown-circle-indicator" id="countdown-circle" title="Double-click to lock the header">5</div>
+          <span class="title-text">VIDCOMPRESSOR <span class="version-text">v0.03</span></span>
+        </div>
+        <span class="engine-pill" id="engine-state">ENGINE IDLE</span>
+      </div>
+      <div class="panel-content-hide">
+        <div class="header-actions">
+          <button class="btn-pill" id="open-video-btn" type="button">Open Video</button>
+          <button class="small-btn" disabled id="clear-btn" type="button">Clear</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="middle-scroll-panel">
+      <section class="config-card" id="import-card">
+        <h2>Video import</h2>
+        <p class="muted">Open a video to retain direct overwrite permission. Dropped videos can still be compressed and saved as a new copy.</p>
+        <div aria-label="Choose a video or drop one here" class="drop-zone" id="drop-zone" role="button" tabindex="0">
+          <div class="drop-zone-icon">🎞️</div>
+          <div class="drop-zone-title">Drop a video here</div>
+          <p class="drop-zone-copy">MP4, M4V, MOV, MKV, AVI, WebM, OGV, or OGG.<br>Nothing is uploaded; processing stays in this browser.</p>
+        </div>
+        <input accept="video/mp4,video/quicktime,video/x-m4v,video/x-matroska,video/x-msvideo,video/webm,video/ogg,.mp4,.m4v,.mov,.mkv,.avi,.webm,.ogv,.ogg" class="file-input" id="file-input" type="file">
+      </section>
+
+      <section class="config-card" hidden id="source-card">
+        <h3>Selected file</h3>
+        <div class="file-card">
+          <div class="video-thumb">
+            <video id="source-preview" muted playsinline preload="metadata"></video>
+            <span class="video-placeholder" id="source-placeholder">▶</span>
+          </div>
+          <div>
+            <div class="file-name" id="source-name">No video selected</div>
+            <div class="file-meta" id="source-meta">—</div>
+            <div class="access-note copy-only" id="access-note">Save a new copy will be available after compression.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-card" id="format-card">
+        <h2>Output format</h2>
+        <label class="field-label" for="output-format">Video container and codecs</label>
+        <select class="pill-select" id="output-format">
+          <option value="auto">Keep source format where supported</option>
+          <option value="mp4">MP4 — H.264 video + AAC audio</option>
+          <option value="ogv">OGV — Theora video + Vorbis audio</option>
+        </select>
+        <p class="field-help" id="format-help">Keeps compatible source containers. WebM is converted to MP4.</p>
+      </section>
+
+      <section class="config-card" id="mode-card">
+        <h2>Compression mode</h2>
+        <label class="field-label" for="compression-mode">How the output size is controlled</label>
+        <select class="pill-select" id="compression-mode">
+          <option value="smart">Smart smaller file</option>
+          <option value="target">Target file size</option>
+          <option value="manual">Manual bitrates</option>
+        </select>
+        <p class="field-help" id="mode-help">Targets a percentage of the original file while allocating separate video and audio bitrates.</p>
+
+        <div class="mode-panel" id="smart-panel">
+          <div class="control-heading-row">
+            <label class="control-heading" for="smart-size-slider">Target size</label>
+            <span class="control-value" id="smart-size-value">70% of original</span>
+          </div>
+          <input id="smart-size-slider" type="range" min="35" max="95" value="70" aria-label="Smart target size percentage">
+          <div class="slider-endpoints"><span>Smallest file</span><span>Highest quality</span></div>
+        </div>
+
+        <div class="mode-panel" id="target-panel" hidden>
+          <label class="field-label" for="target-size-input">Desired output size</label>
+          <div class="number-with-unit">
+            <input id="target-size-input" type="number" min="1" step="1" value="50" inputmode="decimal">
+            <span>MB</span>
+          </div>
+        </div>
+
+        <div class="mode-panel" id="manual-panel" hidden>
+          <div class="control-heading-row">
+            <label class="control-heading" for="manual-video-slider">Video bitrate</label>
+            <span class="control-value" id="manual-video-value">2,500 kbps</span>
+          </div>
+          <input id="manual-video-slider" type="range" min="120" max="12000" step="20" value="2500" aria-label="Manual video bitrate">
+          <div class="slider-endpoints"><span>120 kbps</span><span>12,000 kbps</span></div>
+        </div>
+      </section>
+
+      <section class="config-card settings-card" id="video-card">
+        <h2>Video compression</h2>
+        <div class="settings-grid">
+          <div>
+            <label class="field-label" for="resolution-select">Resolution</label>
+            <select class="pill-select" id="resolution-select">
+              <option value="keep">Keep original</option>
+              <option value="auto">Auto for target size</option>
+              <option value="1080">Maximum 1080p</option>
+              <option value="720">Maximum 720p</option>
+              <option value="480">Maximum 480p</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="passes-select">Encoding passes</label>
+            <select class="pill-select" id="passes-select">
+              <option value="2">Two-pass — accurate size</option>
+              <option value="1">One-pass — faster</option>
+            </select>
+          </div>
+        </div>
+        <div class="readout-grid">
+          <div class="readout-box"><span>Video bitrate</span><strong id="video-bitrate-readout">—</strong></div>
+          <div class="readout-box"><span>Output resolution</span><strong id="resolution-readout">—</strong></div>
+        </div>
+      </section>
+
+      <section class="config-card settings-card" id="audio-card">
+        <h2>Audio compression</h2>
+        <div class="settings-grid">
+          <div>
+            <label class="field-label" for="audio-bitrate-select">Audio bitrate</label>
+            <select class="pill-select" id="audio-bitrate-select">
+              <option value="0">Remove audio</option>
+              <option value="64">64 kbps</option>
+              <option value="96">96 kbps</option>
+              <option value="128" selected>128 kbps</option>
+              <option value="160">160 kbps</option>
+              <option value="192">192 kbps</option>
+              <option value="256">256 kbps</option>
+            </select>
+          </div>
+          <div>
+            <label class="field-label" for="audio-channels-select">Channels</label>
+            <select class="pill-select" id="audio-channels-select">
+              <option value="keep">Keep source</option>
+              <option value="1">Mono</option>
+              <option value="2">Stereo</option>
+            </select>
+          </div>
+        </div>
+        <div class="readout-grid single-row">
+          <div class="readout-box"><span>Audio allocation</span><strong id="audio-bitrate-readout">128 kbps</strong></div>
+        </div>
+      </section>
+
+      <section class="config-card estimate-card" id="estimate-card">
+        <div class="estimate-heading-row">
+          <div>
+            <h2>Estimated output</h2>
+            <p class="muted">Updates from the selected duration, bitrates, format, and encoding mode.</p>
+          </div>
+          <strong class="estimate-main" id="estimated-size">Choose a video</strong>
+        </div>
+        <div class="estimate-grid">
+          <div class="estimate-stat"><span>Original</span><strong id="estimate-original">—</strong></div>
+          <div class="estimate-stat"><span>Expected change</span><strong id="estimate-change">—</strong></div>
+          <div class="estimate-stat"><span>Video</span><strong id="estimate-video">—</strong></div>
+          <div class="estimate-stat"><span>Audio</span><strong id="estimate-audio">—</strong></div>
+        </div>
+        <p class="estimate-warning" id="estimate-warning" hidden></p>
+      </section>
+
+      <section aria-live="polite" class="config-card progress-card" id="progress-card">
+        <div class="progress-top">
+          <span class="progress-title" id="progress-title">Preparing engine…</span>
+          <span class="progress-value" id="progress-value">0%</span>
+        </div>
+        <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+        <p class="muted progress-note" id="progress-note">Two-pass compression processes the video twice for a more accurate final size.</p>
+      </section>
+
+      <section class="config-card result-card" id="result-card">
+        <h2>Compressed video ready</h2>
+        <p class="muted" id="result-file-name">—</p>
+        <div class="result-grid">
+          <div class="result-stat"><span class="result-label">Original</span><span class="result-number" id="result-original-size">—</span></div>
+          <div class="result-stat"><span class="result-label">Estimated</span><span class="result-number" id="result-estimated-size">—</span></div>
+          <div class="result-stat"><span class="result-label">Actual</span><span class="result-number" id="result-output-size">—</span></div>
+          <div class="result-stat"><span class="result-label">Change</span><span class="result-number" id="result-change">—</span></div>
+          <div class="result-stat"><span class="result-label">Estimate accuracy</span><span class="result-number" id="result-accuracy">—</span></div>
+          <div class="result-stat"><span class="result-label">Output</span><span class="result-number" id="result-format">—</span></div>
+        </div>
+        <video class="result-preview" controls id="result-preview" playsinline preload="metadata"></video>
+        <p class="preview-note" hidden id="result-preview-note">OGV preview is not supported by this browser. The generated file can still be saved and used normally.</p>
+      </section>
+
+      <div aria-live="polite" class="status-line" id="status-line">Choose a video to start.</div>
+    </main>
+
+    <footer class="bottom-sticky-panel">
+      <button class="btn-pill compress-btn" disabled id="compress-btn" type="button">Compress Video</button>
+      <button class="btn-pill save-menu-btn" disabled id="show-save-actions-btn" type="button">Save Options</button>
+      <div class="save-actions" id="save-actions">
+        <button class="btn-pill overwrite-btn" disabled id="overwrite-btn" type="button">Save Over Original</button>
+        <button class="btn-pill copy-btn" disabled id="save-copy-btn" type="button">Save New Copy</button>
+      </div>
+    </footer>
+  </div>
+
+  <script src="vidcompressor-v003-core.js"></script>
+  <script src="vidcompressor-v003-encode.js"></script>
+  <script src="vidcompressor-v003-events.js"></script>
 </body>
 </html>
