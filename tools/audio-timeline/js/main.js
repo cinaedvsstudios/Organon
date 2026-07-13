@@ -8,6 +8,12 @@ import { audioCtx, decodeAudioFile, renderWaveformToCanvas, createTrackNode } fr
 import { loadVideoFile, togglePlayback, stepFrame, downloadCurrentFramePNG } from './video-renderer.js';
 import { analyzeCurrentFrame, setBaselineLuminance } from './color-shaders.js';
 import { startExport, stopExport } from './exporter.js';
+import {
+    getMediaKind,
+    initMediaStreamTools,
+    prepareVideoForPreview,
+    registerImportedMedia
+} from './media-stream-tools.js';
 
 // --- UI ELEMENT SELECTION ---
 const btnAddMedia = document.getElementById('btn-add-media');
@@ -22,43 +28,69 @@ const btnSuggestCorrections = document.querySelector('#chroma-panel button');
 const btnPlay = document.getElementById('btn-play');
 const btnExport = document.getElementById('btn-export');
 const exportFormatPicker = document.getElementById('export-format');
+const exportStatus = document.getElementById('export-status');
+
+initMediaStreamTools();
 
 // --- 1. MEDIA IMPORT LOGIC ---
 const hiddenFileInput = document.createElement('input');
 hiddenFileInput.type = 'file';
-hiddenFileInput.accept = 'audio/*, video/*';
+hiddenFileInput.accept = 'audio/*,video/*,.ogv,video/ogg';
 hiddenFileInput.multiple = true;
 
 btnAddMedia.addEventListener('click', () => hiddenFileInput.click());
 
 hiddenFileInput.addEventListener('change', async (event) => {
-    const files = event.target.files;
+    const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
 
     if (audioCtx.state === 'suspended') await audioCtx.resume();
 
     for (const file of files) {
-        if (file.type.startsWith('audio/')) {
-            const audioBuffer = await decodeAudioFile(file);
-            createTrackNode(audioBuffer);
+        const kind = getMediaKind(file);
+        if (!kind) continue;
 
-            const waveCanvas = document.createElement('canvas');
-            waveCanvas.width = audioTrackLane.clientWidth - 20;
-            waveCanvas.height = 50;
-            waveCanvas.style.position = 'absolute';
-            waveCanvas.style.left = '10px';
-            waveCanvas.style.pointerEvents = 'none';
+        registerImportedMedia(file);
 
-            audioTrackLane.innerHTML = '';
-            audioTrackLane.appendChild(waveCanvas);
-            renderWaveformToCanvas(audioBuffer, waveCanvas, '#4b84bf');
+        if (kind === 'audio') {
+            try {
+                const audioBuffer = await decodeAudioFile(file);
+                createTrackNode(audioBuffer);
+
+                const waveCanvas = document.createElement('canvas');
+                waveCanvas.width = audioTrackLane.clientWidth - 20;
+                waveCanvas.height = 50;
+                waveCanvas.style.position = 'absolute';
+                waveCanvas.style.left = '10px';
+                waveCanvas.style.pointerEvents = 'none';
+
+                audioTrackLane.innerHTML = '';
+                audioTrackLane.appendChild(waveCanvas);
+                renderWaveformToCanvas(audioBuffer, waveCanvas, '#4b84bf');
+            } catch (error) {
+                console.error(`Could not load audio file ${file.name}:`, error);
+                exportStatus.textContent = `Could not load audio file: ${file.name}`;
+            }
         }
-        
-        if (file.type.startsWith('video/')) {
-            await loadVideoFile(file);
-            videoTrackLane.innerHTML = `<span style="font-size: 12px; color: var(--stone-ochre);">🎞️ ${file.name} Loaded</span>`;
+
+        if (kind === 'video') {
+            try {
+                videoTrackLane.innerHTML = `<span style="font-size: 12px; color: var(--water-spray);">Preparing ${file.name}…</span>`;
+                const previewFile = await prepareVideoForPreview(file, (message) => {
+                    videoTrackLane.innerHTML = `<span style="font-size: 12px; color: var(--water-spray);">${message}</span>`;
+                });
+                await loadVideoFile(previewFile);
+                const ogvNote = previewFile === file ? '' : ' · temporary WebM preview';
+                videoTrackLane.innerHTML = `<span style="font-size: 12px; color: var(--stone-ochre);">🎞️ ${file.name} Loaded${ogvNote}</span>`;
+            } catch (error) {
+                console.error(`Could not load video file ${file.name}:`, error);
+                videoTrackLane.innerHTML = `<span style="font-size: 12px; color: var(--terracotta-peach);">Could not load ${file.name}</span>`;
+                exportStatus.textContent = `Video import failed: ${error.message}`;
+            }
         }
     }
+
+    hiddenFileInput.value = '';
 });
 
 // --- 2. FLOATING CHROMINANCE PANEL LOGIC ---
