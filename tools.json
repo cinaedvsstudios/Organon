@@ -1,5 +1,5 @@
 {
-  "version": "v1.28-alpha",
+  "version": "v1.29-alpha",
   "categories": [
     {
       "id": "create",
@@ -26,7 +26,7 @@
         {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html", "description": "Create and preview animation assets from local media or image sequences. Advanced Mode opens the wide desktop workspace."},
         {"id": "audio-timeline", "label": "AUDIO TIMELINE", "path": "tools/audio-timeline/index.html", "description": "Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id": "frame-extractor", "label": "FRAME EXTRACTOR", "path": "tools/frame-extractor/index.html", "description": "Extract still frames from local video files."},
-        {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html", "description": "Compress local video files with one quality-to-file-size slider, then save a new copy or overwrite the source file where browser permission allows."},
+        {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html?build=20260713-1722", "description": "Compress or convert local videos to MP4 or OGV with format-aware quality settings, then save a new copy or overwrite matching source formats where browser permission allows."},
         {"id": "bubble-riser", "label": "BUBBLE RISER", "path": "tools/bubble-riser/index-v11.html?build=20260630-1127", "description": "Create loopable black-background bubble fields, streams, emitters and bursts, then export MP4 or animated WebP."}
       ]
     },
