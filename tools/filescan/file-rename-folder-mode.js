@@ -32,6 +32,12 @@
     }
   };
 
+  ui.moduleSelect.addEventListener("change", (event) => {
+    if (ui.moduleSelect.value !== "filescan") return;
+    event.stopImmediatePropagation();
+    window.location.href = "./index.html?v=0.03";
+  }, true);
+
   ui.filePicker.addEventListener("change", (event) => {
     event.stopImmediatePropagation();
 
