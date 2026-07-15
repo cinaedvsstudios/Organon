@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Organon — File Rename</title>
+  <script>if (window.self === window.top) window.location.href='../../index.html';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./filescan.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script defer src="./file-rename.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="title">
+        <select id="moduleSelect" class="module-select" aria-label="Choose FileScan module">
+          <option value="filescan">FILESCAN</option>
+          <option value="file-rename" selected>FILE RENAME</option>
+        </select>
+        <span id="fileStatus" class="folder">No files listed</span>
+      </div>
+      <div class="picker single-picker">
+        <button id="addFiles" class="browse" type="button">Add files to list</button>
+      </div>
+      <input id="filePicker" type="file" multiple hidden>
+    </header>
+
+    <main>
+      <section class="card" aria-label="Files to rename">
+        <div class="summary">
+          <div class="summary-row">
+            <h1>Files to rename</h1>
+            <span id="selectionCount" class="count">0 selected</span>
+          </div>
+          <p id="summaryText" class="note">Choose the files you want to rename and package into a ZIP.</p>
+          <div id="postControls" class="post-controls">
+            <div class="filter-row">
+              <input id="filterInput" class="filter-input" type="search" autocomplete="off" placeholder="Filter original or new filenames">
+              <select id="sortSelect" class="sort-select" aria-label="Sort files">
+                <option value="current">Sort: Current order</option>
+                <option value="name-asc">Sort: Name A–Z</option>
+                <option value="name-desc">Sort: Name Z–A</option>
+                <option value="type-asc">Sort: File type A–Z</option>
+                <option value="type-desc">Sort: File type Z–A</option>
+              </select>
+            </div>
+            <div class="control-row three-controls">
+              <button class="button" id="selectAll" disabled>Select all</button>
+              <button class="button danger" id="clearAll" disabled>Clear all</button>
+              <button class="button" id="invert" disabled>Invert</button>
+            </div>
+          </div>
+        </div>
+        <div class="list-head">
+          <span id="listLabel">Files</span>
+          <span id="totalLabel">0 shown</span>
+        </div>
+        <div id="fileList" class="list rename-main-list">
+          <div class="empty">Choose files above.<br>Only the files you select will be loaded.</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom rename-bottom">
+      <button class="button" id="openRename" disabled>File rename</button>
+      <button class="button txt" id="reset" disabled>Reset</button>
+      <button class="button csv" id="downloadZip" disabled>Download ZIP</button>
+    </footer>
+  </div>
+
+  <div class="modal-backdrop" id="renameModal" hidden>
+    <section class="rename-dialog" role="dialog" aria-modal="true" aria-labelledby="renameDialogTitle">
+      <div class="rename-dialog-head">
+        <div>
+          <h2 id="renameDialogTitle">Rename sequence</h2>
+          <p>Drag files into the required order, enter a shared name, then press Apply to rebuild the numbered filenames.</p>
+        </div>
+        <button type="button" class="modal-close" id="renameClose" aria-label="Close rename sequence">×</button>
+      </div>
+
+      <div class="rename-toolbar">
+        <label for="sequenceBaseName">Sequence name</label>
+        <div class="rename-apply-row">
+          <input id="sequenceBaseName" type="text" placeholder="example: greatfin_idle" autocomplete="off">
+          <button type="button" class="button primary" id="applySequence">Apply</button>
+        </div>
+        <p id="renameStatus" class="rename-status">Names are not changed until you press Save.</p>
+      </div>
+
+      <div class="rename-list" id="renameList"></div>
+
+      <div class="rename-dialog-actions">
+        <button type="button" class="button" id="renameCancel">Cancel</button>
+        <button type="button" class="button csv" id="renameSave">Save order and names</button>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
