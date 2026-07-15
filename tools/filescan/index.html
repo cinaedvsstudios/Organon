@@ -8,69 +8,76 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./filescan.css">
-  <script defer src="./filescan.js"></script>
+  <style>
+    :root{--ochre:#e5a862;--bronze:#896b49;--blue:#4b84bf;--spray:#79b4e3;--paper:#f2ece0;--night:#181919;--card:#292a24;--input:rgba(24,25,25,.95);--head:'Cinzel',Georgia,serif;--body:'Inter',system-ui,sans-serif;--mono:'Geist Mono',Consolas,monospace}
+    *{box-sizing:border-box}body{margin:0;background:var(--night);color:var(--paper);font-family:var(--body)}button,input,select{font:inherit}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--spray);outline-offset:2px}
+    .app{width:100%;max-width:540px;min-height:100vh;margin:auto;display:flex;flex-direction:column;background:var(--night)}
+    .top{position:sticky;top:0;z-index:5;padding:20px 16px 16px;border-bottom:1px solid var(--bronze);border-radius:0 0 28px 28px;background:#d79e5c linear-gradient(rgba(224,163,96,.8),rgba(224,163,96,.8)),url('../../images/stonetext.jpg');background-size:cover;box-shadow:0 8px 20px rgba(0,0,0,.28)}
+    .title{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 15px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.93);color:var(--spray);font-family:var(--head);font-size:.85rem;font-weight:700;letter-spacing:.05em}.folder{max-width:53%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:rgba(242,236,224,.72);font:500 .63rem var(--mono)}
+    .picker{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:12px}.browse,.toggle,.button,.group-button{min-height:40px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--bronze);border-radius:999px;cursor:pointer;font-weight:700;letter-spacing:.035em;text-transform:uppercase;transition:.2s}.browse{padding:10px 16px;background:rgba(24,25,25,.92);color:var(--spray);font-size:.74rem}.browse:hover,.button:hover:not(:disabled),.group-button:hover{border-color:var(--spray);box-shadow:0 0 12px rgba(121,180,227,.34);background:rgba(41,42,36,.96)}.toggle{padding:7px 11px;background:rgba(24,25,25,.78);font-size:.68rem;white-space:nowrap}.toggle input{width:16px;height:16px;margin:0;accent-color:var(--blue)}.fallback{display:none;margin-top:9px;background:rgba(24,25,25,.75);color:rgba(242,236,224,.78);font-size:.63rem}.fallback.show{display:flex}
+    main{flex:1;padding:16px 16px 150px;background:#000}.card{overflow:hidden;border:1px solid var(--bronze);border-radius:22px;background:var(--card)}.summary{padding:15px 16px;border-bottom:1px solid rgba(137,107,73,.7)}.summary-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}h1{margin:0;color:var(--ochre);font:700 1rem var(--head);letter-spacing:.045em}.count{flex:0 0 auto;padding:4px 8px;border:1px solid rgba(121,180,227,.58);border-radius:999px;color:var(--spray);font:700 .65rem var(--mono)}.note{min-height:19px;margin:7px 0 0;color:rgba(242,236,224,.74);font-size:.75rem;line-height:1.45}
+    .post-controls{display:none;margin-top:13px}.post-controls.show{display:block}.filter-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.filter-input,.sort-select{width:100%;height:39px;padding:0 13px;border:1px solid var(--bronze);border-radius:999px;background:var(--input);color:var(--paper);font-size:.7rem;outline:0}.filter-input::placeholder{color:rgba(242,236,224,.46)}.sort-select{color:var(--spray);cursor:pointer}.sort-select option{background:#20211f;color:var(--paper)}.control-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}.button,.group-button{padding:9px 8px;background:var(--input);color:var(--paper);font-size:.61rem}.button:disabled{cursor:not-allowed;opacity:.42}.button.danger{color:#ffb0c1}.group-button{color:var(--spray)}.group-button.active{border-color:var(--spray);background:rgba(75,132,191,.2);box-shadow:inset 0 0 0 1px rgba(121,180,227,.22)}
+    .list-head{display:flex;justify-content:space-between;gap:10px;padding:11px 16px;border-bottom:1px solid rgba(137,107,73,.55);color:var(--spray);font:700 .67rem var(--mono);letter-spacing:.05em;text-transform:uppercase}.list{max-height:calc(100vh - 465px);min-height:190px;overflow:auto;background:rgba(0,0,0,.22)}.list::-webkit-scrollbar{width:9px}.list::-webkit-scrollbar-thumb{border:2px solid var(--card);border-radius:999px;background:var(--bronze)}.empty{display:grid;min-height:190px;place-items:center;padding:25px;color:rgba(242,236,224,.55);font-size:.8rem;text-align:center;line-height:1.5}.file{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid rgba(137,107,73,.25);cursor:pointer;transition:background .16s}.file:hover{background:rgba(75,132,191,.1)}.file input{width:17px;height:17px;flex:0 0 auto;margin:0;accent-color:var(--blue);cursor:pointer}.file-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--paper);font:.74rem var(--mono)}.file.nested .file-name{color:#d1e7ff}.file-group+.file-group{margin-top:4px}.type-divider{display:flex;align-items:center;gap:9px;padding:10px 14px 8px;color:var(--ochre);font:700 .65rem var(--mono);letter-spacing:.06em}.type-divider:before,.type-divider:after{content:'';height:1px;flex:1;background:rgba(137,107,73,.85)}.type-divider span{white-space:nowrap}
+    .bottom{position:fixed;z-index:4;bottom:0;left:50%;width:100%;max-width:540px;transform:translateX(-50%);display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:9px;padding:14px 16px 18px;border-top:1px solid var(--bronze);border-radius:28px 28px 0 0;background:#d79e5c linear-gradient(rgba(224,163,96,.8),rgba(224,163,96,.8)),url('../../images/stonetext.jpg');background-size:cover}.bottom .button{min-height:43px;background:rgba(24,25,25,.92);color:var(--spray);font-size:.66rem}.bottom .button.txt{color:var(--paper)}.bottom .button.csv{color:#caecff}.toast{position:fixed;z-index:20;right:18px;bottom:84px;max-width:calc(100vw - 36px);padding:10px 14px;border:1px solid var(--bronze);border-radius:999px;background:rgba(24,25,25,.97);color:var(--spray);font-size:.74rem;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,.45);opacity:0;transform:translateY(8px);pointer-events:none;transition:.22s}.toast.show{opacity:1;transform:translateY(0)}
+    @media(max-width:440px){.picker{grid-template-columns:1fr}.toggle{justify-content:center}.filter-row{grid-template-columns:1fr}.control-row{grid-template-columns:1fr 1fr}.list{max-height:calc(100vh - 535px)}.bottom{grid-template-columns:1fr 1fr}.bottom .button:first-child{grid-column:1/-1}}
+  </style>
 </head>
 <body>
   <div class="app">
     <header class="top">
-      <div class="title">
-        <select id="moduleSelect" class="module-select" aria-label="Choose FileScan module">
-          <option value="filescan" selected>FILESCAN</option>
-          <option value="file-rename">FILE RENAME</option>
-        </select>
-        <span id="fileStatus" class="folder">No files listed</span>
+      <div class="title"><span>FILESCAN</span><span id="folderName" class="folder">No folder listed</span></div>
+      <div class="picker">
+        <button id="addFolder" class="browse" type="button">Add folder to list</button>
+        <label class="toggle"><input id="subfolders" type="checkbox"> Include subfolders</label>
       </div>
-      <div class="picker single-picker">
-        <button id="addFiles" class="browse" type="button">Add files to list</button>
-      </div>
-      <input id="filePicker" type="file" multiple hidden>
+      <button id="classicPicker" class="browse fallback" type="button">Use browser folder picker</button>
+      <input id="folderPicker" type="file" webkitdirectory directory multiple hidden>
     </header>
-
     <main>
       <section class="card" aria-label="File selection">
         <div class="summary">
-          <div class="summary-row">
-            <h1>File list</h1>
-            <span id="selectionCount" class="count">0 selected</span>
-          </div>
-          <p id="summaryText" class="note">Choose individual files to build a selectable filename list.</p>
+          <div class="summary-row"><h1>Folder file list</h1><span id="selectionCount" class="count">0 selected</span></div>
+          <p id="summaryText" class="note">Choose a folder to build a selectable filename list.</p>
           <div id="postControls" class="post-controls">
-            <div class="filter-row">
-              <input id="filterInput" class="filter-input" type="search" autocomplete="off" placeholder="Filter filenames">
-              <select id="sortSelect" class="sort-select" aria-label="Sort files">
-                <option value="original">Sort: Selection order</option>
-                <option value="name-asc">Sort: Name A–Z</option>
-                <option value="name-desc">Sort: Name Z–A</option>
-                <option value="type-asc">Sort: File type A–Z</option>
-                <option value="type-desc">Sort: File type Z–A</option>
-              </select>
-            </div>
-            <div class="control-row">
-              <button class="button" id="selectAll" disabled>Select all</button>
-              <button class="button danger" id="clearAll" disabled>Clear all</button>
-              <button class="button" id="invert" disabled>Invert</button>
-              <button class="group-button" id="group" disabled>Group: off</button>
-            </div>
+            <div class="filter-row"><input id="filterInput" class="filter-input" type="search" autocomplete="off" placeholder="Filter filenames or paths"><select id="sortSelect" class="sort-select" aria-label="Sort files"><option value="original">Sort: Folder order</option><option value="name-asc">Sort: Name A–Z</option><option value="name-desc">Sort: Name Z–A</option><option value="type-asc">Sort: File type A–Z</option><option value="type-desc">Sort: File type Z–A</option></select></div>
+            <div class="control-row"><button class="button" id="selectAll" disabled>Select all</button><button class="button danger" id="clearAll" disabled>Clear all</button><button class="button" id="invert" disabled>Invert</button><button class="group-button" id="group" disabled>Group: off</button></div>
           </div>
         </div>
-        <div class="list-head">
-          <span id="listLabel">Files</span>
-          <span id="totalLabel">0 shown</span>
-        </div>
-        <div id="fileList" class="list">
-          <div class="empty">Choose files above.<br>Selected files will be checked by default.</div>
-        </div>
+        <div class="list-head"><span id="listLabel">Files</span><span id="totalLabel">0 shown</span></div><div id="fileList" class="list"><div class="empty">Choose a folder above.<br>Files will be selected by default.</div></div>
       </section>
     </main>
-
-    <footer class="bottom">
-      <button class="button" id="copy" disabled>Copy filenames</button>
-      <button class="button txt" id="txt" disabled>Export TXT</button>
-      <button class="button csv" id="csv" disabled>Export CSV</button>
-    </footer>
+    <footer class="bottom"><button class="button" id="copy" disabled>Copy filenames</button><button class="button txt" id="txt" disabled>Export TXT</button><button class="button csv" id="csv" disabled>Export CSV</button></footer>
   </div>
-
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    const picker=document.getElementById('folderPicker'), addFolder=document.getElementById('addFolder'), classicPicker=document.getElementById('classicPicker'), nestedToggle=document.getElementById('subfolders');
+    const folderName=document.getElementById('folderName'), fileList=document.getElementById('fileList'), selectionCount=document.getElementById('selectionCount'), summaryText=document.getElementById('summaryText'), listLabel=document.getElementById('listLabel'), totalLabel=document.getElementById('totalLabel'), toast=document.getElementById('toast'), postControls=document.getElementById('postControls'), filterInput=document.getElementById('filterInput'), sortSelect=document.getElementById('sortSelect'), groupButton=document.getElementById('group');
+    const actions=[document.getElementById('selectAll'),document.getElementById('clearAll'),document.getElementById('invert'),groupButton,document.getElementById('copy'),document.getElementById('txt'),document.getElementById('csv')];
+    let files=[], filterText='', sortMode='original', groupByType=false;
+    function setHubStatus(text){window.parent?.postMessage?.({type:'set-status',text},'*')}function clearHubStatus(){window.parent?.postMessage?.({type:'clear-status'},'*')}
+    function flash(text){toast.textContent=text;toast.classList.add('show');clearTimeout(flash.timer);flash.timer=setTimeout(()=>toast.classList.remove('show'),2600)}
+    function extensionFor(path){const name=path.split('/').pop()||path;const dot=name.lastIndexOf('.');return dot>0&&dot<name.length-1?name.slice(dot+1).toUpperCase():'NO EXTENSION'}
+    function makeItem(path,index){return {id:`${index}:${path}`,path,index,selected:true,nested:path.includes('/'),type:extensionFor(path),name:path.split('/').pop()||path}}
+    function scope(){return nestedToggle.checked?files:files.filter(item=>!item.nested)}
+    function filtered(){const query=filterText.trim().toLocaleLowerCase();return query?scope().filter(item=>item.path.toLocaleLowerCase().includes(query)):scope()}
+    function sorted(items){const copy=[...items];const nameCompare=(a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});const typeCompare=(a,b)=>a.type.localeCompare(b.type,undefined,{numeric:true,sensitivity:'base'})||nameCompare(a,b);if(sortMode==='name-asc')copy.sort(nameCompare);if(sortMode==='name-desc')copy.sort((a,b)=>nameCompare(b,a));if(sortMode==='type-asc')copy.sort(typeCompare);if(sortMode==='type-desc')copy.sort((a,b)=>typeCompare(b,a)||nameCompare(b,a));return copy}
+    function visible(){return sorted(filtered())}
+    function selectedForOutput(){return sorted(scope().filter(item=>item.selected))}
+    function update(){const inScope=scope(), visibleItems=visible(), selectedItems=selectedForOutput();selectionCount.textContent=`${selectedItems.length} selected`;totalLabel.textContent=`${visibleItems.length} shown`;listLabel.textContent=nestedToggle.checked?'Files and relative paths':'Files in selected folder';if(files.length){const subText=nestedToggle.checked?'including subfolders':'direct folder files only';const filterNote=filterText.trim()?` ${visibleItems.length} match the filter.`:'';summaryText.textContent=`${files.length} file${files.length===1?'':'s'} found; showing ${subText}.${filterNote}`}else summaryText.textContent='Choose a folder to build a selectable filename list.';postControls.classList.toggle('show',files.length>0);actions.forEach(button=>button.disabled=!files.length);groupButton.classList.toggle('active',groupByType);groupButton.textContent=`Group: ${groupByType?'on':'off'}`;render(visibleItems)}
+    function createRow(item){const label=document.createElement('label');label.className=`file${item.nested?' nested':''}`;const check=document.createElement('input');check.type='checkbox';check.checked=item.selected;check.addEventListener('change',()=>{item.selected=check.checked;update()});const name=document.createElement('span');name.className='file-name';name.title=item.path;name.textContent=item.path;label.append(check,name);return label}
+    function render(items){fileList.replaceChildren();if(!items.length){const empty=document.createElement('div');empty.className='empty';empty.textContent=files.length?(filterText.trim()?'No files match this filter.':nestedToggle.checked?'This folder contains no files.':'No direct files were found. Turn on Include subfolders to show nested files.'):'Choose a folder above. Files will be selected by default.';fileList.append(empty);return}if(!groupByType){const fragment=document.createDocumentFragment();items.forEach(item=>fragment.append(createRow(item)));fileList.append(fragment);return}const groups=new Map();items.forEach(item=>{if(!groups.has(item.type))groups.set(item.type,[]);groups.get(item.type).push(item)});const names=[...groups.keys()].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));names.forEach(type=>{const section=document.createElement('section');section.className='file-group';const divider=document.createElement('div');divider.className='type-divider';const title=document.createElement('span');title.textContent=`${type} · ${groups.get(type).length}`;divider.append(title);section.append(divider);groups.get(type).forEach(item=>section.append(createRow(item)));fileList.append(section)})}
+    function selectedText(){return selectedForOutput().map(item=>item.path).join('\n')}
+    async function copyNames(){const text=selectedText();if(!text){flash('Select at least one file first.');return}try{await navigator.clipboard.writeText(text)}catch{const area=document.createElement('textarea');area.value=text;area.style.cssText='position:fixed;left:-9999px;top:-9999px';document.body.append(area);area.select();document.execCommand('copy');area.remove()}flash(`${selectedForOutput().length} filename${selectedForOutput().length===1?'':'s'} copied.`)}
+    function download(name,text,type){const blob=new Blob([text],{type});const link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download=name;document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}function stamp(){return new Date().toISOString().slice(0,10)}
+    function usePaths(paths,rootName){files=paths.map((path,index)=>makeItem(path,index)).sort((a,b)=>a.index-b.index);folderName.textContent=rootName||'Selected folder';filterInput.value='';filterText='';update();setHubStatus(`FileScan listed ${files.length} local filenames.`);setTimeout(clearHubStatus,2200)}
+    async function readDirectory(handle){const paths=[];async function walk(directory,prefix=''){for await(const [name,entry] of directory.entries()){const path=prefix?`${prefix}/${name}`:name;if(entry.kind==='file')paths.push(path);else if(entry.kind==='directory')await walk(entry,path)}}await walk(handle);usePaths(paths,handle.name)}
+    async function chooseDirectory(){if(!('showDirectoryPicker' in window)){classicPicker.classList.add('show');picker.click();return}try{const handle=await window.showDirectoryPicker({mode:'read'});await readDirectory(handle);classicPicker.classList.remove('show')}catch(error){if(error?.name==='AbortError')return;classicPicker.classList.add('show');flash('Local directory chooser was blocked here. Use the alternate picker below.')}}
+    addFolder.addEventListener('click',chooseDirectory);classicPicker.addEventListener('click',()=>picker.click());
+    picker.addEventListener('change',event=>{const supplied=Array.from(event.target.files||[]);if(!supplied.length)return;const root=(supplied[0].webkitRelativePath||'').split('/').filter(Boolean)[0]||'Selected folder';const paths=supplied.map(file=>{const raw=(file.webkitRelativePath||file.name).replaceAll('\\','/');const bits=raw.split('/').filter(Boolean);return bits.length>1?bits.slice(1).join('/'):file.name});usePaths(paths,root);picker.value=''});
+    nestedToggle.addEventListener('change',update);filterInput.addEventListener('input',event=>{filterText=event.target.value;update()});sortSelect.addEventListener('change',event=>{sortMode=event.target.value;update()});groupButton.addEventListener('click',()=>{groupByType=!groupByType;update()});
+    document.getElementById('selectAll').addEventListener('click',()=>{visible().forEach(item=>item.selected=true);update()});document.getElementById('clearAll').addEventListener('click',()=>{visible().forEach(item=>item.selected=false);update()});document.getElementById('invert').addEventListener('click',()=>{visible().forEach(item=>item.selected=!item.selected);update()});document.getElementById('copy').addEventListener('click',copyNames);
+    document.getElementById('txt').addEventListener('click',()=>{const text=selectedText();if(!text){flash('Select at least one file first.');return}download(`filescan-${stamp()}.txt`,text+'\n','text/plain;charset=utf-8');flash('TXT exported.')});document.getElementById('csv').addEventListener('click',()=>{const items=selectedForOutput();if(!items.length){flash('Select at least one file first.');return}const csv=['filename',...items.map(item=>'"'+item.path.replaceAll('"','""')+'"')].join('\r\n')+'\r\n';download(`filescan-${stamp()}.csv`,csv,'text/csv;charset=utf-8');flash('CSV exported.')});
+    addFolder.addEventListener('mouseenter',()=>setHubStatus('Choose a local folder and add its filenames to the list.'));nestedToggle.addEventListener('mouseenter',()=>setHubStatus('Show nested files with their relative paths.'));filterInput.addEventListener('mouseenter',()=>setHubStatus('Filter the visible filename list.'));sortSelect.addEventListener('mouseenter',()=>setHubStatus('Choose how the visible filename list is sorted.'));groupButton.addEventListener('mouseenter',()=>setHubStatus('Separate each file type with divider headings.'));document.querySelectorAll('button,input,select').forEach(el=>el.addEventListener('mouseleave',clearHubStatus));
+  </script>
 </body>
 </html>
