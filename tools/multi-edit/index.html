@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./multi-edit.css">
+  <link rel="stylesheet" href="./multi-edit-batch.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="./multi-edit.js"></script>
 </head>
@@ -38,6 +39,7 @@
         <div class="button-row" style="margin-top:10px">
           <button class="button primary" id="addImagesBtn">Add images</button>
           <button class="button danger" id="clearDeckBtn">Clear deck</button>
+          <button class="button" id="renameSequenceBtn" disabled>Rename sequence</button>
         </div>
       </section>
 
@@ -47,7 +49,7 @@
           <span class="deck-count" id="deckCount">0 images</span>
         </div>
         <div class="deck" id="assetDeck">
-          <div class="empty-deck">Add several images, then select one here to edit it.</div>
+          <div class="empty-deck">Add several images. Every edit will apply to the full batch unless an image override is enabled.</div>
         </div>
       </section>
 
@@ -62,11 +64,15 @@
     <main class="workspace">
       <div class="workspace-head">
         <div style="min-width:0">
-          <h2 id="activeImageName">No image selected</h2>
+          <div class="active-title-row">
+            <h2 id="activeImageName">No image selected</h2>
+            <span class="scope-badge" id="editScopeBadge">GLOBAL BATCH</span>
+          </div>
           <p id="activeImageMeta">Add one or more images to begin editing.</p>
         </div>
         <div class="button-row">
-          <button class="button" id="resetAdjustmentsBtn" disabled>Reset edits</button>
+          <button class="button override-button" id="overrideBtn" disabled>Override this image</button>
+          <button class="button" id="resetAdjustmentsBtn" disabled>Reset batch edits</button>
           <button class="button teal" id="exportCurrentBtn" disabled>Export PNG</button>
         </div>
       </div>
@@ -77,7 +83,7 @@
           <div class="stage-empty-inner">
             <div class="stage-empty-icon">▧</div>
             <h3>Multi image editor</h3>
-            <p>Add images on the left. Select an image, adjust its grading, then use Crop &amp; Resize to prepare an exact output canvas.</p>
+            <p>Add images on the left. Adjust the batch once, then click through the deck to preview every image with the same result.</p>
           </div>
         </div>
         <div class="stage-note" id="stageNote"></div>
@@ -93,9 +99,9 @@
       <div class="controls-inner">
         <section class="control-card" id="resizeCard">
           <div class="section-heading">
-            <h3>▣ Crop &amp; Resize</h3>
+            <h3>▣ Batch Crop &amp; Resize</h3>
           </div>
-          <p class="section-help">Choose the target canvas, then apply the resize. Nothing is permanently resized just by selecting an image.</p>
+          <p class="section-help">Canvas size, resize mode and manual placement apply to the entire batch. Enable an image override to edit only one file.</p>
 
           <div class="dimension-grid">
             <div class="field">
@@ -138,7 +144,7 @@
 
         <section class="control-card" id="gradingCard">
           <div class="section-heading">
-            <h3>🎨 Hardware color grading</h3>
+            <h3>🎨 Batch color grading</h3>
           </div>
           <div class="slider-grid">
             <div class="slider-item">
@@ -170,7 +176,7 @@
 
         <section class="control-card" id="chromaCard">
           <div class="chroma-top">
-            <div class="section-heading" style="margin:0"><h3>🎭 Chromakey</h3></div>
+            <div class="section-heading" style="margin:0"><h3>🎭 Batch Chromakey</h3></div>
             <label class="switch">
               <input id="chromaEnabled" type="checkbox" disabled>
               <span>Enable</span>
@@ -196,7 +202,7 @@
 
         <section class="control-card">
           <div class="section-heading"><h3>💾 Output</h3></div>
-          <p class="section-help">Overwrite updates the selected image inside this deck. Export downloads the applied result as a PNG.</p>
+          <p class="section-help">Overwrite replaces the selected deck image with its processed result. Export uses its current saved filename without adding “edited”.</p>
           <div class="button-row">
             <button class="button primary" id="overwriteBtn" disabled>Overwrite current</button>
             <button class="button teal" id="outputExportBtn" disabled>Export PNG</button>
@@ -204,6 +210,34 @@
         </section>
       </div>
     </aside>
+  </div>
+
+  <div class="modal-backdrop" id="renameModal" hidden>
+    <section class="rename-dialog" role="dialog" aria-modal="true" aria-labelledby="renameDialogTitle">
+      <div class="rename-dialog-head">
+        <div>
+          <h2 id="renameDialogTitle">Rename sequence</h2>
+          <p>Drag images into the required order, enter a shared name, then press Apply to rebuild the numbered filenames.</p>
+        </div>
+        <button type="button" class="modal-close" id="renameCloseBtn" aria-label="Close rename sequence">×</button>
+      </div>
+
+      <div class="rename-toolbar">
+        <label for="sequenceBaseName">Sequence name</label>
+        <div class="rename-apply-row">
+          <input id="sequenceBaseName" type="text" placeholder="example: greatfin_idle" autocomplete="off">
+          <button type="button" class="button primary" id="applySequenceNameBtn">Apply</button>
+        </div>
+        <p id="renameStatus" class="rename-status">Names are not changed until you press Save.</p>
+      </div>
+
+      <div class="rename-list" id="renameList"></div>
+
+      <div class="rename-dialog-actions">
+        <button type="button" class="button" id="renameCancelBtn">Cancel</button>
+        <button type="button" class="button teal" id="renameSaveBtn">Save order and names</button>
+      </div>
+    </section>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"><span class="emoji" id="toastEmoji">ℹ️</span><span id="toastText">Ready</span></div>
