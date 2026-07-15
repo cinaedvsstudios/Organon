@@ -7,10 +7,12 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./multi-edit.css">
-  <link rel="stylesheet" href="./multi-edit-batch.css">
+  <link rel="stylesheet" href="./multi-edit.css?v=0.02">
+  <link rel="stylesheet" href="./multi-edit-batch.css?v=0.02">
+  <link rel="stylesheet" href="./multi-edit-output.css?v=0.01">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script defer src="./multi-edit.js"></script>
+  <script defer src="./multi-edit.js?v=0.02"></script>
+  <script defer src="./multi-edit-output.js?v=0.01"></script>
 </head>
 <body>
   <header>
@@ -160,6 +162,14 @@
               <input type="range" id="saturation" min="0" max="200" value="100" disabled>
             </div>
             <div class="slider-item">
+              <div class="slider-head"><span>Contrast</span><output id="contrastOut">100%</output></div>
+              <input type="range" id="contrast" min="0" max="200" value="100" disabled>
+            </div>
+            <div class="slider-item">
+              <div class="slider-head"><span>Global opacity</span><output id="opacityOut">100%</output></div>
+              <input type="range" id="opacity" min="0" max="100" value="100" disabled>
+            </div>
+            <div class="slider-item">
               <div class="slider-head"><span>Highlights</span><output id="highlightsOut">0%</output></div>
               <input type="range" id="highlights" min="-100" max="100" value="0" disabled>
             </div>
@@ -200,9 +210,32 @@
           </div>
         </section>
 
-        <section class="control-card">
+        <section class="control-card" id="outputCard">
           <div class="section-heading"><h3>💾 Output</h3></div>
-          <p class="section-help">Overwrite replaces the selected deck image with its processed result. Export uses its current saved filename without adding “edited”.</p>
+          <p class="section-help">Choose one format for the current image and the batch ZIP. PNG and WebP preserve transparency. JPEG uses the selected solid background.</p>
+
+          <div class="output-format-grid">
+            <div class="field">
+              <label for="outputFormat">File format</label>
+              <select id="outputFormat" class="output-select">
+                <option value="png" selected>PNG — lossless</option>
+                <option value="jpeg">JPEG</option>
+                <option value="webp">WebP</option>
+              </select>
+            </div>
+            <div class="slider-item output-quality-item" id="outputQualityItem">
+              <div class="slider-head"><span>Quality / compression</span><output id="outputQualityOut">Lossless</output></div>
+              <input type="range" id="outputQuality" min="10" max="100" value="92" disabled>
+            </div>
+          </div>
+
+          <label class="jpeg-background-row" id="jpegBackgroundRow" hidden>
+            <span>JPEG background</span>
+            <input id="jpegBackground" type="color" value="#000000">
+            <code id="jpegBackgroundHex">#000000</code>
+          </label>
+
+          <p class="output-format-note" id="outputFormatNote">PNG is lossless, so the quality control is not used.</p>
           <div class="button-row">
             <button class="button primary" id="overwriteBtn" disabled>Overwrite current</button>
             <button class="button teal" id="outputExportBtn" disabled>Export PNG</button>
