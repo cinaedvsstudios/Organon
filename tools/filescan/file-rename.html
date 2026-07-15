@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./filescan.css">
+  <link rel="stylesheet" href="./filescan.css?v=0.02">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script defer src="./file-rename.js"></script>
+  <script defer src="./file-rename.js?v=0.02"></script>
+  <script defer src="./file-rename-folder-mode.js?v=0.01"></script>
 </head>
 <body>
   <div class="app">
@@ -20,12 +21,12 @@
           <option value="filescan">FILESCAN</option>
           <option value="file-rename" selected>FILE RENAME</option>
         </select>
-        <span id="fileStatus" class="folder">No files listed</span>
+        <span id="fileStatus" class="folder">No folder listed</span>
       </div>
       <div class="picker single-picker">
-        <button id="addFiles" class="browse" type="button">Add files to list</button>
+        <button id="addFiles" class="browse" type="button">Add folder to list</button>
       </div>
-      <input id="filePicker" type="file" multiple hidden>
+      <input id="filePicker" type="file" webkitdirectory directory multiple hidden>
     </header>
 
     <main>
@@ -35,12 +36,12 @@
             <h1>Files to rename</h1>
             <span id="selectionCount" class="count">0 selected</span>
           </div>
-          <p id="summaryText" class="note">Choose the files you want to rename and package into a ZIP.</p>
+          <p id="summaryText" class="note">Choose a folder to load its top-level files for renaming.</p>
           <div id="postControls" class="post-controls">
             <div class="filter-row">
               <input id="filterInput" class="filter-input" type="search" autocomplete="off" placeholder="Filter original or new filenames">
               <select id="sortSelect" class="sort-select" aria-label="Sort files">
-                <option value="current">Sort: Current order</option>
+                <option value="current">Sort: Folder order</option>
                 <option value="name-asc">Sort: Name A–Z</option>
                 <option value="name-desc">Sort: Name Z–A</option>
                 <option value="type-asc">Sort: File type A–Z</option>
@@ -55,11 +56,11 @@
           </div>
         </div>
         <div class="list-head">
-          <span id="listLabel">Files</span>
+          <span id="listLabel">Files in selected folder</span>
           <span id="totalLabel">0 shown</span>
         </div>
         <div id="fileList" class="list rename-main-list">
-          <div class="empty">Choose files above.<br>Only the files you select will be loaded.</div>
+          <div class="empty">Choose a folder above.<br>Only files directly inside that folder will be loaded.</div>
         </div>
       </section>
     </main>
