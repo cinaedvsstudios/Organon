@@ -1,5 +1,5 @@
 {
-  "version": "v1.33-alpha",
+  "version": "v1.34-alpha",
   "categories": [
     {
       "id": "create",
@@ -23,7 +23,7 @@
       "id": "video",
       "label": "VIDEO",
       "tools": [
-        {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html", "description": "Create and preview animation assets from local media or image sequences. Advanced Mode opens the wide desktop workspace."},
+        {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.02", "description": "Create and preview animation assets from local media or image sequences, preserving detected PNG, JPEG and WebP frame formats when downloading the processed frame ZIP. Advanced Mode opens the wide desktop workspace."},
         {"id": "audio-timeline", "label": "AUDIO TIMELINE", "path": "tools/audio-timeline/index.html", "description": "Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id": "frame-extractor", "label": "FRAME EXTRACTOR", "path": "tools/frame-extractor/index.html", "description": "Extract still frames from local video files."},
         {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html?build=20260713-1924", "description": "Compress or convert local videos to MP4 or OGV with smart size targeting, live estimates, target-size or manual modes, separate video/audio controls and one-pass or two-pass encoding."},
