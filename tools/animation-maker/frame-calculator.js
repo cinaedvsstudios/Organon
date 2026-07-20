@@ -9,8 +9,9 @@
   const skipInput = $('calc-frame-skip');
   const lengthInput = $('calc-animation-length');
   const durationInput = $('calc-frame-duration');
+  const fpsInput = $('calc-fps');
 
-  if (!frameGrid || !skipSlider || !delaySlider || !totalInput || !skipInput || !lengthInput || !durationInput) return;
+  if (!frameGrid || !skipSlider || !delaySlider || !totalInput || !skipInput || !lengthInput || !durationInput || !fpsInput) return;
 
   let syncing = false;
   let syncTimer = 0;
@@ -68,6 +69,7 @@
     durationInput.step = delaySlider.step || '10';
     durationInput.value = String(duration);
     lengthInput.value = total ? (total * duration / 1000).toFixed(2) : '0.00';
+    fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
 
     syncing = false;
   }
