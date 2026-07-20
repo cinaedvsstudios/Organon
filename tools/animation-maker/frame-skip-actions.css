@@ -1,0 +1,52 @@
+.frame-skip-controls {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.frame-skip-delete-btn {
+  border: 1px solid #9a2f4f;
+  border-radius: 999px;
+  padding: 5px 10px;
+  background: rgba(74, 21, 37, 0.72);
+  color: #fff;
+  font: 700 0.62rem var(--font-mono);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.frame-skip-delete-btn:hover:not(:disabled) {
+  background: #9a2f4f;
+  border-color: #d27d6c;
+}
+
+.frame-skip-delete-btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+#restore-skipped-frames-btn {
+  margin-left: auto;
+  border-color: var(--water-spray);
+  color: var(--water-spray);
+}
+
+#restore-skipped-frames-btn:hover:not(:disabled) {
+  background: var(--water-blue);
+  color: #fff;
+}
+
+@media (max-width: 680px) {
+  .frame-skip-controls {
+    width: 100%;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  #restore-skipped-frames-btn {
+    width: 100%;
+    margin-left: 0;
+  }
+}
