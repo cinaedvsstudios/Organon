@@ -1,5 +1,5 @@
 {
-  "version": "v1.41-alpha",
+  "version": "v1.42-alpha",
   "categories": [
     {
       "id": "create",
@@ -24,7 +24,7 @@
       "id": "video",
       "label": "VIDEO",
       "tools": [
-        {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.04", "description": "Create and preview animation assets from local media or image sequences, permanently remove frames using the selected Frame Skip interval, restore those bulk-removed frames, and preserve detected PNG, JPEG and WebP formats in the processed frame ZIP. Advanced Mode opens the wide desktop workspace."},
+        {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.05", "description": "Create and preview animation assets from local media or image sequences, calculate target frame count, frame skip, total length and frame duration, permanently remove frames using the selected interval, restore bulk-removed frames, and preserve detected PNG, JPEG and WebP formats in the processed frame ZIP. Advanced Mode opens the wide desktop workspace."},
         {"id": "audio-timeline", "label": "AUDIO TIMELINE", "path": "tools/audio-timeline/index.html", "description": "Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id": "frame-extractor", "label": "FRAME EXTRACTOR", "path": "tools/frame-extractor/index.html", "description": "Extract still frames from local video files."},
         {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html?build=20260713-1924", "description": "Compress or convert local videos to MP4 or OGV with smart size targeting, live estimates, target-size or manual modes, separate video/audio controls and one-pass or two-pass encoding."},
@@ -52,7 +52,6 @@
       "tools": [
         {"id": "simple-preview", "label": "SIMPLE PREVIEW", "path": "tools/simple-preview/index.html", "description": "Preview local 2D, 3D, and media assets in a universal viewer."},
         {"id": "image-calculator", "label": "IMAGE CALCULATOR", "path": "tools/image-calculator/index-v2.html?v=0.02", "description": "Calculate image dimensions and filters with aspect-safe previews, then use Palette & Picker to extract colours, generate design palettes, recolour screenshots and switch to a separate fullscreen workspace."},
-        {"id": "animation-maker-utilities", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.04", "description": "Open Animation Maker from Utilities, including permanent Frame Skip deletion and Restore All Frames."},
         {"id": "bulk-download", "label": "BULK DOWNLOAD", "path": "tools/bulk-download/index.html", "description": "Download multiple files or assets in batch."},
         {"id": "filescan", "label": "FILESCAN", "path": "tools/filescan/index.html?v=0.03", "description": "List local folder filenames or switch to the separate File Rename module for top-level batch renaming and ZIP export."},
         {"id": "filedeletr", "label": "FILEDELETR", "path": "tools/filedeletr/index.html?v=0.01", "description": "Mount a local folder, intelligently match pasted filenames, resolve similar candidates, then archive or delete selected exact matches."},
