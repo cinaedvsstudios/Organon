@@ -75,6 +75,19 @@
   border-color: var(--water-spray);
 }
 
+.frame-calculator-grid input[readonly] {
+  border-color: rgba(117, 178, 222, 0.72);
+  background: rgba(19, 34, 39, 0.82);
+  color: var(--water-spray);
+  cursor: default;
+  user-select: none;
+}
+
+.frame-calculator-grid input[readonly]:focus {
+  outline: none;
+  border-color: rgba(117, 178, 222, 0.72);
+}
+
 .frame-calculator-unit {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
