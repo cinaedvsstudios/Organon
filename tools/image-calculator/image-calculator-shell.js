@@ -157,6 +157,7 @@
     if (!doc) return;
     injectLayout(doc);
     installAspectGuard(doc);
+    window.OrganonImagePalette?.install(doc, { mode });
     await restoreFile(doc);
     setTimeout(() => {
       restoreSettings(doc);
@@ -177,8 +178,8 @@
   }
 
   frame.addEventListener('load', onFrameLoad);
-  document.getElementById('openWide')?.addEventListener('click', async () => { await saveWorkspace(); location.href = './fullscreen.html?v=0.01'; });
-  document.getElementById('returnCompact')?.addEventListener('click', async () => { await saveWorkspace(); location.href = './index-v2.html?v=0.01'; });
+  document.getElementById('openWide')?.addEventListener('click', async () => { await saveWorkspace(); location.href = './fullscreen.html?v=0.02'; });
+  document.getElementById('returnCompact')?.addEventListener('click', async () => { await saveWorkspace(); location.href = './index-v2.html?v=0.02'; });
   document.getElementById('browserFullscreen')?.addEventListener('click', async () => {
     try { if (!document.fullscreenElement) await document.documentElement.requestFullscreen(); else await document.exitFullscreen(); }
     catch (error) { status('Browser fullscreen was blocked.'); clearStatus(); }
