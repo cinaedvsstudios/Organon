@@ -4,7 +4,6 @@
   const $ = (id) => document.getElementById(id);
   const bridge = window.__organonAnimationMakerExport;
   const frameGrid = $('frame-grid');
-  const skipSlider = $('adj-skip');
   const delaySlider = $('frame-delay');
   const playButton = $('btn-play-preview');
   const previewModal = $('anim-preview-modal');
@@ -12,13 +11,11 @@
   const previewLoading = $('anim-loading');
   const previewTitle = $('anim-modal-title');
 
-  if (!bridge || !frameGrid || !skipSlider || !delaySlider || !playButton || !previewModal || !previewImage || !previewLoading) {
+  if (!bridge || !frameGrid || !delaySlider || !playButton || !previewModal || !previewImage || !previewLoading) {
     console.error('Animation Maker timing and preview repair could not initialise.');
     return;
   }
 
-  const frameCountForSkip = (count, skip) => count > 0 ? Math.ceil(count / Math.max(1, skip)) : 0;
-  let lastSkip = Math.max(1, parseInt(skipSlider.value, 10) || 1);
   let previewToken = 0;
   let previewRaf = 0;
 
@@ -37,40 +34,25 @@
     return next;
   }
 
-  function outputCount() {
-    return typeof bridge.getOutputFrameCount === 'function'
-      ? bridge.getOutputFrameCount()
-      : frameCountForSkip(bridge.getFrameCount(), parseInt(skipSlider.value, 10) || 1);
+  function outputTimeline() {
+    if (typeof bridge.getOutputTimeline === 'function') return bridge.getOutputTimeline();
+    const count = typeof bridge.getOutputFrameCount === 'function' ? bridge.getOutputFrameCount() : bridge.getFrameCount();
+    const durationMs = Math.max(1, Number(bridge.getFrameDelay?.()) || Number(delaySlider.value) || 200);
+    return Array.from({ length: count }, (_, outputIndex) => ({ outputIndex, sourceIndex: outputIndex, durationMs }));
   }
-
-  skipSlider.addEventListener('input', () => {
-    const nextSkip = Math.max(1, parseInt(skipSlider.value, 10) || 1);
-    if (nextSkip === lastSkip) return;
-
-    const sourceCount = bridge.getFrameCount();
-    const oldCount = frameCountForSkip(sourceCount, lastSkip);
-    const nextCount = frameCountForSkip(sourceCount, nextSkip);
-    const oldDelay = Math.max(1, Number(bridge.getFrameDelay?.()) || Number(delaySlider.value) || 200);
-    if (oldCount > 0 && nextCount > 0) setDelay((oldDelay * oldCount) / nextCount);
-    lastSkip = nextSkip;
-  }, true);
 
   document.addEventListener('click', (event) => {
     const target = event.target.closest?.('#delete-skipped-frames-btn, #restore-skipped-frames-btn, .frame-delete-btn, .clip-remove-btn');
     if (!target || target.disabled) return;
-    const durationMs = outputCount() * Math.max(1, Number(bridge.getFrameDelay?.()) || Number(delaySlider.value) || 200);
-    window.setTimeout(() => {
-      const count = outputCount();
-      if (count > 0 && durationMs > 0) setDelay(durationMs / count);
-      lastSkip = Math.max(1, parseInt(skipSlider.value, 10) || 1);
-    }, 90);
-  }, true);
 
-  new MutationObserver(() => {
+    const previousDuration = Math.max(1, Number(bridge.getOutputDurationMs?.()) || 0);
+    const previousDelay = Math.max(1, Number(bridge.getFrameDelay?.()) || Number(delaySlider.value) || 200);
+
     window.setTimeout(() => {
-      lastSkip = Math.max(1, parseInt(skipSlider.value, 10) || 1);
-    }, 0);
-  }).observe(frameGrid, { childList: true, subtree: true });
+      const nextDuration = Math.max(1, Number(bridge.getOutputDurationMs?.()) || 0);
+      if (previousDuration > 0 && nextDuration > 0) setDelay(previousDelay * previousDuration / nextDuration);
+    }, 100);
+  }, true);
 
   function closeModal(id) {
     const modal = $(id);
@@ -87,6 +69,17 @@
     if (clearImage) previewImage.src = '';
   }
 
+  function frameAtElapsed(cumulativeEnds, elapsedMs) {
+    let low = 0;
+    let high = cumulativeEnds.length - 1;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2);
+      if (elapsedMs < cumulativeEnds[middle]) high = middle;
+      else low = middle + 1;
+    }
+    return low;
+  }
+
   async function playSequence(event) {
     event.preventDefault();
     event.stopImmediatePropagation();
@@ -97,7 +90,8 @@
     stopPreview(true);
 
     const token = previewToken;
-    const count = outputCount();
+    const timeline = outputTimeline();
+    const count = timeline.length;
     if (!count) return;
 
     previewModal.hidden = false;
@@ -113,7 +107,7 @@
         previewLoading.textContent = `Rendering ${position + 1} / ${count}`;
         const canvas = typeof bridge.renderOutputFrameCanvas === 'function'
           ? await bridge.renderOutputFrameCanvas(position)
-          : await bridge.renderFrameCanvas(position);
+          : await bridge.renderFrameCanvas(timeline[position].sourceIndex);
         rendered.push(canvas.toDataURL('image/png'));
       }
     } catch (error) {
@@ -126,12 +120,19 @@
     previewLoading.hidden = true;
     previewImage.hidden = false;
 
+    const cumulativeEnds = [];
+    let totalDuration = 0;
+    timeline.forEach((entry) => {
+      totalDuration += Math.max(1, Number(entry.durationMs) || 1);
+      cumulativeEnds.push(totalDuration);
+    });
+
     const startedAt = performance.now();
     let lastFrame = -1;
     const tick = (now) => {
       if (token !== previewToken || previewModal.hidden) return;
-      const delay = Math.max(1, Number(bridge.getFrameDelay?.()) || Number(delaySlider.value) || 200);
-      const frame = Math.floor((now - startedAt) / delay) % rendered.length;
+      const elapsed = (now - startedAt) % totalDuration;
+      const frame = frameAtElapsed(cumulativeEnds, elapsed);
       if (frame !== lastFrame) {
         previewImage.src = rendered[frame];
         lastFrame = frame;
