@@ -1,5 +1,5 @@
 {
-  "version": "v1.46-alpha",
+  "version": "v1.47-alpha",
   "categories": [
     {
       "id": "create",
@@ -24,7 +24,7 @@
       "id": "video",
       "label": "VIDEO",
       "tools": [
-        {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.08", "description": "Create and preview animation assets with source-duration-aware video extraction, selectable capture FPS, live timeline playback, a resizable sequence preview, duration-preserving frame skipping, ordered frame export, numbered filenames, direct folder saving and frame-timing metadata."},
+        {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.09", "description": "Create and preview animation assets with accurate presented-source-frame video capture, automatic duplicate collapse, real per-frame timing, optional FPS caps, timeline-accurate preview, duration-preserving frame skip, ordered frame export, direct folder saving and timing metadata."},
         {"id": "audio-timeline", "label": "AUDIO TIMELINE", "path": "tools/audio-timeline/index.html", "description": "Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id": "frame-extractor", "label": "FRAME EXTRACTOR", "path": "tools/frame-extractor/index.html", "description": "Extract still frames from local video files."},
         {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html?build=20260713-1924", "description": "Compress or convert local videos to MP4 or OGV with smart size targeting, live estimates, target-size or manual modes, separate video/audio controls and one-pass or two-pass encoding."},
