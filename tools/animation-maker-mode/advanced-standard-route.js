@@ -5,6 +5,6 @@
   button.addEventListener('click', (event) => {
     event.preventDefault();
     event.stopImmediatePropagation();
-    location.href = '../animation-maker-standard/index.html?v=0.07';
+    location.href = '../animation-maker-standard/index.html?v=0.08';
   }, true);
 })();
