@@ -1,5 +1,5 @@
 {
-  "version": "v1.39-alpha",
+  "version": "v1.40-alpha",
   "categories": [
     {
       "id": "create",
@@ -52,6 +52,7 @@
       "tools": [
         {"id": "simple-preview", "label": "SIMPLE PREVIEW", "path": "tools/simple-preview/index.html", "description": "Preview local 2D, 3D, and media assets in a universal viewer."},
         {"id": "image-calculator", "label": "IMAGE CALCULATOR", "path": "tools/image-calculator/index-v2.html?v=0.02", "description": "Calculate image dimensions and filters with aspect-safe previews, then use Palette & Picker to extract colours, generate design palettes, recolour screenshots and switch to a separate fullscreen workspace."},
+        {"id": "animation-maker-utilities", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.04", "description": "Open Animation Maker from Utilities, including permanent Frame Skip deletion and Restore All Frames."},
         {"id": "bulk-download", "label": "BULK DOWNLOAD", "path": "tools/bulk-download/index.html", "description": "Download multiple files or assets in batch."},
         {"id": "filescan", "label": "FILESCAN", "path": "tools/filescan/index.html?v=0.03", "description": "List local folder filenames or switch to the separate File Rename module for top-level batch renaming and ZIP export."},
         {"id": "locadate-calc", "label": "LOCA DATE CALC", "path": "tools/locadate-calc/index.html", "description": "Calculate local dates and date offsets for planning workflows."},
