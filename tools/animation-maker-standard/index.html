@@ -21,7 +21,7 @@
   const patches = [
     [
       '<link rel="stylesheet" href="../animation-maker/enhancements.css">',
-      '<link rel="stylesheet" href="../animation-maker/enhancements.css"><link rel="stylesheet" href="../animation-maker/frame-skip-actions.css?build=20260720-1">'
+      '<link rel="stylesheet" href="../animation-maker/enhancements.css"><link rel="stylesheet" href="../animation-maker/frame-skip-actions.css?build=20260720-2">'
     ],
     [
       '<div class="sequence-bottom-actions"><button type="button" class="mini-action" id="reorder-clips-btn" hidden>REORDER CLIPS</button></div>',
@@ -29,11 +29,11 @@
     ],
     [
       '<div class="frame-skip-box" id="frame-skip-container" hidden><label class="slider-container"><span class="slider-label-row emphasised"><span>Frame Skip (Drop Frames)</span><span id="val-skip">Keep All</span></span><input type="range" id="adj-skip" min="1" max="10" step="1" value="1"></label><p class="help-text">Videos generate many frames. Increase this to drop intermediate frames and reduce final file size.</p></div>',
-      '<div class="frame-skip-box" id="frame-skip-container" hidden><label class="slider-container"><span class="slider-label-row emphasised"><span>Frame Skip (Drop Frames)</span><span class="frame-skip-controls"><span id="val-skip">Keep All</span><button type="button" class="frame-skip-delete-btn" id="delete-skipped-frames-btn" disabled>DELETE FRAMES</button></span></span><input type="range" id="adj-skip" min="1" max="10" step="1" value="1"></label><p class="help-text">Videos generate many frames. Choose a keep interval, then delete the intermediate frames. Restore remains available beneath the sequence.</p></div>'
+      '<div class="frame-skip-box" id="frame-skip-container" hidden><label class="slider-container"><span class="slider-label-row emphasised"><span>Frame Skip (Drop Frames)</span><span class="frame-skip-controls"><span id="val-skip">Keep All</span><button type="button" class="frame-skip-delete-btn" id="delete-skipped-frames-btn" disabled>DELETE FRAMES</button></span></span><input type="range" id="adj-skip" min="1" max="10" step="1" value="1"></label><p class="help-text">Videos generate many frames. Choose a keep interval, then delete the intermediate frames. Restore remains available beneath the sequence.</p></div><div class="frame-calculator-box" id="frame-calculator"><div class="frame-calculator-title">Frame Calculator</div><div class="frame-calculator-grid"><label><span>Total number of frames</span><input type="number" id="calc-total-frames" min="0" step="1" value="0"></label><label><span>Frame Skip</span><input type="number" id="calc-frame-skip" min="1" max="10" step="1" value="1"></label><label><span>Animation length</span><span class="frame-calculator-unit"><input type="number" id="calc-animation-length" min="0.01" step="0.01" value="0.00"><b>seconds</b></span></label><label><span>Frame Duration</span><span class="frame-calculator-unit"><input type="number" id="calc-frame-duration" min="40" max="1000" step="10" value="200"><b>MS</b></span></label></div><p class="help-text">Change any box to update the matching sliders. Requested frame totals snap to the nearest available Frame Skip result.</p></div>'
     ],
     [
       '<script src="../animation-maker/app-v3.js"></' + 'script>',
-      '<script src="../animation-maker/frame-skip-actions-loader.js?build=20260720-2"></' + 'script>'
+      '<script src="../animation-maker/frame-skip-actions-loader.js?build=20260720-2"></' + 'script><script src="../animation-maker/frame-calculator.js?build=20260720-1"></' + 'script>'
     ]
   ];
 
