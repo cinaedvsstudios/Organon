@@ -1,0 +1,120 @@
+#eraseOverlayCanvas {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  touch-action: none;
+}
+
+.stage-wrap.erase-active #eraseOverlayCanvas {
+  pointer-events: auto;
+  cursor: crosshair;
+}
+
+.stage-wrap.erase-active[data-erase-tool="pen"] #eraseOverlayCanvas,
+.stage-wrap.erase-active #eraseOverlayCanvas.pen-active {
+  cursor: none;
+}
+
+.erase-heading {
+  margin-bottom: 4px;
+}
+
+.erase-status {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border: 1px solid rgba(137, 107, 73, .58);
+  border-radius: 999px;
+  color: rgba(245, 240, 219, .55);
+  background: rgba(17, 18, 15, .7);
+  font: 700 .58rem var(--font-mono);
+  letter-spacing: .05em;
+}
+
+.erase-status.active {
+  color: var(--water-spray);
+  border-color: rgba(117, 178, 222, .75);
+  background: rgba(75, 132, 191, .12);
+}
+
+.erase-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin: 10px 0;
+}
+
+.erase-tool {
+  min-width: 0;
+  min-height: 54px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 7px 5px;
+  border: 1px solid rgba(137, 107, 73, .72);
+  border-radius: 8px;
+  color: rgba(245, 240, 219, .72);
+  background: rgba(17, 18, 15, .84);
+  font-weight: 700;
+  transition: .18s ease;
+}
+
+.erase-tool strong {
+  font: 700 1.05rem var(--font-mono);
+  line-height: 1;
+}
+
+.erase-tool span {
+  font-size: .61rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+.erase-tool:hover:not(:disabled) {
+  color: var(--water-spray);
+  border-color: var(--water-spray);
+}
+
+.erase-tool.active {
+  color: #10120f;
+  background: var(--water-spray);
+  border-color: #b8e1ff;
+  box-shadow: 0 0 12px rgba(117, 178, 222, .22);
+}
+
+.erase-tool:disabled {
+  opacity: .38;
+  cursor: not-allowed;
+}
+
+.erase-size-control {
+  margin: 8px 0 9px;
+}
+
+.erase-help {
+  min-height: 34px;
+  margin: 9px 0 10px;
+  color: rgba(245, 240, 219, .58);
+  font-size: .66rem;
+  line-height: 1.4;
+}
+
+#eraseCard .button-row .button {
+  flex: 1 1 130px;
+}
+
+@media (max-width: 430px) {
+  .erase-tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .erase-tool {
+    min-height: 40px;
+    grid-template-columns: 24px 1fr;
+    justify-items: start;
+    padding-inline: 12px;
+  }
+}
