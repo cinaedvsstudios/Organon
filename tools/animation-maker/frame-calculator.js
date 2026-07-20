@@ -45,10 +45,11 @@
     return bestSkip;
   }
 
-  function syncFromSliders() {
+  function syncFromSliders(force = false) {
     if (syncing) return;
     syncing = true;
 
+    const active = force ? null : document.activeElement;
     const sourceCount = currentFrameCount();
     const skip = clamp(parseInt(skipSlider.value, 10) || 1, 1, parseInt(skipSlider.max, 10) || 10);
     const total = finalFrameCount(sourceCount, skip);
@@ -60,39 +61,41 @@
 
     totalInput.min = sourceCount ? '1' : '0';
     totalInput.max = String(Math.max(0, sourceCount));
-    totalInput.value = String(total);
+    if (active !== totalInput) totalInput.value = String(total);
+
     skipInput.min = skipSlider.min || '1';
     skipInput.max = skipSlider.max || '10';
-    skipInput.value = String(skip);
+    if (active !== skipInput) skipInput.value = String(skip);
+
     durationInput.min = delaySlider.min || '40';
     durationInput.max = delaySlider.max || '1000';
     durationInput.step = delaySlider.step || '10';
-    durationInput.value = String(duration);
-    lengthInput.value = total ? (total * duration / 1000).toFixed(2) : '0.00';
+    if (active !== durationInput) durationInput.value = String(duration);
+
+    if (active !== lengthInput) lengthInput.value = total ? (total * duration / 1000).toFixed(2) : '0.00';
     fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
 
     syncing = false;
   }
 
-  function scheduleSync() {
+  function scheduleSync(force = false) {
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(syncFromSliders, 0);
+    syncTimer = setTimeout(() => syncFromSliders(force), 0);
   }
 
-  totalInput.addEventListener('change', () => {
+  function commitTotalFrames() {
     if (syncing) return;
     const sourceCount = currentFrameCount();
-    if (!sourceCount) {
-      syncFromSliders();
+    if (!sourceCount || totalInput.value === '') {
+      scheduleSync(true);
       return;
     }
-    const skip = closestSkipForTarget(sourceCount, totalInput.value);
-    dispatchSlider(skipSlider, skip);
+    dispatchSlider(skipSlider, closestSkipForTarget(sourceCount, totalInput.value));
     scheduleSync();
-  });
+  }
 
-  skipInput.addEventListener('change', () => {
-    if (syncing) return;
+  function commitFrameSkip() {
+    if (syncing || skipInput.value === '') return;
     const skip = clamp(
       Math.round(Number(skipInput.value) || 1),
       rangeMinimum(skipSlider, 1),
@@ -100,18 +103,21 @@
     );
     dispatchSlider(skipSlider, skip);
     scheduleSync();
-  });
+  }
 
-  lengthInput.addEventListener('change', () => {
-    if (syncing) return;
+  function commitAnimationLength() {
+    if (syncing || lengthInput.value === '') return;
     const sourceCount = currentFrameCount();
     const skip = parseInt(skipSlider.value, 10) || 1;
     const total = finalFrameCount(sourceCount, skip);
     if (!total) {
-      syncFromSliders();
+      scheduleSync(true);
       return;
     }
-    const seconds = Math.max(0.01, Number(lengthInput.value) || 0.01);
+
+    const seconds = Number(lengthInput.value);
+    if (!Number.isFinite(seconds) || seconds <= 0) return;
+
     const step = Math.max(1, parseInt(delaySlider.step, 10) || 10);
     const rawDuration = seconds * 1000 / total;
     const duration = clamp(
@@ -120,19 +126,40 @@
       rangeMaximum(delaySlider, 1000)
     );
     dispatchSlider(delaySlider, duration);
+    fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
     scheduleSync();
-  });
+  }
 
-  durationInput.addEventListener('change', () => {
-    if (syncing) return;
+  function commitFrameDuration() {
+    if (syncing || durationInput.value === '') return;
+    const typed = Number(durationInput.value);
+    if (!Number.isFinite(typed) || typed <= 0) return;
+
     const step = Math.max(1, parseInt(delaySlider.step, 10) || 10);
     const duration = clamp(
-      Math.round((Number(durationInput.value) || 200) / step) * step,
+      Math.round(typed / step) * step,
       rangeMinimum(delaySlider, 40),
       rangeMaximum(delaySlider, 1000)
     );
     dispatchSlider(delaySlider, duration);
+    fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
     scheduleSync();
+  }
+
+  totalInput.addEventListener('input', commitTotalFrames);
+  totalInput.addEventListener('change', () => scheduleSync(true));
+
+  skipInput.addEventListener('input', commitFrameSkip);
+  skipInput.addEventListener('change', () => scheduleSync(true));
+
+  lengthInput.addEventListener('input', commitAnimationLength);
+  lengthInput.addEventListener('change', () => scheduleSync(true));
+
+  durationInput.addEventListener('input', commitFrameDuration);
+  durationInput.addEventListener('change', () => scheduleSync(true));
+
+  [totalInput, skipInput, lengthInput, durationInput].forEach((input) => {
+    input.addEventListener('blur', () => scheduleSync(true));
   });
 
   skipSlider.addEventListener('input', scheduleSync);
@@ -143,5 +170,5 @@
   const observer = new MutationObserver(scheduleSync);
   observer.observe(frameGrid, { childList: true, subtree: true });
 
-  syncFromSliders();
+  syncFromSliders(true);
 })();
