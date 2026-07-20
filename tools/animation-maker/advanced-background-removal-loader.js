@@ -71,6 +71,11 @@
   if (source.includes(targetNeedle)) source = source.replace(targetNeedle, targetReplacement);
   else console.error('Animation Maker advanced target patch point missing.');
 
+  const pointerNeedle = "    els.editorCanvas.addEventListener('pointerdown', (event) => {\\n        if (edit.tool === 'pan')";
+  const pointerReplacement = "    els.editorCanvas.addEventListener('pointerdown', (event) => {\\n        if (edit.target === 'advanced') return;\\n        if (edit.tool === 'pan')";
+  if (source.includes(pointerNeedle)) source = source.replace(pointerNeedle, pointerReplacement);
+  else console.error('Animation Maker advanced canvas-input patch point missing.');
+
   const snapshotNeedle = "movingActions: state.movingActions, animateAreaEnabled: state.animateAreaEnabled";
   if (source.includes(snapshotNeedle)) source = source.replace(snapshotNeedle, "movingActions: state.movingActions, advancedBackgroundActions: state.advancedBackgroundActions, animateAreaEnabled: state.animateAreaEnabled");
   else console.error('Animation Maker advanced snapshot patch point missing.');
