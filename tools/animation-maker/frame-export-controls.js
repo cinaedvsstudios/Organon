@@ -50,9 +50,34 @@
     return 'gif';
   }
 
+  function outputFrameCount() {
+    return typeof bridge.getOutputFrameCount === 'function' ? bridge.getOutputFrameCount() : bridge.getFrameCount();
+  }
+
   function frameFileName(index, count, extension) {
     const digits = Math.max(2, String(count).length);
     return `${cleanBaseName(nameInput.value)}${String(index + 1).padStart(digits, '0')}.${extension}`;
+  }
+
+  function timingManifest(count, format) {
+    const duration = Math.max(1, Number(bridge.getFrameDelay?.()) || 200);
+    const timing = typeof bridge.getOutputTiming === 'function' ? bridge.getOutputTiming() : [];
+    return {
+      version: 1,
+      frameFormat: format.extension,
+      frameDurationMs: duration,
+      fps: Number((1000 / duration).toFixed(4)),
+      totalFrames: count,
+      totalDurationMs: count * duration,
+      frames: Array.from({ length: count }, (_, index) => ({
+        file: frameFileName(index, count, format.extension),
+        sequenceIndex: index + 1,
+        sourceFrameIndex: Number.isInteger(timing[index]?.sourceIndex) ? timing[index].sourceIndex + 1 : null,
+        sourceTimeMs: Number.isFinite(timing[index]?.sourceTimeMs) ? timing[index].sourceTimeMs : null,
+        startTimeMs: index * duration,
+        durationMs: duration
+      }))
+    };
   }
 
   async function dataUrlToBlob(dataUrl) {
@@ -96,18 +121,20 @@
     return dataUrlToBlob(dataUrl);
   }
 
-  async function renderEncodedFrame(index, formatKey) {
-    const canvas = await bridge.renderFrameCanvas(index);
+  async function renderEncodedFrame(position, formatKey) {
+    const canvas = typeof bridge.renderOutputFrameCanvas === 'function'
+      ? await bridge.renderOutputFrameCanvas(position)
+      : await bridge.renderFrameCanvas(position);
     return encodeCanvas(canvas, formatKey);
   }
 
   function updateButtons() {
-    const hasFrames = bridge.getFrameCount() > 0;
+    const hasFrames = outputFrameCount() > 0;
     filesButton.disabled = !hasFrames;
   }
 
   async function exportZip() {
-    const count = bridge.getFrameCount();
+    const count = outputFrameCount();
     if (!count || typeof window.JSZip !== 'function') return;
 
     const formatKey = selectedFormatKey();
@@ -126,21 +153,32 @@
         const blob = await renderEncodedFrame(index, formatKey);
         folder.file(frameFileName(index, count, format.extension), blob);
       }
+      folder.file('frame-timing.json', JSON.stringify(timingManifest(count, format), null, 2));
 
       const zipBlob = await zip.generateAsync({ type: 'blob' });
       bridge.downloadBlob(zipBlob, `${baseName}-frames.zip`);
-      setStatus(`${count} ${format.label} frames downloaded as a ZIP.`, 4200);
+      setStatus(`${count} ordered ${format.label} frames and frame-timing.json downloaded as a ZIP.`, 4800);
     } catch (error) {
       setStatus(`Frame ZIP failed: ${error.message}`, 6000);
     } finally {
       zipButton.textContent = originalText;
-      zipButton.disabled = bridge.getFrameCount() === 0;
+      zipButton.disabled = outputFrameCount() === 0;
       updateButtons();
     }
   }
 
+  async function writeFile(directory, filename, data) {
+    const fileHandle = await directory.getFileHandle(filename, { create: true });
+    const writable = await fileHandle.createWritable();
+    try {
+      await writable.write(data);
+    } finally {
+      await writable.close();
+    }
+  }
+
   async function exportToFolder() {
-    const count = bridge.getFrameCount();
+    const count = outputFrameCount();
     if (!count) return;
     if (typeof window.showDirectoryPicker !== 'function') {
       setStatus('Direct folder saving is not supported by this browser. Use Download Frames ZIP instead.', 6500);
@@ -170,21 +208,17 @@
         const filename = frameFileName(index, count, format.extension);
         filesButton.textContent = `SAVING ${index + 1}/${count}`;
         setStatus(`Saving ${filename}...`);
-        const blob = await renderEncodedFrame(index, formatKey);
-        const fileHandle = await directory.getFileHandle(filename, { create: true });
-        const writable = await fileHandle.createWritable();
-        try {
-          await writable.write(blob);
-        } finally {
-          await writable.close();
-        }
+        await writeFile(directory, filename, await renderEncodedFrame(index, formatKey));
       }
-      setStatus(`${count} ${format.label} frames saved directly into the selected folder.`, 4500);
+      await writeFile(directory, 'frame-timing.json', new Blob([
+        JSON.stringify(timingManifest(count, format), null, 2)
+      ], { type: 'application/json' }));
+      setStatus(`${count} ordered ${format.label} frames and frame-timing.json saved into the selected folder.`, 4800);
     } catch (error) {
       setStatus(`Direct frame save failed: ${error.message}`, 6500);
     } finally {
       filesButton.textContent = originalText;
-      zipButton.disabled = bridge.getFrameCount() === 0;
+      zipButton.disabled = outputFrameCount() === 0;
       updateButtons();
     }
   }
