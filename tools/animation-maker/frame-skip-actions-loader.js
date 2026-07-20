@@ -177,6 +177,13 @@
 
     source = replaceOnce(
       source,
+      "$('apply-clip-order').addEventListener('click', () => { const map = new Map(state.clips.map((clip) => [clip.id, clip])); state.clips = state.reorderDraft.map((id) => map.get(id)).filter(Boolean); normalizeClipOrder(); els.reorderModal.hidden = true; checkpoint(); onFramesChanged(); });",
+      "$('apply-clip-order').addEventListener('click', () => { const map = new Map(state.clips.map((clip) => [clip.id, clip])); const hiddenRestoreClips = state.clips.filter((clip) => !state.reorderDraft.includes(clip.id) && [...state.bulkRemovedFrames.values()].some((frame) => frame.clipId === clip.id)); state.clips = state.reorderDraft.map((id) => map.get(id)).filter(Boolean).concat(hiddenRestoreClips); normalizeClipOrder(); els.reorderModal.hidden = true; checkpoint(); onFramesChanged(); });",
+      'clip reorder restore preservation'
+    );
+
+    source = replaceOnce(
+      source,
       "$('adj-skip').addEventListener('input', () => { const value = parseInt($('adj-skip').value, 10); $('val-skip').textContent = value === 1 ? 'Keep All' : `Keep 1 in ${value}`; updateEstimate(); });",
       "$('adj-skip').addEventListener('input', () => { const value = parseInt($('adj-skip').value, 10); $('val-skip').textContent = value === 1 ? 'Keep All' : `Keep 1 in ${value}`; updateEstimate(); updateBulkFrameButtons(); });\n    if (els.deleteSkippedBtn) els.deleteSkippedBtn.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); deleteFramesUsingSkip(); });\n    if (els.restoreSkippedBtn) els.restoreSkippedBtn.addEventListener('click', restoreBulkRemovedFrames);",
       'frame skip controls'
