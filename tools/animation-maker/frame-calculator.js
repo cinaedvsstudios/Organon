@@ -10,6 +10,7 @@
   const lengthInput = $('calc-animation-length');
   const durationInput = $('calc-frame-duration');
   const fpsInput = $('calc-fps');
+  const bridge = window.__organonAnimationMakerExport;
 
   if (!frameGrid || !skipSlider || !delaySlider || !totalInput || !skipInput || !lengthInput || !durationInput || !fpsInput) return;
 
@@ -45,6 +46,12 @@
     return bestSkip;
   }
 
+  function currentOutputDurationMs(fallbackTotal, fallbackDuration) {
+    const bridgeDuration = Number(bridge?.getOutputDurationMs?.());
+    if (Number.isFinite(bridgeDuration) && bridgeDuration > 0) return bridgeDuration;
+    return fallbackTotal * fallbackDuration;
+  }
+
   function syncFromSliders(force = false) {
     if (syncing) return;
     syncing = true;
@@ -55,9 +62,10 @@
     const total = finalFrameCount(sourceCount, skip);
     const duration = clamp(
       parseInt(delaySlider.value, 10) || 200,
-      rangeMinimum(delaySlider, 40),
-      rangeMaximum(delaySlider, 1000)
+      rangeMinimum(delaySlider, 1),
+      rangeMaximum(delaySlider, 10000)
     );
+    const totalDurationMs = currentOutputDurationMs(total, duration);
 
     totalInput.min = sourceCount ? '1' : '0';
     totalInput.max = String(Math.max(0, sourceCount));
@@ -67,12 +75,12 @@
     skipInput.max = skipSlider.max || '10';
     if (active !== skipInput) skipInput.value = String(skip);
 
-    durationInput.min = delaySlider.min || '40';
-    durationInput.max = delaySlider.max || '1000';
-    durationInput.step = delaySlider.step || '10';
+    durationInput.min = delaySlider.min || '1';
+    durationInput.max = delaySlider.max || '10000';
+    durationInput.step = delaySlider.step || '1';
     if (active !== durationInput) durationInput.value = String(duration);
 
-    if (active !== lengthInput) lengthInput.value = total ? (total * duration / 1000).toFixed(2) : '0.00';
+    if (active !== lengthInput) lengthInput.value = totalDurationMs > 0 ? (totalDurationMs / 1000).toFixed(3) : '0.000';
     fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
 
     syncing = false;
@@ -118,12 +126,16 @@
     const seconds = Number(lengthInput.value);
     if (!Number.isFinite(seconds) || seconds <= 0) return;
 
-    const step = Math.max(1, parseInt(delaySlider.step, 10) || 10);
-    const rawDuration = seconds * 1000 / total;
+    const currentDelay = Math.max(1, Number(delaySlider.value) || 200);
+    const currentDuration = currentOutputDurationMs(total, currentDelay);
+    if (!(currentDuration > 0)) return;
+
+    const step = Math.max(1, parseInt(delaySlider.step, 10) || 1);
+    const rawDuration = currentDelay * ((seconds * 1000) / currentDuration);
     const duration = clamp(
       Math.round(rawDuration / step) * step,
-      rangeMinimum(delaySlider, 40),
-      rangeMaximum(delaySlider, 1000)
+      rangeMinimum(delaySlider, 1),
+      rangeMaximum(delaySlider, 10000)
     );
     dispatchSlider(delaySlider, duration);
     fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
@@ -135,11 +147,11 @@
     const typed = Number(durationInput.value);
     if (!Number.isFinite(typed) || typed <= 0) return;
 
-    const step = Math.max(1, parseInt(delaySlider.step, 10) || 10);
+    const step = Math.max(1, parseInt(delaySlider.step, 10) || 1);
     const duration = clamp(
       Math.round(typed / step) * step,
-      rangeMinimum(delaySlider, 40),
-      rangeMaximum(delaySlider, 1000)
+      rangeMinimum(delaySlider, 1),
+      rangeMaximum(delaySlider, 10000)
     );
     dispatchSlider(delaySlider, duration);
     fpsInput.value = duration > 0 ? (1000 / duration).toFixed(2) : '0.00';
