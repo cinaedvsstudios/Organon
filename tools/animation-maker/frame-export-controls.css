@@ -1,0 +1,58 @@
+.frame-export-settings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.frame-export-settings .input-group {
+  min-width: 0;
+  margin: 0;
+}
+
+.frame-export-settings select,
+.frame-export-settings input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.bottom-sticky-panel:has(#download-files-btn) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.bottom-sticky-panel:has(#download-files-btn) .btn-pill-trigger {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 8px;
+  font-size: 0.62rem;
+  white-space: normal;
+  line-height: 1.15;
+}
+
+#download-files-btn {
+  border-color: var(--water-spray);
+  color: var(--water-spray);
+}
+
+#download-files-btn:hover:not(:disabled) {
+  background: var(--water-blue);
+  color: #fff;
+}
+
+@media (max-width: 680px) {
+  .frame-export-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .bottom-sticky-panel:has(#download-files-btn) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .bottom-sticky-panel:has(#download-files-btn) .btn-pill-trigger {
+    padding: 8px 4px;
+    font-size: 0.52rem;
+  }
+}
