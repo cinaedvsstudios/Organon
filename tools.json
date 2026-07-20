@@ -1,5 +1,5 @@
 {
-  "version": "v1.40-alpha",
+  "version": "v1.41-alpha",
   "categories": [
     {
       "id": "create",
@@ -55,6 +55,7 @@
         {"id": "animation-maker-utilities", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.04", "description": "Open Animation Maker from Utilities, including permanent Frame Skip deletion and Restore All Frames."},
         {"id": "bulk-download", "label": "BULK DOWNLOAD", "path": "tools/bulk-download/index.html", "description": "Download multiple files or assets in batch."},
         {"id": "filescan", "label": "FILESCAN", "path": "tools/filescan/index.html?v=0.03", "description": "List local folder filenames or switch to the separate File Rename module for top-level batch renaming and ZIP export."},
+        {"id": "filedeletr", "label": "FILEDELETR", "path": "tools/filedeletr/index.html?v=0.01", "description": "Mount a local folder, intelligently match pasted filenames, resolve similar candidates, then archive or delete selected exact matches."},
         {"id": "locadate-calc", "label": "LOCA DATE CALC", "path": "tools/locadate-calc/index.html", "description": "Calculate local dates and date offsets for planning workflows."},
         {"id": "info", "label": "INFO", "path": "tools/info/index.html", "description": "Open the Organon system information and design manual."}
       ]

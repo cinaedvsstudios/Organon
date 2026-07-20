@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Organon — Filedeletr</title>
+  <script>if (window.self === window.top) window.location.href = '../../index.html';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css?v=0.01">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-panel">
+      <div class="title-pill">
+        <div>
+          <span class="eyebrow">ORGANON UTILITY</span>
+          <h1>FILEDELETR</h1>
+        </div>
+        <span id="folderName" class="folder-name">No folder mounted</span>
+      </div>
+      <div class="mount-row">
+        <button id="mountFolder" class="button button-primary" type="button">Mount folder</button>
+        <button id="refreshFolder" class="button" type="button" disabled>Refresh files</button>
+        <label class="toggle"><input id="includeSubfolders" type="checkbox" checked> Include subfolders</label>
+      </div>
+      <p id="permissionNote" class="permission-note">Choose a folder to compare, archive, or delete its files. The folder stays on your device.</p>
+    </header>
+
+    <main class="workspace">
+      <section class="panel" aria-labelledby="driveHeading">
+        <div class="panel-heading">
+          <div>
+            <span class="step">1</span>
+            <h2 id="driveHeading">Mounted folder</h2>
+          </div>
+          <span id="driveCount" class="count-pill">0 files</span>
+        </div>
+        <div class="filter-wrap">
+          <input id="driveFilter" type="search" placeholder="Filter mounted files" autocomplete="off" disabled>
+        </div>
+        <div id="driveList" class="file-list drive-list" aria-live="polite">
+          <div class="empty-state">Mount a folder to list its files.</div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="requestHeading">
+        <div class="panel-heading request-heading">
+          <div>
+            <span class="step">2</span>
+            <h2 id="requestHeading">Files to process</h2>
+          </div>
+          <div class="heading-actions">
+            <button id="pasteList" class="button button-compact" type="button">Paste</button>
+            <button id="clearList" class="button button-compact" type="button" disabled>Clear</button>
+          </div>
+        </div>
+        <p class="parser-note">Paste filenames separated by lines, commas, colons, semicolons, tabs, or spaces. Known filenames containing spaces are kept together.</p>
+        <div id="matchSummary" class="match-summary" aria-live="polite">
+          <span><b>⏳ 0</b> ready</span>
+          <span><b>❓ 0</b> check</span>
+          <span><b>❌ 0</b> absent</span>
+        </div>
+        <div id="requestList" class="file-list request-list">
+          <div class="empty-state">Paste a filename list to compare it automatically.</div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="bottom-panel">
+      <div id="actionCount" class="action-count">0 matched files selected</div>
+      <button id="archiveFiles" class="button action-button archive-button" type="button" disabled>Archive</button>
+      <button id="deleteFiles" class="button action-button delete-button" type="button" disabled>Delete</button>
+    </footer>
+  </div>
+
+  <dialog id="choiceDialog" class="dialog">
+    <form method="dialog">
+      <h3>Choose the intended file</h3>
+      <p id="choicePrompt" class="dialog-copy"></p>
+      <div id="choiceList" class="choice-list"></div>
+      <button class="button dialog-cancel" value="cancel">Cancel</button>
+    </form>
+  </dialog>
+
+  <dialog id="confirmDialog" class="dialog confirm-dialog">
+    <form method="dialog">
+      <h3 id="confirmTitle">Confirm action</h3>
+      <p id="confirmCopy" class="dialog-copy"></p>
+      <div class="dialog-actions">
+        <button class="button" value="cancel">Cancel</button>
+        <button id="confirmAction" class="button" value="confirm">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js?v=0.01"></script>
+</body>
+</html>
