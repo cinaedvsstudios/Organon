@@ -308,13 +308,14 @@
     return timeline.map((entry, outputIndex) => ({ ...entry, outputIndex }));
   }
 
+  const insertionPoint = "  const script = document.createElement('script');";
+  const bridgePatch = `
   const videoHandlerStart = "    els.videoPicker.addEventListener('change', async (event) => {";
   const videoHandlerEnd = "    function removeClip(id) {";
   const videoStartIndex = source.indexOf(videoHandlerStart);
   const videoEndIndex = source.indexOf(videoHandlerEnd, videoStartIndex);
-
   if (videoStartIndex >= 0 && videoEndIndex > videoStartIndex) {
-    const videoReplacement = `    ${videoFrameSignature.toString()}
+    const videoReplacement = \`    ${videoFrameSignature.toString()}
 
     ${captureUniqueVideoFrames.toString()}
 
@@ -322,14 +323,12 @@
 
     els.videoPicker.addEventListener('change', ${accurateVideoChangeHandler.toString()});
 
-`;
+\`;
     source = source.slice(0, videoStartIndex) + videoReplacement + source.slice(videoEndIndex);
   } else {
     console.error('Animation Maker video import handler patch point missing.');
   }
 
-  const insertionPoint = "  const script = document.createElement('script');";
-  const bridgePatch = `
   const exportBridgeNeedle = "    els.zipBtn.addEventListener('click', async () => {";
   const exportBridgeReplacement = \`    ${frameStoredDuration.toString()}
 
