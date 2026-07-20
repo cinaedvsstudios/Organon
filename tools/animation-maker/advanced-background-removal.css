@@ -1,0 +1,32 @@
+/* Advanced background-removal workspace inside Edit All Frames. */
+.mode-four { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; }
+.mode-four button { min-width: 0; font-size: .52rem; line-height: 1.2; white-space: normal; }
+.advanced-background-panel { border-color: rgba(75,132,191,.65); background: rgba(18,35,42,.32); }
+.advanced-background-panel .tool-heading-tip { align-items: flex-start; }
+.advanced-background-panel .tool-tip-text { margin-top: 0; }
+.advanced-color-row { display: grid; grid-template-columns: 1fr auto; gap: 7px; align-items: stretch; }
+.advanced-color-row input[type=color] { min-width: 0; }
+.advanced-color-row button,
+.advanced-action-grid button {
+  min-height: 34px;
+  padding: 7px 8px;
+  border: 1px solid var(--chiseled-bronze);
+  border-radius: 7px;
+  background: #34352f;
+  color: var(--alabaster-paper);
+  font: 700 .57rem var(--font-headers);
+  line-height: 1.25;
+}
+.advanced-color-row button:hover,
+.advanced-action-grid button:hover,
+.advanced-color-row button.active-toggle { border-color: var(--water-spray); background: var(--water-blue); }
+.advanced-checkbox { margin: 8px 0; font-size: .68rem; align-items: flex-start; }
+.advanced-checkbox .checkmark { width: 18px; height: 18px; flex-basis: 18px; }
+.advanced-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 9px; }
+.advanced-action-grid .primary-advanced-action { border-color: var(--water-spray); background: var(--forest-teal); }
+.advanced-action-grid .danger-advanced-action { border-color: var(--brand-red); background: rgba(74,21,37,.58); }
+.advanced-bg-status { min-height: 2.6em; margin: 8px 0 0; color: var(--water-spray); font: .6rem/1.35 var(--font-mono); }
+@media (max-width: 680px) {
+  .mode-four { grid-template-columns: 1fr 1fr; }
+  .advanced-action-grid { grid-template-columns: 1fr; }
+}
