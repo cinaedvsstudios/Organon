@@ -1,0 +1,65 @@
+.video-timing-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(117, 178, 222, 0.55);
+  border-radius: 10px;
+  background: rgba(75, 132, 191, 0.08);
+}
+
+.video-timing-settings .input-group {
+  margin: 0;
+}
+
+.video-timing-settings .help-text {
+  margin: 0;
+}
+
+#anim-preview-modal {
+  z-index: 650;
+  width: min(520px, calc(100vw - 36px));
+  height: min(520px, calc(100vh - 120px));
+  min-width: 300px;
+  min-height: 300px;
+  resize: both;
+  overflow: hidden;
+  align-items: stretch;
+}
+
+#anim-preview-modal h3 {
+  flex: 0 0 auto;
+}
+
+#anim-preview-modal .animation-preview-box {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  padding: 8px;
+}
+
+#anim-preview-modal #anim-modal-img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+}
+
+#anim-preview-modal #anim-loading {
+  margin: auto;
+}
+
+@media (max-width: 680px) {
+  #anim-preview-modal {
+    left: 10px !important;
+    right: 10px !important;
+    top: 72px !important;
+    width: auto;
+    height: min(62vh, 520px);
+    min-width: 0;
+    min-height: 260px;
+    resize: none;
+  }
+}
