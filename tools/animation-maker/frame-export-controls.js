@@ -60,23 +60,36 @@
   }
 
   function timingManifest(count, format) {
-    const duration = Math.max(1, Number(bridge.getFrameDelay?.()) || 200);
+    const fallbackDuration = Math.max(1, Number(bridge.getFrameDelay?.()) || 200);
     const timing = typeof bridge.getOutputTiming === 'function' ? bridge.getOutputTiming() : [];
-    return {
-      version: 1,
-      frameFormat: format.extension,
-      frameDurationMs: duration,
-      fps: Number((1000 / duration).toFixed(4)),
-      totalFrames: count,
-      totalDurationMs: count * duration,
-      frames: Array.from({ length: count }, (_, index) => ({
+    let startTimeMs = 0;
+
+    const frames = Array.from({ length: count }, (_, index) => {
+      const durationMs = Math.max(1, Number(timing[index]?.durationMs) || fallbackDuration);
+      const frame = {
         file: frameFileName(index, count, format.extension),
         sequenceIndex: index + 1,
         sourceFrameIndex: Number.isInteger(timing[index]?.sourceIndex) ? timing[index].sourceIndex + 1 : null,
         sourceTimeMs: Number.isFinite(timing[index]?.sourceTimeMs) ? timing[index].sourceTimeMs : null,
-        startTimeMs: index * duration,
-        durationMs: duration
-      }))
+        startTimeMs: Math.round(startTimeMs),
+        durationMs: Number(durationMs.toFixed(3))
+      };
+      startTimeMs += durationMs;
+      return frame;
+    });
+
+    const totalDurationMs = frames.reduce((sum, frame) => sum + frame.durationMs, 0);
+    const averageDurationMs = count ? totalDurationMs / count : fallbackDuration;
+
+    return {
+      version: 2,
+      frameFormat: format.extension,
+      timingMode: 'per-frame',
+      averageFrameDurationMs: Number(averageDurationMs.toFixed(3)),
+      averageFps: totalDurationMs > 0 ? Number(((count * 1000) / totalDurationMs).toFixed(4)) : 0,
+      totalFrames: count,
+      totalDurationMs: Number(totalDurationMs.toFixed(3)),
+      frames
     };
   }
 
