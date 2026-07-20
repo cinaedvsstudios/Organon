@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi Edit</title>
+</head>
+<body>
+<script>
+(() => {
+  'use strict';
+  const request = new XMLHttpRequest();
+  request.open('GET', './index.html?build=20260720-multi-edit-base-1', false);
+  request.send(null);
+  if ((request.status < 200 || request.status >= 300) && request.status !== 0) {
+    document.body.innerHTML = '<p style="color:white;background:#131412;padding:20px;font-family:sans-serif">Multi Edit could not be loaded.</p>';
+    return;
+  }
+
+  let html = request.responseText;
+  const erasePanel = '<section class="control-card" id="eraseCard"><div class="section-heading erase-heading"><h3>⌫ Batch Erase</h3><span class="erase-status" id="eraseStatus">OFF</span></div><p class="section-help">Draw one transparent mask over the preview. The same relative area is erased from every image in the batch.</p><div class="erase-tool-grid" role="group" aria-label="Batch erase tools"><button type="button" class="erase-tool" data-erase-tool="box" aria-pressed="false" disabled><strong>□</strong><span>Box</span></button><button type="button" class="erase-tool" data-erase-tool="lasso" aria-pressed="false" disabled><strong>⌁</strong><span>Lasso</span></button><button type="button" class="erase-tool" data-erase-tool="pen" aria-pressed="false" disabled><strong>●</strong><span>Pen</span></button></div><div class="slider-item erase-size-control"><div class="slider-head"><span>Pen size</span><output id="erasePenSizeOut">40 px</output></div><input type="range" id="erasePenSize" min="4" max="300" step="1" value="40" disabled></div><p class="erase-help" id="eraseHelp">Choose Box, Lasso or Pen, then draw on the preview. Click the selected tool again to stop.</p><div class="button-row"><button type="button" class="button" id="undoEraseBtn" disabled>Undo last erase</button><button type="button" class="button danger" id="clearEraseBtn" disabled>Clear erase mask</button></div></section>';
+  const patches = [
+    [
+      '<link rel="stylesheet" href="./multi-edit-output.css?v=0.01">',
+      '<link rel="stylesheet" href="./multi-edit-output.css?v=0.01"><link rel="stylesheet" href="./multi-edit-erase.css?v=0.03">'
+    ],
+    [
+      '<script defer src="./multi-edit-output.js?v=0.01"></' + 'script>',
+      '<script defer src="./multi-edit-output.js?v=0.01"></' + 'script><script defer src="./multi-edit-erase.js?v=0.03"></' + 'script>'
+    ],
+    [
+      '<canvas id="previewCanvas" aria-label="Image editor canvas"></canvas>',
+      '<canvas id="previewCanvas" aria-label="Image editor canvas"></canvas><canvas id="eraseOverlayCanvas" aria-label="Batch erase drawing layer"></canvas>'
+    ],
+    [
+      '<section class="control-card" id="chromaCard">',
+      erasePanel + '<section class="control-card" id="chromaCard">'
+    ]
+  ];
+
+  for (const [needle, replacement] of patches) {
+    if (!html.includes(needle)) {
+      console.error('Multi Edit erase patch point missing:', needle);
+      continue;
+    }
+    html = html.replace(needle, replacement);
+  }
+
+  document.open();
+  document.write(html);
+  document.close();
+})();
+</script>
+</body>
+</html>
