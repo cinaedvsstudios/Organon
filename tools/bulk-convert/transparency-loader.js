@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-    const response = await fetch("./index.html?source=alpha-preservation-20260726", { cache: "no-store" });
+    const response = await fetch("./index.html?source=alpha-preservation-drive-save-20260727", { cache: "no-store" });
     if (!response.ok) throw new Error(`Could not load Bulk Convert source (${response.status}).`);
 
     let html = await response.text();
@@ -69,6 +69,85 @@
                         }
                         
                         ctx.drawImage(img, 0, 0);`
+        },
+        {
+            label: "download menu drive option",
+            oldText: `                    <div class="download-option" id="opt-dl-all">All (ZIP)</div>
+                    <div class="download-option" id="opt-dl-one">One</div>`,
+            newText: `                    <div class="download-option" id="opt-dl-all">All (ZIP)</div>
+                    <div class="download-option" id="opt-dl-one">One</div>
+                    <div class="download-option" id="opt-save-drive">Save to Drive</div>`
+        },
+        {
+            label: "drive option reference",
+            oldText: `        const optDlAll = document.getElementById('opt-dl-all');
+        const optDlOne = document.getElementById('opt-dl-one');`,
+            newText: `        const optDlAll = document.getElementById('opt-dl-all');
+        const optDlOne = document.getElementById('opt-dl-one');
+        const optSaveDrive = document.getElementById('opt-save-drive');`
+        },
+        {
+            label: "drive save handler",
+            oldText: `        function triggerSingleDownload(blob, filename) {`,
+            newText: `        // Action: Save converted files directly to a selected folder.
+        // Existing files with matching names are overwritten by createWritable().
+        optSaveDrive.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            downloadDropdown.classList.remove('show');
+
+            const successfulFiles = filesData.filter(f => f.status === 'success' && f.blob);
+            if (successfulFiles.length === 0) {
+                showToast("No successfully processed files to save.");
+                return;
+            }
+
+            if (!('showDirectoryPicker' in window)) {
+                showToast("Save to Drive requires a browser with folder-write support, such as Chrome or Edge.");
+                return;
+            }
+
+            let directoryHandle;
+            try {
+                directoryHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+            } catch (err) {
+                if (err && err.name === 'AbortError') return;
+                console.error(err);
+                showToast("Could not open the folder picker.");
+                return;
+            }
+
+            let saved = 0;
+            let failed = 0;
+
+            for (let i = 0; i < successfulFiles.length; i++) {
+                const fileItem = successfulFiles[i];
+                showToast('Saving ' + (i + 1) + ' of ' + successfulFiles.length + ': ' + fileItem.newName);
+
+                try {
+                    const fileHandle = await directoryHandle.getFileHandle(fileItem.newName, { create: true });
+                    const writable = await fileHandle.createWritable();
+                    try {
+                        await writable.write(fileItem.blob);
+                        await writable.close();
+                    } catch (writeError) {
+                        try { await writable.abort(); } catch (_) { /* optional cleanup */ }
+                        throw writeError;
+                    }
+                    saved++;
+                } catch (err) {
+                    failed++;
+                    console.error('Could not save ' + fileItem.newName, err);
+                }
+            }
+
+            if (failed > 0) {
+                showToast(saved + ' saved; ' + failed + ' failed.');
+            } else {
+                showToast(saved + ' file' + (saved === 1 ? '' : 's') + ' saved to drive. Existing matching names were overwritten.');
+            }
+        });
+
+        function triggerSingleDownload(blob, filename) {`
         }
     ];
 
