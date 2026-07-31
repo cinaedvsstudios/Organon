@@ -1,5 +1,5 @@
 {
-  "version": "v1.49-alpha",
+  "version": "v1.50-alpha",
   "categories": [
     {
       "id": "create",
@@ -16,7 +16,7 @@
           ]
         },
         {"id": "ihy", "label": "IHY", "path": "tools/ihy/index.html", "description": "Create local sound effects, play an editable music grid, import audio references and export Ihy project JSON."},
-        {"id": "simple-edit", "label": "SIMPLE EDIT", "path": "tools/simple-edit/index.html?v=0.01", "description": "Layer MP3, WAV or video audio across five waveform tracks, trim, split, pitch-preserving stretch, add echo or rhythmic gaps, and export WAV or MP3."},
+        {"id": "simple-edit", "label": "SIMPLE EDIT", "path": "tools/simple-edit/index.html?v=0.02", "description": "Layer MP3, WAV or video audio across five waveform tracks, trim, split, pitch-preserving stretch, add echo or rhythmic gaps, and save WAV or MP3 mixes directly through the browser file picker."},
         {"id": "audio2midi", "label": "AUDIO2MIDI", "path": "tools/audio2midi/index.html?v=0.04", "description": "Convert audio material into MIDI-style note data where browser processing allows."}
       ]
     },
