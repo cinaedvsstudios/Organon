@@ -98,16 +98,63 @@ function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1200);
 }
 
+function exportFilePickerOptions(filename, format) {
+  const mp3 = format === "mp3";
+  const mime = mp3 ? "audio/mpeg" : "audio/wav";
+  const extension = mp3 ? ".mp3" : ".wav";
+  return {
+    suggestedName: filename,
+    types: [{
+      description: mp3 ? "MP3 audio" : "WAV audio",
+      accept: { [mime]: [extension] }
+    }]
+  };
+}
+
+async function chooseExportFile(filename, format) {
+  if (!("showSaveFilePicker" in window)) return null;
+  return window.showSaveFilePicker(exportFilePickerOptions(filename, format));
+}
+
+async function writeExportFile(handle, blob) {
+  const writable = await handle.createWritable();
+  try {
+    await writable.write(blob);
+    await writable.close();
+  } catch (error) {
+    try { await writable.abort(); } catch {}
+    throw error;
+  }
+}
+
 async function confirmExport() {
   if (!state.clips.length) {
     showToast("Add at least one clip before exporting.");
     return;
   }
+
+  const format = ui.exportFormat.value;
+  const extension = format === "mp3" ? "mp3" : "wav";
+  const name = `${safeFilename(ui.exportName.value)}.${extension}`;
+  let fileHandle = null;
+
+  if ("showSaveFilePicker" in window) {
+    try {
+      fileHandle = await chooseExportFile(name, format);
+    } catch (error) {
+      if (error?.name === "AbortError") return;
+      console.error(error);
+      showToast("The save location could not be opened.");
+      return;
+    }
+  }
+
   stopPlayback();
   ui.exportConfirmBtn.disabled = true;
   ui.exportCancelBtn.disabled = true;
+  ui.exportCloseBtn.disabled = true;
   ui.exportProgress.hidden = false;
-  const format = ui.exportFormat.value;
+
   try {
     setStatus("Rendering five-track mix…");
     const rendered = await renderMix();
@@ -115,11 +162,16 @@ async function confirmExport() {
     const blob = format === "mp3"
       ? audioBufferToMp3(rendered, Number(ui.mp3Bitrate.value))
       : audioBufferToWav(rendered);
-    const extension = format === "mp3" ? "mp3" : "wav";
-    const name = `${safeFilename(ui.exportName.value)}.${extension}`;
-    downloadBlob(blob, name);
+
+    if (fileHandle) {
+      setStatus(`Saving ${name}…`);
+      await writeExportFile(fileHandle, blob);
+    } else {
+      downloadBlob(blob, name);
+    }
+
     ui.exportModal.hidden = true;
-    showToast(`${name} exported.`);
+    showToast(fileHandle ? `${name} saved.` : `${name} downloaded.`);
     setStatus("Ready");
   } catch (error) {
     console.error(error);
@@ -128,6 +180,7 @@ async function confirmExport() {
   } finally {
     ui.exportConfirmBtn.disabled = false;
     ui.exportCancelBtn.disabled = false;
+    ui.exportCloseBtn.disabled = false;
     ui.exportProgress.hidden = true;
   }
 }
@@ -141,10 +194,22 @@ function updateExportFormat() {
     : "WAV keeps the rendered mix uncompressed.";
 }
 
+function suggestedExportName() {
+  return safeFilename(state.clips[0]?.name || "simple-edit-mix");
+}
+
 function openExport() {
-  if (!state.clips.length) { showToast("Add at least one clip before exporting."); return; }
+  if (!state.clips.length) {
+    showToast("Add at least one clip before exporting.");
+    return;
+  }
+  ui.exportName.value = suggestedExportName();
   ui.exportModal.hidden = false;
   updateExportFormat();
+  requestAnimationFrame(() => {
+    ui.exportName.focus();
+    ui.exportName.select();
+  });
 }
 
 function escapeHtml(value) {
@@ -241,7 +306,17 @@ function installEvents() {
   ui.exportBtn.addEventListener("click", openExport);
   ui.exportCloseBtn.addEventListener("click", () => { ui.exportModal.hidden = true; });
   ui.exportCancelBtn.addEventListener("click", () => { ui.exportModal.hidden = true; });
-  ui.exportModal.addEventListener("click", (event) => { if (event.target === ui.exportModal) ui.exportModal.hidden = true; });
+
+  let exportBackdropPointerDown = false;
+  ui.exportModal.addEventListener("pointerdown", (event) => {
+    exportBackdropPointerDown = event.target === ui.exportModal;
+  });
+  ui.exportModal.addEventListener("pointerup", (event) => {
+    if (exportBackdropPointerDown && event.target === ui.exportModal) ui.exportModal.hidden = true;
+    exportBackdropPointerDown = false;
+  });
+  ui.exportModal.addEventListener("pointercancel", () => { exportBackdropPointerDown = false; });
+
   ui.exportFormat.addEventListener("change", updateExportFormat);
   ui.exportConfirmBtn.addEventListener("click", confirmExport);
 
