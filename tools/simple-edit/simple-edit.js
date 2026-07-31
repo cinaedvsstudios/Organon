@@ -5,7 +5,7 @@
     "./simple-edit-core.js?v=0.01",
     "./simple-edit-timeline.js?v=0.01",
     "./simple-edit-audio.js?v=0.01",
-    "./simple-edit-export.js?v=0.01"
+    "./simple-edit-export.js?v=0.02"
   ];
   for (const source of files) {
     await new Promise((resolve, reject) => {
