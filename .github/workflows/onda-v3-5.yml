@@ -1,0 +1,46 @@
+name: Apply Onda v3.5 fixes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/onda-v3-5.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply targeted Onda v3.5 source changes
+        shell: bash
+        run: |
+          echo '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' | base64 --decode | gzip --decompress > /tmp/apply_onda_v35.py
+          python /tmp/apply_onda_v35.py
+
+      - name: Validate JavaScript and targeted changes
+        shell: bash
+        run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/layout-enhancements.js
+          grep -q "Onda.*v3.5.*loaded" tools/Onda/js/app-core.js
+          grep -q "onda-mobile-title-marquee" tools/Onda/css/responsive.css
+          grep -q "Repeat current track" tools/Onda/index.html
+          grep -q "Repeat entire playlist" tools/Onda/index.html
+          grep -q "?v=3.5" tools/Onda/index.html
+          ! grep -q "isRepeatOne" tools/Onda/js/app-core.js
+          ! grep -q "isRepeatAll" tools/Onda/js/app-core.js
+
+      - name: Commit Onda v3.5
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/Onda/index.html tools/Onda/css/responsive.css tools/Onda/js/app-core.js tools/Onda/js/layout-enhancements.js
+          git commit -m "Apply Onda v3.5 fixes"
+          git push
