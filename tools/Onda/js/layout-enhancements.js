@@ -7,14 +7,17 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
 
     const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
     const MOBILE_BREAKPOINT = 768;
+    const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
     const UI_FIXES_STYLESHEET_ID = 'onda-final-ui-fixes';
+    const V35_STYLESHEET_ID = 'onda-v3-5-styles';
+    const V35_SCRIPT_ID = 'onda-v3-5-script';
 
     function safeToast(message) {
         if (typeof window.showToast === 'function') window.showToast(message);
     }
 
     function isNaturallyMobile() {
-        return window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`).matches;
+        return mobileLayoutQuery.matches;
     }
 
     function ensureUiFixStylesheet() {
@@ -22,8 +25,28 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
         const stylesheet = document.createElement('link');
         stylesheet.id = UI_FIXES_STYLESHEET_ID;
         stylesheet.rel = 'stylesheet';
-        stylesheet.href = 'css/final-ui-fixes.css';
+        stylesheet.href = 'css/final-ui-fixes.css?v=3.5';
         document.head.appendChild(stylesheet);
+    }
+
+    function ensureV35Assets() {
+        if (!document.getElementById(V35_STYLESHEET_ID)) {
+            const stylesheet = document.createElement('link');
+            stylesheet.id = V35_STYLESHEET_ID;
+            stylesheet.rel = 'stylesheet';
+            stylesheet.href = 'css/onda-v3-5.css?v=3.5';
+            stylesheet.addEventListener('load', () => window.OndaV35?.refreshMarquees?.());
+            document.head.appendChild(stylesheet);
+        }
+
+        if (!document.getElementById(V35_SCRIPT_ID)) {
+            const script = document.createElement('script');
+            script.id = V35_SCRIPT_ID;
+            script.src = 'js/onda-v3-5.js?v=3.5';
+            script.async = false;
+            script.addEventListener('error', () => safeToast('Onda v3.5 failed to load.'));
+            document.head.appendChild(script);
+        }
     }
 
     function applySavedLayoutMode() {
@@ -105,6 +128,7 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
 
     function initLayoutControls() {
         ensureUiFixStylesheet();
+        ensureV35Assets();
 
         const transport = document.getElementById('start-controls-pill');
         if (transport) transport.classList.add('onda-transport-pill');
@@ -137,7 +161,11 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
     }
 
     document.addEventListener('fullscreenchange', updateFullscreenButton);
-    window.addEventListener('resize', applySavedLayoutMode);
+    if (typeof mobileLayoutQuery.addEventListener === 'function') {
+        mobileLayoutQuery.addEventListener('change', applySavedLayoutMode);
+    } else if (typeof mobileLayoutQuery.addListener === 'function') {
+        mobileLayoutQuery.addListener(applySavedLayoutMode);
+    }
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initLayoutControls);
