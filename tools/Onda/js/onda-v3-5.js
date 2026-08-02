@@ -88,6 +88,22 @@
         syncLegacyPlaybackState();
     }
 
+    function setShuffleEnabled(enabled, { rebuild = true } = {}) {
+        shuffleEnabled = Boolean(enabled);
+        if (shuffleEnabled && rebuild) resetShuffleQueue(getCurrentTrackIndex());
+        if (!shuffleEnabled) {
+            shuffleQueue = [];
+            shuffleSignature = '';
+        }
+        updatePlaybackButtons();
+    }
+
+    function syncShuffleFromLegacy() {
+        let legacyShuffle = shuffleEnabled;
+        try { legacyShuffle = Boolean(isShuffle); } catch (error) {}
+        if (legacyShuffle !== shuffleEnabled) setShuffleEnabled(legacyShuffle);
+    }
+
     function shuffleIndexes(indexes) {
         for (let index = indexes.length - 1; index > 0; index -= 1) {
             const swapIndex = Math.floor(Math.random() * (index + 1));
@@ -148,7 +164,9 @@
     function stopAtPlaylistEnd(audioObject) {
         try { pauseAudio(); } catch (error) {}
         if (!audioObject) return;
-        try { audioObject.currentTime = 0; } catch (error) {}
+        try {
+            if (Number.isFinite(audioObject.duration)) audioObject.currentTime = audioObject.duration;
+        } catch (error) {}
     }
 
     function handleTrackEnded(event) {
@@ -156,6 +174,7 @@
         if (audioObject !== getActiveAudio()) return;
 
         event.stopImmediatePropagation();
+        syncShuffleFromLegacy();
         const tracks = getPlaylistTracks();
         const currentIndex = getCurrentTrackIndex();
 
@@ -165,6 +184,10 @@
         }
 
         if (shuffleEnabled) {
+            if (tracks.length === 1 && repeatMode === 'all') {
+                restartCurrentTrack(audioObject);
+                return;
+            }
             const nextIndex = takeNextShuffleIndex(repeatMode === 'all');
             if (nextIndex >= 0) switchToTrack(nextIndex);
             else stopAtPlaylistEnd(audioObject);
@@ -184,6 +207,7 @@
         event.preventDefault();
         event.stopImmediatePropagation();
 
+        syncShuffleFromLegacy();
         const tracks = getPlaylistTracks();
         if (tracks.length <= 1) return;
 
@@ -215,13 +239,7 @@
     function handleShuffleClick(event) {
         event.preventDefault();
         event.stopImmediatePropagation();
-        shuffleEnabled = !shuffleEnabled;
-        if (shuffleEnabled) resetShuffleQueue(getCurrentTrackIndex());
-        else {
-            shuffleQueue = [];
-            shuffleSignature = '';
-        }
-        updatePlaybackButtons();
+        setShuffleEnabled(!shuffleEnabled);
     }
 
     function bindPlaybackControls() {
@@ -229,6 +247,10 @@
         document.getElementById('btn-repeat-all')?.addEventListener('click', handleRepeatAllClick, true);
         document.getElementById('btn-shuffle')?.addEventListener('click', handleShuffleClick, true);
         document.getElementById('btn-next')?.addEventListener('click', handleNextClick, true);
+        document.addEventListener('click', (event) => {
+            if (!event.target.closest?.('.btn-shuffle-playlist, #btn-detail-shuffle-playlist')) return;
+            window.setTimeout(() => setShuffleEnabled(true), 0);
+        });
 
         try { localAudio.addEventListener('ended', handleTrackEnded, true); } catch (error) {}
         try { streamAudio.addEventListener('ended', handleTrackEnded, true); } catch (error) {}
@@ -236,34 +258,82 @@
         updatePlaybackButtons();
     }
 
-    const nativeScrollIntoView = Element.prototype.scrollIntoView;
+    function installMobileScrollGuards() {
+        let originalTrackScroll = null;
+        let originalMetaEdit = null;
 
-    Element.prototype.scrollIntoView = function ondaV35ScrollIntoView(options) {
-        if (!isMobileMode()) return nativeScrollIntoView.call(this, options);
+        try { originalTrackScroll = scrollCurrentTrackRowsIntoView; } catch (error) {}
+        try {
+            scrollCurrentTrackRowsIntoView = function ondaV35TrackScroll(reason = 'track-change') {
+                if (!isMobileMode()) {
+                    if (typeof originalTrackScroll === 'function') return originalTrackScroll(reason);
+                    return;
+                }
 
-        if (this.matches?.('#metadata-display-card, #tab-library')) {
-            const middlePanel = document.getElementById('organon-middle-panel');
-            if (middlePanel && middlePanel.scrollHeight > middlePanel.clientHeight) {
-                middlePanel.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-            return;
+                let trackId = '';
+                try { trackId = currentFile?.name || ''; } catch (error) {}
+                if (!trackId) return;
+
+                const safeId = CSS.escape(trackId);
+                window.clearTimeout(window.OndaActiveTrackScrollTimer);
+                window.OndaActiveTrackScrollTimer = window.setTimeout(() => {
+                    const selectors = [
+                        `#now-playing-playlist-track-list [data-track-id="${safeId}"]`,
+                        `#playlist-detail-track-list [data-track-id="${safeId}"]`
+                    ];
+
+                    selectors.forEach((selector) => {
+                        const row = document.querySelector(selector);
+                        if (!row || row.offsetParent === null) return;
+                        row.classList.add('jump-focus-pulse');
+                        const scroller = row.closest('#now-playing-playlist-track-list, #playlist-detail-track-list, .now-playing-queue-list, .playlist-detail-track-list');
+                        if (scroller && scroller.scrollHeight > scroller.clientHeight) {
+                            const rowRect = row.getBoundingClientRect();
+                            const scrollerRect = scroller.getBoundingClientRect();
+                            const top = scroller.scrollTop
+                                + (rowRect.top - scrollerRect.top)
+                                - ((scroller.clientHeight - row.clientHeight) / 2);
+                            scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+                        }
+                        window.setTimeout(() => row.classList.remove('jump-focus-pulse'), 1100);
+                    });
+
+                    window.OndaDebug = window.OndaDebug || {};
+                    window.OndaDebug.activeTrackScroll = {
+                        reason,
+                        trackId,
+                        matchedRows: selectors.map((selector) => document.querySelector(selector)).filter(Boolean).length
+                    };
+                    scheduleMarqueeRefresh();
+                }, 140);
+            };
+        } catch (error) {
+            console.warn('Onda v3.5 could not install the mobile track-scroll guard:', error);
         }
 
-        if (this.matches?.('#now-playing-playlist-track-list [data-track-id], #playlist-detail-track-list [data-track-id], .now-playing-current-track')) {
-            const scroller = this.closest('#now-playing-playlist-track-list, #playlist-detail-track-list, .now-playing-queue-list, .playlist-detail-track-list');
-            if (scroller && scroller.scrollHeight > scroller.clientHeight) {
-                const rowRect = this.getBoundingClientRect();
-                const scrollerRect = scroller.getBoundingClientRect();
-                const top = scroller.scrollTop
-                    + (rowRect.top - scrollerRect.top)
-                    - ((scroller.clientHeight - this.clientHeight) / 2);
-                scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-            }
-            return;
-        }
+        try { originalMetaEdit = triggerMetaEdit; } catch (error) {}
+        try {
+            triggerMetaEdit = function ondaV35MetaEdit() {
+                if (!isMobileMode()) {
+                    if (typeof originalMetaEdit === 'function') return originalMetaEdit();
+                    return;
+                }
 
-        return nativeScrollIntoView.call(this, options);
-    };
+                let hasCurrentTrack = false;
+                try { hasCurrentTrack = Boolean(currentFile); } catch (error) {}
+                if (!hasCurrentTrack) return;
+
+                try { switchWorkspaceTab('tab-library'); } catch (error) {}
+                const middlePanel = document.getElementById('organon-middle-panel');
+                if (middlePanel && middlePanel.scrollHeight > middlePanel.clientHeight) {
+                    middlePanel.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                try { activateInlineRename(); } catch (error) {}
+            };
+        } catch (error) {
+            console.warn('Onda v3.5 could not install the mobile metadata-scroll guard:', error);
+        }
+    }
 
     function prepareMarqueeTitle(title) {
         let movingText = title.querySelector(':scope > .onda-title-marquee-text');
@@ -336,12 +406,13 @@
             const toast = document.getElementById('toast-notice');
             if (!toast) return;
             toast.textContent = message;
-            toast.classList.add('show');
-            window.setTimeout(() => toast.classList.remove('show'), 2600);
+            toast.classList.add('is-open');
+            window.setTimeout(() => toast.classList.remove('is-open'), 2600);
         }, 260);
     }
 
     function init() {
+        installMobileScrollGuards();
         bindPlaybackControls();
         installMarqueeObserver();
         announceVersion();
