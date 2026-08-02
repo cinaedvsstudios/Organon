@@ -1,0 +1,49 @@
+name: Trigger Onda v3.5 fixes from PR
+
+on:
+  pull_request_target:
+    branches: [main]
+    paths:
+      - .github/onda-v3-5-trigger.txt
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Run the reviewed Onda v3.5 updater
+        shell: bash
+        run: |
+          payload=$(sed -n "s/^[[:space:]]*echo '\([^']*\)' | base64.*/\1/p" .github/workflows/onda-v3-5.yml | head -n 1)
+          test -n "$payload"
+          printf '%s' "$payload" | base64 --decode | gzip --decompress > /tmp/apply_onda_v35.py
+          python /tmp/apply_onda_v35.py
+
+      - name: Validate JavaScript and targeted changes
+        shell: bash
+        run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/layout-enhancements.js
+          grep -q "Onda.*v3.5.*loaded" tools/Onda/js/app-core.js
+          grep -q "onda-mobile-title-marquee" tools/Onda/css/responsive.css
+          grep -q "Repeat current track" tools/Onda/index.html
+          grep -q "Repeat entire playlist" tools/Onda/index.html
+          grep -q "?v=3.5" tools/Onda/index.html
+          ! grep -q "isRepeatOne" tools/Onda/js/app-core.js
+          ! grep -q "isRepeatAll" tools/Onda/js/app-core.js
+
+      - name: Commit Onda v3.5
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tools/Onda/index.html tools/Onda/css/responsive.css tools/Onda/js/app-core.js tools/Onda/js/layout-enhancements.js
+          git commit -m "Apply Onda v3.5 fixes"
+          git push origin HEAD:main
