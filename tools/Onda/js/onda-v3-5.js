@@ -306,9 +306,7 @@
         const observer = new MutationObserver(scheduleMarqueeRefresh);
         observer.observe(document.body, {
             childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['class']
+            subtree: true
         });
 
         window.addEventListener('resize', () => {
