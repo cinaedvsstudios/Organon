@@ -44,3 +44,5 @@ jobs:
           git add tools/Onda/index.html tools/Onda/css/responsive.css tools/Onda/js/app-core.js tools/Onda/js/layout-enhancements.js
           git commit -m "Apply Onda v3.5 fixes"
           git push
+
+# trigger existing workflow on main
