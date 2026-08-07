@@ -1,11 +1,5 @@
-/* Onda v3.5 mobile player corrections. */
-
-body.onda-force-mobile-mode .workspace-mode-bar {
-  isolation: auto !important;
-  position: relative !important;
-  top: auto !important;
-  z-index: 2 !important;
-}
+/* Onda v3.5 current-track title marquee support.
+   Mobile workspace positioning is owned by responsive.css. */
 
 @keyframes onda-mobile-title-marquee {
   0%, 16% {
