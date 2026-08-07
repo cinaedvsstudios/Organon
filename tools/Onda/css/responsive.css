@@ -178,6 +178,8 @@
   }
 
   #organon-middle-panel {
+    min-height: 0;
+    overflow: clip;
     padding: 15px 15px 120px 15px;
   }
 
@@ -941,9 +943,17 @@ body.onda-force-mobile-mode .timeline-utilities-row #end-utilities-pill #btn-spe
   font-size: 1.65rem;
 }
 
-body.onda-force-mobile-mode #workspace-viewport,
+body.onda-force-mobile-mode #workspace-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
 body.onda-force-mobile-mode .viewport-content.active-content {
+  min-height: 0;
   overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 body.onda-force-mobile-mode #tab-history .history-panel-shell {
@@ -1109,11 +1119,12 @@ body.onda-force-mobile-mode .library-action-section[data-library-action-section=
 }
 
 
-/* Mobile fix pass 2: clickable workspace tabs and single row-action icons. */
+/* Mobile workspace tabs: fixed in the middle-panel layout; only the active workspace scrolls. */
 body.onda-force-mobile-mode .workspace-mode-bar {
-  position: sticky;
-  top: 0;
-  z-index: 260;
+  flex: 0 0 auto;
+  position: relative;
+  top: auto;
+  z-index: 2;
   pointer-events: auto;
   touch-action: manipulation;
 }
@@ -1445,17 +1456,7 @@ body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] 
 }
 
 
-/* Mobile fix pass 6: restore tab taps and force Library results to be visible. */
-body.onda-force-mobile-mode .workspace-mode-bar {
-  isolation: isolate;
-  z-index: 500;
-}
-
-body.onda-force-mobile-mode .workspace-mode-bar .mode-tab-btn {
-  pointer-events: auto;
-  touch-action: manipulation;
-}
-
+/* Mobile fix pass 6: force Library results to be visible. */
 body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-results-panel {
   display: flex;
   flex: 1 1 auto;
