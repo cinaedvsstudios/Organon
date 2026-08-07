@@ -10,8 +10,7 @@
   margin-top: 15px;
   overflow: hidden;
   padding: 20px 40px;
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 100;
 }
 

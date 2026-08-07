@@ -1,0 +1,240 @@
+/* Onda Android/background playback integration. Uses the existing Onda audio engine. */
+(function () {
+    'use strict';
+
+    const supported = 'mediaSession' in navigator && typeof window.MediaMetadata === 'function';
+    if (!supported) {
+        window.OndaMediaSession = { supported: false };
+        return;
+    }
+
+    const boundAudio = new WeakSet();
+    let lastActiveAudio = null;
+    let lastMetadataKey = '';
+
+    function getActiveAudioElement() {
+        try { return activeAudio || null; } catch (error) { return null; }
+    }
+
+    function getCurrentTrackMeta() {
+        try {
+            if (!currentFile?.name || !virtualLibrary) return null;
+            return virtualLibrary[currentFile.name] || null;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    function currentPlaylistName() {
+        try {
+            return typeof getCurrentPlaybackPlaylistName === 'function'
+                ? getCurrentPlaybackPlaylistName()
+                : '';
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function resolveArtwork(meta) {
+        let source = '';
+        try {
+            if (typeof getTrackArtwork === 'function') source = getTrackArtwork(meta) || '';
+        } catch (error) {}
+        if (!source && meta) source = meta.imageUrl || meta.artwork || meta.coverUrl || '';
+        if (!source || typeof source !== 'string') return [];
+        try { source = new URL(source, document.baseURI).href; } catch (error) {}
+        return [{ src: source }];
+    }
+
+    function metadataKey(meta) {
+        if (!meta) return '';
+        return [
+            meta.id || '',
+            meta.nickname || '',
+            meta.title || '',
+            meta.fileName || '',
+            meta.artist || '',
+            meta.imageUrl || '',
+            currentPlaylistName()
+        ].join('\u001f');
+    }
+
+    function syncMetadata(force = false) {
+        const meta = getCurrentTrackMeta();
+        if (!meta) return;
+        const key = metadataKey(meta);
+        if (!force && key === lastMetadataKey) return;
+        lastMetadataKey = key;
+
+        let title = meta.nickname || meta.title || meta.fileName || 'Onda';
+        try {
+            if (typeof getDisplayTitle === 'function') title = getDisplayTitle(meta) || title;
+        } catch (error) {}
+
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title,
+            artist: meta.artist || meta.albumArtist || '',
+            album: currentPlaylistName() || meta.album || 'Onda',
+            artwork: resolveArtwork(meta)
+        });
+    }
+
+    function syncPlaybackState() {
+        const audio = getActiveAudioElement();
+        try {
+            navigator.mediaSession.playbackState = audio && !audio.paused ? 'playing' : 'paused';
+        } catch (error) {}
+    }
+
+    function syncPosition() {
+        const audio = getActiveAudioElement();
+        if (!audio || typeof navigator.mediaSession.setPositionState !== 'function') return;
+        const duration = Number(audio.duration);
+        const position = Number(audio.currentTime);
+        const playbackRate = Number(audio.playbackRate) || 1;
+        if (!Number.isFinite(duration) || duration <= 0 || !Number.isFinite(position)) return;
+        try {
+            navigator.mediaSession.setPositionState({
+                duration,
+                playbackRate: playbackRate > 0 ? playbackRate : 1,
+                position: Math.min(duration, Math.max(0, position))
+            });
+        } catch (error) {}
+    }
+
+    function bindAudioElement(audio) {
+        if (!audio || typeof audio.addEventListener !== 'function' || boundAudio.has(audio)) return;
+        boundAudio.add(audio);
+        audio.setAttribute?.('playsinline', '');
+        ['play', 'pause', 'loadedmetadata', 'durationchange', 'ratechange', 'seeked'].forEach((eventName) => {
+            audio.addEventListener(eventName, () => {
+                if (audio !== getActiveAudioElement()) return;
+                syncMetadata();
+                syncPlaybackState();
+                syncPosition();
+            });
+        });
+        audio.addEventListener('timeupdate', () => {
+            if (audio === getActiveAudioElement()) syncPosition();
+        });
+    }
+
+    function bindCurrentAudio() {
+        try { bindAudioElement(localAudio); } catch (error) {}
+        try { bindAudioElement(streamAudio); } catch (error) {}
+        try { bindAudioElement(window.OndaMidi?.audio); } catch (error) {}
+
+        const audio = getActiveAudioElement();
+        bindAudioElement(audio);
+        if (audio !== lastActiveAudio) {
+            lastActiveAudio = audio;
+            lastMetadataKey = '';
+            syncMetadata(true);
+        } else {
+            syncMetadata();
+        }
+        syncPlaybackState();
+        syncPosition();
+    }
+
+    function playFromSystem() {
+        try {
+            const result = typeof playAudio === 'function' ? playAudio() : getActiveAudioElement()?.play();
+            if (result?.catch) result.catch(() => {});
+        } catch (error) {}
+    }
+
+    function pauseFromSystem() {
+        try {
+            if (typeof pauseAudio === 'function') pauseAudio();
+            else getActiveAudioElement()?.pause();
+        } catch (error) {}
+    }
+
+    function previousFromSystem() {
+        try {
+            if (typeof skipToPreviousTrack === 'function') skipToPreviousTrack();
+        } catch (error) {}
+    }
+
+    function nextFromSystem() {
+        const button = document.getElementById('btn-next');
+        if (button) {
+            button.click();
+            return;
+        }
+        try {
+            if (typeof skipToNextTrack === 'function') skipToNextTrack();
+        } catch (error) {}
+    }
+
+    function seekBy(delta) {
+        const audio = getActiveAudioElement();
+        if (!audio || !Number.isFinite(audio.currentTime)) return;
+        const duration = Number(audio.duration);
+        const next = audio.currentTime + delta;
+        audio.currentTime = Number.isFinite(duration)
+            ? Math.min(duration, Math.max(0, next))
+            : Math.max(0, next);
+        syncPosition();
+    }
+
+    const handlers = {
+        play: playFromSystem,
+        pause: pauseFromSystem,
+        previoustrack: previousFromSystem,
+        nexttrack: nextFromSystem,
+        stop: () => {
+            pauseFromSystem();
+            const audio = getActiveAudioElement();
+            if (audio) {
+                try { audio.currentTime = 0; } catch (error) {}
+            }
+            syncPosition();
+        },
+        seekbackward: (details) => seekBy(-(Number(details?.seekOffset) || 10)),
+        seekforward: (details) => seekBy(Number(details?.seekOffset) || 10),
+        seekto: (details) => {
+            const audio = getActiveAudioElement();
+            const seekTime = Number(details?.seekTime);
+            if (!audio || !Number.isFinite(seekTime)) return;
+            try {
+                if (details?.fastSeek && typeof audio.fastSeek === 'function') audio.fastSeek(seekTime);
+                else audio.currentTime = seekTime;
+            } catch (error) {}
+            syncPosition();
+        }
+    };
+
+    Object.entries(handlers).forEach(([action, handler]) => {
+        try { navigator.mediaSession.setActionHandler(action, handler); } catch (error) {}
+    });
+
+    const nowPlaying = document.getElementById('now-playing');
+    if (nowPlaying && typeof MutationObserver === 'function') {
+        new MutationObserver(() => syncMetadata(true)).observe(nowPlaying, {
+            childList: true,
+            characterData: true,
+            subtree: true
+        });
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        // Deliberately do not pause when hidden. On return, refresh WebAudio if Chrome suspended it.
+        if (!document.hidden) {
+            try {
+                const audio = getActiveAudioElement();
+                if (audio && !audio.paused && audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
+            } catch (error) {}
+        }
+        bindCurrentAudio();
+    });
+
+    window.setInterval(bindCurrentAudio, 1000);
+    bindCurrentAudio();
+
+    window.OndaMediaSession = {
+        supported: true,
+        refresh: () => bindCurrentAudio()
+    };
+})();
