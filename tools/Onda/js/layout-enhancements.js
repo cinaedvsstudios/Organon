@@ -9,8 +9,9 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
     const MOBILE_BREAKPOINT = 768;
     const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
     const UI_FIXES_STYLESHEET_ID = 'onda-final-ui-fixes';
-    const V36_STYLESHEET_ID = 'onda-v3-6-styles';
-    const V36_SCRIPT_ID = 'onda-v3-6-script';
+    const V37_STYLESHEET_ID = 'onda-v3-7-styles';
+    const V37_SCRIPT_ID = 'onda-v3-7-script';
+    const MEDIA_SESSION_SCRIPT_ID = 'onda-media-session-script';
 
     function safeToast(message) {
         if (typeof window.showToast === 'function') window.showToast(message);
@@ -20,12 +21,22 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
         return mobileLayoutQuery.matches;
     }
 
-    function ensureResponsiveStylesheetVersion() {
-        const stylesheet = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-            .find((link) => /(?:^|\/)css\/responsive\.css(?:[?#]|$)/.test(link.getAttribute('href') || ''));
-        if (stylesheet && stylesheet.getAttribute('href') !== 'css/responsive.css?v=3.6') {
-            stylesheet.setAttribute('href', 'css/responsive.css?v=3.6');
-        }
+    function ensureCoreStylesheetVersions() {
+        const stylesheets = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
+        const versioned = {
+            'layout.css': 'css/layout.css?v=3.7',
+            'responsive.css': 'css/responsive.css?v=3.7'
+        };
+
+        Object.entries(versioned).forEach(([fileName, href]) => {
+            const stylesheet = stylesheets.find((link) => {
+                const currentHref = link.getAttribute('href') || '';
+                return currentHref === `css/${fileName}` || currentHref.startsWith(`css/${fileName}?`);
+            });
+            if (stylesheet && stylesheet.getAttribute('href') !== href) {
+                stylesheet.setAttribute('href', href);
+            }
+        });
     }
 
     function ensureUiFixStylesheet() {
@@ -33,27 +44,36 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
         const stylesheet = document.createElement('link');
         stylesheet.id = UI_FIXES_STYLESHEET_ID;
         stylesheet.rel = 'stylesheet';
-        stylesheet.href = 'css/final-ui-fixes.css?v=3.6';
+        stylesheet.href = 'css/final-ui-fixes.css?v=3.7';
         document.head.appendChild(stylesheet);
     }
 
-    function ensureV36Assets() {
-        if (!document.getElementById(V36_STYLESHEET_ID)) {
+    function ensureV37Assets() {
+        if (!document.getElementById(V37_STYLESHEET_ID)) {
             const stylesheet = document.createElement('link');
-            stylesheet.id = V36_STYLESHEET_ID;
+            stylesheet.id = V37_STYLESHEET_ID;
             stylesheet.rel = 'stylesheet';
-            stylesheet.href = 'css/onda-v3-5.css?v=3.6';
-            stylesheet.addEventListener('load', () => window.OndaV36?.refreshMarquees?.());
+            stylesheet.href = 'css/onda-v3-5.css?v=3.7';
+            stylesheet.addEventListener('load', () => window.OndaV37?.refreshMarquees?.());
             document.head.appendChild(stylesheet);
         }
 
-        if (!document.getElementById(V36_SCRIPT_ID)) {
+        if (!document.getElementById(V37_SCRIPT_ID)) {
             const script = document.createElement('script');
-            script.id = V36_SCRIPT_ID;
-            script.src = 'js/onda-v3-5.js?v=3.6';
+            script.id = V37_SCRIPT_ID;
+            script.src = 'js/onda-v3-5.js?v=3.7';
             script.async = false;
-            script.addEventListener('error', () => safeToast('Onda v3.6 failed to load.'));
+            script.addEventListener('error', () => safeToast('Onda v3.7 failed to load.'));
             document.head.appendChild(script);
+        }
+
+        if (!document.getElementById(MEDIA_SESSION_SCRIPT_ID)) {
+            const mediaScript = document.createElement('script');
+            mediaScript.id = MEDIA_SESSION_SCRIPT_ID;
+            mediaScript.src = 'js/media-session.js?v=3.7';
+            mediaScript.async = false;
+            mediaScript.addEventListener('error', () => console.warn('Onda background media controls failed to load.'));
+            document.head.appendChild(mediaScript);
         }
     }
 
@@ -135,9 +155,9 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
     }
 
     function initLayoutControls() {
-        ensureResponsiveStylesheetVersion();
+        ensureCoreStylesheetVersions();
         ensureUiFixStylesheet();
-        ensureV36Assets();
+        ensureV37Assets();
 
         const transport = document.getElementById('start-controls-pill');
         if (transport) transport.classList.add('onda-transport-pill');
