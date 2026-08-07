@@ -1,12 +1,12 @@
-/* Onda v3.5 mobile layout, marquee, repeat, and shuffle corrections. */
+/* Onda v3.6 mobile layout, marquee, repeat, and shuffle corrections. */
 (function () {
     'use strict';
 
-    const VERSION = 'v3.5';
+    const VERSION = 'v3.6';
     const MOBILE_BREAKPOINT = 768;
     const mobileQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
 
-    if (window.OndaV35?.initialized) return;
+    if (window.OndaV36?.initialized) return;
 
     let repeatMode = 'off';
     let shuffleEnabled = false;
@@ -146,7 +146,7 @@
             switchTrack(index);
             return true;
         } catch (error) {
-            console.error('Onda v3.5 could not switch tracks:', error);
+            console.error('Onda v3.6 could not switch tracks:', error);
             return false;
         }
     }
@@ -157,7 +157,7 @@
             audioObject.currentTime = 0;
             playAudio();
         } catch (error) {
-            console.error('Onda v3.5 could not repeat the current track:', error);
+            console.error('Onda v3.6 could not repeat the current track:', error);
         }
     }
 
@@ -264,7 +264,7 @@
 
         try { originalTrackScroll = scrollCurrentTrackRowsIntoView; } catch (error) {}
         try {
-            scrollCurrentTrackRowsIntoView = function ondaV35TrackScroll(reason = 'track-change') {
+            scrollCurrentTrackRowsIntoView = function ondaV36TrackScroll(reason = 'track-change') {
                 if (!isMobileMode()) {
                     if (typeof originalTrackScroll === 'function') return originalTrackScroll(reason);
                     return;
@@ -308,12 +308,12 @@
                 }, 140);
             };
         } catch (error) {
-            console.warn('Onda v3.5 could not install the mobile track-scroll guard:', error);
+            console.warn('Onda v3.6 could not install the mobile track-scroll guard:', error);
         }
 
         try { originalMetaEdit = triggerMetaEdit; } catch (error) {}
         try {
-            triggerMetaEdit = function ondaV35MetaEdit() {
+            triggerMetaEdit = function ondaV36MetaEdit() {
                 if (!isMobileMode()) {
                     if (typeof originalMetaEdit === 'function') return originalMetaEdit();
                     return;
@@ -331,7 +331,7 @@
                 try { activateInlineRename(); } catch (error) {}
             };
         } catch (error) {
-            console.warn('Onda v3.5 could not install the mobile metadata-scroll guard:', error);
+            console.warn('Onda v3.6 could not install the mobile metadata-scroll guard:', error);
         }
     }
 
@@ -418,7 +418,7 @@
         announceVersion();
     }
 
-    window.OndaV35 = {
+    window.OndaV36 = {
         initialized: true,
         version: VERSION,
         refreshMarquees: scheduleMarqueeRefresh,
