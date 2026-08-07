@@ -20,6 +20,14 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
         return mobileLayoutQuery.matches;
     }
 
+    function ensureResponsiveStylesheetVersion() {
+        const stylesheet = Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+            .find((link) => /(?:^|\/)css\/responsive\.css(?:[?#]|$)/.test(link.getAttribute('href') || ''));
+        if (stylesheet && stylesheet.getAttribute('href') !== 'css/responsive.css?v=3.6') {
+            stylesheet.setAttribute('href', 'css/responsive.css?v=3.6');
+        }
+    }
+
     function ensureUiFixStylesheet() {
         if (document.getElementById(UI_FIXES_STYLESHEET_ID)) return;
         const stylesheet = document.createElement('link');
@@ -127,6 +135,7 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
     }
 
     function initLayoutControls() {
+        ensureResponsiveStylesheetVersion();
         ensureUiFixStylesheet();
         ensureV36Assets();
 
