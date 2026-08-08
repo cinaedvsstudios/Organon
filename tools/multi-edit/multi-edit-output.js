@@ -18,6 +18,12 @@
     opacity: $("#opacity"),
     contrastOut: $("#contrastOut"),
     opacityOut: $("#opacityOut"),
+    red: $("#red"),
+    green: $("#green"),
+    blue: $("#blue"),
+    redOut: $("#redOut"),
+    greenOut: $("#greenOut"),
+    blueOut: $("#blueOut"),
     outputFormat: $("#outputFormat"),
     outputQuality: $("#outputQuality"),
     outputQualityOut: $("#outputQualityOut"),
@@ -33,13 +39,19 @@
     return {
       ...originalMakeDefaultAdjustments(),
       contrast: 100,
-      opacity: 100
+      opacity: 100,
+      red: 0,
+      green: 0,
+      blue: 0
     };
   };
 
   adjustmentControls.push(
     ["contrast", ui.contrast, ui.contrastOut, "%"],
-    ["opacity", ui.opacity, ui.opacityOut, "%"]
+    ["opacity", ui.opacity, ui.opacityOut, "%"],
+    ["red", ui.red, ui.redOut, "%"],
+    ["green", ui.green, ui.greenOut, "%"],
+    ["blue", ui.blue, ui.blueOut, "%"]
   );
 
   const originalSetUiDisabled = setUiDisabled;
@@ -47,16 +59,22 @@
     originalSetUiDisabled(disabled);
     ui.contrast.disabled = disabled;
     ui.opacity.disabled = disabled;
+    ui.red.disabled = disabled;
+    ui.green.disabled = disabled;
+    ui.blue.disabled = disabled;
   };
 
   const originalBuildProcessedSource = buildProcessedSource;
-  buildProcessedSource = function buildProcessedSourceWithContrastAndOpacity(asset) {
+  buildProcessedSource = function buildProcessedSourceWithContrastOpacityAndRgb(asset) {
     const canvas = originalBuildProcessedSource(asset);
     const adjustments = getEffectiveSettings(asset)?.adjustments || {};
     const contrast = Number(adjustments.contrast ?? 100) / 100;
     const opacity = Number(adjustments.opacity ?? 100) / 100;
+    const redShift = Number(adjustments.red ?? 0) * 2.55;
+    const greenShift = Number(adjustments.green ?? 0) * 2.55;
+    const blueShift = Number(adjustments.blue ?? 0) * 2.55;
 
-    if (contrast === 1 && opacity === 1) return canvas;
+    if (contrast === 1 && opacity === 1 && redShift === 0 && greenShift === 0 && blueShift === 0) return canvas;
 
     const imageData = sourceCtx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
@@ -66,6 +84,11 @@
         data[i] = clampByte(128 + (data[i] - 128) * contrast);
         data[i + 1] = clampByte(128 + (data[i + 1] - 128) * contrast);
         data[i + 2] = clampByte(128 + (data[i + 2] - 128) * contrast);
+      }
+      if (data[i + 3] > 0) {
+        if (redShift) data[i] = clampByte(data[i] + redShift);
+        if (greenShift) data[i + 1] = clampByte(data[i + 1] + greenShift);
+        if (blueShift) data[i + 2] = clampByte(data[i + 2] + blueShift);
       }
       if (opacity !== 1) data[i + 3] = clampByte(data[i + 3] * opacity);
     }
@@ -93,8 +116,8 @@
   const jpegCanvas = document.createElement("canvas");
   const jpegContext = jpegCanvas.getContext("2d", { alpha: false });
 
-  function canvasForExport(canvas) {
-    if (state.output.format !== "jpeg") return canvas;
+  function canvasForMime(canvas, mime) {
+    if (mime !== "image/jpeg") return canvas;
     jpegCanvas.width = canvas.width;
     jpegCanvas.height = canvas.height;
     jpegContext.save();
@@ -103,6 +126,10 @@
     jpegContext.drawImage(canvas, 0, 0);
     jpegContext.restore();
     return jpegCanvas;
+  }
+
+  function canvasForExport(canvas) {
+    return canvasForMime(canvas, currentFormat().mime);
   }
 
   async function makeExportBlob(canvas) {
@@ -118,6 +145,25 @@
     if (format.mime !== "image/png" && blob.type && blob.type !== format.mime) {
       throw new Error(`${format.label} encoding is unavailable in this browser.`);
     }
+    return blob;
+  }
+
+  function originalFormatForAsset(asset) {
+    const name = String(asset?.originalName || "");
+    const extension = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+    if (extension === "png") return { mime: "image/png", supportsQuality: false };
+    if (extension === "jpg" || extension === "jpeg") return { mime: "image/jpeg", supportsQuality: true };
+    if (extension === "webp") return { mime: "image/webp", supportsQuality: true };
+    return null;
+  }
+
+  async function makeOriginalFormatBlob(asset) {
+    const format = originalFormatForAsset(asset);
+    if (!format) throw new Error(`Direct overwrite does not support ${asset.originalName}. Use PNG, JPEG or WebP source files.`);
+    const prepared = canvasForMime(renderOutput(asset), format.mime);
+    const blob = await blobFromCanvas(prepared, format.mime, format.supportsQuality ? outputQuality() : undefined);
+    if (!blob) throw new Error(`Could not encode ${asset.originalName}.`);
+    if (blob.type && blob.type !== format.mime) throw new Error(`${format.mime} encoding is unavailable in this browser.`);
     return blob;
   }
 
@@ -187,44 +233,63 @@
     }
   };
 
-  overwriteCurrent = async function overwriteCurrentInSelectedFormat() {
-    const asset = getActiveAsset();
-    if (!asset) return;
+  overwriteCurrent = async function overwriteBatchInSelectedFolder() {
+    if (!state.assets.length) return;
+    if (typeof window.showDirectoryPicker !== "function") {
+      toast("This browser cannot write directly to a folder. Use Export all instead.", "⚠️");
+      return;
+    }
+
+    const unsupported = state.assets.filter((asset) => !originalFormatForAsset(asset));
+    if (unsupported.length) {
+      toast(`Direct overwrite supports PNG, JPEG and WebP. Unsupported: ${unsupported[0].originalName}${unsupported.length > 1 ? ` (+${unsupported.length - 1} more)` : ""}.`, "⚠️");
+      return;
+    }
+
+    const seenNames = new Set();
+    const duplicate = state.assets.find((asset) => {
+      const key = String(asset.originalName || "").toLowerCase();
+      if (seenNames.has(key)) return true;
+      seenNames.add(key);
+      return false;
+    });
+    if (duplicate) {
+      toast(`Two loaded files share the name ${duplicate.originalName}. Remove or rename one before overwriting a single folder.`, "⚠️");
+      return;
+    }
+
+    let directoryHandle;
+    try {
+      directoryHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        console.error(error);
+        toast("The destination folder could not be opened.", "⚠️");
+      }
+      return;
+    }
+
+    const originalLabel = ui.overwriteBtn.textContent;
+    ui.overwriteBtn.disabled = true;
 
     try {
-      const blob = await makeExportBlob(renderOutput(asset));
-      if (!blob) throw new Error("No export blob was produced.");
-
-      const nextUrl = URL.createObjectURL(blob);
-      const nextImg = new Image();
-      nextImg.decoding = "async";
-      nextImg.src = nextUrl;
-      await nextImg.decode().catch(() => null);
-      if (!nextImg.naturalWidth) {
-        URL.revokeObjectURL(nextUrl);
-        throw new Error("The overwritten image could not be reloaded.");
+      for (let index = 0; index < state.assets.length; index += 1) {
+        const asset = state.assets[index];
+        ui.overwriteBtn.textContent = `Saving ${index + 1}/${state.assets.length}…`;
+        const blob = await makeOriginalFormatBlob(asset);
+        const fileHandle = await directoryHandle.getFileHandle(asset.originalName, { create: true });
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
       }
-
-      URL.revokeObjectURL(asset.url);
-      asset.url = nextUrl;
-      asset.img = nextImg;
-      asset.exportName = getExportName(asset);
-      asset.file = new File([blob], asset.exportName, { type: currentFormat().mime });
-      asset.naturalWidth = nextImg.naturalWidth;
-      asset.naturalHeight = nextImg.naturalHeight;
-
-      asset.override = true;
-      asset.overrideSettings = makeSettings(asset.naturalWidth, asset.naturalHeight);
-      asset.overrideDraft = clone(asset.overrideSettings.resize);
-      state.draft = asset.overrideDraft;
-
-      renderDeck();
-      syncUiFromActive();
-      renderPreview();
-      toast(`Selected image overwritten as ${currentFormat().label} and protected with an override.`, "✓");
+      toast(`${state.assets.length} edited ${state.assets.length === 1 ? "image" : "images"} saved with original filenames. PNG/WebP transparency was preserved.`, "✓");
     } catch (error) {
       console.error(error);
-      toast(error.message || "The selected image could not be overwritten.", "⚠️");
+      toast(error.message || "The edited batch could not be written to the selected folder.", "⚠️");
+    } finally {
+      ui.overwriteBtn.disabled = !state.assets.length;
+      ui.overwriteBtn.textContent = originalLabel;
+      renderPreview();
     }
   };
 
@@ -336,6 +401,17 @@
     ui.opacityOut.textContent = `${ui.opacity.value}%`;
   });
 
+  [
+    ["red", ui.red, ui.redOut],
+    ["green", ui.green, ui.greenOut],
+    ["blue", ui.blue, ui.blueOut]
+  ].forEach(([key, input, output]) => {
+    input.addEventListener("input", () => {
+      updateAdjustment(key, Number(input.value));
+      output.textContent = `${Number(input.value) > 0 ? "+" : ""}${input.value}%`;
+    });
+  });
+
   ui.outputFormat.addEventListener("change", () => {
     state.output.format = ui.outputFormat.value;
     updateFormatControls();
@@ -353,6 +429,26 @@
     ui.jpegBackgroundHex.textContent = ui.jpegBackground.value.toUpperCase();
     renderPreview();
   });
+
+  const previewBackgroundButtons = [...document.querySelectorAll("[data-preview-bg]")];
+  const previewBackgroundColors = {
+    black: "#000000",
+    white: "#ffffff",
+    green: "#00b140"
+  };
+
+  function setPreviewBackground(mode) {
+    const nextMode = mode === "black" || mode === "white" || mode === "green" ? mode : "checker";
+    state.previewBackground = nextMode;
+    if (nextMode === "checker") ui.stageWrap.style.removeProperty("background");
+    else ui.stageWrap.style.background = previewBackgroundColors[nextMode];
+    previewBackgroundButtons.forEach((button) => button.classList.toggle("primary", button.dataset.previewBg === nextMode));
+  }
+
+  previewBackgroundButtons.forEach((button) => {
+    button.addEventListener("click", () => setPreviewBackground(button.dataset.previewBg));
+  });
+  setPreviewBackground("checker");
 
   ui.outputFormat.value = state.output.format;
   ui.outputQuality.value = state.output.quality;

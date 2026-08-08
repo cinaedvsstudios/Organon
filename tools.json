@@ -1,5 +1,5 @@
 {
-  "version": "v1.50-alpha",
+  "version": "v1.51-alpha",
   "categories": [
     {
       "id": "create",
@@ -36,7 +36,7 @@
       "label": "IMAGE",
       "tools": [
         {"id": "alpha-isolator", "label": "ALPHA ISOLATOR", "path": "tools/alpha-isolator/index.html", "description": "Isolate, refine, and export alpha-channel image transparency."},
-        {"id": "multi-edit", "label": "MULTI EDIT", "path": "tools/multi-edit/index-v3.html?v=0.03", "description": "Apply shared crop, resize, colour, opacity and chromakey edits to multiple images, erase matching transparent areas across the full batch with Box, Lasso or Pen tools, adjust pen size with a live circular cursor, undo or clear erase masks, and export transparency-preserving PNG or WebP files."},
+        {"id": "multi-edit", "label": "MULTI EDIT", "path": "tools/multi-edit/index-v3.html?v=0.04", "description": "Apply shared crop, resize, colour, opacity and chromakey edits to multiple images, erase matching transparent areas across the full batch with Box, Lasso or Pen tools, adjust pen size with a live circular cursor, undo or clear erase masks, and export transparency-preserving PNG or WebP files."},
         {"id": "image-tile", "label": "TILE IMAGE", "path": "tools/image-tile/index.html", "description": "Slice and tile images into precise, custom grid coordinates."},
         {"id": "img2normal", "label": "IMG2NORMAL", "path": "tools/img2normal/index.html", "description": "Convert images into normal maps for 3D rendering."},
         {"id": "jpeg-compress", "label": "JPEG COMPRESS", "path": "tools/jpeg-compress/index.html", "description": "Compress JPEG images to optimized file sizes."},

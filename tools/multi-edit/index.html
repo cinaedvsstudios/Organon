@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./multi-edit-output.css?v=0.01">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script defer src="./multi-edit.js?v=0.02"></script>
-  <script defer src="./multi-edit-output.js?v=0.01"></script>
+  <script defer src="./multi-edit-output.js?v=0.02"></script>
 </head>
 <body>
   <header>
@@ -77,6 +77,13 @@
           <button class="button" id="resetAdjustmentsBtn" disabled>Reset batch edits</button>
           <button class="button teal" id="exportCurrentBtn" disabled>Export PNG</button>
         </div>
+      </div>
+
+      <div class="button-row" id="previewBackgroundControls" role="group" aria-label="Transparency preview background">
+        <button type="button" class="button primary preview-bg-btn" data-preview-bg="checker">CHECKER</button>
+        <button type="button" class="button preview-bg-btn" data-preview-bg="black">BLACK</button>
+        <button type="button" class="button preview-bg-btn" data-preview-bg="white">WHITE</button>
+        <button type="button" class="button preview-bg-btn" data-preview-bg="green">GREEN</button>
       </div>
 
       <div class="stage-wrap" id="stageWrap">
@@ -181,6 +188,18 @@
               <div class="slider-head"><span>Tint</span><output id="tintOut">0</output></div>
               <input type="range" id="tint" min="-100" max="100" value="0" disabled>
             </div>
+            <div class="slider-item">
+              <div class="slider-head"><span>Red</span><output id="redOut">0%</output></div>
+              <input type="range" id="red" min="-100" max="100" value="0" disabled>
+            </div>
+            <div class="slider-item">
+              <div class="slider-head"><span>Green</span><output id="greenOut">0%</output></div>
+              <input type="range" id="green" min="-100" max="100" value="0" disabled>
+            </div>
+            <div class="slider-item">
+              <div class="slider-head"><span>Blue</span><output id="blueOut">0%</output></div>
+              <input type="range" id="blue" min="-100" max="100" value="0" disabled>
+            </div>
           </div>
         </section>
 
@@ -212,7 +231,7 @@
 
         <section class="control-card" id="outputCard">
           <div class="section-heading"><h3>💾 Output</h3></div>
-          <p class="section-help">Choose one format for the current image and the batch ZIP. PNG and WebP preserve transparency. JPEG uses the selected solid background.</p>
+          <p class="section-help">Choose one format for Export and the batch ZIP. PNG and WebP preserve transparency. Overwrite batch in folder keeps each original filename and original PNG/JPEG/WebP format; JPEG/WebP use the quality setting.</p>
 
           <div class="output-format-grid">
             <div class="field">
@@ -237,7 +256,7 @@
 
           <p class="output-format-note" id="outputFormatNote">PNG is lossless, so the quality control is not used.</p>
           <div class="button-row">
-            <button class="button primary" id="overwriteBtn" disabled>Overwrite current</button>
+            <button class="button primary" id="overwriteBtn" disabled>Overwrite batch in folder</button>
             <button class="button teal" id="outputExportBtn" disabled>Export PNG</button>
           </div>
         </section>

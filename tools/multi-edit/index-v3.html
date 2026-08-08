@@ -10,7 +10,7 @@
 (() => {
   'use strict';
   const request = new XMLHttpRequest();
-  request.open('GET', './index.html?build=20260720-multi-edit-base-1', false);
+  request.open('GET', './index.html?build=20260808-batch-save-rgb-preview-1', false);
   request.send(null);
   if ((request.status < 200 || request.status >= 300) && request.status !== 0) {
     document.body.innerHTML = '<p style="color:white;background:#131412;padding:20px;font-family:sans-serif">Multi Edit could not be loaded.</p>';
@@ -25,8 +25,8 @@
       '<link rel="stylesheet" href="./multi-edit-output.css?v=0.01"><link rel="stylesheet" href="./multi-edit-erase.css?v=0.03">'
     ],
     [
-      '<script defer src="./multi-edit-output.js?v=0.01"></' + 'script>',
-      '<script defer src="./multi-edit-output.js?v=0.01"></' + 'script><script defer src="./multi-edit-erase.js?v=0.03"></' + 'script>'
+      '<script defer src="./multi-edit-output.js?v=0.02"></' + 'script>',
+      '<script defer src="./multi-edit-output.js?v=0.02"></' + 'script><script defer src="./multi-edit-erase.js?v=0.03"></' + 'script>'
     ],
     [
       '<canvas id="previewCanvas" aria-label="Image editor canvas"></canvas>',
