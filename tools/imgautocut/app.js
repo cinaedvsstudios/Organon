@@ -9,18 +9,22 @@
     rowTolerance: $('#row-tolerance'), rowToleranceValue: $('#row-tolerance-value'), dropZone: $('#drop-zone'), canvas: $('#workspace-canvas'),
     emptyState: $('#empty-state'), workspaceSummary: $('#workspace-summary'), sliceStat: $('#slice-stat'), selectionInfo: $('#selection-info'),
     selectAll: $('#select-all'), clearSelection: $('#clear-selection'), invertSelection: $('#invert-selection'), toggleMulti: $('#toggle-multi'),
-    uniformSize: $('#uniform-size'), resetScan: $('#reset-scan'), manageSelections: $('#manage-selections'), selectionManager: $('#selection-manager'),
-    addSelection: $('#add-selection'), selectionManagerList: $('#selection-manager-list'), toggleLedger: $('#toggle-ledger'), ledgerShell: $('#ledger-shell'),
-    ledgerBody: $('#ledger-body'), detectedMeta: $('#detected-meta'), exportFormat: $('#export-format'), exportAssets: $('#export-assets'), toast: $('#toast')
+    uniformSize: $('#uniform-size'), smartFilter: $('#smart-filter'), resetScan: $('#reset-scan'), manageSelections: $('#manage-selections'), selectionManager: $('#selection-manager'),
+    addSelection: $('#add-selection'), managerSort: $('#manager-sort'), selectionManagerList: $('#selection-manager-list'), toggleLedger: $('#toggle-ledger'), ledgerShell: $('#ledger-shell'),
+    ledgerBody: $('#ledger-body'), detectedMeta: $('#detected-meta'), exportFormat: $('#export-format'), exportAssets: $('#export-assets'),
+    zoomOpen: $('#zoom-open'), zoomModal: $('#zoom-modal'), zoomClose: $('#zoom-close'), zoomFit: $('#zoom-fit'), zoom100: $('#zoom-100'),
+    zoomRange: $('#zoom-range'), zoomValue: $('#zoom-value'), zoomScroll: $('#zoom-scroll'), zoomCanvas: $('#zoom-canvas'), toast: $('#toast')
   };
 
   const ctx = refs.canvas.getContext('2d', { alpha: true });
+  const zoomCtx = refs.zoomCanvas.getContext('2d', { alpha: true });
   const sourceCanvas = document.createElement('canvas');
   const sourceCtx = sourceCanvas.getContext('2d', { willReadFrequently: true });
   const state = {
     image: null, sourceName: '', sourceWidth: 0, sourceHeight: 0, sourceImageData: null,
     slices: [], originalSlices: [], multiSelect: false, pointer: null,
     view: { x: 0, y: 0, scale: 1, width: 0, height: 0, dpr: 1 }, toastTimer: null, resizeObserver: null,
+    managerSort: 'order', zoom: { open: false, scale: 1, pointer: null },
     header: { value: 5, interval: null, locked: false, hovering: false }
   };
 
@@ -153,6 +157,8 @@
     const count = state.slices.length;
     refs.sliceStat.textContent = `${count} ${count === 1 ? 'ASSET' : 'ASSETS'}`;
     refs.toggleLedger.textContent = refs.ledgerShell.hidden ? 'OPEN LEDGER' : 'CLOSE LEDGER';
+    refs.zoomOpen.disabled = !state.image;
+    refs.smartFilter.disabled = !state.image || state.slices.filter((slice) => !slice.manualAdded && !slice.manual).length < 2;
   }
   function updateSelectionInfo() {
     const selected = selectedSlices();
@@ -167,8 +173,8 @@
     refs.toggleMulti.classList.toggle('active', state.multiSelect);
     refs.manageSelections.classList.toggle('active', !refs.selectionManager.hidden);
   }
-  function selectionChanged() { renderCanvas(); renderSelectionManager(); updateSelectionInfo(); }
-  function refreshAll() { renderCanvas(); renderLedger(); renderSelectionManager(); updateSliceStats(); updateSelectionInfo(); }
+  function selectionChanged() { renderCanvas(); renderSelectionManager(); updateSelectionInfo(); if (state.zoom.open) renderZoomCanvas(); }
+  function refreshAll() { renderCanvas(); renderLedger(); renderSelectionManager(); updateSliceStats(); updateSelectionInfo(); if (state.zoom.open) renderZoomCanvas(); }
 
   function checkerboard(width, height) {
     const cell = 12;
@@ -212,7 +218,10 @@
       refs.selectionManagerList.innerHTML = '<div class="selection-manager-empty">Load an image sheet before adding or removing selections.</div>';
       return;
     }
-    refs.selectionManagerList.innerHTML = state.slices.map((slice, index) => {
+    const managerEntries = state.slices.map((slice, index) => ({ slice, index }));
+    if (state.managerSort === 'largest') managerEntries.sort((a, b) => (b.slice.w * b.slice.h) - (a.slice.w * a.slice.h) || a.index - b.index);
+    else if (state.managerSort === 'smallest') managerEntries.sort((a, b) => (a.slice.w * a.slice.h) - (b.slice.w * b.slice.h) || a.index - b.index);
+    refs.selectionManagerList.innerHTML = managerEntries.map(({ slice, index }) => {
       const kind = slice.manualAdded ? 'MANUAL BOX' : (slice.manual ? 'ADJUSTED' : 'AUTO');
       const kindClass = slice.manual ? 'manual' : 'auto';
       const generatedName = sanitizeFilename(slice.name, index, refs.exportFormat.value).replace(/\.(png|webp)$/i, '');
@@ -281,6 +290,41 @@
     targets.forEach((slice) => { const centreX = slice.x + (slice.w / 2), centreY = slice.y + (slice.h / 2); slice.x = centreX - (maxW / 2); slice.y = centreY - (maxH / 2); slice.w = maxW; slice.h = maxH; });
     refreshAll(); toast(`${targets.length} boxes padded and centred to ${Math.round(maxW)} × ${Math.round(maxH)}.`); setHubStatus('ImgAutoCut: selected automatic boxes now share a uniform transparent canvas.'); setTimeout(clearHubStatus, 1600);
   }
+  function smartFilterTinyIslands() {
+    const automatic = state.slices.filter((slice) => !slice.manualAdded && !slice.manual);
+    if (automatic.length < 2) { toast('Smart Filter needs at least two untouched automatic detections.'); return; }
+
+    const areas = automatic.map((slice) => Math.max(1, slice.w * slice.h)).sort((a, b) => a - b);
+    const pixelCounts = automatic.map((slice) => Math.max(1, slice.pixelCount || 1)).sort((a, b) => a - b);
+    const referenceCount = Math.max(1, Math.ceil(automatic.length * .25));
+    const median = (values) => {
+      const middle = Math.floor(values.length / 2);
+      return values.length % 2 ? values[middle] : (values[middle - 1] + values[middle]) / 2;
+    };
+    const referenceArea = median(areas.slice(-referenceCount));
+    const referencePixels = median(pixelCounts.slice(-referenceCount));
+    const minimumArea = Math.max(4, referenceArea * .08);
+    const minimumPixels = Math.max(2, referencePixels * .05);
+    const before = state.slices.length;
+
+    state.slices = state.slices.filter((slice) => {
+      if (slice.manualAdded || slice.manual) return true;
+      const area = Math.max(1, slice.w * slice.h);
+      const pixels = Math.max(1, slice.pixelCount || 1);
+      return !(area < minimumArea && pixels < minimumPixels);
+    });
+
+    const removed = before - state.slices.length;
+    refreshAll();
+    if (!removed) {
+      toast('Smart Filter found no obvious tiny artefacts to remove.');
+      return;
+    }
+    refs.workspaceSummary.textContent = `Smart Filter removed ${removed} tiny alpha island${removed === 1 ? '' : 's'}. ${state.slices.length} assets remain. Reset Scan restores the full detection.`;
+    toast(`Smart Filter removed ${removed} tiny detection${removed === 1 ? '' : 's'}. Reset Scan restores them.`);
+    setHubStatus(`ImgAutoCut: Smart Filter removed ${removed} tiny alpha islands.`); setTimeout(clearHubStatus, 1600);
+  }
+
   function resetScan() {
     if (!state.sourceImageData) return;
     state.slices = state.originalSlices.map(cloneForReset);
@@ -316,6 +360,105 @@
     state.slices.forEach((item) => { item.selected = item === slice; });
     selectionChanged();
     refs.dropZone.focus({ preventScroll: true });
+  }
+
+  function zoomScaleFromInput() { return Math.max(.1, Math.min(5, Number(refs.zoomRange.value || 100) / 100)); }
+  function applyZoomScale(scale) {
+    const bounded = Math.max(.1, Math.min(5, scale));
+    state.zoom.scale = bounded;
+    refs.zoomRange.value = String(Math.round(bounded * 100 / 5) * 5);
+    refs.zoomValue.textContent = `${Math.round(bounded * 100)}%`;
+    renderZoomCanvas();
+  }
+  function fitZoomToWindow() {
+    if (!state.image || !state.zoom.open) return;
+    const width = Math.max(120, refs.zoomScroll.clientWidth - 32);
+    const height = Math.max(120, refs.zoomScroll.clientHeight - 32);
+    applyZoomScale(Math.min(width / state.sourceWidth, height / state.sourceHeight, 5));
+    refs.zoomScroll.scrollLeft = 0; refs.zoomScroll.scrollTop = 0;
+  }
+  function renderZoomCanvas() {
+    if (!state.zoom.open || !state.image) return;
+    const scale = state.zoom.scale;
+    refs.zoomCanvas.width = state.sourceWidth; refs.zoomCanvas.height = state.sourceHeight;
+    refs.zoomCanvas.style.width = `${Math.max(1, Math.round(state.sourceWidth * scale))}px`;
+    refs.zoomCanvas.style.height = `${Math.max(1, Math.round(state.sourceHeight * scale))}px`;
+    zoomCtx.clearRect(0, 0, state.sourceWidth, state.sourceHeight);
+    const cell = Math.max(2, 12 / scale);
+    for (let y = 0; y < state.sourceHeight; y += cell) for (let x = 0; x < state.sourceWidth; x += cell) {
+      zoomCtx.fillStyle = ((Math.floor(x / cell) + Math.floor(y / cell)) % 2 === 0) ? '#252727' : '#171919';
+      zoomCtx.fillRect(x, y, cell, cell);
+    }
+    zoomCtx.drawImage(state.image, 0, 0, state.sourceWidth, state.sourceHeight);
+    state.slices.forEach((slice, index) => {
+      const accent = slice.manual ? '#449e92' : '#75b2de';
+      const line = (slice.selected ? 2.5 : 1.25) / scale;
+      const radius = 6 / scale;
+      zoomCtx.save();
+      zoomCtx.lineWidth = line; zoomCtx.strokeStyle = accent;
+      zoomCtx.fillStyle = slice.selected ? 'rgba(117,178,222,.14)' : 'rgba(0,0,0,.025)';
+      zoomCtx.fillRect(slice.x, slice.y, slice.w, slice.h); zoomCtx.strokeRect(slice.x, slice.y, slice.w, slice.h);
+      zoomCtx.font = `600 ${10 / scale}px Geist Mono, monospace`;
+      const label = slice.manualAdded ? 'M' : String(index + 1);
+      const tagH = 14 / scale; const tagW = Math.max(18 / scale, zoomCtx.measureText(label).width + (8 / scale));
+      zoomCtx.fillStyle = accent; zoomCtx.fillRect(slice.x, Math.max(0, slice.y - tagH), tagW, tagH);
+      zoomCtx.fillStyle = '#101211'; zoomCtx.fillText(label, slice.x + (4 / scale), Math.max(10 / scale, slice.y - (4 / scale)));
+      zoomCtx.fillStyle = '#f5f0db'; zoomCtx.strokeStyle = accent; zoomCtx.lineWidth = 1 / scale;
+      [[slice.x, slice.y], [slice.x + slice.w, slice.y], [slice.x, slice.y + slice.h], [slice.x + slice.w, slice.y + slice.h]].forEach(([x, y]) => {
+        zoomCtx.beginPath(); zoomCtx.arc(x, y, radius, 0, Math.PI * 2); zoomCtx.fill(); zoomCtx.stroke();
+      });
+      zoomCtx.restore();
+    });
+  }
+  function openZoomInspector() {
+    if (!state.image) { toast('Load an image sheet before opening Zoom.'); return; }
+    refs.zoomModal.hidden = false; state.zoom.open = true; state.zoom.pointer = null;
+    requestAnimationFrame(() => fitZoomToWindow());
+  }
+  function closeZoomInspector() {
+    state.zoom.open = false; state.zoom.pointer = null; refs.zoomModal.hidden = true; renderCanvas();
+  }
+  function zoomImagePoint(event) {
+    const rect = refs.zoomCanvas.getBoundingClientRect();
+    return { x: (event.clientX - rect.left) * state.sourceWidth / Math.max(1, rect.width), y: (event.clientY - rect.top) * state.sourceHeight / Math.max(1, rect.height) };
+  }
+  function zoomHandleAtPoint(slice, point) {
+    const threshold = 10 / state.zoom.scale;
+    const handles = [{ mode: 'nw', x: slice.x, y: slice.y }, { mode: 'ne', x: slice.x + slice.w, y: slice.y }, { mode: 'sw', x: slice.x, y: slice.y + slice.h }, { mode: 'se', x: slice.x + slice.w, y: slice.y + slice.h }];
+    return handles.find((handle) => Math.hypot(point.x - handle.x, point.y - handle.y) <= threshold) || null;
+  }
+  function zoomHitAtPoint(point) {
+    for (let i = state.slices.length - 1; i >= 0; i -= 1) {
+      const handle = zoomHandleAtPoint(state.slices[i], point); if (handle) return { slice: state.slices[i], mode: handle.mode };
+    }
+    const hit = sliceAtPoint(point); return hit ? { slice: hit.slice, mode: 'move' } : null;
+  }
+  function zoomPointerDown(event) {
+    if (!state.image) return; const point = zoomImagePoint(event), hit = zoomHitAtPoint(point);
+    if (!hit) return; event.preventDefault();
+    state.slices.forEach((slice) => { slice.selected = slice === hit.slice; });
+    state.zoom.pointer = { slice: hit.slice, mode: hit.mode, startPoint: point, startBox: { x: hit.slice.x, y: hit.slice.y, w: hit.slice.w, h: hit.slice.h } };
+    refs.zoomCanvas.setPointerCapture?.(event.pointerId); selectionChanged();
+  }
+  function zoomPointerMove(event) {
+    const point = zoomImagePoint(event);
+    if (!state.zoom.pointer) {
+      const hit = zoomHitAtPoint(point); refs.zoomCanvas.style.cursor = !hit ? 'crosshair' : (hit.mode === 'move' ? 'move' : `${hit.mode}-resize`); return;
+    }
+    event.preventDefault();
+    const { slice, mode, startPoint, startBox } = state.zoom.pointer; const dx = point.x - startPoint.x, dy = point.y - startPoint.y, minimum = 1;
+    if (mode === 'move') { slice.x = startBox.x + dx; slice.y = startBox.y + dy; }
+    else {
+      let { x, y, w, h } = startBox;
+      if (mode.includes('e')) w = Math.max(minimum, startBox.w + dx); if (mode.includes('s')) h = Math.max(minimum, startBox.h + dy);
+      if (mode.includes('w')) { x = startBox.x + dx; w = Math.max(minimum, startBox.w - dx); if (w === minimum) x = startBox.x + startBox.w - minimum; }
+      if (mode.includes('n')) { y = startBox.y + dy; h = Math.max(minimum, startBox.h - dy); if (h === minimum) y = startBox.y + startBox.h - minimum; }
+      slice.x = x; slice.y = y; slice.w = w; slice.h = h;
+    }
+    slice.manual = true; clampManualBox(slice); renderZoomCanvas(); renderCanvas(); renderLedger(); renderSelectionManager(); updateSelectionInfo();
+  }
+  function zoomPointerUp(event) {
+    if (!state.zoom.pointer) return; refs.zoomCanvas.releasePointerCapture?.(event.pointerId); state.zoom.pointer = null; renderZoomCanvas();
   }
 
   function blobFromCanvas(canvas, type, quality) { return new Promise((resolve) => canvas.toBlob(resolve, type, quality)); }
@@ -406,15 +549,28 @@
     refs.invertSelection.addEventListener('click', () => { state.slices.forEach((slice) => { slice.selected = !slice.selected; }); selectionChanged(); });
     refs.toggleMulti.addEventListener('click', () => { state.multiSelect = !state.multiSelect; updateSelectionInfo(); toast(state.multiSelect ? 'Multi-select is on. Click boxes to add or remove them.' : 'Multi-select is off.'); });
     refs.uniformSize.addEventListener('click', makeUniformSize);
+    refs.smartFilter.addEventListener('click', smartFilterTinyIslands);
     refs.resetScan.addEventListener('click', resetScan);
     refs.manageSelections.addEventListener('click', () => { refs.selectionManager.hidden = !refs.selectionManager.hidden; updateSelectionInfo(); });
     refs.addSelection.addEventListener('click', addManualSelection);
+    refs.managerSort.addEventListener('change', () => { state.managerSort = refs.managerSort.value; renderSelectionManager(); });
     refs.selectionManagerList.addEventListener('click', (event) => {
       const deleteButton = event.target.closest('[data-remove-slice]');
       if (deleteButton) { removeSlice(deleteButton.dataset.removeSlice); return; }
       const focusButton = event.target.closest('[data-focus-slice]');
       if (focusButton) focusSlice(focusButton.dataset.focusSlice);
     });
+    refs.zoomOpen.addEventListener('click', openZoomInspector);
+    refs.zoomClose.addEventListener('click', closeZoomInspector);
+    refs.zoomFit.addEventListener('click', fitZoomToWindow);
+    refs.zoom100.addEventListener('click', () => applyZoomScale(1));
+    refs.zoomRange.addEventListener('input', () => applyZoomScale(zoomScaleFromInput()));
+    refs.zoomModal.addEventListener('pointerdown', (event) => { if (event.target === refs.zoomModal) closeZoomInspector(); });
+    refs.zoomCanvas.addEventListener('pointerdown', zoomPointerDown);
+    refs.zoomCanvas.addEventListener('pointermove', zoomPointerMove);
+    refs.zoomCanvas.addEventListener('pointerup', zoomPointerUp);
+    refs.zoomCanvas.addEventListener('pointercancel', zoomPointerUp);
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && state.zoom.open) closeZoomInspector(); });
     refs.toggleLedger.addEventListener('click', () => { refs.ledgerShell.hidden = !refs.ledgerShell.hidden; updateSliceStats(); });
     refs.exportFormat.addEventListener('change', () => { renderLedger(); renderSelectionManager(); });
     refs.exportAssets.addEventListener('click', exportAssets);
@@ -444,7 +600,7 @@
     refs.canvas.addEventListener('pointercancel', pointerUp);
     refs.canvas.addEventListener('pointerleave', () => { if (!state.pointer) refs.canvas.style.cursor = 'crosshair'; });
     refs.canvas.addEventListener('pointermove', setCursor);
-    window.addEventListener('resize', renderCanvas);
+    window.addEventListener('resize', () => { renderCanvas(); if (state.zoom.open) fitZoomToWindow(); });
     if ('ResizeObserver' in window) { state.resizeObserver = new ResizeObserver(renderCanvas); state.resizeObserver.observe(refs.dropZone); }
   }
   function init() {

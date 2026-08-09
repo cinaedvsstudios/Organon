@@ -1,5 +1,5 @@
 {
-  "version": "v1.51-alpha",
+  "version": "v1.52-alpha",
   "categories": [
     {
       "id": "create",
@@ -41,7 +41,7 @@
         {"id": "img2normal", "label": "IMG2NORMAL", "path": "tools/img2normal/index.html", "description": "Convert images into normal maps for 3D rendering."},
         {"id": "jpeg-compress", "label": "JPEG COMPRESS", "path": "tools/jpeg-compress/index.html", "description": "Compress JPEG images to optimized file sizes."},
         {"id": "icon-slicer", "label": "ICON SLICER", "path": "tools/icon-slicer/index.html", "description": "Slice icon sheets or source graphics into individual icon assets."},
-        {"id": "imgautocut", "label": "AUTO CUT", "path": "tools/imgautocut/index.html", "description": "Detect transparency islands, sort them into rows, name them in bulk, and export isolated PNG or WebP assets."},
+        {"id": "imgautocut", "label": "AUTO CUT", "path": "tools/imgautocut/index.html?v=0.02", "description": "Detect transparency islands, smart-filter tiny artefacts, sort and manage detections, inspect and resize outlines in a zoom editor, name them in bulk, and export isolated PNG or WebP assets."},
         {"id": "simplesprite", "label": "SIMPLESPRITE", "path": "tools/simplesprite/index.html?build=20260702-0419", "description": "Position large source images inside a custom crop canvas, display a grid and exact-centre X, erase temporary transparency, auto-frame transparent-separated sprites, build a set, preview a saved sprite as a 50% alignment overlay, and export numbered transparent PNG files."},
         {"id": "bulk-convert", "label": "BULK CONVERT", "path": "tools/bulk-convert/index-fixed.html?v=20260727-2", "description": "Convert multiple local files in batch, preserve PNG/WebP transparency and save converted files directly to a selected folder."}
       ]

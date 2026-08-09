@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon ImgAutoCut v1.01</title>
+  <title>Organon ImgAutoCut v1.02</title>
   <script>
     if (window.self === window.top) window.location.href = '../../index.html';
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=1.02">
 </head>
 <body>
   <div class="app-wrapper">
@@ -18,7 +18,7 @@
       <div class="title-pill">
         <div class="title-group">
           <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the panel">5</button>
-          <span>IMGAUTOCUT WIZARD · V1.01</span>
+          <span>IMGAUTOCUT WIZARD · V1.02</span>
         </div>
         <span class="header-status" id="header-status">NO SHEET</span>
       </div>
@@ -54,7 +54,10 @@
             <h1>Sheet Workspace</h1>
             <p id="workspace-summary">Load a transparent image sheet. You can drag it here, browse for it, or paste it from the clipboard.</p>
           </div>
-          <div class="slice-stat" id="slice-stat">0 ASSETS</div>
+          <div class="workspace-stat-actions">
+            <div class="slice-stat" id="slice-stat">0 ASSETS</div>
+            <button type="button" class="action-button zoom-open-button" id="zoom-open" disabled>ZOOM</button>
+          </div>
         </div>
 
         <div class="canvas-stage" id="drop-zone" tabindex="0" aria-label="Image sheet workspace">
@@ -74,6 +77,7 @@
           <button type="button" class="action-button" id="invert-selection">INVERT</button>
           <button type="button" class="action-button" id="toggle-multi">MULTI: OFF</button>
           <button type="button" class="action-button" id="uniform-size">MAKE SAME SIZE</button>
+          <button type="button" class="action-button smart-filter-button" id="smart-filter" disabled>SMART FILTER</button>
           <button type="button" class="action-button danger-outline" id="reset-scan">RESET SCAN</button>
           <button type="button" class="action-button manager-toggle" id="manage-selections">ADD / REMOVE</button>
         </div>
@@ -84,7 +88,17 @@
               <h2>Selection Manager</h2>
               <p>Remove unwanted detected artefacts, or add a manual box for anything the alpha scan missed.</p>
             </div>
-            <button type="button" class="action-button manager-add-button" id="add-selection">+ ADD BOX</button>
+            <div class="selection-manager-heading-controls">
+              <label class="manager-sort-wrap">
+                <span>SORT</span>
+                <select id="manager-sort" aria-label="Sort Add / Remove list">
+                  <option value="order">Detection order</option>
+                  <option value="largest">Largest first</option>
+                  <option value="smallest">Smallest first</option>
+                </select>
+              </label>
+              <button type="button" class="action-button manager-add-button" id="add-selection">+ ADD BOX</button>
+            </div>
           </div>
           <div class="selection-manager-list" id="selection-manager-list"></div>
         </div>
@@ -131,7 +145,32 @@
     </footer>
   </div>
 
+  <div class="zoom-modal" id="zoom-modal" hidden>
+    <section class="zoom-dialog" role="dialog" aria-modal="true" aria-labelledby="zoom-dialog-title">
+      <div class="zoom-dialog-head">
+        <div>
+          <h2 id="zoom-dialog-title">Outline Inspector</h2>
+          <p>Zoom into the source sheet, drag any box to reposition it, or resize it from the circular corner handles.</p>
+        </div>
+        <button type="button" class="zoom-close" id="zoom-close" aria-label="Close outline inspector">×</button>
+      </div>
+      <div class="zoom-toolbar">
+        <button type="button" class="action-button" id="zoom-fit">FIT</button>
+        <button type="button" class="action-button" id="zoom-100">100%</button>
+        <label class="zoom-range-wrap">
+          <span>ZOOM</span>
+          <input id="zoom-range" type="range" min="10" max="500" step="5" value="100">
+          <output id="zoom-value">100%</output>
+        </label>
+      </div>
+      <div class="zoom-scroll" id="zoom-scroll">
+        <canvas id="zoom-canvas" aria-label="Zoomed image sheet outline editor"></canvas>
+      </div>
+      <div class="zoom-help">All boxes share the live sheet data. Changes here immediately update the main workspace, ledger and export boundaries.</div>
+    </section>
+  </div>
+
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js"></script>
+  <script src="app.js?v=1.02"></script>
 </body>
 </html>
