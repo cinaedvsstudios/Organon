@@ -12,8 +12,10 @@
     uniformSize: $('#uniform-size'), smartFilter: $('#smart-filter'), resetScan: $('#reset-scan'), manageSelections: $('#manage-selections'), selectionManager: $('#selection-manager'),
     addSelection: $('#add-selection'), managerSort: $('#manager-sort'), selectionManagerList: $('#selection-manager-list'), toggleLedger: $('#toggle-ledger'), ledgerShell: $('#ledger-shell'),
     ledgerBody: $('#ledger-body'), detectedMeta: $('#detected-meta'), exportFormat: $('#export-format'), exportAssets: $('#export-assets'),
+    ledgerPropagateName: $('#ledger-propagate-name'), ledgerStartNumber: $('#ledger-start-number'), ledgerPropagate: $('#ledger-propagate'),
     zoomOpen: $('#zoom-open'), zoomModal: $('#zoom-modal'), zoomClose: $('#zoom-close'), zoomFit: $('#zoom-fit'), zoom100: $('#zoom-100'),
-    zoomRange: $('#zoom-range'), zoomValue: $('#zoom-value'), zoomScroll: $('#zoom-scroll'), zoomCanvas: $('#zoom-canvas'), toast: $('#toast')
+    zoomRange: $('#zoom-range'), zoomValue: $('#zoom-value'), zoomScroll: $('#zoom-scroll'), zoomCanvas: $('#zoom-canvas'),
+    zoomSelectBox: $('#zoom-select-box'), zoomSelectAll: $('#zoom-select-all'), zoomInvert: $('#zoom-invert'), zoomDuplicate: $('#zoom-duplicate'), zoomDelete: $('#zoom-delete'), toast: $('#toast')
   };
 
   const ctx = refs.canvas.getContext('2d', { alpha: true });
@@ -24,7 +26,7 @@
     image: null, sourceName: '', sourceWidth: 0, sourceHeight: 0, sourceImageData: null,
     slices: [], originalSlices: [], multiSelect: false, pointer: null,
     view: { x: 0, y: 0, scale: 1, width: 0, height: 0, dpr: 1 }, toastTimer: null, resizeObserver: null,
-    managerSort: 'order', zoom: { open: false, scale: 1, pointer: null },
+    managerSort: 'order', zoom: { open: false, scale: 1, pointer: null, selectBoxMode: false, marquee: null },
     header: { value: 5, interval: null, locked: false, hovering: false }
   };
 
@@ -209,7 +211,7 @@
     refs.ledgerBody.innerHTML = state.slices.map((slice, index) => {
       const generated = sanitizeFilename(slice.name, index, refs.exportFormat.value).replace(/\.(png|webp)$/i, '');
       const stateText = slice.manualAdded ? 'MANUAL BOX' : (slice.manual ? 'MANUAL' : 'AUTO');
-      return `<tr data-slice-id="${escapedText(slice.id)}"><td>${index + 1}</td><td><input type="text" class="ledger-name" data-index="${index}" value="${escapedText(slice.name || generated)}" aria-label="File name for asset ${index + 1}" spellcheck="false" autocomplete="off"></td><td>${Math.round(slice.w)} × ${Math.round(slice.h)}</td><td><span class="${slice.manual ? 'state-manual' : 'state-auto'}">${stateText}</span></td></tr>`;
+      return `<tr data-slice-id="${escapedText(slice.id)}"><td>${index + 1}</td><td><input type="text" class="ledger-name" data-index="${index}" value="${escapedText(slice.name || generated)}" aria-label="File name for asset ${index + 1}" spellcheck="false" autocomplete="off"></td><td>${Math.round(slice.w)} × ${Math.round(slice.h)}</td><td><span class="ledger-state-cell"><span class="${slice.manual ? 'state-manual' : 'state-auto'}">${stateText}</span><button type="button" class="ledger-delete" data-ledger-delete="${escapedText(slice.id)}" title="Delete this asset" aria-label="Delete asset ${index + 1}">×</button></span></td></tr>`;
     }).join('') || '<tr><td colspan="4">No image islands are available yet.</td></tr>';
   }
   function renderSelectionManager() {
@@ -239,6 +241,20 @@
     const names = text.replace(/\r/g, '').split('\n').map((line) => line.trim()).filter(Boolean); if (!names.length) return;
     names.forEach((name, offset) => { const target = state.slices[startIndex + offset]; if (target) target.name = name; }); renderLedger(); renderSelectionManager();
     toast(`${Math.min(names.length, Math.max(0, state.slices.length - startIndex))} ledger names applied.`); setHubStatus('ImgAutoCut: distributed pasted names through the ledger.'); setTimeout(clearHubStatus, 1200);
+  }
+
+  function propagateLedgerNames() {
+    if (!state.slices.length) { toast('There are no assets to name.'); return; }
+    const rawBase = refs.ledgerPropagateName.value.trim().replace(/\.(png|webp)$/i, '');
+    const base = rawBase.replace(/[\\/:*?"<>|\u0000-\u001F]/g, '_').trim();
+    if (!base) { toast('Enter a name before pressing Propagate.'); refs.ledgerPropagateName.focus(); return; }
+    const start = Math.max(0, Math.trunc(Number(refs.ledgerStartNumber.value) || 0));
+    refs.ledgerStartNumber.value = String(start);
+    const last = start + Math.max(0, state.slices.length - 1);
+    const digits = Math.max(2, String(last).length);
+    state.slices.forEach((slice, index) => { slice.name = `${base}${String(start + index).padStart(digits, '0')}`; });
+    renderLedger(); renderSelectionManager();
+    toast(`${state.slices.length} names propagated from ${base}${String(start).padStart(digits, '0')}.`);
   }
 
   function imagePointFromEvent(event) { const rect = refs.canvas.getBoundingClientRect(); return { x: (event.clientX - rect.left) / state.view.scale, y: (event.clientY - rect.top) / state.view.scale }; }
@@ -377,6 +393,22 @@
     applyZoomScale(Math.min(width / state.sourceWidth, height / state.sourceHeight, 5));
     refs.zoomScroll.scrollLeft = 0; refs.zoomScroll.scrollTop = 0;
   }
+  function updateZoomToolbarState() {
+    if (!refs.zoomDuplicate) return;
+    const count = selectedSlices().length;
+    refs.zoomDuplicate.disabled = count === 0;
+    refs.zoomDelete.disabled = count === 0;
+    refs.zoomSelectBox.classList.toggle('active', state.zoom.selectBoxMode);
+    refs.zoomSelectBox.setAttribute('aria-pressed', state.zoom.selectBoxMode ? 'true' : 'false');
+  }
+  function normalizedMarquee() {
+    if (!state.zoom.marquee) return null;
+    const { start, current } = state.zoom.marquee;
+    return {
+      x: Math.min(start.x, current.x), y: Math.min(start.y, current.y),
+      w: Math.abs(current.x - start.x), h: Math.abs(current.y - start.y)
+    };
+  }
   function renderZoomCanvas() {
     if (!state.zoom.open || !state.image) return;
     const scale = state.zoom.scale;
@@ -391,32 +423,46 @@
     }
     zoomCtx.drawImage(state.image, 0, 0, state.sourceWidth, state.sourceHeight);
     state.slices.forEach((slice, index) => {
-      const accent = slice.manual ? '#449e92' : '#75b2de';
-      const line = (slice.selected ? 2.5 : 1.25) / scale;
-      const radius = 6 / scale;
+      const normalAccent = slice.manual ? '#449e92' : '#75b2de';
+      const accent = slice.selected ? '#ff4d7a' : normalAccent;
+      const line = (slice.selected ? 4 : 1.25) / scale;
+      const radius = (slice.selected ? 7 : 6) / scale;
       zoomCtx.save();
       zoomCtx.lineWidth = line; zoomCtx.strokeStyle = accent;
-      zoomCtx.fillStyle = slice.selected ? 'rgba(117,178,222,.14)' : 'rgba(0,0,0,.025)';
+      zoomCtx.fillStyle = slice.selected ? 'rgba(255,77,122,.22)' : 'rgba(0,0,0,.025)';
       zoomCtx.fillRect(slice.x, slice.y, slice.w, slice.h); zoomCtx.strokeRect(slice.x, slice.y, slice.w, slice.h);
-      zoomCtx.font = `600 ${10 / scale}px Geist Mono, monospace`;
-      const label = slice.manualAdded ? 'M' : String(index + 1);
-      const tagH = 14 / scale; const tagW = Math.max(18 / scale, zoomCtx.measureText(label).width + (8 / scale));
+      zoomCtx.font = `700 ${slice.selected ? 12 / scale : 10 / scale}px Geist Mono, monospace`;
+      const label = slice.manualAdded && !slice.duplicateOf ? 'M' : String(index + 1);
+      const tagH = (slice.selected ? 18 : 14) / scale; const tagW = Math.max((slice.selected ? 24 : 18) / scale, zoomCtx.measureText(label).width + (10 / scale));
       zoomCtx.fillStyle = accent; zoomCtx.fillRect(slice.x, Math.max(0, slice.y - tagH), tagW, tagH);
-      zoomCtx.fillStyle = '#101211'; zoomCtx.fillText(label, slice.x + (4 / scale), Math.max(10 / scale, slice.y - (4 / scale)));
-      zoomCtx.fillStyle = '#f5f0db'; zoomCtx.strokeStyle = accent; zoomCtx.lineWidth = 1 / scale;
+      zoomCtx.fillStyle = slice.selected ? '#ffffff' : '#101211';
+      zoomCtx.fillText(label, slice.x + (5 / scale), Math.max((slice.selected ? 13 : 10) / scale, slice.y - (4 / scale)));
+      zoomCtx.fillStyle = slice.selected ? '#fff7d6' : '#f5f0db'; zoomCtx.strokeStyle = accent; zoomCtx.lineWidth = (slice.selected ? 1.5 : 1) / scale;
       [[slice.x, slice.y], [slice.x + slice.w, slice.y], [slice.x, slice.y + slice.h], [slice.x + slice.w, slice.y + slice.h]].forEach(([x, y]) => {
         zoomCtx.beginPath(); zoomCtx.arc(x, y, radius, 0, Math.PI * 2); zoomCtx.fill(); zoomCtx.stroke();
       });
       zoomCtx.restore();
     });
+    const marquee = normalizedMarquee();
+    if (marquee) {
+      zoomCtx.save();
+      zoomCtx.setLineDash([8 / scale, 5 / scale]);
+      zoomCtx.lineWidth = 2 / scale;
+      zoomCtx.strokeStyle = '#ffd36a';
+      zoomCtx.fillStyle = 'rgba(255,211,106,.12)';
+      zoomCtx.fillRect(marquee.x, marquee.y, marquee.w, marquee.h);
+      zoomCtx.strokeRect(marquee.x, marquee.y, marquee.w, marquee.h);
+      zoomCtx.restore();
+    }
+    updateZoomToolbarState();
   }
   function openZoomInspector() {
     if (!state.image) { toast('Load an image sheet before opening Zoom.'); return; }
-    refs.zoomModal.hidden = false; state.zoom.open = true; state.zoom.pointer = null;
-    requestAnimationFrame(() => fitZoomToWindow());
+    refs.zoomModal.hidden = false; state.zoom.open = true; state.zoom.pointer = null; state.zoom.marquee = null;
+    updateZoomToolbarState(); requestAnimationFrame(() => fitZoomToWindow());
   }
   function closeZoomInspector() {
-    state.zoom.open = false; state.zoom.pointer = null; refs.zoomModal.hidden = true; renderCanvas();
+    state.zoom.open = false; state.zoom.pointer = null; state.zoom.marquee = null; refs.zoomModal.hidden = true; renderCanvas();
   }
   function zoomImagePoint(event) {
     const rect = refs.zoomCanvas.getBoundingClientRect();
@@ -433,20 +479,49 @@
     }
     const hit = sliceAtPoint(point); return hit ? { slice: hit.slice, mode: 'move' } : null;
   }
+  function marqueeTouchesSlice(rect, slice) {
+    return rect.x <= slice.x + slice.w && rect.x + rect.w >= slice.x && rect.y <= slice.y + slice.h && rect.y + rect.h >= slice.y;
+  }
   function zoomPointerDown(event) {
-    if (!state.image) return; const point = zoomImagePoint(event), hit = zoomHitAtPoint(point);
-    if (!hit) return; event.preventDefault();
-    state.slices.forEach((slice) => { slice.selected = slice === hit.slice; });
-    state.zoom.pointer = { slice: hit.slice, mode: hit.mode, startPoint: point, startBox: { x: hit.slice.x, y: hit.slice.y, w: hit.slice.w, h: hit.slice.h } };
-    refs.zoomCanvas.setPointerCapture?.(event.pointerId); selectionChanged();
+    if (!state.image) return;
+    const point = zoomImagePoint(event), hit = zoomHitAtPoint(point);
+    if (!hit) {
+      if (!state.zoom.selectBoxMode) return;
+      event.preventDefault();
+      state.zoom.marquee = { start: point, current: point };
+      refs.zoomCanvas.setPointerCapture?.(event.pointerId);
+      renderZoomCanvas();
+      return;
+    }
+    event.preventDefault();
+    const wasSelected = hit.slice.selected;
+    if (hit.mode !== 'move' && !wasSelected) { hit.slice.selected = true; selectionChanged(); }
+    state.zoom.pointer = {
+      slice: hit.slice, mode: hit.mode, startPoint: point,
+      startBox: { x: hit.slice.x, y: hit.slice.y, w: hit.slice.w, h: hit.slice.h },
+      wasSelected, moved: false
+    };
+    refs.zoomCanvas.setPointerCapture?.(event.pointerId);
   }
   function zoomPointerMove(event) {
     const point = zoomImagePoint(event);
+    if (state.zoom.marquee) {
+      event.preventDefault(); state.zoom.marquee.current = point; renderZoomCanvas(); return;
+    }
     if (!state.zoom.pointer) {
-      const hit = zoomHitAtPoint(point); refs.zoomCanvas.style.cursor = !hit ? 'crosshair' : (hit.mode === 'move' ? 'move' : `${hit.mode}-resize`); return;
+      const hit = zoomHitAtPoint(point);
+      refs.zoomCanvas.style.cursor = !hit ? (state.zoom.selectBoxMode ? 'crosshair' : 'default') : (hit.mode === 'move' ? 'move' : `${hit.mode}-resize`);
+      return;
     }
     event.preventDefault();
-    const { slice, mode, startPoint, startBox } = state.zoom.pointer; const dx = point.x - startPoint.x, dy = point.y - startPoint.y, minimum = 1;
+    const pointer = state.zoom.pointer;
+    const { slice, mode, startPoint, startBox } = pointer;
+    const dx = point.x - startPoint.x, dy = point.y - startPoint.y, minimum = 1;
+    if (!pointer.moved && Math.hypot(dx, dy) * state.zoom.scale < 3) return;
+    if (!pointer.moved) {
+      pointer.moved = true;
+      if (!slice.selected) { slice.selected = true; selectionChanged(); }
+    }
     if (mode === 'move') { slice.x = startBox.x + dx; slice.y = startBox.y + dy; }
     else {
       let { x, y, w, h } = startBox;
@@ -458,7 +533,55 @@
     slice.manual = true; clampManualBox(slice); renderZoomCanvas(); renderCanvas(); renderLedger(); renderSelectionManager(); updateSelectionInfo();
   }
   function zoomPointerUp(event) {
-    if (!state.zoom.pointer) return; refs.zoomCanvas.releasePointerCapture?.(event.pointerId); state.zoom.pointer = null; renderZoomCanvas();
+    if (state.zoom.marquee) {
+      const rect = normalizedMarquee();
+      refs.zoomCanvas.releasePointerCapture?.(event.pointerId);
+      state.zoom.marquee = null;
+      if (rect && (rect.w > 1 / state.zoom.scale || rect.h > 1 / state.zoom.scale)) {
+        state.slices.forEach((slice) => { if (marqueeTouchesSlice(rect, slice)) slice.selected = true; });
+      }
+      selectionChanged();
+      return;
+    }
+    if (!state.zoom.pointer) return;
+    refs.zoomCanvas.releasePointerCapture?.(event.pointerId);
+    const pointer = state.zoom.pointer; state.zoom.pointer = null;
+    if (!pointer.moved) {
+      if (pointer.mode === 'move') pointer.slice.selected = !pointer.wasSelected;
+      else pointer.slice.selected = true;
+      selectionChanged();
+    } else renderZoomCanvas();
+  }
+  function toggleZoomBoxSelect() {
+    state.zoom.selectBoxMode = !state.zoom.selectBoxMode;
+    state.zoom.marquee = null; updateZoomToolbarState(); renderZoomCanvas();
+    toast(state.zoom.selectBoxMode ? 'Box selection is on. Drag an empty area around the boxes you want.' : 'Box selection is off.');
+  }
+  function invertZoomSelection() {
+    state.slices.forEach((slice) => { slice.selected = !slice.selected; }); selectionChanged();
+  }
+  function deleteZoomSelection() {
+    const chosen = selectedSlices();
+    if (!chosen.length) return;
+    const chosenIds = new Set(chosen.map((slice) => slice.id));
+    state.slices = state.slices.filter((slice) => !chosenIds.has(slice.id));
+    refreshAll();
+    toast(`${chosen.length} selected box${chosen.length === 1 ? '' : 'es'} deleted. Reset Scan restores original automatic detections.`);
+  }
+  function duplicateZoomSelection() {
+    const chosen = selectedSlices();
+    if (!chosen.length) return;
+    const offset = Math.max(4, Math.round(Math.min(state.sourceWidth, state.sourceHeight) * .015));
+    state.slices.forEach((slice) => { slice.selected = false; });
+    const copies = chosen.map((original, index) => {
+      const x = Math.min(Math.max(0, original.x + offset), Math.max(0, state.sourceWidth - original.w));
+      const y = Math.min(Math.max(0, original.y + offset), Math.max(0, state.sourceHeight - original.h));
+      const copy = makeSlice({ x, y, w: original.w, h: original.h, pixelCount: 0 }, state.slices.length + index);
+      copy.manual = true; copy.manualAdded = true; copy.duplicateOf = original.id; copy.selected = true; copy.name = '';
+      return copy;
+    });
+    state.slices.push(...copies); refreshAll();
+    toast(`${copies.length} box${copies.length === 1 ? '' : 'es'} duplicated and selected.`);
   }
 
   function blobFromCanvas(canvas, type, quality) { return new Promise((resolve) => canvas.toBlob(resolve, type, quality)); }
@@ -565,6 +688,11 @@
     refs.zoomFit.addEventListener('click', fitZoomToWindow);
     refs.zoom100.addEventListener('click', () => applyZoomScale(1));
     refs.zoomRange.addEventListener('input', () => applyZoomScale(zoomScaleFromInput()));
+    refs.zoomSelectBox.addEventListener('click', toggleZoomBoxSelect);
+    refs.zoomSelectAll.addEventListener('click', () => setAllSelected(true));
+    refs.zoomInvert.addEventListener('click', invertZoomSelection);
+    refs.zoomDuplicate.addEventListener('click', duplicateZoomSelection);
+    refs.zoomDelete.addEventListener('click', deleteZoomSelection);
     refs.zoomModal.addEventListener('pointerdown', (event) => { if (event.target === refs.zoomModal) closeZoomInspector(); });
     refs.zoomCanvas.addEventListener('pointerdown', zoomPointerDown);
     refs.zoomCanvas.addEventListener('pointermove', zoomPointerMove);
@@ -572,8 +700,14 @@
     refs.zoomCanvas.addEventListener('pointercancel', zoomPointerUp);
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && state.zoom.open) closeZoomInspector(); });
     refs.toggleLedger.addEventListener('click', () => { refs.ledgerShell.hidden = !refs.ledgerShell.hidden; updateSliceStats(); });
+    refs.ledgerPropagate.addEventListener('click', propagateLedgerNames);
+    refs.ledgerPropagateName.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); propagateLedgerNames(); } });
     refs.exportFormat.addEventListener('change', () => { renderLedger(); renderSelectionManager(); });
     refs.exportAssets.addEventListener('click', exportAssets);
+    refs.ledgerBody.addEventListener('click', (event) => {
+      const deleteButton = event.target.closest('[data-ledger-delete]');
+      if (deleteButton) removeSlice(deleteButton.dataset.ledgerDelete);
+    });
     refs.ledgerBody.addEventListener('input', (event) => {
       const input = event.target.closest('.ledger-name');
       if (input && state.slices[Number(input.dataset.index)]) {

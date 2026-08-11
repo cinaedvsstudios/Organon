@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon ImgAutoCut v1.02</title>
+  <title>Organon ImgAutoCut v1.03</title>
   <script>
     if (window.self === window.top) window.location.href = '../../index.html';
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=1.02">
+  <link rel="stylesheet" href="styles.css?v=1.03">
 </head>
 <body>
   <div class="app-wrapper">
@@ -18,7 +18,7 @@
       <div class="title-pill">
         <div class="title-group">
           <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the panel">5</button>
-          <span>IMGAUTOCUT WIZARD · V1.02</span>
+          <span>IMGAUTOCUT WIZARD · V1.03</span>
         </div>
         <span class="header-status" id="header-status">NO SHEET</span>
       </div>
@@ -120,6 +120,17 @@
         </div>
 
         <div class="ledger-shell" id="ledger-shell" hidden>
+          <div class="ledger-propagate-bar">
+            <label class="ledger-propagate-name">
+              <span>NAME</span>
+              <input id="ledger-propagate-name" type="text" placeholder="door" maxlength="80" spellcheck="false" autocomplete="off">
+            </label>
+            <label class="ledger-start-number">
+              <span>STARTING NUMBER</span>
+              <input id="ledger-start-number" type="number" min="0" step="1" value="1">
+            </label>
+            <button type="button" class="action-button ledger-propagate-button" id="ledger-propagate">PROPAGATE</button>
+          </div>
           <div class="ledger-note">The compact preview is shown above. Manual boxes are teal and excluded from global uniform-sizing changes.</div>
           <div class="ledger-table-wrap">
             <table class="ledger-table">
@@ -162,6 +173,11 @@
           <input id="zoom-range" type="range" min="10" max="500" step="5" value="100">
           <output id="zoom-value">100%</output>
         </label>
+        <button type="button" class="action-button" id="zoom-select-box" aria-pressed="false">SELECT □</button>
+        <button type="button" class="action-button" id="zoom-select-all">SELECT ALL</button>
+        <button type="button" class="action-button" id="zoom-invert">INVERT</button>
+        <button type="button" class="action-button" id="zoom-duplicate" disabled>DUPLICATE</button>
+        <button type="button" class="action-button danger-outline" id="zoom-delete" disabled>DELETE</button>
       </div>
       <div class="zoom-scroll" id="zoom-scroll">
         <canvas id="zoom-canvas" aria-label="Zoomed image sheet outline editor"></canvas>
@@ -171,6 +187,6 @@
   </div>
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
-  <script src="app.js?v=1.02"></script>
+  <script src="app.js?v=1.03"></script>
 </body>
 </html>
