@@ -1,5 +1,5 @@
 {
-  "version": "v1.52-alpha",
+  "version": "v1.53-alpha",
   "categories": [
     {
       "id": "create",
@@ -27,7 +27,7 @@
         {"id": "animation-maker", "label": "ANIMATION MAKER", "path": "tools/animation-maker-standard/index.html?v=0.10", "description": "Create and preview animation assets with accurate source-frame capture, real per-frame timing, reversible advanced background removal, outside-only chroma cleanup, black-matte repair, despeckling, browser-remembered settings, safe alpha-only shadows, ordered frame export and direct folder saving."},
         {"id": "audio-timeline", "label": "AUDIO TIMELINE", "path": "tools/audio-timeline/index.html", "description": "Assemble short AI video clips with generated audio and export a browser-rendered timeline."},
         {"id": "frame-extractor", "label": "FRAME EXTRACTOR", "path": "tools/frame-extractor/index.html", "description": "Extract still frames from local video files."},
-        {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html?build=20260713-1924", "description": "Compress or convert local videos to MP4 or OGV with smart size targeting, live estimates, target-size or manual modes, separate video/audio controls and one-pass or two-pass encoding."},
+        {"id": "vidcompressor", "label": "VIDCOMPRESSOR", "path": "tools/vidcompressor/index.html?build=20260818-0429", "description": "Compress or convert single videos or queued batches to MP4 or OGV with live estimates, shared video/audio settings, sequential processing and direct saving to an authorised output folder."},
         {"id": "bubble-riser", "label": "BUBBLE RISER", "path": "tools/bubble-riser/index-v11.html?build=20260630-1127", "description": "Create loopable black-background bubble fields, streams, emitters and bursts, then export MP4 or animated WebP."}
       ]
     },
