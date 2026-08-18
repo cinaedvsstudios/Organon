@@ -1,4 +1,4 @@
-ORGANON VIDCOMPRESSOR — v0.03
+ORGANON VIDCOMPRESSOR — v0.04
 
 LOCATION
 The active files are stored at:
@@ -10,37 +10,36 @@ ACTIVE ENTRY
 TOOLBAR PLACEMENT
 VidCompressor belongs in Organon's VIDEO toolbar group.
 
-WHAT THIS VERSION DOES
+SINGLE VIDEO MODE
 - Opens MP4, M4V, MOV, MKV, AVI, WebM, OGV and OGG video files.
 - Converts or compresses to MP4/H.264/AAC or OGV/Theora/Vorbis.
-- Adds three compression modes:
-  - Smart Smaller File: targets 35% to 95% of the original size.
-  - Target File Size: calculates bitrates from a requested MB value.
-  - Manual Bitrates: uses a directly selected video bitrate.
-- Displays a live estimated output-size range whenever the size, video or audio settings change.
-- Separates video and audio controls.
-- Video controls include calculated/manual bitrate, Keep/Auto/1080p/720p/480p resolution and one-pass/two-pass encoding.
-- Audio controls include Remove Audio, 64/96/128/160/192/256 kbps and Keep/Mono/Stereo channel selection.
-- Uses format-aware estimate ranges because OGV/Theora output varies more than H.264 at the same nominal bitrate.
-- Shows the original, estimated and actual sizes plus estimate accuracy after compression.
-- Warns before compression when settings are likely to make the output larger than the original or leave too little bitrate for the selected resolution.
-- Keeps Save Over Original restricted to matching input/output extensions.
-- Shows an explanatory fallback instead of a broken preview when the browser cannot play Theora/OGV.
-- Runs locally in the browser. Video content is not sent to an Organon server.
+- Supports Smart Smaller File, Target File Size and Manual Bitrates.
+- Displays a live estimated output-size range.
+- Keeps separate video and audio controls.
+- Allows Save Over Original only when the opened source handle and output extension match.
+
+BULK CONVERT MODE
+- Use the Bulk Convert button in the top header to switch modes.
+- Add or drop multiple videos into one queue.
+- All output format, compression, resolution, pass and audio settings apply to every queued video.
+- The Batch Queue shows a selectable dot for each file. Selecting a different file updates the existing estimate panel using that video's size, duration and dimensions.
+- Save Options must be used before conversion. It opens the browser directory picker and stores the selected writable folder handle for the current session.
+- Convert Queue remains disabled until an output folder has been authorised.
+- Videos are processed sequentially, one at a time, to avoid keeping multiple FFmpeg jobs in memory simultaneously.
+- Each completed video is written directly to the authorised folder before the next video starts.
+- Existing filenames are never silently overwritten. If name-compressed.ext already exists, the output becomes name-compressed-2.ext, then -3, and so on.
+- Queue rows show Ready, Converting, Saved or Failed status.
+- The latest completed conversion is shown in the result card.
 
 SIZE TARGETING
-The estimated size is calculated from:
-  video bitrate + audio bitrate + video duration + a small format/container allowance.
-
-The estimate is displayed as a range rather than an exact promise:
-- MP4/H.264: narrower range, especially in two-pass mode.
-- OGV/Theora: wider range because Theora can undershoot or overshoot the nominal bitrate depending on the source material.
+The estimated size is calculated from video bitrate + audio bitrate + duration + a format/container allowance.
+The estimate is displayed as a range rather than an exact promise.
 
 TWO-PASS ENCODING
-Two-pass is the default. The first pass analyses scene complexity. The second pass creates the final file using the calculated bitrate allocation. One-pass is available when faster processing matters more than final-size accuracy.
+Two-pass remains the default. Pass one analyses scene complexity and pass two writes the final result. One-pass is available when speed matters more than size accuracy.
 
-BROWSER REQUIREMENT FOR DIRECT OVERWRITE
-Use current Chrome or Edge over HTTPS or localhost. The browser's File System Access API is needed to reopen a file with write permission and overwrite it. The module falls back to Save New Copy where that API is unavailable.
+BROWSER REQUIREMENTS
+Direct overwrite and bulk folder saving use the File System Access API. Use a current Chromium-based browser over HTTPS or localhost. Bulk mode requires showDirectoryPicker support.
 
 IMPORTANT
-The FFmpeg engine is bundled in vendor/ and is loaded only when the user first compresses a video in a browser tab. Video files are held in browser memory while compressing, and two-pass encoding processes the video twice, so long or high-resolution files may require substantial time and available RAM.
+The FFmpeg engine remains browser-local and is loaded only when conversion begins. Large videos and two-pass conversion can require substantial time and available RAM.
