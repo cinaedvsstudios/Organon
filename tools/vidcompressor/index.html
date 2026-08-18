@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link href="vidcompressor-v003.css" rel="stylesheet">
+  <link href="vidcompressor-v004.css" rel="stylesheet">
 </head>
 <body>
   <div class="app-wrapper">
@@ -21,13 +21,14 @@
       <div class="title-pill">
         <div class="title-group">
           <div class="countdown-circle-indicator" id="countdown-circle" title="Double-click to lock the header">5</div>
-          <span class="title-text">VIDCOMPRESSOR <span class="version-text">v0.03</span></span>
+          <span class="title-text">VIDCOMPRESSOR <span class="version-text">v0.04</span></span>
         </div>
         <span class="engine-pill" id="engine-state">ENGINE IDLE</span>
       </div>
       <div class="panel-content-hide">
-        <div class="header-actions">
+        <div class="header-actions bulk-grid">
           <button class="btn-pill" id="open-video-btn" type="button">Open Video</button>
+          <button class="small-btn" id="bulk-mode-btn" type="button">Bulk Convert</button>
           <button class="small-btn" disabled id="clear-btn" type="button">Clear</button>
         </div>
       </div>
@@ -36,17 +37,17 @@
     <main class="middle-scroll-panel">
       <section class="config-card" id="import-card">
         <h2>Video import</h2>
-        <p class="muted">Open a video to retain direct overwrite permission. Dropped videos can still be compressed and saved as a new copy.</p>
+        <p class="muted" id="import-copy">Open a video to retain direct overwrite permission. Dropped videos can still be compressed and saved as a new copy.</p>
         <div aria-label="Choose a video or drop one here" class="drop-zone" id="drop-zone" role="button" tabindex="0">
           <div class="drop-zone-icon">🎞️</div>
-          <div class="drop-zone-title">Drop a video here</div>
-          <p class="drop-zone-copy">MP4, M4V, MOV, MKV, AVI, WebM, OGV, or OGG.<br>Nothing is uploaded; processing stays in this browser.</p>
+          <div class="drop-zone-title" id="drop-zone-title">Drop a video here</div>
+          <p class="drop-zone-copy" id="drop-zone-copy">MP4, M4V, MOV, MKV, AVI, WebM, OGV, or OGG.<br>Nothing is uploaded; processing stays in this browser.</p>
         </div>
         <input accept="video/mp4,video/quicktime,video/x-m4v,video/x-matroska,video/x-msvideo,video/webm,video/ogg,.mp4,.m4v,.mov,.mkv,.avi,.webm,.ogv,.ogg" class="file-input" id="file-input" type="file">
       </section>
 
       <section class="config-card" hidden id="source-card">
-        <h3>Selected file</h3>
+        <h3 id="source-card-title">Selected file</h3>
         <div class="file-card">
           <div class="video-thumb">
             <video id="source-preview" muted playsinline preload="metadata"></video>
@@ -168,7 +169,7 @@
         <div class="estimate-heading-row">
           <div>
             <h2>Estimated output</h2>
-            <p class="muted">Updates from the selected duration, bitrates, format, and encoding mode.</p>
+            <p class="muted" id="estimate-copy">Updates from the selected duration, bitrates, format, and encoding mode.</p>
           </div>
           <strong class="estimate-main" id="estimated-size">Choose a video</strong>
         </div>
@@ -181,6 +182,17 @@
         <p class="estimate-warning" id="estimate-warning" hidden></p>
       </section>
 
+      <section class="config-card" id="batch-card" hidden>
+        <div class="estimate-heading-row">
+          <div>
+            <h2>Batch queue</h2>
+            <p class="muted">Select a file to update the estimate box. The same settings apply to every queued video.</p>
+          </div>
+          <strong class="estimate-main" id="batch-summary">0 files</strong>
+        </div>
+        <div class="batch-queue" id="batch-queue"></div>
+      </section>
+
       <section aria-live="polite" class="config-card progress-card" id="progress-card">
         <div class="progress-top">
           <span class="progress-title" id="progress-title">Preparing engine…</span>
@@ -191,7 +203,7 @@
       </section>
 
       <section class="config-card result-card" id="result-card">
-        <h2>Compressed video ready</h2>
+        <h2 id="result-title">Compressed video ready</h2>
         <p class="muted" id="result-file-name">—</p>
         <div class="result-grid">
           <div class="result-stat"><span class="result-label">Original</span><span class="result-number" id="result-original-size">—</span></div>
@@ -218,8 +230,10 @@
     </footer>
   </div>
 
-  <script src="vidcompressor-v003-core.js"></script>
-  <script src="vidcompressor-v003-encode.js"></script>
-  <script src="vidcompressor-v003-events.js"></script>
+  <script src="vidcompressor-v004-core-part1.js"></script>
+  <script src="vidcompressor-v004-core-part2.js"></script>
+  <script src="vidcompressor-v004-encode-part1.js"></script>
+  <script src="vidcompressor-v004-encode-part2.js"></script>
+  <script src="vidcompressor-v004-events.js"></script>
 </body>
 </html>
