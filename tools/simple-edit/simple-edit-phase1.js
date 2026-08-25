@@ -3,7 +3,7 @@
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
-  const PHASE_VERSION = window.ORGAVOX_VERSION || "v0.24";
+  const PHASE_VERSION = window.ORGAVOX_VERSION || "v0.31";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
@@ -28,18 +28,18 @@
         display: flex !important;
         align-items: flex-start !important;
         justify-content: flex-start !important;
-        gap: 14px !important;
+        gap: 18px !important;
         min-height: var(--topbar-h) !important;
         height: var(--topbar-h) !important;
         padding: 12px 16px 11px !important;
         overflow: visible !important;
       }
       body.simple-edit-phase1 .brand {
-        flex: 0 0 212px !important;
-        min-width: 212px !important;
-        max-width: 212px !important;
+        flex: 0 0 238px !important;
+        min-width: 238px !important;
+        max-width: 238px !important;
         display: flex !important;
-        align-items: center !important;
+        align-items: flex-start !important;
         gap: 12px !important;
         padding-top: 4px;
       }
@@ -53,7 +53,8 @@
       }
       body.simple-edit-phase1 .brand > div:not(.brand-mark) {
         min-width: 0;
-        display: block;
+        display: grid;
+        gap: 0;
       }
       body.simple-edit-phase1 .brand h1 {
         display: flex;
@@ -83,14 +84,25 @@
         margin: 4px 0 0;
         display: block !important;
       }
+      body.simple-edit-phase1 .orgavox-brand-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 9px;
+      }
+      body.simple-edit-phase1 .orgavox-brand-actions .tool-button {
+        min-height: 34px !important;
+        padding: 8px 12px !important;
+      }
       body.simple-edit-phase1 .phase1-top-effects {
         flex: 1 1 auto !important;
         min-width: 0 !important;
         display: grid !important;
-        grid-template-rows: auto auto !important;
+        grid-template-rows: auto !important;
         align-content: start !important;
-        gap: 8px !important;
-        padding-top: 0 !important;
+        gap: 0 !important;
+        padding-top: 16px !important;
       }
       body.simple-edit-phase1 .phase1-top-effects > .phase1-divider,
       body.simple-edit-phase1 .phase1-top-effects > .phase1-tool-group:not(.orgavox-group) {
@@ -106,7 +118,7 @@
         width: 100%;
         min-width: 0;
       }
-      body.simple-edit-phase1 .orgavox-effects-row { gap: 9px; }
+      body.simple-edit-phase1 .orgavox-effects-row { display: none !important; }
       body.simple-edit-phase1 .orgavox-group {
         display: inline-flex;
         align-items: center;
@@ -115,6 +127,10 @@
         min-width: 0;
       }
       body.simple-edit-phase1 .orgavox-transport-group { flex-wrap: nowrap; }
+      body.simple-edit-phase1 .orgavox-main-controls-group {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
       body.simple-edit-phase1 .orgavox-divider,
       body.simple-edit-phase1 .phase1-divider {
         flex: 0 0 1px;
@@ -132,12 +148,14 @@
       body.simple-edit-phase1 .phase1-workspace-rule { display: none !important; }
 
       body.simple-edit-phase1 .topbar .range-control,
+      body.simple-edit-phase1 .orgavox-toolbar-row .range-control,
       body.simple-edit-phase1 .orgavox-effects-row .range-control {
-        min-width: 178px !important;
-        grid-template-columns: auto minmax(72px, 112px) 46px !important;
-        gap: 8px !important;
+        min-width: 158px !important;
+        grid-template-columns: auto minmax(60px, 96px) 42px !important;
+        gap: 7px !important;
       }
       body.simple-edit-phase1 .topbar .range-control span,
+      body.simple-edit-phase1 .orgavox-toolbar-row .range-control span,
       body.simple-edit-phase1 .orgavox-effects-row .range-control span { white-space: nowrap; }
       body.simple-edit-phase1 .topbar .tool-button,
       body.simple-edit-phase1 .topbar .icon-button,
@@ -153,6 +171,42 @@
       body.simple-edit-phase1 .timeline-topline .icon-button {
         min-width: 36px;
         padding: 7px 10px;
+      }
+      body.simple-edit-phase1 .orgavox-effects-dropdown {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        z-index: 80;
+      }
+      body.simple-edit-phase1 .orgavox-effects-dropdown-button {
+        border-color: rgba(117,178,222,.9) !important;
+        background: linear-gradient(180deg, rgba(57,132,205,.96), rgba(31,77,133,.92)) !important;
+        color: #fff !important;
+        box-shadow: 0 0 0 1px rgba(117,178,222,.24), 0 0 16px rgba(75,155,255,.26) !important;
+      }
+      body.simple-edit-phase1 .orgavox-effects-dropdown-button::after {
+        content: "▾";
+        margin-left: 7px;
+        color: #dff5ff;
+      }
+      body.simple-edit-phase1 .orgavox-effects-menu {
+        position: absolute;
+        top: calc(100% + 7px);
+        left: 0;
+        display: none;
+        min-width: 218px;
+        padding: 8px;
+        border: 1px solid rgba(117,178,222,.56);
+        border-radius: 14px;
+        background: rgba(8, 10, 9, .98);
+        box-shadow: 0 18px 40px rgba(0,0,0,.65), inset 0 0 0 1px rgba(255,255,255,.04);
+        z-index: 2500;
+      }
+      body.simple-edit-phase1 .orgavox-effects-dropdown.open .orgavox-effects-menu { display: grid; gap: 7px; }
+      body.simple-edit-phase1 .orgavox-effects-menu .tool-button {
+        width: 100%;
+        justify-content: flex-start;
+        min-height: 34px;
       }
 
       body.simple-edit-phase1 .workspace {
@@ -338,10 +392,11 @@
           --orgavox-sidebar-w: 270px;
         }
         body.simple-edit-phase1 .brand {
-          flex-basis: 180px !important;
-          min-width: 180px !important;
-          max-width: 180px !important;
+          flex-basis: 210px !important;
+          min-width: 210px !important;
+          max-width: 210px !important;
         }
+        body.simple-edit-phase1 .phase1-top-effects { padding-top: 8px !important; }
       }
     `;
     document.head.appendChild(style);
@@ -389,9 +444,84 @@
     document.title = `Organon — ORGAVOX ${PHASE_VERSION}`;
   }
 
+  function ensureBrandActions() {
+    const brand = document.querySelector(".brand");
+    const brandText = brand?.querySelector("div:not(.brand-mark)");
+    if (!brandText) return null;
+    let actions = brandText.querySelector(".orgavox-brand-actions");
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "orgavox-brand-actions";
+      brandText.appendChild(actions);
+    }
+    return actions;
+  }
+
   function findEffectsLibraryButton() {
     return document.querySelector(".effects-library-button") ||
       [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
+  }
+
+  function findEchoSettingsButton() {
+    return document.getElementById("echoSettingsBtn") || document.querySelector(".echo-settings-button");
+  }
+
+  function closeEffectsMenu() {
+    document.querySelector(".orgavox-effects-dropdown")?.classList.remove("open");
+  }
+
+  function ensureEffectsDropdown() {
+    let wrap = document.querySelector(".orgavox-effects-dropdown");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "orgavox-effects-dropdown";
+      const button = document.createElement("button");
+      button.id = "orgavoxEffectsButton";
+      button.type = "button";
+      button.className = "tool-button primary orgavox-effects-dropdown-button";
+      button.textContent = "Effects";
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        wrap.classList.toggle("open");
+      });
+      const menu = document.createElement("div");
+      menu.className = "orgavox-effects-menu";
+      menu.setAttribute("role", "menu");
+      menu.addEventListener("click", (event) => {
+        if (event.target.closest("button")) setTimeout(closeEffectsMenu, 0);
+      });
+      wrap.append(button, menu);
+    }
+    const button = wrap.querySelector("#orgavoxEffectsButton");
+    if (button) button.textContent = "Effects";
+    if (!window.__orgavoxEffectsMenuCloseBound) {
+      window.__orgavoxEffectsMenuCloseBound = true;
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".orgavox-effects-dropdown")) closeEffectsMenu();
+      });
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") closeEffectsMenu();
+      });
+    }
+    return wrap;
+  }
+
+  function moveButtonsIntoEffectsDropdown(wrap) {
+    const menu = wrap?.querySelector(".orgavox-effects-menu");
+    if (!menu) return;
+    const menuButtons = [
+      ui.gateBtn,
+      ui.stretchBtn,
+      ui.normalizeBtn,
+      ui.transposeBtn,
+      ui.eqBtn,
+      ui.driveBtn,
+      ui.dynamicsBtn
+    ].filter(Boolean);
+    menuButtons.forEach((button) => {
+      button.classList.add("orgavox-menu-effect-item");
+      menu.appendChild(button);
+    });
   }
 
   function updateButtonEmojiLabels() {
@@ -411,10 +541,10 @@
       ui.stopBtn.textContent = "⏹";
       ui.stopBtn.title = "Stop";
     }
-    if (ui.scissorsBtn) ui.scissorsBtn.textContent = "✂️ Scissors";
-    if (ui.deleteBtn) ui.deleteBtn.textContent = "🗑 Delete";
+    if (ui.scissorsBtn) ui.scissorsBtn.textContent = "Cut";
+    if (ui.deleteBtn) ui.deleteBtn.textContent = "DEL";
     if (ui.fullscreenBtn) {
-      ui.fullscreenBtn.textContent = "🖥";
+      ui.fullscreenBtn.textContent = "⛶";
       ui.fullscreenBtn.title = "Toggle fullscreen";
     }
     if (ui.gateBtn) ui.gateBtn.textContent = "🚪 Noise gate";
@@ -433,6 +563,10 @@
     if (ui.fadeOutBtn) ui.fadeOutBtn.textContent = "↘ Fade out";
     if (ui.resetFadesBtn) ui.resetFadesBtn.textContent = "✕ Fades";
     if (ui.normalizeBtn) ui.normalizeBtn.textContent = "⚖ Normalize";
+    if (ui.transposeBtn) ui.transposeBtn.textContent = "🎼 Transpose";
+    if (ui.eqBtn) ui.eqBtn.textContent = "🎚 EQ / Filter";
+    if (ui.driveBtn) ui.driveBtn.textContent = "🔥 Drive";
+    if (ui.dynamicsBtn) ui.dynamicsBtn.textContent = "📊 Dynamics";
     const volumeLabel = ui.volumeSlider?.closest(".range-control")?.querySelector("span");
     if (volumeLabel) volumeLabel.textContent = "🔊 Volume";
     const echoLabel = ui.echoSlider?.closest(".range-control")?.querySelector("span");
@@ -467,36 +601,36 @@
       topbar.appendChild(deck);
     }
 
+    const brandActions = ensureBrandActions();
     const effectsButton = findEffectsLibraryButton();
-    const echoSettingsButton = document.getElementById("echoSettingsBtn");
+    const echoSettingsButton = findEchoSettingsButton();
     const volumeControl = ui.volumeSlider?.closest(".range-control");
     const echoControl = ui.echoSlider?.closest(".range-control");
+    const effectsMenu = ensureEffectsDropdown();
 
     const row1 = ensureContainer("orgavox-toolbar-row", deck);
     const row2 = ensureContainer("orgavox-effects-row", deck);
     row1.innerHTML = "";
     row2.innerHTML = "";
 
+    if (brandActions) brandActions.append(ui.importBtn, ui.exportBtn);
+    moveButtonsIntoEffectsDropdown(effectsMenu);
+
     row1.append(
-      makeGroup("file", [ui.importBtn, ui.exportBtn]),
-      makeDivider(),
       makeGroup("transport", [ui.jumpStartBtn, ui.playBtn, ui.stopBtn, ui.timeReadout]),
       makeDivider(),
-      makeGroup("edit", [ui.scissorsBtn, ui.deleteBtn, ui.fullscreenBtn])
+      makeGroup("edit", [ui.scissorsBtn, ui.deleteBtn, ui.fullscreenBtn, effectsMenu]),
+      makeDivider(),
+      makeGroup("main-controls", [
+        volumeControl,
+        echoControl,
+        echoSettingsButton,
+        ui.fadeInBtn,
+        ui.fadeOutBtn,
+        ui.resetFadesBtn,
+        effectsButton
+      ])
     );
-
-    row2.append(makeGroup("effects", [
-      volumeControl,
-      echoControl,
-      echoSettingsButton,
-      ui.gateBtn,
-      ui.stretchBtn,
-      ui.fadeInBtn,
-      ui.fadeOutBtn,
-      ui.resetFadesBtn,
-      ui.normalizeBtn,
-      effectsButton
-    ]));
   }
 
   function moveZoomToSidebar() {
