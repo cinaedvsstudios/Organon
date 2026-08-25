@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.27";
+  const VERSION = "v0.28";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -75,16 +75,23 @@
 
   function restoreLateFeatureButtons() {
     try {
-      if (typeof ui === "undefined" || !ui.transposeBtn) return;
+      if (typeof ui === "undefined") return;
       const effectsGroup = document.querySelector(".orgavox-effects-group");
       if (!effectsGroup) return;
       const effectsButton = document.querySelector(".effects-library-button") ||
         [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
-      ui.transposeBtn.textContent = "🎼 Transpose";
-      if (ui.transposeBtn.parentElement !== effectsGroup) {
-        if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(ui.transposeBtn, effectsButton);
-        else effectsGroup.appendChild(ui.transposeBtn);
-      }
+      const lateButtons = [
+        { node: ui.transposeBtn, label: "🎼 Transpose" },
+        { node: ui.eqBtn, label: "🎚 EQ / Filter" }
+      ];
+      lateButtons.forEach(({ node, label }) => {
+        if (!node) return;
+        node.textContent = label;
+        if (node.parentElement !== effectsGroup) {
+          if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(node, effectsButton);
+          else effectsGroup.appendChild(node);
+        }
+      });
     } catch (error) {
       console.warn("ORGAVOX could not restore late feature buttons.", error);
     }
@@ -107,7 +114,9 @@
     "./simple-edit-fade-handles.js?v=0.20",
     "./simple-edit-normalize.js?v=0.21",
     "./simple-edit-transpose-engine.js?v=0.26",
-    "./simple-edit-transpose.js?v=0.26"
+    "./simple-edit-transpose.js?v=0.26",
+    "./simple-edit-eq-engine.js?v=0.28",
+    "./simple-edit-eq.js?v=0.28"
   ];
 
   for (const source of files) {
