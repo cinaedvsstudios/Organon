@@ -2,7 +2,6 @@
 
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
-  const VISIBLE_TRACK_COUNT = 5;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
@@ -14,7 +13,7 @@
     style.id = PHASE_STYLE_ID;
     style.textContent = `
       body.simple-edit-phase1 {
-        --topbar-h: 96px;
+        --topbar-h: 72px;
         --controls-h: 0px;
         --lane-h: 84px;
       }
@@ -23,21 +22,28 @@
       }
       body.simple-edit-phase1 .topbar {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: flex-start;
-        gap: 12px;
-        padding: 10px 12px 8px;
+        gap: 14px;
+        padding: 9px 12px;
         min-height: var(--topbar-h);
       }
       body.simple-edit-phase1 .brand {
         flex: 0 0 auto;
         min-width: 178px;
-        padding-top: 2px;
       }
       body.simple-edit-phase1 .brand p { display: none; }
-      body.simple-edit-phase1 .phase1-toolbar {
+      body.simple-edit-phase1 .phase1-top-effects {
         flex: 1 1 auto;
         min-width: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      body.simple-edit-phase1 .phase1-timeline-toolbar {
+        width: 100%;
         display: flex;
         align-items: center;
         justify-content: flex-start;
@@ -64,31 +70,53 @@
       body.simple-edit-phase1 .clip-controls {
         display: none !important;
       }
-      body.simple-edit-phase1 .topbar .range-control {
+      body.simple-edit-phase1 .timeline-topline {
+        margin-bottom: 8px;
+        justify-content: flex-start;
+      }
+      body.simple-edit-phase1 .timeline-topline > div:not(.phase1-timeline-toolbar),
+      body.simple-edit-phase1 .timeline-topline .eyebrow,
+      body.simple-edit-phase1 .timeline-topline h2 {
+        display: none !important;
+      }
+      body.simple-edit-phase1 .status-pill {
+        margin-left: auto;
+        white-space: nowrap;
+      }
+      body.simple-edit-phase1 .topbar .range-control,
+      body.simple-edit-phase1 .timeline-topline .range-control {
         min-width: 176px;
         grid-template-columns: auto minmax(82px, 126px) 48px;
         gap: 6px;
       }
-      body.simple-edit-phase1 .topbar .range-control span {
+      body.simple-edit-phase1 .topbar .range-control span,
+      body.simple-edit-phase1 .timeline-topline .range-control span {
         white-space: nowrap;
       }
-      body.simple-edit-phase1 .topbar .zoom-control { margin-left: 0; }
+      body.simple-edit-phase1 .zoom-control { margin-left: 0; }
       body.simple-edit-phase1 .topbar .tool-button,
-      body.simple-edit-phase1 .topbar .icon-button {
+      body.simple-edit-phase1 .topbar .icon-button,
+      body.simple-edit-phase1 .timeline-topline .tool-button,
+      body.simple-edit-phase1 .timeline-topline .icon-button {
         min-height: 32px;
       }
-      body.simple-edit-phase1 .topbar .tool-button {
+      body.simple-edit-phase1 .topbar .tool-button,
+      body.simple-edit-phase1 .timeline-topline .tool-button {
         padding: 7px 11px;
       }
-      body.simple-edit-phase1 .topbar .icon-button {
+      body.simple-edit-phase1 .topbar .icon-button,
+      body.simple-edit-phase1 .timeline-topline .icon-button {
         min-width: 32px;
         padding: 6px 8px;
       }
+      body.simple-edit-phase1 .timeline-panel {
+        padding-top: 10px;
+      }
       body.simple-edit-phase1 .timeline-shell {
         grid-template-columns: 112px minmax(0, 1fr);
-        height: calc(var(--ruler-h) + 420px);
-        max-height: calc(100vh - var(--topbar-h) - 94px);
-        min-height: calc(var(--ruler-h) + 260px);
+        height: calc(var(--ruler-h) + (var(--lane-h) * 5));
+        max-height: calc(100vh - var(--topbar-h) - 104px);
+        min-height: calc(var(--ruler-h) + (var(--lane-h) * 3));
         flex: 0 0 auto;
       }
       body.simple-edit-phase1 .track-label-column {
@@ -140,7 +168,7 @@
       }
       @media (max-width: 1180px) {
         body.simple-edit-phase1 {
-          --topbar-h: 128px;
+          --topbar-h: 104px;
         }
         body.simple-edit-phase1 .brand {
           min-width: 150px;
@@ -186,8 +214,30 @@
     document.body.classList.add("simple-edit-phase1");
     topbar.classList.add("phase1-ready");
 
-    const toolbar = document.createElement("div");
-    toolbar.className = "phase1-toolbar";
+    const effectsToolbar = document.createElement("div");
+    effectsToolbar.className = "phase1-top-effects";
+
+    const volumeControl = ui.volumeSlider?.closest(".range-control");
+    const echoControl = ui.echoSlider?.closest(".range-control");
+    const effectsGroup = makeGroup("effects", [volumeControl, echoControl, ui.gateBtn]);
+
+    effectsToolbar.append(makeDivider(), effectsGroup);
+    topbar.appendChild(effectsToolbar);
+  }
+
+  function rebuildTimelineTopline() {
+    const topline = document.querySelector(".timeline-topline");
+    if (!topline || topline.classList.contains("phase1-ready")) return;
+    topline.classList.add("phase1-ready");
+
+    const oldTitle = topline.querySelector(":scope > div");
+    if (oldTitle) oldTitle.remove();
+
+    const status = ui.statusPill || document.getElementById("statusPill");
+    if (status) status.remove();
+
+    const timelineToolbar = document.createElement("div");
+    timelineToolbar.className = "phase1-timeline-toolbar";
 
     const transportGroup = makeGroup("transport", [
       ui.importBtn,
@@ -217,28 +267,20 @@
     ui.nextKeyframeBtn = keyframeGroup.querySelector("#nextKeyframeBtn");
     ui.deleteKeyframeBtn = keyframeGroup.querySelector("#deleteKeyframeBtn");
 
-    const volumeControl = ui.volumeSlider?.closest(".range-control");
-    const echoControl = ui.echoSlider?.closest(".range-control");
     const zoomControl = ui.zoomSlider?.closest(".range-control");
-    const effectsGroup = makeGroup("effects", [
-      volumeControl,
-      echoControl,
-      ui.gateBtn,
-      zoomControl
-    ]);
+    const zoomGroup = makeGroup("zoom", [zoomControl]);
 
-    toolbar.append(
-      makeDivider(),
+    timelineToolbar.append(
       transportGroup,
       makeDivider(),
       editGroup,
       makeDivider(),
       keyframeGroup,
       makeDivider(),
-      effectsGroup
+      zoomGroup
     );
-
-    topbar.appendChild(toolbar);
+    if (status) timelineToolbar.append(status);
+    topline.appendChild(timelineToolbar);
   }
 
   function bindLaneEvents(lane) {
@@ -271,35 +313,11 @@
     label.addEventListener("click", () => selectTrack(label.dataset.trackLabel));
   }
 
-  function wrapTrackLabels() {
-    const labelColumn = document.querySelector(".track-label-column");
-    if (!labelColumn) return;
-    let wrapper = labelColumn.querySelector(".phase1-track-label-scroll");
-    if (!wrapper) {
-      wrapper = document.createElement("div");
-      wrapper.className = "phase1-track-label-scroll";
-      const directLabels = [...labelColumn.children].filter((child) => child.classList?.contains("track-label"));
-      directLabels.forEach((label) => wrapper.appendChild(label));
-      labelColumn.appendChild(wrapper);
-    } else {
-      const directLabels = [...labelColumn.children].filter((child) => child.classList?.contains("track-label"));
-      directLabels.forEach((label) => wrapper.appendChild(label));
-    }
-    ui.trackLabels = [...wrapper.querySelectorAll(".track-label")];
-  }
-
-  function syncTrackLabelScroll() {
-    const wrapper = document.querySelector(".phase1-track-label-scroll");
-    if (!wrapper || !ui.timelineScroll) return;
-    wrapper.style.transform = `translateY(${-ui.timelineScroll.scrollTop}px)`;
-  }
-
   function ensureTenTracks() {
     const labelColumn = document.querySelector(".track-label-column");
     const tracks = document.querySelector("#tracks");
     if (!labelColumn || !tracks) return;
 
-    let labelParent = labelColumn.querySelector(".phase1-track-label-scroll") || labelColumn;
     const newLanes = [];
     const newLabels = [];
 
@@ -310,7 +328,7 @@
         label.dataset.trackLabel = String(index);
         label.type = "button";
         label.innerHTML = `<span>${index + 1}</span><strong>Track ${index + 1}</strong>`;
-        labelParent.appendChild(label);
+        labelColumn.appendChild(label);
         newLabels.push(label);
       }
       if (!tracks.querySelector(`[data-track="${index}"]`)) {
@@ -322,13 +340,26 @@
       }
     }
 
-    wrapTrackLabels();
-    labelParent = labelColumn.querySelector(".phase1-track-label-scroll") || labelColumn;
     ui.lanes = [...document.querySelectorAll(".track-lane")];
-    ui.trackLabels = [...labelParent.querySelectorAll(".track-label")];
+    ui.trackLabels = [...document.querySelectorAll(".track-label")];
     newLanes.forEach(bindLaneEvents);
     newLabels.forEach(bindTrackLabel);
-    syncTrackLabelScroll();
+  }
+
+  function wrapTrackLabels() {
+    const labelColumn = document.querySelector(".track-label-column");
+    if (!labelColumn || labelColumn.querySelector(".phase1-track-label-scroll")) return;
+    const labelScroll = document.createElement("div");
+    labelScroll.className = "phase1-track-label-scroll";
+    const labels = [...labelColumn.querySelectorAll(".track-label")];
+    labels.forEach((label) => labelScroll.appendChild(label));
+    labelColumn.appendChild(labelScroll);
+  }
+
+  function syncTrackLabelScroll() {
+    const labelScroll = document.querySelector(".phase1-track-label-scroll");
+    if (!labelScroll || !ui.timelineScroll) return;
+    labelScroll.style.transform = `translateY(${-ui.timelineScroll.scrollTop}px)`;
   }
 
   function patchTrackAwareFunctions() {
@@ -363,7 +394,7 @@
         clip.start = Math.max(0, drag.original.start + deltaSeconds);
         const laneRect = ui.tracks.getBoundingClientRect();
         const laneHeight = laneRect.height / TRACK_COUNT;
-        const nextTrack = clampTrack(Math.floor((event.clientY - laneRect.top) / laneHeight));
+        const nextTrack = clampTrack(Math.floor((event.clientY - laneRect.top + ui.timelineScroll.scrollTop) / laneHeight));
         if (clip.track !== nextTrack) {
           clip.track = nextTrack;
           selectTrack(clip.track);
@@ -420,33 +451,28 @@
     });
   }
 
-  function installScrollSync() {
-    if (!ui.timelineScroll || ui.timelineScroll.dataset.phase1ScrollSync === "true") return;
-    ui.timelineScroll.dataset.phase1ScrollSync = "true";
-    ui.timelineScroll.addEventListener("scroll", syncTrackLabelScroll, { passive: true });
-  }
-
   function updateExportCopy() {
     if (ui.exportTitle) ui.exportTitle.textContent = "Export mix";
     if (ui.exportConfirmBtn && ui.exportFormat) {
       const originalUpdateExportFormat = updateExportFormat;
       updateExportFormat = function patchedUpdateExportFormat() {
         originalUpdateExportFormat();
-        if (ui.exportFormat.value === "mp3") ui.exportConfirmBtn.textContent = "Render MP3";
-        else ui.exportConfirmBtn.textContent = "Render WAV";
+        ui.exportConfirmBtn.textContent = ui.exportFormat.value === "mp3" ? "Render MP3" : "Render WAV";
       };
     }
   }
 
   installPhaseStyles();
   rebuildTopBar();
+  rebuildTimelineTopline();
   ensureTenTracks();
+  wrapTrackLabels();
   patchTrackAwareFunctions();
   configureZoom();
-  installScrollSync();
   updateExportCopy();
+  ui.timelineScroll?.addEventListener("scroll", syncTrackLabelScroll, { passive: true });
+  syncTrackLabelScroll();
   selectTrack(state.selectedTrack || 0);
   renderTimeline();
-  syncTrackLabelScroll();
   setStatus("Ready — 10-track layout active");
 })();
