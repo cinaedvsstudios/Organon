@@ -17,7 +17,8 @@
     "./simple-edit-asset-visibility-fix.js?v=0.18",
     "./simple-edit-stretch-audiotsm.js?v=0.19",
     "./simple-edit-fade-handles.js?v=0.20",
-    "./simple-edit-normalize.js?v=0.21"
+    "./simple-edit-normalize.js?v=0.21",
+    "./simple-edit-orgavox-layout.js?v=0.22"
   ];
   for (const source of files) {
     await new Promise((resolve, reject) => {
