@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon — Simple Edit v0.19</title>
+  <title>Organon — Simple Edit v0.20</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./simple-edit.css?v=0.01">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
-  <script defer src="./simple-edit.js?v=0.19"></script>
+  <script src="./vendor/lame.min.js"></script>
+  <script defer src="./simple-edit.js?v=0.20"></script>
 </head>
 <body>
   <div class="app" id="app">
@@ -17,7 +17,7 @@
       <div class="brand">
         <div class="brand-mark">Ω</div>
         <div>
-          <h1>Simple Edit <span class="simple-edit-version" style="margin-left:8px;color:var(--water-spray);font:700 .62em var(--font-mono);letter-spacing:.08em;">v0.19</span></h1>
+          <h1>Simple Edit <span class="simple-edit-version" style="margin-left:8px;color:var(--water-spray);font:700 .62em var(--font-mono);letter-spacing:.08em;">v0.20</span></h1>
           <p>Ten-track audio workspace</p>
         </div>
       </div>
@@ -78,50 +78,32 @@
         </button>
         <div class="library-help">Drag a file onto a track, or select a track and press Add.</div>
         <div class="asset-list" id="assetList">
-          <div class="empty-state">No sound files loaded.</div>
+          <p class="empty-state">No imported media yet.</p>
         </div>
       </aside>
 
       <main class="timeline-panel">
         <div class="timeline-topline">
           <div>
-            <span class="eyebrow">Arrangement</span>
-            <h2>Ten-track timeline</h2>
+            <span class="eyebrow">Arrange</span>
+            <h2>Timeline</h2>
           </div>
-          <div class="status-pill" id="statusPill">Ready</div>
+          <div class="track-picker" id="trackPicker" aria-label="Target track selector"></div>
         </div>
-
-        <div class="timeline-shell" id="timelineShell">
-          <div class="track-label-column">
-            <div class="ruler-label">TRACKS</div>
-            <button class="track-label active" data-track-label="0" type="button"><span>1</span><strong>Track 1</strong></button>
-            <button class="track-label" data-track-label="1" type="button"><span>2</span><strong>Track 2</strong></button>
-            <button class="track-label" data-track-label="2" type="button"><span>3</span><strong>Track 3</strong></button>
-            <button class="track-label" data-track-label="3" type="button"><span>4</span><strong>Track 4</strong></button>
-            <button class="track-label" data-track-label="4" type="button"><span>5</span><strong>Track 5</strong></button>
-            <button class="track-label" data-track-label="5" type="button"><span>6</span><strong>Track 6</strong></button>
-            <button class="track-label" data-track-label="6" type="button"><span>7</span><strong>Track 7</strong></button>
-            <button class="track-label" data-track-label="7" type="button"><span>8</span><strong>Track 8</strong></button>
-            <button class="track-label" data-track-label="8" type="button"><span>9</span><strong>Track 9</strong></button>
-            <button class="track-label" data-track-label="9" type="button"><span>10</span><strong>Track 10</strong></button>
+        <div class="timeline-shell">
+          <div class="ruler-wrap">
+            <canvas id="rulerCanvas"></canvas>
           </div>
-
           <div class="timeline-scroll" id="timelineScroll">
             <div class="timeline-content" id="timelineContent">
-              <canvas class="ruler" id="rulerCanvas"></canvas>
+              <div class="playhead" id="playhead"></div>
               <div class="tracks" id="tracks">
-                <div class="track-lane selected-track" data-track="0"></div>
+                <div class="track-lane" data-track="0"></div>
                 <div class="track-lane" data-track="1"></div>
                 <div class="track-lane" data-track="2"></div>
                 <div class="track-lane" data-track="3"></div>
                 <div class="track-lane" data-track="4"></div>
-                <div class="track-lane" data-track="5"></div>
-                <div class="track-lane" data-track="6"></div>
-                <div class="track-lane" data-track="7"></div>
-                <div class="track-lane" data-track="8"></div>
-                <div class="track-lane" data-track="9"></div>
               </div>
-              <div class="playhead" id="playhead"><span></span></div>
             </div>
           </div>
         </div>
@@ -129,72 +111,69 @@
     </div>
   </div>
 
-  <div class="popover" id="gatePopover" hidden>
-    <div class="popover-head">
-      <div>
-        <span class="eyebrow">Clip effect</span>
-        <h3>Rhythmic noise gate</h3>
+  <div class="gate-popover" id="gatePopover" hidden>
+    <div class="gate-card">
+      <h3>Noise gate</h3>
+      <p>Cut the selected clip into repeating audible chunks with pauses between them.</p>
+      <label>
+        <span>Cuts per second</span>
+        <input id="gateSpeed" type="range" min="0.5" max="12" step="0.5" value="4">
+        <output id="gateSpeedOut">4 cuts/s</output>
+      </label>
+      <label>
+        <span>Pause length</span>
+        <input id="gatePause" type="range" min="0" max="1.5" step="0.05" value="0.25">
+        <output id="gatePauseOut">0.25 s</output>
+      </label>
+      <label>
+        <span>Edge fade</span>
+        <input id="gateFade" type="range" min="0" max="10" step="1" value="0">
+        <output id="gateFadeOut">0 / 10</output>
+      </label>
+      <div class="gate-actions">
+        <button class="tool-button" id="applyGateBtn" type="button">Apply gate</button>
+        <button class="tool-button" id="resetGateBtn" type="button">Reset</button>
+        <button class="tool-button ghost" id="closeGateBtn" type="button">Close</button>
       </div>
-      <button class="icon-button" id="gateCloseBtn" type="button">×</button>
-    </div>
-    <p>This keeps every part of the audio, cuts it into pieces and inserts real gaps between them.</p>
-    <label class="range-control vertical">
-      <span>Speed</span>
-      <input id="gateSpeed" type="range" min="0.5" max="16" step="0.5" value="4">
-      <output id="gateSpeedOut">4 cuts/s</output>
-    </label>
-    <label class="range-control vertical">
-      <span>Pause length</span>
-      <input id="gatePause" type="range" min="0" max="1" step="0.01" value="0.25">
-      <output id="gatePauseOut">0.25 s</output>
-    </label>
-    <label class="range-control vertical">
-      <span>Fade</span>
-      <input id="gateFade" type="range" min="0" max="10" step="1" value="0">
-      <output id="gateFadeOut">0 / 10</output>
-    </label>
-    <div class="button-row">
-      <button class="tool-button" id="gateResetBtn" type="button">Reset gate</button>
-      <button class="tool-button primary" id="gateApplyBtn" type="button">Apply gate</button>
     </div>
   </div>
 
-  <div class="modal-backdrop" id="exportModal" hidden>
-    <section class="export-dialog" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
-      <div class="popover-head">
+  <div class="export-modal" id="exportModal" hidden>
+    <div class="export-card">
+      <div class="export-head">
         <div>
-          <span class="eyebrow">Render all tracks</span>
-          <h3 id="exportTitle">Export mix</h3>
+          <span class="eyebrow">Render</span>
+          <h3>Export mix</h3>
+          <p>Render all tracks into a single file.</p>
         </div>
-        <button class="icon-button" id="exportCloseBtn" type="button">×</button>
+        <button class="icon-button" id="closeExportBtn" type="button" title="Close">×</button>
       </div>
-      <label class="field">
-        <span>Filename</span>
-        <input id="exportName" type="text" value="simple-edit-mix" autocomplete="off">
-      </label>
-      <label class="field">
-        <span>Format</span>
-        <select id="exportFormat">
-          <option value="wav" selected>WAV — lossless</option>
-          <option value="mp3">MP3</option>
-        </select>
-      </label>
-      <label class="field" id="bitrateField" hidden>
-        <span>MP3 bitrate</span>
-        <select id="mp3Bitrate">
-          <option value="128">128 kbps</option>
-          <option value="192" selected>192 kbps</option>
-          <option value="256">256 kbps</option>
-          <option value="320">320 kbps</option>
-        </select>
-      </label>
-      <p class="export-note" id="exportNote">WAV keeps the rendered mix uncompressed.</p>
-      <div class="export-progress" id="exportProgress" hidden><span></span></div>
-      <div class="button-row end">
-        <button class="tool-button" id="exportCancelBtn" type="button">Cancel</button>
-        <button class="tool-button primary" id="exportConfirmBtn" type="button">Render WAV</button>
+      <div class="export-options">
+        <label class="export-option">
+          <input type="radio" name="exportFormat" value="wav" checked>
+          <span>
+            <strong>WAV</strong>
+            <small>Lossless, fastest, larger file.</small>
+          </span>
+        </label>
+        <label class="export-option">
+          <input type="radio" name="exportFormat" value="mp3">
+          <span>
+            <strong>MP3</strong>
+            <small>Compressed with lamejs when available.</small>
+          </span>
+        </label>
       </div>
-    </section>
+      <label class="filename-row">
+        <span>File name</span>
+        <input id="exportName" type="text" value="organon-simple-edit-mix">
+      </label>
+      <div class="export-actions">
+        <button class="tool-button primary" id="confirmExportBtn" type="button">Render and download</button>
+        <button class="tool-button ghost" id="cancelExportBtn" type="button">Cancel</button>
+      </div>
+      <div class="export-status" id="exportStatus"></div>
+    </div>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
