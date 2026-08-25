@@ -2,38 +2,45 @@
 
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
+  const VISIBLE_TRACK_COUNT = 5;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
   function installPhaseStyles() {
-    if (document.getElementById(PHASE_STYLE_ID)) return;
+    const previous = document.getElementById(PHASE_STYLE_ID);
+    if (previous) previous.remove();
     const style = document.createElement("style");
     style.id = PHASE_STYLE_ID;
     style.textContent = `
       body.simple-edit-phase1 {
-        --topbar-h: 118px;
-        --controls-h: 42px;
-        --lane-h: 64px;
+        --topbar-h: 96px;
+        --controls-h: 0px;
+        --lane-h: 84px;
+      }
+      body.simple-edit-phase1 .app {
+        grid-template-rows: var(--topbar-h) 0px 1fr;
       }
       body.simple-edit-phase1 .topbar {
         display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 12px;
+        align-items: flex-start;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 10px 12px 8px;
         min-height: var(--topbar-h);
       }
       body.simple-edit-phase1 .brand {
         flex: 0 0 auto;
-        min-width: 190px;
+        min-width: 178px;
+        padding-top: 2px;
       }
       body.simple-edit-phase1 .brand p { display: none; }
       body.simple-edit-phase1 .phase1-toolbar {
-        flex: 1 1 920px;
+        flex: 1 1 auto;
         min-width: 0;
         display: flex;
         align-items: center;
-        justify-content: flex-end;
+        justify-content: flex-start;
         gap: 8px;
         flex-wrap: wrap;
       }
@@ -55,17 +62,11 @@
         display: contents;
       }
       body.simple-edit-phase1 .clip-controls {
-        min-height: var(--controls-h);
-        padding: 6px 14px;
-        gap: 12px;
-      }
-      body.simple-edit-phase1 .selected-summary {
-        min-width: 260px;
-        max-width: none;
+        display: none !important;
       }
       body.simple-edit-phase1 .topbar .range-control {
-        min-width: 178px;
-        grid-template-columns: auto minmax(82px, 130px) 50px;
+        min-width: 176px;
+        grid-template-columns: auto minmax(82px, 126px) 48px;
         gap: 6px;
       }
       body.simple-edit-phase1 .topbar .range-control span {
@@ -85,6 +86,25 @@
       }
       body.simple-edit-phase1 .timeline-shell {
         grid-template-columns: 112px minmax(0, 1fr);
+        height: calc(var(--ruler-h) + 420px);
+        max-height: calc(100vh - var(--topbar-h) - 94px);
+        min-height: calc(var(--ruler-h) + 260px);
+        flex: 0 0 auto;
+      }
+      body.simple-edit-phase1 .track-label-column {
+        overflow: hidden;
+      }
+      body.simple-edit-phase1 .phase1-track-label-scroll {
+        will-change: transform;
+      }
+      body.simple-edit-phase1 .timeline-scroll {
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+      body.simple-edit-phase1 .ruler {
+        position: sticky;
+        top: 0;
+        z-index: 9;
       }
       body.simple-edit-phase1 .track-label {
         height: var(--lane-h);
@@ -98,9 +118,18 @@
       body.simple-edit-phase1 .track-label strong {
         font-size: .62rem;
       }
+      body.simple-edit-phase1 .track-lane.selected-track {
+        box-shadow: inset 0 0 0 2px rgba(117,216,255,.55), inset 4px 0 rgba(117,216,255,.85);
+        background-color: rgba(75,155,255,.09);
+      }
       body.simple-edit-phase1 .audio-clip {
-        top: 7px;
-        height: calc(var(--lane-h) - 14px);
+        top: 8px;
+        height: calc(var(--lane-h) - 16px);
+      }
+      body.simple-edit-phase1 .audio-clip.selected {
+        border-color: #75d8ff;
+        background: linear-gradient(180deg, rgba(80,174,255,.78), rgba(35,111,184,.66));
+        box-shadow: 0 0 0 2px rgba(117,216,255,.48), 0 0 18px rgba(75,178,255,.42), 0 5px 16px rgba(0,0,0,.5);
       }
       body.simple-edit-phase1 .clip-title {
         top: 4px;
@@ -109,12 +138,12 @@
       body.simple-edit-phase1 .clip-effect-badges {
         bottom: 4px;
       }
-      @media (max-width: 1100px) {
+      @media (max-width: 1180px) {
         body.simple-edit-phase1 {
-          --topbar-h: 146px;
+          --topbar-h: 128px;
         }
-        body.simple-edit-phase1 .phase1-toolbar {
-          justify-content: flex-start;
+        body.simple-edit-phase1 .brand {
+          min-width: 150px;
         }
       }
     `;
@@ -242,11 +271,35 @@
     label.addEventListener("click", () => selectTrack(label.dataset.trackLabel));
   }
 
+  function wrapTrackLabels() {
+    const labelColumn = document.querySelector(".track-label-column");
+    if (!labelColumn) return;
+    let wrapper = labelColumn.querySelector(".phase1-track-label-scroll");
+    if (!wrapper) {
+      wrapper = document.createElement("div");
+      wrapper.className = "phase1-track-label-scroll";
+      const directLabels = [...labelColumn.children].filter((child) => child.classList?.contains("track-label"));
+      directLabels.forEach((label) => wrapper.appendChild(label));
+      labelColumn.appendChild(wrapper);
+    } else {
+      const directLabels = [...labelColumn.children].filter((child) => child.classList?.contains("track-label"));
+      directLabels.forEach((label) => wrapper.appendChild(label));
+    }
+    ui.trackLabels = [...wrapper.querySelectorAll(".track-label")];
+  }
+
+  function syncTrackLabelScroll() {
+    const wrapper = document.querySelector(".phase1-track-label-scroll");
+    if (!wrapper || !ui.timelineScroll) return;
+    wrapper.style.transform = `translateY(${-ui.timelineScroll.scrollTop}px)`;
+  }
+
   function ensureTenTracks() {
     const labelColumn = document.querySelector(".track-label-column");
     const tracks = document.querySelector("#tracks");
     if (!labelColumn || !tracks) return;
 
+    let labelParent = labelColumn.querySelector(".phase1-track-label-scroll") || labelColumn;
     const newLanes = [];
     const newLabels = [];
 
@@ -257,7 +310,7 @@
         label.dataset.trackLabel = String(index);
         label.type = "button";
         label.innerHTML = `<span>${index + 1}</span><strong>Track ${index + 1}</strong>`;
-        labelColumn.appendChild(label);
+        labelParent.appendChild(label);
         newLabels.push(label);
       }
       if (!tracks.querySelector(`[data-track="${index}"]`)) {
@@ -269,10 +322,13 @@
       }
     }
 
+    wrapTrackLabels();
+    labelParent = labelColumn.querySelector(".phase1-track-label-scroll") || labelColumn;
     ui.lanes = [...document.querySelectorAll(".track-lane")];
-    ui.trackLabels = [...document.querySelectorAll(".track-label")];
+    ui.trackLabels = [...labelParent.querySelectorAll(".track-label")];
     newLanes.forEach(bindLaneEvents);
     newLabels.forEach(bindTrackLabel);
+    syncTrackLabelScroll();
   }
 
   function patchTrackAwareFunctions() {
@@ -364,6 +420,12 @@
     });
   }
 
+  function installScrollSync() {
+    if (!ui.timelineScroll || ui.timelineScroll.dataset.phase1ScrollSync === "true") return;
+    ui.timelineScroll.dataset.phase1ScrollSync = "true";
+    ui.timelineScroll.addEventListener("scroll", syncTrackLabelScroll, { passive: true });
+  }
+
   function updateExportCopy() {
     if (ui.exportTitle) ui.exportTitle.textContent = "Export mix";
     if (ui.exportConfirmBtn && ui.exportFormat) {
@@ -381,8 +443,10 @@
   ensureTenTracks();
   patchTrackAwareFunctions();
   configureZoom();
+  installScrollSync();
   updateExportCopy();
   selectTrack(state.selectedTrack || 0);
   renderTimeline();
+  syncTrackLabelScroll();
   setStatus("Ready — 10-track layout active");
 })();
