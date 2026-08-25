@@ -15,7 +15,8 @@
     "./simple-edit-effects-local.js?v=0.16",
     "./simple-edit-echo-settings.js?v=0.17",
     "./simple-edit-asset-visibility-fix.js?v=0.18",
-    "./simple-edit-stretch-audiotsm.js?v=0.19"
+    "./simple-edit-stretch-audiotsm.js?v=0.19",
+    "./simple-edit-fade-handles.js?v=0.20"
   ];
   for (const source of files) {
     await new Promise((resolve, reject) => {
