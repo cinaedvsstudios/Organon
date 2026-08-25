@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.34";
+  const VERSION = "v0.35";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -89,9 +89,7 @@
           ui.deleteBtn.textContent = "🗑 DEL";
           ui.deleteBtn.classList.add("orgavox-danger-tool");
         }
-        if (ui.fadeInBtn) ui.fadeInBtn.classList.add("orgavox-fade-tool");
-        if (ui.fadeOutBtn) ui.fadeOutBtn.classList.add("orgavox-fade-tool");
-        if (ui.resetFadesBtn) ui.resetFadesBtn.classList.add("orgavox-fade-tool");
+        [ui.fadeInBtn, ui.fadeOutBtn, ui.resetFadesBtn].filter(Boolean).forEach((button) => button.classList.add("orgavox-fade-tool"));
       }
       const effectsLibrary = document.querySelector(".effects-library-button") ||
         [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
@@ -196,7 +194,9 @@
     "./simple-edit-drive-engine.js?v=0.29",
     "./simple-edit-drive.js?v=0.29",
     "./simple-edit-dynamics-engine.js?v=0.30",
-    "./simple-edit-dynamics.js?v=0.30"
+    "./simple-edit-dynamics.js?v=0.30",
+    "./simple-edit-stereo-engine.js?v=0.35",
+    "./simple-edit-stereo.js?v=0.35"
   ];
 
   for (const source of files) {
