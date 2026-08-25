@@ -10,7 +10,8 @@
     "./simple-edit-keyframes.js?v=0.10",
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13",
-    "./simple-edit-layout-fix.js?v=0.14"
+    "./simple-edit-layout-fix.js?v=0.14",
+    "./simple-edit-effects-library.js?v=0.15"
   ];
   for (const source of files) {
     await new Promise((resolve, reject) => {
