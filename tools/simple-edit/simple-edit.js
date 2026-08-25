@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.37";
+  const VERSION = "v0.38";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -77,6 +77,14 @@
       .forEach((button) => { if (button.parentElement !== menu) menu.appendChild(button); });
   }
 
+  function placeRenderToolsButton() {
+    if (typeof ui === "undefined" || !ui.renderToolsBtn) return;
+    const editGroup = document.querySelector(".orgavox-edit-group");
+    const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
+    ui.renderToolsBtn.classList.add("orgavox-render-tools-button");
+    if (editGroup && effectsDrop && ui.renderToolsBtn.parentElement !== editGroup) editGroup.insertBefore(ui.renderToolsBtn, effectsDrop);
+  }
+
   function applyFinalToolbarStyling() {
     try {
       if (typeof ui !== "undefined") {
@@ -88,21 +96,13 @@
         [ui.fadeInBtn, ui.fadeOutBtn, ui.resetFadesBtn].filter(Boolean).forEach((button) => button.classList.add("orgavox-fade-tool"));
       }
       keepFeatureButtonsInMenu();
+      placeRenderToolsButton();
       ensureLeadingTransportDivider();
       const effectsLibrary = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
       if (effectsLibrary) effectsLibrary.classList.add("orgavox-effects-library-button");
       let style = document.getElementById("orgavox-final-toolbar-style");
       if (!style) { style = document.createElement("style"); style.id = "orgavox-final-toolbar-style"; document.head.appendChild(style); }
-      style.textContent = `
-        body.simple-edit-phase1{--topbar-h:112px!important}body.simple-edit-phase1 .topbar{height:var(--topbar-h)!important;min-height:var(--topbar-h)!important;padding-top:12px!important;padding-bottom:8px!important}body.simple-edit-phase1 .brand p{display:none!important}body.simple-edit-phase1 .orgavox-brand-actions{margin-top:8px!important}body.simple-edit-phase1 .phase1-top-effects{padding-top:10px!important}body.simple-edit-phase1 .workspace{height:calc(100vh - var(--topbar-h))!important}
-        body.simple-edit-phase1 #importBtn.orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important;box-shadow:0 0 0 1px rgba(117,178,222,.24),0 0 14px rgba(75,155,255,.24)!important}
-        body.simple-edit-phase1 #exportBtn.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important;box-shadow:0 0 0 1px rgba(74,190,117,.22),0 0 14px rgba(74,190,117,.22)!important}
-        body.simple-edit-phase1 #stopBtn.orgavox-stop-danger,body.simple-edit-phase1 #scissorsBtn.orgavox-danger-tool,body.simple-edit-phase1 #deleteBtn.orgavox-danger-tool{border-color:rgba(220,72,64,.76)!important;background:linear-gradient(180deg,rgba(89,29,26,.84),rgba(35,13,12,.94))!important;color:#ffd8d2!important;box-shadow:0 0 0 1px rgba(220,72,64,.2),0 0 14px rgba(220,72,64,.2)!important}
-        body.simple-edit-phase1 .orgavox-fade-tool{border-color:rgba(74,190,117,.76)!important;background:linear-gradient(180deg,rgba(28,89,52,.74),rgba(12,42,25,.9))!important;color:#d6ffe4!important}body.simple-edit-phase1 .orgavox-effects-library-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(87,46,148,.88),rgba(37,22,74,.96))!important;color:#f1ddff!important}
-        body.simple-edit-phase1 .time-readout{font-size:.94rem!important;min-height:36px!important;padding:9px 14px!important;letter-spacing:.08em!important}body.simple-edit-phase1 .orgavox-leading-divider{display:inline-flex!important;flex:0 0 1px!important;min-height:36px!important;margin-left:0!important}
-        body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control{display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:auto auto!important;gap:6px 10px!important;align-items:center!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control span{grid-column:1!important;grid-row:1!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control output{grid-column:2!important;grid-row:1!important;text-align:right!important;color:#f8d792!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control input[type="range"]{grid-column:1 / -1!important;grid-row:2!important;width:100%!important}
-        @media (max-width:1380px){body.simple-edit-phase1{--topbar-h:158px!important}}
-      `;
+      style.textContent = `body.simple-edit-phase1{--topbar-h:112px!important}body.simple-edit-phase1 .topbar{height:var(--topbar-h)!important;min-height:var(--topbar-h)!important;padding-top:12px!important;padding-bottom:8px!important}body.simple-edit-phase1 .brand p{display:none!important}body.simple-edit-phase1 .orgavox-brand-actions{margin-top:8px!important}body.simple-edit-phase1 .phase1-top-effects{padding-top:10px!important}body.simple-edit-phase1 .workspace{height:calc(100vh - var(--topbar-h))!important}body.simple-edit-phase1 #importBtn.orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important;box-shadow:0 0 0 1px rgba(117,178,222,.24),0 0 14px rgba(75,155,255,.24)!important}body.simple-edit-phase1 #exportBtn.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important;box-shadow:0 0 0 1px rgba(74,190,117,.22),0 0 14px rgba(74,190,117,.22)!important}body.simple-edit-phase1 #stopBtn.orgavox-stop-danger,body.simple-edit-phase1 #scissorsBtn.orgavox-danger-tool,body.simple-edit-phase1 #deleteBtn.orgavox-danger-tool{border-color:rgba(220,72,64,.76)!important;background:linear-gradient(180deg,rgba(89,29,26,.84),rgba(35,13,12,.94))!important;color:#ffd8d2!important;box-shadow:0 0 0 1px rgba(220,72,64,.2),0 0 14px rgba(220,72,64,.2)!important}body.simple-edit-phase1 .orgavox-fade-tool{border-color:rgba(74,190,117,.76)!important;background:linear-gradient(180deg,rgba(28,89,52,.74),rgba(12,42,25,.9))!important;color:#d6ffe4!important}body.simple-edit-phase1 .orgavox-effects-library-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(87,46,148,.88),rgba(37,22,74,.96))!important;color:#f1ddff!important}body.simple-edit-phase1 .time-readout{font-size:.94rem!important;min-height:36px!important;padding:9px 14px!important;letter-spacing:.08em!important}body.simple-edit-phase1 .orgavox-leading-divider{display:inline-flex!important;flex:0 0 1px!important;min-height:36px!important;margin-left:0!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control{display:grid!important;grid-template-columns:1fr auto!important;grid-template-rows:auto auto!important;gap:6px 10px!important;align-items:center!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control span{grid-column:1!important;grid-row:1!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control output{grid-column:2!important;grid-row:1!important;text-align:right!important;color:#f8d792!important}body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control input[type="range"]{grid-column:1 / -1!important;grid-row:2!important;width:100%!important}@media (max-width:1380px){body.simple-edit-phase1{--topbar-h:158px!important}}`;
     } catch (error) { console.warn("ORGAVOX final toolbar styling failed.", error); }
   }
 
@@ -114,13 +114,7 @@
   }
 
   installLocalSoundFxRouting();
-  const files = [
-    "./simple-edit-core.js?v=0.01", "./simple-edit-timeline.js?v=0.01", "./simple-edit-audio.js?v=0.26", "./simple-edit-export.js?v=0.02", "./simple-edit-phase1.js?v=0.33",
-    "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=0.25",
-    "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26",
-    "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30",
-    "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37"
-  ];
+  const files = ["./simple-edit-core.js?v=0.01", "./simple-edit-timeline.js?v=0.01", "./simple-edit-audio.js?v=0.26", "./simple-edit-export.js?v=0.02", "./simple-edit-phase1.js?v=0.33", "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=0.25", "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26", "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30", "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=0.38"];
 
   for (const source of files) {
     await new Promise((resolve, reject) => {
