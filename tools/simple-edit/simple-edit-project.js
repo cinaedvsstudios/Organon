@@ -5,19 +5,24 @@
   const MODAL_ID = "projectModal";
   const INPUT_ID = "projectFileInput";
   let busy = false;
-  const projectMeta = {
-    name: "Untitled Project",
-    savedAt: null
-  };
+  const projectMeta = { name: "Untitled Project", savedAt: null };
 
   function installStyles() {
     document.getElementById(STYLE_ID)?.remove();
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      body.simple-edit-phase1 .orgavox-brand-actions{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:7px!important;margin-top:8px!important}
-      .orgavox-open-save-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
-      .orgavox-project-button{width:100%;justify-content:center!important;border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important;box-shadow:0 0 0 1px rgba(178,109,255,.24),0 0 14px rgba(130,78,220,.22)!important}
+      body.simple-edit-phase1 .topbar .brand{display:none!important}
+      body.simple-edit-phase1 .orgavox-brand-actions{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;margin-top:0!important;flex:0 0 auto!important;min-width:0!important}
+      body.simple-edit-phase1 .orgavox-brand-actions .tool-button{min-height:36px!important;padding:8px 12px!important;font-size:.62rem!important;white-space:nowrap!important}
+      .orgavox-open-save-row{display:contents!important}
+      .orgavox-project-button{width:auto!important;justify-content:center!important;border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important;box-shadow:0 0 0 1px rgba(178,109,255,.24),0 0 14px rgba(130,78,220,.22)!important}
+      .orgavox-sidebar-brand{display:flex;align-items:center;gap:10px;min-width:0}
+      .orgavox-sidebar-mark{display:grid;place-items:center;width:39px;height:39px;flex:0 0 39px;border:1px solid rgba(224,163,96,.92);border-radius:11px;background:rgba(0,0,0,.26);color:#f8d792;font:900 1.32rem Georgia,serif;box-shadow:0 0 0 1px rgba(224,163,96,.18),inset 0 0 16px rgba(224,163,96,.08)}
+      .orgavox-sidebar-title{min-width:0;display:grid;gap:1px;line-height:1}
+      .orgavox-sidebar-title strong{display:flex;align-items:baseline;gap:6px;color:#e0a360;font:800 1.08rem var(--font-headers);letter-spacing:.04em;white-space:nowrap}
+      .orgavox-sidebar-version{color:#63b8ff!important;font:800 .67rem var(--font-mono)!important;letter-spacing:.08em!important;text-transform:none!important}
+      .orgavox-sidebar-title span:not(.orgavox-sidebar-version){color:#75b2de;font:800 .57rem var(--font-body);letter-spacing:.11em;text-transform:uppercase;white-space:nowrap}
       .orgavox-project-info-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 auto;margin:0 8px 8px 0;padding:8px 14px;border:1px solid rgba(96,58,22,.78);border-radius:10px;background:linear-gradient(180deg,#e5b65d,#c99134);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 14px rgba(0,0,0,.22)}
       .orgavox-project-info-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#17100a;font:900 .82rem var(--font-body);letter-spacing:.025em;text-transform:uppercase}
       .orgavox-project-info-meta{flex:0 0 auto;color:#5a341d;font:900 .7rem var(--font-mono);letter-spacing:.035em;white-space:nowrap}
@@ -30,7 +35,7 @@
       .orgavox-project-card h4{margin:0;color:#f8d792;font:800 .78rem var(--font-body);text-transform:uppercase;letter-spacing:.045em}
       .orgavox-project-card p{margin:0;color:rgba(245,240,219,.62);font-size:.69rem;line-height:1.45}
       .orgavox-project-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:16px}
-      @media(max-width:760px){.orgavox-project-grid{grid-template-columns:1fr}.orgavox-project-info-bar{align-items:flex-start;flex-direction:column;gap:3px}.orgavox-project-info-meta{white-space:normal}}
+      @media(max-width:760px){.orgavox-project-grid{grid-template-columns:1fr}.orgavox-project-info-bar{align-items:flex-start;flex-direction:column;gap:3px}.orgavox-project-info-meta{white-space:normal}.orgavox-sidebar-title strong{font-size:.96rem}}
     `;
     document.head.appendChild(style);
   }
@@ -49,21 +54,62 @@
     return button;
   }
 
+  function chooseActionsContainer() {
+    const all = [...document.querySelectorAll(".orgavox-brand-actions")];
+    let actions = all.find((node) => node.contains(ui.importBtn) || node.contains(ui.exportBtn) || node.contains(ui.projectBtn)) || all[0];
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "orgavox-brand-actions";
+    }
+    all.filter((node) => node !== actions && !node.children.length).forEach((node) => node.remove());
+    const topbar = document.querySelector(".topbar");
+    const deck = document.querySelector(".phase1-top-effects");
+    if (topbar && actions.parentElement !== topbar) topbar.insertBefore(actions, deck || topbar.firstChild);
+    return actions;
+  }
+
   function placeButton() {
     const button = ui.projectBtn || ensureButton();
-    const actions = document.querySelector(".orgavox-brand-actions");
+    const actions = chooseActionsContainer();
     if (!actions || !button) return;
-    let row = actions.querySelector(".orgavox-open-save-row");
-    if (!row) {
-      row = document.createElement("div");
-      row.className = "orgavox-open-save-row";
-      actions.prepend(row);
+    const legacyRow = actions.querySelector(".orgavox-open-save-row");
+    if (legacyRow) {
+      [...legacyRow.children].forEach((child) => actions.insertBefore(child, legacyRow));
+      legacyRow.remove();
     }
-    if (ui.importBtn && ui.importBtn.parentElement !== row) row.appendChild(ui.importBtn);
-    if (ui.exportBtn && ui.exportBtn.parentElement !== row) row.appendChild(ui.exportBtn);
-    if (button.parentElement !== actions) actions.appendChild(button);
+    [ui.importBtn, ui.exportBtn, button].filter(Boolean).forEach((item) => {
+      if (item.parentElement !== actions) actions.appendChild(item);
+    });
     button.textContent = "📁 Project";
     button.disabled = busy;
+  }
+
+  function ensureSidebarBrand() {
+    const heading = document.querySelector(".library-panel .panel-heading");
+    if (!heading) return null;
+    let count = heading.querySelector("#assetCount");
+    let brand = heading.querySelector(".orgavox-sidebar-brand");
+    if (!brand) {
+      brand = document.createElement("div");
+      brand.className = "orgavox-sidebar-brand";
+    }
+    brand.innerHTML = `
+      <div class="orgavox-sidebar-mark">Φ</div>
+      <div class="orgavox-sidebar-title"><strong>ORGAVOX <span class="orgavox-sidebar-version">${window.ORGAVOX_VERSION || "v0.43"}</span></strong><span>Browser audio workstation</span></div>
+    `;
+    [...heading.children].forEach((child) => {
+      if (child !== brand && child !== count) child.remove();
+    });
+    if (brand.parentElement !== heading) heading.prepend(brand);
+    if (!count) {
+      count = document.createElement("span");
+      count.className = "count-badge";
+      count.id = "assetCount";
+      count.textContent = String(state.assets?.length || 0);
+      heading.appendChild(count);
+      if (typeof ui !== "undefined") ui.assetCount = count;
+    } else if (count.parentElement !== heading) heading.appendChild(count);
+    return brand;
   }
 
   function ensureProjectInfoBar() {
@@ -91,6 +137,7 @@
 
   function updateProjectInfoBar() {
     ensureProjectInfoBar();
+    ensureSidebarBrand();
     const name = document.getElementById("orgavoxProjectInfoName");
     const meta = document.getElementById("orgavoxProjectInfoMeta");
     if (name) name.textContent = projectMeta.name || "Untitled Project";
@@ -147,9 +194,7 @@
     return modal;
   }
 
-  function projectNameInput() {
-    return ensureModal().querySelector("[data-project-name]");
-  }
+  function projectNameInput() { return ensureModal().querySelector("[data-project-name]"); }
 
   function updateSummary() {
     const summary = ensureModal().querySelector("[data-project-summary]");
@@ -165,9 +210,7 @@
     updateSummary();
   }
 
-  function closeModal() {
-    ensureModal().hidden = true;
-  }
+  function closeModal() { ensureModal().hidden = true; }
 
   function setBusy(nextBusy, message) {
     busy = Boolean(nextBusy);
@@ -221,7 +264,7 @@
       if (packed) assets.push(packed);
     }
     const savedAt = new Date().toISOString();
-    return { format: "ORGAVOX_PROJECT", version: window.ORGAVOX_VERSION || "v0.42", savedAt, name: projectNameInput()?.value?.trim() || suggestedProjectName(), pixelsPerSecond: state.pixelsPerSecond, playhead: state.playhead, selectedTrack: state.selectedTrack, assets, clips: state.clips.map(serialiseClip) };
+    return { format: "ORGAVOX_PROJECT", version: window.ORGAVOX_VERSION || "v0.43", savedAt, name: projectNameInput()?.value?.trim() || suggestedProjectName(), pixelsPerSecond: state.pixelsPerSecond, playhead: state.playhead, selectedTrack: state.selectedTrack, assets, clips: state.clips.map(serialiseClip) };
   }
 
   async function saveProjectFile() {
@@ -307,6 +350,7 @@
     renderTimeline = function orgavoxProjectRenderTimeline() {
       previousRenderTimeline();
       placeButton();
+      ensureSidebarBrand();
       updateProjectInfoBar();
       updateSummary();
     };
@@ -314,13 +358,15 @@
 
   window.orgavoxPlaceProjectButton = placeButton;
   window.orgavoxUpdateProjectInfoBar = updateProjectInfoBar;
+  window.orgavoxEnsureSidebarBrand = ensureSidebarBrand;
   installStyles();
   ensureButton();
   ensureModal();
   ensureLoadInput();
+  ensureSidebarBrand();
   ensureProjectInfoBar();
   patchRender();
   placeButton();
   updateProjectInfoBar();
-  setTimeout(() => { placeButton(); updateProjectInfoBar(); }, 150);
+  setTimeout(() => { placeButton(); ensureSidebarBrand(); updateProjectInfoBar(); }, 150);
 })();
