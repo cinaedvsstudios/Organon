@@ -13,7 +13,8 @@
     "./simple-edit-layout-fix.js?v=0.14",
     "./simple-edit-effects-library.js?v=0.15",
     "./simple-edit-effects-local.js?v=0.16",
-    "./simple-edit-echo-settings.js?v=0.17"
+    "./simple-edit-echo-settings.js?v=0.17",
+    "./simple-edit-asset-visibility-fix.js?v=0.18"
   ];
   for (const source of files) {
     await new Promise((resolve, reject) => {
