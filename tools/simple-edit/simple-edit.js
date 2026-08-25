@@ -78,15 +78,18 @@
     "./simple-edit-timeline.js?v=0.01",
     "./simple-edit-audio.js?v=0.01",
     "./simple-edit-export.js?v=0.02",
-    "./simple-edit-phase1.js?v=0.23",
+    "./simple-edit-phase1.js?v=0.12",
     "./simple-edit-keyframes.js?v=0.10",
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13",
+    "./simple-edit-layout-fix.js?v=0.14",
     "./simple-edit-effects-library.js?v=0.15",
     "./simple-edit-echo-settings.js?v=0.17",
+    "./simple-edit-asset-visibility-fix.js?v=0.18",
     "./simple-edit-stretch-audiotsm.js?v=0.19",
     "./simple-edit-fade-handles.js?v=0.20",
-    "./simple-edit-normalize.js?v=0.21"
+    "./simple-edit-normalize.js?v=0.21",
+    "./simple-edit-orgavox-layout.js?v=0.22"
   ];
 
   for (const source of files) {
