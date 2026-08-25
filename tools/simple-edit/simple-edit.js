@@ -8,7 +8,8 @@
     "./simple-edit-export.js?v=0.02",
     "./simple-edit-phase1.js?v=0.12",
     "./simple-edit-keyframes.js?v=0.10",
-    "./simple-edit-keyframes-fix.js?v=0.11"
+    "./simple-edit-keyframes-fix.js?v=0.11",
+    "./simple-edit-phase3.js?v=0.13"
   ];
   for (const source of files) {
     await new Promise((resolve, reject) => {
