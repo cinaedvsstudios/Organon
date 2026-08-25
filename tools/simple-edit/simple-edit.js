@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.28";
+  const VERSION = "v0.29";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -82,7 +82,8 @@
         [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
       const lateButtons = [
         { node: ui.transposeBtn, label: "🎼 Transpose" },
-        { node: ui.eqBtn, label: "🎚 EQ / Filter" }
+        { node: ui.eqBtn, label: "🎚 EQ / Filter" },
+        { node: ui.driveBtn, label: "🔥 Drive" }
       ];
       lateButtons.forEach(({ node, label }) => {
         if (!node) return;
@@ -116,7 +117,9 @@
     "./simple-edit-transpose-engine.js?v=0.26",
     "./simple-edit-transpose.js?v=0.26",
     "./simple-edit-eq-engine.js?v=0.28",
-    "./simple-edit-eq.js?v=0.28"
+    "./simple-edit-eq.js?v=0.28",
+    "./simple-edit-drive-engine.js?v=0.29",
+    "./simple-edit-drive.js?v=0.29"
   ];
 
   for (const source of files) {
