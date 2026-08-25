@@ -3,7 +3,7 @@
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
-  const PHASE_VERSION = window.ORGAVOX_VERSION || "v0.31";
+  const PHASE_VERSION = window.ORGAVOX_VERSION || "v0.32";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
@@ -88,12 +88,14 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         margin-top: 9px;
       }
       body.simple-edit-phase1 .orgavox-brand-actions .tool-button {
-        min-height: 34px !important;
-        padding: 8px 12px !important;
+        min-height: 32px !important;
+        padding: 7px 10px !important;
+        font-size: .62rem !important;
+        white-space: nowrap !important;
       }
       body.simple-edit-phase1 .phase1-top-effects {
         flex: 1 1 auto !important;
@@ -525,8 +527,8 @@
   }
 
   function updateButtonEmojiLabels() {
-    if (ui.importBtn) ui.importBtn.textContent = "📥 Import";
-    if (ui.exportBtn) ui.exportBtn.textContent = "💾 Export";
+    if (ui.importBtn) ui.importBtn.textContent = "📥 Open";
+    if (ui.exportBtn) ui.exportBtn.textContent = "💾 Save";
     const effectsButton = findEffectsLibraryButton();
     if (effectsButton) effectsButton.textContent = "🎧 Effects Library";
     if (ui.jumpStartBtn) {
