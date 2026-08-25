@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.24";
+  const VERSION = "v0.25";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -85,7 +85,7 @@
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13",
     "./simple-edit-effects-library.js?v=0.15",
-    "./simple-edit-echo-settings.js?v=0.17",
+    "./simple-edit-echo-settings.js?v=0.25",
     "./simple-edit-stretch-audiotsm.js?v=0.19",
     "./simple-edit-fade-handles.js?v=0.20",
     "./simple-edit-normalize.js?v=0.21"
