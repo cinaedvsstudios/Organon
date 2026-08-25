@@ -3,7 +3,7 @@
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
-  const PHASE_VERSION = "v0.08";
+  const PHASE_VERSION = "v0.09";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
@@ -31,23 +31,42 @@
       }
       body.simple-edit-phase1 .brand {
         flex: 0 0 auto;
-        min-width: 184px;
+        min-width: 210px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
       }
-      body.simple-edit-phase1 .brand > div {
+      body.simple-edit-phase1 .brand .brand-mark {
+        flex: 0 0 auto;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        line-height: 1 !important;
+      }
+      body.simple-edit-phase1 .brand > div:not(.brand-mark) {
+        min-width: 0;
+        display: block;
+      }
+      body.simple-edit-phase1 .brand h1 {
         display: flex;
         align-items: baseline;
         gap: 10px;
-        flex-wrap: wrap;
-      }
-      body.simple-edit-phase1 .brand h1 {
         margin: 0;
+        line-height: 1;
+        white-space: nowrap;
       }
       body.simple-edit-phase1 .phase1-version {
-        color: #63b8ff;
-        font-size: .68rem;
-        font-weight: 700;
+        color: #63b8ff !important;
+        display: inline-flex;
+        align-items: baseline;
+        font: 700 .68rem var(--font-mono) !important;
         letter-spacing: .08em;
+        line-height: 1 !important;
+        margin: 0 !important;
+        position: static !important;
         text-transform: uppercase;
+        transform: none !important;
+        vertical-align: baseline;
         white-space: nowrap;
       }
       body.simple-edit-phase1 .brand p { display: none; }
@@ -93,16 +112,19 @@
         position: relative;
       }
       body.simple-edit-phase1 .workspace::before {
-        content: "";
+        display: none !important;
+      }
+      body.simple-edit-phase1 .phase1-workspace-rule {
         position: absolute;
         left: 0;
         right: 0;
-        top: var(--phase1-divider-y, 66px);
-        height: 1px;
-        background: linear-gradient(90deg, rgba(224,163,96,.22), rgba(224,163,96,.92), rgba(224,163,96,.22));
-        box-shadow: 0 1px 0 rgba(0,0,0,.4);
+        top: var(--phase1-divider-y, 70px);
+        height: 2px;
+        background: linear-gradient(90deg, rgba(224,163,96,.35), rgba(224,163,96,.95), rgba(224,163,96,.35));
+        border-top: 1px solid rgba(248,215,146,.48);
+        box-shadow: 0 1px 0 rgba(0,0,0,.8), 0 0 10px rgba(224,163,96,.25);
         pointer-events: none;
-        z-index: 4;
+        z-index: 80;
       }
       body.simple-edit-phase1 .library-panel,
       body.simple-edit-phase1 .timeline-panel {
@@ -256,6 +278,7 @@
     badge.textContent = PHASE_VERSION;
   }
 
+
   function updateButtonEmojiLabels() {
     if (ui.importBtn) ui.importBtn.textContent = "📥 Import";
     if (ui.jumpStartBtn) {
@@ -350,16 +373,33 @@
     timelineTopline.appendChild(toolbar);
   }
 
+  function ensureWorkspaceRule() {
+    const workspace = document.querySelector('.workspace');
+    if (!workspace || workspace.querySelector('.phase1-workspace-rule')) return;
+    const rule = document.createElement('div');
+    rule.className = 'phase1-workspace-rule';
+    rule.setAttribute('aria-hidden', 'true');
+    workspace.appendChild(rule);
+  }
+
   function syncWorkspaceDivider() {
     const workspace = document.querySelector('.workspace');
     const panelHeading = document.querySelector('.library-panel .panel-heading');
     const timelineTopline = document.querySelector('.timeline-topline');
     if (!workspace || !panelHeading || !timelineTopline) return;
+    ensureWorkspaceRule();
     const workspaceRect = workspace.getBoundingClientRect();
+    const headingStyles = getComputedStyle(panelHeading);
+    const toplineStyles = getComputedStyle(timelineTopline);
+    const gap = Math.max(
+      Number.parseFloat(headingStyles.marginBottom) || 0,
+      Number.parseFloat(toplineStyles.marginBottom) || 0,
+      10
+    );
     const topY = Math.max(
       panelHeading.getBoundingClientRect().bottom - workspaceRect.top,
       timelineTopline.getBoundingClientRect().bottom - workspaceRect.top
-    );
+    ) + Math.round(gap / 2);
     workspace.style.setProperty('--phase1-divider-y', `${Math.round(topY)}px`);
   }
 
@@ -560,6 +600,7 @@
   updateExportCopy();
   selectTrack(state.selectedTrack || 0);
   renderTimeline();
+  ensureWorkspaceRule();
   syncWorkspaceDivider();
   window.addEventListener('resize', syncWorkspaceDivider);
   setTimeout(syncWorkspaceDivider, 0);
