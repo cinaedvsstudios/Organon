@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.33";
+  const VERSION = "v0.34";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -68,9 +68,109 @@
     }
   }
 
-  function restoreLateFeatureButtons() {
+  function applyFinalToolbarStyling() {
+    try {
+      if (typeof ui !== "undefined") {
+        if (ui.importBtn) {
+          ui.importBtn.textContent = "📥 Open";
+          ui.importBtn.classList.remove("primary");
+          ui.importBtn.classList.add("orgavox-open-button");
+        }
+        if (ui.exportBtn) {
+          ui.exportBtn.textContent = "💾 Save";
+          ui.exportBtn.classList.add("orgavox-save-button");
+        }
+        if (ui.stopBtn) ui.stopBtn.classList.add("orgavox-stop-danger");
+        if (ui.scissorsBtn) {
+          ui.scissorsBtn.textContent = "✂️ Cut";
+          ui.scissorsBtn.classList.add("orgavox-danger-tool");
+        }
+        if (ui.deleteBtn) {
+          ui.deleteBtn.textContent = "🗑 DEL";
+          ui.deleteBtn.classList.add("orgavox-danger-tool");
+        }
+        if (ui.fadeInBtn) ui.fadeInBtn.classList.add("orgavox-fade-tool");
+        if (ui.fadeOutBtn) ui.fadeOutBtn.classList.add("orgavox-fade-tool");
+        if (ui.resetFadesBtn) ui.resetFadesBtn.classList.add("orgavox-fade-tool");
+      }
+      const effectsLibrary = document.querySelector(".effects-library-button") ||
+        [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
+      if (effectsLibrary) effectsLibrary.classList.add("orgavox-effects-library-button");
+      let style = document.getElementById("orgavox-final-toolbar-style");
+      if (!style) {
+        style = document.createElement("style");
+        style.id = "orgavox-final-toolbar-style";
+        document.head.appendChild(style);
+      }
+      style.textContent = `
+        body.simple-edit-phase1 #importBtn.orgavox-open-button {
+          border-color: rgba(117,178,222,.92) !important;
+          background: linear-gradient(180deg, rgba(57,132,205,.96), rgba(31,77,133,.94)) !important;
+          color: #eef8ff !important;
+          box-shadow: 0 0 0 1px rgba(117,178,222,.24), 0 0 14px rgba(75,155,255,.24) !important;
+        }
+        body.simple-edit-phase1 #exportBtn.orgavox-save-button {
+          border-color: rgba(74,190,117,.86) !important;
+          background: linear-gradient(180deg, rgba(35,118,66,.92), rgba(14,62,35,.94)) !important;
+          color: #e2ffe9 !important;
+          box-shadow: 0 0 0 1px rgba(74,190,117,.22), 0 0 14px rgba(74,190,117,.22) !important;
+        }
+        body.simple-edit-phase1 #stopBtn.orgavox-stop-danger,
+        body.simple-edit-phase1 #scissorsBtn.orgavox-danger-tool,
+        body.simple-edit-phase1 #deleteBtn.orgavox-danger-tool {
+          border-color: rgba(220,72,64,.76) !important;
+          background: linear-gradient(180deg, rgba(89,29,26,.84), rgba(35,13,12,.94)) !important;
+          color: #ffd8d2 !important;
+          box-shadow: 0 0 0 1px rgba(220,72,64,.2), 0 0 14px rgba(220,72,64,.2) !important;
+        }
+        body.simple-edit-phase1 .orgavox-fade-tool {
+          border-color: rgba(74,190,117,.76) !important;
+          background: linear-gradient(180deg, rgba(28,89,52,.74), rgba(12,42,25,.9)) !important;
+          color: #d6ffe4 !important;
+        }
+        body.simple-edit-phase1 .orgavox-effects-library-button {
+          border-color: rgba(178,109,255,.86) !important;
+          background: linear-gradient(180deg, rgba(87,46,148,.88), rgba(37,22,74,.96)) !important;
+          color: #f1ddff !important;
+        }
+        body.simple-edit-phase1 .time-readout {
+          font-size: .94rem !important;
+          min-height: 36px !important;
+          padding: 9px 14px !important;
+          letter-spacing: .08em !important;
+        }
+        body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control {
+          display: grid !important;
+          grid-template-columns: 1fr auto !important;
+          grid-template-rows: auto auto !important;
+          gap: 6px 10px !important;
+          align-items: center !important;
+        }
+        body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control span {
+          grid-column: 1 !important;
+          grid-row: 1 !important;
+        }
+        body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control output {
+          grid-column: 2 !important;
+          grid-row: 1 !important;
+          text-align: right !important;
+          color: #f8d792 !important;
+        }
+        body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control input[type="range"] {
+          grid-column: 1 / -1 !important;
+          grid-row: 2 !important;
+          width: 100% !important;
+        }
+      `;
+    } catch (error) {
+      console.warn("ORGAVOX final toolbar styling failed.", error);
+    }
+  }
+
+  function refreshFinalLayout() {
     try { if (typeof ui !== "undefined") window.orgavoxRefreshLayout?.(); }
-    catch (error) { console.warn("ORGAVOX could not restore late feature buttons.", error); }
+    catch (error) { console.warn("ORGAVOX could not refresh layout.", error); }
+    applyFinalToolbarStyling();
   }
 
   installLocalSoundFxRouting();
@@ -109,15 +209,14 @@
     });
   }
 
-  window.orgavoxRefreshLayout?.();
-  restoreLateFeatureButtons();
+  refreshFinalLayout();
   setFinalVersion();
   document.documentElement.classList.remove("orgavox-loading");
   document.getElementById("orgavox-boot-style")?.remove();
   if (typeof setStatus === "function") setStatus("Ready — ORGAVOX loaded");
-  setTimeout(restoreLateFeatureButtons, 0);
-  setTimeout(restoreLateFeatureButtons, 150);
-  window.addEventListener("resize", () => setTimeout(restoreLateFeatureButtons, 0));
+  setTimeout(refreshFinalLayout, 0);
+  setTimeout(refreshFinalLayout, 150);
+  window.addEventListener("resize", () => setTimeout(refreshFinalLayout, 0));
 })().catch((error) => {
   console.error(error);
   document.documentElement.classList.remove("orgavox-loading");
