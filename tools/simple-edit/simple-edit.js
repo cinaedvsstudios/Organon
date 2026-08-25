@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.38";
+  const VERSION = "v0.39";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -77,12 +77,15 @@
       .forEach((button) => { if (button.parentElement !== menu) menu.appendChild(button); });
   }
 
-  function placeRenderToolsButton() {
-    if (typeof ui === "undefined" || !ui.renderToolsBtn) return;
+  function placeClipToolButtons() {
+    if (typeof ui === "undefined") return;
     const editGroup = document.querySelector(".orgavox-edit-group");
     const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
-    ui.renderToolsBtn.classList.add("orgavox-render-tools-button");
-    if (editGroup && effectsDrop && ui.renderToolsBtn.parentElement !== editGroup) editGroup.insertBefore(ui.renderToolsBtn, effectsDrop);
+    if (!editGroup) return;
+    [ui.reverseClipBtn, ui.downloadClipBtn, ui.bounceBtn].filter(Boolean).forEach((button) => {
+      if (effectsDrop) editGroup.insertBefore(button, effectsDrop);
+      else if (button.parentElement !== editGroup) editGroup.appendChild(button);
+    });
   }
 
   function applyFinalToolbarStyling() {
@@ -96,7 +99,7 @@
         [ui.fadeInBtn, ui.fadeOutBtn, ui.resetFadesBtn].filter(Boolean).forEach((button) => button.classList.add("orgavox-fade-tool"));
       }
       keepFeatureButtonsInMenu();
-      placeRenderToolsButton();
+      placeClipToolButtons();
       ensureLeadingTransportDivider();
       const effectsLibrary = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
       if (effectsLibrary) effectsLibrary.classList.add("orgavox-effects-library-button");
@@ -114,7 +117,7 @@
   }
 
   installLocalSoundFxRouting();
-  const files = ["./simple-edit-core.js?v=0.01", "./simple-edit-timeline.js?v=0.01", "./simple-edit-audio.js?v=0.26", "./simple-edit-export.js?v=0.02", "./simple-edit-phase1.js?v=0.33", "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=0.25", "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26", "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30", "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=0.38"];
+  const files = ["./simple-edit-core.js?v=0.01", "./simple-edit-timeline.js?v=0.01", "./simple-edit-audio.js?v=0.26", "./simple-edit-export.js?v=0.02", "./simple-edit-phase1.js?v=0.33", "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=0.25", "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26", "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30", "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=0.39"];
 
   for (const source of files) {
     await new Promise((resolve, reject) => {
