@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.42";
+  const VERSION = "v0.43";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -82,7 +82,7 @@
     const editGroup = document.querySelector(".orgavox-edit-group");
     const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
     if (!editGroup) return;
-    [ui.reverseClipBtn, ui.downloadClipBtn, ui.bounceBtn, ui.analysisBtn].filter(Boolean).forEach((button) => {
+    [ui.reverseClipBtn, ui.downloadClipBtn, ui.bounceBtn, ui.analysisBtn, ui.markersBtn].filter(Boolean).forEach((button) => {
       if (effectsDrop) editGroup.insertBefore(button, effectsDrop);
       else if (button.parentElement !== editGroup) editGroup.appendChild(button);
     });
@@ -102,6 +102,8 @@
       placeClipToolButtons();
       window.orgavoxPlaceProjectButton?.();
       window.orgavoxUpdateProjectInfoBar?.();
+      window.orgavoxPlaceMarkersButton?.();
+      window.orgavoxRenderMarkers?.();
       ensureLeadingTransportDivider();
       const effectsLibrary = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
       if (effectsLibrary) effectsLibrary.classList.add("orgavox-effects-library-button");
@@ -125,7 +127,7 @@
     "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26",
     "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30",
     "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=0.39",
-    "./simple-edit-analysis.js?v=0.40", "./simple-edit-project.js?v=0.42"
+    "./simple-edit-analysis.js?v=0.40", "./simple-edit-project.js?v=0.43", "./simple-edit-markers.js?v=0.43"
   ];
 
   for (const source of files) {
