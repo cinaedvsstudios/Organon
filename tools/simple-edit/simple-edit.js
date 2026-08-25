@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.32";
+  const VERSION = "v0.33";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -28,8 +28,7 @@
 
   function localizeSoundFxUrl(value) {
     const text = String(value || "");
-    if (!text.startsWith(REMOTE_SOUND_FX)) return value;
-    return `${LOCAL_SOUND_FX}${text.slice(REMOTE_SOUND_FX.length)}`;
+    return text.startsWith(REMOTE_SOUND_FX) ? `${LOCAL_SOUND_FX}${text.slice(REMOTE_SOUND_FX.length)}` : value;
   }
 
   function installLocalSoundFxRouting() {
@@ -47,18 +46,14 @@
         };
       }
     }
-
     if (!window.__orgavoxLocalSoundFxAudioPatched && window.Audio) {
       window.__orgavoxLocalSoundFxAudioPatched = true;
       const NativeAudio = window.Audio;
-      function OrgavoxAudio(src) {
-        return src === undefined ? new NativeAudio() : new NativeAudio(localizeSoundFxUrl(src));
-      }
+      function OrgavoxAudio(src) { return src === undefined ? new NativeAudio() : new NativeAudio(localizeSoundFxUrl(src)); }
       OrgavoxAudio.prototype = NativeAudio.prototype;
       Object.setPrototypeOf(OrgavoxAudio, NativeAudio);
       window.Audio = OrgavoxAudio;
     }
-
     if (!window.__orgavoxLocalSoundFxMediaSrcPatched && window.HTMLMediaElement?.prototype) {
       const descriptor = Object.getOwnPropertyDescriptor(window.HTMLMediaElement.prototype, "src");
       if (descriptor?.get && descriptor?.set) {
@@ -74,12 +69,8 @@
   }
 
   function restoreLateFeatureButtons() {
-    try {
-      if (typeof ui === "undefined") return;
-      window.orgavoxRefreshLayout?.();
-    } catch (error) {
-      console.warn("ORGAVOX could not restore late feature buttons.", error);
-    }
+    try { if (typeof ui !== "undefined") window.orgavoxRefreshLayout?.(); }
+    catch (error) { console.warn("ORGAVOX could not restore late feature buttons.", error); }
   }
 
   installLocalSoundFxRouting();
@@ -89,7 +80,7 @@
     "./simple-edit-timeline.js?v=0.01",
     "./simple-edit-audio.js?v=0.26",
     "./simple-edit-export.js?v=0.02",
-    "./simple-edit-phase1.js?v=0.32",
+    "./simple-edit-phase1.js?v=0.33",
     "./simple-edit-keyframes.js?v=0.10",
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13",
