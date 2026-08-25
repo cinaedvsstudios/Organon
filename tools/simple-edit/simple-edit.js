@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.26";
+  const VERSION = "v0.27";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -73,6 +73,23 @@
     }
   }
 
+  function restoreLateFeatureButtons() {
+    try {
+      if (typeof ui === "undefined" || !ui.transposeBtn) return;
+      const effectsGroup = document.querySelector(".orgavox-effects-group");
+      if (!effectsGroup) return;
+      const effectsButton = document.querySelector(".effects-library-button") ||
+        [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
+      ui.transposeBtn.textContent = "🎼 Transpose";
+      if (ui.transposeBtn.parentElement !== effectsGroup) {
+        if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(ui.transposeBtn, effectsButton);
+        else effectsGroup.appendChild(ui.transposeBtn);
+      }
+    } catch (error) {
+      console.warn("ORGAVOX could not restore late feature buttons.", error);
+    }
+  }
+
   installLocalSoundFxRouting();
 
   const files = [
@@ -104,10 +121,14 @@
   }
 
   window.orgavoxRefreshLayout?.();
+  restoreLateFeatureButtons();
   setFinalVersion();
   document.documentElement.classList.remove("orgavox-loading");
   document.getElementById("orgavox-boot-style")?.remove();
   if (typeof setStatus === "function") setStatus("Ready — ORGAVOX loaded");
+  setTimeout(restoreLateFeatureButtons, 0);
+  setTimeout(restoreLateFeatureButtons, 150);
+  window.addEventListener("resize", () => setTimeout(restoreLateFeatureButtons, 0));
 })().catch((error) => {
   console.error(error);
   document.documentElement.classList.remove("orgavox-loading");
