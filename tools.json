@@ -35,7 +35,7 @@
         {
           "id": "simple-edit",
           "label": "ORGAVOX",
-          "path": "tools/simple-edit/index.html?v=0.26",
+          "path": "tools/simple-edit/index.html?v=0.27",
           "description": "Local browser audio workstation for layering MP3, WAV or video audio across ten waveform tracks, trimming, splitting, stretching, adding effects, fading, normalizing and exporting WAV or MP3 mixes."
         },
         {
