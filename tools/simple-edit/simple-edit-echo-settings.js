@@ -1,7 +1,7 @@
 "use strict";
 
 (function installSimpleEditEchoSettings() {
-  const ECHO_VERSION = "v0.17";
+  const ECHO_VERSION = window.ORGAVOX_VERSION || "v0.25";
   const STYLE_ID = "simple-edit-echo-settings-style";
   const MODAL_ID = "echoSettingsModal";
 
@@ -150,16 +150,25 @@
       body.simple-edit-phase1 .clip-effect-badges span.echo-settings-badge { border-color: rgba(117,178,222,.62); color: #cbefff; }
       .echo-settings-backdrop { position: fixed; inset: 0; z-index: 2700; display: none; align-items: center; justify-content: center; padding: 20px; background: rgba(5, 7, 7, .74); backdrop-filter: blur(7px); }
       .echo-settings-backdrop.open { display: flex; }
-      .echo-settings-dialog { width: min(940px, 96vw); max-height: min(760px, 92vh); overflow: auto; border: 1px solid rgba(224,163,96,.58); border-radius: 22px; background: linear-gradient(180deg, rgba(41,38,30,.98), rgba(17,20,18,.99)); color: #f5f0db; box-shadow: 0 26px 80px rgba(0,0,0,.54), inset 0 0 0 1px rgba(255,255,255,.04); padding: 18px; }
+      .echo-settings-dialog { width: min(980px, 96vw); max-height: min(780px, 92vh); overflow: auto; border: 1px solid rgba(224,163,96,.58); border-radius: 22px; background: linear-gradient(180deg, rgba(41,38,30,.98), rgba(17,20,18,.99)); color: #f5f0db; box-shadow: 0 26px 80px rgba(0,0,0,.54), inset 0 0 0 1px rgba(255,255,255,.04); padding: 18px; }
       .echo-settings-head { display: flex; justify-content: space-between; gap: 18px; align-items: flex-start; margin-bottom: 14px; }
       .echo-settings-head h3 { margin: 4px 0 6px; font-family: var(--font-headers); font-size: 1.35rem; letter-spacing: .04em; }
       .echo-settings-head p, .echo-settings-explain { margin: 0; color: rgba(245,240,219,.72); line-height: 1.45; }
-      .echo-settings-grid { display: grid; grid-template-columns: minmax(230px, .72fr) minmax(0, 1.28fr); gap: 14px; align-items: start; }
+      .echo-settings-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(250px, 295px); gap: 14px; align-items: start; }
       .echo-settings-panel { border: 1px solid rgba(224,163,96,.26); border-radius: 16px; background: rgba(7,9,8,.38); padding: 14px; }
       .echo-settings-panel h4 { margin: 0 0 10px; font-size: .84rem; letter-spacing: .08em; text-transform: uppercase; color: #f8d792; }
-      .echo-settings-preset { width: 100%; border: 1px solid rgba(224,163,96,.38); border-radius: 12px; background: rgba(0,0,0,.3); color: #f5f0db; padding: 10px 12px; font: 700 .9rem var(--font-body); outline: none; }
-      .echo-settings-explain { margin-top: 12px; border-left: 3px solid rgba(117,178,222,.7); padding: 10px 12px; background: rgba(117,178,222,.08); border-radius: 10px; }
-      .echo-settings-mode { display: inline-flex; margin-top: 10px; border: 1px solid rgba(224,163,96,.28); border-radius: 999px; padding: 5px 9px; color: rgba(245,240,219,.7); font: 800 .7rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
+      .echo-settings-manual-panel { min-width: 0; }
+      .echo-settings-side-panel { position: sticky; top: 0; display: grid; gap: 12px; }
+      .echo-preset-picker { position: relative; }
+      .echo-preset-button { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid rgba(117,178,222,.62); border-radius: 12px; background: rgba(0,0,0,.56); color: #f5f0db; padding: 10px 12px; font: 800 .9rem var(--font-body); text-align: left; }
+      .echo-preset-button::after { content: "▾"; color: #f8d792; font-size: .9rem; }
+      .echo-preset-menu { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 5; display: none; overflow: hidden; border: 1px solid rgba(117,178,222,.55); border-radius: 12px; background: #080a09; box-shadow: 0 18px 34px rgba(0,0,0,.62); }
+      .echo-preset-picker.open .echo-preset-menu { display: grid; }
+      .echo-preset-option { width: 100%; min-height: 34px; border: 0; border-radius: 0; background: transparent; color: #f5f0db; padding: 8px 12px; text-align: left; font: 700 .84rem var(--font-body); }
+      .echo-preset-option:hover, .echo-preset-option:focus-visible { background: rgba(117,178,222,.22); color: #fff; outline: none; }
+      .echo-preset-option.active { background: rgba(75,132,191,.78); color: #fff; }
+      .echo-settings-explain { border-left: 3px solid rgba(117,178,222,.7); padding: 10px 12px; background: rgba(117,178,222,.08); border-radius: 10px; }
+      .echo-settings-mode { display: inline-flex; width: fit-content; border: 1px solid rgba(224,163,96,.28); border-radius: 999px; padding: 5px 9px; color: rgba(245,240,219,.7); font: 800 .7rem var(--font-mono); text-transform: uppercase; letter-spacing: .08em; }
       .echo-settings-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
       .echo-settings-control { display: grid; gap: 6px; border: 1px solid rgba(224,163,96,.16); border-radius: 13px; padding: 10px; background: rgba(0,0,0,.2); }
       .echo-settings-control.hidden { display: none; }
@@ -167,16 +176,11 @@
       .echo-settings-control output { color: #75b2de; font: 800 .78rem var(--font-mono); }
       .echo-settings-control input[type="range"] { width: 100%; }
       .echo-settings-control small { min-height: 2.4em; color: rgba(245,240,219,.62); line-height: 1.3; }
-      .echo-settings-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 14px; }
-      @media (max-width: 760px) { .echo-settings-grid { grid-template-columns: 1fr; } .echo-settings-controls { grid-template-columns: 1fr; } }
+      .echo-settings-actions { display: grid; gap: 9px; margin-top: 2px; }
+      .echo-settings-actions .tool-button { width: 100%; justify-content: center; }
+      @media (max-width: 820px) { .echo-settings-grid { grid-template-columns: 1fr; } .echo-settings-side-panel { position: static; order: -1; } .echo-settings-controls { grid-template-columns: 1fr; } }
     `;
     document.head.appendChild(style);
-  }
-
-  function setVersion() {
-    document.title = `Organon — Simple Edit ${ECHO_VERSION}`;
-    const badge = document.querySelector(".phase1-version, .simple-edit-version");
-    if (badge) badge.textContent = ECHO_VERSION;
   }
 
   function controlValueLabel(key, value) {
@@ -213,6 +217,41 @@
     return label;
   }
 
+  function closePresetMenu() {
+    document.getElementById("echoPresetPicker")?.classList.remove("open");
+  }
+
+  function choosePreset(id) {
+    currentPresetId = id || "studio";
+    loadSettingsIntoModal(clonePreset(currentPresetId));
+    closePresetMenu();
+  }
+
+  function renderPresetPicker(container) {
+    container.innerHTML = `
+      <button class="echo-preset-button" id="echoPresetButton" type="button" aria-haspopup="listbox" aria-expanded="false">Studio Echo</button>
+      <div class="echo-preset-menu" id="echoPresetMenu" role="listbox"></div>`;
+    const button = container.querySelector("#echoPresetButton");
+    const menu = container.querySelector("#echoPresetMenu");
+    Object.entries(PRESETS).forEach(([id, preset]) => {
+      const option = document.createElement("button");
+      option.type = "button";
+      option.className = "echo-preset-option";
+      option.dataset.preset = id;
+      option.role = "option";
+      option.textContent = preset.label;
+      option.addEventListener("click", () => choosePreset(id));
+      menu.appendChild(option);
+    });
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const picker = document.getElementById("echoPresetPicker");
+      const open = !picker.classList.contains("open");
+      picker.classList.toggle("open", open);
+      button.setAttribute("aria-expanded", String(open));
+    });
+  }
+
   function ensureModal() {
     let backdrop = document.getElementById(MODAL_ID);
     if (backdrop) return backdrop;
@@ -230,37 +269,30 @@
           <button class="icon-button" id="echoSettingsCloseBtn" type="button" aria-label="Close echo settings">×</button>
         </div>
         <div class="echo-settings-grid">
-          <aside class="echo-settings-panel">
-            <h4>Preset</h4>
-            <select class="echo-settings-preset" id="echoPresetSelect"></select>
-            <div class="echo-settings-mode" id="echoModeLabel">Delay</div>
-            <p class="echo-settings-explain" id="echoPresetExplain"></p>
-          </aside>
-          <div class="echo-settings-panel">
+          <div class="echo-settings-panel echo-settings-manual-panel">
             <h4>Manual controls</h4>
             <div class="echo-settings-controls" id="echoControlsGrid"></div>
           </div>
-        </div>
-        <div class="echo-settings-actions">
-          <button class="tool-button" id="echoPreviewBtn" type="button">▶ Preview selected clip</button>
-          <button class="tool-button" id="echoResetBtn" type="button">Reset echo</button>
-          <button class="tool-button" id="echoCloseBtn" type="button">Close</button>
-          <button class="tool-button primary" id="echoApplyBtn" type="button">Apply echo</button>
+          <aside class="echo-settings-panel echo-settings-side-panel">
+            <h4>Preset</h4>
+            <div class="echo-preset-picker" id="echoPresetPicker"></div>
+            <div class="echo-settings-mode" id="echoModeLabel">Delay</div>
+            <p class="echo-settings-explain" id="echoPresetExplain"></p>
+            <div class="echo-settings-actions">
+              <button class="tool-button" id="echoPreviewBtn" type="button">▶ Preview selected clip</button>
+              <button class="tool-button" id="echoResetBtn" type="button">Reset echo</button>
+              <button class="tool-button" id="echoCloseBtn" type="button">Close</button>
+              <button class="tool-button primary" id="echoApplyBtn" type="button">Apply echo</button>
+            </div>
+          </aside>
         </div>
       </section>`;
     document.body.appendChild(backdrop);
 
-    const select = backdrop.querySelector("#echoPresetSelect");
-    Object.entries(PRESETS).forEach(([id, preset]) => {
-      const option = document.createElement("option");
-      option.value = id;
-      option.textContent = preset.label;
-      select.appendChild(option);
-    });
+    renderPresetPicker(backdrop.querySelector("#echoPresetPicker"));
     const grid = backdrop.querySelector("#echoControlsGrid");
     Object.keys(CONTROL_META).forEach((key) => grid.appendChild(createControl(key)));
 
-    select.addEventListener("change", () => loadSettingsIntoModal(clonePreset(select.value)));
     backdrop.querySelector("#echoSettingsCloseBtn").addEventListener("click", closeModal);
     backdrop.querySelector("#echoCloseBtn").addEventListener("click", closeModal);
     backdrop.querySelector("#echoApplyBtn").addEventListener("click", applyEchoSettings);
@@ -276,13 +308,21 @@
   function modalOutput(key) { return document.getElementById(`echo-${key}-out`); }
 
   function readSettingsFromModal() {
-    const preset = document.getElementById("echoPresetSelect")?.value || currentPresetId || "studio";
-    const base = clonePreset(preset);
+    const base = clonePreset(currentPresetId || "studio");
     Object.keys(CONTROL_META).forEach((key) => {
       const input = modalInput(key);
       if (input) base[key] = clampNumber(input.value, CONTROL_META[key].min, CONTROL_META[key].max, base[key]);
     });
     return normalizeSettings(base);
+  }
+
+  function updatePresetPicker(settings) {
+    const button = document.getElementById("echoPresetButton");
+    if (button) button.textContent = settings.label;
+    document.querySelectorAll(".echo-preset-option").forEach((option) => {
+      option.classList.toggle("active", option.dataset.preset === settings.preset);
+      option.setAttribute("aria-selected", String(option.dataset.preset === settings.preset));
+    });
   }
 
   function updateVisibleControls(settings) {
@@ -299,13 +339,12 @@
     if (explain) explain.textContent = settings.explanation;
     if (mode) mode.textContent = settings.mode === "reverb" ? "Reverb / space" : "Delay / echo";
     updateVisibleControls(settings);
+    updatePresetPicker(settings);
   }
 
   function loadSettingsIntoModal(settings) {
     const normalized = normalizeSettings(settings);
     currentPresetId = normalized.preset || "studio";
-    const select = document.getElementById("echoPresetSelect");
-    if (select) select.value = currentPresetId;
     Object.keys(CONTROL_META).forEach((key) => {
       const input = modalInput(key);
       const output = modalOutput(key);
@@ -329,6 +368,7 @@
 
   function closeModal() {
     document.getElementById(MODAL_ID)?.classList.remove("open");
+    closePresetMenu();
     stopPreview();
   }
 
@@ -626,15 +666,21 @@
     renderTimeline();
   });
 
+  document.addEventListener("click", (event) => {
+    if (!event.target.closest("#echoPresetPicker")) closePresetMenu();
+  }, true);
+
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeModal();
+    if (event.key === "Escape") {
+      closePresetMenu();
+      closeModal();
+    }
   });
 
   installStyles();
-  setVersion();
   ensureEchoButton();
   ensureModal();
   syncSelectedControls();
   renderTimeline();
-  setStatus("Ready — echo settings active");
+  if (typeof setStatus === "function") setStatus("Ready — echo settings active");
 })();
