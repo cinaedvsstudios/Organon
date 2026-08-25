@@ -3,7 +3,7 @@
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
-  const PHASE_VERSION = "v0.10";
+  const PHASE_VERSION = "v0.12";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
