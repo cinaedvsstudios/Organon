@@ -9,7 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./simple-edit.css?v=0.01">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
-  <script defer src="./simple-edit.js?v=0.02"></script>
+  <script defer src="./simple-edit.js?v=0.03"></script>
 </head>
 <body>
   <div class="app" id="app">
@@ -18,7 +18,7 @@
         <div class="brand-mark">Ω</div>
         <div>
           <h1>Simple Edit</h1>
-          <p>Five-track audio workspace</p>
+          <p>Ten-track audio workspace</p>
         </div>
       </div>
 
@@ -57,8 +57,8 @@
       </label>
       <label class="range-control zoom-control">
         <span>Timeline zoom</span>
-        <input id="zoomSlider" type="range" min="25" max="240" value="80">
-        <output id="zoomOut">80 px/s</output>
+        <input id="zoomSlider" type="range" min="25" max="500" value="100">
+        <output id="zoomOut">100%</output>
       </label>
       <button class="tool-button" id="exportBtn" type="button">⇩ Export mix</button>
     </section>
@@ -86,7 +86,7 @@
         <div class="timeline-topline">
           <div>
             <span class="eyebrow">Arrangement</span>
-            <h2>Five-track timeline</h2>
+            <h2>Ten-track timeline</h2>
           </div>
           <div class="status-pill" id="statusPill">Ready</div>
         </div>
@@ -99,6 +99,11 @@
             <button class="track-label" data-track-label="2" type="button"><span>3</span><strong>Track 3</strong></button>
             <button class="track-label" data-track-label="3" type="button"><span>4</span><strong>Track 4</strong></button>
             <button class="track-label" data-track-label="4" type="button"><span>5</span><strong>Track 5</strong></button>
+            <button class="track-label" data-track-label="5" type="button"><span>6</span><strong>Track 6</strong></button>
+            <button class="track-label" data-track-label="6" type="button"><span>7</span><strong>Track 7</strong></button>
+            <button class="track-label" data-track-label="7" type="button"><span>8</span><strong>Track 8</strong></button>
+            <button class="track-label" data-track-label="8" type="button"><span>9</span><strong>Track 9</strong></button>
+            <button class="track-label" data-track-label="9" type="button"><span>10</span><strong>Track 10</strong></button>
           </div>
 
           <div class="timeline-scroll" id="timelineScroll">
@@ -110,6 +115,11 @@
                 <div class="track-lane" data-track="2"></div>
                 <div class="track-lane" data-track="3"></div>
                 <div class="track-lane" data-track="4"></div>
+                <div class="track-lane" data-track="5"></div>
+                <div class="track-lane" data-track="6"></div>
+                <div class="track-lane" data-track="7"></div>
+                <div class="track-lane" data-track="8"></div>
+                <div class="track-lane" data-track="9"></div>
               </div>
               <div class="playhead" id="playhead"><span></span></div>
             </div>
@@ -153,7 +163,7 @@
     <section class="export-dialog" role="dialog" aria-modal="true" aria-labelledby="exportTitle">
       <div class="popover-head">
         <div>
-          <span class="eyebrow">Render all five tracks</span>
+          <span class="eyebrow">Render all tracks</span>
           <h3 id="exportTitle">Export mix</h3>
         </div>
         <button class="icon-button" id="exportCloseBtn" type="button">×</button>
