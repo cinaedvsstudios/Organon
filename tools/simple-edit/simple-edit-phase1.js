@@ -13,9 +13,9 @@
     style.id = PHASE_STYLE_ID;
     style.textContent = `
       body.simple-edit-phase1 {
-        --topbar-h: 72px;
+        --topbar-h: 82px;
         --controls-h: 0px;
-        --lane-h: 84px;
+        --lane-h: clamp(88px, calc((100vh - 250px) / 6), 132px);
       }
       body.simple-edit-phase1 .app {
         grid-template-rows: var(--topbar-h) 0px 1fr;
@@ -24,13 +24,13 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        gap: 14px;
-        padding: 9px 12px;
+        gap: 18px;
+        padding: 12px 16px;
         min-height: var(--topbar-h);
       }
       body.simple-edit-phase1 .brand {
         flex: 0 0 auto;
-        min-width: 178px;
+        min-width: 184px;
       }
       body.simple-edit-phase1 .brand p { display: none; }
       body.simple-edit-phase1 .phase1-top-effects {
@@ -39,7 +39,7 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        gap: 8px;
+        gap: 12px;
         flex-wrap: wrap;
       }
       body.simple-edit-phase1 .phase1-timeline-toolbar {
@@ -47,21 +47,22 @@
         display: flex;
         align-items: center;
         justify-content: flex-start;
-        gap: 8px;
+        gap: 12px;
         flex-wrap: wrap;
+        padding: 10px 0 11px;
       }
       body.simple-edit-phase1 .phase1-tool-group {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 9px;
         flex-wrap: wrap;
       }
       body.simple-edit-phase1 .phase1-divider {
         flex: 0 0 1px;
         width: 1px;
-        height: 32px;
-        background: linear-gradient(180deg, transparent, rgba(224,163,96,.72), transparent);
-        margin: 0 2px;
+        height: 34px;
+        background: linear-gradient(180deg, transparent, rgba(224,163,96,.74), transparent);
+        margin: 0 4px;
       }
       body.simple-edit-phase1 .transport,
       body.simple-edit-phase1 .toolbar-actions {
@@ -70,53 +71,52 @@
       body.simple-edit-phase1 .clip-controls {
         display: none !important;
       }
+      body.simple-edit-phase1 .timeline-panel {
+        padding: 14px 16px 18px;
+      }
       body.simple-edit-phase1 .timeline-topline {
         margin-bottom: 8px;
         justify-content: flex-start;
+        align-items: center;
       }
       body.simple-edit-phase1 .timeline-topline > div:not(.phase1-timeline-toolbar),
       body.simple-edit-phase1 .timeline-topline .eyebrow,
-      body.simple-edit-phase1 .timeline-topline h2 {
+      body.simple-edit-phase1 .timeline-topline h2,
+      body.simple-edit-phase1 .timeline-topline .status-pill {
         display: none !important;
       }
-      body.simple-edit-phase1 .status-pill {
-        margin-left: auto;
+      body.simple-edit-phase1 .topbar .range-control {
+        min-width: 190px;
+        grid-template-columns: auto minmax(94px, 138px) 52px;
+        gap: 8px;
+      }
+      body.simple-edit-phase1 .topbar .range-control span {
         white-space: nowrap;
       }
-      body.simple-edit-phase1 .topbar .range-control,
-      body.simple-edit-phase1 .timeline-topline .range-control {
-        min-width: 176px;
-        grid-template-columns: auto minmax(82px, 126px) 48px;
-        gap: 6px;
+      body.simple-edit-phase1 .topbar .zoom-control {
+        min-width: 220px;
+        margin-left: 0;
       }
-      body.simple-edit-phase1 .topbar .range-control span,
-      body.simple-edit-phase1 .timeline-topline .range-control span {
-        white-space: nowrap;
-      }
-      body.simple-edit-phase1 .zoom-control { margin-left: 0; }
       body.simple-edit-phase1 .topbar .tool-button,
       body.simple-edit-phase1 .topbar .icon-button,
       body.simple-edit-phase1 .timeline-topline .tool-button,
       body.simple-edit-phase1 .timeline-topline .icon-button {
-        min-height: 32px;
+        min-height: 36px;
       }
       body.simple-edit-phase1 .topbar .tool-button,
       body.simple-edit-phase1 .timeline-topline .tool-button {
-        padding: 7px 11px;
+        padding: 8px 14px;
       }
       body.simple-edit-phase1 .topbar .icon-button,
       body.simple-edit-phase1 .timeline-topline .icon-button {
-        min-width: 32px;
-        padding: 6px 8px;
-      }
-      body.simple-edit-phase1 .timeline-panel {
-        padding-top: 10px;
+        min-width: 36px;
+        padding: 7px 10px;
       }
       body.simple-edit-phase1 .timeline-shell {
-        grid-template-columns: 112px minmax(0, 1fr);
-        height: calc(var(--ruler-h) + (var(--lane-h) * 5));
-        max-height: calc(100vh - var(--topbar-h) - 104px);
-        min-height: calc(var(--ruler-h) + (var(--lane-h) * 3));
+        grid-template-columns: 122px minmax(0, 1fr);
+        height: calc(var(--ruler-h) + var(--lane-h) + var(--lane-h) + var(--lane-h) + var(--lane-h) + var(--lane-h) + var(--lane-h));
+        max-height: calc(100vh - var(--topbar-h) - 118px);
+        min-height: calc(var(--ruler-h) + 410px);
         flex: 0 0 auto;
       }
       body.simple-edit-phase1 .track-label-column {
@@ -136,23 +136,23 @@
       }
       body.simple-edit-phase1 .track-label {
         height: var(--lane-h);
-        padding: 0 10px;
+        padding: 0 12px;
       }
       body.simple-edit-phase1 .track-label span {
-        width: 24px;
-        height: 24px;
-        font-size: .6rem;
+        width: 26px;
+        height: 26px;
+        font-size: .62rem;
       }
       body.simple-edit-phase1 .track-label strong {
-        font-size: .62rem;
+        font-size: .66rem;
       }
       body.simple-edit-phase1 .track-lane.selected-track {
         box-shadow: inset 0 0 0 2px rgba(117,216,255,.55), inset 4px 0 rgba(117,216,255,.85);
         background-color: rgba(75,155,255,.09);
       }
       body.simple-edit-phase1 .audio-clip {
-        top: 8px;
-        height: calc(var(--lane-h) - 16px);
+        top: 10px;
+        height: calc(var(--lane-h) - 20px);
       }
       body.simple-edit-phase1 .audio-clip.selected {
         border-color: #75d8ff;
@@ -160,15 +160,15 @@
         box-shadow: 0 0 0 2px rgba(117,216,255,.48), 0 0 18px rgba(75,178,255,.42), 0 5px 16px rgba(0,0,0,.5);
       }
       body.simple-edit-phase1 .clip-title {
-        top: 4px;
-        font-size: .55rem;
+        top: 5px;
+        font-size: .58rem;
       }
       body.simple-edit-phase1 .clip-effect-badges {
-        bottom: 4px;
+        bottom: 5px;
       }
       @media (max-width: 1180px) {
         body.simple-edit-phase1 {
-          --topbar-h: 104px;
+          --topbar-h: 118px;
         }
         body.simple-edit-phase1 .brand {
           min-width: 150px;
@@ -192,52 +192,39 @@
     return group;
   }
 
-  function makeKeyframeButton(id, label, title) {
-    let button = document.getElementById(id);
-    if (!button) {
-      button = document.createElement("button");
-      button.id = id;
-      button.type = "button";
-      button.className = "tool-button";
-      button.textContent = label;
-      button.title = title;
-      button.disabled = true;
-    }
-    return button;
-  }
-
-  function rebuildTopBar() {
+  function rebuildTopEffectsBar() {
     const topbar = document.querySelector(".topbar");
     const brand = document.querySelector(".brand");
-    if (!topbar || !brand || topbar.classList.contains("phase1-ready")) return;
+    if (!topbar || !brand || topbar.classList.contains("phase1-effects-ready")) return;
 
     document.body.classList.add("simple-edit-phase1");
-    topbar.classList.add("phase1-ready");
+    topbar.classList.add("phase1-effects-ready");
 
     const effectsToolbar = document.createElement("div");
     effectsToolbar.className = "phase1-top-effects";
 
     const volumeControl = ui.volumeSlider?.closest(".range-control");
     const echoControl = ui.echoSlider?.closest(".range-control");
-    const effectsGroup = makeGroup("effects", [volumeControl, echoControl, ui.gateBtn]);
+    const zoomControl = ui.zoomSlider?.closest(".range-control");
+
+    const effectsGroup = makeGroup("effects", [
+      volumeControl,
+      echoControl,
+      ui.gateBtn,
+      ui.stretchBtn,
+      zoomControl
+    ]);
 
     effectsToolbar.append(makeDivider(), effectsGroup);
     topbar.appendChild(effectsToolbar);
   }
 
-  function rebuildTimelineTopline() {
-    const topline = document.querySelector(".timeline-topline");
-    if (!topline || topline.classList.contains("phase1-ready")) return;
-    topline.classList.add("phase1-ready");
+  function rebuildTimelineToolbar() {
+    const timelineTopline = document.querySelector(".timeline-topline");
+    if (!timelineTopline || timelineTopline.querySelector(".phase1-timeline-toolbar")) return;
 
-    const oldTitle = topline.querySelector(":scope > div");
-    if (oldTitle) oldTitle.remove();
-
-    const status = ui.statusPill || document.getElementById("statusPill");
-    if (status) status.remove();
-
-    const timelineToolbar = document.createElement("div");
-    timelineToolbar.className = "phase1-timeline-toolbar";
+    const toolbar = document.createElement("div");
+    toolbar.className = "phase1-timeline-toolbar";
 
     const transportGroup = makeGroup("transport", [
       ui.importBtn,
@@ -249,68 +236,13 @@
 
     const editGroup = makeGroup("edit", [
       ui.exportBtn,
-      ui.stretchBtn,
       ui.scissorsBtn,
       ui.deleteBtn,
       ui.fullscreenBtn
     ]);
 
-    const keyframeGroup = makeGroup("keyframes", [
-      makeKeyframeButton("addKeyframeBtn", "+ Keyframe", "Volume keyframes are coming in Phase 2."),
-      makeKeyframeButton("prevKeyframeBtn", "◀ Keyframe", "Volume keyframes are coming in Phase 2."),
-      makeKeyframeButton("nextKeyframeBtn", "Keyframe ▶", "Volume keyframes are coming in Phase 2."),
-      makeKeyframeButton("deleteKeyframeBtn", "Delete Keyframe", "Volume keyframes are coming in Phase 2.")
-    ]);
-
-    ui.addKeyframeBtn = keyframeGroup.querySelector("#addKeyframeBtn");
-    ui.prevKeyframeBtn = keyframeGroup.querySelector("#prevKeyframeBtn");
-    ui.nextKeyframeBtn = keyframeGroup.querySelector("#nextKeyframeBtn");
-    ui.deleteKeyframeBtn = keyframeGroup.querySelector("#deleteKeyframeBtn");
-
-    const zoomControl = ui.zoomSlider?.closest(".range-control");
-    const zoomGroup = makeGroup("zoom", [zoomControl]);
-
-    timelineToolbar.append(
-      transportGroup,
-      makeDivider(),
-      editGroup,
-      makeDivider(),
-      keyframeGroup,
-      makeDivider(),
-      zoomGroup
-    );
-    if (status) timelineToolbar.append(status);
-    topline.appendChild(timelineToolbar);
-  }
-
-  function bindLaneEvents(lane) {
-    if (lane.dataset.phase1Bound === "true") return;
-    lane.dataset.phase1Bound = "true";
-    lane.addEventListener("click", (event) => {
-      if (event.target.closest(".audio-clip")) return;
-      selectTrack(Number(lane.dataset.track));
-      setPlayhead(pointerTime(event));
-      state.selectedClipId = null;
-      syncSelectedControls();
-      renderTimeline();
-    });
-    lane.addEventListener("dragover", (event) => {
-      event.preventDefault();
-      lane.classList.add("drag-target");
-    });
-    lane.addEventListener("dragleave", () => lane.classList.remove("drag-target"));
-    lane.addEventListener("drop", (event) => {
-      event.preventDefault();
-      lane.classList.remove("drag-target");
-      const assetId = state.dragAssetId || event.dataTransfer.getData("text/plain");
-      addClipFromAsset(assetId, Number(lane.dataset.track), pointerTime(event));
-    });
-  }
-
-  function bindTrackLabel(label) {
-    if (label.dataset.phase1Bound === "true") return;
-    label.dataset.phase1Bound = "true";
-    label.addEventListener("click", () => selectTrack(label.dataset.trackLabel));
+    toolbar.append(transportGroup, makeDivider(), editGroup);
+    timelineTopline.appendChild(toolbar);
   }
 
   function ensureTenTracks() {
@@ -346,20 +278,55 @@
     newLabels.forEach(bindTrackLabel);
   }
 
-  function wrapTrackLabels() {
+  function ensureTrackLabelScroller() {
     const labelColumn = document.querySelector(".track-label-column");
-    if (!labelColumn || labelColumn.querySelector(".phase1-track-label-scroll")) return;
-    const labelScroll = document.createElement("div");
-    labelScroll.className = "phase1-track-label-scroll";
-    const labels = [...labelColumn.querySelectorAll(".track-label")];
-    labels.forEach((label) => labelScroll.appendChild(label));
-    labelColumn.appendChild(labelScroll);
+    if (!labelColumn) return;
+    let scroller = labelColumn.querySelector(".phase1-track-label-scroll");
+    if (!scroller) {
+      scroller = document.createElement("div");
+      scroller.className = "phase1-track-label-scroll";
+      [...labelColumn.querySelectorAll(".track-label")].forEach((label) => scroller.appendChild(label));
+      labelColumn.appendChild(scroller);
+    }
+    ui.trackLabels = [...scroller.querySelectorAll(".track-label")];
+    const sync = () => {
+      scroller.style.transform = `translateY(${-ui.timelineScroll.scrollTop}px)`;
+    };
+    if (ui.timelineScroll && ui.timelineScroll.dataset.phase1ScrollBound !== "true") {
+      ui.timelineScroll.dataset.phase1ScrollBound = "true";
+      ui.timelineScroll.addEventListener("scroll", sync);
+    }
+    sync();
   }
 
-  function syncTrackLabelScroll() {
-    const labelScroll = document.querySelector(".phase1-track-label-scroll");
-    if (!labelScroll || !ui.timelineScroll) return;
-    labelScroll.style.transform = `translateY(${-ui.timelineScroll.scrollTop}px)`;
+  function bindLaneEvents(lane) {
+    if (lane.dataset.phase1Bound === "true") return;
+    lane.dataset.phase1Bound = "true";
+    lane.addEventListener("click", (event) => {
+      if (event.target.closest(".audio-clip")) return;
+      selectTrack(Number(lane.dataset.track));
+      setPlayhead(pointerTime(event));
+      state.selectedClipId = null;
+      syncSelectedControls();
+      renderTimeline();
+    });
+    lane.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      lane.classList.add("drag-target");
+    });
+    lane.addEventListener("dragleave", () => lane.classList.remove("drag-target"));
+    lane.addEventListener("drop", (event) => {
+      event.preventDefault();
+      lane.classList.remove("drag-target");
+      const assetId = state.dragAssetId || event.dataTransfer.getData("text/plain");
+      addClipFromAsset(assetId, Number(lane.dataset.track), pointerTime(event));
+    });
+  }
+
+  function bindTrackLabel(label) {
+    if (label.dataset.phase1Bound === "true") return;
+    label.dataset.phase1Bound = "true";
+    label.addEventListener("click", () => selectTrack(label.dataset.trackLabel));
   }
 
   function patchTrackAwareFunctions() {
@@ -394,7 +361,7 @@
         clip.start = Math.max(0, drag.original.start + deltaSeconds);
         const laneRect = ui.tracks.getBoundingClientRect();
         const laneHeight = laneRect.height / TRACK_COUNT;
-        const nextTrack = clampTrack(Math.floor((event.clientY - laneRect.top + ui.timelineScroll.scrollTop) / laneHeight));
+        const nextTrack = clampTrack(Math.floor((event.clientY - laneRect.top) / laneHeight));
         if (clip.track !== nextTrack) {
           clip.track = nextTrack;
           selectTrack(clip.track);
@@ -457,21 +424,20 @@
       const originalUpdateExportFormat = updateExportFormat;
       updateExportFormat = function patchedUpdateExportFormat() {
         originalUpdateExportFormat();
-        ui.exportConfirmBtn.textContent = ui.exportFormat.value === "mp3" ? "Render MP3" : "Render WAV";
+        if (ui.exportFormat.value === "mp3") ui.exportConfirmBtn.textContent = "Render MP3";
+        else ui.exportConfirmBtn.textContent = "Render WAV";
       };
     }
   }
 
   installPhaseStyles();
-  rebuildTopBar();
-  rebuildTimelineTopline();
+  rebuildTopEffectsBar();
+  rebuildTimelineToolbar();
   ensureTenTracks();
-  wrapTrackLabels();
+  ensureTrackLabelScroller();
   patchTrackAwareFunctions();
   configureZoom();
   updateExportCopy();
-  ui.timelineScroll?.addEventListener("scroll", syncTrackLabelScroll, { passive: true });
-  syncTrackLabelScroll();
   selectTrack(state.selectedTrack || 0);
   renderTimeline();
   setStatus("Ready — 10-track layout active");
