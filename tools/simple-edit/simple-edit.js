@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.23";
+  const VERSION = "v0.24";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -22,6 +22,8 @@
       badge.textContent = VERSION;
       title.appendChild(badge);
     }
+    const subtitle = brand?.querySelector("p");
+    if (subtitle) subtitle.textContent = "Browser audio workstation";
   }
 
   function localizeSoundFxUrl(value) {
@@ -78,18 +80,15 @@
     "./simple-edit-timeline.js?v=0.01",
     "./simple-edit-audio.js?v=0.01",
     "./simple-edit-export.js?v=0.02",
-    "./simple-edit-phase1.js?v=0.12",
+    "./simple-edit-phase1.js?v=0.24",
     "./simple-edit-keyframes.js?v=0.10",
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13",
-    "./simple-edit-layout-fix.js?v=0.14",
     "./simple-edit-effects-library.js?v=0.15",
     "./simple-edit-echo-settings.js?v=0.17",
-    "./simple-edit-asset-visibility-fix.js?v=0.18",
     "./simple-edit-stretch-audiotsm.js?v=0.19",
     "./simple-edit-fade-handles.js?v=0.20",
-    "./simple-edit-normalize.js?v=0.21",
-    "./simple-edit-orgavox-layout.js?v=0.22"
+    "./simple-edit-normalize.js?v=0.21"
   ];
 
   for (const source of files) {
