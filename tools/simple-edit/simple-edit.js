@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.29";
+  const VERSION = "v0.30";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -83,7 +83,8 @@
       const lateButtons = [
         { node: ui.transposeBtn, label: "🎼 Transpose" },
         { node: ui.eqBtn, label: "🎚 EQ / Filter" },
-        { node: ui.driveBtn, label: "🔥 Drive" }
+        { node: ui.driveBtn, label: "🔥 Drive" },
+        { node: ui.dynamicsBtn, label: "📊 Dynamics" }
       ];
       lateButtons.forEach(({ node, label }) => {
         if (!node) return;
@@ -119,7 +120,9 @@
     "./simple-edit-eq-engine.js?v=0.28",
     "./simple-edit-eq.js?v=0.28",
     "./simple-edit-drive-engine.js?v=0.29",
-    "./simple-edit-drive.js?v=0.29"
+    "./simple-edit-drive.js?v=0.29",
+    "./simple-edit-dynamics-engine.js?v=0.30",
+    "./simple-edit-dynamics.js?v=0.30"
   ];
 
   for (const source of files) {
