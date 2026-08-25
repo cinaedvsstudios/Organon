@@ -3,6 +3,7 @@
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
+  const PHASE_VERSION = "v0.08";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
@@ -31,6 +32,23 @@
       body.simple-edit-phase1 .brand {
         flex: 0 0 auto;
         min-width: 184px;
+      }
+      body.simple-edit-phase1 .brand > div {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      body.simple-edit-phase1 .brand h1 {
+        margin: 0;
+      }
+      body.simple-edit-phase1 .phase1-version {
+        color: #63b8ff;
+        font-size: .68rem;
+        font-weight: 700;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        white-space: nowrap;
       }
       body.simple-edit-phase1 .brand p { display: none; }
       body.simple-edit-phase1 .phase1-top-effects {
@@ -71,11 +89,35 @@
       body.simple-edit-phase1 .clip-controls {
         display: none !important;
       }
+      body.simple-edit-phase1 .workspace {
+        position: relative;
+      }
+      body.simple-edit-phase1 .workspace::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: var(--phase1-divider-y, 66px);
+        height: 1px;
+        background: linear-gradient(90deg, rgba(224,163,96,.22), rgba(224,163,96,.92), rgba(224,163,96,.22));
+        box-shadow: 0 1px 0 rgba(0,0,0,.4);
+        pointer-events: none;
+        z-index: 4;
+      }
+      body.simple-edit-phase1 .library-panel,
+      body.simple-edit-phase1 .timeline-panel {
+        position: relative;
+        z-index: 1;
+      }
+      body.simple-edit-phase1 .library-panel .panel-heading,
+      body.simple-edit-phase1 .timeline-topline {
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+      }
       body.simple-edit-phase1 .timeline-panel {
         padding: 14px 16px 18px;
       }
       body.simple-edit-phase1 .timeline-topline {
-        margin-bottom: 8px;
         justify-content: flex-start;
         align-items: center;
       }
@@ -93,9 +135,18 @@
       body.simple-edit-phase1 .topbar .range-control span {
         white-space: nowrap;
       }
-      body.simple-edit-phase1 .topbar .zoom-control {
+      body.simple-edit-phase1 .topbar .zoom-control,
+      body.simple-edit-phase1 .timeline-topline .zoom-control {
         min-width: 220px;
         margin-left: 0;
+      }
+      body.simple-edit-phase1 .timeline-topline .range-control {
+        min-width: 230px;
+        grid-template-columns: auto minmax(96px, 150px) 52px;
+        gap: 8px;
+      }
+      body.simple-edit-phase1 .timeline-topline .range-control span {
+        white-space: nowrap;
       }
       body.simple-edit-phase1 .topbar .tool-button,
       body.simple-edit-phase1 .topbar .icon-button,
@@ -192,6 +243,60 @@
     return group;
   }
 
+  function ensureVersionBadge() {
+    const brand = document.querySelector(".brand");
+    const title = brand?.querySelector("h1");
+    if (!brand || !title) return;
+    let badge = brand.querySelector(".phase1-version, .simple-edit-version");
+    if (!badge) {
+      badge = document.createElement("span");
+      title.insertAdjacentElement("afterend", badge);
+    }
+    badge.className = "phase1-version simple-edit-version";
+    badge.textContent = PHASE_VERSION;
+  }
+
+  function updateButtonEmojiLabels() {
+    if (ui.importBtn) ui.importBtn.textContent = "📥 Import";
+    if (ui.jumpStartBtn) {
+      ui.jumpStartBtn.textContent = "⏮";
+      ui.jumpStartBtn.title = "Return to start";
+    }
+    if (ui.playBtn) {
+      ui.playBtn.textContent = "▶️";
+      ui.playBtn.title = "Play or pause";
+    }
+    if (ui.stopBtn) {
+      ui.stopBtn.textContent = "⏹";
+      ui.stopBtn.title = "Stop";
+    }
+    if (ui.exportBtn) ui.exportBtn.textContent = "💾 Export mix";
+    if (ui.scissorsBtn) ui.scissorsBtn.textContent = "✂️ Scissors";
+    if (ui.deleteBtn) ui.deleteBtn.textContent = "🗑 Delete";
+    if (ui.fullscreenBtn) {
+      ui.fullscreenBtn.textContent = "🖥";
+      ui.fullscreenBtn.title = "Toggle fullscreen";
+    }
+    if (ui.gateBtn) ui.gateBtn.textContent = "🚪 Noise gate";
+    if (ui.stretchBtn) {
+      const applyStretchText = () => {
+        const active = ui.stretchBtn.getAttribute("aria-pressed") === "true";
+        ui.stretchBtn.textContent = active ? "↔️ Stretch on" : "↔️ Stretch off";
+      };
+      applyStretchText();
+      if (ui.stretchBtn.dataset.phase1EmojiBound !== "true") {
+        ui.stretchBtn.dataset.phase1EmojiBound = "true";
+        ui.stretchBtn.addEventListener("click", () => setTimeout(applyStretchText, 0));
+      }
+    }
+    const volumeLabel = ui.volumeSlider?.closest(".range-control")?.querySelector("span");
+    if (volumeLabel) volumeLabel.textContent = "🔊 Volume";
+    const echoLabel = ui.echoSlider?.closest(".range-control")?.querySelector("span");
+    if (echoLabel) echoLabel.textContent = "🔁 Echo";
+    const zoomLabel = ui.zoomSlider?.closest(".range-control")?.querySelector("span");
+    if (zoomLabel) zoomLabel.textContent = "🔍 Timeline zoom";
+  }
+
   function rebuildTopEffectsBar() {
     const topbar = document.querySelector(".topbar");
     const brand = document.querySelector(".brand");
@@ -205,14 +310,12 @@
 
     const volumeControl = ui.volumeSlider?.closest(".range-control");
     const echoControl = ui.echoSlider?.closest(".range-control");
-    const zoomControl = ui.zoomSlider?.closest(".range-control");
 
     const effectsGroup = makeGroup("effects", [
       volumeControl,
       echoControl,
       ui.gateBtn,
-      ui.stretchBtn,
-      zoomControl
+      ui.stretchBtn
     ]);
 
     effectsToolbar.append(makeDivider(), effectsGroup);
@@ -234,15 +337,30 @@
       ui.timeReadout
     ]);
 
+    const zoomControl = ui.zoomSlider?.closest(".range-control");
     const editGroup = makeGroup("edit", [
       ui.exportBtn,
       ui.scissorsBtn,
       ui.deleteBtn,
-      ui.fullscreenBtn
+      ui.fullscreenBtn,
+      zoomControl
     ]);
 
     toolbar.append(transportGroup, makeDivider(), editGroup);
     timelineTopline.appendChild(toolbar);
+  }
+
+  function syncWorkspaceDivider() {
+    const workspace = document.querySelector('.workspace');
+    const panelHeading = document.querySelector('.library-panel .panel-heading');
+    const timelineTopline = document.querySelector('.timeline-topline');
+    if (!workspace || !panelHeading || !timelineTopline) return;
+    const workspaceRect = workspace.getBoundingClientRect();
+    const topY = Math.max(
+      panelHeading.getBoundingClientRect().bottom - workspaceRect.top,
+      timelineTopline.getBoundingClientRect().bottom - workspaceRect.top
+    );
+    workspace.style.setProperty('--phase1-divider-y', `${Math.round(topY)}px`);
   }
 
   function ensureTenTracks() {
@@ -431,8 +549,10 @@
   }
 
   installPhaseStyles();
+  updateButtonEmojiLabels();
   rebuildTopEffectsBar();
   rebuildTimelineToolbar();
+  ensureVersionBadge();
   ensureTenTracks();
   ensureTrackLabelScroller();
   patchTrackAwareFunctions();
@@ -440,5 +560,9 @@
   updateExportCopy();
   selectTrack(state.selectedTrack || 0);
   renderTimeline();
+  syncWorkspaceDivider();
+  window.addEventListener('resize', syncWorkspaceDivider);
+  setTimeout(syncWorkspaceDivider, 0);
+  setTimeout(syncWorkspaceDivider, 120);
   setStatus("Ready — 10-track layout active");
 })();
