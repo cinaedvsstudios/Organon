@@ -3,7 +3,7 @@
 (function installSimpleEditPhaseOne() {
   const TRACK_COUNT = 10;
   const PHASE_STYLE_ID = "simple-edit-phase1-style";
-  const PHASE_VERSION = "v0.09";
+  const PHASE_VERSION = "v0.10";
 
   const clampTrack = (track) => Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0));
 
@@ -110,6 +110,7 @@
       }
       body.simple-edit-phase1 .workspace {
         position: relative;
+        background: rgba(10,12,10,.96);
       }
       body.simple-edit-phase1 .workspace::before {
         display: none !important;
@@ -118,30 +119,45 @@
         position: absolute;
         left: 0;
         right: 0;
-        top: var(--phase1-divider-y, 70px);
+        top: var(--phase1-divider-y, 72px);
         height: 2px;
-        background: linear-gradient(90deg, rgba(224,163,96,.35), rgba(224,163,96,.95), rgba(224,163,96,.35));
-        border-top: 1px solid rgba(248,215,146,.48);
-        box-shadow: 0 1px 0 rgba(0,0,0,.8), 0 0 10px rgba(224,163,96,.25);
+        background: linear-gradient(90deg, rgba(224,163,96,.34), rgba(224,163,96,.96), rgba(224,163,96,.34));
+        border-top: 1px solid rgba(248,215,146,.55);
+        box-shadow: 0 1px 0 rgba(0,0,0,.85), 0 0 10px rgba(224,163,96,.25);
         pointer-events: none;
-        z-index: 80;
+        z-index: 90;
       }
       body.simple-edit-phase1 .library-panel,
       body.simple-edit-phase1 .timeline-panel {
         position: relative;
         z-index: 1;
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none;
+      }
+      body.simple-edit-phase1 .library-panel {
+        border-right: 1px solid rgba(224,163,96,.55);
       }
       body.simple-edit-phase1 .library-panel .panel-heading,
       body.simple-edit-phase1 .timeline-topline {
-        padding-bottom: 12px;
-        margin-bottom: 12px;
+        min-height: 52px;
+        padding-bottom: 16px;
+        margin-bottom: 20px;
+        background: transparent !important;
+      }
+      body.simple-edit-phase1 .library-panel .dropzone {
+        margin-top: 8px;
       }
       body.simple-edit-phase1 .timeline-panel {
         padding: 14px 16px 18px;
+        background: transparent !important;
       }
       body.simple-edit-phase1 .timeline-topline {
         justify-content: flex-start;
         align-items: center;
+      }
+      body.simple-edit-phase1 .timeline-shell {
+        margin-top: 8px;
       }
       body.simple-edit-phase1 .timeline-topline > div:not(.phase1-timeline-toolbar),
       body.simple-edit-phase1 .timeline-topline .eyebrow,
@@ -389,17 +405,10 @@
     if (!workspace || !panelHeading || !timelineTopline) return;
     ensureWorkspaceRule();
     const workspaceRect = workspace.getBoundingClientRect();
-    const headingStyles = getComputedStyle(panelHeading);
-    const toplineStyles = getComputedStyle(timelineTopline);
-    const gap = Math.max(
-      Number.parseFloat(headingStyles.marginBottom) || 0,
-      Number.parseFloat(toplineStyles.marginBottom) || 0,
-      10
-    );
     const topY = Math.max(
       panelHeading.getBoundingClientRect().bottom - workspaceRect.top,
       timelineTopline.getBoundingClientRect().bottom - workspaceRect.top
-    ) + Math.round(gap / 2);
+    );
     workspace.style.setProperty('--phase1-divider-y', `${Math.round(topY)}px`);
   }
 
@@ -589,10 +598,11 @@
   }
 
   installPhaseStyles();
-  updateButtonEmojiLabels();
   rebuildTopEffectsBar();
   rebuildTimelineToolbar();
   ensureVersionBadge();
+  updateButtonEmojiLabels();
+  ensureWorkspaceRule();
   ensureTenTracks();
   ensureTrackLabelScroller();
   patchTrackAwareFunctions();
@@ -600,7 +610,6 @@
   updateExportCopy();
   selectTrack(state.selectedTrack || 0);
   renderTimeline();
-  ensureWorkspaceRule();
   syncWorkspaceDivider();
   window.addEventListener('resize', syncWorkspaceDivider);
   setTimeout(syncWorkspaceDivider, 0);
