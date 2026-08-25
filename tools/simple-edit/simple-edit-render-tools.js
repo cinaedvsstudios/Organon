@@ -47,7 +47,7 @@
 
   function ensureButtons() {
     if (!ui.reverseClipBtn) ui.reverseClipBtn = makeButton("reverseClipBtn", "↩ Reverse", "orgavox-clip-tool-button orgavox-reverse-button", "Reverse selected clip", toggleReverse);
-    if (!ui.downloadClipBtn) ui.downloadClipBtn = makeButton("downloadClipBtn", "⬇ Clip WAV", "orgavox-download-clip-button", "Download selected clip as WAV", downloadRenderedClip);
+    if (!ui.downloadClipBtn) ui.downloadClipBtn = makeButton("downloadClipBtn", "⬇ Clip", "orgavox-download-clip-button", "Download selected clip as WAV or MP3", () => downloadRenderedClip());
     if (!ui.bounceBtn) ui.bounceBtn = makeButton("bounceBtn", "🧱 Bounce", "orgavox-clip-tool-button orgavox-bounce-button", "Bounce selected clip", openBounceModal);
     placeButtons();
     return [ui.reverseClipBtn, ui.downloadClipBtn, ui.bounceBtn];
@@ -56,9 +56,10 @@
   function placeButtons() {
     const editGroup = document.querySelector(".orgavox-edit-group");
     const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
-    const buttons = [ui.reverseClipBtn, ui.downloadClipBtn, ui.bounceBtn].filter(Boolean);
-    if (!editGroup) return;
-    buttons.forEach((button) => {
+    const effectsMenu = document.querySelector(".orgavox-effects-menu");
+    if (effectsMenu && ui.reverseClipBtn && ui.reverseClipBtn.parentElement !== effectsMenu) effectsMenu.appendChild(ui.reverseClipBtn);
+    [ui.downloadClipBtn, ui.bounceBtn].filter(Boolean).forEach((button) => {
+      if (!editGroup) return;
       if (effectsDrop) editGroup.insertBefore(button, effectsDrop);
       else if (button.parentElement !== editGroup) editGroup.appendChild(button);
     });
@@ -94,11 +95,7 @@
     const clip = selectedClipForTools();
     const status = ensureBounceModal().querySelector("[data-bounce-status]");
     if (!status) return;
-    if (!clip) {
-      status.textContent = "Select a clip to use bounce tools.";
-      return;
-    }
-    status.textContent = `${clip.name} · ${formatTime(clipDuration(clip))}${clip.reverseAudio ? " · reversed" : ""}`;
+    status.textContent = clip ? `${clip.name} · ${formatTime(clipDuration(clip))}${clip.reverseAudio ? " · reversed" : ""}` : "Select a clip to use bounce tools.";
   }
 
   function openBounceModal() {
@@ -109,9 +106,7 @@
     modal.hidden = false;
   }
 
-  function closeBounceModal() {
-    ensureBounceModal().hidden = true;
-  }
+  function closeBounceModal() { ensureBounceModal().hidden = true; }
 
   function setBusy(nextBusy) {
     busy = Boolean(nextBusy);
@@ -121,15 +116,7 @@
   }
 
   function addBufferAsset(buffer, name) {
-    const asset = {
-      id: makeId("asset"),
-      file: null,
-      name,
-      kind: "BOUNCED WAV",
-      buffer,
-      duration: buffer.duration,
-      peaks: makePeaks(buffer)
-    };
+    const asset = { id: makeId("asset"), file: null, name, kind: "BOUNCED WAV", buffer, duration: buffer.duration, peaks: makePeaks(buffer) };
     state.assets.push(asset);
     state.selectedAssetId = asset.id;
     renderAssets();
@@ -155,9 +142,9 @@
     clip.lofiSettings = null;
   }
 
-  function renderedName(clip, suffix = "bounced") {
+  function renderedName(clip, suffix = "clip", extension = "wav") {
     const base = safeFilename(clip?.name || "orgavox-clip");
-    return `${base}-${suffix}.wav`;
+    return `${base}-${suffix}.${extension}`;
   }
 
   async function renderSelectedClip() {
@@ -176,6 +163,7 @@
     renderTimeline();
     updateStatus();
     showToast(clip.reverseAudio ? "Clip reversed." : "Clip reverse removed.");
+    window.orgavoxRecordHistory?.();
   }
 
   async function bounceToLibrary(replaceClip) {
@@ -187,7 +175,7 @@
     try {
       const rendered = await renderSelectedClip();
       if (!rendered) throw new Error("The selected clip could not be bounced.");
-      const asset = addBufferAsset(rendered, renderedName(clip, replaceClip ? "bounce-in-place" : "bounce"));
+      const asset = addBufferAsset(rendered, renderedName(clip, replaceClip ? "bounce-in-place" : "bounce", "wav"));
       if (replaceClip) {
         clip.assetId = asset.id;
         clip.name = asset.name;
@@ -201,34 +189,41 @@
       closeBounceModal();
       showToast(replaceClip ? "Clip bounced in place." : "Bounced clip added to the sound library.");
       setStatus("Ready");
+      window.orgavoxRecordHistory?.();
     } catch (error) {
       console.error(error);
       showToast(error.message || "The clip could not be bounced.");
       setStatus("Bounce failed");
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
-  async function downloadRenderedClip() {
+  function resolveDownloadFormat(forcedFormat) {
+    if (forcedFormat) return /^mp3$/i.test(forcedFormat) ? "mp3" : "wav";
+    const answer = prompt("Download selected clip as wav or mp3", "wav");
+    if (answer == null) return null;
+    return /^mp3$/i.test(answer.trim()) ? "mp3" : "wav";
+  }
+
+  async function downloadRenderedClip(forcedFormat) {
     const clip = selectedClipForTools();
     if (!clip || busy) return;
+    const format = resolveDownloadFormat(forcedFormat);
+    if (!format) return;
     stopPlayback();
     setBusy(true);
-    setStatus("Rendering selected clip WAV…");
+    setStatus(format === "mp3" ? "Rendering selected clip MP3…" : "Rendering selected clip WAV…");
     try {
       const rendered = await renderSelectedClip();
       if (!rendered) throw new Error("The selected clip could not be rendered.");
-      downloadBlob(audioBufferToWav(rendered), renderedName(clip, "clip"));
-      showToast("Selected clip WAV downloaded.");
+      const blob = format === "mp3" ? audioBufferToMp3(rendered, 192) : audioBufferToWav(rendered);
+      downloadBlob(blob, renderedName(clip, "clip", format));
+      showToast(`Selected clip ${format.toUpperCase()} downloaded.`);
       setStatus("Ready");
     } catch (error) {
       console.error(error);
       showToast(error.message || "The clip could not be downloaded.");
       setStatus("Download failed");
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
   function updateClipToolButtonState() {
@@ -239,7 +234,7 @@
       ui.reverseClipBtn.classList.toggle("active", Boolean(clip?.reverseAudio));
       ui.reverseClipBtn.textContent = clip?.reverseAudio ? "🔁 Unreverse" : "↩ Reverse";
     }
-    if (ui.downloadClipBtn) ui.downloadClipBtn.textContent = "⬇ Clip WAV";
+    if (ui.downloadClipBtn) ui.downloadClipBtn.textContent = "⬇ Clip";
     if (ui.bounceBtn) ui.bounceBtn.textContent = "🧱 Bounce";
   }
 
@@ -274,6 +269,9 @@
     };
   }
 
+  window.orgavoxToggleReverseSelectedClip = toggleReverse;
+  window.orgavoxDownloadSelectedClip = downloadRenderedClip;
+  window.orgavoxPlaceClipRenderButtons = placeButtons;
   installStyles();
   ensureButtons();
   ensureBounceModal();
