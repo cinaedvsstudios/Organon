@@ -3,19 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon — ORGAVOX v0.39</title>
+  <title>Organon — ORGAVOX v0.40</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./simple-edit.css?v=0.01">
   <style id="orgavox-boot-style">html.orgavox-loading .app { visibility: hidden; } html.orgavox-loading body::before { content: "Loading ORGAVOX…"; position: fixed; inset: 0; display: grid; place-items: center; z-index: 99999; background: #131412; color: #e0a360; font: 800 1rem Georgia, serif; letter-spacing: .12em; }</style>
   <script src="./vendor/lame.min.js"></script>
-  <script defer src="./simple-edit.js?v=0.39"></script>
+  <script defer src="./simple-edit.js?v=0.40"></script>
 </head>
 <body>
   <div class="app" id="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version" style="margin-left:8px;color:var(--water-spray);font:700 .62em var(--font-mono);letter-spacing:.08em;">v0.39</span></h1><p hidden></p></div></div>
+      <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version" style="margin-left:8px;color:var(--water-spray);font:700 .62em var(--font-mono);letter-spacing:.08em;">v0.40</span></h1><p hidden></p></div></div>
       <div class="transport" aria-label="Transport controls"><button class="tool-button primary" id="importBtn" type="button">＋ Open</button><button class="icon-button" id="jumpStartBtn" type="button" title="Return to start">|◀</button><button class="icon-button primary" id="playBtn" type="button" title="Play or pause">▶</button><button class="icon-button" id="stopBtn" type="button" title="Stop">■</button><span class="time-readout" id="timeReadout">00:00.000</span></div>
       <div class="toolbar-actions"><button class="tool-button" id="scissorsBtn" type="button" disabled>✂ Scissors</button><button class="tool-button" id="stretchBtn" type="button" aria-pressed="false">↔ Stretch off</button><button class="tool-button" id="gateBtn" type="button" disabled>▥ Noise gate</button><button class="tool-button danger" id="deleteBtn" type="button" disabled>Delete</button><button class="icon-button" id="fullscreenBtn" type="button" title="Toggle fullscreen">⛶</button></div>
       <input id="fileInput" type="file" multiple hidden accept="audio/*,video/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.mp4,.webm,.mov,.mkv">
