@@ -34,6 +34,7 @@
       body.simple-edit-phase1 .brand-mark { font-size:1.45rem !important; }
       body.simple-edit-phase1 .brand h1 { gap:9px !important; color:var(--stone-ochre) !important; }
       body.simple-edit-phase1 .phase1-top-effects { flex:1 1 auto !important; min-width:0 !important; display:grid !important; grid-template-rows:auto auto !important; align-content:start !important; gap:8px !important; padding-top:0 !important; }
+      body.simple-edit-phase1 .phase1-top-effects > .phase1-divider, body.simple-edit-phase1 .phase1-top-effects > .phase1-tool-group:not(.orgavox-group) { display:none !important; }
       body.simple-edit-phase1 .orgavox-toolbar-row, body.simple-edit-phase1 .orgavox-effects-row { display:flex; align-items:center; justify-content:flex-start; gap:8px; flex-wrap:wrap; width:100%; min-width:0; }
       body.simple-edit-phase1 .orgavox-effects-row { gap:9px; }
       body.simple-edit-phase1 .orgavox-group { display:inline-flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
