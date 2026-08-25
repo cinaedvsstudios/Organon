@@ -5,13 +5,22 @@
   const MODAL_ID = "projectModal";
   const INPUT_ID = "projectFileInput";
   let busy = false;
+  const projectMeta = {
+    name: "Untitled Project",
+    savedAt: null
+  };
 
   function installStyles() {
     document.getElementById(STYLE_ID)?.remove();
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      .orgavox-project-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(116,77,36,.86),rgba(47,29,12,.94))!important;color:#ffe4a8!important}
+      body.simple-edit-phase1 .orgavox-brand-actions{display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:7px!important;margin-top:8px!important}
+      .orgavox-open-save-row{display:flex;align-items:center;gap:8px;flex-wrap:nowrap}
+      .orgavox-project-button{width:100%;justify-content:center!important;border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important;box-shadow:0 0 0 1px rgba(178,109,255,.24),0 0 14px rgba(130,78,220,.22)!important}
+      .orgavox-project-info-bar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex:0 0 auto;margin:0 8px 8px 0;padding:8px 14px;border:1px solid rgba(96,58,22,.78);border-radius:10px;background:linear-gradient(180deg,#e5b65d,#c99134);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 4px 14px rgba(0,0,0,.22)}
+      .orgavox-project-info-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#17100a;font:900 .82rem var(--font-body);letter-spacing:.025em;text-transform:uppercase}
+      .orgavox-project-info-meta{flex:0 0 auto;color:#5a341d;font:900 .7rem var(--font-mono);letter-spacing:.035em;white-space:nowrap}
       .orgavox-project-modal{position:fixed;inset:0;z-index:97;display:grid;place-items:center;padding:18px;background:rgba(0,0,0,.72);backdrop-filter:blur(5px)}
       .orgavox-project-modal[hidden]{display:none}
       .orgavox-project-dialog{width:min(720px,calc(100vw - 42px));max-height:min(700px,calc(100vh - 42px));overflow:auto;padding:20px;border:1px solid rgba(224,163,96,.72);border-radius:22px;background:#1a1c18;box-shadow:0 24px 80px rgba(0,0,0,.78)}
@@ -21,7 +30,7 @@
       .orgavox-project-card h4{margin:0;color:#f8d792;font:800 .78rem var(--font-body);text-transform:uppercase;letter-spacing:.045em}
       .orgavox-project-card p{margin:0;color:rgba(245,240,219,.62);font-size:.69rem;line-height:1.45}
       .orgavox-project-actions{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap;margin-top:16px}
-      @media(max-width:760px){.orgavox-project-grid{grid-template-columns:1fr}}
+      @media(max-width:760px){.orgavox-project-grid{grid-template-columns:1fr}.orgavox-project-info-bar{align-items:flex-start;flex-direction:column;gap:3px}.orgavox-project-info-meta{white-space:normal}}
     `;
     document.head.appendChild(style);
   }
@@ -41,14 +50,57 @@
   }
 
   function placeButton() {
-    const button = ui.projectBtn;
-    if (!button) return;
+    const button = ui.projectBtn || ensureButton();
+    const actions = document.querySelector(".orgavox-brand-actions");
+    if (!actions || !button) return;
+    let row = actions.querySelector(".orgavox-open-save-row");
+    if (!row) {
+      row = document.createElement("div");
+      row.className = "orgavox-open-save-row";
+      actions.prepend(row);
+    }
+    if (ui.importBtn && ui.importBtn.parentElement !== row) row.appendChild(ui.importBtn);
+    if (ui.exportBtn && ui.exportBtn.parentElement !== row) row.appendChild(ui.exportBtn);
+    if (button.parentElement !== actions) actions.appendChild(button);
     button.textContent = "📁 Project";
     button.disabled = busy;
-    const editGroup = document.querySelector(".orgavox-edit-group");
-    const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
-    if (editGroup && effectsDrop && button.parentElement !== editGroup) editGroup.insertBefore(button, effectsDrop);
-    else if (editGroup && !button.parentElement) editGroup.appendChild(button);
+  }
+
+  function ensureProjectInfoBar() {
+    let bar = document.getElementById("orgavoxProjectInfoBar");
+    if (!bar) {
+      bar = document.createElement("div");
+      bar.id = "orgavoxProjectInfoBar";
+      bar.className = "orgavox-project-info-bar";
+      bar.innerHTML = `<span class="orgavox-project-info-name" id="orgavoxProjectInfoName">Untitled Project</span><span class="orgavox-project-info-meta" id="orgavoxProjectInfoMeta">Not saved yet</span>`;
+    }
+    const shell = document.querySelector(".timeline-shell");
+    const panel = document.querySelector(".timeline-panel");
+    if (panel && shell && bar.parentElement !== panel) panel.insertBefore(bar, shell);
+    return bar;
+  }
+
+  function formatSavedAt(value) {
+    if (!value) return "Not saved yet";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Not saved yet";
+    const day = date.toLocaleDateString([], { year: "numeric", month: "short", day: "2-digit" });
+    const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    return `Saved ${day} · ${time}`;
+  }
+
+  function updateProjectInfoBar() {
+    ensureProjectInfoBar();
+    const name = document.getElementById("orgavoxProjectInfoName");
+    const meta = document.getElementById("orgavoxProjectInfoMeta");
+    if (name) name.textContent = projectMeta.name || "Untitled Project";
+    if (meta) meta.textContent = formatSavedAt(projectMeta.savedAt);
+  }
+
+  function setProjectInfo(name, savedAt) {
+    projectMeta.name = name || "Untitled Project";
+    projectMeta.savedAt = savedAt || null;
+    updateProjectInfoBar();
   }
 
   function ensureLoadInput() {
@@ -109,7 +161,7 @@
   function openModal() {
     ensureModal().hidden = false;
     const input = projectNameInput();
-    if (input && !input.value.trim()) input.value = suggestedProjectName();
+    if (input && (!input.value.trim() || input.value === "orgavox-project")) input.value = projectMeta.name !== "Untitled Project" ? projectMeta.name : suggestedProjectName();
     updateSummary();
   }
 
@@ -122,6 +174,7 @@
     ensureButton().disabled = busy;
     ensureModal().querySelectorAll("button, input").forEach((element) => { element.disabled = busy; });
     if (message) setStatus(message);
+    placeButton();
   }
 
   function suggestedProjectName() {
@@ -167,7 +220,8 @@
       const packed = await serialiseAsset(asset);
       if (packed) assets.push(packed);
     }
-    return { format: "ORGAVOX_PROJECT", version: window.ORGAVOX_VERSION || "v0.41", savedAt: new Date().toISOString(), name: projectNameInput()?.value?.trim() || suggestedProjectName(), pixelsPerSecond: state.pixelsPerSecond, playhead: state.playhead, selectedTrack: state.selectedTrack, assets, clips: state.clips.map(serialiseClip) };
+    const savedAt = new Date().toISOString();
+    return { format: "ORGAVOX_PROJECT", version: window.ORGAVOX_VERSION || "v0.42", savedAt, name: projectNameInput()?.value?.trim() || suggestedProjectName(), pixelsPerSecond: state.pixelsPerSecond, playhead: state.playhead, selectedTrack: state.selectedTrack, assets, clips: state.clips.map(serialiseClip) };
   }
 
   async function saveProjectFile() {
@@ -180,6 +234,7 @@
       const json = JSON.stringify(project, null, 2);
       const blob = new Blob([json], { type: "application/json" });
       downloadBlob(blob, filename);
+      setProjectInfo(project.name, project.savedAt);
       showToast(`${filename} saved.`);
       setStatus("Ready");
       closeModal();
@@ -229,6 +284,9 @@
       renderAssets();
       syncSelectedControls();
       renderTimeline();
+      setProjectInfo(project.name || file.name.replace(/\.[^.]+$/, ""), project.savedAt || null);
+      const input = projectNameInput();
+      if (input) input.value = project.name || suggestedProjectName();
       updateSummary();
       showToast(`${project.name || file.name} loaded.`);
       setStatus("Ready");
@@ -249,15 +307,20 @@
     renderTimeline = function orgavoxProjectRenderTimeline() {
       previousRenderTimeline();
       placeButton();
+      updateProjectInfoBar();
       updateSummary();
     };
   }
 
+  window.orgavoxPlaceProjectButton = placeButton;
+  window.orgavoxUpdateProjectInfoBar = updateProjectInfoBar;
   installStyles();
   ensureButton();
   ensureModal();
   ensureLoadInput();
+  ensureProjectInfoBar();
   patchRender();
   placeButton();
-  setTimeout(placeButton, 150);
+  updateProjectInfoBar();
+  setTimeout(() => { placeButton(); updateProjectInfoBar(); }, 150);
 })();
