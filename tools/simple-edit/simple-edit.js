@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.30";
+  const VERSION = "v0.31";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -76,24 +76,7 @@
   function restoreLateFeatureButtons() {
     try {
       if (typeof ui === "undefined") return;
-      const effectsGroup = document.querySelector(".orgavox-effects-group");
-      if (!effectsGroup) return;
-      const effectsButton = document.querySelector(".effects-library-button") ||
-        [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
-      const lateButtons = [
-        { node: ui.transposeBtn, label: "🎼 Transpose" },
-        { node: ui.eqBtn, label: "🎚 EQ / Filter" },
-        { node: ui.driveBtn, label: "🔥 Drive" },
-        { node: ui.dynamicsBtn, label: "📊 Dynamics" }
-      ];
-      lateButtons.forEach(({ node, label }) => {
-        if (!node) return;
-        node.textContent = label;
-        if (node.parentElement !== effectsGroup) {
-          if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(node, effectsButton);
-          else effectsGroup.appendChild(node);
-        }
-      });
+      window.orgavoxRefreshLayout?.();
     } catch (error) {
       console.warn("ORGAVOX could not restore late feature buttons.", error);
     }
@@ -106,7 +89,7 @@
     "./simple-edit-timeline.js?v=0.01",
     "./simple-edit-audio.js?v=0.26",
     "./simple-edit-export.js?v=0.02",
-    "./simple-edit-phase1.js?v=0.24",
+    "./simple-edit-phase1.js?v=0.31",
     "./simple-edit-keyframes.js?v=0.10",
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13",
