@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v0.35";
+  const VERSION = "v0.36";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
 
@@ -23,7 +23,10 @@
       title.appendChild(badge);
     }
     const subtitle = brand?.querySelector("p");
-    if (subtitle) subtitle.textContent = "Browser audio workstation";
+    if (subtitle) {
+      subtitle.textContent = "";
+      subtitle.hidden = true;
+    }
   }
 
   function localizeSoundFxUrl(value) {
@@ -49,7 +52,9 @@
     if (!window.__orgavoxLocalSoundFxAudioPatched && window.Audio) {
       window.__orgavoxLocalSoundFxAudioPatched = true;
       const NativeAudio = window.Audio;
-      function OrgavoxAudio(src) { return src === undefined ? new NativeAudio() : new NativeAudio(localizeSoundFxUrl(src)); }
+      function OrgavoxAudio(src) {
+        return src === undefined ? new NativeAudio() : new NativeAudio(localizeSoundFxUrl(src));
+      }
       OrgavoxAudio.prototype = NativeAudio.prototype;
       Object.setPrototypeOf(OrgavoxAudio, NativeAudio);
       window.Audio = OrgavoxAudio;
@@ -66,6 +71,30 @@
         });
       }
     }
+  }
+
+  function ensureLeadingTransportDivider() {
+    const row = document.querySelector(".orgavox-toolbar-row");
+    const transport = row?.querySelector(".orgavox-transport-group");
+    if (!row || !transport) return;
+    let divider = row.querySelector(".orgavox-leading-divider");
+    if (!divider) {
+      divider = document.createElement("span");
+      divider.className = "orgavox-divider orgavox-leading-divider";
+      divider.setAttribute("aria-hidden", "true");
+    }
+    if (transport.previousElementSibling !== divider) row.insertBefore(divider, transport);
+  }
+
+  function keepFeatureButtonsInMenu() {
+    if (typeof ui === "undefined") return;
+    const menu = document.querySelector(".orgavox-effects-menu");
+    if (!menu) return;
+    [ui.gateBtn, ui.stretchBtn, ui.normalizeBtn, ui.transposeBtn, ui.eqBtn, ui.driveBtn, ui.dynamicsBtn, ui.stereoBtn]
+      .filter(Boolean)
+      .forEach((button) => {
+        if (button.parentElement !== menu) menu.appendChild(button);
+      });
   }
 
   function applyFinalToolbarStyling() {
@@ -91,6 +120,8 @@
         }
         [ui.fadeInBtn, ui.fadeOutBtn, ui.resetFadesBtn].filter(Boolean).forEach((button) => button.classList.add("orgavox-fade-tool"));
       }
+      keepFeatureButtonsInMenu();
+      ensureLeadingTransportDivider();
       const effectsLibrary = document.querySelector(".effects-library-button") ||
         [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
       if (effectsLibrary) effectsLibrary.classList.add("orgavox-effects-library-button");
@@ -101,6 +132,17 @@
         document.head.appendChild(style);
       }
       style.textContent = `
+        body.simple-edit-phase1 { --topbar-h: 112px !important; }
+        body.simple-edit-phase1 .topbar {
+          height: var(--topbar-h) !important;
+          min-height: var(--topbar-h) !important;
+          padding-top: 12px !important;
+          padding-bottom: 8px !important;
+        }
+        body.simple-edit-phase1 .brand p { display: none !important; }
+        body.simple-edit-phase1 .orgavox-brand-actions { margin-top: 8px !important; }
+        body.simple-edit-phase1 .phase1-top-effects { padding-top: 10px !important; }
+        body.simple-edit-phase1 .workspace { height: calc(100vh - var(--topbar-h)) !important; }
         body.simple-edit-phase1 #importBtn.orgavox-open-button {
           border-color: rgba(117,178,222,.92) !important;
           background: linear-gradient(180deg, rgba(57,132,205,.96), rgba(31,77,133,.94)) !important;
@@ -137,6 +179,12 @@
           padding: 9px 14px !important;
           letter-spacing: .08em !important;
         }
+        body.simple-edit-phase1 .orgavox-leading-divider {
+          display: inline-flex !important;
+          flex: 0 0 1px !important;
+          min-height: 36px !important;
+          margin-left: 0 !important;
+        }
         body.simple-edit-phase1 .orgavox-sidebar-zoom .range-control {
           display: grid !important;
           grid-template-columns: 1fr auto !important;
@@ -159,6 +207,9 @@
           grid-row: 2 !important;
           width: 100% !important;
         }
+        @media (max-width: 1380px) {
+          body.simple-edit-phase1 { --topbar-h: 158px !important; }
+        }
       `;
     } catch (error) {
       console.warn("ORGAVOX final toolbar styling failed.", error);
@@ -169,6 +220,7 @@
     try { if (typeof ui !== "undefined") window.orgavoxRefreshLayout?.(); }
     catch (error) { console.warn("ORGAVOX could not refresh layout.", error); }
     applyFinalToolbarStyling();
+    setFinalVersion();
   }
 
   installLocalSoundFxRouting();
@@ -210,7 +262,6 @@
   }
 
   refreshFinalLayout();
-  setFinalVersion();
   document.documentElement.classList.remove("orgavox-loading");
   document.getElementById("orgavox-boot-style")?.remove();
   if (typeof setStatus === "function") setStatus("Ready — ORGAVOX loaded");
