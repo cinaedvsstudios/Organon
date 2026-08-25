@@ -247,6 +247,9 @@
     const tracks = document.querySelector("#tracks");
     if (!labelColumn || !tracks) return;
 
+    const newLanes = [];
+    const newLabels = [];
+
     for (let index = 0; index < TRACK_COUNT; index += 1) {
       if (!labelColumn.querySelector(`[data-track-label="${index}"]`)) {
         const label = document.createElement("button");
@@ -255,19 +258,21 @@
         label.type = "button";
         label.innerHTML = `<span>${index + 1}</span><strong>Track ${index + 1}</strong>`;
         labelColumn.appendChild(label);
+        newLabels.push(label);
       }
       if (!tracks.querySelector(`[data-track="${index}"]`)) {
         const lane = document.createElement("div");
         lane.className = "track-lane";
         lane.dataset.track = String(index);
         tracks.appendChild(lane);
+        newLanes.push(lane);
       }
     }
 
     ui.lanes = [...document.querySelectorAll(".track-lane")];
     ui.trackLabels = [...document.querySelectorAll(".track-label")];
-    ui.lanes.forEach(bindLaneEvents);
-    ui.trackLabels.forEach(bindTrackLabel);
+    newLanes.forEach(bindLaneEvents);
+    newLabels.forEach(bindTrackLabel);
   }
 
   function patchTrackAwareFunctions() {
