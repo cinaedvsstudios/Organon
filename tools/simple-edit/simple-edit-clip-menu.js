@@ -46,10 +46,6 @@
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeMenu();
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "v" && !event.target?.closest?.("input,select,textarea,[contenteditable='true']")) {
-        event.preventDefault();
-        pasteCopiedClip();
-      }
     });
     return menu;
   }
@@ -230,28 +226,11 @@
     });
   }
 
-  function wireVisibleClipboardButtons() {
-    const actions = [
-      ["orgavoxCopyClipBtn", copySelectedClips],
-      ["orgavoxCutClipBtn", cutSelectedClips],
-      ["orgavoxPasteClipBtn", pasteCopiedClip]
-    ];
-    actions.forEach(([id, action]) => {
-      const button = document.getElementById(id);
-      if (!button || button.dataset.orgavoxClipMenuClipboardWired === "true") return;
-      button.dataset.orgavoxClipMenuClipboardWired = "true";
-      button.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        action();
-      }, true);
-    });
-  }
+  window.orgavoxCopySelectedClips = copySelectedClips;
+  window.orgavoxCutSelectedClips = cutSelectedClips;
+  window.orgavoxPasteCopiedClips = pasteCopiedClip;
 
   installStyles();
   ensureMenu();
   installContextListener();
-  const wireTimer = setInterval(wireVisibleClipboardButtons, 120);
-  setTimeout(() => clearInterval(wireTimer), 4500);
-  requestAnimationFrame(wireVisibleClipboardButtons);
 })();
