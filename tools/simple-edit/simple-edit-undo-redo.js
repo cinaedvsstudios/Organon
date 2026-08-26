@@ -10,6 +10,7 @@
   let lastSig = "";
   let restoring = false;
   let recordTimer = 0;
+  let pendingLabel = "";
 
   function clone(value) {
     if (value == null || typeof value !== "object") return value;
@@ -22,6 +23,42 @@
     return output;
   }
 
+  function cleanLabel(value) {
+    return String(value || "")
+      .replace(/[▥↔↗↘✕⚖🎼🎚🔥📊🧊🎧↩✂️🗑📥💾📁⏮▶■⛶↶↷✎👁🏷◀→←🧲⧉🧹📈▏🎨▣▢⬇🧱🔊]/gu, "")
+      .replace(/\s+/g, " ")
+      .replace(/\s*▾\s*$/g, "")
+      .trim();
+  }
+
+  function setPendingLabel(label) {
+    const cleaned = cleanLabel(label);
+    if (cleaned) pendingLabel = cleaned.slice(0, 80);
+  }
+
+  function consumePendingLabel() {
+    const label = pendingLabel;
+    pendingLabel = "";
+    return label;
+  }
+
+  function buttonLabel(button) {
+    if (!button) return "";
+    return button.getAttribute("title") || button.getAttribute("aria-label") || button.dataset.historyLabel || button.textContent || "";
+  }
+
+  function installActionLabelCapture() {
+    if (window.__orgavoxUndoActionLabelCapture) return;
+    window.__orgavoxUndoActionLabelCapture = true;
+    document.addEventListener("click", (event) => {
+      const button = event.target?.closest?.("button");
+      if (!button) return;
+      if (button.matches("[data-history-close],[data-echo-close],[data-bounce-close],[data-download-close]")) return;
+      const label = buttonLabel(button);
+      if (label) setPendingLabel(label);
+    }, true);
+  }
+
   function installStyles() {
     if (document.getElementById(STYLE_ID)) return;
     const style = document.createElement("style");
@@ -29,10 +66,11 @@
     style.textContent = `
       .orgavox-history-modal{position:fixed!important;inset:0!important;z-index:999998!important;display:grid!important;place-items:center!important;padding:24px!important;background:rgba(0,0,0,.58)!important}
       .orgavox-history-modal[hidden]{display:none!important}
-      .orgavox-history-dialog{width:min(560px,calc(100vw - 40px))!important;max-height:min(620px,calc(100vh - 40px))!important;display:flex!important;flex-direction:column!important;gap:12px!important;padding:16px!important;border:1px solid rgba(224,163,96,.72)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(24,25,24,.98),rgba(10,11,10,.99))!important;box-shadow:0 22px 64px rgba(0,0,0,.76)!important;color:#f5f0db!important}
+      .orgavox-history-dialog{width:min(620px,calc(100vw - 40px))!important;max-height:min(620px,calc(100vh - 40px))!important;display:flex!important;flex-direction:column!important;gap:12px!important;padding:16px!important;border:1px solid rgba(224,163,96,.72)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(24,25,24,.98),rgba(10,11,10,.99))!important;box-shadow:0 22px 64px rgba(0,0,0,.76)!important;color:#f5f0db!important}
       .orgavox-history-list{display:grid!important;gap:8px!important;overflow:auto!important;min-height:96px!important;padding-right:4px!important}
       .orgavox-history-row{display:grid!important;grid-template-columns:1fr auto auto!important;align-items:center!important;gap:10px!important;width:100%!important;padding:8px 10px!important;border:1px solid rgba(224,163,96,.34)!important;border-radius:12px!important;background:rgba(0,0,0,.28)!important;color:#f5f0db!important;text-align:left!important;cursor:pointer!important}
       .orgavox-history-row:hover{border-color:rgba(117,178,222,.76)!important;background:rgba(117,178,222,.1)!important}
+      .orgavox-history-row strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
       .orgavox-history-row span{color:#75b2de!important;font:900 .64rem var(--font-mono,monospace)!important}
       .orgavox-history-row small{color:rgba(245,240,219,.58)!important;font:800 .58rem var(--font-mono,monospace)!important}
     `;
@@ -59,7 +97,37 @@
   }
 
   function signature(saved) {
-    return JSON.stringify(saved, (key, value) => ["buffer", "bufferOverride", "file", "peaks", "renderCache", "activeSources", "raf", "toastTimer", "clipDrag", "__historyTime"].includes(key) ? undefined : value);
+    return JSON.stringify(saved, (key, value) => ["buffer", "bufferOverride", "file", "peaks", "renderCache", "activeSources", "raf", "toastTimer", "clipDrag", "__historyTime", "__historyLabel"].includes(key) ? undefined : value);
+  }
+
+  function changedTrackCount(before, after) {
+    const a = before.trackSettings || [];
+    const b = after.trackSettings || [];
+    let count = 0;
+    for (let index = 0; index < Math.max(a.length, b.length); index += 1) {
+      if (JSON.stringify(a[index] || null) !== JSON.stringify(b[index] || null)) count += 1;
+    }
+    return count;
+  }
+
+  function describeChange(before, after) {
+    const assetDelta = (after.assets?.length || 0) - (before.assets?.length || 0);
+    const clipDelta = (after.clips?.length || 0) - (before.clips?.length || 0);
+    const markerDelta = (after.markers?.length || 0) - (before.markers?.length || 0);
+    const beatDelta = (after.beatMarkers?.length || 0) - (before.beatMarkers?.length || 0);
+    const trackDelta = changedTrackCount(before, after);
+    if (assetDelta > 0 && clipDelta === 0) return assetDelta === 1 ? "Added sound to library" : `Added ${assetDelta} sounds to library`;
+    if (assetDelta > 0 && clipDelta > 0) return "Imported audio";
+    if (clipDelta > 0) return clipDelta === 1 ? "Added or pasted clip" : `Added or pasted ${clipDelta} clips`;
+    if (clipDelta < 0) return clipDelta === -1 ? "Removed clip" : `Removed ${Math.abs(clipDelta)} clips`;
+    if (markerDelta > 0) return markerDelta === 1 ? "Added marker" : `Added ${markerDelta} markers`;
+    if (markerDelta < 0) return markerDelta === -1 ? "Deleted marker" : `Deleted ${Math.abs(markerDelta)} markers`;
+    if (beatDelta > 0) return "Added beat markers";
+    if (beatDelta < 0) return "Cleared beat markers";
+    if (trackDelta > 0) return trackDelta === 1 ? "Changed track settings" : `Changed ${trackDelta} track settings`;
+    if (before.expandedTrack !== after.expandedTrack) return "Changed track view";
+    if (before.globalVolume !== after.globalVolume) return "Changed master volume";
+    return "Timeline edit";
   }
 
   function updateButtons() {
@@ -81,6 +149,7 @@
     const sig = signature(now);
     if (sig === lastSig) return;
     last.__historyTime = Date.now();
+    last.__historyLabel = consumePendingLabel() || describeChange(last, now);
     undoStack.push(last);
     if (undoStack.length > LIMIT) undoStack.shift();
     redoStack = [];
@@ -132,7 +201,7 @@
     }
   }
 
-  function undo() { if (!undoStack.length) { showToast("No undo history yet."); return; } const saved = undoStack.pop(); redoStack.push(snap()); apply(saved); showToast("Undo."); }
+  function undo() { if (!undoStack.length) { showToast("No undo history yet."); return; } const saved = undoStack.pop(); redoStack.push(snap()); apply(saved); showToast(`Undo: ${saved.__historyLabel || "Timeline edit"}.`); }
   function redo() { if (!redoStack.length) { showToast("Nothing to redo."); return; } const saved = redoStack.pop(); undoStack.push(snap()); apply(saved); showToast("Redo."); }
 
   function ensureHistoryModal() {
@@ -160,7 +229,8 @@
       row.type = "button";
       row.className = "orgavox-history-row";
       const time = saved.__historyTime ? new Date(saved.__historyTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "saved state";
-      row.innerHTML = `<strong>Change ${reverseIndex + 1}</strong><span>${saved.clips?.length || 0} clips</span><small>${time}</small>`;
+      const label = saved.__historyLabel || `Change ${reverseIndex + 1}`;
+      row.innerHTML = `<strong>${label}</strong><span>${saved.clips?.length || 0} clips</span><small>${time}</small>`;
       row.addEventListener("click", () => {
         const originalIndex = undoStack.length - 1 - reverseIndex;
         if (originalIndex < 0) return;
@@ -169,7 +239,7 @@
         undoStack = undoStack.slice(0, originalIndex);
         apply(target);
         modal.hidden = true;
-        showToast("History state restored.");
+        showToast(`History restored: ${label}.`);
       });
       list.appendChild(row);
     });
@@ -193,7 +263,7 @@
     const oldRenderTimeline = renderTimeline;
     renderTimeline = function orgavoxUndoRedoRenderTimeline() { const result = oldRenderTimeline.apply(this, arguments); scheduleRecordHistory(700); return result; };
     const oldImportFiles = importFiles;
-    importFiles = async function orgavoxUndoRedoImportFiles() { const result = await oldImportFiles.apply(this, arguments); scheduleRecordHistory(0); return result; };
+    importFiles = async function orgavoxUndoRedoImportFiles() { setPendingLabel("Import audio"); const result = await oldImportFiles.apply(this, arguments); scheduleRecordHistory(0); return result; };
   }
 
   function keys() {
@@ -214,9 +284,11 @@
   window.orgavoxRecordHistory = recordHistory;
   window.orgavoxScheduleHistory = scheduleRecordHistory;
   window.orgavoxWireUndoRedoControls = wireControls;
+  window.orgavoxSetHistoryLabel = setPendingLabel;
 
   installStyles();
   ensureHistoryModal();
+  installActionLabelCapture();
   patchHistory();
   keys();
   wireControls();
