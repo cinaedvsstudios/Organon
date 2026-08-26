@@ -36,6 +36,52 @@ function formatRulerLabel(seconds) {
   return `${minutes}:${String(remain).padStart(2, "0")}`;
 }
 
+const ORGAVOX_TRACK_WAVE_COLORS = {
+  cyan: [117, 178, 222],
+  gold: [224, 163, 96],
+  green: [74, 190, 117],
+  purple: [178, 109, 255],
+  red: [220, 72, 64],
+  blue: [99, 184, 255],
+  white: [245, 240, 219]
+};
+
+function trackSettingForClip(clip) {
+  const settings = Array.isArray(state.trackSettings) ? state.trackSettings : [];
+  return settings[Math.max(0, Math.min(trackCount() - 1, Number(clip?.track) || 0))] || null;
+}
+
+function trackIsAudibleForClip(clip) {
+  const settings = Array.isArray(state.trackSettings) ? state.trackSettings : [];
+  const setting = trackSettingForClip(clip);
+  const soloActive = settings.some((track) => track?.solo);
+  if (setting?.muted) return false;
+  return !soloActive || Boolean(setting?.solo);
+}
+
+function trackWaveColor(clip, selected = false) {
+  const setting = trackSettingForClip(clip);
+  const key = setting?.color && ORGAVOX_TRACK_WAVE_COLORS[setting.color] ? setting.color : "cyan";
+  const [r, g, b] = ORGAVOX_TRACK_WAVE_COLORS[key];
+  const alpha = selected ? .96 : .84;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function syncTrackLabelScroll() {
+  const column = document.querySelector(".track-label-column");
+  if (!column || !ui.timelineScroll) return;
+  column.scrollTop = ui.timelineScroll.scrollTop;
+}
+
+function installTrackLabelScrollSync() {
+  if (window.__orgavoxTrackLabelScrollSync) return;
+  window.__orgavoxTrackLabelScrollSync = true;
+  requestAnimationFrame(() => {
+    ui.timelineScroll?.addEventListener("scroll", syncTrackLabelScroll, { passive: true });
+    syncTrackLabelScroll();
+  });
+}
+
 function renderTimeline() {
   const width = timelineWidth();
   ui.timelineContent.style.width = `${width}px`;
@@ -47,6 +93,7 @@ function renderTimeline() {
   });
   state.clips.forEach((clip) => renderClipElement(clip));
   updatePlayheadVisual();
+  syncTrackLabelScroll();
 }
 
 function renderClipElement(clip) {
@@ -54,7 +101,10 @@ function renderClipElement(clip) {
   if (!lane) return;
   const element = document.createElement("div");
   const stretched = Math.abs(stretchedAudioDuration(clip) - bufferDuration(clip)) > .005;
-  element.className = `audio-clip${clip.id === state.selectedClipId ? " selected" : ""}${clip.gate?.enabled ? " gated" : ""}${stretched ? " stretched" : ""}`;
+  const audible = trackIsAudibleForClip(clip);
+  const settings = Array.isArray(state.trackSettings) ? state.trackSettings : [];
+  const soloActive = settings.some((track) => track?.solo);
+  element.className = `audio-clip${clip.id === state.selectedClipId ? " selected" : ""}${clip.gate?.enabled ? " gated" : ""}${stretched ? " stretched" : ""}${audible ? "" : " orgavox-clip-muted"}${soloActive && !trackSettingForClip(clip)?.solo ? " orgavox-clip-excluded" : ""}`;
   element.dataset.clipId = clip.id;
   element.style.left = `${clip.start * state.pixelsPerSecond}px`;
   element.style.width = `${Math.max(12, clipDuration(clip) * state.pixelsPerSecond)}px`;
@@ -74,6 +124,7 @@ function renderClipElement(clip) {
   if (clip.volume !== 100) badges.innerHTML += `<span>VOL ${clip.volume}%</span>`;
   if (clip.echo > 0) badges.innerHTML += `<span>ECHO ${clip.echo}%</span>`;
   if (clip.gate?.enabled) badges.innerHTML += `<span>GATE ${clip.gate.speed}/s</span>`;
+  if (!audible) badges.innerHTML += `<span>MUTED</span>`;
   element.append(canvas, title, badges, left, right);
   element.addEventListener("pointerdown", (event) => beginClipPointer(event, clip, element));
   element.addEventListener("click", (event) => { event.stopPropagation(); selectClip(clip.id); });
@@ -104,7 +155,8 @@ function drawClipWaveform(canvas, clip) {
   if (!buffer) return;
   const channel = buffer.getChannelData(0);
   const mid = canvas.height / 2;
-  ctx.strokeStyle = clip.id === state.selectedClipId ? "rgba(255,235,194,.95)" : "rgba(205,239,255,.85)";
+  ctx.strokeStyle = trackWaveColor(clip, clip.id === state.selectedClipId);
+  ctx.globalAlpha = trackIsAudibleForClip(clip) ? 1 : .38;
   ctx.lineWidth = Math.max(1, dpr);
   ctx.beginPath();
   const layout = gateLayout(clip);
@@ -130,6 +182,7 @@ function drawClipWaveform(canvas, clip) {
     ctx.lineTo(x + .5, mid + h);
   }
   ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 function beginClipPointer(event, clip, element) {
@@ -234,3 +287,5 @@ function updatePlayheadVisual() {
   ui.playhead.style.left = `${state.playhead * state.pixelsPerSecond}px`;
   ui.timeReadout.textContent = formatTime(state.playhead);
 }
+
+installTrackLabelScrollSync();

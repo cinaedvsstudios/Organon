@@ -16,6 +16,7 @@
       .orgavox-clip-context-menu button{width:100%;justify-content:flex-start!important;min-height:32px!important;text-align:left!important}
       .orgavox-clip-context-menu .danger{border-color:rgba(220,72,64,.72)!important;color:#ffd8d2!important}
       .orgavox-clip-context-menu .orgavox-clip-menu-hint{padding:4px 7px;color:rgba(245,240,219,.52);font:700 .57rem var(--font-mono);letter-spacing:.035em;text-transform:uppercase}
+      .audio-clip.orgavox-clip-muted,.audio-clip.orgavox-clip-excluded{opacity:.48!important;filter:saturate(.55)!important}
     `;
     document.head.appendChild(style);
   }
@@ -45,7 +46,10 @@
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeMenu();
-      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "v") pasteCopiedClip();
+      if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === "v" && !event.target?.closest?.("input,select,textarea,[contenteditable='true']")) {
+        event.preventDefault();
+        pasteCopiedClip();
+      }
     });
     return menu;
   }
@@ -57,6 +61,11 @@
 
   function clipById(id) {
     return state.clips.find((clip) => clip.id === id) || null;
+  }
+
+  function selectedClipsFromState() {
+    const ids = Array.isArray(state.selectedClipIds) && state.selectedClipIds.length ? state.selectedClipIds : (state.selectedClipId ? [state.selectedClipId] : []);
+    return ids.map((id) => clipById(id)).filter(Boolean);
   }
 
   function cloneClip(clip, overrides = {}) {
@@ -106,23 +115,58 @@
     if (action === "delete") return deleteClip(clip);
   }
 
+  function storeClipboard(clips) {
+    if (!clips.length) return false;
+    state.__orgavoxClipClipboard = clips.map((clip) => cloneClip(clip, { id: clip.id }));
+    return true;
+  }
+
+  function copySelectedClips() {
+    const clips = selectedClipsFromState();
+    if (!storeClipboard(clips)) { showToast("Select a clip to copy."); return false; }
+    showToast(`${clips.length} clip${clips.length === 1 ? "" : "s"} copied.`);
+    return true;
+  }
+
+  function cutSelectedClips() {
+    const clips = selectedClipsFromState();
+    if (!storeClipboard(clips)) { showToast("Select a clip to cut."); return false; }
+    const ids = new Set(clips.map((clip) => clip.id));
+    state.clips = state.clips.filter((clip) => !ids.has(clip.id));
+    state.selectedClipId = null;
+    state.selectedClipIds = [];
+    syncSelectedControls();
+    renderTimeline();
+    showToast(`${clips.length} clip${clips.length === 1 ? "" : "s"} cut.`);
+    window.orgavoxRecordHistory?.();
+    return true;
+  }
+
   function copyClip(clip) {
-    state.__orgavoxClipClipboard = cloneClip(clip, { id: clip.id });
+    storeClipboard([clip]);
     showToast("Clip copied. Press Ctrl+V to paste at the playhead.");
   }
 
   function pasteCopiedClip() {
-    const target = state.__orgavoxClipClipboard;
-    if (!target) return;
-    const next = cloneClip(target, {
-      start: Math.max(0, state.playhead || 0),
-      track: Math.max(0, Math.min(9, Number(state.selectedTrack) || 0))
-    });
-    state.clips.push(next);
-    selectClip(next.id);
+    const stored = state.__orgavoxClipClipboard;
+    const targets = Array.isArray(stored) ? stored : (stored ? [stored] : []);
+    if (!targets.length) { showToast("Copy a clip first."); return false; }
+    const minStart = Math.min(...targets.map((clip) => Number(clip.start) || 0));
+    const minTrack = Math.min(...targets.map((clip) => Number(clip.track) || 0));
+    const baseTrack = Math.max(0, Math.min(trackCount() - 1, Number(state.selectedTrack) || 0));
+    const copies = targets.map((clip) => cloneClip(clip, {
+      start: Math.max(0, (state.playhead || 0) + ((Number(clip.start) || 0) - minStart)),
+      track: Math.max(0, Math.min(trackCount() - 1, baseTrack + ((Number(clip.track) || 0) - minTrack)))
+    }));
+    state.clips.push(...copies);
+    state.selectedClipId = copies[0]?.id || null;
+    state.selectedClipIds = copies.map((clip) => clip.id);
+    if (copies[0]) selectTrack(copies[0].track);
+    syncSelectedControls();
     renderTimeline();
-    showToast("Copied clip pasted at the playhead.");
+    showToast(`${copies.length} clip${copies.length === 1 ? "" : "s"} pasted to selected track.`);
     window.orgavoxRecordHistory?.();
+    return true;
   }
 
   function duplicateClip(clip) {
@@ -186,7 +230,28 @@
     });
   }
 
+  function wireVisibleClipboardButtons() {
+    const actions = [
+      ["orgavoxCopyClipBtn", copySelectedClips],
+      ["orgavoxCutClipBtn", cutSelectedClips],
+      ["orgavoxPasteClipBtn", pasteCopiedClip]
+    ];
+    actions.forEach(([id, action]) => {
+      const button = document.getElementById(id);
+      if (!button || button.dataset.orgavoxClipMenuClipboardWired === "true") return;
+      button.dataset.orgavoxClipMenuClipboardWired = "true";
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        action();
+      }, true);
+    });
+  }
+
   installStyles();
   ensureMenu();
   installContextListener();
+  const wireTimer = setInterval(wireVisibleClipboardButtons, 120);
+  setTimeout(() => clearInterval(wireTimer), 4500);
+  requestAnimationFrame(wireVisibleClipboardButtons);
 })();
