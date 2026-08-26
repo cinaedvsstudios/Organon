@@ -160,6 +160,7 @@
             <span class="eyebrow">Clip-wide effect</span>
             <h3 id="eqTitle">EQ / filter</h3>
             <p>These settings apply to the selected clip as a whole. EQ keyframes are not enabled.</p>
+            <div class="orgavox-tool-target" data-tool-target></div>
           </div>
           <button class="icon-button" id="eqCloseX" type="button" aria-label="Close EQ settings">×</button>
         </div>
@@ -248,6 +249,7 @@
       return;
     }
     const backdrop = ensureModal();
+    window.orgavoxUpdateToolTarget?.(backdrop, clip, "EQ target");
     loadSettings(clip.eqSettings?.enabled ? clip.eqSettings : clonePreset("flat"));
     backdrop.classList.add("open");
   }

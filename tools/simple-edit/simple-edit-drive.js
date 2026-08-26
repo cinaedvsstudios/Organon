@@ -167,6 +167,7 @@
             <span class="eyebrow">Clip-wide effect</span>
             <h3 id="driveTitle">Drive / saturation</h3>
             <p>These settings apply to the selected clip as a whole. Drive keyframes are not enabled.</p>
+            <div class="orgavox-tool-target" data-tool-target></div>
           </div>
           <button class="icon-button" id="driveCloseX" type="button" aria-label="Close drive settings">×</button>
         </div>
@@ -256,6 +257,7 @@
       return;
     }
     const backdrop = ensureModal();
+    window.orgavoxUpdateToolTarget?.(backdrop, clip, "Drive target");
     loadSettingsIntoModal(settingsForClip(clip) || clonePreset("warm"));
     backdrop.classList.add("open");
   }

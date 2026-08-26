@@ -73,6 +73,7 @@
             <span class="eyebrow">Clip-wide effect</span>
             <h3 id="transposeTitle">Transpose / key match</h3>
             <p>These settings apply to the selected clip as a whole. Transpose keyframes are not enabled.</p>
+            <div class="orgavox-tool-target" data-tool-target></div>
           </div>
           <button class="icon-button" id="transposeCloseX" type="button" aria-label="Close transpose settings">×</button>
         </div>
@@ -141,6 +142,7 @@
       return;
     }
     const backdrop = ensureModal();
+    window.orgavoxUpdateToolTarget?.(backdrop, clip, "Transpose target");
     const slider = document.getElementById("transposeSlider");
     if (slider) slider.value = String(clampSemitones(clip.transposeSemitones || 0));
     updateModalOutput();

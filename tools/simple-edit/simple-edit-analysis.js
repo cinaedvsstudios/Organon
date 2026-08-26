@@ -5,9 +5,21 @@
   const MODAL_ID = "analysisModal";
   let busy = false;
   let lastReport = "";
+  let analysisTargetId = null;
 
   function selectedClipForAnalysis() {
-    return state.clips.find((clip) => clip.id === state.selectedClipId) || null;
+    const clips = Array.isArray(state.clips) ? state.clips : [];
+    return clips.find((clip) => clip.id === analysisTargetId) || clips.find((clip) => clip.id === state.selectedClipId) || clips[0] || null;
+  }
+
+  function refreshTargetPicker() {
+    const modal = document.getElementById(MODAL_ID);
+    if (!modal) return null;
+    const select = modal.querySelector("[data-analysis-target]");
+    const clip = window.orgavoxPopulateClipSelect?.(select, analysisTargetId) || selectedClipForAnalysis();
+    analysisTargetId = clip?.id || null;
+    window.orgavoxUpdateToolTarget?.(modal, clip, "Analyze target");
+    return clip;
   }
 
   function installStyles() {
@@ -47,7 +59,8 @@
     modal.innerHTML = `
       <section class="orgavox-analysis-dialog" role="dialog" aria-modal="true" aria-labelledby="analysisTitle">
         <div class="popover-head"><div><span class="eyebrow">Clip inspection</span><h3 id="analysisTitle">Analyze selected clip</h3></div><button class="icon-button" data-analysis-close type="button">×</button></div>
-        <p class="export-note">Scans the selected clip after trimming, stretch, reverse, transpose and current effects where the render chain allows it.</p>
+        <p class="export-note">Choose exactly which clip to scan. Analysis uses the chosen clip after trimming, stretch, reverse, transpose and current effects where the render chain allows it.</p>
+        <div class="orgavox-tool-target"><label><span>Target clip</span><select data-analysis-target></select></label><button class="tool-button" data-analysis-use-selected type="button">Use selected</button></div>
         <div class="orgavox-analysis-summary" data-analysis-summary>Select a clip and press Scan.</div>
         <div class="orgavox-analysis-grid" data-analysis-grid></div>
         <div class="orgavox-analysis-warnings" data-analysis-warnings></div>
@@ -57,7 +70,10 @@
     modal.querySelectorAll("[data-analysis-close]").forEach((button) => button.addEventListener("click", closeModal));
     modal.querySelector("[data-analysis-scan]")?.addEventListener("click", scanSelectedClip);
     modal.querySelector("[data-analysis-copy]")?.addEventListener("click", copyStats);
+    modal.querySelector("[data-analysis-target]")?.addEventListener("change", (event) => { analysisTargetId = event.target.value; refreshTargetPicker(); lastReport = ""; modal.querySelector("[data-analysis-grid]").innerHTML = ""; modal.querySelector("[data-analysis-warnings]").innerHTML = ""; modal.querySelector("[data-analysis-summary]").textContent = `${selectedClipForAnalysis()?.name || "Chosen clip"} · press Scan clip.`; });
+    modal.querySelector("[data-analysis-use-selected]")?.addEventListener("click", () => { analysisTargetId = state.selectedClipId || analysisTargetId; refreshTargetPicker(); });
     modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+    modal.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); if ((event.ctrlKey || event.metaKey) && event.key === "Enter") scanSelectedClip(); });
     return modal;
   }
 
@@ -203,7 +219,8 @@
     busy = true;
     updateAnalysisButtonState();
     const modal = ensureModal();
-    modal.querySelector("[data-analysis-summary]").textContent = "Scanning selected clip…";
+    refreshTargetPicker();
+    modal.querySelector("[data-analysis-summary]").textContent = `Scanning ${clip.name || "chosen clip"}…`;
     modal.querySelector("[data-analysis-grid]").innerHTML = "";
     modal.querySelector("[data-analysis-warnings]").innerHTML = "";
     setStatus("Analyzing selected clip…");
@@ -233,9 +250,11 @@
   }
 
   function openModal() {
+    if (state.selectedClipId) analysisTargetId = state.selectedClipId;
     const clip = selectedClipForAnalysis();
-    if (!clip) return showToast("Select a clip before opening Analyze.");
+    if (!clip) return showToast("Add or select a clip before opening Analyze.");
     const modal = ensureModal();
+    refreshTargetPicker();
     modal.hidden = false;
     modal.querySelector("[data-analysis-summary]").textContent = `${clip.name} · press Scan clip.`;
     modal.querySelector("[data-analysis-grid]").innerHTML = "";

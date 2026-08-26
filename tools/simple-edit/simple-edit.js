@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.22";
+  const VERSION = "v1.23";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -12,6 +12,51 @@
     document.title = `Organon — ORGAVOX ${VERSION}`;
     document.querySelectorAll(".simple-edit-version,.phase1-version,.orgavox-sidebar-version").forEach((node) => { node.textContent = VERSION; });
   }
+
+
+
+  function installToolTargetStyles() {
+    if (document.getElementById("orgavoxToolTargetStyles")) return;
+    const style = document.createElement("style");
+    style.id = "orgavoxToolTargetStyles";
+    style.textContent = `
+      .orgavox-tool-target{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin:10px 0 12px!important;padding:9px 11px!important;border:1px solid rgba(117,178,222,.36)!important;border-radius:13px!important;background:rgba(117,178,222,.08)!important;color:#dff5ff!important;font:800 .72rem var(--font-mono,monospace)!important;letter-spacing:.04em!important}
+      .orgavox-tool-target strong{color:#fff4c7!important;font-weight:900!important;max-width:420px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
+      .orgavox-tool-target label{display:flex!important;align-items:center!important;gap:8px!important;width:100%!important;color:#dff5ff!important}
+      .orgavox-tool-target select{min-width:220px!important;max-width:100%!important;height:34px!important;border:1px solid rgba(117,178,222,.62)!important;border-radius:10px!important;background:#050505!important;color:#f5f0db!important;padding:0 9px!important;font:800 .78rem var(--font-mono,monospace)!important}
+      .orgavox-tool-target .tool-button{min-height:32px!important;padding:6px 10px!important;font-size:.66rem!important}
+    `;
+    document.head.appendChild(style);
+  }
+
+  function clipDisplayName(clip) {
+    return clip ? `${clip.name || "Untitled clip"} · Track ${(Number(clip.track) || 0) + 1}` : "No clip selected";
+  }
+
+  window.orgavoxClipDisplayName = clipDisplayName;
+  window.orgavoxUpdateToolTarget = function orgavoxUpdateToolTarget(root, clip, label = "Target clip") {
+    installToolTargetStyles();
+    const node = root?.querySelector?.("[data-tool-target]");
+    if (!node) return;
+    node.innerHTML = `<span>${label}</span><strong>${clipDisplayName(clip)}</strong>`;
+  };
+
+  window.orgavoxPopulateClipSelect = function orgavoxPopulateClipSelect(select, activeId) {
+    installToolTargetStyles();
+    if (!select) return null;
+    const appState = typeof state !== "undefined" ? state : window.state;
+    const clips = Array.isArray(appState?.clips) ? appState.clips : [];
+    select.innerHTML = clips.length ? "" : `<option value="">No clips loaded</option>`;
+    clips.forEach((clip) => {
+      const option = document.createElement("option");
+      option.value = clip.id;
+      option.textContent = clipDisplayName(clip);
+      select.appendChild(option);
+    });
+    const selected = clips.find((clip) => clip.id === activeId) || clips.find((clip) => clip.id === appState?.selectedClipId) || clips[0] || null;
+    if (selected) select.value = selected.id;
+    return selected;
+  };
 
   function localizeSoundFxUrl(value) {
     const text = String(value || "");
@@ -109,44 +154,44 @@
 
   installLocalSoundFxRouting();
   const earlyFiles = [
-    "./simple-edit-core.js?v=1.22",
-    "./simple-edit-timeline.js?v=1.22",
-    "./simple-edit-audio.js?v=1.22",
-    "./simple-edit-export.js?v=1.22",
-    "./simple-edit-keyframes.js?v=1.22",
-    "./simple-edit-keyframes-fix.js?v=1.22",
-    "./simple-edit-phase3.js?v=1.22"
+    "./simple-edit-core.js?v=1.23",
+    "./simple-edit-timeline.js?v=1.23",
+    "./simple-edit-audio.js?v=1.23",
+    "./simple-edit-export.js?v=1.23",
+    "./simple-edit-keyframes.js?v=1.23",
+    "./simple-edit-keyframes-fix.js?v=1.23",
+    "./simple-edit-phase3.js?v=1.23"
   ];
   createOwnerControls();
   for (const source of earlyFiles) await loadScript(source);
   const behaviorFiles = [
-    "./simple-edit-effects-library.js?v=1.22",
-    "./simple-edit-echo-settings.js?v=1.22",
-    "./simple-edit-stretch-audiotsm.js?v=1.22",
-    "./simple-edit-fade-handles.js?v=1.22",
-    "./simple-edit-normalize.js?v=1.22",
-    "./simple-edit-transpose-engine.js?v=1.22",
-    "./simple-edit-transpose.js?v=1.22",
-    "./simple-edit-eq-engine.js?v=1.22",
-    "./simple-edit-eq.js?v=1.22",
-    "./simple-edit-drive-engine.js?v=1.22",
-    "./simple-edit-drive.js?v=1.22",
-    "./simple-edit-dynamics-engine.js?v=1.22",
-    "./simple-edit-dynamics.js?v=1.22",
-    "./simple-edit-stereo-engine.js?v=1.22",
-    "./simple-edit-stereo.js?v=1.22",
-    "./simple-edit-lofi-engine.js?v=1.22",
-    "./simple-edit-lofi.js?v=1.22",
-    "./simple-edit-render-tools-engine.js?v=1.22",
-    "./simple-edit-render-tools.js?v=1.22",
-    "./simple-edit-analysis.js?v=1.22",
-    "./simple-edit-project.js?v=1.22",
-    "./simple-edit-markers.js?v=1.22",
-    "./simple-edit-undo-redo.js?v=1.22",
-    "./simple-edit-track-tools.js?v=1.22",
-    "./simple-edit-clip-menu.js?v=1.22",
-    "./simple-edit-snap-tools.js?v=1.22",
-    "./simple-edit-library-tools.js?v=1.22"
+    "./simple-edit-effects-library.js?v=1.23",
+    "./simple-edit-echo-settings.js?v=1.23",
+    "./simple-edit-stretch-audiotsm.js?v=1.23",
+    "./simple-edit-fade-handles.js?v=1.23",
+    "./simple-edit-normalize.js?v=1.23",
+    "./simple-edit-transpose-engine.js?v=1.23",
+    "./simple-edit-transpose.js?v=1.23",
+    "./simple-edit-eq-engine.js?v=1.23",
+    "./simple-edit-eq.js?v=1.23",
+    "./simple-edit-drive-engine.js?v=1.23",
+    "./simple-edit-drive.js?v=1.23",
+    "./simple-edit-dynamics-engine.js?v=1.23",
+    "./simple-edit-dynamics.js?v=1.23",
+    "./simple-edit-stereo-engine.js?v=1.23",
+    "./simple-edit-stereo.js?v=1.23",
+    "./simple-edit-lofi-engine.js?v=1.23",
+    "./simple-edit-lofi.js?v=1.23",
+    "./simple-edit-render-tools-engine.js?v=1.23",
+    "./simple-edit-render-tools.js?v=1.23",
+    "./simple-edit-analysis.js?v=1.23",
+    "./simple-edit-project.js?v=1.23",
+    "./simple-edit-markers.js?v=1.23",
+    "./simple-edit-undo-redo.js?v=1.23",
+    "./simple-edit-track-tools.js?v=1.23",
+    "./simple-edit-clip-menu.js?v=1.23",
+    "./simple-edit-snap-tools.js?v=1.23",
+    "./simple-edit-library-tools.js?v=1.23"
   ];
   for (const source of behaviorFiles) await loadScript(source);
 

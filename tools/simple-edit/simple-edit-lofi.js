@@ -80,7 +80,7 @@
     modal.innerHTML = `
       <section class="orgavox-lofi-dialog" role="dialog" aria-modal="true" aria-labelledby="lofiTitle">
         <div class="popover-head"><div><span class="eyebrow">Clip-wide effect</span><h3 id="lofiTitle">Lo-fi / Bitcrusher</h3></div><button class="icon-button" data-lofi-close type="button">×</button></div>
-        <p class="export-note">These settings degrade the selected clip as a whole and render into playback/export.</p>
+        <p class="export-note">These settings degrade the selected clip as a whole and render into playback/export.</p><div class="orgavox-tool-target" data-tool-target></div>
         <div class="orgavox-lofi-grid"><div class="orgavox-lofi-panel"><span class="eyebrow">Manual controls</span><div class="orgavox-lofi-controls" data-lofi-controls></div></div><aside class="orgavox-lofi-panel"><span class="eyebrow">Presets</span><div class="orgavox-lofi-presets" data-lofi-presets></div><div class="orgavox-lofi-desc" data-lofi-desc></div></aside></div>
         <div class="orgavox-lofi-actions"><button class="tool-button" data-lofi-preview type="button">Preview</button><button class="tool-button" data-lofi-reset type="button">Reset</button><button class="tool-button" data-lofi-close type="button">Close</button><button class="tool-button primary" data-lofi-apply type="button">Apply</button></div>
       </section>`;
@@ -171,6 +171,7 @@
     const clip = selectedClip();
     if (!clip) return showToast("Select a clip before opening Lo-fi / Crush.");
     const modal = ensureModal();
+    window.orgavoxUpdateToolTarget?.(modal, clip, "Lo-Fi target");
     writeSettings(activeSettings(clip));
     modal.hidden = false;
   }

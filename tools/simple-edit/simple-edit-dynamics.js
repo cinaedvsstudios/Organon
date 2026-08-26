@@ -164,6 +164,7 @@
             <span class="eyebrow">Clip-wide effect</span>
             <h3 id="dynamicsTitle">Dynamics / compressor</h3>
             <p>These settings apply to the selected clip as a whole. Dynamics keyframes are not enabled.</p>
+            <div class="orgavox-tool-target" data-tool-target></div>
           </div>
           <button class="icon-button" id="dynamicsCloseX" type="button" aria-label="Close dynamics settings">×</button>
         </div>
@@ -238,6 +239,7 @@
     const clip = selectedClip();
     if (!clip) { showToast("Select a clip before opening Dynamics."); return; }
     const backdrop = ensureModal();
+    window.orgavoxUpdateToolTarget?.(backdrop, clip, "Dynamics target");
     loadSettingsIntoModal(clip.dynamicsSettings?.enabled ? clip.dynamicsSettings : clonePreset("leveler"));
     backdrop.classList.add("open");
   }

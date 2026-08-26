@@ -80,7 +80,7 @@
     modal.innerHTML = `
       <section class="orgavox-stereo-dialog" role="dialog" aria-modal="true" aria-labelledby="stereoTitle">
         <div class="popover-head"><div><span class="eyebrow">Clip-wide effect</span><h3 id="stereoTitle">Stereo / Pan</h3></div><button class="icon-button" data-stereo-close type="button">×</button></div>
-        <p class="export-note">These settings apply to the selected clip as a whole.</p>
+        <p class="export-note">These settings apply to the selected clip as a whole.</p><div class="orgavox-tool-target" data-tool-target></div>
         <div class="orgavox-stereo-grid"><div class="orgavox-stereo-panel"><span class="eyebrow">Manual controls</span><div class="orgavox-stereo-controls" data-stereo-controls></div></div><aside class="orgavox-stereo-panel"><span class="eyebrow">Presets</span><div class="orgavox-stereo-presets" data-stereo-presets></div><label class="orgavox-stereo-mono"><input type="checkbox" data-stereo-mono> Force mono center</label><div class="orgavox-stereo-desc" data-stereo-desc></div></aside></div>
         <div class="orgavox-stereo-actions"><button class="tool-button" data-stereo-preview type="button">Preview</button><button class="tool-button" data-stereo-reset type="button">Reset</button><button class="tool-button" data-stereo-close type="button">Close</button><button class="tool-button primary" data-stereo-apply type="button">Apply</button></div>
       </section>`;
@@ -159,6 +159,7 @@
     const clip = selectedClip();
     if (!clip) return showToast("Select a clip before opening Stereo / Pan.");
     const modal = ensureModal();
+    window.orgavoxUpdateToolTarget?.(modal, clip, "Stereo target");
     writeSettings(activeSettings(clip));
     modal.hidden = false;
   }
