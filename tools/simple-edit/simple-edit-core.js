@@ -97,7 +97,8 @@ function bufferDuration(clip) {
 
 function stretchedAudioDuration(clip) {
   return Math.max(.01, clip.stretchDuration || bufferDuration(clip));
-}\n
+}
+
 function gateLayout(clip) {
   const audioDuration = stretchedAudioDuration(clip);
   if (!clip.gate?.enabled) return { audioDuration, outputDuration: audioDuration, chunkDuration: audioDuration, pause: 0, count: 1 };
