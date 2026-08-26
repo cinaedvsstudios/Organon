@@ -222,17 +222,12 @@
   };
 
   function decorateStretchButton() {
+    ui.stretchBtn = document.getElementById("stretchBtn");
     if (!ui.stretchBtn) return;
     ui.stretchBtn.title = "Stretch mode now uses an AudioTSM-style WSOLA pitch-preserving engine.";
-    if (ui.stretchBtn.dataset.audioTsmToastBound === "true") return;
-    ui.stretchBtn.dataset.audioTsmToastBound = "true";
-    ui.stretchBtn.addEventListener("click", () => {
-      setTimeout(() => {
-        const active = ui.stretchBtn.getAttribute("aria-pressed") === "true";
-        if (active) showToast("Stretch mode uses the new AudioTSM-style WSOLA engine.");
-      }, 0);
-    });
   }
+
+  window.orgavoxUpdateStretchButton = decorateStretchButton;
 
   const previousRenderTimeline = renderTimeline;
   renderTimeline = function audioTsmStretchRenderTimeline() {

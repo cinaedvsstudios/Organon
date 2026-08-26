@@ -51,22 +51,8 @@
   }
 
   function ensureButton() {
-    let button = document.getElementById("transposeBtn");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "transposeBtn";
-      button.type = "button";
-      button.className = "tool-button transpose-btn";
-      button.textContent = "🎼 Transpose";
-      button.addEventListener("click", openModal);
-    }
-    ui.transposeBtn = button;
-    const effectsGroup = document.querySelector(".orgavox-effects-group");
-    const effectsButton = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((node) => /effects library/i.test(node.textContent || ""));
-    if (effectsGroup && button.parentElement !== effectsGroup) {
-      if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(button, effectsButton);
-      else effectsGroup.appendChild(button);
-    }
+    const button = document.getElementById("transposeBtn");
+    if (button) ui.transposeBtn = button;
     return button;
   }
 
@@ -218,6 +204,7 @@
 
   function updateButtonState() {
     const button = ensureButton();
+    if (!button) return;
     const clip = selectedClip();
     const amount = clampSemitones(clip?.transposeSemitones || 0);
     button.disabled = !clip;
@@ -243,7 +230,6 @@
   const previousRenderTimeline = renderTimeline;
   renderTimeline = function transposeRenderTimeline() {
     previousRenderTimeline();
-    ensureButton();
     addTransposeBadges();
   };
 
@@ -256,9 +242,11 @@
   const previousRefresh = window.orgavoxRefreshLayout;
   window.orgavoxRefreshLayout = function transposeAwareRefreshLayout() {
     previousRefresh?.();
-    ensureButton();
     updateButtonState();
   };
+
+  window.orgavoxOpenTranspose = openModal;
+  window.orgavoxUpdateTransposeButton = updateButtonState;
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeModal();

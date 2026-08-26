@@ -227,7 +227,7 @@ function pointerTime(event) {
 }
 
 function installEvents() {
-  ui.importBtn.addEventListener("click", () => ui.fileInput.click());
+  window.orgavoxOpenFiles = () => ui.fileInput.click();
   ui.dropzone.addEventListener("click", () => ui.fileInput.click());
   ui.fileInput.addEventListener("change", (event) => { importFiles(event.target.files); event.target.value = ""; });
   [ui.dropzone, ui.timelineShell].forEach((target) => {
@@ -261,21 +261,21 @@ function installEvents() {
   ui.rulerCanvas.addEventListener("pointerdown", (event) => { stopPlayback(); setPlayhead(pointerTime(event)); });
   ui.trackLabels.forEach((label) => label.addEventListener("click", () => selectTrack(label.dataset.trackLabel)));
 
-  ui.playBtn.addEventListener("click", togglePlayback);
-  ui.stopBtn.addEventListener("click", () => stopPlayback());
-  ui.jumpStartBtn.addEventListener("click", () => { stopPlayback(); setPlayhead(0, true); });
-  ui.stretchBtn.addEventListener("click", () => {
+  window.orgavoxTogglePlayback = togglePlayback;
+  window.orgavoxStopPlayback = () => stopPlayback();
+  window.orgavoxJumpToStart = () => { stopPlayback(); setPlayhead(0, true); };
+  window.orgavoxToggleStretch = () => {
     state.stretchMode = !state.stretchMode;
     ui.stretchBtn.setAttribute("aria-pressed", String(state.stretchMode));
     ui.stretchBtn.textContent = state.stretchMode ? "↔ Stretch on" : "↔ Stretch off";
     showToast(state.stretchMode ? "Clip edges now change length without changing pitch." : "Clip edges now crop or restore source audio.");
-  });
-  ui.fullscreenBtn.addEventListener("click", async () => {
+  };
+  window.orgavoxToggleFullscreen = async () => {
     try {
       if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
       else await document.exitFullscreen();
     } catch { showToast("Fullscreen was blocked by the browser."); }
-  });
+  };
 
   ui.volumeSlider.addEventListener("input", () => {
     const clip = selectedClip(); if (!clip) return;
@@ -295,13 +295,13 @@ function installEvents() {
     renderTimeline();
   });
 
-  ui.gateBtn.addEventListener("click", openGate);
+  window.orgavoxOpenNoiseGate = openGate;
   ui.gateCloseBtn.addEventListener("click", () => { ui.gatePopover.hidden = true; });
   [ui.gateSpeed, ui.gatePause, ui.gateFade].forEach((input) => input.addEventListener("input", updateGateReadouts));
   ui.gateApplyBtn.addEventListener("click", applyGate);
   ui.gateResetBtn.addEventListener("click", resetGate);
 
-  ui.exportBtn.addEventListener("click", openExport);
+  window.orgavoxOpenExport = openExport;
   ui.exportCloseBtn.addEventListener("click", () => { ui.exportModal.hidden = true; });
   ui.exportCancelBtn.addEventListener("click", () => { ui.exportModal.hidden = true; });
 

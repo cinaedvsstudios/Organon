@@ -41,50 +41,6 @@
     document.head.appendChild(style);
   }
 
-  function button(id, label, title) {
-    let btn = document.getElementById(id);
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.id = id;
-      btn.type = "button";
-      btn.className = "tool-button";
-    }
-    btn.textContent = label;
-    btn.title = title;
-    return btn;
-  }
-
-  function ensureToolbar() {
-    const toolbar = document.querySelector(".phase1-timeline-toolbar");
-    if (!toolbar || toolbar.querySelector(".phase2-keyframes-group")) return;
-    const group = document.createElement("div");
-    group.className = "phase1-tool-group phase2-keyframes-group";
-    group.append(
-      button("addKeyframeBtn", "➕ Keyframe", "Add or update a volume keyframe at the playhead."),
-      button("prevKeyframeBtn", "⬅️ Keyframe", "Jump to the previous volume keyframe."),
-      button("nextKeyframeBtn", "➡️ Keyframe", "Jump to the next volume keyframe."),
-      button("deleteKeyframeBtn", "🗑 Keyframe", "Delete the nearest volume keyframe.")
-    );
-    const divider = document.createElement("span");
-    divider.className = "phase1-divider";
-    divider.setAttribute("aria-hidden", "true");
-    const editGroup = toolbar.querySelector(".phase1-edit-group");
-    if (editGroup) {
-      editGroup.insertAdjacentElement("afterend", divider);
-      divider.insertAdjacentElement("afterend", group);
-    } else {
-      toolbar.append(divider, group);
-    }
-    ui.addKeyframeBtn = group.querySelector("#addKeyframeBtn");
-    ui.prevKeyframeBtn = group.querySelector("#prevKeyframeBtn");
-    ui.nextKeyframeBtn = group.querySelector("#nextKeyframeBtn");
-    ui.deleteKeyframeBtn = group.querySelector("#deleteKeyframeBtn");
-    ui.addKeyframeBtn.addEventListener("click", addOrUpdateVolumeKeyframe);
-    ui.prevKeyframeBtn.addEventListener("click", previousVolumeKeyframe);
-    ui.nextKeyframeBtn.addEventListener("click", nextVolumeKeyframe);
-    ui.deleteKeyframeBtn.addEventListener("click", deleteVolumeKeyframe);
-  }
-
   function kfs(clip) {
     if (!clip) return [];
     if (!Array.isArray(clip.volumeKeyframes)) clip.volumeKeyframes = [];
@@ -424,9 +380,13 @@
     if (event.altKey && event.key === "ArrowRight") { event.preventDefault(); nextVolumeKeyframe(); }
   });
 
+  window.orgavoxAddVolumeKeyframe = addOrUpdateVolumeKeyframe;
+  window.orgavoxPreviousVolumeKeyframe = previousVolumeKeyframe;
+  window.orgavoxNextVolumeKeyframe = nextVolumeKeyframe;
+  window.orgavoxDeleteVolumeKeyframe = deleteVolumeKeyframe;
+
   installStyles();
   setVersion();
-  ensureToolbar();
   state.clips.forEach(kfs);
   syncSelectedControls();
   renderTimeline();

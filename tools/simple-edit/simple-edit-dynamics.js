@@ -146,22 +146,8 @@
   }
 
   function ensureButton() {
-    let button = document.getElementById("dynamicsBtn");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "dynamicsBtn";
-      button.type = "button";
-      button.className = "tool-button dynamics-btn";
-      button.textContent = "📊 Dynamics";
-      button.addEventListener("click", openModal);
-    }
-    ui.dynamicsBtn = button;
-    const effectsGroup = document.querySelector(".orgavox-effects-group");
-    const effectsButton = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((node) => /effects library/i.test(node.textContent || ""));
-    if (effectsGroup && button.parentElement !== effectsGroup) {
-      if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(button, effectsButton);
-      else effectsGroup.appendChild(button);
-    }
+    const button = document.getElementById("dynamicsBtn");
+    if (button) ui.dynamicsBtn = button;
     return button;
   }
 
@@ -329,17 +315,22 @@
   };
 
   const previousSyncSelectedControls = syncSelectedControls;
-  syncSelectedControls = function dynamicsSyncSelectedControls() {
-    previousSyncSelectedControls();
+  function updateDynamicsButtonState() {
     const clip = selectedClip();
     const settings = settingsForClip(clip);
-    const button = document.getElementById("dynamicsBtn");
-    if (button) {
-      button.disabled = !clip;
-      button.classList.toggle("dynamics-active", Boolean(settings));
-      button.title = settings ? `Dynamics: ${settings.label}` : "Open clip-wide dynamics / compressor";
-    }
+    const button = ensureButton();
+    if (!button) return;
+    button.disabled = !clip;
+    button.classList.toggle("dynamics-active", Boolean(settings));
+    button.title = settings ? `Dynamics: ${settings.label}` : "Open clip-wide dynamics / compressor";
+  }
+  syncSelectedControls = function dynamicsSyncSelectedControls() {
+    previousSyncSelectedControls();
+    updateDynamicsButtonState();
   };
+
+  window.orgavoxOpenDynamics = openModal;
+  window.orgavoxUpdateDynamicsButton = updateDynamicsButtonState;
 
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
   installStyles();

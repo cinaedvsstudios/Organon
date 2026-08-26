@@ -125,15 +125,6 @@
     showToast("Echo removed from selected clip.");
   }
 
-  function wireButton() {
-    const button = document.getElementById("echoSettingsBtn");
-    if (!button || button.dataset.orgavoxEchoWired) return;
-    button.dataset.orgavoxEchoWired = "true";
-    button.title = "Open clip-wide echo settings";
-    button.addEventListener("click", openModal);
-  }
-
   window.orgavoxOpenEchoSettings = openModal;
-  window.orgavoxWireEchoSettingsButton = wireButton;
   window.orgavoxEchoSettingsForClip = (clip) => clip?.echoSettings?.enabled ? clip.echoSettings : null;
 })();

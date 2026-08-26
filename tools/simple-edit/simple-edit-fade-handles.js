@@ -70,35 +70,14 @@
     });
   }
 
-  function ensureToolbar() {
-    const toolbar = document.querySelector(".phase1-timeline-toolbar");
-    if (!toolbar || toolbar.querySelector(".phase2-fade-group")) return;
-    const group = document.createElement("div");
-    group.className = "phase1-tool-group phase2-fade-group";
-    group.innerHTML = `
-      <button class="tool-button" id="fadeInBtn" type="button" disabled title="Set fade-in from clip start to the playhead.">↗ Fade in</button>
-      <button class="tool-button" id="fadeOutBtn" type="button" disabled title="Set fade-out from the playhead to clip end.">↘ Fade out</button>
-      <button class="tool-button" id="resetFadesBtn" type="button" disabled title="Remove fade-in and fade-out from the selected clip.">✕ Fades</button>
-    `;
-    const divider = document.createElement("span");
-    divider.className = "phase1-divider";
-    divider.setAttribute("aria-hidden", "true");
-    const keyframeGroup = toolbar.querySelector(".phase2-keyframes-group");
-    if (keyframeGroup) {
-      keyframeGroup.insertAdjacentElement("afterend", divider);
-      divider.insertAdjacentElement("afterend", group);
-    } else {
-      toolbar.append(divider, group);
-    }
-    ui.fadeInBtn = group.querySelector("#fadeInBtn");
-    ui.fadeOutBtn = group.querySelector("#fadeOutBtn");
-    ui.resetFadesBtn = group.querySelector("#resetFadesBtn");
-    ui.fadeInBtn.addEventListener("click", setFadeInFromPlayhead);
-    ui.fadeOutBtn.addEventListener("click", setFadeOutFromPlayhead);
-    ui.resetFadesBtn.addEventListener("click", resetFades);
+  function ensureButtons() {
+    ui.fadeInBtn = document.getElementById("fadeInBtn");
+    ui.fadeOutBtn = document.getElementById("fadeOutBtn");
+    ui.resetFadesBtn = document.getElementById("resetFadesBtn");
   }
 
   function updateButtons() {
+    ensureButtons();
     const clip = selected();
     const hasClip = Boolean(clip);
     if (ui.fadeInBtn) ui.fadeInBtn.disabled = !hasClip;
@@ -292,9 +271,14 @@
     renderTimeline();
   };
 
+  window.orgavoxSetFadeIn = setFadeInFromPlayhead;
+  window.orgavoxSetFadeOut = setFadeOutFromPlayhead;
+  window.orgavoxResetFades = resetFades;
+  window.orgavoxUpdateFadeButtons = updateButtons;
+
   installStyles();
   setVersion();
-  ensureToolbar();
+  ensureButtons();
   syncSelectedControls();
   renderTimeline();
   setStatus("Ready — fade handles active");
