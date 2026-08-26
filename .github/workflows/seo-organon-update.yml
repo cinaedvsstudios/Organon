@@ -1,0 +1,82 @@
+name: Apply Organon SEO metadata
+
+on:
+  push:
+    branches:
+      - seo-organon
+    paths:
+      - .github/workflows/seo-organon-update.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply-seo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: seo-organon
+          fetch-depth: 0
+
+      - name: Update homepage SEO metadata
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+
+          old = '''  <title>Organon Central Hub</title>'''
+          new = '''  <title>Organon Productivity Tools | Creative & File Utilities</title>
+  <meta name="description" content="Organon is a browser-based productivity toolkit for audio, video, image, file and code workflows, with local-first tools for creators and developers.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://cinaedvsstudios.github.io/Organon/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Organon Productivity Tools">
+  <meta property="og:title" content="Organon Productivity Tools | Creative & File Utilities">
+  <meta property="og:description" content="Browser-based productivity tools for audio, video, image, file and code workflows, built for creators and developers.">
+  <meta property="og:url" content="https://cinaedvsstudios.github.io/Organon/">
+  <meta property="og:image" content="https://cinaedvsstudios.github.io/Organon/images/logoemoji.png">
+  <meta property="og:locale" content="en_GB">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Organon Productivity Tools | Creative & File Utilities">
+  <meta name="twitter:description" content="Browser-based productivity tools for audio, video, image, file and code workflows, built for creators and developers.">
+  <meta name="twitter:image" content="https://cinaedvsstudios.github.io/Organon/images/logoemoji.png">
+
+  <!-- Structured data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Organon Productivity Tools",
+    "alternateName": "Organon",
+    "url": "https://cinaedvsstudios.github.io/Organon/",
+    "description": "Organon is a browser-based productivity toolkit for audio, video, image, file and code workflows, with local-first tools for creators and developers.",
+    "inLanguage": "en"
+  }
+  </script>'''
+
+          if 'Organon Productivity Tools | Creative & File Utilities' in text:
+              print('SEO metadata already present; no index change needed.')
+          else:
+              if old not in text:
+                  raise SystemExit('Expected existing title tag not found; refusing to modify index.html')
+              text = text.replace(old, new, 1)
+              path.write_text(text, encoding='utf-8')
+
+      - name: Commit SEO change
+        run: |
+          if git diff --quiet -- index.html; then
+            echo "No index.html changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git commit -m "Add Organon homepage SEO metadata"
+          git push origin HEAD:seo-organon
