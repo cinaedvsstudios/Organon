@@ -73,37 +73,10 @@
     document.head.appendChild(style);
   }
 
-  function button(id, label, title) {
-    let btn = document.getElementById(id);
-    if (!btn) {
-      btn = document.createElement("button");
-      btn.id = id;
-      btn.type = "button";
-      btn.className = "tool-button";
-    }
-    btn.textContent = label;
-    btn.title = title;
-    return btn;
-  }
-
-  function ensureToolbar() {
-    const toolbar = document.querySelector(".phase1-timeline-toolbar");
-    if (!toolbar || toolbar.querySelector(".phase2-normalize-group")) return;
-    const group = document.createElement("div");
-    group.className = "phase1-tool-group phase2-normalize-group";
-    group.append(button("normalizeBtn", "⚖ Normalize", "Open track loudness normalize tools."));
-    const divider = document.createElement("span");
-    divider.className = "phase1-divider";
-    divider.setAttribute("aria-hidden", "true");
-    const previous = toolbar.querySelector(".phase2-fade-group") || toolbar.querySelector(".phase2-keyframes-group") || toolbar.querySelector(".phase1-edit-group");
-    if (previous) {
-      previous.insertAdjacentElement("afterend", divider);
-      divider.insertAdjacentElement("afterend", group);
-    } else {
-      toolbar.append(divider, group);
-    }
-    ui.normalizeBtn = group.querySelector("#normalizeBtn");
-    ui.normalizeBtn.addEventListener("click", openModal);
+  function ensureButton() {
+    const button = document.getElementById("normalizeBtn");
+    if (button) ui.normalizeBtn = button;
+    return button;
   }
 
   function ensureModal() {
@@ -349,7 +322,9 @@
   }
 
   function updateNormalizeButton() {
-    if (ui.normalizeBtn) ui.normalizeBtn.disabled = !state.clips.length;
+    const button = ensureButton();
+    if (!button) return;
+    button.disabled = !state.clips.length;
   }
 
   const previousRenderTimeline = renderTimeline;
@@ -369,9 +344,12 @@
     if (event.key === "Escape") closeModal();
   });
 
+  window.orgavoxOpenNormalize = openModal;
+  window.orgavoxUpdateNormalizeButton = updateNormalizeButton;
+
   installStyles();
   setVersion();
-  ensureToolbar();
+  ensureButton();
   ensureModal();
   updateNormalizeButton();
   renderTimeline();

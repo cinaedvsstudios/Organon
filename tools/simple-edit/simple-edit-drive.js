@@ -149,23 +149,8 @@
   }
 
   function ensureButton() {
-    let button = document.getElementById("driveBtn");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "driveBtn";
-      button.type = "button";
-      button.className = "tool-button drive-btn";
-      button.textContent = "🔥 Drive";
-      button.addEventListener("click", openModal);
-    }
-    ui.driveBtn = button;
-    const effectsGroup = document.querySelector(".orgavox-effects-group");
-    const effectsButton = document.querySelector(".effects-library-button") ||
-      [...document.querySelectorAll("button")].find((node) => /effects library/i.test(node.textContent || ""));
-    if (effectsGroup && button.parentElement !== effectsGroup) {
-      if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(button, effectsButton);
-      else effectsGroup.appendChild(button);
-    }
+    const button = document.getElementById("driveBtn");
+    if (button) ui.driveBtn = button;
     return button;
   }
 
@@ -349,17 +334,22 @@
   };
 
   const previousSyncSelectedControls = syncSelectedControls;
-  syncSelectedControls = function driveSyncSelectedControls() {
-    previousSyncSelectedControls();
+  function updateDriveButtonState() {
     const clip = selectedClip();
     const settings = settingsForClip(clip);
-    const button = document.getElementById("driveBtn");
-    if (button) {
-      button.disabled = !clip;
-      button.classList.toggle("drive-active", Boolean(settings));
-      button.title = settings ? `Drive: ${settings.label}` : "Open clip-wide drive/saturation";
-    }
+    const button = ensureButton();
+    if (!button) return;
+    button.disabled = !clip;
+    button.classList.toggle("drive-active", Boolean(settings));
+    button.title = settings ? `Drive: ${settings.label}` : "Open clip-wide drive/saturation";
+  }
+  syncSelectedControls = function driveSyncSelectedControls() {
+    previousSyncSelectedControls();
+    updateDriveButtonState();
   };
+
+  window.orgavoxOpenDrive = openModal;
+  window.orgavoxUpdateDriveButton = updateDriveButtonState;
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") closeModal();

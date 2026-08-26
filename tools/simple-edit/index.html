@@ -17,26 +17,20 @@
     <header class="topbar">
       <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version">v1.12</span></h1><p>Browser audio workstation</p></div></div>
       <div class="orgavox-main-controls-group">
-        <button class="tool-button primary" id="importBtn" type="button">📥 Open</button>
-        <button class="tool-button" id="exportBtn" type="button">💾 Save</button>
-        <div class="orgavox-transport-group"><button class="icon-button" id="jumpStartBtn" type="button">⏮</button><button class="icon-button" id="playBtn" type="button">▶</button><button class="icon-button" id="stopBtn" type="button">■</button><button class="time-readout" id="timeReadout" type="button">00:00.000</button></div>
+        <div class="orgavox-transport-group"></div>
       </div>
       <div class="toolbar-actions orgavox-edit-group" aria-label="ORGAVOX visible tools"></div>
       <input id="fileInput" type="file" multiple hidden accept="audio/*,video/*,.mp3,.wav,.wave,.m4a,.aac,.ogg,.oga,.opus,.flac,.aif,.aiff,.caf,.weba,.mp4,.m4v,.mov,.webm,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi">
     </header>
 
     <div id="orgavoxHiddenUiSeed" hidden>
-      <button class="tool-button" id="scissorsBtn" type="button" disabled>✂️ Snip</button>
-      <button class="tool-button" id="stretchBtn" type="button" aria-pressed="false">↔ Stretch off</button>
-      <button class="tool-button" id="gateBtn" type="button" disabled>▥ Noise gate</button>
-      <button class="tool-button danger" id="deleteBtn" type="button" disabled>Delete</button>
     </div>
 
     <section class="clip-controls" id="clipControls" aria-label="Selected clip controls">
       <div class="selected-summary"><span class="scope-label">Selected clip</span><strong id="selectedClipName">None</strong></div>
       <label class="range-control"><span>Volume</span><input id="volumeSlider" type="range" min="0" max="200" value="100" disabled><output id="volumeOut">100%</output></label>
-      <label class="range-control orgavox-echo-control"><span>Echo</span><input id="echoSlider" type="range" min="0" max="100" value="0" disabled><output id="echoOut">0%</output><button class="icon-button echo-settings-btn" id="echoSettingsBtn" type="button">⚙</button></label>
-      <label class="range-control zoom-control"><span>Timeline zoom</span><input id="zoomSlider" type="range" min="25" max="500" value="100"><output id="zoomOut">100%</output><button class="icon-button" id="fullscreenBtn" type="button" title="Toggle fullscreen">⛶</button></label>
+      <label class="range-control orgavox-echo-control"><span>Echo</span><input id="echoSlider" type="range" min="0" max="100" value="0" disabled><output id="echoOut">0%</output></label>
+      <label class="range-control zoom-control"><span>Timeline zoom</span><input id="zoomSlider" type="range" min="25" max="500" value="100"><output id="zoomOut">100%</output></label>
     </section>
 
     <div class="workspace">

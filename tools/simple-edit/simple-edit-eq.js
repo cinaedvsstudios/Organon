@@ -142,22 +142,8 @@
   }
 
   function ensureButton() {
-    let button = document.getElementById("eqBtn");
-    if (!button) {
-      button = document.createElement("button");
-      button.id = "eqBtn";
-      button.type = "button";
-      button.className = "tool-button eq-btn";
-      button.textContent = "🎚 EQ / Filter";
-      button.addEventListener("click", openModal);
-    }
-    ui.eqBtn = button;
-    const effectsGroup = document.querySelector(".orgavox-effects-group");
-    const effectsButton = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((node) => /effects library/i.test(node.textContent || ""));
-    if (effectsGroup && button.parentElement !== effectsGroup) {
-      if (effectsButton?.parentElement === effectsGroup) effectsGroup.insertBefore(button, effectsButton);
-      else effectsGroup.appendChild(button);
-    }
+    const button = document.getElementById("eqBtn");
+    if (button) ui.eqBtn = button;
     return button;
   }
 
@@ -338,16 +324,21 @@
   };
 
   const previousSyncSelectedControls = syncSelectedControls;
+  function updateEqButtonState() {
+    const clip = selectedClip();
+    const button = ensureButton();
+    if (!button) return;
+    button.disabled = !clip;
+    button.classList.toggle("eq-active", Boolean(clip?.eqSettings?.enabled));
+    button.title = clip?.eqSettings?.enabled ? `EQ / Filter: ${clip.eqSettings.label || "Custom EQ"}` : "Open clip-wide EQ / Filter";
+  }
   syncSelectedControls = function orgavoxEqSyncSelectedControls() {
     previousSyncSelectedControls();
-    const clip = selectedClip();
-    const button = document.getElementById("eqBtn");
-    if (button) {
-      button.disabled = !clip;
-      button.classList.toggle("eq-active", Boolean(clip?.eqSettings?.enabled));
-      button.title = clip?.eqSettings?.enabled ? `EQ / Filter: ${clip.eqSettings.label || "Custom EQ"}` : "Open clip-wide EQ / Filter";
-    }
+    updateEqButtonState();
   };
+
+  window.orgavoxOpenEq = openModal;
+  window.orgavoxUpdateEqButton = updateEqButtonState;
 
   document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
 

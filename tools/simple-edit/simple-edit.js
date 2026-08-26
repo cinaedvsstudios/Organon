@@ -63,6 +63,50 @@
     return staging;
   }
 
+  function createOwnerControls() {
+    const staging = ensureModuleStaging();
+    const effectsGroup = staging.querySelector(".orgavox-effects-group");
+    const editGroup = staging.querySelector(".phase1-edit-group");
+    const controls = [
+      ["gateBtn", "▥ Noise Gate", effectsGroup], ["stretchBtn", "↔ Stretch", effectsGroup],
+      ["fadeInBtn", "↗ Fade In", effectsGroup], ["fadeOutBtn", "↘ Fade Out", effectsGroup],
+      ["resetFadesBtn", "✕ Reset Fades", effectsGroup], ["normalizeBtn", "⚖ Normalize", effectsGroup],
+      ["transposeBtn", "🎼 Transpose", effectsGroup, "tool-button transpose-btn"], ["eqBtn", "🎚 EQ / Filter", effectsGroup, "tool-button eq-btn"],
+      ["driveBtn", "🔥 Drive", effectsGroup, "tool-button drive-btn"], ["dynamicsBtn", "📊 Dynamics", effectsGroup, "tool-button dynamics-btn"],
+      ["stereoBtn", "↔ Stereo / Pan", effectsGroup], ["lofiBtn", "🧊 Lo-Fi / Crush", effectsGroup],
+      ["effectsLibraryBtn", "🎧 Effects Library", effectsGroup], ["reverseClipBtn", "↩ Reverse", effectsGroup],
+      ["scissorsBtn", "✂️ Snip", editGroup], ["deleteBtn", "🗑 Delete", editGroup]
+    ];
+    controls.forEach(([id, label, parent, className = "tool-button"]) => {
+      if (document.getElementById(id)) return;
+      const control = document.createElement("button");
+      control.id = id;
+      control.type = "button";
+      control.className = className;
+      control.textContent = label;
+      parent.appendChild(control);
+    });
+    const visibleSeeds = [
+      ["importBtn", "📥 Open", ".orgavox-main-controls-group", "tool-button primary"],
+      ["exportBtn", "💾 Save", ".orgavox-main-controls-group", "tool-button"],
+      ["jumpStartBtn", "⏮", ".orgavox-transport-group", "icon-button"],
+      ["playBtn", "▶", ".orgavox-transport-group", "icon-button"],
+      ["stopBtn", "■", ".orgavox-transport-group", "icon-button"],
+      ["timeReadout", "00:00.000", ".orgavox-transport-group", "time-readout"],
+      ["echoSettingsBtn", "⚙", ".orgavox-echo-control", "icon-button echo-settings-btn"],
+      ["fullscreenBtn", "⛶", ".zoom-control", "icon-button"]
+    ];
+    visibleSeeds.forEach(([id, label, selector, className]) => {
+      if (document.getElementById(id)) return;
+      const control = document.createElement("button");
+      control.id = id;
+      control.type = "button";
+      control.className = className;
+      control.textContent = label;
+      document.querySelector(selector)?.appendChild(control);
+    });
+  }
+
   installLocalSoundFxRouting();
   const earlyFiles = [
     "./simple-edit-core.js?v=1.05",
@@ -73,8 +117,8 @@
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13"
   ];
+  createOwnerControls();
   for (const source of earlyFiles) await loadScript(source);
-  ensureModuleStaging();
   const behaviorFiles = [
     "./simple-edit-effects-library.js?v=0.15",
     "./simple-edit-echo-settings.js?v=1.04",
@@ -350,6 +394,12 @@
         node.addEventListener("click", (event) => { closeMenus(); action(event); });
       };
       bind("projectBtn", () => window.orgavoxOpenProjectModal?.());
+      bind("importBtn", () => window.orgavoxOpenFiles?.());
+      bind("exportBtn", () => window.orgavoxOpenExport?.());
+      bind("jumpStartBtn", () => window.orgavoxJumpToStart?.());
+      bind("playBtn", () => window.orgavoxTogglePlayback?.());
+      bind("stopBtn", () => window.orgavoxStopPlayback?.());
+      bind("fullscreenBtn", () => window.orgavoxToggleFullscreen?.());
       bind("echoSettingsBtn", () => window.orgavoxOpenEchoSettings?.());
       bind("markersBtn", () => window.orgavoxAddMarkerAtPlayhead?.());
       bind("prevMarkerBtn", () => window.orgavoxPreviousMarker?.());
@@ -375,6 +425,16 @@
       bind("deleteBtn", deleteClips);
       bind("scissorsBtn", splitSelectedClip);
       bind("analysisBtn", () => window.orgavoxOpenAnalysis?.());
+      bind("gateBtn", () => window.orgavoxOpenNoiseGate?.());
+      bind("stretchBtn", () => window.orgavoxToggleStretch?.());
+      bind("fadeInBtn", () => window.orgavoxSetFadeIn?.());
+      bind("fadeOutBtn", () => window.orgavoxSetFadeOut?.());
+      bind("resetFadesBtn", () => window.orgavoxResetFades?.());
+      bind("normalizeBtn", () => window.orgavoxOpenNormalize?.());
+      bind("transposeBtn", () => window.orgavoxOpenTranspose?.());
+      bind("eqBtn", () => window.orgavoxOpenEq?.());
+      bind("driveBtn", () => window.orgavoxOpenDrive?.());
+      bind("dynamicsBtn", () => window.orgavoxOpenDynamics?.());
       bind("stereoBtn", () => window.orgavoxOpenStereo?.());
       bind("lofiBtn", () => window.orgavoxOpenLofi?.());
       window.orgavoxWireSnapControls?.();
@@ -382,6 +442,13 @@
       window.orgavoxRenderMarkers?.();
       window.orgavoxUpdateProjectInfoBar?.();
       window.orgavoxUpdateAnalysisButton?.();
+      window.orgavoxUpdateStretchButton?.();
+      window.orgavoxUpdateFadeButtons?.();
+      window.orgavoxUpdateNormalizeButton?.();
+      window.orgavoxUpdateTransposeButton?.();
+      window.orgavoxUpdateEqButton?.();
+      window.orgavoxUpdateDriveButton?.();
+      window.orgavoxUpdateDynamicsButton?.();
       window.orgavoxUpdateStereoButton?.();
       window.orgavoxUpdateLofiButton?.();
     }
