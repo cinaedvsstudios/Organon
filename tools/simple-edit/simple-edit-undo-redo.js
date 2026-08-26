@@ -2,12 +2,14 @@
 
 (function installOrgavoxUndoRedo() {
   const HISTORY_MODAL_ID = "orgavoxUndoHistoryModal";
+  const STYLE_ID = "orgavoxUndoRedoStyles";
   const LIMIT = 80;
   let undoStack = [];
   let redoStack = [];
   let last = null;
   let lastSig = "";
   let restoring = false;
+  let recordTimer = 0;
 
   function clone(value) {
     if (value == null || typeof value !== "object") return value;
@@ -18,6 +20,23 @@
     const output = {};
     Object.entries(value).forEach(([key, next]) => { if (key !== "renderCache") output[key] = clone(next); });
     return output;
+  }
+
+  function installStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      .orgavox-history-modal{position:fixed!important;inset:0!important;z-index:999998!important;display:grid!important;place-items:center!important;padding:24px!important;background:rgba(0,0,0,.58)!important}
+      .orgavox-history-modal[hidden]{display:none!important}
+      .orgavox-history-dialog{width:min(560px,calc(100vw - 40px))!important;max-height:min(620px,calc(100vh - 40px))!important;display:flex!important;flex-direction:column!important;gap:12px!important;padding:16px!important;border:1px solid rgba(224,163,96,.72)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(24,25,24,.98),rgba(10,11,10,.99))!important;box-shadow:0 22px 64px rgba(0,0,0,.76)!important;color:#f5f0db!important}
+      .orgavox-history-list{display:grid!important;gap:8px!important;overflow:auto!important;min-height:96px!important;padding-right:4px!important}
+      .orgavox-history-row{display:grid!important;grid-template-columns:1fr auto auto!important;align-items:center!important;gap:10px!important;width:100%!important;padding:8px 10px!important;border:1px solid rgba(224,163,96,.34)!important;border-radius:12px!important;background:rgba(0,0,0,.28)!important;color:#f5f0db!important;text-align:left!important;cursor:pointer!important}
+      .orgavox-history-row:hover{border-color:rgba(117,178,222,.76)!important;background:rgba(117,178,222,.1)!important}
+      .orgavox-history-row span{color:#75b2de!important;font:900 .64rem var(--font-mono,monospace)!important}
+      .orgavox-history-row small{color:rgba(245,240,219,.58)!important;font:800 .58rem var(--font-mono,monospace)!important}
+    `;
+    document.head.appendChild(style);
   }
 
   function snap() {
@@ -49,12 +68,14 @@
     const historyBtn = document.getElementById("undoHistoryBtn");
     if (undoBtn) undoBtn.disabled = !undoStack.length;
     if (redoBtn) redoBtn.disabled = !redoStack.length;
-    if (historyBtn) historyBtn.disabled = !undoStack.length;
+    if (historyBtn) historyBtn.disabled = false;
   }
 
   function baseline() { last = snap(); lastSig = signature(last); updateButtons(); }
 
   function recordHistory() {
+    clearTimeout(recordTimer);
+    recordTimer = 0;
     if (restoring || !last) return;
     const now = snap();
     const sig = signature(now);
@@ -68,10 +89,17 @@
     updateButtons();
   }
 
+  function scheduleRecordHistory(delay = 450) {
+    if (restoring || !last) return;
+    clearTimeout(recordTimer);
+    recordTimer = setTimeout(recordHistory, delay);
+  }
+
   function apply(saved) {
     if (!saved) return;
     restoring = true;
     try {
+      clearTimeout(recordTimer);
       stopPlayback(false);
       state.assets = saved.assets.map(clone);
       state.clips = saved.clips.map(clone);
@@ -89,12 +117,13 @@
       state.expandedTrack = typeof saved.expandedTrack === "number" ? saved.expandedTrack : null;
       state.renderCache?.clear?.();
       if (ui.zoomSlider) ui.zoomSlider.value = state.pixelsPerSecond;
-      if (ui.zoomOut) ui.zoomOut.textContent = `${Math.round(state.pixelsPerSecond / 80 * 100)}%`;
+      if (ui.zoomOut) ui.zoomOut.textContent = `${state.pixelsPerSecond} px/s`;
       renderAssets();
       syncSelectedControls();
       renderTimeline();
       setPlayhead(state.playhead, true);
       window.orgavoxRefreshVisibleUi?.();
+      window.orgavoxRenderMarkers?.();
     } finally {
       restoring = false;
       last = snap();
@@ -103,8 +132,8 @@
     }
   }
 
-  function undo() { if (!undoStack.length) return; const saved = undoStack.pop(); redoStack.push(snap()); apply(saved); showToast("Undo."); }
-  function redo() { if (!redoStack.length) return; const saved = redoStack.pop(); undoStack.push(snap()); apply(saved); showToast("Redo."); }
+  function undo() { if (!undoStack.length) { showToast("No undo history yet."); return; } const saved = undoStack.pop(); redoStack.push(snap()); apply(saved); showToast("Undo."); }
+  function redo() { if (!redoStack.length) { showToast("Nothing to redo."); return; } const saved = redoStack.pop(); undoStack.push(snap()); apply(saved); showToast("Redo."); }
 
   function ensureHistoryModal() {
     let modal = document.getElementById(HISTORY_MODAL_ID);
@@ -121,6 +150,7 @@
   }
 
   function openHistory() {
+    recordHistory();
     const modal = ensureHistoryModal();
     const list = modal.querySelector("[data-history-list]");
     const items = undoStack.slice(-20).reverse();
@@ -161,9 +191,9 @@
     if (window.__orgavoxUndoRedoHistoryPatched) return;
     window.__orgavoxUndoRedoHistoryPatched = true;
     const oldRenderTimeline = renderTimeline;
-    renderTimeline = function orgavoxUndoRedoRenderTimeline() { const result = oldRenderTimeline.apply(this, arguments); setTimeout(recordHistory, 0); return result; };
+    renderTimeline = function orgavoxUndoRedoRenderTimeline() { const result = oldRenderTimeline.apply(this, arguments); scheduleRecordHistory(700); return result; };
     const oldImportFiles = importFiles;
-    importFiles = async function orgavoxUndoRedoImportFiles() { const result = await oldImportFiles.apply(this, arguments); setTimeout(recordHistory, 0); return result; };
+    importFiles = async function orgavoxUndoRedoImportFiles() { const result = await oldImportFiles.apply(this, arguments); scheduleRecordHistory(0); return result; };
   }
 
   function keys() {
@@ -182,8 +212,10 @@
   window.orgavoxRedo = redo;
   window.orgavoxOpenUndoHistory = openHistory;
   window.orgavoxRecordHistory = recordHistory;
+  window.orgavoxScheduleHistory = scheduleRecordHistory;
   window.orgavoxWireUndoRedoControls = wireControls;
 
+  installStyles();
   ensureHistoryModal();
   patchHistory();
   keys();
