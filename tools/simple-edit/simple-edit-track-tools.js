@@ -3,6 +3,7 @@
 (function installOrgavoxTrackTools() {
   const MENU_ID = "orgavoxTrackMenu";
   const POP_ID = "orgavoxTrackNumberPop";
+  const STYLE_ID = "orgavoxTrackToolsPhase2Styles";
   const TRACK_COUNT = 10;
   const COLOR_KEYS = ["cyan", "gold", "green", "purple", "red", "blue", "white"];
   const COLOR_MAP = { cyan: "#75b2de", gold: "#e0a360", green: "#4abe75", purple: "#b26dff", red: "#dc4840", blue: "#63b8ff", white: "#f5f0db" };
@@ -32,7 +33,21 @@
     return !soloActive() || setting.solo;
   }
   function trackGainValue(index) { return (isTrackAudible(index) ? 1 : 0) * Math.max(0, Math.min(2, (tracks()[index]?.volume || 100) / 100)); }
-  function escapeHtml(value) { return String(value || "").replace(/[&<>'\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '\"': "&quot;" }[char])); }
+  function escapeHtml(value) { return String(value || "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
+
+  function installStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      body.simple-edit-phase1 .track-label.orgavox-expanded-track-label{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;align-content:start!important;padding-top:14px!important;background:rgba(224,163,96,.11)!important;box-shadow:inset 4px 0 var(--orgavox-track-color,#75b2de),inset 0 0 0 2px rgba(224,163,96,.5)!important}
+      body.simple-edit-phase1 .track-lane.orgavox-expanded-track{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;background-color:rgba(224,163,96,.06)!important;box-shadow:inset 0 0 0 2px rgba(224,163,96,.42),inset 4px 0 var(--orgavox-track-color,#75b2de)!important}
+      body.simple-edit-phase1 .track-lane.orgavox-expanded-track .audio-clip{min-height:52px!important}
+      body.simple-edit-phase1 .orgavox-track-volume-overlay{cursor:pointer!important}
+      body.simple-edit-phase1 .orgavox-track-volume-overlay:hover{border-color:rgba(117,178,222,.86)!important;color:#e1f7ff!important}
+    `;
+    document.head.appendChild(style);
+  }
 
   function closeMenu() { const menu = document.getElementById(MENU_ID); if (menu) menu.hidden = true; }
   function ensureMenu() {
@@ -59,8 +74,9 @@
   }
   function touch(message) {
     stopPlayback?.();
-    refreshTrackLabels();
     renderTimeline();
+    refreshTrackLabels();
+    window.orgavoxRenderMarkers?.();
     window.orgavoxRecordHistory?.();
     if (message && typeof showToast === "function") showToast(message);
   }
@@ -97,16 +113,20 @@
       const next = prompt("Track name", setting.name);
       if (next != null) { setting.name = next.trim().slice(0, 48) || setting.name; touch("Track renamed."); }
     }
-    if (action === "volume") {
-      const anchor = document.querySelector(`.track-lane[data-track="${index}"] .orgavox-track-volume-overlay`) || document.body;
-      numberPop(anchor, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; });
-    }
+    if (action === "volume") openTrackVolume(index);
     if (action === "expand") expandTrack(index);
     if (action === "reset") resetTrackView();
     if (action === "clear" && state.clips.some((clip) => Number(clip.track) === index) && (!confirm || confirm(`Clear ${setting.name}?`))) {
       state.clips = state.clips.filter((clip) => Number(clip.track) !== index);
       touch("Track cleared.");
     }
+  }
+
+  function openTrackVolume(index, anchor = null) {
+    const setting = tracks()[index];
+    if (!setting) return;
+    const target = anchor || document.querySelector(`.track-lane[data-track="${index}"] .orgavox-track-volume-overlay`) || document.body;
+    numberPop(target, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; });
   }
 
   function analyzeTrack(index) {
@@ -183,13 +203,28 @@
       lane.classList.toggle("orgavox-track-excluded", anySolo && !setting.solo);
       lane.classList.toggle("orgavox-expanded-track", state.expandedTrack === index);
       const overlay = lane.querySelector(".orgavox-track-volume-overlay");
-      if (overlay) overlay.textContent = `${setting.name} · VOL ${Math.round(setting.volume)}%`;
+      if (overlay) {
+        overlay.textContent = `${setting.name} · VOL ${Math.round(setting.volume)}%`;
+        if (!overlay.dataset.orgavoxTrackVolumeWired) {
+          overlay.dataset.orgavoxTrackVolumeWired = "true";
+          overlay.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); openTrackVolume(index, overlay); });
+        }
+      }
     });
   }
 
-  function randomizeTrackColors() { const palette = COLOR_KEYS.filter((color) => color !== "white"); tracks().forEach((track, index) => { track.color = palette[index % palette.length]; }); touch("Track colors randomized."); }
-  function expandTrack(index = state.selectedTrack) { state.expandedTrack = Math.max(0, Math.min(TRACK_COUNT - 1, Number(index) || 0)); refreshTrackLabels(); window.orgavoxRecordHistory?.(); }
-  function resetTrackView() { state.expandedTrack = null; refreshTrackLabels(); window.orgavoxRecordHistory?.(); }
+  function randomizeTrackColors() {
+    const palette = COLOR_KEYS.filter((color) => color !== "white");
+    tracks().forEach((track, index) => {
+      const current = track.color;
+      let next = palette[Math.floor(Math.random() * palette.length)];
+      if (palette.length > 1 && next === current) next = palette[(palette.indexOf(next) + index + 1) % palette.length];
+      track.color = next;
+    });
+    touch("Track colors randomized.");
+  }
+  function expandTrack(index = state.selectedTrack) { state.expandedTrack = Math.max(0, Math.min(TRACK_COUNT - 1, Number(index) || 0)); touch("Track expanded."); }
+  function resetTrackView() { state.expandedTrack = null; touch("Track view reset."); }
 
   if (!window.__orgavoxTrackAudioPatched && typeof connectClipNodes === "function") {
     window.__orgavoxTrackAudioPatched = true;
@@ -203,13 +238,26 @@
     };
   }
 
+  function patchRenderTimeline() {
+    if (window.__orgavoxTrackToolsRenderPatched || typeof renderTimeline !== "function") return;
+    window.__orgavoxTrackToolsRenderPatched = true;
+    const previousRenderTimeline = renderTimeline;
+    renderTimeline = function orgavoxTrackToolsRenderTimeline() {
+      const result = previousRenderTimeline.apply(this, arguments);
+      requestAnimationFrame(refreshTrackLabels);
+      return result;
+    };
+  }
+
   window.orgavoxRefreshTrackTools = refreshTrackLabels;
   window.orgavoxTrackSettings = tracks;
   window.orgavoxRandomizeTrackColors = randomizeTrackColors;
   window.orgavoxExpandSelectedTrack = () => expandTrack(state.selectedTrack);
   window.orgavoxResetTrackView = resetTrackView;
   window.orgavoxApplyTrackView = refreshTrackLabels;
+  installStyles();
   tracks();
+  patchRenderTimeline();
   setTimeout(refreshTrackLabels, 0);
   document.addEventListener("click", (event) => { if (!event.target.closest(`#${MENU_ID}`) && !event.target.closest(".orgavox-track-menu-btn")) closeMenu(); });
 })();
