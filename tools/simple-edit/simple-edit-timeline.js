@@ -160,12 +160,13 @@ function moveClipPointer(event) {
   if (drag.type === "move") {
     clip.start = Math.max(0, drag.original.start + deltaSeconds);
     const laneRect = ui.tracks.getBoundingClientRect();
-    const laneHeight = laneRect.height / 5;
-    const nextTrack = Math.max(0, Math.min(4, Math.floor((event.clientY - laneRect.top) / laneHeight)));
+    const count = Math.max(1, ui.lanes?.length || document.querySelectorAll(".track-lane").length || 10);
+    const laneHeight = laneRect.height / count;
+    const nextTrack = Math.max(0, Math.min(count - 1, Math.floor((event.clientY - laneRect.top) / laneHeight)));
     if (clip.track !== nextTrack) {
       clip.track = nextTrack;
       selectTrack(clip.track);
-      ui.lanes[clip.track].appendChild(drag.element);
+      ui.lanes[clip.track]?.appendChild(drag.element);
     }
   } else if (state.stretchMode) {
     const originalDuration = drag.original.stretchDuration || Math.max(.01, drag.original.sourceEnd - drag.original.sourceStart);
