@@ -249,6 +249,7 @@
 
   function updateAnalysisButtonState() {
     const button = ensureButton();
+    if (!button) return;
     button.disabled = busy || !selectedClipForAnalysis();
     button.textContent = busy ? "📈 Scanning" : "📈 Analyze";
   }
