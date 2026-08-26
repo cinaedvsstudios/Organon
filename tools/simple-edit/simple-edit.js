@@ -57,11 +57,21 @@
     }
   }
 
-  function installMainUi() {
-    if (window.__orgavoxMainUiV101) return;
-    window.__orgavoxMainUiV101 = true;
+  function loadScript(source) {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = source;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error(`Could not load ${source}`));
+      document.head.appendChild(script);
+    });
+  }
 
-    const STYLE_ID = "orgavox-main-ui-v101-style";
+  function installMainUi() {
+    if (window.__orgavoxMainUiV102) return;
+    window.__orgavoxMainUiV102 = true;
+
+    const STYLE_ID = "orgavox-main-ui-v102-style";
     const EDIT_ID = "orgavoxEditDropdown";
     const VIEW_ID = "orgavoxViewDropdown";
     const TRACK_COUNT = 10;
@@ -77,6 +87,8 @@
 
     function installStyles() {
       document.getElementById(STYLE_ID)?.remove();
+      document.getElementById("orgavox-main-ui-v101-style")?.remove();
+      document.getElementById("orgavox-track-mix-color-lock")?.remove();
       const style = document.createElement("style");
       style.id = STYLE_ID;
       style.textContent = `
@@ -86,14 +98,13 @@
         body.simple-edit-phase1 .brand p{display:none!important}
         body.simple-edit-phase1 .workspace{height:calc(100vh - var(--topbar-h))!important}
         body.simple-edit-phase1 .phase1-top-effects{padding-top:10px!important}
-        body.simple-edit-phase1 .orgavox-edit-group{display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:8px!important;min-width:0!important}
-        body.simple-edit-phase1 .orgavox-main-controls-group{display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:8px!important;min-width:0!important}
+        body.simple-edit-phase1 .orgavox-edit-group,body.simple-edit-phase1 .orgavox-main-controls-group{display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:8px!important;min-width:0!important}
         body.simple-edit-phase1 .topbar .tool-button,body.simple-edit-phase1 .topbar .icon-button{min-height:36px!important;height:36px!important;align-items:center!important}
         body.simple-edit-phase1 .topbar .tool-button,body.simple-edit-phase1 .topbar .icon-button,body.simple-edit-phase1 .topbar .range-control span,body.simple-edit-phase1 .topbar .range-control output{font-size:.62rem!important;line-height:1!important;font-weight:800!important}
-        body.simple-edit-phase1 .orgavox-edit-dropdown,body.simple-edit-phase1 .orgavox-view-dropdown{position:relative!important;display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;visibility:visible!important;opacity:1!important;order:initial!important}
+        body.simple-edit-phase1 .orgavox-edit-dropdown,body.simple-edit-phase1 .orgavox-view-dropdown{position:relative!important;display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;visibility:visible!important;opacity:1!important}
         body.simple-edit-phase1 .orgavox-edit-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(93,67,35,.88),rgba(34,23,13,.95))!important;color:#ffe4a8!important}
         body.simple-edit-phase1 .orgavox-view-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important;box-shadow:0 0 0 1px rgba(117,178,222,.2),0 0 14px rgba(75,155,255,.18)!important}
-        body.simple-edit-phase1 .orgavox-edit-menu,body.simple-edit-phase1 .orgavox-view-menu{position:absolute!important;top:calc(100% + 8px)!important;left:0!important;z-index:4300!important;min-width:205px!important;display:grid!important;gap:6px!important;padding:8px!important;border:1px solid rgba(224,163,96,.65)!important;border-radius:14px!important;background:rgba(10,11,10,.98)!important;box-shadow:0 18px 44px rgba(0,0,0,.72)!important}
+        body.simple-edit-phase1 .orgavox-edit-menu,body.simple-edit-phase1 .orgavox-view-menu{position:absolute!important;top:calc(100% + 8px)!important;left:0!important;z-index:4300!important;min-width:215px!important;display:grid!important;gap:6px!important;padding:8px!important;border:1px solid rgba(224,163,96,.65)!important;border-radius:14px!important;background:rgba(10,11,10,.98)!important;box-shadow:0 18px 44px rgba(0,0,0,.72)!important}
         body.simple-edit-phase1 .orgavox-view-menu{border-color:rgba(117,178,222,.68)!important}
         body.simple-edit-phase1 .orgavox-edit-menu[hidden],body.simple-edit-phase1 .orgavox-view-menu[hidden]{display:none!important}
         body.simple-edit-phase1 .orgavox-edit-menu .tool-button,body.simple-edit-phase1 .orgavox-view-menu .tool-button{width:100%!important;justify-content:flex-start!important;min-height:32px!important}
@@ -113,12 +124,8 @@
         body.simple-edit-phase1 .audio-clip.orgavox-multi-selected{outline:3px solid rgba(248,215,146,.92)!important;box-shadow:0 0 0 1px rgba(248,215,146,.45),0 0 24px rgba(248,215,146,.34),0 5px 16px rgba(0,0,0,.5)!important}
         body.simple-edit-phase1 .orgavox-track-volume-overlay{background:rgba(0,0,0,.78)!important;border:1px solid rgba(224,163,96,.32)!important;color:#f8d792!important;box-shadow:0 2px 8px rgba(0,0,0,.48)!important;cursor:pointer!important}
         body.simple-edit-phase1 .orgavox-track-info-btn{min-width:24px!important;width:24px!important;height:22px!important;min-height:22px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:1px solid rgba(74,190,117,.9)!important;border-radius:7px!important;background:linear-gradient(180deg,rgba(34,126,66,.95),rgba(12,58,31,.98))!important;color:#e4ffed!important;font:900 .58rem var(--font-mono)!important;box-shadow:0 0 10px rgba(74,190,117,.24)!important;cursor:pointer!important}
-        body.simple-edit-phase1 .topbar .range-control.orgavox-echo-inline{display:grid!important;grid-template-columns:auto minmax(60px,96px) 42px 34px!important;grid-template-rows:36px!important;align-items:center!important;gap:7px!important;min-width:206px!important;margin:0!important}
-        body.simple-edit-phase1 .topbar .range-control.orgavox-echo-inline span,body.simple-edit-phase1 .topbar .range-control.orgavox-echo-inline input,body.simple-edit-phase1 .topbar .range-control.orgavox-echo-inline output{grid-row:1!important}
-        body.simple-edit-phase1 .topbar .range-control.orgavox-echo-inline #echoSettingsBtn{grid-column:4!important;grid-row:1!important;align-self:center!important;justify-self:center!important;margin:0!important;width:32px!important;min-width:32px!important;height:32px!important;min-height:32px!important;padding:0!important}
         body.simple-edit-phase1 output{cursor:pointer!important}
-        body.simple-edit-phase1 .orgavox-v101-divider{display:inline-flex!important;width:1px!important;min-width:1px!important;flex:0 0 1px!important;align-self:stretch!important;min-height:34px!important;margin:0 6px!important;background:linear-gradient(180deg,transparent,rgba(224,163,96,.58),transparent)!important;pointer-events:none!important}
-        body.simple-edit-phase1 .orgavox-leading-divider{display:inline-flex!important;flex:0 0 1px!important;min-height:36px!important;margin-left:0!important}
+        body.simple-edit-phase1 .orgavox-v102-divider{display:inline-flex!important;width:1px!important;min-width:1px!important;flex:0 0 1px!important;align-self:stretch!important;min-height:34px!important;margin:0 6px!important;background:linear-gradient(180deg,transparent,rgba(224,163,96,.58),transparent)!important;pointer-events:none!important}
         .orgavox-number-pop{position:fixed;z-index:999999;min-width:128px;padding:8px;border:1px solid rgba(224,163,96,.72);border-radius:12px;background:rgba(10,11,10,.98);box-shadow:0 18px 44px rgba(0,0,0,.72);display:grid;gap:6px}
         .orgavox-number-pop label{color:rgba(245,240,219,.72);font:800 .56rem var(--font-mono);text-transform:uppercase;letter-spacing:.08em}
         .orgavox-number-pop input{height:34px;border:1px solid rgba(117,178,222,.64);border-radius:9px;background:#050505;color:#f5f0db;padding:0 9px;font:900 .78rem var(--font-mono);outline:none}
@@ -140,49 +147,55 @@
     }
     function selectedClips() { const ids = new Set(selectedIds()); return state.clips.filter((clip) => ids.has(clip.id)); }
     function formatSeconds(value) { const seconds = Math.max(0, Number(value) || 0); const mins = Math.floor(seconds / 60); const rest = seconds - mins * 60; return `${String(mins).padStart(2, "0")}:${rest.toFixed(3).padStart(6, "0")}`; }
-    function parseTime(value) { const text = String(value || "").trim(); if (!text) return null; if (text.includes(":")) { const parts = text.split(":").map(Number); if (parts.some((part) => !Number.isFinite(part))) return null; return Math.max(0, parts.reduce((sum, part) => sum * 60 + part, 0)); } const number = Number(text.replace(/s$/i, "")); return Number.isFinite(number) ? Math.max(0, number) : null; }
+    function parseTime(value) {
+      const text = String(value || "").trim();
+      if (!text) return null;
+      if (text.includes(":")) {
+        const parts = text.split(":").map(Number);
+        if (parts.some((part) => !Number.isFinite(part))) return null;
+        return Math.max(0, parts.reduce((sum, part) => sum * 60 + part, 0));
+      }
+      const number = Number(text.replace(/s$/i, ""));
+      return Number.isFinite(number) ? Math.max(0, number) : null;
+    }
 
     function closeMenus() {
       document.querySelectorAll(".orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu").forEach((panel) => { panel.hidden = true; });
       document.querySelectorAll(".orgavox-edit-button,.orgavox-view-button,.orgavox-effects-dropdown-button").forEach((button) => button.setAttribute("aria-expanded", "false"));
     }
 
-    function menu(id, cls, buttonCls, label, title) {
+    function menu(id, wrapCls, buttonCls, panelCls, label, title) {
       let wrap = document.getElementById(id);
       if (!wrap) {
         wrap = document.createElement("div");
         wrap.id = id;
-        wrap.className = cls;
-        wrap.innerHTML = `<button class="tool-button ${buttonCls}" type="button" aria-expanded="false">${label}</button><div class="${buttonCls.replace("-button", "-menu")}" hidden></div>`;
       }
-      wrap.className = cls;
-      let button = wrap.querySelector(`.${buttonCls}`);
+      wrap.className = wrapCls;
+      let button = wrap.querySelector(`.${buttonCls}`) || wrap.querySelector("button");
       if (!button) {
         button = document.createElement("button");
         button.type = "button";
-        button.className = `tool-button ${buttonCls}`;
         wrap.prepend(button);
       }
-      let panel = wrap.querySelector(`.${buttonCls.replace("-button", "-menu")}`);
+      button.className = `tool-button ${buttonCls}`;
+      button.textContent = label;
+      button.setAttribute("aria-expanded", button.getAttribute("aria-expanded") || "false");
+      tip(button, title);
+      let panel = wrap.querySelector(`.${panelCls}`);
       if (!panel) {
         panel = document.createElement("div");
-        panel.className = buttonCls.replace("-button", "-menu");
+        panel.className = panelCls;
         panel.hidden = true;
         wrap.appendChild(panel);
       }
-      button.textContent = label;
-      tip(button, title);
-      if (button.dataset.orgavoxMenuReady !== "true") {
-        button.dataset.orgavoxMenuReady = "true";
-        button.addEventListener("click", (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          const open = panel.hidden;
-          closeMenus();
-          panel.hidden = !open;
-          button.setAttribute("aria-expanded", String(open));
-        });
-      }
+      button.onclick = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const willOpen = panel.hidden;
+        closeMenus();
+        panel.hidden = !willOpen;
+        button.setAttribute("aria-expanded", String(willOpen));
+      };
       return { wrap, button, panel };
     }
 
@@ -192,11 +205,11 @@
         button = document.createElement("button");
         button.id = id;
         button.type = "button";
-        button.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); closeMenus(); handler(); });
       }
       button.textContent = label;
       button.className = className;
       tip(button, title);
+      button.onclick = (event) => { event.preventDefault(); event.stopPropagation(); closeMenus(); handler(); };
       return button;
     }
 
@@ -313,39 +326,49 @@
       });
       if (!state.clips.length) select.innerHTML = `<option value="">No clips in timeline</option>`;
       else select.value = state.selectedClipId && state.clips.some((clip) => clip.id === state.selectedClipId) ? state.selectedClipId : state.clips[0].id;
-      if (select.dataset.orgavoxReady !== "true") {
-        select.dataset.orgavoxReady = "true";
-        select.addEventListener("change", () => {
-          const clip = state.clips.find((item) => item.id === select.value);
-          if (!clip) return;
-          selectClip(clip.id);
-          selectTrack(clip.track);
-          syncSelectedControls();
-          show(`Selected ${clip.name} for analysis.`);
-        });
-      }
+      select.onchange = () => {
+        const clip = state.clips.find((item) => item.id === select.value);
+        if (!clip) return;
+        selectClip(clip.id);
+        selectTrack(clip.track);
+        syncSelectedControls();
+        show(`Selected ${clip.name} for analysis.`);
+      };
       return select;
     }
 
     function ensureEditMenu() {
-      const made = menu(EDIT_ID, "orgavox-edit-dropdown", "orgavox-edit-button", "✎ Edit ▾", "Edit selected clips");
+      const made = menu(EDIT_ID, "orgavox-edit-dropdown", "orgavox-edit-button", "orgavox-edit-menu", "✎ Edit ▾", "Edit selected clips");
       const copy = customButton("orgavoxCopyClipBtn", "⧉ Copy", "Copy the selected clip", copyClip);
       const cut = customButton("orgavoxCutClipBtn", "✂ Cut", "Remove selected clip and store it for Paste", cutClip, "tool-button orgavox-cut-clip-btn");
       const paste = customButton("orgavoxPasteClipBtn", "⧉ Paste", "Paste copied clip at the playhead", pasteClip);
       const clear = customButton("orgavoxClearTimelineBtn", "🧹 Clear All", "Clear all clips from the timeline", clearAll);
-      [copy, cut, paste, clear, ui.deleteBtn, ui.downloadClipBtn].filter(Boolean).forEach((button) => {
+      [ui.undoHistoryBtn, copy, cut, paste, clear, ui.deleteBtn, ui.downloadClipBtn].filter(Boolean).forEach((button) => {
         if (button === ui.deleteBtn) { button.textContent = "🗑 DEL"; tip(button, "Delete the selected clip"); }
         if (button === ui.downloadClipBtn) { button.textContent = "⬇ Download Clip"; tip(button, "Download the selected clip"); }
         if (button.parentElement !== made.panel) made.panel.appendChild(button);
       });
+      made.wrap.hidden = false;
+      made.wrap.style.display = "inline-flex";
       return made.wrap;
     }
 
+    function viewButton(id, label, title, handler) {
+      return customButton(id, label, title, handler, "tool-button");
+    }
+
     function ensureViewMenu() {
-      const made = menu(VIEW_ID, "orgavox-view-dropdown", "orgavox-view-button", "👁 View ▾", "Open marker, alignment and analysis tools");
-      const markerPanel = customButton("orgavoxMarkerPanelBtn", "🏷 Markers Panel", "Open marker names, colors and cue list", openMarkersPanel);
-      const sendStart = customButton("orgavoxSendToStartBtn", "↤ Send to Start", "Move the selected clip to 0:00", sendToStart);
-      [markerPanel, sendStart].forEach((button) => { if (button.parentElement !== made.panel) made.panel.appendChild(button); });
+      const made = menu(VIEW_ID, "orgavox-view-dropdown", "orgavox-view-button", "orgavox-view-menu", "👁 View ▾", "Open marker, alignment and analysis tools");
+      const buttons = [
+        viewButton("orgavoxMarkerPanelBtn", "🏷 Markers Panel", "Open marker names, colors and cue list", openMarkersPanel),
+        viewButton("orgavoxSendToStartBtn", "↤ Send to Start", "Move the selected clip to 0:00", sendToStart),
+        viewButton("orgavoxAddBeatMarkersBtn", "▏ Add Beat Markers", "Add magenta beat markers from the selected track", () => window.orgavoxAddBeatMarkers?.()),
+        viewButton("orgavoxClearBeatMarkersBtn", "▏ Clear Beat Markers", "Clear magenta beat markers", () => window.orgavoxClearBeatMarkers?.()),
+        viewButton("orgavoxRandomizeTrackColorsBtn", "🎨 Randomize Track Colors", "Assign different colors across tracks", () => window.orgavoxRandomizeTrackColors?.()),
+        viewButton("orgavoxExpandTrackBtn", "▣ Expand Track", "Make selected track three rows tall", () => window.orgavoxExpandSelectedTrack?.()),
+        viewButton("orgavoxResetTrackViewBtn", "▢ Reset Track View", "Restore normal track heights", () => window.orgavoxResetTrackView?.())
+      ];
+      buttons.forEach((button) => { if (button.parentElement !== made.panel) made.panel.appendChild(button); });
       if (ui.alignPlayheadBtn) {
         ui.alignPlayheadBtn.textContent = "⤓ Align to Playhead";
         tip(ui.alignPlayheadBtn, "Align selected clip start to the playhead");
@@ -355,14 +378,26 @@
         ui.analysisBtn.textContent = "📈 Analyze";
         tip(ui.analysisBtn, "Analyze the selected clip immediately");
         if (ui.analysisBtn.parentElement !== made.panel) made.panel.appendChild(ui.analysisBtn);
-        if (ui.analysisBtn.dataset.orgavoxAnalyzeDirect !== "true") {
-          ui.analysisBtn.dataset.orgavoxAnalyzeDirect = "true";
-          ui.analysisBtn.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); closeMenus(); autoAnalyze(); }, true);
-        }
+        ui.analysisBtn.onclick = (event) => { event.preventDefault(); event.stopPropagation(); closeMenus(); autoAnalyze(); };
       }
+      if (ui.bounceBtn && ui.bounceBtn.parentElement !== made.panel) made.panel.appendChild(ui.bounceBtn);
       made.wrap.hidden = false;
       made.wrap.style.display = "inline-flex";
       return made.wrap;
+    }
+
+    function makeMarkerNav(id, label, title, handler) {
+      let button = document.getElementById(id);
+      if (!button) {
+        button = document.createElement("button");
+        button.id = id;
+        button.type = "button";
+        button.className = "icon-button orgavox-marker-nav";
+      }
+      button.textContent = label;
+      tip(button, title);
+      button.onclick = (event) => { event.preventDefault(); event.stopPropagation(); handler(); };
+      return button;
     }
 
     function insertAfter(anchor, node) {
@@ -378,15 +413,17 @@
       if (!group) return;
       const effects = group.querySelector(".orgavox-effects-dropdown") || document.querySelector(".orgavox-effects-dropdown");
       const marker = ui.markersBtn || document.getElementById("markersBtn");
+      if (marker) { marker.textContent = "🏷 Add Marker"; tip(marker, "Add a marker at the playhead"); }
+      const prevMarker = makeMarkerNav("orgavoxPrevMarkerBtn", "◀", "Previous marker", () => window.orgavoxPreviousMarker?.());
+      const nextMarker = makeMarkerNav("orgavoxNextMarkerBtn", "▶", "Next marker", () => window.orgavoxNextMarker?.());
       const nudgeLeft = ui.nudgeLeftBtn || document.getElementById("nudgeLeftBtn");
       const nudgeRight = ui.nudgeRightBtn || document.getElementById("nudgeRightBtn");
       const snap = ui.snapBtn || document.getElementById("snapGridBtn");
       const snapGrid = ui.snapGridSelect || document.getElementById("snapGridSelect");
       const redo = ui.redoBtn || document.getElementById("redoBtn");
-      if (marker) { marker.textContent = "🏷 Add Marker"; tip(marker, "Add a marker at the playhead"); }
       let anchor = redo?.parentElement === group ? redo : group.firstElementChild;
       if (anchor === edit || anchor === view) anchor = null;
-      [edit, view, effects, marker, nudgeLeft, nudgeRight, snap, snapGrid].filter(Boolean).forEach((node) => {
+      [edit, view, effects, prevMarker, marker, nextMarker, nudgeLeft, nudgeRight, snap, snapGrid].filter(Boolean).forEach((node) => {
         if (anchor) insertAfter(anchor, node);
         else if (node.parentElement !== group || group.firstChild !== node) group.insertBefore(node, group.firstChild);
         anchor = node;
@@ -397,44 +434,21 @@
       view.hidden = false;
     }
 
-    function restoreEchoSettings() {
-      const button = document.getElementById("echoSettingsBtn") || ui.echoSettingsBtn;
-      const control = ui.echoSlider?.closest(".range-control");
-      if (!button || !control || !ui.echoOut) return;
-      control.classList.remove("orgavox-echo-inline-v054", "orgavox-echo-inline-v055");
-      control.classList.add("orgavox-echo-inline");
-      if (button.parentElement !== control || button.previousElementSibling !== ui.echoOut) ui.echoOut.insertAdjacentElement("afterend", button);
-      ui.echoSettingsBtn = button;
-    }
-
     function addControlDividers() {
       Array.from(document.querySelectorAll(".topbar .range-control,.clip-controls .range-control")).forEach((control) => {
         const label = (control.querySelector("span")?.textContent || control.textContent || "").toLowerCase();
         const key = label.includes("master") ? "master" : (label.includes("volume") && !label.includes("zoom") ? "volume" : (label.includes("echo") ? "echo" : ""));
         if (!key || control.dataset.orgavoxDividerKey === key) return;
         const before = document.createElement("span");
-        before.className = `orgavox-v101-divider orgavox-before-${key}`;
+        before.className = `orgavox-v102-divider orgavox-before-${key}`;
         before.setAttribute("aria-hidden", "true");
         const after = document.createElement("span");
-        after.className = `orgavox-v101-divider orgavox-after-${key}`;
+        after.className = `orgavox-v102-divider orgavox-after-${key}`;
         after.setAttribute("aria-hidden", "true");
         control.parentElement?.insertBefore(before, control);
         control.parentElement?.insertBefore(after, control.nextSibling);
         control.dataset.orgavoxDividerKey = key;
       });
-    }
-
-    function ensureLeadingTransportDivider() {
-      const row = document.querySelector(".orgavox-toolbar-row");
-      const transport = row?.querySelector(".orgavox-transport-group");
-      if (!row || !transport) return;
-      let divider = row.querySelector(".orgavox-leading-divider");
-      if (!divider) {
-        divider = document.createElement("span");
-        divider.className = "orgavox-v101-divider orgavox-leading-divider";
-        divider.setAttribute("aria-hidden", "true");
-      }
-      if (transport.previousElementSibling !== divider) row.insertBefore(divider, transport);
     }
 
     function setSnapOptions() {
@@ -451,10 +465,7 @@
       const next = SNAP_VALUES.includes(current) ? current : 0.1;
       select.value = String(next);
       state.snapGrid = next;
-      if (select.dataset.orgavoxV101Snap !== "true") {
-        select.dataset.orgavoxV101Snap = "true";
-        select.addEventListener("change", () => { state.snapGrid = Number(select.value) || 0.1; show(`Snap ${state.snapGrid}s.`); });
-      }
+      select.onchange = () => { state.snapGrid = Number(select.value) || 0.1; show(`Snap ${state.snapGrid}s.`); };
     }
     function currentSnap() { const value = Number((ui.snapGridSelect || document.getElementById("snapGridSelect"))?.value || state.snapGrid || 0.1); return Number.isFinite(value) && value > 0 ? value : 0.1; }
     function nudgeSelected(direction) {
@@ -470,35 +481,8 @@
     function installNudgeHandlers() {
       const left = ui.nudgeLeftBtn || document.getElementById("nudgeLeftBtn");
       const right = ui.nudgeRightBtn || document.getElementById("nudgeRightBtn");
-      if (left && left.dataset.orgavoxV101Nudge !== "true") { left.dataset.orgavoxV101Nudge = "true"; left.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); nudgeSelected(-1); }, true); }
-      if (right && right.dataset.orgavoxV101Nudge !== "true") { right.dataset.orgavoxV101Nudge = "true"; right.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); nudgeSelected(1); }, true); }
-    }
-
-    function ensureStepButtons() {
-      const group = document.querySelector(".orgavox-transport-group") || ui.timeReadout?.parentElement;
-      if (!group || !ui.timeReadout) return;
-      if (!ui.playheadBackStepBtn) {
-        const button = document.createElement("button");
-        button.id = "playheadBackStepBtn";
-        button.type = "button";
-        button.className = "icon-button orgavox-playhead-step-button";
-        button.textContent = "←";
-        tip(button, "Move playhead back 0.01 seconds");
-        button.addEventListener("click", () => setPlayhead(Math.max(0, (Number(state.playhead) || 0) - 0.01), true));
-        ui.playheadBackStepBtn = button;
-      }
-      if (!ui.playheadForwardStepBtn) {
-        const button = document.createElement("button");
-        button.id = "playheadForwardStepBtn";
-        button.type = "button";
-        button.className = "icon-button orgavox-playhead-step-button";
-        button.textContent = "→";
-        tip(button, "Move playhead forward 0.01 seconds");
-        button.addEventListener("click", () => setPlayhead(Math.max(0, (Number(state.playhead) || 0) + 0.01), true));
-        ui.playheadForwardStepBtn = button;
-      }
-      if (ui.playheadBackStepBtn.previousElementSibling !== ui.timeReadout) group.insertBefore(ui.playheadBackStepBtn, ui.timeReadout.nextSibling);
-      if (ui.playheadForwardStepBtn.previousElementSibling !== ui.playheadBackStepBtn) group.insertBefore(ui.playheadForwardStepBtn, ui.playheadBackStepBtn.nextSibling);
+      if (left) left.onclick = (event) => { event.preventDefault(); event.stopPropagation(); nudgeSelected(-1); };
+      if (right) right.onclick = (event) => { event.preventDefault(); event.stopPropagation(); nudgeSelected(1); };
     }
 
     function updateSelectedSummary() { const ids = selectedIds(); if (ids.length > 1 && ui.selectedClipName) ui.selectedClipName.textContent = `${ids.length} clips selected`; }
@@ -520,8 +504,8 @@
       applySelectionClasses();
     }
     function installDeselect() {
-      if (window.__orgavoxV101Deselect) return;
-      window.__orgavoxV101Deselect = true;
+      if (window.__orgavoxV102Deselect) return;
+      window.__orgavoxV102Deselect = true;
       document.addEventListener("pointerdown", (event) => {
         const target = event.target;
         if (!target) return;
@@ -557,10 +541,10 @@
           button.type = "button";
           button.className = "orgavox-track-info-btn";
           button.textContent = "i";
-          button.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); });
         }
         button.title = `Analyze Track ${index + 1}`;
         button.setAttribute("aria-label", button.title);
+        button.onclick = (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); };
         const solo = label.querySelector(".orgavox-track-mix-btn.solo");
         if (solo && button.previousElementSibling !== solo) solo.insertAdjacentElement("afterend", button);
         else if (!solo && button.parentElement !== label) label.appendChild(button);
@@ -569,23 +553,23 @@
     function decorateTracks() { decorateTrackVolumeOverlays(); applySelectionClasses(); ensureTrackInfoButtons(); }
 
     function installFunctionWrappers() {
-      if (window.__orgavoxFunctionWrappersV101) return;
-      window.__orgavoxFunctionWrappersV101 = true;
+      if (window.__orgavoxFunctionWrappersV102) return;
+      window.__orgavoxFunctionWrappersV102 = true;
       if (typeof selectClip === "function") {
         const oldSelect = selectClip;
-        selectClip = function orgavoxSelectClipV101(id) { const result = oldSelect.apply(this, arguments); if (!multiSelectLock) state.selectedClipIds = id ? [id] : []; decorateTracks(); return result; };
+        selectClip = function orgavoxSelectClipV102(id) { const result = oldSelect.apply(this, arguments); if (!multiSelectLock) state.selectedClipIds = id ? [id] : []; decorateTracks(); return result; };
       }
       if (typeof syncSelectedControls === "function") {
         const oldSync = syncSelectedControls;
-        syncSelectedControls = function orgavoxSyncSelectedControlsV101() { const result = oldSync.apply(this, arguments); updateSelectedSummary(); ensureAnalysisPicker(); return result; };
+        syncSelectedControls = function orgavoxSyncSelectedControlsV102() { const result = oldSync.apply(this, arguments); updateSelectedSummary(); ensureAnalysisPicker(); return result; };
       }
       if (typeof renderTimeline === "function") {
         const oldRender = renderTimeline;
-        renderTimeline = function orgavoxRenderTimelineV101() { const result = oldRender.apply(this, arguments); refreshUi(); return result; };
+        renderTimeline = function orgavoxRenderTimelineV102() { const result = oldRender.apply(this, arguments); refreshUi(); return result; };
       }
       if (typeof deleteSelectedClip === "function") {
         const oldDelete = deleteSelectedClip;
-        deleteSelectedClip = function orgavoxDeleteSelectedClipV101() {
+        deleteSelectedClip = function orgavoxDeleteSelectedClipV102() {
           const ids = selectedIds();
           if (ids.length <= 1) return oldDelete.apply(this, arguments);
           stopPlayback?.();
@@ -601,8 +585,8 @@
     }
 
     function installShiftMultiSelect() {
-      if (window.__orgavoxShiftMultiSelect) return;
-      window.__orgavoxShiftMultiSelect = true;
+      if (window.__orgavoxShiftMultiSelectV102) return;
+      window.__orgavoxShiftMultiSelectV102 = true;
       document.addEventListener("pointerdown", (event) => {
         const element = event.target.closest?.(".audio-clip");
         if (!element || !event.shiftKey || !ui.tracks?.contains(element)) return;
@@ -628,8 +612,8 @@
     }
 
     function installKeyboard() {
-      if (window.__orgavoxKeyboardV101) return;
-      window.__orgavoxKeyboardV101 = true;
+      if (window.__orgavoxKeyboardV102) return;
+      window.__orgavoxKeyboardV102 = true;
       document.addEventListener("keydown", (event) => {
         const target = event.target;
         const typing = target && (/input|textarea|select/i.test(target.tagName || "") || target.isContentEditable);
@@ -646,14 +630,14 @@
     function scrubHit(event) {
       const target = event.target;
       if (!target || !ui.timelineScroll?.contains(target)) return null;
-      if (target.closest?.(".audio-clip,.clip-handle,button,input,select,textarea,label,.track-label-column,.asset-list,.library-panel,.popover,.modal-backdrop")) return null;
+      if (target.closest?.(".audio-clip,.clip-handle,button,input,select,textarea,label,.track-label-column,.asset-list,.library-panel,.popover,.modal-backdrop,.orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown")) return null;
       const lane = target.closest?.(".track-lane");
       if (target === ui.rulerCanvas || lane || target.closest?.("#tracks,.tracks,.timeline-content")) return { lane };
       return null;
     }
     function installScrub() {
-      if (!ui.timelineScroll || ui.timelineScroll.dataset.orgavoxScrub === "true") return;
-      ui.timelineScroll.dataset.orgavoxScrub = "true";
+      if (!ui.timelineScroll || ui.timelineScroll.dataset.orgavoxScrubV102 === "true") return;
+      ui.timelineScroll.dataset.orgavoxScrubV102 = "true";
       ui.timelineScroll.addEventListener("pointerdown", (event) => {
         if (event.button != null && event.button !== 0) return;
         const hit = scrubHit(event);
@@ -674,13 +658,13 @@
     }
 
     function installDragCopyGuard() {
-      if (window.__orgavoxDragCopyGuard) return;
-      window.__orgavoxDragCopyGuard = true;
+      if (window.__orgavoxDragCopyGuardV102) return;
+      window.__orgavoxDragCopyGuardV102 = true;
       document.addEventListener("pointerdown", (event) => { if (!event.target.closest?.(".audio-clip")) return; recentClipPointerAt = Date.now(); state.dragAssetId = null; }, true);
       document.addEventListener("dragstart", (event) => { if (!event.target.closest?.(".audio-clip")) return; event.preventDefault(); event.stopImmediatePropagation(); recentClipPointerAt = Date.now(); state.dragAssetId = null; }, true);
       document.addEventListener("drop", (event) => { if (!ui.timelineScroll?.contains(event.target)) return; if (Date.now() - recentClipPointerAt < 1400 && !state.dragAssetId) { event.preventDefault(); event.stopImmediatePropagation(); return; } setTimeout(() => { state.dragAssetId = null; }, 0); }, true);
-      if (typeof addClipFromAsset === "function" && !window.__orgavoxAddClipGuarded) {
-        window.__orgavoxAddClipGuarded = true;
+      if (typeof addClipFromAsset === "function" && !window.__orgavoxAddClipGuardedV102) {
+        window.__orgavoxAddClipGuardedV102 = true;
         const oldAdd = addClipFromAsset;
         addClipFromAsset = function orgavoxGuardedAddClipFromAsset(assetId, track, start) {
           const now = Date.now();
@@ -702,10 +686,10 @@
       ui.playBtn?.classList.toggle("orgavox-playing", active);
     }
     function installPlaybackState() {
-      if (window.__orgavoxPlaybackStateV101) return;
-      window.__orgavoxPlaybackStateV101 = true;
-      if (typeof startPlayback === "function") { const oldStart = startPlayback; startPlayback = function orgavoxStartPlaybackV101() { const result = oldStart.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
-      if (typeof stopPlayback === "function") { const oldStop = stopPlayback; stopPlayback = function orgavoxStopPlaybackV101() { const result = oldStop.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
+      if (window.__orgavoxPlaybackStateV102) return;
+      window.__orgavoxPlaybackStateV102 = true;
+      if (typeof startPlayback === "function") { const oldStart = startPlayback; startPlayback = function orgavoxStartPlaybackV102() { const result = oldStart.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
+      if (typeof stopPlayback === "function") { const oldStop = stopPlayback; stopPlayback = function orgavoxStopPlaybackV102() { const result = oldStop.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
       ui.playBtn?.addEventListener("click", () => setTimeout(syncPlayButton, 60), true);
       setInterval(syncPlayButton, 200);
     }
@@ -734,12 +718,12 @@
       if (id === "volumeOut" || label === "volume") { const clips = selectedClips(); if (!clips.length) return false; const next = Math.max(0, Math.min(200, n)); clips.forEach((clip) => { clip.volume = next; }); if (ui.volumeSlider) ui.volumeSlider.value = next; output.textContent = `${Math.round(next)}%`; renderTimeline(); syncSelectedControls(); window.orgavoxRecordHistory?.(); return true; }
       if (id === "echoOut" || label.includes("echo")) { const clips = selectedClips(); if (!clips.length) return false; const next = Math.max(0, Math.min(100, n)); clips.forEach((clip) => { clip.echo = next; }); if (ui.echoSlider) ui.echoSlider.value = next; output.textContent = `${Math.round(next)}%`; syncSelectedControls(); window.orgavoxRecordHistory?.(); return true; }
       if (id === "zoomOut" || label.includes("zoom")) { const percent = Math.max(25, Math.min(500, n)); state.pixelsPerSecond = Math.max(25, Math.min(500, Math.round(80 * percent / 100))); if (ui.zoomSlider) ui.zoomSlider.value = state.pixelsPerSecond; output.textContent = `${Math.round(percent)}%`; renderTimeline(); return true; }
-      if (label.includes("master")) { const next = Math.max(0, Math.min(200, n)); state.masterVolume = next; output.textContent = `${Math.round(next)}%`; const input = output.closest(".range-control")?.querySelector("input[type='range']"); if (input) input.value = next; window.orgavoxRecordHistory?.(); return true; }
+      if (label.includes("master")) { const next = Math.max(0, Math.min(200, n)); state.globalVolume = next; output.textContent = `${Math.round(next)}%`; const input = output.closest(".range-control")?.querySelector("input[type='range']"); if (input) { input.value = next; input.dispatchEvent(new Event("input", { bubbles: true })); } window.orgavoxRecordHistory?.(); return true; }
       return false;
     }
     function installEditableValues() {
-      if (window.__orgavoxEditableValuesV101) return;
-      window.__orgavoxEditableValuesV101 = true;
+      if (window.__orgavoxEditableValuesV102) return;
+      window.__orgavoxEditableValuesV102 = true;
       document.addEventListener("click", (event) => {
         const target = event.target;
         if (!target) return;
@@ -796,16 +780,13 @@
         window.orgavoxRefreshLibraryTools?.();
         window.orgavoxRefreshBuild6?.();
         window.orgavoxApplyFinalCleanup?.();
-        restoreEchoSettings();
         ensureEditMenu();
         ensureViewMenu();
         placeFeatureButtons();
-        ensureStepButtons();
         setSnapOptions();
         installNudgeHandlers();
         orderToolbar();
         addControlDividers();
-        ensureLeadingTransportDivider();
         finalButtonStyling();
         ensureAnalysisPicker();
         decorateTracks();
@@ -814,7 +795,7 @@
       } finally { applying = false; }
     }
 
-    window.orgavoxRefreshV101 = refreshUi;
+    window.orgavoxRefreshV102 = refreshUi;
     installStyles();
     installFunctionWrappers();
     installShiftMultiSelect();
@@ -836,21 +817,12 @@
     "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=0.51",
     "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26",
     "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30",
-    "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=0.46",
-    "./simple-edit-analysis.js?v=0.40", "./simple-edit-project.js?v=0.49", "./simple-edit-markers.js?v=0.43", "./simple-edit-build1.js?v=0.44", "./simple-edit-track-tools.js?v=0.45", "./simple-edit-clip-menu.js?v=0.46", "./simple-edit-snap-tools.js?v=0.47", "./simple-edit-library-tools.js?v=0.48", "./simple-edit-build6.js?v=0.49", "./simple-edit-cleanup.js?v=0.50"
+    "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=1.02",
+    "./simple-edit-analysis.js?v=0.40", "./simple-edit-project.js?v=0.49", "./simple-edit-markers.js?v=1.02", "./simple-edit-build1.js?v=1.02", "./simple-edit-track-tools.js?v=1.02", "./simple-edit-clip-menu.js?v=0.46", "./simple-edit-snap-tools.js?v=0.47", "./simple-edit-library-tools.js?v=0.48", "./simple-edit-build6.js?v=0.49", "./simple-edit-cleanup.js?v=0.50"
   ];
 
   window.ORGAVOX_ACTIVE_SCRIPTS = files.slice();
-
-  for (const source of files) {
-    await new Promise((resolve, reject) => {
-      const script = document.createElement("script");
-      script.src = source;
-      script.onload = resolve;
-      script.onerror = () => reject(new Error(`Could not load ${source}`));
-      document.head.appendChild(script);
-    });
-  }
+  for (const source of files) await loadScript(source);
 
   installMainUi();
   setFinalVersion();
