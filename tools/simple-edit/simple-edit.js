@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.23";
+  const VERSION = "v1.24";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -154,44 +154,46 @@
 
   installLocalSoundFxRouting();
   const earlyFiles = [
-    "./simple-edit-core.js?v=1.23",
-    "./simple-edit-timeline.js?v=1.23",
-    "./simple-edit-audio.js?v=1.23",
-    "./simple-edit-export.js?v=1.23",
-    "./simple-edit-keyframes.js?v=1.23",
-    "./simple-edit-keyframes-fix.js?v=1.23",
-    "./simple-edit-phase3.js?v=1.23"
+    "./simple-edit-core.js?v=1.24",
+    "./simple-edit-timeline.js?v=1.24",
+    "./simple-edit-audio.js?v=1.24",
+    "./simple-edit-export.js?v=1.24",
+    "./simple-edit-keyframes.js?v=1.24",
+    "./simple-edit-keyframes-fix.js?v=1.24",
+    "./simple-edit-phase3.js?v=1.24"
   ];
   createOwnerControls();
   for (const source of earlyFiles) await loadScript(source);
   const behaviorFiles = [
-    "./simple-edit-effects-library.js?v=1.23",
-    "./simple-edit-echo-settings.js?v=1.23",
-    "./simple-edit-stretch-audiotsm.js?v=1.23",
-    "./simple-edit-fade-handles.js?v=1.23",
-    "./simple-edit-normalize.js?v=1.23",
-    "./simple-edit-transpose-engine.js?v=1.23",
-    "./simple-edit-transpose.js?v=1.23",
-    "./simple-edit-eq-engine.js?v=1.23",
-    "./simple-edit-eq.js?v=1.23",
-    "./simple-edit-drive-engine.js?v=1.23",
-    "./simple-edit-drive.js?v=1.23",
-    "./simple-edit-dynamics-engine.js?v=1.23",
-    "./simple-edit-dynamics.js?v=1.23",
-    "./simple-edit-stereo-engine.js?v=1.23",
-    "./simple-edit-stereo.js?v=1.23",
-    "./simple-edit-lofi-engine.js?v=1.23",
-    "./simple-edit-lofi.js?v=1.23",
-    "./simple-edit-render-tools-engine.js?v=1.23",
-    "./simple-edit-render-tools.js?v=1.23",
-    "./simple-edit-analysis.js?v=1.23",
-    "./simple-edit-project.js?v=1.23",
-    "./simple-edit-markers.js?v=1.23",
-    "./simple-edit-undo-redo.js?v=1.23",
-    "./simple-edit-track-tools.js?v=1.23",
-    "./simple-edit-clip-menu.js?v=1.23",
-    "./simple-edit-snap-tools.js?v=1.23",
-    "./simple-edit-library-tools.js?v=1.23"
+    "./simple-edit-effects-library.js?v=1.24",
+    "./simple-edit-echo-settings.js?v=1.24",
+    "./simple-edit-stretch-audiotsm.js?v=1.24",
+    "./simple-edit-fade-handles.js?v=1.24",
+    "./simple-edit-normalize.js?v=1.24",
+    "./simple-edit-transpose-engine.js?v=1.24",
+    "./simple-edit-transpose.js?v=1.24",
+    "./simple-edit-eq-engine.js?v=1.24",
+    "./simple-edit-eq.js?v=1.24",
+    "./simple-edit-drive-engine.js?v=1.24",
+    "./simple-edit-drive.js?v=1.24",
+    "./simple-edit-dynamics-engine.js?v=1.24",
+    "./simple-edit-dynamics.js?v=1.24",
+    "./simple-edit-stereo-engine.js?v=1.24",
+    "./simple-edit-stereo.js?v=1.24",
+    "./simple-edit-lofi-engine.js?v=1.24",
+    "./simple-edit-lofi.js?v=1.24",
+    "./simple-edit-render-tools-engine.js?v=1.24",
+    "./simple-edit-render-tools.js?v=1.24",
+    "./simple-edit-analysis.js?v=1.24",
+    "./simple-edit-advanced-analysis.js?v=1.24",
+    "./simple-edit-advanced-tools.js?v=1.24",
+    "./simple-edit-project.js?v=1.24",
+    "./simple-edit-markers.js?v=1.24",
+    "./simple-edit-undo-redo.js?v=1.24",
+    "./simple-edit-track-tools.js?v=1.24",
+    "./simple-edit-clip-menu.js?v=1.24",
+    "./simple-edit-snap-tools.js?v=1.24",
+    "./simple-edit-library-tools.js?v=1.24"
   ];
   for (const source of behaviorFiles) await loadScript(source);
 
@@ -220,9 +222,9 @@
         .orgavox-top-row,.orgavox-mix-row{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;width:100%!important}.orgavox-top-row{height:42px!important;flex:0 0 42px!important;flex-wrap:nowrap!important}.orgavox-mix-row{height:42px!important;flex:0 0 42px!important;flex-wrap:nowrap!important;padding-left:296px!important}.orgavox-group{display:inline-flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;min-width:0!important}.orgavox-divider{width:1px!important;align-self:stretch!important;min-height:32px!important;max-height:44px!important;margin:0 6px!important;background:linear-gradient(180deg,transparent,rgba(224,163,96,.46),transparent)!important}
         body.simple-edit-phase1 .clip-controls,body.simple-edit-phase1 .timeline-topline,body.simple-edit-phase1 .phase1-timeline-toolbar,body.simple-edit-phase1 .phase1-workspace-rule{display:none!important}
         .tool-button,.icon-button{white-space:nowrap!important}.topbar .tool-button{min-height:36px!important;padding:8px 12px!important;font-size:.66rem!important}.topbar .icon-button{min-width:36px!important;min-height:36px!important;padding:7px 10px!important}.time-readout{min-height:36px!important;padding:8px 14px!important;font-size:.86rem!important;letter-spacing:.08em!important}
-        .orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important}.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important}.orgavox-project-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important}.orgavox-danger-tool,.orgavox-cut-clip-btn{border-color:rgba(220,72,64,.78)!important;background:linear-gradient(180deg,rgba(92,28,23,.88),rgba(39,13,10,.96))!important;color:#ffd8d2!important}.orgavox-edit-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(93,67,35,.88),rgba(34,23,13,.95))!important;color:#ffe4a8!important}.orgavox-view-button,.orgavox-analysis-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}.orgavox-effects-dropdown-button,.orgavox-marker-nav,#markersBtn{border-color:rgba(178,109,255,.84)!important;background:linear-gradient(180deg,rgba(87,45,155,.92),rgba(40,21,82,.96))!important;color:#f4e2ff!important}.orgavox-nudge-button,.orgavox-snap-button,.orgavox-align-button{border-color:rgba(117,178,222,.76)!important;background:linear-gradient(180deg,rgba(33,80,122,.86),rgba(13,35,61,.95))!important;color:#dff5ff!important}.orgavox-history-button{border-color:rgba(224,163,96,.92)!important;background:linear-gradient(180deg,rgba(151,92,26,.96),rgba(69,38,12,.98))!important;color:#ffe4a8!important}.orgavox-step-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}
+        .orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important}.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important}.orgavox-project-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important}.orgavox-danger-tool,.orgavox-cut-clip-btn{border-color:rgba(220,72,64,.78)!important;background:linear-gradient(180deg,rgba(92,28,23,.88),rgba(39,13,10,.96))!important;color:#ffd8d2!important}.orgavox-edit-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(93,67,35,.88),rgba(34,23,13,.95))!important;color:#ffe4a8!important}.orgavox-view-button,.orgavox-analysis-button,.orgavox-advanced-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}.orgavox-effects-dropdown-button,.orgavox-marker-nav,#markersBtn{border-color:rgba(178,109,255,.84)!important;background:linear-gradient(180deg,rgba(87,45,155,.92),rgba(40,21,82,.96))!important;color:#f4e2ff!important}.orgavox-nudge-button,.orgavox-snap-button,.orgavox-align-button{border-color:rgba(117,178,222,.76)!important;background:linear-gradient(180deg,rgba(33,80,122,.86),rgba(13,35,61,.95))!important;color:#dff5ff!important}.orgavox-history-button{border-color:rgba(224,163,96,.92)!important;background:linear-gradient(180deg,rgba(151,92,26,.96),rgba(69,38,12,.98))!important;color:#ffe4a8!important}.orgavox-step-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}
         #playBtn{border-color:rgba(117,178,222,.96)!important;background:linear-gradient(180deg,rgba(57,132,205,.98),rgba(24,70,132,.98))!important;color:#eef8ff!important}#stopBtn{border-color:rgba(220,72,64,.96)!important;background:linear-gradient(180deg,rgba(150,38,32,.98),rgba(65,18,15,.98))!important;color:#ffe3de!important}#jumpStartBtn,#playheadBackStepBtn{border-color:rgba(178,109,255,.92)!important;background:linear-gradient(180deg,rgba(106,60,190,.96),rgba(53,27,108,.98))!important;color:#f3e2ff!important}.orgavox-history-button{box-shadow:inset 0 0 0 1px rgba(255,218,148,.12)!important}
-        .orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown{position:relative!important;display:inline-flex!important;align-items:center!important;z-index:90!important}.orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu{position:absolute!important;top:calc(100% + 8px)!important;left:0!important;z-index:4300!important;min-width:230px!important;display:grid!important;gap:6px!important;padding:8px!important;border:1px solid rgba(224,163,96,.65)!important;border-radius:14px!important;background:rgba(10,11,10,.98)!important;box-shadow:0 18px 44px rgba(0,0,0,.72)!important}.orgavox-view-menu,.orgavox-effects-menu{border-color:rgba(117,178,222,.68)!important}.orgavox-edit-menu[hidden],.orgavox-view-menu[hidden],.orgavox-effects-menu[hidden]{display:none!important}.orgavox-edit-menu .tool-button,.orgavox-view-menu .tool-button,.orgavox-effects-menu .tool-button{width:100%!important;justify-content:flex-start!important;min-height:32px!important}
+        .orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown,.orgavox-advanced-dropdown{position:relative!important;display:inline-flex!important;align-items:center!important;z-index:90!important}.orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu,.orgavox-advanced-menu{position:absolute!important;top:calc(100% + 8px)!important;left:0!important;z-index:4300!important;min-width:230px!important;display:grid!important;gap:6px!important;padding:8px!important;border:1px solid rgba(224,163,96,.65)!important;border-radius:14px!important;background:rgba(10,11,10,.98)!important;box-shadow:0 18px 44px rgba(0,0,0,.72)!important}.orgavox-view-menu,.orgavox-effects-menu,.orgavox-advanced-menu{border-color:rgba(117,178,222,.68)!important}.orgavox-edit-menu[hidden],.orgavox-view-menu[hidden],.orgavox-effects-menu[hidden],.orgavox-advanced-menu[hidden]{display:none!important}.orgavox-edit-menu .tool-button,.orgavox-view-menu .tool-button,.orgavox-effects-menu .tool-button,.orgavox-advanced-menu .tool-button{width:100%!important;justify-content:flex-start!important;min-height:32px!important}
         .topbar .range-control{height:36px!important;min-width:0!important;display:grid!important;grid-template-columns:auto 96px 48px!important;align-items:center!important;gap:7px!important;margin:0!important}.topbar .range-control span{white-space:nowrap!important}.topbar .range-control input[type=range]{width:96px!important;min-width:96px!important}.topbar .range-control output{cursor:pointer!important;color:#e0a360!important;font:800 .62rem var(--font-mono)!important;text-align:right!important}.orgavox-master-control{width:230px!important}.orgavox-clip-volume-control{width:250px!important}.orgavox-echo-control{width:286px!important;grid-template-columns:auto 96px 48px 34px!important}.echo-settings-btn{position:static!important;grid-column:4!important;width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;align-self:center!important;justify-self:start!important;border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(32,82,125,.94),rgba(13,38,66,.96))!important;color:#e1f7ff!important}
         #snapGridSelect{height:34px!important;border:1px solid rgba(117,178,222,.72)!important;border-radius:10px!important;background:#050505!important;color:#f5f0db!important;font:900 .62rem var(--font-mono)!important}#snapGridSelect option{background:#050505!important;color:#f5f0db!important}
         body.simple-edit-phase1 .workspace{height:calc(100vh - var(--topbar-h))!important;display:grid!important;grid-template-columns:var(--orgavox-sidebar-w) minmax(0,1fr)!important;overflow:hidden!important;background:rgba(9,11,9,.97)!important}.library-panel{height:100%!important;display:flex!important;flex-direction:column!important;padding:14px 12px 14px!important;gap:11px!important;overflow:hidden!important;border-right:2px solid rgba(224,163,96,.58)!important;background:transparent!important;box-shadow:8px 0 18px rgba(0,0,0,.22)!important}.panel-heading{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important}.orgavox-sidebar-brand{display:flex!important;align-items:center!important;gap:10px!important;min-width:0!important}.orgavox-sidebar-mark{display:grid!important;place-items:center!important;width:39px!important;height:39px!important;flex:0 0 39px!important;border:1px solid rgba(224,163,96,.92)!important;border-radius:11px!important;background:rgba(0,0,0,.26)!important;color:#f8d792!important;font:900 1.32rem Georgia,serif!important}.orgavox-sidebar-title{min-width:0!important;display:grid!important;gap:1px!important;line-height:1!important}.orgavox-sidebar-title strong{display:flex!important;align-items:baseline!important;gap:6px!important;color:#e0a360!important;font:800 1.08rem var(--font-head,var(--font-headers))!important;letter-spacing:.04em!important;white-space:nowrap!important}.orgavox-sidebar-version{color:#63b8ff!important;font:800 .67rem var(--font-mono)!important;letter-spacing:.08em!important}.orgavox-sidebar-title span:not(.orgavox-sidebar-version){color:#75b2de!important;font:800 .57rem var(--font-body)!important;letter-spacing:.11em!important;text-transform:uppercase!important;white-space:nowrap!important}
@@ -237,7 +239,7 @@
       document.head.appendChild(style);
     }
 
-    function closeMenus() { qa(".orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu").forEach((panel) => { panel.hidden = true; }); }
+    function closeMenus() { qa(".orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu,.orgavox-advanced-menu").forEach((panel) => { panel.hidden = true; }); }
     function button(id, text, cls = "tool-button") {
       let node = document.getElementById(id);
       if (!node) { node = document.createElement("button"); node.id = id; node.type = "button"; }
@@ -395,6 +397,7 @@
       const edit = dropdown("orgavoxEditDropdown", "orgavox-edit-dropdown", "orgavox-edit-button", "orgavox-edit-menu", "✎ Edit ▾");
       const view = dropdown("orgavoxViewDropdown", "orgavox-view-dropdown", "orgavox-view-button", "orgavox-view-menu", "👁 View ▾");
       const effects = dropdown("orgavoxEffectsDropdown", "orgavox-effects-dropdown", "orgavox-effects-dropdown-button", "orgavox-effects-menu", "Effects ▾");
+      const advanced = dropdown("orgavoxAdvancedDropdown", "orgavox-advanced-dropdown", "orgavox-advanced-button", "orgavox-advanced-menu", "Advanced ▾");
       const prev = button("prevMarkerBtn", "◀", "icon-button orgavox-marker-nav");
       const marker = button("markersBtn", "🏷 Add Marker", "tool-button orgavox-markers-button");
       const next = button("nextMarkerBtn", "▶", "icon-button orgavox-marker-nav");
@@ -420,8 +423,9 @@
       const effectIds = ["gateBtn", "stretchBtn", "fadeInBtn", "fadeOutBtn", "resetFadesBtn", "normalizeBtn", "transposeBtn", "eqBtn", "driveBtn", "dynamicsBtn", "stereoBtn", "lofiBtn", "effectsLibraryBtn", "reverseClipBtn"];
       const fallbackLabels = { gateBtn:"▥ Noise Gate", stretchBtn:"↔ Stretch", fadeInBtn:"↗ Fade In", fadeOutBtn:"↘ Fade Out", resetFadesBtn:"✕ Reset Fades", normalizeBtn:"⚖ Normalize", transposeBtn:"🎼 Transpose", eqBtn:"🎚 EQ / Filter", driveBtn:"🔥 Drive", dynamicsBtn:"📊 Dynamics", stereoBtn:"↔ Stereo / Pan", lofiBtn:"🧊 Lo-Fi / Crush", effectsLibraryBtn:"🎧 Effects Library", reverseClipBtn:"↩ Reverse" };
       appendOrdered(effects.menu, effectIds.map((id) => document.getElementById(id) || button(id, fallbackLabels[id] || id)).filter(Boolean));
+      appendOrdered(advanced.menu, [button("orgavoxAdvancedAlignBeatBtn", "⤓ Align First Beat"), button("orgavoxAdvancedRemoveSilenceBtn", "⌫ Remove Silence"), button("orgavoxAdvancedMeasureNoteBtn", "♪ Measure Note"), button("orgavoxAdvancedMatchKeyBtn", "🎼 Match Key"), button("orgavoxAdvancedBpmDriftBtn", "▦ Split BPM Drift")]);
 
-      appendOrdered(topRow, [group("files", [ui.importBtn, ui.exportBtn, project]), divider("orgavoxTopDividerFiles"), transport, divider("orgavoxTopDividerTransport"), group("menus", [edit.wrap, view.wrap, effects.wrap]), group("markers", [prev, marker, next]), group("nudge", [nudgeLeft, nudgeRight]), group("snap", [snap, snapSelect])]);
+      appendOrdered(topRow, [group("files", [ui.importBtn, ui.exportBtn, project]), divider("orgavoxTopDividerFiles"), transport, divider("orgavoxTopDividerTransport"), group("menus", [edit.wrap, view.wrap, effects.wrap, advanced.wrap]), group("markers", [prev, marker, next]), group("nudge", [nudgeLeft, nudgeRight]), group("snap", [snap, snapSelect])]);
 
       const volume = ui.volumeSlider?.closest(".range-control"); if (volume) volume.classList.add("orgavox-clip-volume-control");
       const echo = ui.echoSlider?.closest(".range-control");
@@ -515,6 +519,11 @@
       bind("deleteBtn", deleteClips);
       bind("scissorsBtn", splitSelectedClip);
       bind("analysisBtn", () => window.orgavoxOpenAnalysis?.());
+      bind("orgavoxAdvancedAlignBeatBtn", () => window.orgavoxOpenAdvancedAlignFirstBeat?.());
+      bind("orgavoxAdvancedRemoveSilenceBtn", () => window.orgavoxOpenAdvancedRemoveSilence?.());
+      bind("orgavoxAdvancedMeasureNoteBtn", () => window.orgavoxOpenAdvancedMeasureNote?.());
+      bind("orgavoxAdvancedMatchKeyBtn", () => window.orgavoxOpenAdvancedMatchKey?.());
+      bind("orgavoxAdvancedBpmDriftBtn", () => window.orgavoxOpenAdvancedBpmDrift?.());
       bind("gateBtn", () => window.orgavoxOpenNoiseGate?.());
       bind("stretchBtn", () => window.orgavoxToggleStretch?.());
       bind("fadeInBtn", () => window.orgavoxSetFadeIn?.());
@@ -547,7 +556,7 @@
       window.__orgavoxVisibleRuntime115 = true;
       if (typeof renderTimeline === "function") { const old = renderTimeline; renderTimeline = function orgavoxUiOwnerRenderTimeline() { const result = old.apply(this, arguments); requestAnimationFrame(refresh); return result; }; }
       if (typeof syncSelectedControls === "function") { const old = syncSelectedControls; syncSelectedControls = function orgavoxUiOwnerSyncSelectedControls() { const result = old.apply(this, arguments); const hasClip = Boolean(selectedClip()); [ui.deleteBtn, ui.downloadClipBtn, ui.reverseClipBtn, ui.bounceBtn, ui.scissorsBtn, ui.nudgeLeftBtn, ui.nudgeRightBtn, ui.alignPlayheadBtn, document.getElementById("analysisBtn")].filter(Boolean).forEach((btn) => { btn.disabled = !hasClip; }); return result; }; }
-      document.addEventListener("click", (event) => { const target = event.target; if (!target.closest?.("#orgavoxEditDropdown,#orgavoxViewDropdown,#orgavoxEffectsDropdown,.orgavox-number-pop,.orgavox-track-menu")) closeMenus(); if (target.closest?.(".audio-clip,.track-label,.asset-item,button,input,select,label,.popover,.modal-backdrop,.orgavox-analysis-modal,.orgavox-project-modal,.echo-settings-backdrop")) return; if (state.selectedClipId) { state.selectedClipId = null; state.selectedClipIds = []; syncSelectedControls(); qa(".audio-clip.selected").forEach((clip) => clip.classList.remove("selected")); } }, true);
+      document.addEventListener("click", (event) => { const target = event.target; if (!target.closest?.("#orgavoxEditDropdown,#orgavoxViewDropdown,#orgavoxEffectsDropdown,#orgavoxAdvancedDropdown,.orgavox-number-pop,.orgavox-track-menu")) closeMenus(); if (target.closest?.(".audio-clip,.track-label,.asset-item,button,input,select,label,.popover,.modal-backdrop,.orgavox-analysis-modal,.orgavox-project-modal,.echo-settings-backdrop,.orgavox-advanced-backdrop")) return; if (state.selectedClipId) { state.selectedClipId = null; state.selectedClipIds = []; syncSelectedControls(); qa(".audio-clip.selected").forEach((clip) => clip.classList.remove("selected")); } }, true);
       document.addEventListener("keydown", (event) => {
         const target = event.target;
         const typing = target && (/input|textarea|select/i.test(target.tagName || "") || target.isContentEditable);
