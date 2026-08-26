@@ -11,6 +11,7 @@
   let restoring = false;
   let recordTimer = 0;
   let pendingLabel = "";
+  let selectedHistory = { stack: "undo", index: -1 };
 
   function clone(value) {
     if (value == null || typeof value !== "object") return value;
@@ -53,6 +54,7 @@
     document.addEventListener("click", (event) => {
       const button = event.target?.closest?.("button");
       if (!button) return;
+      if (button.closest?.(`#${HISTORY_MODAL_ID}`)) return;
       if (button.matches("[data-history-close],[data-echo-close],[data-bounce-close],[data-download-close]")) return;
       const label = buttonLabel(button);
       if (label) setPendingLabel(label);
@@ -66,13 +68,16 @@
     style.textContent = `
       .orgavox-history-modal{position:fixed!important;inset:0!important;z-index:999998!important;display:grid!important;place-items:center!important;padding:24px!important;background:rgba(0,0,0,.58)!important}
       .orgavox-history-modal[hidden]{display:none!important}
-      .orgavox-history-dialog{width:min(620px,calc(100vw - 40px))!important;max-height:min(620px,calc(100vh - 40px))!important;display:flex!important;flex-direction:column!important;gap:12px!important;padding:16px!important;border:1px solid rgba(224,163,96,.72)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(24,25,24,.98),rgba(10,11,10,.99))!important;box-shadow:0 22px 64px rgba(0,0,0,.76)!important;color:#f5f0db!important}
-      .orgavox-history-list{display:grid!important;gap:8px!important;overflow:auto!important;min-height:96px!important;padding-right:4px!important}
+      .orgavox-history-dialog{width:min(680px,calc(100vw - 40px))!important;max-height:min(680px,calc(100vh - 40px))!important;display:flex!important;flex-direction:column!important;gap:12px!important;padding:16px!important;border:1px solid rgba(224,163,96,.72)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(24,25,24,.98),rgba(10,11,10,.99))!important;box-shadow:0 22px 64px rgba(0,0,0,.76)!important;color:#f5f0db!important}
+      .orgavox-history-list{display:grid!important;gap:8px!important;overflow:auto!important;min-height:116px!important;padding-right:4px!important}
+      .orgavox-history-section-title{margin:10px 0 2px!important;color:#75b2de!important;font:900 .66rem var(--font-mono,monospace)!important;letter-spacing:.08em!important;text-transform:uppercase!important}
       .orgavox-history-row{display:grid!important;grid-template-columns:1fr auto auto!important;align-items:center!important;gap:10px!important;width:100%!important;padding:8px 10px!important;border:1px solid rgba(224,163,96,.34)!important;border-radius:12px!important;background:rgba(0,0,0,.28)!important;color:#f5f0db!important;text-align:left!important;cursor:pointer!important}
       .orgavox-history-row:hover{border-color:rgba(117,178,222,.76)!important;background:rgba(117,178,222,.1)!important}
+      .orgavox-history-row.selected{border-color:rgba(224,163,96,.95)!important;background:rgba(224,163,96,.18)!important;box-shadow:0 0 0 2px rgba(224,163,96,.18)!important}
       .orgavox-history-row strong{overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important}
       .orgavox-history-row span{color:#75b2de!important;font:900 .64rem var(--font-mono,monospace)!important}
       .orgavox-history-row small{color:rgba(245,240,219,.58)!important;font:800 .58rem var(--font-mono,monospace)!important}
+      .orgavox-history-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important}
     `;
     document.head.appendChild(style);
   }
@@ -137,6 +142,11 @@
     if (undoBtn) undoBtn.disabled = !undoStack.length;
     if (redoBtn) redoBtn.disabled = !redoStack.length;
     if (historyBtn) historyBtn.disabled = false;
+    const modal = document.getElementById(HISTORY_MODAL_ID);
+    const modalUndo = modal?.querySelector("[data-history-undo]");
+    const modalRedo = modal?.querySelector("[data-history-redo]");
+    if (modalUndo) modalUndo.disabled = !undoStack.length;
+    if (modalRedo) modalRedo.disabled = !redoStack.length;
   }
 
   function baseline() { last = snap(); lastSig = signature(last); updateButtons(); }
@@ -155,6 +165,7 @@
     redoStack = [];
     last = now;
     lastSig = sig;
+    selectedHistory = { stack: "undo", index: undoStack.length - 1 };
     updateButtons();
   }
 
@@ -201,8 +212,31 @@
     }
   }
 
-  function undo() { if (!undoStack.length) { showToast("No undo history yet."); return; } const saved = undoStack.pop(); redoStack.push(snap()); apply(saved); showToast(`Undo: ${saved.__historyLabel || "Timeline edit"}.`); }
-  function redo() { if (!redoStack.length) { showToast("Nothing to redo."); return; } const saved = redoStack.pop(); undoStack.push(snap()); apply(saved); showToast("Redo."); }
+  function undo() {
+    if (!undoStack.length) { showToast("No undo history yet."); return; }
+    const saved = undoStack.pop();
+    const current = snap();
+    current.__historyTime = Date.now();
+    current.__historyLabel = saved.__historyLabel || "Redo state";
+    redoStack.push(current);
+    apply(saved);
+    selectedHistory = { stack: "redo", index: redoStack.length - 1 };
+    showToast(`Undo: ${saved.__historyLabel || "Timeline edit"}.`);
+    if (!document.getElementById(HISTORY_MODAL_ID)?.hidden) renderHistoryList();
+  }
+
+  function redo() {
+    if (!redoStack.length) { showToast("Nothing to redo."); return; }
+    const saved = redoStack.pop();
+    const current = snap();
+    current.__historyTime = Date.now();
+    current.__historyLabel = saved.__historyLabel || "Undo state";
+    undoStack.push(current);
+    apply(saved);
+    selectedHistory = { stack: "undo", index: undoStack.length - 1 };
+    showToast(`Redo: ${saved.__historyLabel || "Timeline edit"}.`);
+    if (!document.getElementById(HISTORY_MODAL_ID)?.hidden) renderHistoryList();
+  }
 
   function ensureHistoryModal() {
     let modal = document.getElementById(HISTORY_MODAL_ID);
@@ -211,40 +245,69 @@
     modal.id = HISTORY_MODAL_ID;
     modal.className = "orgavox-history-modal";
     modal.hidden = true;
-    modal.innerHTML = `<section class="orgavox-history-dialog" role="dialog" aria-modal="true" aria-labelledby="undoHistoryTitle"><div class="popover-head"><div><span class="eyebrow">Edit history</span><h3 id="undoHistoryTitle">Undo History</h3></div><button class="icon-button" data-history-close type="button">×</button></div><p class="export-note">Choose one of the last 20 saved timeline states to restore.</p><div class="orgavox-history-list" data-history-list></div><div class="button-row end"><button class="tool-button" data-history-close type="button">Close</button></div></section>`;
+    modal.innerHTML = `<section class="orgavox-history-dialog" role="dialog" aria-modal="true" aria-labelledby="undoHistoryTitle"><div class="popover-head"><div><span class="eyebrow">Edit history</span><h3 id="undoHistoryTitle">Undo History</h3></div><button class="icon-button" data-history-close type="button">×</button></div><p class="export-note">Click a line to select it. Nothing is restored until you press Undo or Redo.</p><div class="orgavox-history-list" data-history-list></div><div class="orgavox-history-actions"><button class="tool-button" data-history-undo type="button">Undo</button><button class="tool-button" data-history-redo type="button">Redo</button><button class="tool-button" data-history-close type="button">Close</button></div></section>`;
     document.body.appendChild(modal);
     modal.querySelectorAll("[data-history-close]").forEach((button) => button.addEventListener("click", () => { modal.hidden = true; }));
+    modal.querySelector("[data-history-undo]")?.addEventListener("click", undo);
+    modal.querySelector("[data-history-redo]")?.addEventListener("click", redo);
     modal.addEventListener("click", (event) => { if (event.target === modal) modal.hidden = true; });
     return modal;
   }
 
-  function openHistory() {
-    recordHistory();
+  function historyRow(saved, stack, index) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "orgavox-history-row";
+    row.dataset.stack = stack;
+    row.dataset.index = String(index);
+    const time = saved.__historyTime ? new Date(saved.__historyTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "saved state";
+    const label = saved.__historyLabel || "Timeline edit";
+    row.innerHTML = `<strong>${label}</strong><span>${saved.clips?.length || 0} clips</span><small>${time}</small>`;
+    row.classList.toggle("selected", selectedHistory.stack === stack && selectedHistory.index === index);
+    row.addEventListener("click", () => {
+      selectedHistory = { stack, index };
+      document.querySelectorAll(".orgavox-history-row.selected").forEach((node) => node.classList.remove("selected"));
+      row.classList.add("selected");
+      updateButtons();
+    });
+    return row;
+  }
+
+  function renderHistoryList() {
     const modal = ensureHistoryModal();
     const list = modal.querySelector("[data-history-list]");
-    const items = undoStack.slice(-20).reverse();
-    list.innerHTML = items.length ? "" : `<div class="empty-state">No undo history yet.</div>`;
-    items.forEach((saved, reverseIndex) => {
-      const row = document.createElement("button");
-      row.type = "button";
-      row.className = "orgavox-history-row";
-      const time = saved.__historyTime ? new Date(saved.__historyTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "saved state";
-      const label = saved.__historyLabel || `Change ${reverseIndex + 1}`;
-      row.innerHTML = `<strong>${label}</strong><span>${saved.clips?.length || 0} clips</span><small>${time}</small>`;
-      row.addEventListener("click", () => {
-        const originalIndex = undoStack.length - 1 - reverseIndex;
-        if (originalIndex < 0) return;
-        redoStack = [snap()];
-        const target = undoStack[originalIndex];
-        undoStack = undoStack.slice(0, originalIndex);
-        apply(target);
-        modal.hidden = true;
-        showToast(`History restored: ${label}.`);
+    list.textContent = "";
+    if (!undoStack.length && !redoStack.length) {
+      list.innerHTML = `<div class="empty-state">No undo history yet.</div>`;
+      updateButtons();
+      return;
+    }
+    if (undoStack.length) {
+      const title = document.createElement("div");
+      title.className = "orgavox-history-section-title";
+      title.textContent = "Available undo steps";
+      list.appendChild(title);
+      undoStack.slice().reverse().forEach((saved, reverseIndex) => {
+        list.appendChild(historyRow(saved, "undo", undoStack.length - 1 - reverseIndex));
       });
-      list.appendChild(row);
-    });
-    modal.hidden = false;
+    }
+    if (redoStack.length) {
+      const title = document.createElement("div");
+      title.className = "orgavox-history-section-title";
+      title.textContent = "Available redo steps";
+      list.appendChild(title);
+      redoStack.slice().reverse().forEach((saved, reverseIndex) => {
+        list.appendChild(historyRow(saved, "redo", redoStack.length - 1 - reverseIndex));
+      });
+    }
     updateButtons();
+  }
+
+  function openHistory() {
+    recordHistory();
+    ensureHistoryModal().hidden = false;
+    selectedHistory = undoStack.length ? { stack: "undo", index: undoStack.length - 1 } : redoStack.length ? { stack: "redo", index: redoStack.length - 1 } : { stack: "undo", index: -1 };
+    renderHistoryList();
   }
 
   function wireControls() {
