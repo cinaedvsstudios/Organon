@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.01 set 1";
+  const VERSION = "v1.02 set 2";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -81,8 +81,6 @@
       style.id = STYLE_ID;
       style.textContent = `
         @keyframes orgavoxPlayPulse{from{transform:scale(1);filter:brightness(1);box-shadow:0 0 0 1px rgba(117,178,222,.42),0 0 12px rgba(75,155,255,.28)}to{transform:scale(1.16);filter:brightness(1.35);box-shadow:0 0 0 1px rgba(168,220,255,.8),0 0 28px rgba(75,155,255,.74)}}
-        @keyframes orgavoxMutePulse{0%,100%{box-shadow:0 0 0 1px rgba(220,72,64,.28),0 0 9px rgba(220,72,64,.2)}50%{box-shadow:0 0 0 1px rgba(255,120,104,.52),0 0 18px rgba(255,90,72,.58)}}
-        @keyframes orgavoxSoloPulse{0%,100%{box-shadow:0 0 0 1px rgba(248,215,146,.28),0 0 9px rgba(248,215,146,.2)}50%{box-shadow:0 0 0 1px rgba(255,236,164,.6),0 0 19px rgba(255,207,72,.62)}}
         body.simple-edit-phase1{--topbar-h:112px!important}
         body.simple-edit-phase1 .topbar{height:var(--topbar-h)!important;min-height:var(--topbar-h)!important;padding-top:12px!important;padding-bottom:8px!important}
         body.simple-edit-phase1 .brand p{display:none!important}
@@ -113,8 +111,6 @@
         body.simple-edit-phase1 .audio-clip:not(.selected):not(.orgavox-multi-selected){outline:none!important;box-shadow:0 5px 16px rgba(0,0,0,.42)!important}
         body.simple-edit-phase1 .audio-clip.orgavox-cleared-selection{outline:none!important;box-shadow:0 5px 16px rgba(0,0,0,.42)!important;background-image:none!important;filter:none!important}
         body.simple-edit-phase1 .audio-clip.orgavox-multi-selected{outline:3px solid rgba(248,215,146,.92)!important;box-shadow:0 0 0 1px rgba(248,215,146,.45),0 0 24px rgba(248,215,146,.34),0 5px 16px rgba(0,0,0,.5)!important}
-        body.simple-edit-phase1 .orgavox-track-mix-btn.mute.active{border-color:rgba(255,96,76,.96)!important;background:linear-gradient(180deg,rgba(178,42,34,.95),rgba(74,14,12,.98))!important;color:#fff3ef!important;animation:orgavoxMutePulse 1.15s ease-in-out infinite!important}
-        body.simple-edit-phase1 .orgavox-track-mix-btn.solo.active{border-color:rgba(255,224,92,.98)!important;background:linear-gradient(180deg,rgba(217,158,35,.96),rgba(104,66,7,.98))!important;color:#171008!important;animation:orgavoxSoloPulse 1.15s ease-in-out infinite!important}
         body.simple-edit-phase1 .orgavox-track-volume-overlay{background:rgba(0,0,0,.78)!important;border:1px solid rgba(224,163,96,.32)!important;color:#f8d792!important;box-shadow:0 2px 8px rgba(0,0,0,.48)!important;cursor:pointer!important}
         body.simple-edit-phase1 .orgavox-track-info-btn{min-width:24px!important;width:24px!important;height:22px!important;min-height:22px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:1px solid rgba(74,190,117,.9)!important;border-radius:7px!important;background:linear-gradient(180deg,rgba(34,126,66,.95),rgba(12,58,31,.98))!important;color:#e4ffed!important;font:900 .58rem var(--font-mono)!important;box-shadow:0 0 10px rgba(74,190,117,.24)!important;cursor:pointer!important}
         body.simple-edit-phase1 .topbar .range-control.orgavox-echo-inline{display:grid!important;grid-template-columns:auto minmax(60px,96px) 42px 34px!important;grid-template-rows:36px!important;align-items:center!important;gap:7px!important;min-width:206px!important;margin:0!important}
