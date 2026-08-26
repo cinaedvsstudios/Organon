@@ -2,6 +2,7 @@
 
 (function installSimpleEditEchoSettings() {
   const MODAL_ID = "echoSettingsModal";
+  const STYLE_ID = "orgavoxEchoSettingsStyles";
   const PRESETS = {
     studio: { label: "Studio Echo", wet: 24, delayTime: 220, feedback: 18, explanation: "A clean controlled echo that adds depth without taking over." },
     slapback: { label: "Slapback Echo", wet: 22, delayTime: 95, feedback: 6, explanation: "A single fast echo that thickens the clip." },
@@ -16,6 +17,33 @@
 
   function selected() { return selectedClip?.() || null; }
   function preset(id) { return { ...(PRESETS[id] || PRESETS.studio), preset: id || "studio", enabled: true }; }
+
+  function installStyles() {
+    if (document.getElementById(STYLE_ID)) return;
+    const style = document.createElement("style");
+    style.id = STYLE_ID;
+    style.textContent = `
+      .echo-settings-backdrop{position:fixed!important;inset:0!important;z-index:999998!important;display:none!important;place-items:center!important;padding:24px!important;background:rgba(0,0,0,.62)!important;color:#f5f0db!important}
+      .echo-settings-backdrop.open{display:grid!important}
+      .echo-settings-dialog{width:min(760px,calc(100vw - 40px))!important;max-height:min(720px,calc(100vh - 40px))!important;overflow:auto!important;display:grid!important;gap:14px!important;padding:16px!important;border:1px solid rgba(117,178,222,.76)!important;border-radius:18px!important;background:linear-gradient(180deg,rgba(24,25,24,.98),rgba(10,11,10,.99))!important;box-shadow:0 22px 64px rgba(0,0,0,.78)!important}
+      .echo-settings-head{display:flex!important;align-items:flex-start!important;justify-content:space-between!important;gap:18px!important}
+      .echo-settings-head h3{margin:.1rem 0 .2rem!important;color:#e0a360!important;font-family:var(--font-head,var(--font-headers),Georgia,serif)!important}
+      .echo-settings-head p,.echo-settings-explain{margin:0!important;color:rgba(245,240,219,.66)!important;font-size:.82rem!important;line-height:1.35!important}
+      .echo-settings-grid{display:grid!important;grid-template-columns:minmax(210px,.88fr) minmax(260px,1.12fr)!important;gap:14px!important}
+      .echo-settings-panel{display:grid!important;align-content:start!important;gap:10px!important;padding:12px!important;border:1px solid rgba(224,163,96,.28)!important;border-radius:14px!important;background:rgba(0,0,0,.24)!important}
+      .echo-settings-panel h4{margin:0!important;color:#75b2de!important;font-size:.8rem!important;letter-spacing:.08em!important;text-transform:uppercase!important}
+      .echo-preset-picker{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:7px!important}
+      .echo-preset-option{min-height:32px!important;padding:7px 8px!important;border:1px solid rgba(117,178,222,.36)!important;border-radius:10px!important;background:rgba(0,0,0,.28)!important;color:#f5f0db!important;font:800 .68rem var(--font-body,system-ui)!important;cursor:pointer!important;text-align:left!important}
+      .echo-preset-option:hover,.echo-preset-option.active{border-color:rgba(224,163,96,.86)!important;background:rgba(224,163,96,.16)!important;color:#ffe4a8!important}
+      .echo-settings-control{display:grid!important;gap:6px!important;margin:0!important;color:#f5f0db!important;font:800 .72rem var(--font-body,system-ui)!important}
+      .echo-settings-control span{display:flex!important;justify-content:space-between!important;gap:12px!important;color:rgba(245,240,219,.78)!important}
+      .echo-settings-control output{color:#e0a360!important;font-family:var(--font-mono,monospace)!important}
+      .echo-settings-control input[type=range]{width:100%!important}
+      .echo-settings-actions{display:flex!important;justify-content:flex-end!important;gap:8px!important;flex-wrap:wrap!important}
+      @media(max-width:720px){.echo-settings-grid{grid-template-columns:1fr!important}.echo-preset-picker{grid-template-columns:1fr!important}}
+    `;
+    document.head.appendChild(style);
+  }
 
   function ensureModal() {
     let modal = document.getElementById(MODAL_ID);
@@ -69,7 +97,7 @@
 
   function openModal() {
     const clip = selected();
-    if (!clip) return showToast("Select a clip before opening Echo settings.");
+    if (!clip) { showToast("Select a clip before opening Echo settings."); return; }
     const modal = ensureModal();
     currentPreset = clip.echoSettings?.preset || currentPreset || "studio";
     choosePreset(currentPreset);
@@ -83,6 +111,7 @@
       updateOutputs();
     }
     modal.classList.add("open");
+    setTimeout(() => modal.querySelector("#echoWet")?.focus(), 0);
   }
 
   function closeModal() { document.getElementById(MODAL_ID)?.classList.remove("open"); }
@@ -125,6 +154,7 @@
     showToast("Echo removed from selected clip.");
   }
 
+  installStyles();
   window.orgavoxOpenEchoSettings = openModal;
   window.orgavoxEchoSettingsForClip = (clip) => clip?.echoSettings?.enabled ? clip.echoSettings : null;
 })();
