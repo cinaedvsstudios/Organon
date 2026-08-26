@@ -44,23 +44,38 @@
     pop.addEventListener("submit", (event) => { event.preventDefault(); const number = Number(String(input.value).replace(/[^0-9.-]/g, "")); if (Number.isFinite(number) && apply(number) !== false) pop.remove(); });
     document.body.appendChild(pop); input.select(); input.focus();
   }
-  function touch(message) { stopPlayback?.(); refreshTrackLabels(); renderTimeline(); window.orgavoxRecordHistory?.(); if (message) showToast(message); }
+  function touch(message) { stopPlayback?.(); refreshTrackLabels(); renderTimeline(); window.orgavoxRecordHistory?.(); if (message && typeof showToast === "function") showToast(message); }
 
   function showMenu(index, anchor) {
     const menu = ensureMenu();
-    menu.innerHTML = `<button class="tool-button" data-action="rename" type="button">✎ Rename track</button><button class="tool-button" data-action="volume" type="button">🔊 Track volume…</button><button class="tool-button" data-action="expand" type="button">▣ Expand track</button><button class="tool-button" data-action="reset" type="button">▢ Reset track view</button><button class="tool-button danger" data-action="clear" type="button">🧹 Clear track</button>`;
-    menu.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => runMenuAction(index, button.dataset.action)));
+    menu.textContent = "";
+    const actions = [
+      ["rename", "✎ Rename track"],
+      ["volume", "🔊 Track volume…"],
+      ["expand", "▣ Expand track"],
+      ["reset", "▢ Reset track view"],
+      ["clear", "🧹 Clear track"]
+    ];
+    actions.forEach(([action, label]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = action === "clear" ? "tool-button danger" : "tool-button";
+      button.textContent = label;
+      button.addEventListener("click", () => runMenuAction(index, action));
+      menu.appendChild(button);
+    });
     const rect = anchor.getBoundingClientRect();
     menu.style.left = `${Math.min(window.innerWidth - 225, Math.max(8, rect.right + 7))}px`;
     menu.style.top = `${Math.min(window.innerHeight - 240, Math.max(8, rect.top))}px`;
     menu.hidden = false;
   }
+
   function runMenuAction(index, action) {
     closeMenu();
     const setting = tracks()[index];
     if (!setting) return;
     if (action === "rename") { const next = prompt("Track name", setting.name); if (next != null) { setting.name = next.trim().slice(0, 48) || setting.name; touch("Track renamed."); } }
-    if (action === "volume") { const anchor = document.querySelector(`.track-label[data-track-label="${index}"] .orgavox-track-volume-pill`) || document.body; numberPop(anchor, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; }); }
+    if (action === "volume") { const anchor = document.querySelector(`.track-label[data-track-label="${index}"] .orgavox-track-volume-pill`) || document.querySelector(`.track-lane[data-track="${index}"] .orgavox-track-volume-overlay`) || document.body; numberPop(anchor, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; }); }
     if (action === "expand") expandTrack(index);
     if (action === "reset") resetTrackView();
     if (action === "clear" && state.clips.some((clip) => Number(clip.track) === index) && (!confirm || confirm(`Clear ${setting.name}?`))) { state.clips = state.clips.filter((clip) => Number(clip.track) !== index); touch("Track cleared."); }
@@ -72,7 +87,7 @@
     if (clip && typeof selectClip === "function") selectClip(clip.id);
     if (typeof selectTrack === "function") selectTrack(state.selectedTrack);
     const modal = document.getElementById("analysisModal");
-    if (!modal) return showToast("Analyze panel is still loading.");
+    if (!modal) { if (typeof showToast === "function") showToast("Analyze panel is still loading."); return; }
     modal.hidden = false;
     setTimeout(() => modal.querySelector("[data-analysis-scan]")?.click(), 0);
   }
@@ -121,7 +136,7 @@
       lane.classList.toggle("orgavox-track-excluded", anySolo && !setting.solo);
       lane.classList.toggle("orgavox-expanded-track", state.expandedTrack === index);
       const overlay = lane.querySelector(".orgavox-track-volume-overlay");
-      if (overlay) overlay.textContent = `${setting.name} · VOL ${Math.round(setting.volume)}%`;
+      if (overlay) overlay.textContent = `VOL ${Math.round(setting.volume)}%`;
     });
   }
 
@@ -136,7 +151,8 @@
       const gain = context.createGain();
       gain.gain.value = trackGainValue(Math.max(0, Math.min(TRACK_COUNT - 1, Number(clip.track) || 0)));
       gain.connect(destination);
-      return previousConnectClipNodes(context, source, clip, gain);
+      const extra = Array.prototype.slice.call(arguments, 4);
+      return previousConnectClipNodes.call(this, context, source, clip, gain, ...extra);
     };
   }
 
