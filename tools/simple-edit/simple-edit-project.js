@@ -55,11 +55,11 @@
     modal.innerHTML = `
       <section class="orgavox-project-dialog" role="dialog" aria-modal="true" aria-labelledby="projectTitle">
         <div class="popover-head"><div><span class="eyebrow">Project file</span><h3 id="projectTitle">Save / Load Project</h3></div><button class="icon-button" data-project-close type="button">×</button></div>
-        <p class="export-note">Project files save the timeline, clip edits and embedded decoded audio so the session can be opened again later.</p>
+        <p class="export-note">Project files save the audio sources, timeline, clip edits, markers, track settings and workstation view state.</p>
         <label class="field"><span>Project name</span><input data-project-name type="text" value="orgavox-project" autocomplete="off"></label>
         <div class="orgavox-project-summary" data-project-summary></div>
         <div class="orgavox-project-grid">
-          <div class="orgavox-project-card"><h4>Save project</h4><p>Creates an .orgavox.json file with source audio embedded as WAV data plus all clip positions and effects.</p><button class="tool-button primary" data-project-save type="button">Save Project</button></div>
+          <div class="orgavox-project-card"><h4>Save project</h4><p>Creates an .orgavox.json file with source audio embedded as WAV data plus arrangement, markers and track settings.</p><button class="tool-button primary" data-project-save type="button">Save Project</button></div>
           <div class="orgavox-project-card"><h4>Load project</h4><p>Opens an .orgavox.json file and replaces the current ORGAVOX session with the saved arrangement.</p><button class="tool-button" data-project-load type="button">Load Project</button></div>
         </div>
         <div class="orgavox-project-actions"><button class="tool-button" data-project-close type="button">Close</button></div>
@@ -68,7 +68,11 @@
     modal.querySelectorAll("[data-project-close]").forEach((button) => button.addEventListener("click", closeModal));
     modal.querySelector("[data-project-save]")?.addEventListener("click", saveProjectFile);
     modal.querySelector("[data-project-load]")?.addEventListener("click", () => ensureLoadInput().click());
-    modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+    modal.addEventListener("pointerdown", (event) => { if (event.target === modal) closeModal(); });
+    modal.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") { event.preventDefault(); closeModal(); }
+      if (event.key === "Enter" && event.ctrlKey) { event.preventDefault(); saveProjectFile(); }
+    });
     return modal;
   }
 
@@ -78,7 +82,9 @@
     const summary = ensureModal().querySelector("[data-project-summary]");
     if (!summary) return;
     const duration = typeof projectDuration === "function" ? formatTime(projectDuration()) : "00:00.000";
-    summary.textContent = `${state.assets.length} source file${state.assets.length === 1 ? "" : "s"} · ${state.clips.length} clip${state.clips.length === 1 ? "" : "s"} · ${duration} timeline length`;
+    const markerCount = Array.isArray(state.markers) ? state.markers.length : 0;
+    const trackCount = Array.isArray(state.trackSettings) ? state.trackSettings.length : 0;
+    summary.textContent = `${state.assets.length} source file${state.assets.length === 1 ? "" : "s"} · ${state.clips.length} clip${state.clips.length === 1 ? "" : "s"} · ${markerCount} marker${markerCount === 1 ? "" : "s"} · ${trackCount || 10} tracks · ${duration}`;
   }
 
   function openModal() {
@@ -87,6 +93,7 @@
     const input = projectNameInput();
     if (input && (!input.value.trim() || input.value === "orgavox-project")) input.value = projectMeta.name !== "Untitled Project" ? projectMeta.name : suggestedProjectName();
     updateSummary();
+    setTimeout(() => input?.focus(), 0);
   }
 
   function closeModal() { ensureModal().hidden = true; }
@@ -150,10 +157,25 @@
   }
 
   function serialiseClip(clip) {
-    const keys = ["id", "assetId", "name", "track", "start", "sourceStart", "sourceEnd", "stretchDuration", "volume", "echo", "gate", "fadeIn", "fadeOut", "volumeKeyframes", "reverseAudio", "transposeSemitones", "eqSettings", "driveSettings", "dynamicsSettings", "stereoSettings", "lofiSettings"];
+    const keys = ["id", "assetId", "name", "track", "start", "sourceStart", "sourceEnd", "stretchDuration", "volume", "echo", "echoSettings", "gate", "fadeIn", "fadeOut", "volumeKeyframes", "reverseAudio", "transposeSemitones", "eqSettings", "driveSettings", "dynamicsSettings", "stereoSettings", "lofiSettings"];
     const output = {};
     keys.forEach((key) => { if (clip[key] !== undefined) output[key] = clip[key]; });
     return output;
+  }
+
+  function serialiseMarker(marker) {
+    return { id: marker.id || makeId("marker"), time: Math.max(0, Number(marker.time) || 0), label: marker.label || "Marker", color: marker.color || "gold" };
+  }
+
+  function serialiseTrack(track, index) {
+    return {
+      name: String(track?.name || `Track ${index + 1}`).slice(0, 48),
+      color: track?.color || "cyan",
+      muted: Boolean(track?.muted),
+      solo: Boolean(track?.solo),
+      volume: Math.max(0, Math.min(200, Number(track?.volume) || 100)),
+      pan: Math.max(-100, Math.min(100, Number(track?.pan) || 0))
+    };
   }
 
   async function buildProjectData() {
@@ -163,7 +185,39 @@
       if (packed) assets.push(packed);
     }
     const savedAt = new Date().toISOString();
-    return { format: "ORGAVOX_PROJECT", version: window.ORGAVOX_VERSION || "v1.06", savedAt, name: projectNameInput()?.value?.trim() || suggestedProjectName(), pixelsPerSecond: state.pixelsPerSecond, playhead: state.playhead, selectedTrack: state.selectedTrack, assets, clips: state.clips.map(serialiseClip) };
+    return {
+      format: "ORGAVOX_PROJECT",
+      version: window.ORGAVOX_VERSION || "v1.19",
+      savedAt,
+      name: projectNameInput()?.value?.trim() || suggestedProjectName(),
+      pixelsPerSecond: state.pixelsPerSecond,
+      playhead: state.playhead,
+      selectedTrack: state.selectedTrack,
+      selectedAssetId: state.selectedAssetId,
+      selectedClipId: state.selectedClipId,
+      selectedClipIds: Array.isArray(state.selectedClipIds) ? state.selectedClipIds.slice() : [],
+      stretchMode: Boolean(state.stretchMode),
+      globalVolume: Number(state.globalVolume ?? 100),
+      expandedTrack: typeof state.expandedTrack === "number" ? state.expandedTrack : null,
+      trackSettings: Array.isArray(state.trackSettings) ? state.trackSettings.map(serialiseTrack) : [],
+      markers: Array.isArray(state.markers) ? state.markers.map(serialiseMarker) : [],
+      assets,
+      clips: state.clips.map(serialiseClip)
+    };
+  }
+
+  async function saveBlobWithPicker(blob, filename) {
+    if (window.showSaveFilePicker) {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: filename,
+        types: [{ description: "ORGAVOX Project", accept: { "application/json": [".orgavox.json", ".orgavox"] } }]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    }
+    downloadBlob(blob, filename);
   }
 
   async function saveProjectFile() {
@@ -174,22 +228,39 @@
       const project = await buildProjectData();
       const filename = `${safeFilename(project.name || "orgavox-project")}.orgavox.json`;
       const blob = new Blob([JSON.stringify(project, null, 2)], { type: "application/json" });
-      downloadBlob(blob, filename);
+      await saveBlobWithPicker(blob, filename);
       setProjectInfo(project.name, project.savedAt);
       showToast(`${filename} saved.`);
       setStatus("Ready");
       closeModal();
     } catch (error) {
+      if (error?.name === "AbortError") { setStatus("Ready"); return; }
       console.error(error);
       showToast(error.message || "The project could not be saved.");
       setStatus("Project save failed");
     } finally { setBusy(false); }
   }
 
+  function safeMarkerFromProject(raw) {
+    if (!raw) return null;
+    return { id: raw.id || makeId("marker"), time: Math.max(0, Number(raw.time) || 0), label: String(raw.label || "Marker").slice(0, 80), color: raw.color || "gold" };
+  }
+
+  function safeTrackFromProject(raw, index) {
+    return {
+      name: String(raw?.name || `Track ${index + 1}`).slice(0, 48),
+      color: String(raw?.color || ["cyan", "gold", "green", "purple", "red", "blue"][index % 6]),
+      muted: Boolean(raw?.muted),
+      solo: Boolean(raw?.solo),
+      volume: Math.max(0, Math.min(200, Number(raw?.volume) || 100)),
+      pan: Math.max(-100, Math.min(100, Number(raw?.pan) || 0))
+    };
+  }
+
   function safeClipFromProject(raw, assetIds) {
     const assetId = String(raw.assetId || "");
     if (!assetIds.has(assetId)) return null;
-    return { id: raw.id || makeId("clip"), assetId, name: raw.name || "Project clip", track: Math.max(0, Math.min(9, Number(raw.track) || 0)), start: Math.max(0, Number(raw.start) || 0), sourceStart: Math.max(0, Number(raw.sourceStart) || 0), sourceEnd: Math.max(0.01, Number(raw.sourceEnd) || 0.01), stretchDuration: raw.stretchDuration == null ? null : Math.max(0.01, Number(raw.stretchDuration) || 0.01), volume: Number.isFinite(Number(raw.volume)) ? Number(raw.volume) : 100, echo: Number.isFinite(Number(raw.echo)) ? Number(raw.echo) : 0, gate: raw.gate || null, fadeIn: Number(raw.fadeIn) || 0, fadeOut: Number(raw.fadeOut) || 0, volumeKeyframes: Array.isArray(raw.volumeKeyframes) ? raw.volumeKeyframes : [], reverseAudio: Boolean(raw.reverseAudio), transposeSemitones: Number(raw.transposeSemitones) || 0, eqSettings: raw.eqSettings || null, driveSettings: raw.driveSettings || null, dynamicsSettings: raw.dynamicsSettings || null, stereoSettings: raw.stereoSettings || null, lofiSettings: raw.lofiSettings || null, bufferOverride: null, cacheVersion: 0 };
+    return { id: raw.id || makeId("clip"), assetId, name: raw.name || "Project clip", track: Math.max(0, Math.min(9, Number(raw.track) || 0)), start: Math.max(0, Number(raw.start) || 0), sourceStart: Math.max(0, Number(raw.sourceStart) || 0), sourceEnd: Math.max(0.01, Number(raw.sourceEnd) || 0.01), stretchDuration: raw.stretchDuration == null ? null : Math.max(0.01, Number(raw.stretchDuration) || 0.01), volume: Number.isFinite(Number(raw.volume)) ? Number(raw.volume) : 100, echo: Number.isFinite(Number(raw.echo)) ? Number(raw.echo) : 0, echoSettings: raw.echoSettings || null, gate: raw.gate || null, fadeIn: Number(raw.fadeIn) || 0, fadeOut: Number(raw.fadeOut) || 0, volumeKeyframes: Array.isArray(raw.volumeKeyframes) ? raw.volumeKeyframes : [], reverseAudio: Boolean(raw.reverseAudio), transposeSemitones: Number(raw.transposeSemitones) || 0, eqSettings: raw.eqSettings || null, driveSettings: raw.driveSettings || null, dynamicsSettings: raw.dynamicsSettings || null, stereoSettings: raw.stereoSettings || null, lofiSettings: raw.lofiSettings || null, bufferOverride: null, cacheVersion: 0 };
   }
 
   async function loadProjectFile(file) {
@@ -210,17 +281,27 @@
       const clips = (Array.isArray(project.clips) ? project.clips : []).map((clip) => safeClipFromProject(clip, assetIds)).filter(Boolean);
       state.assets = assets;
       state.clips = clips;
-      state.selectedAssetId = assets[0]?.id || null;
-      state.selectedClipId = clips[0]?.id || null;
+      state.markers = (Array.isArray(project.markers) ? project.markers : []).map(safeMarkerFromProject).filter(Boolean);
+      state.trackSettings = Array.from({ length: 10 }, (_, index) => safeTrackFromProject(project.trackSettings?.[index], index));
+      state.selectedAssetId = assetIds.has(project.selectedAssetId) ? project.selectedAssetId : assets[0]?.id || null;
+      state.selectedClipId = clips.some((clip) => clip.id === project.selectedClipId) ? project.selectedClipId : clips[0]?.id || null;
+      state.selectedClipIds = (Array.isArray(project.selectedClipIds) ? project.selectedClipIds : []).filter((id) => clips.some((clip) => clip.id === id));
+      if (!state.selectedClipIds.length && state.selectedClipId) state.selectedClipIds = [state.selectedClipId];
       state.selectedTrack = Math.max(0, Math.min(9, Number(project.selectedTrack) || clips[0]?.track || 0));
       state.playhead = Math.max(0, Number(project.playhead) || 0);
       state.pixelsPerSecond = Math.max(25, Math.min(500, Number(project.pixelsPerSecond) || state.pixelsPerSecond || 80));
+      state.stretchMode = Boolean(project.stretchMode);
+      state.globalVolume = Math.max(0, Math.min(200, Number(project.globalVolume ?? state.globalVolume ?? 100)));
+      state.expandedTrack = typeof project.expandedTrack === "number" ? Math.max(0, Math.min(9, Number(project.expandedTrack))) : null;
       state.renderCache?.clear?.();
       if (ui.zoomSlider) ui.zoomSlider.value = state.pixelsPerSecond;
       if (ui.zoomOut) ui.zoomOut.textContent = `${Math.round(state.pixelsPerSecond / 80 * 100)}%`;
       renderAssets();
       syncSelectedControls();
       renderTimeline();
+      setPlayhead(state.playhead, true);
+      window.orgavoxRefreshTrackTools?.();
+      window.orgavoxRenderMarkers?.();
       setProjectInfo(project.name || file.name.replace(/\.[^.]+$/, ""), project.savedAt || null);
       const input = projectNameInput();
       if (input) input.value = project.name || suggestedProjectName();
