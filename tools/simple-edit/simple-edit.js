@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.02 set 2";
+  const VERSION = "v1.03";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -9,20 +9,19 @@
 
   function setFinalVersion() {
     document.title = `Organon — ORGAVOX ${VERSION}`;
-    const mark = document.querySelector(".brand-mark");
-    if (mark) mark.textContent = "Φ";
     const brand = document.querySelector(".brand");
+    const mark = brand?.querySelector(".brand-mark");
+    if (mark) mark.textContent = "Φ";
     const title = brand?.querySelector("h1");
     if (title) {
-      let badge = title.querySelector(".phase1-version, .simple-edit-version");
       title.textContent = "ORGAVOX";
-      if (!badge) badge = document.createElement("span");
+      const badge = document.createElement("span");
       badge.className = "phase1-version simple-edit-version";
       badge.textContent = VERSION;
       title.appendChild(badge);
     }
     const subtitle = brand?.querySelector("p");
-    if (subtitle) { subtitle.textContent = ""; subtitle.hidden = true; }
+    if (subtitle) { subtitle.textContent = "Browser audio workstation"; subtitle.hidden = false; }
     document.querySelectorAll(".simple-edit-version,.phase1-version,.orgavox-sidebar-version").forEach((node) => { node.textContent = VERSION; });
     window.ORGAVOX_VERSION = VERSION;
   }
@@ -68,77 +67,51 @@
   }
 
   function installMainUi() {
-    if (window.__orgavoxMainUiV102) return;
-    window.__orgavoxMainUiV102 = true;
+    if (window.__orgavoxMainUiV103) return;
+    window.__orgavoxMainUiV103 = true;
 
-    const STYLE_ID = "orgavox-main-ui-v102-style";
+    const STYLE_ID = "orgavox-main-ui-v103-style";
     const EDIT_ID = "orgavoxEditDropdown";
     const VIEW_ID = "orgavoxViewDropdown";
-    const TRACK_COUNT = 10;
     const SNAP_VALUES = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10];
-    let applying = false;
     let numberPopover = null;
-    let scrubPointer = null;
-    let suppressClickUntil = 0;
-    let multiSelectLock = false;
-    let blockShiftClickUntil = 0;
-    let recentClipPointerAt = 0;
-    let lastAssetAdd = null;
+    let closingMenus = false;
 
     function installStyles() {
-      document.getElementById(STYLE_ID)?.remove();
       document.getElementById("orgavox-main-ui-v101-style")?.remove();
+      document.getElementById("orgavox-main-ui-v102-style")?.remove();
+      document.getElementById("orgavox-final-cleanup-v102c-style")?.remove();
       document.getElementById("orgavox-track-mix-color-lock")?.remove();
+      document.getElementById(STYLE_ID)?.remove();
       const style = document.createElement("style");
       style.id = STYLE_ID;
       style.textContent = `
-        @keyframes orgavoxPlayPulse{from{transform:scale(1);filter:brightness(1);box-shadow:0 0 0 1px rgba(117,178,222,.42),0 0 12px rgba(75,155,255,.28)}to{transform:scale(1.16);filter:brightness(1.35);box-shadow:0 0 0 1px rgba(168,220,255,.8),0 0 28px rgba(75,155,255,.74)}}
-        body.simple-edit-phase1{--topbar-h:112px!important}
-        body.simple-edit-phase1 .topbar{height:var(--topbar-h)!important;min-height:var(--topbar-h)!important;padding-top:12px!important;padding-bottom:8px!important}
-        body.simple-edit-phase1 .brand p{display:none!important}
-        body.simple-edit-phase1 .workspace{height:calc(100vh - var(--topbar-h))!important}
-        body.simple-edit-phase1 .phase1-top-effects{padding-top:10px!important}
-        body.simple-edit-phase1 .orgavox-edit-group,body.simple-edit-phase1 .orgavox-main-controls-group{display:inline-flex!important;align-items:center!important;flex-wrap:nowrap!important;gap:8px!important;min-width:0!important}
-        body.simple-edit-phase1 .topbar .tool-button,body.simple-edit-phase1 .topbar .icon-button{min-height:36px!important;height:36px!important;align-items:center!important}
-        body.simple-edit-phase1 .topbar .tool-button,body.simple-edit-phase1 .topbar .icon-button,body.simple-edit-phase1 .topbar .range-control span,body.simple-edit-phase1 .topbar .range-control output{font-size:.62rem!important;line-height:1!important;font-weight:800!important}
+        @keyframes orgavoxPlayPulse{from{transform:scale(1);filter:brightness(1);box-shadow:0 0 0 1px rgba(117,178,222,.42),0 0 12px rgba(75,155,255,.28)}to{transform:scale(1.14);filter:brightness(1.3);box-shadow:0 0 0 1px rgba(168,220,255,.82),0 0 28px rgba(75,155,255,.72)}}
         body.simple-edit-phase1 .orgavox-edit-dropdown,body.simple-edit-phase1 .orgavox-view-dropdown{position:relative!important;display:inline-flex!important;align-items:center!important;flex:0 0 auto!important;visibility:visible!important;opacity:1!important}
         body.simple-edit-phase1 .orgavox-edit-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(93,67,35,.88),rgba(34,23,13,.95))!important;color:#ffe4a8!important}
-        body.simple-edit-phase1 .orgavox-view-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important;box-shadow:0 0 0 1px rgba(117,178,222,.2),0 0 14px rgba(75,155,255,.18)!important}
+        body.simple-edit-phase1 .orgavox-view-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}
         body.simple-edit-phase1 .orgavox-edit-menu,body.simple-edit-phase1 .orgavox-view-menu{position:absolute!important;top:calc(100% + 8px)!important;left:0!important;z-index:4300!important;min-width:215px!important;display:grid!important;gap:6px!important;padding:8px!important;border:1px solid rgba(224,163,96,.65)!important;border-radius:14px!important;background:rgba(10,11,10,.98)!important;box-shadow:0 18px 44px rgba(0,0,0,.72)!important}
         body.simple-edit-phase1 .orgavox-view-menu{border-color:rgba(117,178,222,.68)!important}
         body.simple-edit-phase1 .orgavox-edit-menu[hidden],body.simple-edit-phase1 .orgavox-view-menu[hidden]{display:none!important}
         body.simple-edit-phase1 .orgavox-edit-menu .tool-button,body.simple-edit-phase1 .orgavox-view-menu .tool-button{width:100%!important;justify-content:flex-start!important;min-height:32px!important}
-        body.simple-edit-phase1 #importBtn.orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important;box-shadow:0 0 0 1px rgba(117,178,222,.24),0 0 14px rgba(75,155,255,.24)!important}
-        body.simple-edit-phase1 #exportBtn.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important;box-shadow:0 0 0 1px rgba(74,190,117,.22),0 0 14px rgba(74,190,117,.22)!important}
-        body.simple-edit-phase1 #stopBtn.orgavox-stop-danger,body.simple-edit-phase1 #deleteBtn.orgavox-danger-tool,body.simple-edit-phase1 .orgavox-cut-clip-btn{border-color:rgba(220,72,64,.78)!important;background:linear-gradient(180deg,rgba(92,28,23,.88),rgba(39,13,10,.96))!important;color:#ffd8d2!important;box-shadow:0 0 0 1px rgba(220,72,64,.2),0 0 14px rgba(220,72,64,.2)!important}
-        body.simple-edit-phase1 #scissorsBtn.orgavox-snip-tool{border-color:rgba(220,72,64,.76)!important;background:linear-gradient(180deg,rgba(89,29,26,.84),rgba(35,13,12,.94))!important;color:#ffd8d2!important;box-shadow:0 0 0 1px rgba(220,72,64,.2),0 0 14px rgba(220,72,64,.2)!important}
-        body.simple-edit-phase1 .orgavox-fade-tool{border-color:rgba(74,190,117,.76)!important;background:linear-gradient(180deg,rgba(28,89,52,.74),rgba(12,42,25,.9))!important;color:#d6ffe4!important}
-        body.simple-edit-phase1 .orgavox-effects-library-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(87,46,148,.88),rgba(37,22,74,.96))!important;color:#f1ddff!important}
-        body.simple-edit-phase1 .time-readout{font-size:.94rem!important;min-height:36px!important;padding:9px 14px!important;letter-spacing:.08em!important;cursor:pointer!important}
+        body.simple-edit-phase1 #importBtn.orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important}
+        body.simple-edit-phase1 #exportBtn.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important}
+        body.simple-edit-phase1 #stopBtn.orgavox-stop-danger,body.simple-edit-phase1 #deleteBtn.orgavox-danger-tool,body.simple-edit-phase1 .orgavox-cut-clip-btn{border-color:rgba(220,72,64,.78)!important;background:linear-gradient(180deg,rgba(92,28,23,.88),rgba(39,13,10,.96))!important;color:#ffd8d2!important}
+        body.simple-edit-phase1 #scissorsBtn.orgavox-snip-tool{border-color:rgba(220,72,64,.76)!important;background:linear-gradient(180deg,rgba(89,29,26,.84),rgba(35,13,12,.94))!important;color:#ffd8d2!important}
         body.simple-edit-phase1 #playBtn.orgavox-playing{animation:orgavoxPlayPulse .72s ease-in-out infinite alternate!important;transform-origin:center!important}
-        body.simple-edit-phase1 #snapGridSelect{background:#050505!important;color:#f5f0db!important;border-color:rgba(117,178,222,.72)!important;box-shadow:0 0 0 1px rgba(117,178,222,.16)!important}
+        body.simple-edit-phase1 #snapGridSelect{background:#050505!important;color:#f5f0db!important;border-color:rgba(117,178,222,.72)!important}
         body.simple-edit-phase1 #snapGridSelect option{background:#050505!important;color:#f5f0db!important}
-        body.simple-edit-phase1 .track-lane.selected-track{background:linear-gradient(90deg,rgba(80,172,255,.24),rgba(117,178,222,.12))!important;box-shadow:inset 0 0 0 2px rgba(117,178,222,.72),inset 0 0 28px rgba(75,155,255,.28)!important}
-        body.simple-edit-phase1 .audio-clip:not(.selected):not(.orgavox-multi-selected){outline:none!important;box-shadow:0 5px 16px rgba(0,0,0,.42)!important}
-        body.simple-edit-phase1 .audio-clip.orgavox-cleared-selection{outline:none!important;box-shadow:0 5px 16px rgba(0,0,0,.42)!important;background-image:none!important;filter:none!important}
-        body.simple-edit-phase1 .audio-clip.orgavox-multi-selected{outline:3px solid rgba(248,215,146,.92)!important;box-shadow:0 0 0 1px rgba(248,215,146,.45),0 0 24px rgba(248,215,146,.34),0 5px 16px rgba(0,0,0,.5)!important}
-        body.simple-edit-phase1 .orgavox-track-volume-overlay{background:rgba(0,0,0,.78)!important;border:1px solid rgba(224,163,96,.32)!important;color:#f8d792!important;box-shadow:0 2px 8px rgba(0,0,0,.48)!important;cursor:pointer!important}
-        body.simple-edit-phase1 .orgavox-track-info-btn{min-width:24px!important;width:24px!important;height:22px!important;min-height:22px!important;padding:0!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;border:1px solid rgba(74,190,117,.9)!important;border-radius:7px!important;background:linear-gradient(180deg,rgba(34,126,66,.95),rgba(12,58,31,.98))!important;color:#e4ffed!important;font:900 .58rem var(--font-mono)!important;box-shadow:0 0 10px rgba(74,190,117,.24)!important;cursor:pointer!important}
         body.simple-edit-phase1 output{cursor:pointer!important}
-        body.simple-edit-phase1 .orgavox-v102-divider{display:inline-flex!important;width:1px!important;min-width:1px!important;flex:0 0 1px!important;align-self:stretch!important;min-height:34px!important;margin:0 6px!important;background:linear-gradient(180deg,transparent,rgba(224,163,96,.58),transparent)!important;pointer-events:none!important}
         .orgavox-number-pop{position:fixed;z-index:999999;min-width:128px;padding:8px;border:1px solid rgba(224,163,96,.72);border-radius:12px;background:rgba(10,11,10,.98);box-shadow:0 18px 44px rgba(0,0,0,.72);display:grid;gap:6px}
         .orgavox-number-pop label{color:rgba(245,240,219,.72);font:800 .56rem var(--font-mono);text-transform:uppercase;letter-spacing:.08em}
         .orgavox-number-pop input{height:34px;border:1px solid rgba(117,178,222,.64);border-radius:9px;background:#050505;color:#f5f0db;padding:0 9px;font:900 .78rem var(--font-mono);outline:none}
         .orgavox-number-pop small{color:rgba(245,240,219,.5);font:700 .55rem var(--font-mono)}
-        @media (max-width:1380px){body.simple-edit-phase1{--topbar-h:158px!important}}
       `;
       document.head.appendChild(style);
     }
 
-    function tip(button, text) { if (!button || !text) return; button.title = text; button.setAttribute("aria-label", text); }
+    function tip(button, text) { if (!button) return; button.title = text; button.setAttribute("aria-label", text); }
     function show(message) { if (typeof showToast === "function") showToast(message); }
-    function clampTrack(track) { return Math.max(0, Math.min(TRACK_COUNT - 1, Number(track) || 0)); }
-    function trackSettingsList() { if (!Array.isArray(state.trackSettings)) state.trackSettings = []; return state.trackSettings; }
     function selectedIds() {
       if (!Array.isArray(state.selectedClipIds)) state.selectedClipIds = state.selectedClipId ? [state.selectedClipId] : [];
       state.selectedClipIds = state.selectedClipIds.filter((id) => state.clips.some((clip) => clip.id === id));
@@ -160,8 +133,11 @@
     }
 
     function closeMenus() {
+      if (closingMenus) return;
+      closingMenus = true;
       document.querySelectorAll(".orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu").forEach((panel) => { panel.hidden = true; });
       document.querySelectorAll(".orgavox-edit-button,.orgavox-view-button,.orgavox-effects-dropdown-button").forEach((button) => button.setAttribute("aria-expanded", "false"));
+      closingMenus = false;
     }
 
     function menu(id, wrapCls, buttonCls, panelCls, label, title) {
@@ -171,7 +147,7 @@
         wrap.id = id;
       }
       wrap.className = wrapCls;
-      let button = wrap.querySelector(`.${buttonCls}`) || wrap.querySelector("button");
+      let button = wrap.querySelector(`.${buttonCls}`);
       if (!button) {
         button = document.createElement("button");
         button.type = "button";
@@ -179,7 +155,6 @@
       }
       button.className = `tool-button ${buttonCls}`;
       button.textContent = label;
-      button.setAttribute("aria-expanded", button.getAttribute("aria-expanded") || "false");
       tip(button, title);
       let panel = wrap.querySelector(`.${panelCls}`);
       if (!panel) {
@@ -201,11 +176,7 @@
 
     function customButton(id, label, title, handler, className = "tool-button") {
       let button = document.getElementById(id);
-      if (!button) {
-        button = document.createElement("button");
-        button.id = id;
-        button.type = "button";
-      }
+      if (!button) { button = document.createElement("button"); button.id = id; button.type = "button"; }
       button.textContent = label;
       button.className = className;
       tip(button, title);
@@ -231,22 +202,22 @@
       state.selectedClipIds = [];
       syncSelectedControls();
       renderTimeline();
-      show(clips.length === 1 ? "Clip cut." : `${clips.length} clips cut.`);
       window.orgavoxRecordHistory?.();
+      show(clips.length === 1 ? "Clip cut." : `${clips.length} clips cut.`);
     }
     function pasteClip() {
-      const stored = Array.isArray(state.__orgavoxClipClipboard) ? state.__orgavoxClipClipboard : (state.__orgavoxClipClipboard ? [state.__orgavoxClipClipboard] : []);
+      const stored = Array.isArray(state.__orgavoxClipClipboard) ? state.__orgavoxClipClipboard : [];
       if (!stored.length) return show("No copied clip to paste.");
       const base = Math.max(0, Number(state.playhead) || 0);
-      const pasted = stored.map((clip) => ({ ...clip, id: makeId("clip"), start: base + Math.max(0, Number(clip.__relativeStart) || 0), track: clampTrack(Number(state.selectedTrack) || Number(clip.track) || 0), cacheVersion: 0, volumeKeyframes: Array.isArray(clip.volumeKeyframes) ? clip.volumeKeyframes.map((item) => ({ ...item, id: makeId("kf") })) : [] }));
+      const pasted = stored.map((clip) => ({ ...clip, id: makeId("clip"), start: base + Math.max(0, Number(clip.__relativeStart) || 0), cacheVersion: 0, volumeKeyframes: Array.isArray(clip.volumeKeyframes) ? clip.volumeKeyframes.map((item) => ({ ...item, id: makeId("kf") })) : [] }));
       pasted.forEach((clip) => { delete clip.__relativeStart; });
       state.clips.push(...pasted);
       state.selectedClipId = pasted[pasted.length - 1]?.id || null;
       state.selectedClipIds = pasted.map((clip) => clip.id);
       renderTimeline();
       syncSelectedControls();
-      show(pasted.length === 1 ? "Clip pasted at the playhead." : `${pasted.length} clips pasted at the playhead.`);
       window.orgavoxRecordHistory?.();
+      show(pasted.length === 1 ? "Clip pasted at the playhead." : `${pasted.length} clips pasted at the playhead.`);
     }
     function clearAll() {
       if (!state.clips.length) return show("Timeline is already clear.");
@@ -257,32 +228,18 @@
       state.selectedClipIds = [];
       syncSelectedControls();
       renderTimeline();
-      show("All timeline clips cleared.");
       window.orgavoxRecordHistory?.();
-    }
-
-    function openMarkersPanel() {
-      const modal = document.getElementById("markersModal");
-      if (!modal) return show("Markers panel is still loading.");
-      modal.hidden = false;
-      const input = modal.querySelector("[data-marker-name]");
-      if (input && !input.value.trim()) input.value = `Marker ${(state.markers?.length || 0) + 1}`;
-      window.orgavoxRenderMarkers?.();
-      show("Markers panel opened.");
+      show("All timeline clips cleared.");
     }
     function sendToStart() {
       const clips = selectedClips();
       if (!clips.length) return show("Select a clip to send to start.");
-      stopPlayback?.();
-      if (clips.length === 1) clips[0].start = 0;
-      else {
-        const earliest = Math.min(...clips.map((clip) => Math.max(0, Number(clip.start) || 0)));
-        clips.forEach((clip) => { clip.start = Math.max(0, (Number(clip.start) || 0) - earliest); });
-      }
+      const earliest = Math.min(...clips.map((clip) => Math.max(0, Number(clip.start) || 0)));
+      clips.forEach((clip) => { clip.start = clips.length === 1 ? 0 : Math.max(0, (Number(clip.start) || 0) - earliest); });
       renderTimeline();
       syncSelectedControls();
-      show(clips.length === 1 ? "Clip sent to start." : `${clips.length} clips sent to start.`);
       window.orgavoxRecordHistory?.();
+      show(clips.length === 1 ? "Clip sent to start." : `${clips.length} clips sent to start.`);
     }
     function autoAnalyze() {
       const clip = state.clips.find((item) => item.id === state.selectedClipId) || state.clips.find((item) => Number(item.track) === Number(state.selectedTrack)) || state.clips[0];
@@ -292,163 +249,72 @@
       const modal = document.getElementById("analysisModal");
       if (!modal) return show("Analyze panel is still loading.");
       modal.hidden = false;
-      const summary = modal.querySelector("[data-analysis-summary]");
-      if (summary) summary.textContent = `${clip.name} · scanning selected clip…`;
       setTimeout(() => modal.querySelector("[data-analysis-scan]")?.click(), 0);
-      show(`Analyzing ${clip.name}.`);
-    }
-    function analyzeTrack(track) {
-      const index = clampTrack(track);
-      selectTrack(index);
-      const clip = state.clips.find((item) => Number(item.track) === index);
-      if (clip) selectClip(clip.id);
-      autoAnalyze();
-    }
-
-    function ensureAnalysisPicker() {
-      const modal = document.getElementById("analysisModal");
-      const dialog = modal?.querySelector(".orgavox-analysis-dialog") || modal?.querySelector("section,.export-dialog,.popover");
-      if (!dialog) return null;
-      let wrap = dialog.querySelector(".orgavox-analysis-picker-wrap");
-      if (!wrap) {
-        wrap = document.createElement("label");
-        wrap.className = "orgavox-analysis-picker-wrap";
-        wrap.innerHTML = `<span>Clip / track to analyze</span><select class="orgavox-analysis-picker"></select>`;
-        dialog.prepend(wrap);
-      }
-      const select = wrap.querySelector("select");
-      select.innerHTML = "";
-      state.clips.slice().sort((a, b) => a.track - b.track || a.start - b.start).forEach((clip) => {
-        const option = document.createElement("option");
-        option.value = clip.id;
-        option.textContent = `Track ${clip.track + 1} · ${formatSeconds(clip.start)} · ${clip.name}`;
-        select.appendChild(option);
-      });
-      if (!state.clips.length) select.innerHTML = `<option value="">No clips in timeline</option>`;
-      else select.value = state.selectedClipId && state.clips.some((clip) => clip.id === state.selectedClipId) ? state.selectedClipId : state.clips[0].id;
-      select.onchange = () => {
-        const clip = state.clips.find((item) => item.id === select.value);
-        if (!clip) return;
-        selectClip(clip.id);
-        selectTrack(clip.track);
-        syncSelectedControls();
-        show(`Selected ${clip.name} for analysis.`);
-      };
-      return select;
     }
 
     function ensureEditMenu() {
       const made = menu(EDIT_ID, "orgavox-edit-dropdown", "orgavox-edit-button", "orgavox-edit-menu", "✎ Edit ▾", "Edit selected clips");
-      const copy = customButton("orgavoxCopyClipBtn", "⧉ Copy", "Copy the selected clip", copyClip);
-      const cut = customButton("orgavoxCutClipBtn", "✂ Cut", "Remove selected clip and store it for Paste", cutClip, "tool-button orgavox-cut-clip-btn");
-      const paste = customButton("orgavoxPasteClipBtn", "⧉ Paste", "Paste copied clip at the playhead", pasteClip);
-      const clear = customButton("orgavoxClearTimelineBtn", "🧹 Clear All", "Clear all clips from the timeline", clearAll);
-      [ui.undoHistoryBtn, copy, cut, paste, clear, ui.deleteBtn, ui.downloadClipBtn].filter(Boolean).forEach((button) => {
-        if (button === ui.deleteBtn) { button.textContent = "🗑 DEL"; tip(button, "Delete the selected clip"); }
-        if (button === ui.downloadClipBtn) { button.textContent = "⬇ Download Clip"; tip(button, "Download the selected clip"); }
-        if (button.parentElement !== made.panel) made.panel.appendChild(button);
-      });
-      made.wrap.hidden = false;
-      made.wrap.style.display = "inline-flex";
+      const buttons = [
+        customButton("orgavoxCopyClipBtn", "⧉ Copy", "Copy selected clip", copyClip),
+        customButton("orgavoxCutClipBtn", "✂ Cut", "Remove selected clip and store it for Paste", cutClip, "tool-button orgavox-cut-clip-btn"),
+        customButton("orgavoxPasteClipBtn", "⧉ Paste", "Paste copied clip at playhead", pasteClip),
+        customButton("orgavoxClearTimelineBtn", "🧹 Clear All", "Clear all clips", clearAll)
+      ];
+      if (ui.undoHistoryBtn) { ui.undoHistoryBtn.textContent = "↶ Undo History"; buttons.unshift(ui.undoHistoryBtn); }
+      buttons.filter(Boolean).forEach((button) => { if (button.parentElement !== made.panel) made.panel.appendChild(button); });
       return made.wrap;
-    }
-
-    function viewButton(id, label, title, handler) {
-      return customButton(id, label, title, handler, "tool-button");
     }
 
     function ensureViewMenu() {
-      const made = menu(VIEW_ID, "orgavox-view-dropdown", "orgavox-view-button", "orgavox-view-menu", "👁 View ▾", "Open marker, alignment and analysis tools");
-      const buttons = [
-        viewButton("orgavoxMarkerPanelBtn", "🏷 Markers Panel", "Open marker names, colors and cue list", openMarkersPanel),
-        viewButton("orgavoxSendToStartBtn", "↤ Send to Start", "Move the selected clip to 0:00", sendToStart),
-        viewButton("orgavoxAddBeatMarkersBtn", "▏ Add Beat Markers", "Add magenta beat markers from the selected track", () => window.orgavoxAddBeatMarkers?.()),
-        viewButton("orgavoxClearBeatMarkersBtn", "▏ Clear Beat Markers", "Clear magenta beat markers", () => window.orgavoxClearBeatMarkers?.()),
-        viewButton("orgavoxRandomizeTrackColorsBtn", "🎨 Randomize Track Colors", "Assign different colors across tracks", () => window.orgavoxRandomizeTrackColors?.()),
-        viewButton("orgavoxExpandTrackBtn", "▣ Expand Track", "Make selected track three rows tall", () => window.orgavoxExpandSelectedTrack?.()),
-        viewButton("orgavoxResetTrackViewBtn", "▢ Reset Track View", "Restore normal track heights", () => window.orgavoxResetTrackView?.())
+      const made = menu(VIEW_ID, "orgavox-view-dropdown", "orgavox-view-button", "orgavox-view-menu", "👁 View ▾", "View and timeline tools");
+      const base = [
+        customButton("orgavoxMarkerPanelBtn", "🏷 Markers Panel", "Open marker list", () => { const modal = document.getElementById("markersModal"); if (modal) { modal.hidden = false; window.orgavoxRenderMarkers?.(); } else show("Markers panel is still loading."); }),
+        customButton("orgavoxSendToStartBtn", "↤ Send to Start", "Move selected clip to 0:00", sendToStart),
+        customButton("orgavoxAnalyzeBtn", "📈 Analyze", "Analyze selected clip", autoAnalyze),
+        customButton("orgavoxAddBeatMarkersBtn", "▏ Add Beat Markers", "Add beat markers from selected track", () => window.orgavoxAddBeatMarkers?.()),
+        customButton("orgavoxClearBeatMarkersBtn", "▏ Clear Beat Markers", "Clear beat markers", () => window.orgavoxClearBeatMarkers?.()),
+        customButton("orgavoxRandomizeTrackColorsBtn", "🎨 Randomize Track Colors", "Assign different track colors", () => window.orgavoxRandomizeTrackColors?.()),
+        customButton("orgavoxExpandTrackBtn", "▣ Expand Track", "Make selected track taller", () => window.orgavoxExpandSelectedTrack?.()),
+        customButton("orgavoxResetTrackViewBtn", "▢ Reset Track View", "Restore normal track heights", () => window.orgavoxResetTrackView?.())
       ];
-      buttons.forEach((button) => { if (button.parentElement !== made.panel) made.panel.appendChild(button); });
-      if (ui.alignPlayheadBtn) {
-        ui.alignPlayheadBtn.textContent = "⤓ Align to Playhead";
-        tip(ui.alignPlayheadBtn, "Align selected clip start to the playhead");
-        if (ui.alignPlayheadBtn.parentElement !== made.panel) made.panel.appendChild(ui.alignPlayheadBtn);
-      }
-      if (ui.analysisBtn) {
-        ui.analysisBtn.textContent = "📈 Analyze";
-        tip(ui.analysisBtn, "Analyze the selected clip immediately");
-        if (ui.analysisBtn.parentElement !== made.panel) made.panel.appendChild(ui.analysisBtn);
-        ui.analysisBtn.onclick = (event) => { event.preventDefault(); event.stopPropagation(); closeMenus(); autoAnalyze(); };
-      }
-      if (ui.bounceBtn && ui.bounceBtn.parentElement !== made.panel) made.panel.appendChild(ui.bounceBtn);
-      made.wrap.hidden = false;
-      made.wrap.style.display = "inline-flex";
+      if (ui.alignPlayheadBtn) base.splice(2, 0, ui.alignPlayheadBtn);
+      if (ui.bounceBtn) { ui.bounceBtn.textContent = "🧱 Bounce Track"; base.push(ui.bounceBtn); }
+      base.filter(Boolean).forEach((button) => { if (button.parentElement !== made.panel) made.panel.appendChild(button); });
       return made.wrap;
     }
 
-    function makeMarkerNav(id, label, title, handler) {
-      let button = document.getElementById(id);
-      if (!button) {
-        button = document.createElement("button");
-        button.id = id;
-        button.type = "button";
-        button.className = "icon-button orgavox-marker-nav";
-      }
-      button.textContent = label;
-      tip(button, title);
-      button.onclick = (event) => { event.preventDefault(); event.stopPropagation(); handler(); };
-      return button;
-    }
-
-    function insertAfter(anchor, node) {
-      if (!anchor?.parentElement || !node) return node;
-      if (anchor.nextSibling !== node) anchor.parentElement.insertBefore(node, anchor.nextSibling);
-      return node;
+    function removeWrongArrows() {
+      document.getElementById("playheadBackStepBtn")?.remove();
+      document.getElementById("playheadForwardStepBtn")?.remove();
+      document.querySelectorAll(".orgavox-marker-nav").forEach((button) => {
+        if (button.id !== "prevMarkerBtn" && button.id !== "nextMarkerBtn") button.remove();
+      });
     }
 
     function orderToolbar() {
+      removeWrongArrows();
       const edit = ensureEditMenu();
       const view = ensureViewMenu();
       const group = document.querySelector(".orgavox-edit-group") || document.querySelector(".toolbar-actions") || ui.scissorsBtn?.parentElement;
       if (!group) return;
       const effects = group.querySelector(".orgavox-effects-dropdown") || document.querySelector(".orgavox-effects-dropdown");
+      const prev = document.getElementById("prevMarkerBtn");
       const marker = ui.markersBtn || document.getElementById("markersBtn");
-      if (marker) { marker.textContent = "🏷 Add Marker"; tip(marker, "Add a marker at the playhead"); }
-      const prevMarker = makeMarkerNav("orgavoxPrevMarkerBtn", "◀", "Previous marker", () => window.orgavoxPreviousMarker?.());
-      const nextMarker = makeMarkerNav("orgavoxNextMarkerBtn", "▶", "Next marker", () => window.orgavoxNextMarker?.());
+      const next = document.getElementById("nextMarkerBtn");
       const nudgeLeft = ui.nudgeLeftBtn || document.getElementById("nudgeLeftBtn");
       const nudgeRight = ui.nudgeRightBtn || document.getElementById("nudgeRightBtn");
       const snap = ui.snapBtn || document.getElementById("snapGridBtn");
       const snapGrid = ui.snapGridSelect || document.getElementById("snapGridSelect");
+      const undo = ui.undoBtn || document.getElementById("undoBtn");
       const redo = ui.redoBtn || document.getElementById("redoBtn");
-      let anchor = redo?.parentElement === group ? redo : group.firstElementChild;
-      if (anchor === edit || anchor === view) anchor = null;
-      [edit, view, effects, prevMarker, marker, nextMarker, nudgeLeft, nudgeRight, snap, snapGrid].filter(Boolean).forEach((node) => {
-        if (anchor) insertAfter(anchor, node);
-        else if (node.parentElement !== group || group.firstChild !== node) group.insertBefore(node, group.firstChild);
-        anchor = node;
-      });
-      if (edit.parentElement && view.previousElementSibling !== edit) edit.parentElement.insertBefore(view, edit.nextSibling);
-      edit.style.display = "inline-flex";
-      view.style.display = "inline-flex";
-      view.hidden = false;
-    }
-
-    function addControlDividers() {
-      Array.from(document.querySelectorAll(".topbar .range-control,.clip-controls .range-control")).forEach((control) => {
-        const label = (control.querySelector("span")?.textContent || control.textContent || "").toLowerCase();
-        const key = label.includes("master") ? "master" : (label.includes("volume") && !label.includes("zoom") ? "volume" : (label.includes("echo") ? "echo" : ""));
-        if (!key || control.dataset.orgavoxDividerKey === key) return;
-        const before = document.createElement("span");
-        before.className = `orgavox-v102-divider orgavox-before-${key}`;
-        before.setAttribute("aria-hidden", "true");
-        const after = document.createElement("span");
-        after.className = `orgavox-v102-divider orgavox-after-${key}`;
-        after.setAttribute("aria-hidden", "true");
-        control.parentElement?.insertBefore(before, control);
-        control.parentElement?.insertBefore(after, control.nextSibling);
-        control.dataset.orgavoxDividerKey = key;
-      });
+      const snip = ui.scissorsBtn || document.getElementById("scissorsBtn");
+      const fullscreen = ui.fullscreenBtn || document.getElementById("fullscreenBtn");
+      const ordered = [edit, view, effects, prev, marker, next, nudgeLeft, nudgeRight, snap, snapGrid, undo, redo, snip, fullscreen].filter(Boolean);
+      ordered.forEach((node) => { if (node.parentElement !== group) group.appendChild(node); });
+      ordered.forEach((node) => group.appendChild(node));
+      if (marker) { marker.textContent = "🏷 Add Marker"; tip(marker, "Add a marker at the playhead"); }
+      if (prev && marker && prev.nextElementSibling !== marker) group.insertBefore(prev, marker);
+      if (next && marker && marker.nextElementSibling !== next) group.insertBefore(next, marker.nextSibling);
     }
 
     function setSnapOptions() {
@@ -475,223 +341,30 @@
       clips.forEach((clip) => { clip.start = Math.max(0, (Number(clip.start) || 0) + amount); });
       renderTimeline();
       syncSelectedControls();
-      show(`${clips.length === 1 ? "Clip" : "Clips"} nudged ${Math.abs(amount)}s.`);
       window.orgavoxRecordHistory?.();
+      show(`${clips.length === 1 ? "Clip" : "Clips"} nudged ${Math.abs(amount)}s.`);
     }
     function installNudgeHandlers() {
       const left = ui.nudgeLeftBtn || document.getElementById("nudgeLeftBtn");
       const right = ui.nudgeRightBtn || document.getElementById("nudgeRightBtn");
-      if (left) left.onclick = (event) => { event.preventDefault(); event.stopPropagation(); nudgeSelected(-1); };
-      if (right) right.onclick = (event) => { event.preventDefault(); event.stopPropagation(); nudgeSelected(1); };
+      if (left) left.onclick = (event) => { event.preventDefault(); nudgeSelected(-1); };
+      if (right) right.onclick = (event) => { event.preventDefault(); nudgeSelected(1); };
     }
 
-    function updateSelectedSummary() { const ids = selectedIds(); if (ids.length > 1 && ui.selectedClipName) ui.selectedClipName.textContent = `${ids.length} clips selected`; }
     function applySelectionClasses() {
       const ids = new Set(selectedIds());
       document.querySelectorAll(".audio-clip").forEach((element) => {
         const active = ids.has(element.dataset.clipId) || element.dataset.clipId === state.selectedClipId;
         element.classList.toggle("selected", active);
         element.classList.toggle("orgavox-multi-selected", active && ids.size > 1);
-        element.classList.toggle("orgavox-cleared-selection", !active);
       });
-      updateSelectedSummary();
+      if (ids.size > 1 && ui.selectedClipName) ui.selectedClipName.textContent = `${ids.size} clips selected`;
     }
     function deselectClips() {
-      if (!state.selectedClipId && !(Array.isArray(state.selectedClipIds) && state.selectedClipIds.length)) return;
       state.selectedClipId = null;
       state.selectedClipIds = [];
       syncSelectedControls();
       applySelectionClasses();
-    }
-    function installDeselect() {
-      if (window.__orgavoxV102Deselect) return;
-      window.__orgavoxV102Deselect = true;
-      document.addEventListener("pointerdown", (event) => {
-        const target = event.target;
-        if (!target) return;
-        if (target.closest?.(".audio-clip,.clip-handle,button,input,select,textarea,label,.popover,.modal-backdrop,.orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown,.asset-list,.library-panel")) return;
-        if (target.closest?.(".track-lane,.tracks,.timeline-scroll,.timeline-content,#rulerCanvas")) deselectClips();
-      }, true);
-    }
-
-    function decorateTrackVolumeOverlays() {
-      document.querySelectorAll(".track-lane").forEach((lane) => {
-        const index = clampTrack(lane.dataset.track);
-        const setting = trackSettingsList()[index] || {};
-        const volume = Number.isFinite(Number(setting.volume)) ? Math.round(Number(setting.volume)) : 100;
-        const bits = [`Track ${index + 1}`, `VOL ${volume}%`];
-        if (setting.muted) bits.push("MUTED");
-        if (setting.solo) bits.push("SOLO");
-        let overlay = lane.querySelector(".orgavox-track-volume-overlay");
-        if (!overlay) {
-          overlay = document.createElement("div");
-          overlay.className = "orgavox-track-volume-overlay";
-          lane.appendChild(overlay);
-        }
-        overlay.textContent = bits.join(" · ");
-        overlay.dataset.track = String(index);
-      });
-    }
-    function ensureTrackInfoButtons() {
-      document.querySelectorAll(".track-label").forEach((label) => {
-        const index = Number.isFinite(Number(label.dataset.trackLabel)) ? Number(label.dataset.trackLabel) : Math.max(0, Number(label.querySelector("span")?.textContent || 1) - 1);
-        let button = label.querySelector(".orgavox-track-info-btn");
-        if (!button) {
-          button = document.createElement("button");
-          button.type = "button";
-          button.className = "orgavox-track-info-btn";
-          button.textContent = "i";
-        }
-        button.title = `Analyze Track ${index + 1}`;
-        button.setAttribute("aria-label", button.title);
-        button.onclick = (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); };
-        const solo = label.querySelector(".orgavox-track-mix-btn.solo");
-        if (solo && button.previousElementSibling !== solo) solo.insertAdjacentElement("afterend", button);
-        else if (!solo && button.parentElement !== label) label.appendChild(button);
-      });
-    }
-    function decorateTracks() { decorateTrackVolumeOverlays(); applySelectionClasses(); ensureTrackInfoButtons(); }
-
-    function installFunctionWrappers() {
-      if (window.__orgavoxFunctionWrappersV102) return;
-      window.__orgavoxFunctionWrappersV102 = true;
-      if (typeof selectClip === "function") {
-        const oldSelect = selectClip;
-        selectClip = function orgavoxSelectClipV102(id) { const result = oldSelect.apply(this, arguments); if (!multiSelectLock) state.selectedClipIds = id ? [id] : []; decorateTracks(); return result; };
-      }
-      if (typeof syncSelectedControls === "function") {
-        const oldSync = syncSelectedControls;
-        syncSelectedControls = function orgavoxSyncSelectedControlsV102() { const result = oldSync.apply(this, arguments); updateSelectedSummary(); ensureAnalysisPicker(); return result; };
-      }
-      if (typeof renderTimeline === "function") {
-        const oldRender = renderTimeline;
-        renderTimeline = function orgavoxRenderTimelineV102() { const result = oldRender.apply(this, arguments); refreshUi(); return result; };
-      }
-      if (typeof deleteSelectedClip === "function") {
-        const oldDelete = deleteSelectedClip;
-        deleteSelectedClip = function orgavoxDeleteSelectedClipV102() {
-          const ids = selectedIds();
-          if (ids.length <= 1) return oldDelete.apply(this, arguments);
-          stopPlayback?.();
-          state.clips = state.clips.filter((clip) => !ids.includes(clip.id));
-          state.selectedClipIds = [];
-          state.selectedClipId = null;
-          syncSelectedControls();
-          renderTimeline();
-          show(`${ids.length} selected clips deleted.`);
-          window.orgavoxRecordHistory?.();
-        };
-      }
-    }
-
-    function installShiftMultiSelect() {
-      if (window.__orgavoxShiftMultiSelectV102) return;
-      window.__orgavoxShiftMultiSelectV102 = true;
-      document.addEventListener("pointerdown", (event) => {
-        const element = event.target.closest?.(".audio-clip");
-        if (!element || !event.shiftKey || !ui.tracks?.contains(element)) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        blockShiftClickUntil = Date.now() + 450;
-        const id = element.dataset.clipId;
-        let ids = selectedIds().slice();
-        if (ids.includes(id)) ids = ids.length > 1 ? ids.filter((item) => item !== id) : ids;
-        else ids.push(id);
-        state.selectedClipIds = ids;
-        state.selectedClipId = id;
-        multiSelectLock = true;
-        try { selectClip(id, true); } finally { multiSelectLock = false; }
-        state.selectedClipIds = ids;
-        applySelectionClasses();
-        syncSelectedControls();
-      }, true);
-      document.addEventListener("click", (event) => {
-        if (!event.target.closest?.(".audio-clip") || !event.shiftKey) return;
-        if (Date.now() < blockShiftClickUntil) { event.preventDefault(); event.stopImmediatePropagation(); }
-      }, true);
-    }
-
-    function installKeyboard() {
-      if (window.__orgavoxKeyboardV102) return;
-      window.__orgavoxKeyboardV102 = true;
-      document.addEventListener("keydown", (event) => {
-        const target = event.target;
-        const typing = target && (/input|textarea|select/i.test(target.tagName || "") || target.isContentEditable);
-        if (typing || event.defaultPrevented || event.altKey) return;
-        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        const amount = event.shiftKey ? 1 : (event.ctrlKey || event.metaKey ? 0.1 : 0.01);
-        setPlayhead(Math.max(0, (Number(state.playhead) || 0) + (event.key === "ArrowLeft" ? -amount : amount)), true);
-      }, true);
-    }
-
-    function timeFromEvent(event) { const rect = ui.timelineScroll.getBoundingClientRect(); return Math.max(0, ((event.clientX - rect.left) + ui.timelineScroll.scrollLeft) / Math.max(1, Number(state.pixelsPerSecond) || 80)); }
-    function scrubHit(event) {
-      const target = event.target;
-      if (!target || !ui.timelineScroll?.contains(target)) return null;
-      if (target.closest?.(".audio-clip,.clip-handle,button,input,select,textarea,label,.track-label-column,.asset-list,.library-panel,.popover,.modal-backdrop,.orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown")) return null;
-      const lane = target.closest?.(".track-lane");
-      if (target === ui.rulerCanvas || lane || target.closest?.("#tracks,.tracks,.timeline-content")) return { lane };
-      return null;
-    }
-    function installScrub() {
-      if (!ui.timelineScroll || ui.timelineScroll.dataset.orgavoxScrubV102 === "true") return;
-      ui.timelineScroll.dataset.orgavoxScrubV102 = "true";
-      ui.timelineScroll.addEventListener("pointerdown", (event) => {
-        if (event.button != null && event.button !== 0) return;
-        const hit = scrubHit(event);
-        if (!hit) return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        if (hit.lane) selectTrack(hit.lane.dataset.track);
-        scrubPointer = event.pointerId;
-        ui.timelineScroll.classList.add("orgavox-scrubbing");
-        ui.timelineScroll.setPointerCapture?.(event.pointerId);
-        setPlayhead(timeFromEvent(event), false);
-      }, true);
-      ui.timelineScroll.addEventListener("pointermove", (event) => { if (scrubPointer == null || event.pointerId !== scrubPointer) return; event.preventDefault(); event.stopImmediatePropagation(); setPlayhead(timeFromEvent(event), false); }, true);
-      function done(event) { if (scrubPointer == null || event.pointerId !== scrubPointer) return; event.preventDefault(); event.stopImmediatePropagation(); ui.timelineScroll.releasePointerCapture?.(event.pointerId); ui.timelineScroll.classList.remove("orgavox-scrubbing"); scrubPointer = null; suppressClickUntil = Date.now() + 220; }
-      ui.timelineScroll.addEventListener("pointerup", done, true);
-      ui.timelineScroll.addEventListener("pointercancel", done, true);
-      ui.timelineScroll.addEventListener("click", (event) => { if (Date.now() > suppressClickUntil || !scrubHit(event)) return; event.preventDefault(); event.stopImmediatePropagation(); }, true);
-    }
-
-    function installDragCopyGuard() {
-      if (window.__orgavoxDragCopyGuardV102) return;
-      window.__orgavoxDragCopyGuardV102 = true;
-      document.addEventListener("pointerdown", (event) => { if (!event.target.closest?.(".audio-clip")) return; recentClipPointerAt = Date.now(); state.dragAssetId = null; }, true);
-      document.addEventListener("dragstart", (event) => { if (!event.target.closest?.(".audio-clip")) return; event.preventDefault(); event.stopImmediatePropagation(); recentClipPointerAt = Date.now(); state.dragAssetId = null; }, true);
-      document.addEventListener("drop", (event) => { if (!ui.timelineScroll?.contains(event.target)) return; if (Date.now() - recentClipPointerAt < 1400 && !state.dragAssetId) { event.preventDefault(); event.stopImmediatePropagation(); return; } setTimeout(() => { state.dragAssetId = null; }, 0); }, true);
-      if (typeof addClipFromAsset === "function" && !window.__orgavoxAddClipGuardedV102) {
-        window.__orgavoxAddClipGuardedV102 = true;
-        const oldAdd = addClipFromAsset;
-        addClipFromAsset = function orgavoxGuardedAddClipFromAsset(assetId, track, start) {
-          const now = Date.now();
-          const t = clampTrack(track);
-          const s = Math.max(0, Number(start) || 0);
-          const repeat = lastAssetAdd && now - lastAssetAdd.time < 900 && String(assetId || "") === lastAssetAdd.assetId && t === lastAssetAdd.track && Math.abs(s - lastAssetAdd.start) < 0.3;
-          const suspicious = now - recentClipPointerAt < 700 && !state.dragAssetId;
-          if (repeat || suspicious) { show("Duplicate clip add ignored."); return null; }
-          const before = state.clips.length;
-          const result = oldAdd.apply(this, arguments);
-          if (state.clips.length > before) lastAssetAdd = { time: now, assetId: String(assetId || ""), track: t, start: s };
-          return result;
-        };
-      }
-    }
-
-    function syncPlayButton() {
-      const active = Boolean(state.isPlaying || state.playing || state.playbackActive || ui.playBtn?.textContent?.includes("❚") || ui.playBtn?.textContent?.includes("Ⅱ"));
-      ui.playBtn?.classList.toggle("orgavox-playing", active);
-    }
-    function installPlaybackState() {
-      if (window.__orgavoxPlaybackStateV102) return;
-      window.__orgavoxPlaybackStateV102 = true;
-      if (typeof startPlayback === "function") { const oldStart = startPlayback; startPlayback = function orgavoxStartPlaybackV102() { const result = oldStart.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
-      if (typeof stopPlayback === "function") { const oldStop = stopPlayback; stopPlayback = function orgavoxStopPlaybackV102() { const result = oldStop.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
-      ui.playBtn?.addEventListener("click", () => setTimeout(syncPlayButton, 60), true);
-      setInterval(syncPlayButton, 200);
     }
 
     function openNumberPopover(anchor, label, value, apply) {
@@ -704,126 +377,124 @@
       input.value = String(value ?? "");
       numberPopover.style.left = `${Math.min(window.innerWidth - 150, Math.max(8, rect.left))}px`;
       numberPopover.style.top = `${Math.min(window.innerHeight - 96, rect.bottom + 8)}px`;
-      numberPopover.addEventListener("submit", (event) => { event.preventDefault(); const ok = apply(input.value.trim()); if (ok !== false) numberPopover?.remove(); });
-      input.addEventListener("keydown", (event) => { if (event.key === "Escape") { event.preventDefault(); numberPopover?.remove(); } });
+      numberPopover.onsubmit = (event) => { event.preventDefault(); const ok = apply(input.value.trim()); if (ok !== false) numberPopover?.remove(); };
+      input.onkeydown = (event) => { if (event.key === "Escape") { event.preventDefault(); numberPopover?.remove(); } };
       document.body.appendChild(numberPopover);
       input.select();
       input.focus();
     }
     function applyOutputValue(output, value) {
       const n = Number(String(value).replace(/[^0-9.-]/g, ""));
-      if (!Number.isFinite(n)) { show("Enter a number."); return false; }
+      if (!Number.isFinite(n)) return false;
       const id = output.id || "";
       const label = (output.closest(".range-control")?.querySelector("span")?.textContent || "").toLowerCase();
       if (id === "volumeOut" || label === "volume") { const clips = selectedClips(); if (!clips.length) return false; const next = Math.max(0, Math.min(200, n)); clips.forEach((clip) => { clip.volume = next; }); if (ui.volumeSlider) ui.volumeSlider.value = next; output.textContent = `${Math.round(next)}%`; renderTimeline(); syncSelectedControls(); window.orgavoxRecordHistory?.(); return true; }
       if (id === "echoOut" || label.includes("echo")) { const clips = selectedClips(); if (!clips.length) return false; const next = Math.max(0, Math.min(100, n)); clips.forEach((clip) => { clip.echo = next; }); if (ui.echoSlider) ui.echoSlider.value = next; output.textContent = `${Math.round(next)}%`; syncSelectedControls(); window.orgavoxRecordHistory?.(); return true; }
       if (id === "zoomOut" || label.includes("zoom")) { const percent = Math.max(25, Math.min(500, n)); state.pixelsPerSecond = Math.max(25, Math.min(500, Math.round(80 * percent / 100))); if (ui.zoomSlider) ui.zoomSlider.value = state.pixelsPerSecond; output.textContent = `${Math.round(percent)}%`; renderTimeline(); return true; }
-      if (label.includes("master")) { const next = Math.max(0, Math.min(200, n)); state.globalVolume = next; output.textContent = `${Math.round(next)}%`; const input = output.closest(".range-control")?.querySelector("input[type='range']"); if (input) { input.value = next; input.dispatchEvent(new Event("input", { bubbles: true })); } window.orgavoxRecordHistory?.(); return true; }
+      if (label.includes("master")) { const next = Math.max(0, Math.min(200, n)); output.textContent = `${Math.round(next)}%`; const input = output.closest(".range-control")?.querySelector("input[type='range']"); if (input) { input.value = next; input.dispatchEvent(new Event("input", { bubbles: true })); } window.orgavoxRecordHistory?.(); return true; }
       return false;
     }
-    function installEditableValues() {
-      if (window.__orgavoxEditableValuesV102) return;
-      window.__orgavoxEditableValuesV102 = true;
-      document.addEventListener("click", (event) => {
-        const target = event.target;
-        if (!target) return;
-        if (target === ui.timeReadout || target.id === "timeReadout") {
+
+    function installGlobalHandlers() {
+      if (!window.__orgavoxV103GlobalHandlers) {
+        window.__orgavoxV103GlobalHandlers = true;
+        document.addEventListener("keydown", (event) => {
+          const target = event.target;
+          const typing = target && (/input|textarea|select/i.test(target.tagName || "") || target.isContentEditable);
+          if (typing || event.defaultPrevented || event.altKey) return;
+          if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
           event.preventDefault();
-          openNumberPopover(target, "Playhead time", target.textContent || formatSeconds(state.playhead), (value) => { const seconds = parseTime(value); if (seconds == null) { show("Use seconds or mm:ss.xxx."); return false; } setPlayhead(seconds, true); return true; });
-          return;
+          const amount = event.shiftKey ? 1 : (event.ctrlKey || event.metaKey ? 0.1 : 0.01);
+          setPlayhead(Math.max(0, (Number(state.playhead) || 0) + (event.key === "ArrowLeft" ? -amount : amount)), true);
+        }, true);
+        document.addEventListener("pointerdown", (event) => {
+          const target = event.target;
+          if (!target) return;
+          if (target.closest?.(".audio-clip,.clip-handle,button,input,select,textarea,label,.popover,.modal-backdrop,.orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown,.asset-list,.library-panel")) return;
+          if (target.closest?.(".track-lane,.tracks,.timeline-scroll,.timeline-content,#rulerCanvas")) deselectClips();
+        }, true);
+        document.addEventListener("click", (event) => {
+          const target = event.target;
+          if (!target) return;
+          if (!target.closest?.(`#${EDIT_ID},#${VIEW_ID},.orgavox-effects-dropdown`)) closeMenus();
+          if (target === ui.timeReadout || target.id === "timeReadout") {
+            event.preventDefault();
+            openNumberPopover(target, "Playhead time", target.textContent || formatSeconds(state.playhead), (value) => { const seconds = parseTime(value); if (seconds == null) return false; setPlayhead(seconds, true); return true; });
+          } else if (target.matches?.("output")) {
+            const output = target;
+            const label = output.closest(".range-control")?.querySelector("span")?.textContent || "Value";
+            openNumberPopover(output, label, output.textContent || "", (value) => applyOutputValue(output, value));
+          }
+        }, true);
+        if (typeof selectClip === "function") {
+          const oldSelect = selectClip;
+          selectClip = function orgavoxSelectClipV103(id) { const result = oldSelect.apply(this, arguments); state.selectedClipIds = id ? [id] : []; applySelectionClasses(); return result; };
         }
-        if (target.matches?.("output")) {
-          const output = target;
-          const label = output.closest(".range-control")?.querySelector("span")?.textContent || "Value";
-          openNumberPopover(output, label, output.textContent || "", (value) => applyOutputValue(output, value));
-          return;
+        if (typeof renderTimeline === "function") {
+          const oldRender = renderTimeline;
+          renderTimeline = function orgavoxRenderTimelineV103() { const result = oldRender.apply(this, arguments); refreshUi(); return result; };
         }
-        const overlay = target.closest?.(".orgavox-track-volume-overlay");
-        if (overlay) {
-          const track = clampTrack(overlay.dataset.track || overlay.closest(".track-lane")?.dataset.track || 0);
-          const setting = trackSettingsList()[track] || (trackSettingsList()[track] = {});
-          const volume = Number.isFinite(Number(setting.volume)) ? Math.round(Number(setting.volume)) : 100;
-          openNumberPopover(overlay, `Track ${track + 1} volume`, volume, (value) => { const next = Math.max(0, Math.min(200, Number(value))); if (!Number.isFinite(next)) { show("Enter a number."); return false; } setting.volume = next; decorateTrackVolumeOverlays(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; });
-        }
-      }, true);
+        if (typeof startPlayback === "function") { const oldStart = startPlayback; startPlayback = function orgavoxStartPlaybackV103() { const result = oldStart.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
+        if (typeof stopPlayback === "function") { const oldStop = stopPlayback; stopPlayback = function orgavoxStopPlaybackV103() { const result = oldStop.apply(this, arguments); setTimeout(syncPlayButton, 0); return result; }; }
+      }
     }
 
+    function syncPlayButton() {
+      const active = Boolean(state.isPlaying || state.playing || state.playbackActive || ui.playBtn?.textContent?.includes("❚") || ui.playBtn?.textContent?.includes("Ⅱ"));
+      ui.playBtn?.classList.toggle("orgavox-playing", active);
+    }
     function finalButtonStyling() {
       if (ui.importBtn) { ui.importBtn.textContent = "📥 Open"; ui.importBtn.classList.remove("primary"); ui.importBtn.classList.add("orgavox-open-button"); }
       if (ui.exportBtn) { ui.exportBtn.textContent = "💾 Save"; ui.exportBtn.classList.add("orgavox-save-button"); }
       if (ui.stopBtn) ui.stopBtn.classList.add("orgavox-stop-danger");
       if (ui.scissorsBtn) { ui.scissorsBtn.textContent = "✂️ Snip"; ui.scissorsBtn.classList.remove("orgavox-danger-tool"); ui.scissorsBtn.classList.add("orgavox-snip-tool"); tip(ui.scissorsBtn, "Snip/split the selected clip at the playhead"); }
       if (ui.deleteBtn) { ui.deleteBtn.textContent = "🗑 DEL"; ui.deleteBtn.classList.add("orgavox-danger-tool"); }
-      [ui.fadeInBtn, ui.fadeOutBtn, ui.resetFadesBtn].filter(Boolean).forEach((button) => button.classList.add("orgavox-fade-tool"));
-      const effectsLibrary = document.querySelector(".effects-library-button") || [...document.querySelectorAll("button")].find((button) => /effects library/i.test(button.textContent || ""));
-      if (effectsLibrary) effectsLibrary.classList.add("orgavox-effects-library-button");
     }
-    function placeFeatureButtons() { const menu = document.querySelector(".orgavox-effects-menu"); if (menu) [ui.gateBtn, ui.stretchBtn, ui.normalizeBtn, ui.transposeBtn, ui.eqBtn, ui.driveBtn, ui.dynamicsBtn, ui.stereoBtn, ui.lofiBtn, ui.reverseClipBtn].filter(Boolean).forEach((button) => { if (button.parentElement !== menu) menu.appendChild(button); }); }
-    function tooltips() { [[ui.importBtn, "Open/import audio or video files"], [ui.exportBtn, "Save/export the full mix"], [ui.projectBtn, "Save or load an ORGAVOX project"], [ui.undoBtn, "Undo the last edit"], [ui.redoBtn, "Redo the last undone edit"], [ui.playBtn, "Play or pause"], [ui.stopBtn, "Stop playback"], [ui.jumpStartBtn, "Jump back to the start"], [ui.scissorsBtn, "Snip/split the selected clip at the playhead"], [ui.deleteBtn, "Delete the selected clip"], [ui.downloadClipBtn, "Download the selected clip"], [ui.markersBtn, "Add a marker at the playhead"], [ui.snapBtn, "Toggle snap-to-grid"], [ui.snapGridSelect, "Choose snap grid size"], [ui.nudgeLeftBtn, "Nudge selected clip left by Snap"], [ui.nudgeRightBtn, "Nudge selected clip right by Snap"], [ui.alignPlayheadBtn, "Align selected clip to the playhead"], [ui.analysisBtn, "Analyze the selected clip"], [document.querySelector(".orgavox-effects-dropdown-button"), "Open audio effects"], [document.querySelector(".orgavox-edit-button"), "Open editing commands"], [document.querySelector(".orgavox-view-button"), "Open marker, alignment and analysis tools"]].forEach(([button, title]) => tip(button, title)); }
 
     function refreshUi() {
-      if (applying) return;
-      applying = true;
-      try {
-        setFinalVersion();
-        installStyles();
-        window.orgavoxRefreshLayout?.();
-        window.orgavoxPlaceProjectButton?.();
-        window.orgavoxUpdateProjectInfoBar?.();
-        window.orgavoxPlaceMarkersButton?.();
-        window.orgavoxRenderMarkers?.();
-        window.orgavoxPlaceBuild1Controls?.();
-        window.orgavoxSyncPlaybackPolish?.();
-        window.orgavoxRefreshTrackTools?.();
-        window.orgavoxPlaceClipRenderButtons?.();
-        window.orgavoxPlaceSnapTools?.();
-        window.orgavoxRefreshLibraryTools?.();
-        window.orgavoxRefreshBuild6?.();
-        window.orgavoxApplyFinalCleanup?.();
-        ensureEditMenu();
-        ensureViewMenu();
-        placeFeatureButtons();
-        setSnapOptions();
-        installNudgeHandlers();
-        orderToolbar();
-        addControlDividers();
-        finalButtonStyling();
-        ensureAnalysisPicker();
-        decorateTracks();
-        syncPlayButton();
-        tooltips();
-      } finally { applying = false; }
+      setFinalVersion();
+      installStyles();
+      window.orgavoxRefreshLayout?.();
+      window.orgavoxPlaceProjectButton?.();
+      window.orgavoxUpdateProjectInfoBar?.();
+      window.orgavoxPlaceMarkersButton?.();
+      window.orgavoxRenderMarkers?.();
+      window.orgavoxPlaceBuild1Controls?.();
+      window.orgavoxSyncPlaybackPolish?.();
+      window.orgavoxRefreshTrackTools?.();
+      window.orgavoxPlaceClipRenderButtons?.();
+      window.orgavoxPlaceSnapTools?.();
+      window.orgavoxRefreshLibraryTools?.();
+      ensureEditMenu();
+      ensureViewMenu();
+      setSnapOptions();
+      installNudgeHandlers();
+      orderToolbar();
+      finalButtonStyling();
+      applySelectionClasses();
+      syncPlayButton();
     }
 
-    window.orgavoxRefreshV102 = refreshUi;
-    installStyles();
-    installFunctionWrappers();
-    installShiftMultiSelect();
-    installKeyboard();
-    installDeselect();
-    installScrub();
-    installDragCopyGuard();
-    installPlaybackState();
-    installEditableValues();
+    window.orgavoxRefreshV103 = refreshUi;
+    installGlobalHandlers();
     refreshUi();
-    [0, 100, 250, 500, 1200, 2200].forEach((delay) => setTimeout(refreshUi, delay));
+    setTimeout(refreshUi, 150);
+    setTimeout(refreshUi, 600);
     window.addEventListener("resize", () => setTimeout(refreshUi, 0));
-    document.addEventListener("click", (event) => { if (!event.target.closest?.(`#${EDIT_ID},#${VIEW_ID},.orgavox-effects-dropdown`)) closeMenus(); });
   }
 
   installLocalSoundFxRouting();
   const files = [
     "./simple-edit-core.js?v=0.01", "./simple-edit-timeline.js?v=0.01", "./simple-edit-audio.js?v=0.26", "./simple-edit-export.js?v=0.02", "./simple-edit-phase1.js?v=0.33",
-    "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=0.51",
+    "./simple-edit-keyframes.js?v=0.10", "./simple-edit-keyframes-fix.js?v=0.11", "./simple-edit-phase3.js?v=0.13", "./simple-edit-effects-library.js?v=0.15", "./simple-edit-echo-settings.js?v=1.03",
     "./simple-edit-stretch-audiotsm.js?v=0.19", "./simple-edit-fade-handles.js?v=0.20", "./simple-edit-normalize.js?v=0.21", "./simple-edit-transpose-engine.js?v=0.26", "./simple-edit-transpose.js?v=0.26",
     "./simple-edit-eq-engine.js?v=0.28", "./simple-edit-eq.js?v=0.28", "./simple-edit-drive-engine.js?v=0.29", "./simple-edit-drive.js?v=0.29", "./simple-edit-dynamics-engine.js?v=0.30", "./simple-edit-dynamics.js?v=0.30",
-    "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=1.02",
-    "./simple-edit-analysis.js?v=0.40", "./simple-edit-project.js?v=0.49", "./simple-edit-markers.js?v=1.02", "./simple-edit-build1.js?v=1.02", "./simple-edit-track-tools.js?v=1.02", "./simple-edit-clip-menu.js?v=0.46", "./simple-edit-snap-tools.js?v=0.47", "./simple-edit-library-tools.js?v=0.48", "./simple-edit-build6.js?v=0.49", "./simple-edit-cleanup.js?v=0.50"
+    "./simple-edit-stereo-engine.js?v=0.35", "./simple-edit-stereo.js?v=0.35", "./simple-edit-lofi-engine.js?v=0.37", "./simple-edit-lofi.js?v=0.37", "./simple-edit-render-tools-engine.js?v=0.38", "./simple-edit-render-tools.js?v=1.03",
+    "./simple-edit-analysis.js?v=0.40", "./simple-edit-project.js?v=0.49", "./simple-edit-markers.js?v=1.03", "./simple-edit-build1.js?v=1.03", "./simple-edit-track-tools.js?v=1.03", "./simple-edit-clip-menu.js?v=0.46", "./simple-edit-snap-tools.js?v=0.47", "./simple-edit-library-tools.js?v=0.48", "./simple-edit-build6.js?v=0.49"
   ];
 
   window.ORGAVOX_ACTIVE_SCRIPTS = files.slice();
   for (const source of files) await loadScript(source);
-
   installMainUi();
   setFinalVersion();
   document.documentElement.classList.remove("orgavox-loading");
