@@ -230,79 +230,6 @@ function isTypingShortcutTarget(target) {
   return Boolean(target?.closest?.("input,select,textarea,[contenteditable='true']"));
 }
 
-function triggerVisibleAction(id) {
-  const button = document.getElementById(id);
-  if (!button) return false;
-  button.click();
-  return true;
-}
-
-function wireNoClipSliderFeedback() {
-  const pairs = [
-    [ui.volumeSlider, "Select a clip before changing clip volume."],
-    [ui.echoSlider, "Select a clip before changing echo."]
-  ];
-  pairs.forEach(([slider, message]) => {
-    const wrap = slider?.closest?.(".range-control");
-    if (!wrap || wrap.dataset.orgavoxNoClipFeedbackWired === "true") return;
-    wrap.dataset.orgavoxNoClipFeedbackWired = "true";
-    wrap.addEventListener("pointerdown", (event) => {
-      if (selectedClip()) return;
-      if (event.target?.closest?.("button,output")) return;
-      event.preventDefault();
-      showToast(message);
-    });
-    wrap.addEventListener("click", (event) => {
-      if (selectedClip()) return;
-      if (event.target?.closest?.("button,output")) return;
-      event.preventDefault();
-    });
-  });
-}
-
-function wireHoldStepButton(id, direction) {
-  const button = document.getElementById(id);
-  if (!button || button.dataset.orgavoxHoldStepWired === "true") return;
-  button.dataset.orgavoxHoldStepWired = "true";
-  let holdDelay = 0;
-  let repeatTimer = 0;
-  let suppressClick = false;
-  const clearHold = () => {
-    clearTimeout(holdDelay);
-    clearInterval(repeatTimer);
-    holdDelay = 0;
-    repeatTimer = 0;
-  };
-  const step = () => setPlayhead(Math.max(0, (state.playhead || 0) + direction * 0.01), true);
-  button.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    event.preventDefault();
-    event.stopPropagation();
-    suppressClick = true;
-    clearHold();
-    button.setPointerCapture?.(event.pointerId);
-    step();
-    holdDelay = setTimeout(() => {
-      repeatTimer = setInterval(step, 58);
-    }, 280);
-  });
-  ["pointerup", "pointerleave", "pointercancel", "lostpointercapture", "blur"].forEach((eventName) => {
-    button.addEventListener(eventName, clearHold);
-  });
-  button.addEventListener("click", (event) => {
-    if (!suppressClick) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    suppressClick = false;
-  }, true);
-}
-
-function wirePhase2VisibleControls() {
-  wireHoldStepButton("playheadBackStepBtn", -1);
-  wireHoldStepButton("playheadForwardStepBtn", 1);
-  wireNoClipSliderFeedback();
-}
-
 function installEvents() {
   window.orgavoxOpenFiles = () => ui.fileInput.click();
   ui.dropzone.addEventListener("click", () => ui.fileInput.click());
@@ -355,13 +282,15 @@ function installEvents() {
   };
 
   ui.volumeSlider.addEventListener("input", () => {
-    const clip = selectedClip(); if (!clip) { showToast("Select a clip before changing clip volume."); return; }
+    const clip = selectedClip();
+    if (!clip) { showToast("Select a clip before changing clip volume."); syncSelectedControls(); return; }
     clip.volume = Number(ui.volumeSlider.value);
     ui.volumeOut.textContent = `${clip.volume}%`;
     renderTimeline();
   });
   ui.echoSlider.addEventListener("input", () => {
-    const clip = selectedClip(); if (!clip) { showToast("Select a clip before changing echo."); return; }
+    const clip = selectedClip();
+    if (!clip) { showToast("Select a clip before changing echo."); syncSelectedControls(); return; }
     clip.echo = Number(ui.echoSlider.value);
     ui.echoOut.textContent = `${clip.echo}%`;
     renderTimeline();
@@ -371,7 +300,6 @@ function installEvents() {
     ui.zoomOut.textContent = `${state.pixelsPerSecond} px/s`;
     renderTimeline();
   });
-  wireNoClipSliderFeedback();
 
   window.orgavoxOpenNoiseGate = openGate;
   ui.gateCloseBtn.addEventListener("click", () => { ui.gatePopover.hidden = true; });
@@ -401,24 +329,10 @@ function installEvents() {
     if (event.code === "Space" && !typing) { event.preventDefault(); togglePlayback(); }
     if ((event.key === "Delete" || event.key === "Backspace") && !typing) deleteSelectedClip();
     if (event.key.toLowerCase() === "s" && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) splitSelectedClip();
-    if (event.ctrlKey && !event.altKey && !event.metaKey && !typing) {
-      const key = event.key.toLowerCase();
-      if (key === "c" || key === "x" || key === "v") {
-        event.preventDefault();
-        event.stopPropagation();
-        if (key === "c") triggerVisibleAction("orgavoxCopyClipBtn");
-        if (key === "x") triggerVisibleAction("orgavoxCutClipBtn");
-        if (key === "v") triggerVisibleAction("orgavoxPasteClipBtn");
-      }
-    }
     if (event.key === "Escape") { ui.gatePopover.hidden = true; ui.exportModal.hidden = true; }
   });
-  window.addEventListener("resize", () => { renderTimeline(); wirePhase2VisibleControls(); });
+  window.addEventListener("resize", () => { renderTimeline(); });
   window.addEventListener("beforeunload", stopPlayback);
-  window.orgavoxWirePhase2VisibleControls = wirePhase2VisibleControls;
-  const wireTimer = setInterval(wirePhase2VisibleControls, 120);
-  setTimeout(() => clearInterval(wireTimer), 4200);
-  requestAnimationFrame(wirePhase2VisibleControls);
 }
 
 installEvents();

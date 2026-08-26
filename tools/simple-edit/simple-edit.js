@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.12";
+  const VERSION = "v1.15";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -112,7 +112,7 @@
     "./simple-edit-core.js?v=1.05",
     "./simple-edit-timeline.js?v=1.05",
     "./simple-edit-audio.js?v=0.26",
-    "./simple-edit-export.js?v=0.02",
+    "./simple-edit-export.js?v=0.03",
     "./simple-edit-keyframes.js?v=0.10",
     "./simple-edit-keyframes-fix.js?v=0.11",
     "./simple-edit-phase3.js?v=0.13"
@@ -121,7 +121,7 @@
   for (const source of earlyFiles) await loadScript(source);
   const behaviorFiles = [
     "./simple-edit-effects-library.js?v=0.15",
-    "./simple-edit-echo-settings.js?v=1.04",
+    "./simple-edit-echo-settings.js?v=1.05",
     "./simple-edit-stretch-audiotsm.js?v=0.19",
     "./simple-edit-fade-handles.js?v=0.20",
     "./simple-edit-normalize.js?v=0.21",
@@ -141,20 +141,20 @@
     "./simple-edit-render-tools.js?v=1.04",
     "./simple-edit-analysis.js?v=0.40",
     "./simple-edit-project.js?v=1.06",
-    "./simple-edit-markers.js?v=1.04",
-    "./simple-edit-undo-redo.js?v=1.04",
-    "./simple-edit-track-tools.js?v=1.12",
-    "./simple-edit-clip-menu.js?v=0.46",
+    "./simple-edit-markers.js?v=1.05",
+    "./simple-edit-undo-redo.js?v=1.05",
+    "./simple-edit-track-tools.js?v=1.13",
+    "./simple-edit-clip-menu.js?v=0.47",
     "./simple-edit-snap-tools.js?v=1.04",
     "./simple-edit-library-tools.js?v=0.48"
   ];
   for (const source of behaviorFiles) await loadScript(source);
 
   function installVisibleUiOwner() {
-    if (window.__orgavoxVisibleUiOwner112) return;
-    window.__orgavoxVisibleUiOwner112 = true;
+    if (window.__orgavoxVisibleUiOwner115) return;
+    window.__orgavoxVisibleUiOwner115 = true;
 
-    const STYLE_ID = "orgavox-visible-ui-owner-v112";
+    const STYLE_ID = "orgavox-visible-ui-owner-v115";
     const SNAP_VALUES = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10];
     let numberPopover = null;
     let clipClipboard = [];
@@ -175,7 +175,8 @@
         .orgavox-top-row,.orgavox-mix-row{display:flex!important;align-items:center!important;gap:8px!important;min-width:0!important;width:100%!important}.orgavox-top-row{height:42px!important;flex:0 0 42px!important;flex-wrap:nowrap!important}.orgavox-mix-row{height:42px!important;flex:0 0 42px!important;flex-wrap:nowrap!important;padding-left:296px!important}.orgavox-group{display:inline-flex!important;align-items:center!important;gap:8px!important;flex-wrap:nowrap!important;min-width:0!important}.orgavox-divider{width:1px!important;align-self:stretch!important;min-height:32px!important;max-height:44px!important;margin:0 6px!important;background:linear-gradient(180deg,transparent,rgba(224,163,96,.46),transparent)!important}
         body.simple-edit-phase1 .clip-controls,body.simple-edit-phase1 .timeline-topline,body.simple-edit-phase1 .phase1-timeline-toolbar,body.simple-edit-phase1 .phase1-workspace-rule{display:none!important}
         .tool-button,.icon-button{white-space:nowrap!important}.topbar .tool-button{min-height:36px!important;padding:8px 12px!important;font-size:.66rem!important}.topbar .icon-button{min-width:36px!important;min-height:36px!important;padding:7px 10px!important}.time-readout{min-height:36px!important;padding:8px 14px!important;font-size:.86rem!important;letter-spacing:.08em!important}
-        .orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important}.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important}.orgavox-project-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important}.orgavox-danger-tool,.orgavox-cut-clip-btn{border-color:rgba(220,72,64,.78)!important;background:linear-gradient(180deg,rgba(92,28,23,.88),rgba(39,13,10,.96))!important;color:#ffd8d2!important}.orgavox-edit-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(93,67,35,.88),rgba(34,23,13,.95))!important;color:#ffe4a8!important}.orgavox-view-button,.orgavox-analysis-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}.orgavox-effects-dropdown-button,.orgavox-marker-nav,#markersBtn{border-color:rgba(178,109,255,.84)!important;background:linear-gradient(180deg,rgba(87,45,155,.92),rgba(40,21,82,.96))!important;color:#f4e2ff!important}.orgavox-nudge-button,.orgavox-snap-button,.orgavox-align-button{border-color:rgba(117,178,222,.76)!important;background:linear-gradient(180deg,rgba(33,80,122,.86),rgba(13,35,61,.95))!important;color:#dff5ff!important}.orgavox-history-button{border-color:rgba(137,107,73,.58)!important;background:linear-gradient(180deg,rgba(65,47,30,.58),rgba(28,21,16,.88))!important;color:#b99b75!important}.orgavox-step-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}
+        .orgavox-open-button{border-color:rgba(117,178,222,.92)!important;background:linear-gradient(180deg,rgba(57,132,205,.96),rgba(31,77,133,.94))!important;color:#eef8ff!important}.orgavox-save-button{border-color:rgba(74,190,117,.86)!important;background:linear-gradient(180deg,rgba(35,118,66,.92),rgba(14,62,35,.94))!important;color:#e2ffe9!important}.orgavox-project-button{border-color:rgba(178,109,255,.86)!important;background:linear-gradient(180deg,rgba(106,60,190,.94),rgba(53,27,108,.96))!important;color:#f3e2ff!important}.orgavox-danger-tool,.orgavox-cut-clip-btn{border-color:rgba(220,72,64,.78)!important;background:linear-gradient(180deg,rgba(92,28,23,.88),rgba(39,13,10,.96))!important;color:#ffd8d2!important}.orgavox-edit-button{border-color:rgba(224,163,96,.82)!important;background:linear-gradient(180deg,rgba(93,67,35,.88),rgba(34,23,13,.95))!important;color:#ffe4a8!important}.orgavox-view-button,.orgavox-analysis-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}.orgavox-effects-dropdown-button,.orgavox-marker-nav,#markersBtn{border-color:rgba(178,109,255,.84)!important;background:linear-gradient(180deg,rgba(87,45,155,.92),rgba(40,21,82,.96))!important;color:#f4e2ff!important}.orgavox-nudge-button,.orgavox-snap-button,.orgavox-align-button{border-color:rgba(117,178,222,.76)!important;background:linear-gradient(180deg,rgba(33,80,122,.86),rgba(13,35,61,.95))!important;color:#dff5ff!important}.orgavox-history-button{border-color:rgba(224,163,96,.92)!important;background:linear-gradient(180deg,rgba(151,92,26,.96),rgba(69,38,12,.98))!important;color:#ffe4a8!important}.orgavox-step-button{border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(35,80,124,.95),rgba(14,38,72,.98))!important;color:#e1f7ff!important}
+        #playBtn{border-color:rgba(117,178,222,.96)!important;background:linear-gradient(180deg,rgba(57,132,205,.98),rgba(24,70,132,.98))!important;color:#eef8ff!important}#stopBtn{border-color:rgba(220,72,64,.96)!important;background:linear-gradient(180deg,rgba(150,38,32,.98),rgba(65,18,15,.98))!important;color:#ffe3de!important}#jumpStartBtn,#playheadBackStepBtn{border-color:rgba(178,109,255,.92)!important;background:linear-gradient(180deg,rgba(106,60,190,.96),rgba(53,27,108,.98))!important;color:#f3e2ff!important}.orgavox-history-button{box-shadow:inset 0 0 0 1px rgba(255,218,148,.12)!important}
         .orgavox-edit-dropdown,.orgavox-view-dropdown,.orgavox-effects-dropdown{position:relative!important;display:inline-flex!important;align-items:center!important;z-index:90!important}.orgavox-edit-menu,.orgavox-view-menu,.orgavox-effects-menu{position:absolute!important;top:calc(100% + 8px)!important;left:0!important;z-index:4300!important;min-width:230px!important;display:grid!important;gap:6px!important;padding:8px!important;border:1px solid rgba(224,163,96,.65)!important;border-radius:14px!important;background:rgba(10,11,10,.98)!important;box-shadow:0 18px 44px rgba(0,0,0,.72)!important}.orgavox-view-menu,.orgavox-effects-menu{border-color:rgba(117,178,222,.68)!important}.orgavox-edit-menu[hidden],.orgavox-view-menu[hidden],.orgavox-effects-menu[hidden]{display:none!important}.orgavox-edit-menu .tool-button,.orgavox-view-menu .tool-button,.orgavox-effects-menu .tool-button{width:100%!important;justify-content:flex-start!important;min-height:32px!important}
         .topbar .range-control{height:36px!important;min-width:0!important;display:grid!important;grid-template-columns:auto 96px 48px!important;align-items:center!important;gap:7px!important;margin:0!important}.topbar .range-control span{white-space:nowrap!important}.topbar .range-control input[type=range]{width:96px!important;min-width:96px!important}.topbar .range-control output{cursor:pointer!important;color:#e0a360!important;font:800 .62rem var(--font-mono)!important;text-align:right!important}.orgavox-master-control{width:230px!important}.orgavox-clip-volume-control{width:250px!important}.orgavox-echo-control{width:286px!important;grid-template-columns:auto 96px 48px 34px!important}.echo-settings-btn{position:static!important;grid-column:4!important;width:34px!important;min-width:34px!important;height:34px!important;min-height:34px!important;padding:0!important;align-self:center!important;justify-self:start!important;border-color:rgba(117,178,222,.86)!important;background:linear-gradient(180deg,rgba(32,82,125,.94),rgba(13,38,66,.96))!important;color:#e1f7ff!important}
         #snapGridSelect{height:34px!important;border:1px solid rgba(117,178,222,.72)!important;border-radius:10px!important;background:#050505!important;color:#f5f0db!important;font:900 .62rem var(--font-mono)!important}#snapGridSelect option{background:#050505!important;color:#f5f0db!important}
@@ -221,9 +222,33 @@
     function appendOrdered(parent, nodes) { nodes.filter(Boolean).forEach((node) => { if (node.parentElement !== parent || parent.lastElementChild !== node) parent.appendChild(node); }); }
 
     function selectedClips() { const ids = Array.isArray(state.selectedClipIds) && state.selectedClipIds.length ? state.selectedClipIds : (state.selectedClipId ? [state.selectedClipId] : []); return ids.map((id) => state.clips.find((clip) => clip.id === id)).filter(Boolean); }
-    function copyClip() { const clips = selectedClips(); if (!clips.length) return; clipClipboard = clips.map((clip) => ({ ...clip, id: makeId("clip-copy") })); if (typeof showToast === "function") showToast(`${clips.length} clip${clips.length === 1 ? "" : "s"} copied.`); }
-    function cutClip() { copyClip(); deleteClips(); }
-    function pasteClip() { if (!clipClipboard.length) return; const minStart = Math.min(...clipClipboard.map((clip) => clip.start || 0)); const copies = clipClipboard.map((clip) => ({ ...clip, id: makeId("clip"), start: Math.max(0, (state.playhead || 0) + ((clip.start || 0) - minStart)) })); state.clips.push(...copies); state.selectedClipId = copies[0]?.id || null; state.selectedClipIds = copies.map((clip) => clip.id); renderTimeline(); syncSelectedControls(); window.orgavoxRecordHistory?.(); }
+    function cloneClipboardClip(clip) { return { ...clip, id: makeId("clip-copy"), volumeKeyframes: Array.isArray(clip.volumeKeyframes) ? clip.volumeKeyframes.map((keyframe) => ({ ...keyframe, id: makeId("kf") })) : [] }; }
+    function copyClip() { const clips = selectedClips(); if (!clips.length) { showToast?.("Select a clip to copy."); return; } clipClipboard = clips.map(cloneClipboardClip); state.__orgavoxClipClipboard = clipClipboard.map((clip) => ({ ...clip })); if (typeof showToast === "function") showToast(`${clips.length} clip${clips.length === 1 ? "" : "s"} copied.`); }
+    function cutClip() { const clips = selectedClips(); if (!clips.length) { showToast?.("Select a clip to cut."); return; } copyClip(); deleteClips(); if (typeof showToast === "function") showToast(`${clips.length} clip${clips.length === 1 ? "" : "s"} cut.`); }
+    function pasteClip() {
+      const source = clipClipboard.length ? clipClipboard : (Array.isArray(state.__orgavoxClipClipboard) ? state.__orgavoxClipClipboard : []);
+      if (!source.length) { showToast?.("Copy a clip first."); return; }
+      const minStart = Math.min(...source.map((clip) => Number(clip.start) || 0));
+      const minTrack = Math.min(...source.map((clip) => Number(clip.track) || 0));
+      const lanes = Math.max(1, qa(".track-lane").length || 10);
+      const baseTrack = Math.max(0, Math.min(lanes - 1, Number(state.selectedTrack) || 0));
+      const copies = source.map((clip) => ({
+        ...clip,
+        id: makeId("clip"),
+        start: Math.max(0, (state.playhead || 0) + ((Number(clip.start) || 0) - minStart)),
+        track: Math.max(0, Math.min(lanes - 1, baseTrack + ((Number(clip.track) || 0) - minTrack))),
+        cacheVersion: 0,
+        volumeKeyframes: Array.isArray(clip.volumeKeyframes) ? clip.volumeKeyframes.map((keyframe) => ({ ...keyframe, id: makeId("kf") })) : []
+      }));
+      state.clips.push(...copies);
+      state.selectedClipId = copies[0]?.id || null;
+      state.selectedClipIds = copies.map((clip) => clip.id);
+      if (copies[0]) selectTrack(copies[0].track);
+      renderTimeline();
+      syncSelectedControls();
+      window.orgavoxRecordHistory?.();
+      showToast?.(`${copies.length} clip${copies.length === 1 ? "" : "s"} pasted to selected track.`);
+    }
     function deleteClips() { const ids = new Set(selectedClips().map((clip) => clip.id)); if (!ids.size) return; state.clips = state.clips.filter((clip) => !ids.has(clip.id)); state.selectedClipId = null; state.selectedClipIds = []; renderTimeline(); syncSelectedControls(); window.orgavoxRecordHistory?.(); }
     function clearAll() { if (!state.clips.length) return; state.clips = []; state.selectedClipId = null; state.selectedClipIds = []; renderTimeline(); syncSelectedControls(); window.orgavoxRecordHistory?.(); }
     function sendToStart() { selectedClips().forEach((clip) => { clip.start = 0; }); renderTimeline(); window.orgavoxRecordHistory?.(); }
@@ -378,13 +403,33 @@
       const bind = (node, key, fn) => { if (node && !node.dataset[key]) { node.dataset[key] = "true"; node.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); fn(node); }); } };
       bind(ui.timeReadout, "orgavoxTimePopup", (node) => showNumber(node, "Time", formatTime(state.playhead || 0), (value) => { setPlayhead(parseTime(value), true); return true; }));
       bind(ui.globalVolumeOut, "orgavoxMasterPopup", (node) => showNumber(node, "Master volume", Math.round(state.globalVolume || 100), (value) => { const n = Math.max(0, Math.min(200, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); state.globalVolume = n; localStorage.setItem("orgavoxGlobalVolume", String(n)); if (ui.globalVolumeSlider) ui.globalVolumeSlider.value = n; node.textContent = `${Math.round(n)}%`; return true; }));
-      bind(ui.volumeOut, "orgavoxVolumePopup", (node) => showNumber(node, "Clip volume", parseInt(node.textContent, 10) || 100, (value) => { const clip = selectedClip(); if (!clip) return false; const n = Math.max(0, Math.min(200, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); clip.volume = n; if (ui.volumeSlider) ui.volumeSlider.value = n; syncSelectedControls(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; }));
-      bind(ui.echoOut, "orgavoxEchoPopup", (node) => showNumber(node, "Echo", parseInt(node.textContent, 10) || 0, (value) => { const clip = selectedClip(); if (!clip) return false; const n = Math.max(0, Math.min(100, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); clip.echo = n; if (ui.echoSlider) ui.echoSlider.value = n; syncSelectedControls(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; }));
+      bind(ui.volumeOut, "orgavoxVolumePopup", (node) => showNumber(node, "Clip volume", parseInt(node.textContent, 10) || 100, (value) => { const clip = selectedClip(); if (!clip) { showToast?.("Select a clip before changing clip volume."); return false; } const n = Math.max(0, Math.min(200, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); clip.volume = n; if (ui.volumeSlider) ui.volumeSlider.value = n; syncSelectedControls(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; }));
+      bind(ui.echoOut, "orgavoxEchoPopup", (node) => showNumber(node, "Echo", parseInt(node.textContent, 10) || 0, (value) => { const clip = selectedClip(); if (!clip) { showToast?.("Select a clip before changing echo."); return false; } const n = Math.max(0, Math.min(100, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); clip.echo = n; if (ui.echoSlider) ui.echoSlider.value = n; syncSelectedControls(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; }));
       bind(ui.zoomOut, "orgavoxZoomPopup", (node) => showNumber(node, "Timeline zoom %", parseInt(node.textContent, 10) || 100, (value) => { const pct = Math.max(31, Math.min(625, Number(String(value).replace(/[^0-9.]/g, "")) || 100)); state.pixelsPerSecond = Math.max(25, Math.min(500, Math.round(pct / 100 * 80))); if (ui.zoomSlider) ui.zoomSlider.value = state.pixelsPerSecond; if (ui.zoomOut) ui.zoomOut.textContent = `${Math.round(state.pixelsPerSecond / 80 * 100)}%`; renderTimeline(); return true; }));
     }
     function wireStepButtons(back, forward) {
-      if (back && !back.dataset.orgavoxStepWired) { back.dataset.orgavoxStepWired = "true"; back.addEventListener("click", () => setPlayhead(Math.max(0, (state.playhead || 0) - 0.01), true)); }
-      if (forward && !forward.dataset.orgavoxStepWired) { forward.dataset.orgavoxStepWired = "true"; forward.addEventListener("click", () => setPlayhead(Math.max(0, (state.playhead || 0) + 0.01), true)); }
+      const wire = (node, direction) => {
+        if (!node || node.dataset.orgavoxStepWired === "true") return;
+        node.dataset.orgavoxStepWired = "true";
+        let holdDelay = 0;
+        let repeatTimer = 0;
+        let suppressClick = false;
+        const step = () => setPlayhead(Math.max(0, (state.playhead || 0) + direction * 0.01), true);
+        const clearHold = () => { clearTimeout(holdDelay); clearInterval(repeatTimer); holdDelay = 0; repeatTimer = 0; };
+        node.addEventListener("pointerdown", (event) => {
+          if (event.button !== 0) return;
+          event.preventDefault();
+          clearHold();
+          suppressClick = true;
+          node.setPointerCapture?.(event.pointerId);
+          step();
+          holdDelay = setTimeout(() => { repeatTimer = setInterval(step, 58); }, 280);
+        });
+        ["pointerup", "pointerleave", "pointercancel", "lostpointercapture", "blur"].forEach((eventName) => node.addEventListener(eventName, clearHold));
+        node.addEventListener("click", (event) => { if (!suppressClick) return; event.preventDefault(); event.stopImmediatePropagation(); suppressClick = false; }, true);
+      };
+      wire(back, -1);
+      wire(forward, 1);
     }
     function wireAllVisibleUiActions() {
       const bind = (id, action) => {
@@ -453,12 +498,30 @@
       window.orgavoxUpdateLofiButton?.();
     }
     function patchRuntime() {
-      if (window.__orgavoxVisibleRuntime112) return;
-      window.__orgavoxVisibleRuntime112 = true;
+      if (window.__orgavoxVisibleRuntime115) return;
+      window.__orgavoxVisibleRuntime115 = true;
       if (typeof renderTimeline === "function") { const old = renderTimeline; renderTimeline = function orgavoxUiOwnerRenderTimeline() { const result = old.apply(this, arguments); requestAnimationFrame(refresh); return result; }; }
       if (typeof syncSelectedControls === "function") { const old = syncSelectedControls; syncSelectedControls = function orgavoxUiOwnerSyncSelectedControls() { const result = old.apply(this, arguments); const hasClip = Boolean(selectedClip()); [ui.deleteBtn, ui.downloadClipBtn, ui.reverseClipBtn, ui.bounceBtn, ui.scissorsBtn, ui.nudgeLeftBtn, ui.nudgeRightBtn, ui.alignPlayheadBtn, document.getElementById("analysisBtn")].filter(Boolean).forEach((btn) => { btn.disabled = !hasClip; }); return result; }; }
       document.addEventListener("click", (event) => { const target = event.target; if (!target.closest?.("#orgavoxEditDropdown,#orgavoxViewDropdown,#orgavoxEffectsDropdown,.orgavox-number-pop,.orgavox-track-menu")) closeMenus(); if (target.closest?.(".audio-clip,.track-label,.asset-item,button,input,select,label,.popover,.modal-backdrop,.orgavox-analysis-modal,.orgavox-project-modal,.echo-settings-backdrop")) return; if (state.selectedClipId) { state.selectedClipId = null; state.selectedClipIds = []; syncSelectedControls(); qa(".audio-clip.selected").forEach((clip) => clip.classList.remove("selected")); } }, true);
-      document.addEventListener("keydown", (event) => { const target = event.target; const typing = target && (/input|textarea|select/i.test(target.tagName || "") || target.isContentEditable); if (typing || event.altKey || event.metaKey) return; if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return; event.preventDefault(); const step = event.shiftKey ? 1 : event.ctrlKey ? 0.1 : 0.01; setPlayhead((state.playhead || 0) + (event.key === "ArrowRight" ? step : -step), true); });
+      document.addEventListener("keydown", (event) => {
+        const target = event.target;
+        const typing = target && (/input|textarea|select/i.test(target.tagName || "") || target.isContentEditable);
+        if (typing || event.altKey || event.metaKey) return;
+        if (event.ctrlKey) {
+          const key = event.key.toLowerCase();
+          if (key === "c" || key === "x" || key === "v") {
+            event.preventDefault();
+            if (key === "c") copyClip();
+            if (key === "x") cutClip();
+            if (key === "v") pasteClip();
+            return;
+          }
+        }
+        if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+        event.preventDefault();
+        const step = event.shiftKey ? 1 : event.ctrlKey ? 0.1 : 0.01;
+        setPlayhead((state.playhead || 0) + (event.key === "ArrowRight" ? step : -step), true);
+      });
     }
     function refresh() { document.body.classList.add("simple-edit-phase1"); setVersion(); installStyles(); buildTopbar(); ensureSidebar(); ensureProjectBar(); ensureTrackSkeleton(); wireValuePopups(); wireAllVisibleUiActions(); ui.playBtn?.classList.toggle("orgavox-playing", Boolean(state.playing)); }
     window.orgavoxRefreshVisibleUi = refresh;
