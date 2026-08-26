@@ -25,6 +25,14 @@
     return state.trackSettings;
   }
   function cssColor(index) { return COLOR_MAP[tracks()[index]?.color] || COLOR_MAP.cyan; }
+  function colorWithAlpha(index, alpha) {
+    const hex = cssColor(index).replace("#", "");
+    const value = parseInt(hex.length === 3 ? hex.split("").map((char) => char + char).join("") : hex, 16);
+    const red = (value >> 16) & 255;
+    const green = (value >> 8) & 255;
+    const blue = value & 255;
+    return `rgba(${red},${green},${blue},${alpha})`;
+  }
   function soloActive() { return tracks().some((track) => track.solo); }
   function isTrackAudible(index) {
     const setting = tracks()[index] || defaultTrack(index);
@@ -41,7 +49,7 @@
     style.id = STYLE_ID;
     style.textContent = `
       body.simple-edit-phase1 .track-label.orgavox-expanded-track-label{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;align-content:start!important;padding-top:14px!important;background:rgba(224,163,96,.11)!important;box-shadow:inset 4px 0 var(--orgavox-track-color,#75b2de),inset 0 0 0 2px rgba(224,163,96,.5)!important}
-      body.simple-edit-phase1 .track-lane.orgavox-expanded-track{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;background-color:rgba(224,163,96,.06)!important;box-shadow:inset 0 0 0 2px rgba(224,163,96,.42),inset 4px 0 var(--orgavox-track-color,#75b2de)!important}
+      body.simple-edit-phase1 .track-lane.orgavox-expanded-track{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;box-shadow:inset 0 0 0 2px rgba(224,163,96,.42),inset 4px 0 var(--orgavox-track-color,#75b2de)!important}
       body.simple-edit-phase1 .track-lane.orgavox-expanded-track .audio-clip{min-height:52px!important}
       body.simple-edit-phase1 .track-label.orgavox-track-muted,body.simple-edit-phase1 .track-lane.orgavox-track-muted{opacity:.58!important}
       body.simple-edit-phase1 .track-label.orgavox-track-excluded,body.simple-edit-phase1 .track-lane.orgavox-track-excluded{opacity:.42!important}
@@ -89,13 +97,7 @@
   function showMenu(index, anchor) {
     const menu = ensureMenu();
     menu.textContent = "";
-    const actions = [
-      ["rename", "✎ Rename track"],
-      ["volume", "🔊 Track volume…"],
-      ["expand", "▣ Expand track"],
-      ["reset", "▢ Reset track view"],
-      ["clear", "🧹 Clear track"]
-    ];
+    const actions = [["rename", "✎ Rename track"], ["volume", "🔊 Track volume…"], ["expand", "▣ Expand track"], ["reset", "▢ Reset track view"], ["clear", "🧹 Clear track"]];
     actions.forEach(([action, label]) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -156,37 +158,13 @@
       });
     }
     const menu = label.querySelector(".orgavox-track-menu-btn");
-    if (menu && !menu.dataset.orgavoxTrackMenuWired) {
-      menu.dataset.orgavoxTrackMenuWired = "true";
-      menu.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); showMenu(index, event.currentTarget); });
-    }
+    if (menu && !menu.dataset.orgavoxTrackMenuWired) { menu.dataset.orgavoxTrackMenuWired = "true"; menu.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); showMenu(index, event.currentTarget); }); }
     const mute = label.querySelector(".orgavox-track-mix-btn.mute");
-    if (mute && !mute.dataset.orgavoxTrackMuteWired) {
-      mute.dataset.orgavoxTrackMuteWired = "true";
-      mute.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const setting = tracks()[index];
-        setting.muted = !setting.muted;
-        touch(`${setting.name} ${setting.muted ? "muted" : "unmuted"}.`);
-      });
-    }
+    if (mute && !mute.dataset.orgavoxTrackMuteWired) { mute.dataset.orgavoxTrackMuteWired = "true"; mute.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); const setting = tracks()[index]; setting.muted = !setting.muted; touch(`${setting.name} ${setting.muted ? "muted" : "unmuted"}.`); }); }
     const solo = label.querySelector(".orgavox-track-mix-btn.solo");
-    if (solo && !solo.dataset.orgavoxTrackSoloWired) {
-      solo.dataset.orgavoxTrackSoloWired = "true";
-      solo.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const setting = tracks()[index];
-        setting.solo = !setting.solo;
-        touch(`${setting.name} solo ${setting.solo ? "on" : "off"}.`);
-      });
-    }
+    if (solo && !solo.dataset.orgavoxTrackSoloWired) { solo.dataset.orgavoxTrackSoloWired = "true"; solo.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); const setting = tracks()[index]; setting.solo = !setting.solo; touch(`${setting.name} solo ${setting.solo ? "on" : "off"}.`); }); }
     const info = label.querySelector(".orgavox-track-info-btn");
-    if (info && !info.dataset.orgavoxTrackInfoWired) {
-      info.dataset.orgavoxTrackInfoWired = "true";
-      info.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); });
-    }
+    if (info && !info.dataset.orgavoxTrackInfoWired) { info.dataset.orgavoxTrackInfoWired = "true"; info.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); }); }
   }
 
   function refreshTrackLabels() {
@@ -198,8 +176,10 @@
       const index = Number(label.dataset.trackLabel);
       if (!Number.isFinite(index) || index < 0 || index >= TRACK_COUNT) return;
       const setting = settings[index];
+      const color = cssColor(index);
       label.dataset.trackColor = setting.color;
-      label.style.setProperty("--orgavox-track-color", cssColor(index));
+      label.style.setProperty("--orgavox-track-color", color);
+      label.style.setProperty("background", `linear-gradient(90deg,${colorWithAlpha(index, .24)},rgba(0,0,0,.18))`, "important");
       label.classList.toggle("active", Number(state.selectedTrack) === index);
       label.classList.toggle("orgavox-track-muted", setting.muted);
       label.classList.toggle("orgavox-track-excluded", anySolo && !setting.solo);
@@ -214,7 +194,9 @@
       const index = Number(lane.dataset.track);
       if (!Number.isFinite(index) || index < 0 || index >= TRACK_COUNT) return;
       const setting = settings[index];
-      lane.style.setProperty("--orgavox-track-color", cssColor(index));
+      const color = cssColor(index);
+      lane.style.setProperty("--orgavox-track-color", color);
+      lane.style.setProperty("background", `linear-gradient(90deg,${colorWithAlpha(index, .16)},rgba(0,0,0,.06) 56%,${colorWithAlpha(index, .08)})`, "important");
       lane.classList.toggle("selected-track", Number(state.selectedTrack) === index);
       lane.classList.toggle("orgavox-track-muted", setting.muted);
       lane.classList.toggle("orgavox-track-excluded", anySolo && !setting.solo);
@@ -222,10 +204,7 @@
       const overlay = lane.querySelector(".orgavox-track-volume-overlay");
       if (overlay) {
         overlay.textContent = `${setting.name} · VOL ${Math.round(setting.volume)}%`;
-        if (!overlay.dataset.orgavoxTrackVolumeWired) {
-          overlay.dataset.orgavoxTrackVolumeWired = "true";
-          overlay.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); openTrackVolume(index, overlay); });
-        }
+        if (!overlay.dataset.orgavoxTrackVolumeWired) { overlay.dataset.orgavoxTrackVolumeWired = "true"; overlay.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); openTrackVolume(index, overlay); }); }
       }
     });
   }
