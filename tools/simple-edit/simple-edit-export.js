@@ -230,13 +230,6 @@ function isTypingShortcutTarget(target) {
   return Boolean(target?.closest?.("input,select,textarea,[contenteditable='true']"));
 }
 
-function triggerVisibleAction(id) {
-  const button = document.getElementById(id);
-  if (!button) return false;
-  button.click();
-  return true;
-}
-
 function installEvents() {
   window.orgavoxOpenFiles = () => ui.fileInput.click();
   ui.dropzone.addEventListener("click", () => ui.fileInput.click());
@@ -272,7 +265,6 @@ function installEvents() {
   ui.rulerCanvas.addEventListener("pointerdown", (event) => { stopPlayback(); setPlayhead(pointerTime(event)); });
   ui.trackLabels.forEach((label) => label.addEventListener("click", () => selectTrack(label.dataset.trackLabel)));
 
-  window.orgavoxOpenFiles = () => ui.fileInput.click();
   window.orgavoxTogglePlayback = togglePlayback;
   window.orgavoxStopPlayback = () => stopPlayback();
   window.orgavoxJumpToStart = () => { stopPlayback(); setPlayhead(0, true); };
@@ -337,16 +329,6 @@ function installEvents() {
     if (event.code === "Space" && !typing) { event.preventDefault(); togglePlayback(); }
     if ((event.key === "Delete" || event.key === "Backspace") && !typing) deleteSelectedClip();
     if (event.key.toLowerCase() === "s" && !typing && !event.ctrlKey && !event.metaKey && !event.altKey) splitSelectedClip();
-    if (event.ctrlKey && !event.altKey && !event.metaKey && !typing) {
-      const key = event.key.toLowerCase();
-      if (key === "c" || key === "x" || key === "v") {
-        event.preventDefault();
-        event.stopPropagation();
-        if (key === "c") triggerVisibleAction("orgavoxCopyClipBtn");
-        if (key === "x") triggerVisibleAction("orgavoxCutClipBtn");
-        if (key === "v") triggerVisibleAction("orgavoxPasteClipBtn");
-      }
-    }
     if (event.key === "Escape") { ui.gatePopover.hidden = true; ui.exportModal.hidden = true; }
   });
   window.addEventListener("resize", () => { renderTimeline(); });
