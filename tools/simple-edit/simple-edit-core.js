@@ -26,6 +26,7 @@ const state = {
   clips: [],
   selectedAssetId: null,
   selectedClipId: null,
+  selectedClipIds: [],
   selectedTrack: 0,
   pixelsPerSecond: 80,
   playhead: 0,
@@ -41,6 +42,9 @@ const state = {
   renderCache: new Map(),
   processingToken: 0
 };
+
+function trackCount() { return Math.max(1, ui.lanes?.length || document.querySelectorAll(".track-lane").length || 10); }
+function clampTrack(track) { return Math.max(0, Math.min(trackCount() - 1, Number(track) || 0)); }
 
 function makeId(prefix) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -93,8 +97,7 @@ function bufferDuration(clip) {
 
 function stretchedAudioDuration(clip) {
   return Math.max(.01, clip.stretchDuration || bufferDuration(clip));
-}
-
+}\n
 function gateLayout(clip) {
   const audioDuration = stretchedAudioDuration(clip);
   if (!clip.gate?.enabled) return { audioDuration, outputDuration: audioDuration, chunkDuration: audioDuration, pause: 0, count: 1 };
@@ -237,7 +240,7 @@ function addClipFromAsset(assetId, track, start) {
   const asset = state.assets.find((item) => item.id === assetId);
   if (!asset) return;
   const clip = {
-    id: makeId("clip"), assetId, name: asset.name, track: Math.max(0, Math.min(4, track)),
+    id: makeId("clip"), assetId, name: asset.name, track: clampTrack(track),
     start: Math.max(0, start), sourceStart: 0, sourceEnd: asset.duration,
     stretchDuration: null, volume: 100, echo: 0, gate: null, bufferOverride: null, cacheVersion: 0
   };
@@ -248,7 +251,7 @@ function addClipFromAsset(assetId, track, start) {
 }
 
 function selectTrack(track) {
-  state.selectedTrack = Math.max(0, Math.min(4, Number(track) || 0));
+  state.selectedTrack = clampTrack(track);
   ui.lanes.forEach((lane) => lane.classList.toggle("selected-track", Number(lane.dataset.track) === state.selectedTrack));
   ui.trackLabels.forEach((label) => label.classList.toggle("active", Number(label.dataset.trackLabel) === state.selectedTrack));
   renderAssets();
@@ -297,6 +300,7 @@ function deleteSelectedClip() {
   stopPlayback();
   state.clips = state.clips.filter((item) => item.id !== clip.id);
   state.selectedClipId = null;
+  state.selectedClipIds = [];
   syncSelectedControls();
   renderTimeline();
   showToast("Selected clip deleted.");
