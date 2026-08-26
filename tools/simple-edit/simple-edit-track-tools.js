@@ -49,13 +49,7 @@
   function showMenu(index, anchor) {
     const menu = ensureMenu();
     menu.textContent = "";
-    const actions = [
-      ["rename", "✎ Rename track"],
-      ["volume", "🔊 Track volume…"],
-      ["expand", "▣ Expand track"],
-      ["reset", "▢ Reset track view"],
-      ["clear", "🧹 Clear track"]
-    ];
+    const actions = [["rename", "✎ Rename track"], ["volume", "🔊 Track volume…"], ["expand", "▣ Expand track"], ["reset", "▢ Reset track view"], ["clear", "🧹 Clear track"]];
     actions.forEach(([action, label]) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -136,7 +130,7 @@
       lane.classList.toggle("orgavox-track-excluded", anySolo && !setting.solo);
       lane.classList.toggle("orgavox-expanded-track", state.expandedTrack === index);
       const overlay = lane.querySelector(".orgavox-track-volume-overlay");
-      if (overlay) overlay.textContent = `VOL ${Math.round(setting.volume)}%`;
+      if (overlay) overlay.textContent = `${setting.name} · VOL ${Math.round(setting.volume)}%`;
     });
   }
 
