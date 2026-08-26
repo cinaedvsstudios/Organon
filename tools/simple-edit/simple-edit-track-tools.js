@@ -25,12 +25,21 @@
   }
   function cssColor(index) { return COLOR_MAP[tracks()[index]?.color] || COLOR_MAP.cyan; }
   function soloActive() { return tracks().some((track) => track.solo); }
-  function isTrackAudible(index) { const setting = tracks()[index] || defaultTrack(index); if (typeof state.__orgavoxRenderTrackOnly === "number") return index === state.__orgavoxRenderTrackOnly; if (setting.muted) return false; return !soloActive() || setting.solo; }
+  function isTrackAudible(index) {
+    const setting = tracks()[index] || defaultTrack(index);
+    if (typeof state.__orgavoxRenderTrackOnly === "number") return index === state.__orgavoxRenderTrackOnly;
+    if (setting.muted) return false;
+    return !soloActive() || setting.solo;
+  }
   function trackGainValue(index) { return (isTrackAudible(index) ? 1 : 0) * Math.max(0, Math.min(2, (tracks()[index]?.volume || 100) / 100)); }
-  function escapeHtml(value) { return String(value || "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[char])); }
+  function escapeHtml(value) { return String(value || "").replace(/[&<>'\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '\"': "&quot;" }[char])); }
 
   function closeMenu() { const menu = document.getElementById(MENU_ID); if (menu) menu.hidden = true; }
-  function ensureMenu() { let menu = document.getElementById(MENU_ID); if (!menu) { menu = document.createElement("div"); menu.id = MENU_ID; menu.className = "orgavox-track-menu"; menu.hidden = true; document.body.appendChild(menu); } return menu; }
+  function ensureMenu() {
+    let menu = document.getElementById(MENU_ID);
+    if (!menu) { menu = document.createElement("div"); menu.id = MENU_ID; menu.className = "orgavox-track-menu"; menu.hidden = true; document.body.appendChild(menu); }
+    return menu;
+  }
   function numberPop(anchor, label, value, apply) {
     document.getElementById(POP_ID)?.remove();
     const rect = anchor.getBoundingClientRect();
@@ -41,15 +50,31 @@
     pop.style.left = `${Math.min(window.innerWidth - 230, Math.max(8, rect.left))}px`;
     pop.style.top = `${Math.min(window.innerHeight - 110, Math.max(8, rect.bottom + 8))}px`;
     const input = pop.querySelector("input");
-    pop.addEventListener("submit", (event) => { event.preventDefault(); const number = Number(String(input.value).replace(/[^0-9.-]/g, "")); if (Number.isFinite(number) && apply(number) !== false) pop.remove(); });
+    pop.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const number = Number(String(input.value).replace(/[^0-9.-]/g, ""));
+      if (Number.isFinite(number) && apply(number) !== false) pop.remove();
+    });
     document.body.appendChild(pop); input.select(); input.focus();
   }
-  function touch(message) { stopPlayback?.(); refreshTrackLabels(); renderTimeline(); window.orgavoxRecordHistory?.(); if (message && typeof showToast === "function") showToast(message); }
+  function touch(message) {
+    stopPlayback?.();
+    refreshTrackLabels();
+    renderTimeline();
+    window.orgavoxRecordHistory?.();
+    if (message && typeof showToast === "function") showToast(message);
+  }
 
   function showMenu(index, anchor) {
     const menu = ensureMenu();
     menu.textContent = "";
-    const actions = [["rename", "✎ Rename track"], ["volume", "🔊 Track volume…"], ["expand", "▣ Expand track"], ["reset", "▢ Reset track view"], ["clear", "🧹 Clear track"]];
+    const actions = [
+      ["rename", "✎ Rename track"],
+      ["volume", "🔊 Track volume…"],
+      ["expand", "▣ Expand track"],
+      ["reset", "▢ Reset track view"],
+      ["clear", "🧹 Clear track"]
+    ];
     actions.forEach(([action, label]) => {
       const button = document.createElement("button");
       button.type = "button";
@@ -68,11 +93,20 @@
     closeMenu();
     const setting = tracks()[index];
     if (!setting) return;
-    if (action === "rename") { const next = prompt("Track name", setting.name); if (next != null) { setting.name = next.trim().slice(0, 48) || setting.name; touch("Track renamed."); } }
-    if (action === "volume") { const anchor = document.querySelector(`.track-label[data-track-label="${index}"] .orgavox-track-volume-pill`) || document.querySelector(`.track-lane[data-track="${index}"] .orgavox-track-volume-overlay`) || document.body; numberPop(anchor, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; }); }
+    if (action === "rename") {
+      const next = prompt("Track name", setting.name);
+      if (next != null) { setting.name = next.trim().slice(0, 48) || setting.name; touch("Track renamed."); }
+    }
+    if (action === "volume") {
+      const anchor = document.querySelector(`.track-lane[data-track="${index}"] .orgavox-track-volume-overlay`) || document.body;
+      numberPop(anchor, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; });
+    }
     if (action === "expand") expandTrack(index);
     if (action === "reset") resetTrackView();
-    if (action === "clear" && state.clips.some((clip) => Number(clip.track) === index) && (!confirm || confirm(`Clear ${setting.name}?`))) { state.clips = state.clips.filter((clip) => Number(clip.track) !== index); touch("Track cleared."); }
+    if (action === "clear" && state.clips.some((clip) => Number(clip.track) === index) && (!confirm || confirm(`Clear ${setting.name}?`))) {
+      state.clips = state.clips.filter((clip) => Number(clip.track) !== index);
+      touch("Track cleared.");
+    }
   }
 
   function analyzeTrack(index) {
@@ -87,14 +121,35 @@
   }
 
   function wireLabel(index, label) {
-    if (!label || label.dataset.orgavoxTrackWired) return;
-    label.dataset.orgavoxTrackWired = "true";
-    label.addEventListener("click", (event) => { if (event.target.closest("button")) return; if (typeof selectTrack === "function") selectTrack(index); else state.selectedTrack = index; refreshTrackLabels(); });
-    label.querySelector(".orgavox-track-menu-btn")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); showMenu(index, event.currentTarget); });
-    label.querySelector(".orgavox-track-mix-btn.mute")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); tracks()[index].muted = !tracks()[index].muted; touch(); });
-    label.querySelector(".orgavox-track-mix-btn.solo")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); tracks()[index].solo = !tracks()[index].solo; touch(); });
-    label.querySelector(".orgavox-track-info-btn")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); });
-    label.querySelector(".orgavox-track-volume-pill")?.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); const setting = tracks()[index]; numberPop(event.currentTarget, `${setting.name} volume`, setting.volume, (number) => { setting.volume = Math.max(0, Math.min(200, number)); touch("Track volume updated."); return true; }); });
+    if (!label) return;
+    if (!label.dataset.orgavoxTrackLabelClick) {
+      label.dataset.orgavoxTrackLabelClick = "true";
+      label.addEventListener("click", (event) => {
+        if (event.target.closest("button")) return;
+        if (typeof selectTrack === "function") selectTrack(index); else state.selectedTrack = index;
+        refreshTrackLabels();
+      });
+    }
+    const menu = label.querySelector(".orgavox-track-menu-btn");
+    if (menu && !menu.dataset.orgavoxTrackMenuWired) {
+      menu.dataset.orgavoxTrackMenuWired = "true";
+      menu.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); showMenu(index, event.currentTarget); });
+    }
+    const mute = label.querySelector(".orgavox-track-mix-btn.mute");
+    if (mute && !mute.dataset.orgavoxTrackMuteWired) {
+      mute.dataset.orgavoxTrackMuteWired = "true";
+      mute.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); tracks()[index].muted = !tracks()[index].muted; touch(); });
+    }
+    const solo = label.querySelector(".orgavox-track-mix-btn.solo");
+    if (solo && !solo.dataset.orgavoxTrackSoloWired) {
+      solo.dataset.orgavoxTrackSoloWired = "true";
+      solo.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); tracks()[index].solo = !tracks()[index].solo; touch(); });
+    }
+    const info = label.querySelector(".orgavox-track-info-btn");
+    if (info && !info.dataset.orgavoxTrackInfoWired) {
+      info.dataset.orgavoxTrackInfoWired = "true";
+      info.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); analyzeTrack(index); });
+    }
   }
 
   function refreshTrackLabels() {
@@ -116,8 +171,6 @@
       if (name) { name.textContent = setting.name; name.title = setting.name; }
       label.querySelector(".orgavox-track-mix-btn.mute")?.classList.toggle("active", setting.muted);
       label.querySelector(".orgavox-track-mix-btn.solo")?.classList.toggle("active", setting.solo);
-      const pill = label.querySelector(".orgavox-track-volume-pill");
-      if (pill) pill.textContent = `${Math.round(setting.volume)}%`;
       wireLabel(index, label);
     });
     ui.lanes.forEach((lane) => {
