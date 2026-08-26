@@ -3,6 +3,60 @@ function timelineWidth() {
   return Math.max(visible, projectDuration() * state.pixelsPerSecond + 240);
 }
 
+function installPhase3SelectionStyles() {
+  if (document.getElementById("orgavoxPhase3SelectionStyles")) return;
+  const style = document.createElement("style");
+  style.id = "orgavoxPhase3SelectionStyles";
+  style.textContent = `
+    body.simple-edit-phase1 .timeline-shell .track-lane{
+      background:var(--orgavox-track-bg-soft,rgba(117,178,222,.055))!important;
+      box-shadow:inset 3px 0 var(--orgavox-track-color,#75b2de),inset 0 1px 0 rgba(224,163,96,.18)!important;
+    }
+    body.simple-edit-phase1 .timeline-shell .track-lane.selected-track{
+      background:var(--orgavox-track-bg,rgba(117,178,222,.16))!important;
+      box-shadow:inset 5px 0 var(--orgavox-track-color,#75b2de),inset 0 0 0 2px rgba(224,163,96,.28),0 0 18px rgba(224,163,96,.08)!important;
+    }
+    body.simple-edit-phase1 .track-label.active{
+      background:linear-gradient(90deg,var(--orgavox-track-bg,rgba(117,178,222,.24)),rgba(224,163,96,.14))!important;
+      border-color:rgba(224,163,96,.72)!important;
+      box-shadow:inset 5px 0 var(--orgavox-track-color,#75b2de),inset 0 0 0 2px rgba(224,163,96,.44),0 0 18px rgba(224,163,96,.14)!important;
+      color:#fff4c7!important;
+    }
+    body.simple-edit-phase1 .track-label.active .orgavox-track-name,
+    body.simple-edit-phase1 .track-label.active strong{
+      color:#fff7d7!important;
+      text-shadow:0 0 10px rgba(224,163,96,.36)!important;
+    }
+    body.simple-edit-phase1 .track-label.active > span:first-child{
+      border-color:rgba(255,244,199,.88)!important;
+      color:#fff4c7!important;
+      background:rgba(224,163,96,.16)!important;
+      box-shadow:0 0 14px rgba(224,163,96,.3)!important;
+    }
+    body.simple-edit-phase1 .audio-clip{
+      background:linear-gradient(180deg,rgba(24,55,75,.72),rgba(6,24,28,.76))!important;
+      border-color:rgba(117,178,222,.58)!important;
+      transition:background .14s ease,border-color .14s ease,box-shadow .14s ease,filter .14s ease!important;
+    }
+    body.simple-edit-phase1 .audio-clip:not(.selected){
+      filter:saturate(.92) brightness(.9)!important;
+    }
+    body.simple-edit-phase1 .audio-clip.selected{
+      background:linear-gradient(180deg,rgba(224,163,96,.94),rgba(116,59,21,.92))!important;
+      border:2px solid rgba(255,238,184,.96)!important;
+      box-shadow:0 0 0 2px rgba(75,178,222,.22),0 0 24px rgba(224,163,96,.34),inset 0 0 0 1px rgba(255,255,255,.18)!important;
+      filter:saturate(1.14) brightness(1.08)!important;
+      z-index:12!important;
+    }
+    body.simple-edit-phase1 .audio-clip.selected .clip-title,
+    body.simple-edit-phase1 .audio-clip.selected .clip-effect-badges span{
+      color:#fff8db!important;
+      text-shadow:0 1px 2px rgba(0,0,0,.68)!important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function drawRuler(width) {
   const canvas = ui.rulerCanvas;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -59,12 +113,18 @@ function trackIsAudibleForClip(clip) {
   return !soloActive || Boolean(setting?.solo);
 }
 
+function clipIsSelected(clip) {
+  if (!clip) return false;
+  if (clip.id === state.selectedClipId) return true;
+  return Array.isArray(state.selectedClipIds) && state.selectedClipIds.includes(clip.id);
+}
+
 function trackWaveColor(clip, selected = false) {
+  if (selected) return "rgba(255,248,222,.98)";
   const setting = trackSettingForClip(clip);
   const key = setting?.color && ORGAVOX_TRACK_WAVE_COLORS[setting.color] ? setting.color : "cyan";
   const [r, g, b] = ORGAVOX_TRACK_WAVE_COLORS[key];
-  const alpha = selected ? .96 : .84;
-  return `rgba(${r},${g},${b},${alpha})`;
+  return `rgba(${r},${g},${b},.86)`;
 }
 
 function syncTrackLabelScroll() {
@@ -83,6 +143,7 @@ function installTrackLabelScrollSync() {
 }
 
 function renderTimeline() {
+  installPhase3SelectionStyles();
   const width = timelineWidth();
   ui.timelineContent.style.width = `${width}px`;
   ui.tracks.style.width = `${width}px`;
@@ -102,9 +163,10 @@ function renderClipElement(clip) {
   const element = document.createElement("div");
   const stretched = Math.abs(stretchedAudioDuration(clip) - bufferDuration(clip)) > .005;
   const audible = trackIsAudibleForClip(clip);
+  const selected = clipIsSelected(clip);
   const settings = Array.isArray(state.trackSettings) ? state.trackSettings : [];
   const soloActive = settings.some((track) => track?.solo);
-  element.className = `audio-clip${clip.id === state.selectedClipId ? " selected" : ""}${clip.gate?.enabled ? " gated" : ""}${stretched ? " stretched" : ""}${audible ? "" : " orgavox-clip-muted"}${soloActive && !trackSettingForClip(clip)?.solo ? " orgavox-clip-excluded" : ""}`;
+  element.className = `audio-clip${selected ? " selected" : ""}${clip.gate?.enabled ? " gated" : ""}${stretched ? " stretched" : ""}${audible ? "" : " orgavox-clip-muted"}${soloActive && !trackSettingForClip(clip)?.solo ? " orgavox-clip-excluded" : ""}`;
   element.dataset.clipId = clip.id;
   element.style.left = `${clip.start * state.pixelsPerSecond}px`;
   element.style.width = `${Math.max(12, clipDuration(clip) * state.pixelsPerSecond)}px`;
@@ -155,9 +217,9 @@ function drawClipWaveform(canvas, clip) {
   if (!buffer) return;
   const channel = buffer.getChannelData(0);
   const mid = canvas.height / 2;
-  ctx.strokeStyle = trackWaveColor(clip, clip.id === state.selectedClipId);
+  ctx.strokeStyle = trackWaveColor(clip, clipIsSelected(clip));
   ctx.globalAlpha = trackIsAudibleForClip(clip) ? 1 : .38;
-  ctx.lineWidth = Math.max(1, dpr);
+  ctx.lineWidth = clipIsSelected(clip) ? Math.max(1.35, dpr * 1.15) : Math.max(1, dpr);
   ctx.beginPath();
   const layout = gateLayout(clip);
   for (let x = 0; x < canvas.width; x += 1) {
@@ -288,4 +350,5 @@ function updatePlayheadVisual() {
   ui.timeReadout.textContent = formatTime(state.playhead);
 }
 
+installPhase3SelectionStyles();
 installTrackLabelScrollSync();
