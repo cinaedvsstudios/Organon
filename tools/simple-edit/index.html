@@ -3,129 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon — ORGAVOX v0.63 title fix</title>
+  <title>Organon — ORGAVOX v1.01 set 1</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./simple-edit.css?v=0.01">
-  <style id="orgavox-boot-style">html.orgavox-loading .app{visibility:hidden}html.orgavox-loading body::before{content:"Loading ORGAVOX v0.63 title fix…";position:fixed;inset:0;display:grid;place-items:center;z-index:99999;background:#131412;color:#e0a360;font:800 1rem Georgia,serif;letter-spacing:.12em}</style>
+  <style id="orgavox-boot-style">html.orgavox-loading .app{visibility:hidden}html.orgavox-loading body::before{content:"Loading ORGAVOX v1.01 set 1…";position:fixed;inset:0;display:grid;place-items:center;z-index:99999;background:#131412;color:#e0a360;font:800 1rem Georgia,serif;letter-spacing:.12em}</style>
   <script src="./vendor/lame.min.js"></script>
-  <script>
-    (() => {
-      const VERSION = "v0.63 title fix";
-      const TITLE = "Organon — ORGAVOX " + VERSION;
-      const STYLE_ID = "orgavox-v063-title-info-style";
-
-      function forceVersion() {
-        try {
-          if (document.title !== TITLE) document.title = TITLE;
-        } catch {}
-        document.querySelectorAll(".simple-edit-version,.phase1-version,.orgavox-sidebar-version").forEach((node) => { node.textContent = VERSION; });
-        window.ORGAVOX_VERSION = VERSION;
-      }
-
-      function lockTitle() {
-        const source = Object.getOwnPropertyDescriptor(Document.prototype, "title") || Object.getOwnPropertyDescriptor(HTMLDocument.prototype, "title");
-        if (source?.configurable && source?.set) {
-          try {
-            Object.defineProperty(document, "title", {
-              configurable: true,
-              get() { return TITLE; },
-              set() { source.set.call(document, TITLE); }
-            });
-          } catch {}
-        }
-        forceVersion();
-      }
-
-      function installInfoStyle() {
-        if (document.getElementById(STYLE_ID)) return;
-        const style = document.createElement("style");
-        style.id = STYLE_ID;
-        style.textContent = `
-          body.simple-edit-phase1 .orgavox-track-info-btn{
-            min-width:24px!important;width:24px!important;height:22px!important;min-height:22px!important;padding:0!important;
-            display:inline-flex!important;align-items:center!important;justify-content:center!important;
-            border:1px solid rgba(74,190,117,.9)!important;border-radius:7px!important;
-            background:linear-gradient(180deg,rgba(34,126,66,.95),rgba(12,58,31,.98))!important;
-            color:#e4ffed!important;font:900 .58rem var(--font-mono)!important;
-            box-shadow:0 0 10px rgba(74,190,117,.24)!important;cursor:pointer!important;
-          }
-        `;
-        document.head.appendChild(style);
-      }
-
-      function trackIndex(label) {
-        const direct = Number(label.dataset.trackLabel);
-        if (Number.isFinite(direct)) return direct;
-        const text = label.querySelector("span")?.textContent || "";
-        const inferred = Number(text) - 1;
-        return Number.isFinite(inferred) ? inferred : 0;
-      }
-
-      function openTrackInfo(track) {
-        try { if (typeof selectTrack === "function") selectTrack(track); } catch {}
-        try {
-          if (typeof state !== "undefined" && typeof selectClip === "function") {
-            const clip = state.clips?.find((item) => Number(item.track) === track);
-            if (clip) selectClip(clip.id);
-          }
-        } catch {}
-        const modal = document.getElementById("analysisModal");
-        if (modal) {
-          modal.hidden = false;
-          try { showToast?.(`Analyzing Track ${track + 1}.`); } catch {}
-          setTimeout(() => modal.querySelector("[data-analysis-scan]")?.click(), 0);
-        } else {
-          try { showToast?.("Analyze screen is still loading."); } catch {}
-        }
-      }
-
-      function restoreTrackInfoButtons() {
-        installInfoStyle();
-        document.querySelectorAll(".track-label").forEach((label) => {
-          if (label.querySelector(".orgavox-track-info-btn")) return;
-          const track = trackIndex(label);
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "orgavox-track-info-btn";
-          button.textContent = "i";
-          button.title = `Analyze Track ${track + 1}`;
-          button.setAttribute("aria-label", button.title);
-          button.addEventListener("click", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            openTrackInfo(track);
-          });
-          const solo = label.querySelector(".orgavox-track-mix-btn.solo");
-          if (solo) solo.insertAdjacentElement("afterend", button);
-          else label.appendChild(button);
-        });
-      }
-
-      function refresh() {
-        forceVersion();
-        restoreTrackInfoButtons();
-      }
-
-      lockTitle();
-      const timer = setInterval(refresh, 150);
-      window.addEventListener("load", () => {
-        refresh();
-        setTimeout(refresh, 250);
-        setTimeout(refresh, 900);
-        setTimeout(refresh, 1800);
-        setTimeout(() => clearInterval(timer), 10000);
-      });
-      window.orgavoxForceVersionAndInfo = refresh;
-    })();
-  </script>
   <script defer src="./simple-edit.js?v=0.62"></script>
+  <script defer src="./simple-edit-v101-set1.js?v=1.01"></script>
 </head>
 <body>
   <div class="app" id="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version" style="margin-left:8px;color:var(--water-spray);font:700 .62em var(--font-mono);letter-spacing:.08em;">v0.63 title fix</span></h1><p hidden></p></div></div>
+      <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version" style="margin-left:8px;color:var(--water-spray);font:700 .62em var(--font-mono);letter-spacing:.08em;">v1.01 set 1</span></h1><p hidden></p></div></div>
       <div class="transport" aria-label="Transport controls"><button class="tool-button primary" id="importBtn" type="button">＋ Open</button><button class="icon-button" id="jumpStartBtn" type="button" title="Return to start">|◀</button><button class="icon-button primary" id="playBtn" type="button" title="Play or pause">▶</button><button class="icon-button" id="stopBtn" type="button" title="Stop">■</button><span class="time-readout" id="timeReadout">00:00.000</span></div>
       <div class="toolbar-actions"><button class="tool-button" id="scissorsBtn" type="button" disabled>✂ Scissors</button><button class="tool-button" id="stretchBtn" type="button" aria-pressed="false">↔ Stretch off</button><button class="tool-button" id="gateBtn" type="button" disabled>▥ Noise gate</button><button class="tool-button danger" id="deleteBtn" type="button" disabled>Delete</button><button class="icon-button" id="fullscreenBtn" type="button" title="Toggle fullscreen">⛶</button></div>
       <input id="fileInput" type="file" multiple hidden accept="audio/*,video/*,.mp3,.wav,.wave,.m4a,.aac,.ogg,.oga,.opus,.flac,.aif,.aiff,.caf,.weba,.mp4,.m4v,.mov,.webm,.mkv,.3gp,.3g2,.mpeg,.mpg,.avi">
