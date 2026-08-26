@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.24";
+  const VERSION = "v1.24.1";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -154,48 +154,58 @@
 
   installLocalSoundFxRouting();
   const earlyFiles = [
-    "./simple-edit-core.js?v=1.24",
-    "./simple-edit-timeline.js?v=1.24",
-    "./simple-edit-audio.js?v=1.24",
-    "./simple-edit-export.js?v=1.24",
-    "./simple-edit-keyframes.js?v=1.24",
-    "./simple-edit-keyframes-fix.js?v=1.24",
-    "./simple-edit-phase3.js?v=1.24"
+    "./simple-edit-core.js?v=1.24.1",
+    "./simple-edit-timeline.js?v=1.24.1",
+    "./simple-edit-audio.js?v=1.24.1",
+    "./simple-edit-export.js?v=1.24.1",
+    "./simple-edit-keyframes.js?v=1.24.1",
+    "./simple-edit-keyframes-fix.js?v=1.24.1",
+    "./simple-edit-phase3.js?v=1.24.1"
   ];
   createOwnerControls();
   for (const source of earlyFiles) await loadScript(source);
   const behaviorFiles = [
-    "./simple-edit-effects-library.js?v=1.24",
-    "./simple-edit-echo-settings.js?v=1.24",
-    "./simple-edit-stretch-audiotsm.js?v=1.24",
-    "./simple-edit-fade-handles.js?v=1.24",
-    "./simple-edit-normalize.js?v=1.24",
-    "./simple-edit-transpose-engine.js?v=1.24",
-    "./simple-edit-transpose.js?v=1.24",
-    "./simple-edit-eq-engine.js?v=1.24",
-    "./simple-edit-eq.js?v=1.24",
-    "./simple-edit-drive-engine.js?v=1.24",
-    "./simple-edit-drive.js?v=1.24",
-    "./simple-edit-dynamics-engine.js?v=1.24",
-    "./simple-edit-dynamics.js?v=1.24",
-    "./simple-edit-stereo-engine.js?v=1.24",
-    "./simple-edit-stereo.js?v=1.24",
-    "./simple-edit-lofi-engine.js?v=1.24",
-    "./simple-edit-lofi.js?v=1.24",
-    "./simple-edit-render-tools-engine.js?v=1.24",
-    "./simple-edit-render-tools.js?v=1.24",
-    "./simple-edit-analysis.js?v=1.24",
-    "./simple-edit-advanced-analysis.js?v=1.24",
-    "./simple-edit-advanced-tools.js?v=1.24",
-    "./simple-edit-project.js?v=1.24",
-    "./simple-edit-markers.js?v=1.24",
-    "./simple-edit-undo-redo.js?v=1.24",
-    "./simple-edit-track-tools.js?v=1.24",
-    "./simple-edit-clip-menu.js?v=1.24",
-    "./simple-edit-snap-tools.js?v=1.24",
-    "./simple-edit-library-tools.js?v=1.24"
+    "./simple-edit-effects-library.js?v=1.24.1",
+    "./simple-edit-echo-settings.js?v=1.24.1",
+    "./simple-edit-stretch-audiotsm.js?v=1.24.1",
+    "./simple-edit-fade-handles.js?v=1.24.1",
+    "./simple-edit-normalize.js?v=1.24.1",
+    "./simple-edit-transpose-engine.js?v=1.24.1",
+    "./simple-edit-transpose.js?v=1.24.1",
+    "./simple-edit-eq-engine.js?v=1.24.1",
+    "./simple-edit-eq.js?v=1.24.1",
+    "./simple-edit-drive-engine.js?v=1.24.1",
+    "./simple-edit-drive.js?v=1.24.1",
+    "./simple-edit-dynamics-engine.js?v=1.24.1",
+    "./simple-edit-dynamics.js?v=1.24.1",
+    "./simple-edit-stereo-engine.js?v=1.24.1",
+    "./simple-edit-stereo.js?v=1.24.1",
+    "./simple-edit-lofi-engine.js?v=1.24.1",
+    "./simple-edit-lofi.js?v=1.24.1",
+    "./simple-edit-render-tools-engine.js?v=1.24.1",
+    "./simple-edit-render-tools.js?v=1.24.1",
+    "./simple-edit-analysis.js?v=1.24.1",
+    "./simple-edit-advanced-analysis.js?v=1.24.1",
+    "./simple-edit-advanced-tools.js?v=1.24.1",
+    "./simple-edit-project.js?v=1.24.1",
+    "./simple-edit-markers.js?v=1.24.1",
+    "./simple-edit-undo-redo.js?v=1.24.1",
+    "./simple-edit-track-tools.js?v=1.24.1",
+    "./simple-edit-clip-menu.js?v=1.24.1",
+    "./simple-edit-snap-tools.js?v=1.24.1",
+    "./simple-edit-library-tools.js?v=1.24.1"
   ];
-  for (const source of behaviorFiles) await loadScript(source);
+  for (const source of behaviorFiles) {
+    if (source.includes("simple-edit-advanced-")) {
+      try {
+        await loadScript(source);
+      } catch (error) {
+        console.warn("ORGAVOX advanced module skipped:", source, error);
+      }
+    } else {
+      await loadScript(source);
+    }
+  }
 
   function installVisibleUiOwner() {
     if (window.__orgavoxVisibleUiOwner122) return;
