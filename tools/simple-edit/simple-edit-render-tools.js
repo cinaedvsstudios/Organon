@@ -48,21 +48,18 @@
   function ensureButtons() {
     if (!ui.reverseClipBtn) ui.reverseClipBtn = makeButton("reverseClipBtn", "↩ Reverse", "orgavox-clip-tool-button orgavox-reverse-button", "Reverse selected clip", toggleReverse);
     if (!ui.downloadClipBtn) ui.downloadClipBtn = makeButton("downloadClipBtn", "⬇ Clip", "orgavox-download-clip-button", "Download selected clip as WAV or MP3", () => downloadRenderedClip());
-    if (!ui.bounceBtn) ui.bounceBtn = makeButton("bounceBtn", "🧱 Bounce", "orgavox-clip-tool-button orgavox-bounce-button", "Bounce selected clip", openBounceModal);
+    if (!ui.bounceBtn) ui.bounceBtn = makeButton("bounceBtn", "🧱 Bounce Track", "orgavox-clip-tool-button orgavox-bounce-button", "Bounce selected clip or selected track", openBounceModal);
     placeButtons();
     return [ui.reverseClipBtn, ui.downloadClipBtn, ui.bounceBtn];
   }
 
   function placeButtons() {
     const editGroup = document.querySelector(".orgavox-edit-group");
-    const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
     const effectsMenu = document.querySelector(".orgavox-effects-menu");
+    const viewMenu = document.querySelector("#orgavoxViewDropdown .orgavox-view-menu");
     if (effectsMenu && ui.reverseClipBtn && ui.reverseClipBtn.parentElement !== effectsMenu) effectsMenu.appendChild(ui.reverseClipBtn);
-    [ui.downloadClipBtn, ui.bounceBtn].filter(Boolean).forEach((button) => {
-      if (!editGroup) return;
-      if (effectsDrop) editGroup.insertBefore(button, effectsDrop);
-      else if (button.parentElement !== editGroup) editGroup.appendChild(button);
-    });
+    if (editGroup && ui.downloadClipBtn && ui.downloadClipBtn.parentElement !== editGroup && !document.querySelector("#orgavoxEditDropdown .orgavox-edit-menu")?.contains(ui.downloadClipBtn)) editGroup.appendChild(ui.downloadClipBtn);
+    if (viewMenu && ui.bounceBtn && ui.bounceBtn.parentElement !== viewMenu) viewMenu.appendChild(ui.bounceBtn);
   }
 
   function ensureBounceModal() {
@@ -74,7 +71,7 @@
     modal.hidden = true;
     modal.innerHTML = `
       <section class="orgavox-bounce-dialog" role="dialog" aria-modal="true" aria-labelledby="bounceToolsTitle">
-        <div class="popover-head"><div><span class="eyebrow">Clip tools</span><h3 id="bounceToolsTitle">Bounce selected clip</h3></div><button class="icon-button" data-bounce-close type="button">×</button></div>
+        <div class="popover-head"><div><span class="eyebrow">Clip tools</span><h3 id="bounceToolsTitle">Bounce Track</h3></div><button class="icon-button" data-bounce-close type="button">×</button></div>
         <p class="export-note">Bounce means bake the selected clip with its current edits and effects applied.</p>
         <div class="orgavox-bounce-status" data-bounce-status>Select a clip to use bounce tools.</div>
         <div class="orgavox-bounce-grid">
@@ -100,7 +97,7 @@
 
   function openBounceModal() {
     const clip = selectedClipForTools();
-    if (!clip) return showToast("Select a clip before opening Bounce.");
+    if (!clip) return showToast("Select a clip before opening Bounce Track.");
     const modal = ensureBounceModal();
     updateStatus();
     modal.hidden = false;
@@ -124,28 +121,10 @@
   }
 
   function clearBakedEffects(clip) {
-    clip.sourceStart = 0;
-    clip.stretchDuration = null;
-    clip.volume = 100;
-    clip.echo = 0;
-    clip.fadeIn = 0;
-    clip.fadeOut = 0;
-    clip.gate = null;
-    clip.bufferOverride = null;
-    clip.volumeKeyframes = [];
-    clip.reverseAudio = false;
-    clip.transposeSemitones = 0;
-    clip.eqSettings = null;
-    clip.driveSettings = null;
-    clip.dynamicsSettings = null;
-    clip.stereoSettings = null;
-    clip.lofiSettings = null;
+    clip.sourceStart = 0; clip.stretchDuration = null; clip.volume = 100; clip.echo = 0; clip.fadeIn = 0; clip.fadeOut = 0; clip.gate = null; clip.bufferOverride = null; clip.volumeKeyframes = []; clip.reverseAudio = false; clip.transposeSemitones = 0; clip.eqSettings = null; clip.driveSettings = null; clip.dynamicsSettings = null; clip.stereoSettings = null; clip.lofiSettings = null;
   }
 
-  function renderedName(clip, suffix = "clip", extension = "wav") {
-    const base = safeFilename(clip?.name || "orgavox-clip");
-    return `${base}-${suffix}.${extension}`;
-  }
+  function renderedName(clip, suffix = "clip", extension = "wav") { return `${safeFilename(clip?.name || "orgavox-clip")}-${suffix}.${extension}`; }
 
   async function renderSelectedClip() {
     const clip = selectedClipForTools();
@@ -230,12 +209,9 @@
     const clip = selectedClipForTools();
     const disabled = busy || !clip;
     ensureButtons().forEach((button) => { button.disabled = disabled; });
-    if (ui.reverseClipBtn) {
-      ui.reverseClipBtn.classList.toggle("active", Boolean(clip?.reverseAudio));
-      ui.reverseClipBtn.textContent = clip?.reverseAudio ? "🔁 Unreverse" : "↩ Reverse";
-    }
+    if (ui.reverseClipBtn) { ui.reverseClipBtn.classList.toggle("active", Boolean(clip?.reverseAudio)); ui.reverseClipBtn.textContent = clip?.reverseAudio ? "🔁 Unreverse" : "↩ Reverse"; }
     if (ui.downloadClipBtn) ui.downloadClipBtn.textContent = "⬇ Clip";
-    if (ui.bounceBtn) ui.bounceBtn.textContent = "🧱 Bounce";
+    if (ui.bounceBtn) ui.bounceBtn.textContent = "🧱 Bounce Track";
   }
 
   function addReverseBadges() {
@@ -279,5 +255,5 @@
   placeButtons();
   updateClipToolButtonState();
   renderTimeline();
-  setTimeout(() => { placeButtons(); updateClipToolButtonState(); }, 150);
+  [150, 500, 1200, 2200].forEach((delay) => setTimeout(() => { placeButtons(); updateClipToolButtonState(); }, delay));
 })();
