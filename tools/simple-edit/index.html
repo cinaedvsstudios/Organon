@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Organon — ORGAVOX v1.14</title>
+  <title>Organon — ORGAVOX v1.15</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./simple-edit.css?v=0.01">
-  <style id="orgavox-boot-style">html.orgavox-loading .app{visibility:hidden}html.orgavox-loading body::before{content:"Loading ORGAVOX v1.14…";position:fixed;inset:0;display:grid;place-items:center;z-index:99999;background:#131412;color:#e0a360;font:800 1rem Georgia,serif;letter-spacing:.12em}</style>
+  <style id="orgavox-boot-style">html.orgavox-loading .app{visibility:hidden}html.orgavox-loading body::before{content:"Loading ORGAVOX v1.15…";position:fixed;inset:0;display:grid;place-items:center;z-index:99999;background:#131412;color:#e0a360;font:800 1rem Georgia,serif;letter-spacing:.12em}</style>
   <script src="./vendor/lame.min.js"></script>
-  <script defer src="./simple-edit.js?v=1.14"></script>
+  <script defer src="./simple-edit.js?v=1.15"></script>
   <script>
     window.addEventListener("load", () => {
-      const version = "v1.14";
+      const version = "v1.15";
       window.ORGAVOX_VERSION = version;
       document.title = `Organon — ORGAVOX ${version}`;
       document.querySelectorAll(".simple-edit-version,.phase1-version,.orgavox-sidebar-version").forEach((node) => { node.textContent = version; });
@@ -23,7 +23,7 @@
 <body>
   <div class="app" id="app">
     <header class="topbar">
-      <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version">v1.14</span></h1><p>Browser audio workstation</p></div></div>
+      <div class="brand"><div class="brand-mark">Φ</div><div><h1>ORGAVOX <span class="simple-edit-version">v1.15</span></h1><p>Browser audio workstation</p></div></div>
       <div class="orgavox-main-controls-group">
         <div class="orgavox-transport-group"></div>
       </div>
@@ -36,8 +36,8 @@
 
     <section class="clip-controls" id="clipControls" aria-label="Selected clip controls">
       <div class="selected-summary"><span class="scope-label">Selected clip</span><strong id="selectedClipName">None</strong></div>
-      <label class="range-control"><span>Volume</span><input id="volumeSlider" type="range" min="0" max="200" value="100" disabled onpointerdown="event.stopPropagation()" onmousedown="event.stopPropagation()"><output id="volumeOut">100%</output></label>
-      <label class="range-control orgavox-echo-control"><span>Echo</span><input id="echoSlider" type="range" min="0" max="100" value="0" disabled onpointerdown="event.stopPropagation()" onmousedown="event.stopPropagation()"><output id="echoOut">0%</output></label>
+      <label class="range-control"><span>Volume</span><input id="volumeSlider" type="range" min="0" max="200" value="100" disabled><output id="volumeOut">100%</output></label>
+      <label class="range-control orgavox-echo-control"><span>Echo</span><input id="echoSlider" type="range" min="0" max="100" value="0" disabled><output id="echoOut">0%</output></label>
       <label class="range-control zoom-control"><span>Timeline zoom</span><input id="zoomSlider" type="range" min="25" max="500" value="100"><output id="zoomOut">100%</output></label>
     </section>
 
