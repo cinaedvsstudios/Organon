@@ -116,18 +116,9 @@
   }
 
   function ensureButton() {
-    if (document.getElementById("effectsLibraryBtn")) return;
-    const button = document.createElement("button");
-    button.className = "tool-button effects-library-button";
-    button.id = "effectsLibraryBtn";
-    button.type = "button";
-    button.textContent = "🎧 Effects Library";
-    button.title = "Open the CC0 sound effects library.";
-    button.addEventListener("click", openLibrary);
-    const importButton = document.getElementById("importBtn");
-    if (importButton) importButton.insertAdjacentElement("afterend", button);
-    else document.querySelector(".transport, .phase1-timeline-toolbar, .toolbar-actions")?.prepend(button);
-    ui.effectsLibraryBtn = button;
+    const button = document.getElementById("effectsLibraryBtn");
+    if (button) ui.effectsLibraryBtn = button;
+    return button;
   }
 
   function ensureModal() {
@@ -265,6 +256,8 @@
       showToast(`${effect.name} could not be loaded from the effects library.`);
     }
   }
+
+  window.orgavoxOpenEffectsLibrary = openLibrary;
 
   installStyles();
   ensureButton();

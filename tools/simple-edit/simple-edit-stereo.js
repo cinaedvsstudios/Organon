@@ -65,25 +65,9 @@
   }
 
   function ensureButton() {
-    if (ui.stereoBtn) return ui.stereoBtn;
-    const button = document.createElement("button");
-    button.id = "stereoBtn";
-    button.type = "button";
-    button.className = "tool-button";
-    button.textContent = "↔ Stereo / Pan";
-    button.disabled = true;
-    button.addEventListener("click", openModal);
-    ui.stereoBtn = button;
-    placeButton();
+    const button = document.getElementById("stereoBtn");
+    if (button) ui.stereoBtn = button;
     return button;
-  }
-
-  function placeButton() {
-    const button = ui.stereoBtn;
-    if (!button) return;
-    button.textContent = "↔ Stereo / Pan";
-    const menu = document.querySelector(".orgavox-effects-menu");
-    if (menu && button.parentElement !== menu) menu.appendChild(button);
   }
 
   function ensureModal() {
@@ -212,6 +196,7 @@
   function updateStereoButtonState() {
     const button = ensureButton();
     const clip = selectedClip();
+    if (!button) return;
     button.disabled = !clip;
     button.classList.toggle("active", Boolean(clip?.stereoSettings));
   }
@@ -235,17 +220,19 @@
     if (window.__orgavoxStereoRenderPatched) return;
     window.__orgavoxStereoRenderPatched = true;
     const previousRenderTimeline = renderTimeline;
-    renderTimeline = function orgavoxStereoRenderTimeline() { previousRenderTimeline(); placeButton(); updateStereoButtonState(); addClipBadges(); };
+    renderTimeline = function orgavoxStereoRenderTimeline() { previousRenderTimeline(); updateStereoButtonState(); addClipBadges(); };
     const previousSyncSelectedControls = syncSelectedControls;
     syncSelectedControls = function orgavoxStereoSyncSelectedControls() { previousSyncSelectedControls(); updateStereoButtonState(); };
   }
+
+  window.orgavoxOpenStereo = openModal;
+  window.orgavoxUpdateStereoButton = updateStereoButtonState;
 
   installStyles();
   ensureButton();
   ensureModal();
   patchRender();
-  placeButton();
   updateStereoButtonState();
   renderTimeline();
-  setTimeout(() => { placeButton(); updateStereoButtonState(); }, 150);
+  setTimeout(updateStereoButtonState, 150);
 })();
