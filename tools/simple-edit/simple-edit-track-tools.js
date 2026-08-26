@@ -43,6 +43,11 @@
       body.simple-edit-phase1 .track-label.orgavox-expanded-track-label{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;align-content:start!important;padding-top:14px!important;background:rgba(224,163,96,.11)!important;box-shadow:inset 4px 0 var(--orgavox-track-color,#75b2de),inset 0 0 0 2px rgba(224,163,96,.5)!important}
       body.simple-edit-phase1 .track-lane.orgavox-expanded-track{height:calc(var(--lane-h,112px)*1.7)!important;min-height:calc(var(--lane-h,112px)*1.7)!important;background-color:rgba(224,163,96,.06)!important;box-shadow:inset 0 0 0 2px rgba(224,163,96,.42),inset 4px 0 var(--orgavox-track-color,#75b2de)!important}
       body.simple-edit-phase1 .track-lane.orgavox-expanded-track .audio-clip{min-height:52px!important}
+      body.simple-edit-phase1 .track-label.orgavox-track-muted,body.simple-edit-phase1 .track-lane.orgavox-track-muted{opacity:.58!important}
+      body.simple-edit-phase1 .track-label.orgavox-track-excluded,body.simple-edit-phase1 .track-lane.orgavox-track-excluded{opacity:.42!important}
+      body.simple-edit-phase1 .track-label.orgavox-track-muted{background:rgba(92,28,23,.16)!important}
+      body.simple-edit-phase1 .track-label.orgavox-track-excluded{background:rgba(117,178,222,.08)!important}
+      body.simple-edit-phase1 .orgavox-track-mix-btn.active{transform:scale(1.08)!important;box-shadow:0 0 12px rgba(224,163,96,.38)!important}
       body.simple-edit-phase1 .orgavox-track-volume-overlay{cursor:pointer!important}
       body.simple-edit-phase1 .orgavox-track-volume-overlay:hover{border-color:rgba(117,178,222,.86)!important;color:#e1f7ff!important}
     `;
@@ -158,12 +163,24 @@
     const mute = label.querySelector(".orgavox-track-mix-btn.mute");
     if (mute && !mute.dataset.orgavoxTrackMuteWired) {
       mute.dataset.orgavoxTrackMuteWired = "true";
-      mute.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); tracks()[index].muted = !tracks()[index].muted; touch(); });
+      mute.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const setting = tracks()[index];
+        setting.muted = !setting.muted;
+        touch(`${setting.name} ${setting.muted ? "muted" : "unmuted"}.`);
+      });
     }
     const solo = label.querySelector(".orgavox-track-mix-btn.solo");
     if (solo && !solo.dataset.orgavoxTrackSoloWired) {
       solo.dataset.orgavoxTrackSoloWired = "true";
-      solo.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); tracks()[index].solo = !tracks()[index].solo; touch(); });
+      solo.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        const setting = tracks()[index];
+        setting.solo = !setting.solo;
+        touch(`${setting.name} solo ${setting.solo ? "on" : "off"}.`);
+      });
     }
     const info = label.querySelector(".orgavox-track-info-btn");
     if (info && !info.dataset.orgavoxTrackInfoWired) {
@@ -251,6 +268,7 @@
 
   window.orgavoxRefreshTrackTools = refreshTrackLabels;
   window.orgavoxTrackSettings = tracks;
+  window.orgavoxTrackIsAudible = isTrackAudible;
   window.orgavoxRandomizeTrackColors = randomizeTrackColors;
   window.orgavoxExpandSelectedTrack = () => expandTrack(state.selectedTrack);
   window.orgavoxResetTrackView = resetTrackView;
