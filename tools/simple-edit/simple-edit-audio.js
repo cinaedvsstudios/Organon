@@ -99,6 +99,21 @@ async function processedClipBuffer(clip) {
   return output;
 }
 
+
+function masterGainValue() {
+  return Math.max(0, Math.min(2, Number(state.globalVolume ?? 100) / 100));
+}
+
+function syncPlaybackMasterGain() {
+  const gain = state.playbackMasterGain;
+  if (!gain || !audioContext) return;
+  const value = masterGainValue();
+  try { gain.gain.setTargetAtTime(value, audioContext.currentTime, .01); }
+  catch { gain.gain.value = value; }
+}
+
+window.orgavoxSyncMasterGain = syncPlaybackMasterGain;
+
 function connectClipNodes(context, source, clip, destination) {
   const dryGain = context.createGain();
   dryGain.gain.value = Math.max(0, clip.volume / 100);
@@ -144,12 +159,16 @@ async function startPlayback() {
   state.playOriginContextTime = startTime;
   state.playOriginTimelineTime = state.playhead;
   state.activeSources = [];
+  const masterGain = audioContext.createGain();
+  masterGain.gain.value = masterGainValue();
+  masterGain.connect(audioContext.destination);
+  state.playbackMasterGain = masterGain;
   for (const { clip, buffer } of entries) {
     const clipEnd = clip.start + buffer.duration;
     if (clipEnd <= state.playhead) continue;
     const source = audioContext.createBufferSource();
     source.buffer = buffer;
-    connectClipNodes(audioContext, source, clip, audioContext.destination);
+    connectClipNodes(audioContext, source, clip, masterGain);
     const when = startTime + Math.max(0, clip.start - state.playhead);
     const offset = Math.max(0, state.playhead - clip.start);
     try { source.start(when, offset); } catch (error) { console.error(error); }
@@ -180,6 +199,8 @@ function stopPlayback(updateStatus = true) {
   state.processingToken += 1;
   state.activeSources.forEach((source) => { try { source.stop(); } catch {} });
   state.activeSources = [];
+  try { state.playbackMasterGain?.disconnect?.(); } catch {}
+  state.playbackMasterGain = null;
   state.playing = false;
   cancelAnimationFrame(state.raf);
   ui.playBtn.textContent = "▶";

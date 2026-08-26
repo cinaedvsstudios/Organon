@@ -1,3 +1,7 @@
+function masterGainValue() {
+  return Math.max(0, Math.min(2, Number(state.globalVolume ?? 100) / 100));
+}
+
 async function renderMix() {
   const prepared = [];
   for (const clip of state.clips) {
@@ -15,7 +19,10 @@ async function renderMix() {
   compressor.ratio.value = 4;
   compressor.attack.value = .003;
   compressor.release.value = .2;
-  compressor.connect(offline.destination);
+  const masterGain = offline.createGain();
+  masterGain.gain.value = masterGainValue();
+  compressor.connect(masterGain);
+  masterGain.connect(offline.destination);
   for (const { clip, buffer } of prepared) {
     const source = offline.createBufferSource();
     source.buffer = buffer;
@@ -156,7 +163,7 @@ async function confirmExport() {
   ui.exportProgress.hidden = false;
 
   try {
-    setStatus("Rendering five-track mix…");
+    setStatus("Rendering mix…");
     const rendered = await renderMix();
     setStatus(format === "mp3" ? "Encoding MP3…" : "Encoding WAV…");
     const blob = format === "mp3"
@@ -190,8 +197,8 @@ function updateExportFormat() {
   ui.bitrateField.hidden = !mp3;
   ui.exportConfirmBtn.textContent = mp3 ? "Render MP3" : "Render WAV";
   ui.exportNote.textContent = mp3
-    ? "MP3 creates a smaller compressed file using the selected bitrate."
-    : "WAV keeps the rendered mix uncompressed.";
+    ? "MP3 creates a smaller compressed file using the selected bitrate and includes the current master volume."
+    : "WAV keeps the rendered mix uncompressed and includes the current master volume.";
 }
 
 function suggestedExportName() {

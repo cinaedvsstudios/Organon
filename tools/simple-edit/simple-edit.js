@@ -1,7 +1,7 @@
 "use strict";
 
 (async () => {
-  const VERSION = "v1.15";
+  const VERSION = "v1.22";
   const REMOTE_SOUND_FX = "https://raw.githubusercontent.com/rse/soundfx/master/soundfx.d/";
   const LOCAL_SOUND_FX = "./soundeffects/";
   window.ORGAVOX_VERSION = VERSION;
@@ -109,52 +109,52 @@
 
   installLocalSoundFxRouting();
   const earlyFiles = [
-    "./simple-edit-core.js?v=1.05",
-    "./simple-edit-timeline.js?v=1.05",
-    "./simple-edit-audio.js?v=0.26",
-    "./simple-edit-export.js?v=0.03",
-    "./simple-edit-keyframes.js?v=0.10",
-    "./simple-edit-keyframes-fix.js?v=0.11",
-    "./simple-edit-phase3.js?v=0.13"
+    "./simple-edit-core.js?v=1.22",
+    "./simple-edit-timeline.js?v=1.22",
+    "./simple-edit-audio.js?v=1.22",
+    "./simple-edit-export.js?v=1.22",
+    "./simple-edit-keyframes.js?v=1.22",
+    "./simple-edit-keyframes-fix.js?v=1.22",
+    "./simple-edit-phase3.js?v=1.22"
   ];
   createOwnerControls();
   for (const source of earlyFiles) await loadScript(source);
   const behaviorFiles = [
-    "./simple-edit-effects-library.js?v=0.15",
-    "./simple-edit-echo-settings.js?v=1.05",
-    "./simple-edit-stretch-audiotsm.js?v=0.19",
-    "./simple-edit-fade-handles.js?v=0.20",
-    "./simple-edit-normalize.js?v=0.21",
-    "./simple-edit-transpose-engine.js?v=0.26",
-    "./simple-edit-transpose.js?v=0.26",
-    "./simple-edit-eq-engine.js?v=0.28",
-    "./simple-edit-eq.js?v=0.28",
-    "./simple-edit-drive-engine.js?v=0.29",
-    "./simple-edit-drive.js?v=0.29",
-    "./simple-edit-dynamics-engine.js?v=0.30",
-    "./simple-edit-dynamics.js?v=0.30",
-    "./simple-edit-stereo-engine.js?v=0.35",
-    "./simple-edit-stereo.js?v=0.35",
-    "./simple-edit-lofi-engine.js?v=0.37",
-    "./simple-edit-lofi.js?v=0.37",
-    "./simple-edit-render-tools-engine.js?v=0.38",
-    "./simple-edit-render-tools.js?v=1.04",
-    "./simple-edit-analysis.js?v=0.40",
-    "./simple-edit-project.js?v=1.06",
-    "./simple-edit-markers.js?v=1.05",
-    "./simple-edit-undo-redo.js?v=1.05",
-    "./simple-edit-track-tools.js?v=1.13",
-    "./simple-edit-clip-menu.js?v=0.47",
-    "./simple-edit-snap-tools.js?v=1.04",
-    "./simple-edit-library-tools.js?v=0.48"
+    "./simple-edit-effects-library.js?v=1.22",
+    "./simple-edit-echo-settings.js?v=1.22",
+    "./simple-edit-stretch-audiotsm.js?v=1.22",
+    "./simple-edit-fade-handles.js?v=1.22",
+    "./simple-edit-normalize.js?v=1.22",
+    "./simple-edit-transpose-engine.js?v=1.22",
+    "./simple-edit-transpose.js?v=1.22",
+    "./simple-edit-eq-engine.js?v=1.22",
+    "./simple-edit-eq.js?v=1.22",
+    "./simple-edit-drive-engine.js?v=1.22",
+    "./simple-edit-drive.js?v=1.22",
+    "./simple-edit-dynamics-engine.js?v=1.22",
+    "./simple-edit-dynamics.js?v=1.22",
+    "./simple-edit-stereo-engine.js?v=1.22",
+    "./simple-edit-stereo.js?v=1.22",
+    "./simple-edit-lofi-engine.js?v=1.22",
+    "./simple-edit-lofi.js?v=1.22",
+    "./simple-edit-render-tools-engine.js?v=1.22",
+    "./simple-edit-render-tools.js?v=1.22",
+    "./simple-edit-analysis.js?v=1.22",
+    "./simple-edit-project.js?v=1.22",
+    "./simple-edit-markers.js?v=1.22",
+    "./simple-edit-undo-redo.js?v=1.22",
+    "./simple-edit-track-tools.js?v=1.22",
+    "./simple-edit-clip-menu.js?v=1.22",
+    "./simple-edit-snap-tools.js?v=1.22",
+    "./simple-edit-library-tools.js?v=1.22"
   ];
   for (const source of behaviorFiles) await loadScript(source);
 
   function installVisibleUiOwner() {
-    if (window.__orgavoxVisibleUiOwner115) return;
-    window.__orgavoxVisibleUiOwner115 = true;
+    if (window.__orgavoxVisibleUiOwner122) return;
+    window.__orgavoxVisibleUiOwner122 = true;
 
-    const STYLE_ID = "orgavox-visible-ui-owner-v115";
+    const STYLE_ID = "orgavox-visible-ui-owner-v122";
     const SNAP_VALUES = [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10];
     let numberPopover = null;
     let clipClipboard = [];
@@ -262,7 +262,7 @@
         const label = document.createElement("span"); label.textContent = "🌐 Master";
         const slider = document.createElement("input"); slider.id = "globalVolumeSlider"; slider.type = "range"; slider.min = "0"; slider.max = "200"; slider.value = String(state.globalVolume || 100);
         const output = document.createElement("output"); output.id = "globalVolumeOut"; output.textContent = `${Math.round(state.globalVolume || 100)}%`;
-        slider.addEventListener("input", () => { state.globalVolume = Number(slider.value) || 100; output.textContent = `${Math.round(state.globalVolume)}%`; localStorage.setItem("orgavoxGlobalVolume", String(state.globalVolume)); });
+        slider.addEventListener("input", () => { state.globalVolume = Number(slider.value) || 100; output.textContent = `${Math.round(state.globalVolume)}%`; localStorage.setItem("orgavoxGlobalVolume", String(state.globalVolume)); window.orgavoxSyncMasterGain?.(); });
         control.append(label, slider, output);
       }
       ui.globalVolumeSlider = control.querySelector("#globalVolumeSlider");
@@ -402,7 +402,7 @@
     function wireValuePopups() {
       const bind = (node, key, fn) => { if (node && !node.dataset[key]) { node.dataset[key] = "true"; node.addEventListener("click", (event) => { event.preventDefault(); event.stopPropagation(); fn(node); }); } };
       bind(ui.timeReadout, "orgavoxTimePopup", (node) => showNumber(node, "Time", formatTime(state.playhead || 0), (value) => { setPlayhead(parseTime(value), true); return true; }));
-      bind(ui.globalVolumeOut, "orgavoxMasterPopup", (node) => showNumber(node, "Master volume", Math.round(state.globalVolume || 100), (value) => { const n = Math.max(0, Math.min(200, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); state.globalVolume = n; localStorage.setItem("orgavoxGlobalVolume", String(n)); if (ui.globalVolumeSlider) ui.globalVolumeSlider.value = n; node.textContent = `${Math.round(n)}%`; return true; }));
+      bind(ui.globalVolumeOut, "orgavoxMasterPopup", (node) => showNumber(node, "Master volume", Math.round(state.globalVolume || 100), (value) => { const n = Math.max(0, Math.min(200, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); state.globalVolume = n; localStorage.setItem("orgavoxGlobalVolume", String(n)); if (ui.globalVolumeSlider) ui.globalVolumeSlider.value = n; node.textContent = `${Math.round(n)}%`; window.orgavoxSyncMasterGain?.(); return true; }));
       bind(ui.volumeOut, "orgavoxVolumePopup", (node) => showNumber(node, "Clip volume", parseInt(node.textContent, 10) || 100, (value) => { const clip = selectedClip(); if (!clip) { showToast?.("Select a clip before changing clip volume."); return false; } const n = Math.max(0, Math.min(200, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); clip.volume = n; if (ui.volumeSlider) ui.volumeSlider.value = n; syncSelectedControls(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; }));
       bind(ui.echoOut, "orgavoxEchoPopup", (node) => showNumber(node, "Echo", parseInt(node.textContent, 10) || 0, (value) => { const clip = selectedClip(); if (!clip) { showToast?.("Select a clip before changing echo."); return false; } const n = Math.max(0, Math.min(100, Number(String(value).replace(/[^0-9.]/g, "")) || 0)); clip.echo = n; if (ui.echoSlider) ui.echoSlider.value = n; syncSelectedControls(); renderTimeline(); window.orgavoxRecordHistory?.(); return true; }));
       bind(ui.zoomOut, "orgavoxZoomPopup", (node) => showNumber(node, "Timeline zoom %", parseInt(node.textContent, 10) || 100, (value) => { const pct = Math.max(31, Math.min(625, Number(String(value).replace(/[^0-9.]/g, "")) || 100)); state.pixelsPerSecond = Math.max(25, Math.min(500, Math.round(pct / 100 * 80))); if (ui.zoomSlider) ui.zoomSlider.value = state.pixelsPerSecond; if (ui.zoomOut) ui.zoomOut.textContent = `${Math.round(state.pixelsPerSecond / 80 * 100)}%`; renderTimeline(); return true; }));
