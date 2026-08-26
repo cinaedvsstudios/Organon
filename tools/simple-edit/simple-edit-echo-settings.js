@@ -136,5 +136,4 @@
   window.orgavoxOpenEchoSettings = openModal;
   window.orgavoxWireEchoSettingsButton = wireButton;
   window.orgavoxEchoSettingsForClip = (clip) => clip?.echoSettings?.enabled ? clip.echoSettings : null;
-  setTimeout(wireButton, 0);
 })();

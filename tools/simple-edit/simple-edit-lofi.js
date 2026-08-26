@@ -65,25 +65,9 @@
   }
 
   function ensureButton() {
-    if (ui.lofiBtn) return ui.lofiBtn;
-    const button = document.createElement("button");
-    button.id = "lofiBtn";
-    button.type = "button";
-    button.className = "tool-button";
-    button.textContent = "🧊 Lo-fi / Crush";
-    button.disabled = true;
-    button.addEventListener("click", openModal);
-    ui.lofiBtn = button;
-    placeButton();
+    const button = document.getElementById("lofiBtn");
+    if (button) ui.lofiBtn = button;
     return button;
-  }
-
-  function placeButton() {
-    const button = ui.lofiBtn;
-    if (!button) return;
-    button.textContent = "🧊 Lo-fi / Crush";
-    const menu = document.querySelector(".orgavox-effects-menu");
-    if (menu && button.parentElement !== menu) menu.appendChild(button);
   }
 
   function ensureModal() {
@@ -225,6 +209,7 @@
   function updateLofiButtonState() {
     const button = ensureButton();
     const clip = selectedClip();
+    if (!button) return;
     button.disabled = !clip;
     button.classList.toggle("active", Boolean(clip?.lofiSettings));
   }
@@ -246,17 +231,19 @@
     if (window.__orgavoxLofiRenderPatched) return;
     window.__orgavoxLofiRenderPatched = true;
     const previousRenderTimeline = renderTimeline;
-    renderTimeline = function orgavoxLofiRenderTimeline() { previousRenderTimeline(); placeButton(); updateLofiButtonState(); addClipBadges(); };
+    renderTimeline = function orgavoxLofiRenderTimeline() { previousRenderTimeline(); updateLofiButtonState(); addClipBadges(); };
     const previousSyncSelectedControls = syncSelectedControls;
     syncSelectedControls = function orgavoxLofiSyncSelectedControls() { previousSyncSelectedControls(); updateLofiButtonState(); };
   }
+
+  window.orgavoxOpenLofi = openModal;
+  window.orgavoxUpdateLofiButton = updateLofiButtonState;
 
   installStyles();
   ensureButton();
   ensureModal();
   patchRender();
-  placeButton();
   updateLofiButtonState();
   renderTimeline();
-  setTimeout(() => { placeButton(); updateLofiButtonState(); }, 150);
+  setTimeout(updateLofiButtonState, 150);
 })();

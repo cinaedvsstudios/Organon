@@ -264,8 +264,6 @@ function installEvents() {
   ui.playBtn.addEventListener("click", togglePlayback);
   ui.stopBtn.addEventListener("click", () => stopPlayback());
   ui.jumpStartBtn.addEventListener("click", () => { stopPlayback(); setPlayhead(0, true); });
-  ui.scissorsBtn.addEventListener("click", splitSelectedClip);
-  ui.deleteBtn.addEventListener("click", deleteSelectedClip);
   ui.stretchBtn.addEventListener("click", () => {
     state.stretchMode = !state.stretchMode;
     ui.stretchBtn.setAttribute("aria-pressed", String(state.stretchMode));

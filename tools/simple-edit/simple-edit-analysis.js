@@ -32,27 +32,9 @@
   }
 
   function ensureButton() {
-    if (ui.analysisBtn) return ui.analysisBtn;
-    const button = document.createElement("button");
-    button.id = "analysisBtn";
-    button.type = "button";
-    button.className = "tool-button orgavox-analysis-button";
-    button.textContent = "📈 Analyze";
-    button.title = "Analyze selected clip";
-    button.disabled = true;
-    button.addEventListener("click", openModal);
-    ui.analysisBtn = button;
-    placeButton();
+    const button = document.getElementById("analysisBtn");
+    if (button) ui.analysisBtn = button;
     return button;
-  }
-
-  function placeButton() {
-    const button = ui.analysisBtn;
-    if (!button) return;
-    const editGroup = document.querySelector(".orgavox-edit-group");
-    const effectsDrop = editGroup?.querySelector(".orgavox-effects-dropdown");
-    if (editGroup && effectsDrop && button.parentElement !== editGroup) editGroup.insertBefore(button, effectsDrop);
-    else if (editGroup && !button.parentElement) editGroup.appendChild(button);
   }
 
   function ensureModal() {
@@ -277,7 +259,6 @@
     const previousRenderTimeline = renderTimeline;
     renderTimeline = function orgavoxAnalysisRenderTimeline() {
       previousRenderTimeline();
-      placeButton();
       updateAnalysisButtonState();
     };
     const previousSyncSelectedControls = syncSelectedControls;
@@ -287,11 +268,14 @@
     };
   }
 
+  window.orgavoxOpenAnalysis = openModal;
+  window.orgavoxUpdateAnalysisButton = updateAnalysisButtonState;
+
   installStyles();
   ensureButton();
   ensureModal();
   patchRender();
   updateAnalysisButtonState();
   renderTimeline();
-  setTimeout(() => { placeButton(); updateAnalysisButtonState(); }, 150);
+  setTimeout(updateAnalysisButtonState, 150);
 })();
