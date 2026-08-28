@@ -1523,3 +1523,49 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
     white-space: nowrap;
   }
 }
+
+/* Current-track marquee is a canonical responsive behavior. Phase 3 upgrades its motion and scope. */
+@keyframes onda-mobile-title-marquee {
+  0%, 16% {
+    transform: translateX(0);
+  }
+
+  48%, 66% {
+    transform: translateX(calc(-1 * var(--onda-title-shift)));
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+body.onda-force-mobile-mode .now-playing-current-track .library-track-title {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+body.onda-force-mobile-mode .now-playing-current-track .onda-title-marquee-text {
+  display: inline-block;
+  min-width: max-content;
+  transform: translateX(0);
+  will-change: transform;
+}
+
+body.onda-force-mobile-mode .now-playing-current-track .library-track-title.is-title-overflowing .onda-title-marquee-text {
+  animation: onda-mobile-title-marquee var(--onda-title-duration, 10s) ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.onda-force-mobile-mode .now-playing-current-track .library-track-title {
+    text-overflow: ellipsis;
+  }
+
+  body.onda-force-mobile-mode .now-playing-current-track .library-track-title.is-title-overflowing .onda-title-marquee-text {
+    animation: none;
+  }
+}
+
