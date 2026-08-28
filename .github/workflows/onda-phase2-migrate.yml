@@ -1,0 +1,605 @@
+name: Onda Phase 2 source migration
+
+on:
+  push:
+    branches:
+      - onda-phase2-runtime-cleanup
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: onda-phase2-runtime-cleanup
+          fetch-depth: 0
+
+      - name: Migrate correction behavior into canonical Onda sources
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          app_path = Path('tools/Onda/js/app-core.js')
+          responsive_path = Path('tools/Onda/css/responsive.css')
+          index_path = Path('tools/Onda/index.html')
+          app = app_path.read_text(encoding='utf-8')
+          responsive = responsive_path.read_text(encoding='utf-8')
+          index = index_path.read_text(encoding='utf-8')
+
+          def replace_once(text, old, new, label):
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 match, found {count}')
+              return text.replace(old, new, 1)
+
+          def regex_once(text, pattern, replacement, label):
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f'{label}: expected exactly 1 regex match, found {count}')
+              return updated
+
+          app = replace_once(
+              app,
+              "        let isRepeatOne = false;\n        let isRepeatAll = false;\n        let isShuffle = false;\n",
+              "        let isRepeatOne = false;\n        let isRepeatAll = false;\n        let isShuffle = false;\n        let shuffleQueue = [];\n        let shuffleSignature = '';\n        let marqueeFrame = 0;\n        let marqueeResizeTimer = 0;\n        const ONDA_VERSION = 'v3.8';\n        const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';\n        const MOBILE_BREAKPOINT = 768;\n        const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);\n",
+              'playback/layout state'
+          )
+
+          app = replace_once(app, "                speedCycleIndex: currentSpeedIdx || 0,\n", "", 'obsolete speed-cycle export')
+          app = replace_once(app, "                if (btnSpeedCycle) btnSpeedCycle.innerText = `🚀${speed.toFixed(1).replace('.0', '')}`;\n", "", 'obsolete speed-cycle button import')
+          app = regex_once(
+              app,
+              r"\n            if \(Number\.isInteger\(settings\.speedCycleIndex\)\) \{\n                currentSpeedIdx = Math\.max\(0, Math\.min\(speedCycles\.length - 1, settings\.speedCycleIndex\)\);\n            \}\n",
+              "\n",
+              'obsolete speed-cycle index import'
+          )
+
+          playback_helpers = r'''
+        function isMobileLayoutMode() {
+            return document.body.classList.contains('onda-force-mobile-mode')
+                || (!document.body.classList.contains('onda-force-desktop-mode') && mobileLayoutQuery.matches);
+        }
+
+        function getPlaylistSignature() {
+            return playlistTracks.map((track, index) => String(getTrackId(track) || index)).join('\u001f');
+        }
+
+        function shuffleIndexes(indexes) {
+            for (let index = indexes.length - 1; index > 0; index -= 1) {
+                const swapIndex = Math.floor(Math.random() * (index + 1));
+                [indexes[index], indexes[swapIndex]] = [indexes[swapIndex], indexes[index]];
+            }
+            return indexes;
+        }
+
+        function resetShuffleQueue(excludeIndex = currentTrackIndex) {
+            shuffleSignature = getPlaylistSignature();
+            shuffleQueue = shuffleIndexes(
+                Array.from({ length: playlistTracks.length }, (_, index) => index)
+                    .filter(index => index !== excludeIndex)
+            );
+        }
+
+        function takeNextShuffleIndex(allowWrap = false) {
+            if (playlistTracks.length <= 1) return -1;
+            const signature = getPlaylistSignature();
+            if (signature !== shuffleSignature) resetShuffleQueue(currentTrackIndex);
+            shuffleQueue = shuffleQueue.filter(index => index !== currentTrackIndex && index < playlistTracks.length);
+            if (shuffleQueue.length === 0) {
+                if (!allowWrap) return -1;
+                resetShuffleQueue(currentTrackIndex);
+            }
+            return shuffleQueue.shift() ?? -1;
+        }
+
+        function syncPlaybackModeButtons() {
+            const repeatOneButton = document.getElementById('btn-repeat-one');
+            const repeatAllButton = document.getElementById('btn-repeat-all');
+            const shuffleButton = document.getElementById('btn-shuffle');
+
+            if (repeatOneButton) {
+                repeatOneButton.textContent = '🔂';
+                repeatOneButton.dataset.tooltip = 'Repeat current track';
+                repeatOneButton.title = 'Repeat current track';
+                repeatOneButton.classList.toggle('active-state', isRepeatOne);
+                repeatOneButton.setAttribute('aria-pressed', String(isRepeatOne));
+            }
+            if (repeatAllButton) {
+                repeatAllButton.textContent = '🔁';
+                repeatAllButton.dataset.tooltip = 'Repeat entire playlist';
+                repeatAllButton.title = 'Repeat entire playlist';
+                repeatAllButton.classList.toggle('active-state', isRepeatAll);
+                repeatAllButton.setAttribute('aria-pressed', String(isRepeatAll));
+            }
+            if (shuffleButton) {
+                shuffleButton.classList.toggle('active-state', isShuffle);
+                shuffleButton.setAttribute('aria-pressed', String(isShuffle));
+            }
+        }
+
+        function setRepeatMode(mode = 'off') {
+            const currentMode = isRepeatOne ? 'one' : (isRepeatAll ? 'all' : 'off');
+            const nextMode = mode === currentMode ? 'off' : mode;
+            isRepeatOne = nextMode === 'one';
+            isRepeatAll = nextMode === 'all';
+            syncPlaybackModeButtons();
+        }
+
+        function setShuffleEnabled(enabled, { rebuild = true } = {}) {
+            isShuffle = Boolean(enabled);
+            if (isShuffle && rebuild) resetShuffleQueue(currentTrackIndex);
+            if (!isShuffle) {
+                shuffleQueue = [];
+                shuffleSignature = '';
+            }
+            syncPlaybackModeButtons();
+        }
+
+        function restartCurrentTrack(audioObject) {
+            if (!audioObject) return;
+            audioObject.currentTime = 0;
+            playAudio();
+        }
+
+        function stopAtPlaylistEnd(audioObject) {
+            pauseAudio();
+            if (!audioObject) return;
+            if (Number.isFinite(audioObject.duration)) audioObject.currentTime = audioObject.duration;
+        }
+
+        function handleTrackEnded(audioObject) {
+            if (!audioObject || audioObject !== activeAudio) return;
+
+            if (isRepeatOne) {
+                restartCurrentTrack(audioObject);
+                return;
+            }
+
+            if (isShuffle) {
+                if (playlistTracks.length === 1 && isRepeatAll) {
+                    restartCurrentTrack(audioObject);
+                    return;
+                }
+                const nextIndex = takeNextShuffleIndex(isRepeatAll);
+                if (nextIndex >= 0) switchTrack(nextIndex);
+                else stopAtPlaylistEnd(audioObject);
+                return;
+            }
+
+            if (currentTrackIndex >= 0 && currentTrackIndex < playlistTracks.length - 1) {
+                switchTrack(currentTrackIndex + 1);
+            } else if (isRepeatAll && playlistTracks.length > 0) {
+                switchTrack(0);
+            } else {
+                stopAtPlaylistEnd(audioObject);
+            }
+        }
+
+'''
+          app = replace_once(
+              app,
+              "        // Bind playback timeline events robustly to both dual-engine elements\n",
+              playback_helpers + "        // Bind playback timeline events robustly to both dual-engine elements\n",
+              'canonical playback helpers'
+          )
+
+          app = regex_once(
+              app,
+              r"            audioObj\.addEventListener\('ended', \(e\) => \{\n                if \(e\.target !== activeAudio\) return;\n                if \(isRepeatOne\) \{.*?\n            \}\);",
+              "            audioObj.addEventListener('ended', (e) => {\n                if (e.target !== activeAudio) return;\n                handleTrackEnded(audioObj);\n            });",
+              'audio ended handler'
+          )
+
+          scroll_function = r'''        function scrollCurrentTrackRowsIntoView(reason = 'track-change') {
+            if (!currentFile || !currentFile.name) return;
+            const safeId = CSS.escape(currentFile.name);
+            window.clearTimeout(window.OndaActiveTrackScrollTimer);
+            window.OndaActiveTrackScrollTimer = window.setTimeout(() => {
+                const selectors = [
+                    `#now-playing-playlist-track-list [data-track-id="${safeId}"]`,
+                    `#playlist-detail-track-list [data-track-id="${safeId}"]`
+                ];
+                selectors.forEach(selector => {
+                    const row = document.querySelector(selector);
+                    if (!row || row.offsetParent === null) return;
+                    row.classList.add('jump-focus-pulse');
+
+                    if (isMobileLayoutMode()) {
+                        const scroller = row.closest('#now-playing-playlist-track-list, #playlist-detail-track-list, .now-playing-queue-list, .playlist-detail-track-list');
+                        if (scroller && scroller.scrollHeight > scroller.clientHeight) {
+                            const rowRect = row.getBoundingClientRect();
+                            const scrollerRect = scroller.getBoundingClientRect();
+                            const top = scroller.scrollTop
+                                + (rowRect.top - scrollerRect.top)
+                                - ((scroller.clientHeight - row.clientHeight) / 2);
+                            scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+                        }
+                    } else {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+
+                    setTimeout(() => row.classList.remove('jump-focus-pulse'), 1100);
+                });
+                window.OndaDebug = window.OndaDebug || {};
+                window.OndaDebug.activeTrackScroll = {
+                    reason,
+                    trackId: currentFile.name,
+                    matchedRows: selectors.map(selector => document.querySelector(selector)).filter(Boolean).length
+                };
+                scheduleCurrentTrackMarqueeRefresh();
+            }, 140);
+        }
+'''
+          app = regex_once(
+              app,
+              r"        function scrollCurrentTrackRowsIntoView\(reason = 'track-change'\) \{.*?\n        \}\n\n        \n        function updateNowPlayingPlaylistPanel",
+              scroll_function + "\n        function updateNowPlayingPlaylistPanel",
+              'current-track scrolling'
+          )
+
+          next_function = r'''        function skipToNextTrack() {
+            if (playlistTracks.length <= 1) return;
+
+            if (isShuffle) {
+                const nextIndex = takeNextShuffleIndex(isRepeatAll);
+                if (nextIndex >= 0) switchTrack(nextIndex);
+                return;
+            }
+
+            const nextIndex = currentTrackIndex + 1;
+            if (nextIndex < playlistTracks.length) switchTrack(nextIndex);
+            else if (isRepeatAll) switchTrack(0);
+        }
+'''
+          app = regex_once(
+              app,
+              r"        function skipToNextTrack\(\) \{.*?\n        \}\n        function formatTime",
+              next_function + "        function formatTime",
+              'next-track handler'
+          )
+
+          meta_function = r'''        function triggerMetaEdit() {
+            if (!currentFile) return;
+            switchWorkspaceTab('tab-library');
+
+            if (isMobileLayoutMode()) {
+                const middlePanel = document.getElementById('organon-middle-panel');
+                if (middlePanel && middlePanel.scrollHeight > middlePanel.clientHeight) {
+                    middlePanel.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                activateInlineRename();
+                return;
+            }
+
+            const metadataCard = document.getElementById('metadata-display-card') || document.getElementById('tab-library');
+            if (metadataCard) metadataCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            activateInlineRename();
+        }
+'''
+          app = regex_once(
+              app,
+              r"        function triggerMetaEdit\(\) \{.*?\n        \}\n\n        // --- 9\. MINI METADATA BOX ACTION ENGINE ---",
+              meta_function + "\n        // --- 9. MINI METADATA BOX ACTION ENGINE ---",
+              'metadata edit routing'
+          )
+
+          repeat_bindings = r'''        // --- 10. PLAYBACK MODE CONTROLS ---
+        document.getElementById('btn-repeat-one').addEventListener('click', () => setRepeatMode('one'));
+        document.getElementById('btn-repeat-all').addEventListener('click', () => setRepeatMode('all'));
+        document.getElementById('btn-shuffle').addEventListener('click', () => setShuffleEnabled(!isShuffle));
+        syncPlaybackModeButtons();
+
+        safeBind('btn-lyrics-modal'、 'click', () => {
+'''.replace('、', ',')
+          app = regex_once(
+              app,
+              r"        // --- 10\. RE-ROUTING METADATA UTILITY DISPATCH ---\n        \n        document\.getElementById\('btn-repeat-one'\)\.addEventListener\('click', \(\) => \{.*?\n        safeBind\('btn-lyrics-modal', 'click', \(\) => \{\n",
+              repeat_bindings,
+              'repeat/shuffle button handlers'
+          )
+
+          app = replace_once(
+              app,
+              "            const shuffleBtn = document.getElementById('btn-detail-shuffle-playlist');\n            if (shuffleBtn) shuffleBtn.addEventListener('click', () => {\n                isShuffle = true;\n                loadPlaylistQueue(name);\n                showToast(`Shuffle play: ${name}`);\n            });\n",
+              "            const shuffleBtn = document.getElementById('btn-detail-shuffle-playlist');\n            if (shuffleBtn) shuffleBtn.addEventListener('click', () => {\n                setShuffleEnabled(true, { rebuild: false });\n                loadPlaylistQueue(name);\n                resetShuffleQueue(currentTrackIndex);\n                syncPlaybackModeButtons();\n                showToast(`Shuffle play: ${name}`);\n            });\n",
+              'playlist shuffle control'
+          )
+
+          layout_and_marquee = r'''
+        // --- 8B. SETTINGS, LAYOUT MODE, FULLSCREEN, AND CURRENT-TRACK MARQUEE ---
+        function setSettingsTab(tab = 'audio') {
+            const tabs = Array.from(document.querySelectorAll('.settings-tab-btn[data-settings-tab]'));
+            const cards = Array.from(document.querySelectorAll('.settings-card[data-settings-card]'));
+            const knownTab = tabs.some(button => button.dataset.settingsTab === tab) ? tab : 'audio';
+
+            tabs.forEach(button => {
+                const active = button.dataset.settingsTab === knownTab;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-selected', String(active));
+            });
+
+            cards.forEach(card => {
+                const active = card.dataset.settingsCard === knownTab;
+                card.classList.toggle('active', active);
+                card.hidden = !active;
+                card.style.display = active
+                    ? (card.classList.contains('control-row') ? 'flex' : 'block')
+                    : 'none';
+            });
+
+            if (knownTab === 'storage') updateSettingsHealthPanel();
+        }
+
+        function isNaturallyMobile() {
+            return mobileLayoutQuery.matches;
+        }
+
+        function applySavedLayoutMode() {
+            const desktopForced = localStorage.getItem(DESKTOP_MODE_KEY) === '1';
+            const mobileActive = !desktopForced && isNaturallyMobile();
+            document.body.classList.toggle('onda-force-desktop-mode', desktopForced);
+            document.body.classList.toggle('onda-force-mobile-mode', mobileActive);
+
+            const button = document.getElementById('btn-toggle-layout-mode');
+            if (button) {
+                button.classList.toggle('active', desktopForced);
+                button.textContent = desktopForced ? '💻' : '📱';
+                button.title = desktopForced
+                    ? 'Desktop layout forced. Tap for normal responsive layout.'
+                    : 'Responsive layout active. Tap to force desktop layout.';
+            }
+            scheduleCurrentTrackMarqueeRefresh();
+        }
+
+        function toggleDesktopMode() {
+            const next = !document.body.classList.contains('onda-force-desktop-mode');
+            localStorage.setItem(DESKTOP_MODE_KEY, next ? '1' : '0');
+            applySavedLayoutMode();
+            showToast(next ? 'Desktop layout mode on.' : 'Responsive layout restored.');
+        }
+
+        async function toggleFullscreenMode() {
+            try {
+                if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+                else await document.exitFullscreen();
+            } catch (error) {
+                showToast('Fullscreen was blocked by this browser.');
+            }
+            updateFullscreenButton();
+        }
+
+        function updateFullscreenButton() {
+            const enabled = Boolean(document.fullscreenElement);
+            document.body.classList.toggle('onda-app-fullscreen', enabled);
+            const button = document.getElementById('btn-toggle-fullscreen');
+            if (button) {
+                button.classList.toggle('active', enabled);
+                button.textContent = enabled ? '↙' : '⛶';
+                button.title = enabled ? 'Exit fullscreen' : 'Enter fullscreen';
+            }
+        }
+
+        function bindOnceElement(element, eventName, handler, bindingName) {
+            if (!element || element.dataset[bindingName] === '1') return;
+            element.addEventListener(eventName, handler);
+            element.dataset[bindingName] = '1';
+        }
+
+        function initLayoutControls() {
+            const transport = document.getElementById('start-controls-pill');
+            if (transport) transport.classList.add('onda-transport-pill');
+
+            bindOnceElement(document.getElementById('btn-toggle-layout-mode'), 'click', toggleDesktopMode, 'ondaLayoutBound');
+            bindOnceElement(document.getElementById('btn-toggle-fullscreen'), 'click', toggleFullscreenMode, 'ondaFullscreenBound');
+
+            applySavedLayoutMode();
+            updateFullscreenButton();
+        }
+
+        function prepareCurrentTrackMarqueeTitle(title) {
+            let movingText = title.querySelector(':scope > .onda-title-marquee-text');
+            if (!movingText) {
+                movingText = document.createElement('span');
+                movingText.className = 'onda-title-marquee-text';
+                movingText.textContent = title.textContent;
+                title.replaceChildren(movingText);
+            }
+
+            title.classList.remove('is-title-overflowing');
+            title.style.removeProperty('--onda-title-shift');
+            title.style.removeProperty('--onda-title-duration');
+
+            if (!isMobileLayoutMode() || title.clientWidth <= 0) return;
+            const overflow = Math.ceil(movingText.scrollWidth - title.clientWidth);
+            if (overflow <= 2) return;
+
+            title.style.setProperty('--onda-title-shift', `${overflow + 12}px`);
+            title.style.setProperty('--onda-title-duration', `${Math.max(7, Math.min(18, 6 + overflow / 35))}s`);
+            title.classList.add('is-title-overflowing');
+        }
+
+        function refreshCurrentTrackMarquees() {
+            document.querySelectorAll('.library-track-title.is-title-overflowing').forEach(title => {
+                title.classList.remove('is-title-overflowing');
+            });
+            document.querySelectorAll('.now-playing-current-track .library-track-title').forEach(prepareCurrentTrackMarqueeTitle);
+        }
+
+        function scheduleCurrentTrackMarqueeRefresh() {
+            if (marqueeFrame) cancelAnimationFrame(marqueeFrame);
+            marqueeFrame = requestAnimationFrame(() => {
+                marqueeFrame = 0;
+                refreshCurrentTrackMarquees();
+            });
+        }
+
+        function installCurrentTrackMarqueeObserver() {
+            const observer = new MutationObserver(scheduleCurrentTrackMarqueeRefresh);
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            window.addEventListener('resize', () => {
+                window.clearTimeout(marqueeResizeTimer);
+                marqueeResizeTimer = window.setTimeout(scheduleCurrentTrackMarqueeRefresh, 120);
+            });
+            window.addEventListener('orientationchange', () => {
+                window.setTimeout(scheduleCurrentTrackMarqueeRefresh, 180);
+            });
+            if (document.fonts?.ready) document.fonts.ready.then(scheduleCurrentTrackMarqueeRefresh).catch(() => {});
+            scheduleCurrentTrackMarqueeRefresh();
+        }
+
+        function announceOndaVersion() {
+            window.ONDA_VERSION = ONDA_VERSION;
+            document.documentElement.dataset.ondaVersion = ONDA_VERSION;
+            console.info(`Onda ${ONDA_VERSION} loaded`);
+            window.setTimeout(() => showToast(`Onda ${ONDA_VERSION} loaded`), 260);
+        }
+
+'''
+          app = regex_once(
+              app,
+              r"        // --- 8B\. SETTINGS TABS / MENU HOUSEKEEPING ---\n        function setSettingsTab\(tab = 'audio'\) \{.*?\n        \}\n\n\n        // Mobile fix pass 2: bind workspace mode buttons through JS as real buttons\.",
+              layout_and_marquee + "        // Workspace mode buttons are bound here as the canonical mobile/desktop tab controls.",
+              'settings/layout/marquee owner'
+          )
+
+          app = replace_once(
+              app,
+              "        bindWorkspaceModeButtons();\n\n        document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.addEventListener('click', () => setSettingsTab(btn.dataset.settingsTab || 'audio')));\n        setSettingsTab('audio');\n",
+              "        bindWorkspaceModeButtons();\n\n        document.querySelectorAll('.settings-tab-btn[data-settings-tab]').forEach(button => {\n            bindOnceElement(button, 'click', () => setSettingsTab(button.dataset.settingsTab || 'audio'), 'ondaSettingsTabBound');\n        });\n        initLayoutControls();\n        setSettingsTab(document.querySelector('.settings-tab-btn.active')?.dataset.settingsTab || 'audio');\n        installCurrentTrackMarqueeObserver();\n        announceOndaVersion();\n",
+              'layout/settings initialization'
+          )
+
+          app = replace_once(
+              app,
+              "        window.addEventListener('resize', () => {\n",
+              "        document.addEventListener('fullscreenchange', updateFullscreenButton);\n        if (typeof mobileLayoutQuery.addEventListener === 'function') {\n            mobileLayoutQuery.addEventListener('change', applySavedLayoutMode);\n        } else if (typeof mobileLayoutQuery.addListener === 'function') {\n            mobileLayoutQuery.addListener(applySavedLayoutMode);\n        }\n\n        window.OndaLayoutControls = {\n            applySavedLayoutMode,\n            toggleDesktopMode,\n            toggleFullscreenMode,\n            activateSettingsTab: setSettingsTab\n        };\n\n        window.addEventListener('resize', () => {\n",
+              'layout event listeners and API'
+          )
+
+          marquee_css = r'''
+
+/* Current-track marquee is a canonical responsive behavior. Phase 3 upgrades its motion and scope. */
+@keyframes onda-mobile-title-marquee {
+  0%, 16% {
+    transform: translateX(0);
+  }
+
+  48%, 66% {
+    transform: translateX(calc(-1 * var(--onda-title-shift)));
+  }
+
+  100% {
+    transform: translateX(0);
+  }
+}
+
+body.onda-force-mobile-mode .now-playing-current-track .library-track-title {
+  display: block;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+body.onda-force-mobile-mode .now-playing-current-track .onda-title-marquee-text {
+  display: inline-block;
+  min-width: max-content;
+  transform: translateX(0);
+  will-change: transform;
+}
+
+body.onda-force-mobile-mode .now-playing-current-track .library-track-title.is-title-overflowing .onda-title-marquee-text {
+  animation: onda-mobile-title-marquee var(--onda-title-duration, 10s) ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.onda-force-mobile-mode .now-playing-current-track .library-track-title {
+    text-overflow: ellipsis;
+  }
+
+  body.onda-force-mobile-mode .now-playing-current-track .library-track-title.is-title-overflowing .onda-title-marquee-text {
+    animation: none;
+  }
+}
+'''
+          if 'onda-mobile-title-marquee' in responsive:
+              raise SystemExit('responsive.css already contains the marquee migration')
+          responsive = responsive.rstrip() + marquee_css + '\n'
+
+          index = index.replace('?v=3.7', '?v=3.8')
+          index = replace_once(
+              index,
+              '<script src="js/app-core.js?v=3.8"></script><script src="js/cloud-sync.js"></script><script src="js/layout-enhancements.js?v=3.8"></script>',
+              '<script src="js/app-core.js?v=3.8"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.8"></script>',
+              'direct runtime script loading'
+          )
+
+          for forbidden in ('currentSpeedIdx', 'speedCycles', 'btnSpeedCycle', 'window.OndaV37', 'stopImmediatePropagation'):
+              if forbidden in app:
+                  raise SystemExit(f'app-core.js still contains forbidden Phase 2 token: {forbidden}')
+
+          app_path.write_text(app, encoding='utf-8')
+          responsive_path.write_text(responsive, encoding='utf-8')
+          index_path.write_text(index, encoding='utf-8')
+
+          for obsolete in [
+              Path('tools/Onda/js/onda-v3-5.js'),
+              Path('tools/Onda/css/onda-v3-5.css'),
+              Path('tools/Onda/js/layout-enhancements.js'),
+          ]:
+              if not obsolete.exists():
+                  raise SystemExit(f'Expected obsolete file is missing before migration: {obsolete}')
+              obsolete.unlink()
+
+          Path('.github/workflows/onda-phase2-migrate.yml').unlink()
+          PY
+
+      - name: Validate migrated runtime
+        shell: bash
+        run: |
+          node --check tools/Onda/js/app-core.js
+          node --check tools/Onda/js/media-session.js
+          python3 - <<'PY'
+          from pathlib import Path
+          app = Path('tools/Onda/js/app-core.js').read_text(encoding='utf-8')
+          responsive = Path('tools/Onda/css/responsive.css').read_text(encoding='utf-8')
+          index = Path('tools/Onda/index.html').read_text(encoding='utf-8')
+          checks = {
+              'repeat-one owner': "setRepeatMode('one')" in app,
+              'repeat-all owner': "setRepeatMode('all')" in app,
+              'shuffle queue': 'takeNextShuffleIndex' in app and 'resetShuffleQueue' in app,
+              'mobile local track scroll': "row.closest('#now-playing-playlist-track-list" in app,
+              'metadata mobile route': 'middlePanel.scrollTo' in app,
+              'layout toggle': 'onda-force-desktop-mode' in app and 'toggleDesktopMode' in app,
+              'fullscreen': 'toggleFullscreenMode' in app,
+              'settings hidden state': 'card.hidden = !active' in app,
+              'marquee JS': 'prepareCurrentTrackMarqueeTitle' in app,
+              'marquee CSS': 'onda-mobile-title-marquee' in responsive,
+              'reduced motion': 'prefers-reduced-motion: reduce' in responsive,
+              'direct media session': 'js/media-session.js?v=3.8' in index,
+              'no layout wrapper load': 'layout-enhancements.js' not in index,
+              'no v3 correction asset load': 'onda-v3-5' not in index,
+          }
+          failed = [name for name, ok in checks.items() if not ok]
+          if failed:
+              raise SystemExit('Phase 2 verification failed: ' + ', '.join(failed))
+          if responsive.count('{') != responsive.count('}'):
+              raise SystemExit('responsive.css brace count mismatch')
+          print('Phase 2 source verification passed.')
+          PY
+
+      - name: Commit canonical Phase 2 sources
+        shell: bash
+        run: |
+          git config user.name "cinaedvsstudios"
+          git config user.email "cinaedvsstudios@gmail.com"
+          git add -A
+          git commit -m "Phase 2: move Onda runtime corrections into canonical sources"
+          git push origin HEAD:onda-phase2-runtime-cleanup
