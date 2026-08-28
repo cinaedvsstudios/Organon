@@ -1371,7 +1371,8 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
     gap: 0;
   }
 
-  body.onda-force-mobile-mode #library-manager-drawer .library-sidebar {
+  body.onda-force-mobile-mode #library-manager-drawer .library-sidebar,
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-sidebar {
     display: block;
     flex: 0 0 auto;
     min-width: 0;
@@ -1409,6 +1410,7 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
   body.onda-force-mobile-mode #library-manager-drawer .bulk-select-panel {
     background: transparent;
     border: 0;
+    overflow: hidden;
     padding: 0;
   }
 
