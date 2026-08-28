@@ -17,6 +17,9 @@ jobs:
           ref: onda-phase2-runtime-cleanup
           fetch-depth: 0
 
+      - name: Narrow one-time migration match
+        run: python3 .github/onda-phase2-fix-helper.py
+
       - name: Migrate correction behavior into canonical sources
         run: python3 .github/onda-phase2-migrate.py
 
@@ -27,6 +30,7 @@ jobs:
 
       - name: Commit canonical Phase 2 sources
         run: |
+          rm -f .github/onda-phase2-fix-helper.py
           git config user.name "cinaedvsstudios"
           git config user.email "cinaedvsstudios@gmail.com"
           git add -A
