@@ -8,7 +8,6 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
     const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
     const MOBILE_BREAKPOINT = 768;
     const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
-    const UI_FIXES_STYLESHEET_ID = 'onda-final-ui-fixes';
     const V37_STYLESHEET_ID = 'onda-v3-7-styles';
     const V37_SCRIPT_ID = 'onda-v3-7-script';
     const MEDIA_SESSION_SCRIPT_ID = 'onda-media-session-script';
@@ -37,15 +36,6 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
                 stylesheet.setAttribute('href', href);
             }
         });
-    }
-
-    function ensureUiFixStylesheet() {
-        if (document.getElementById(UI_FIXES_STYLESHEET_ID)) return;
-        const stylesheet = document.createElement('link');
-        stylesheet.id = UI_FIXES_STYLESHEET_ID;
-        stylesheet.rel = 'stylesheet';
-        stylesheet.href = 'css/final-ui-fixes.css?v=3.7';
-        document.head.appendChild(stylesheet);
     }
 
     function ensureV37Assets() {
@@ -156,7 +146,6 @@ var currentSpeedIdx = typeof window.currentSpeedIdx === 'number' ? window.curren
 
     function initLayoutControls() {
         ensureCoreStylesheetVersions();
-        ensureUiFixStylesheet();
         ensureV37Assets();
 
         const transport = document.getElementById('start-controls-pill');

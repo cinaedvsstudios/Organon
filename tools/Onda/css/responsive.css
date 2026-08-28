@@ -1,9 +1,9 @@
 /* Responsive and layout-mode rules. All mobile/desktop overrides live here. */
+
 @media (max-width: 980px) {
   .history-card-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
-
 }
 
 @media (max-width: 620px) {
@@ -19,7 +19,6 @@
     grid-column: 2;
     justify-content: flex-start;
   }
-
 }
 
 @media (max-width: 760px) {
@@ -44,7 +43,6 @@
     grid-column: 1 / -1;
     justify-content: flex-start;
   }
-
 }
 
 @media (max-width: 900px) {
@@ -52,14 +50,23 @@
     grid-template-columns: 1fr;
   }
 
-  .youtube-frame-wrap, #youtube-frame {
+  .youtube-frame-wrap,
+  #youtube-frame {
     min-height: 320px;
   }
-
 }
 
+/* Shared narrow-screen rules. These also remain available when desktop mode is forced on a narrow viewport. */
 @media (max-width: 768px) {
-  .settings-tab-row, .now-playing-mode-pills, .playlist-detail-meta-row, .library-action-grid, .library-manager-actions, .mobile-library-header-actions, .visual-layer-footer, .streaming-provider-row, .history-mode-pills {
+  .settings-tab-row,
+  .now-playing-mode-pills,
+  .playlist-detail-meta-row,
+  .library-action-grid,
+  .library-manager-actions,
+  .mobile-library-header-actions,
+  .visual-layer-footer,
+  .streaming-provider-row,
+  .history-mode-pills {
     -webkit-overflow-scrolling: touch;
     flex-wrap: nowrap;
     justify-content: flex-start;
@@ -69,11 +76,27 @@
     white-space: nowrap;
   }
 
-  .settings-tab-row::-webkit-scrollbar, .now-playing-mode-pills::-webkit-scrollbar, .playlist-detail-meta-row::-webkit-scrollbar, .library-action-grid::-webkit-scrollbar, .library-manager-actions::-webkit-scrollbar, .mobile-library-header-actions::-webkit-scrollbar, .visual-layer-footer::-webkit-scrollbar, .streaming-provider-row::-webkit-scrollbar, .history-mode-pills::-webkit-scrollbar {
+  .settings-tab-row::-webkit-scrollbar,
+  .now-playing-mode-pills::-webkit-scrollbar,
+  .playlist-detail-meta-row::-webkit-scrollbar,
+  .library-action-grid::-webkit-scrollbar,
+  .library-manager-actions::-webkit-scrollbar,
+  .mobile-library-header-actions::-webkit-scrollbar,
+  .visual-layer-footer::-webkit-scrollbar,
+  .streaming-provider-row::-webkit-scrollbar,
+  .history-mode-pills::-webkit-scrollbar {
     display: none;
   }
 
-  .settings-tab-row > *, .now-playing-mode-pills > *, .playlist-detail-meta-row > *, .library-action-grid > *, .library-manager-actions > *, .mobile-library-header-actions > *, .visual-layer-footer > *, .streaming-provider-row > *, .history-mode-pills > * {
+  .settings-tab-row > *,
+  .now-playing-mode-pills > *,
+  .playlist-detail-meta-row > *,
+  .library-action-grid > *,
+  .library-manager-actions > *,
+  .mobile-library-header-actions > *,
+  .visual-layer-footer > *,
+  .streaming-provider-row > *,
+  .history-mode-pills > * {
     flex: 0 0 auto;
   }
 
@@ -127,7 +150,8 @@
     display: none;
   }
 
-  .library-manager-toolbar input, .library-manager-toolbar select {
+  .library-manager-toolbar input,
+  .library-manager-toolbar select {
     font-size: 0.82rem;
     min-width: 0;
     padding: 8px 10px;
@@ -149,11 +173,15 @@
     overflow: auto;
   }
 
-  .library-manager-content .library-sidebar, .library-manager-content .library-results-panel {
+  .library-manager-content .library-sidebar,
+  .library-manager-content .library-results-panel {
     min-height: 0;
   }
 
-  #library-manager-drawer[data-mobile-view="results"] #db-recent-label, #library-manager-drawer[data-mobile-view="results"] #db-recent-list, #library-manager-drawer[data-mobile-view="results"] #db-playlist-label, #library-manager-drawer[data-mobile-view="results"] #db-playlist-list {
+  #library-manager-drawer[data-mobile-view="results"] #db-recent-label,
+  #library-manager-drawer[data-mobile-view="results"] #db-recent-list,
+  #library-manager-drawer[data-mobile-view="results"] #db-playlist-label,
+  #library-manager-drawer[data-mobile-view="results"] #db-playlist-list {
     display: none;
   }
 
@@ -161,15 +189,20 @@
     display: none;
   }
 
-  #library-manager-drawer[data-mobile-view="recents"] #db-playlist-label, #library-manager-drawer[data-mobile-view="recents"] #db-playlist-list, #library-manager-drawer[data-mobile-view="recents"] .library-results-panel {
+  #library-manager-drawer[data-mobile-view="recents"] #db-playlist-label,
+  #library-manager-drawer[data-mobile-view="recents"] #db-playlist-list,
+  #library-manager-drawer[data-mobile-view="recents"] .library-results-panel {
     display: none;
   }
 
-  #library-manager-drawer[data-mobile-view="playlists"] #db-recent-label, #library-manager-drawer[data-mobile-view="playlists"] #db-recent-list, #library-manager-drawer[data-mobile-view="playlists"] .library-results-panel {
+  #library-manager-drawer[data-mobile-view="playlists"] #db-recent-label,
+  #library-manager-drawer[data-mobile-view="playlists"] #db-recent-list,
+  #library-manager-drawer[data-mobile-view="playlists"] .library-results-panel {
     display: none;
   }
 
-  #library-manager-drawer[data-mobile-view="help"] .library-sidebar, #library-manager-drawer[data-mobile-view="help"] .library-results-panel {
+  #library-manager-drawer[data-mobile-view="help"] .library-sidebar,
+  #library-manager-drawer[data-mobile-view="help"] .library-results-panel {
     display: none;
   }
 
@@ -213,7 +246,8 @@
     order: 3;
   }
 
-  #start-controls-pill, #end-utilities-pill {
+  #start-controls-pill,
+  #end-utilities-pill {
     gap: 8px;
     justify-content: center;
     margin-inline: auto;
@@ -294,7 +328,13 @@
     font-size: 2.7rem;
   }
 
-  .library-drawer-inner, .library-manager-content, .library-results-panel, #db-library-results, #db-recent-list, #history-list, #now-playing-playlist-panel {
+  .library-drawer-inner,
+  .library-manager-content,
+  .library-results-panel,
+  #db-library-results,
+  #db-recent-list,
+  #history-list,
+  #now-playing-playlist-panel {
     box-sizing: border-box;
     max-width: 100%;
     min-width: 0;
@@ -306,7 +346,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .onda-track-row-enhanced .library-track-title, .onda-track-row-enhanced .library-track-meta {
+  .onda-track-row-enhanced .library-track-title,
+  .onda-track-row-enhanced .library-track-meta {
     -webkit-box-orient: vertical;
     display: -webkit-box;
     overflow-wrap: anywhere;
@@ -321,13 +362,15 @@
     -webkit-line-clamp: 2;
   }
 
-  .onda-track-row-enhanced .library-row-buttons, .onda-track-row-enhanced .onda-row-actions {
+  .onda-track-row-enhanced .library-row-buttons,
+  .onda-track-row-enhanced .onda-row-actions {
     justify-content: flex-start;
     min-width: 0;
     width: 100%;
   }
 
-  .onda-track-row-enhanced .library-row-buttons .btn-pill, .onda-track-row-enhanced .onda-row-actions .btn-pill {
+  .onda-track-row-enhanced .library-row-buttons .btn-pill,
+  .onda-track-row-enhanced .onda-row-actions .btn-pill {
     min-height: 34px;
     padding: 8px 12px;
   }
@@ -355,7 +398,8 @@
     width: 100%;
   }
 
-  .now-playing-queue-row .library-track-title, .now-playing-queue-row .library-track-meta {
+  .now-playing-queue-row .library-track-title,
+  .now-playing-queue-row .library-track-meta {
     overflow-wrap: anywhere;
     white-space: normal;
   }
@@ -380,11 +424,13 @@
     padding: 8px;
   }
 
-  .library-action-section h3,.library-action-section .bulk-selection-summary {
+  .library-action-section h3,
+  .library-action-section .bulk-selection-summary {
     display: none;
   }
 
-  .library-settings-actions,.bulk-actions-stack {
+  .library-settings-actions,
+  .bulk-actions-stack {
     -ms-overflow-style: none;
     display: flex;
     flex-direction: row;
@@ -397,13 +443,15 @@
     white-space: nowrap;
   }
 
-  .library-settings-actions::-webkit-scrollbar,.bulk-actions-stack::-webkit-scrollbar {
+  .library-settings-actions::-webkit-scrollbar,
+  .bulk-actions-stack::-webkit-scrollbar {
     display: none;
     height: 0;
     width: 0;
   }
 
-  .library-settings-actions .btn-pill,.bulk-actions-stack .btn-pill {
+  .library-settings-actions .btn-pill,
+  .bulk-actions-stack .btn-pill {
     flex: 0 0 auto;
     min-width: max-content;
     padding: 8px 13px;
@@ -414,7 +462,8 @@
     grid-template-columns: 1fr;
   }
 
-  .playlist-detail-header,.now-playing-queue-header {
+  .playlist-detail-header,
+  .now-playing-queue-header {
     align-items: flex-start;
     display: flex;
     flex-direction: column;
@@ -426,7 +475,8 @@
     width: 100%;
   }
 
-  .playlist-detail-header .playlist-detail-art,.now-playing-queue-header .playlist-detail-art {
+  .playlist-detail-header .playlist-detail-art,
+  .now-playing-queue-header .playlist-detail-art {
     flex: 0 0 auto;
     height: 88px;
     order: 1;
@@ -512,9 +562,9 @@
   .onda-cloud-actions .btn-pill {
     flex: 1 1 auto;
   }
-
 }
 
+/* Kept in its original position so the later accepted mobile-player rules continue to win. */
 @media (max-width: 420px) {
   #start-controls-pill.onda-transport-pill {
     gap: 14px;
@@ -527,7 +577,6 @@
     min-width: 44px;
     width: 44px;
   }
-
 }
 
 @media (min-width: 769px) {
@@ -811,8 +860,7 @@
   }
 }
 
-
-/* Mobile fix pass 1: preserve accepted desktop while rebuilding mobile player, rows, now-playing, and library select controls. */
+/* Canonical mobile layout. Historical mobile fix-pass blocks are consolidated here. */
 body.onda-force-mobile-mode #organon-top-panel {
   overflow: hidden;
 }
@@ -970,9 +1018,9 @@ body.onda-force-mobile-mode #history-list.history-list-panel {
 body.onda-force-mobile-mode .history-list-row {
   align-items: center;
   display: grid;
-  gap: 6px 8px;
+  gap: 4px 9px;
   grid-template-areas: "num text buttons";
-  grid-template-columns: 28px minmax(0, 1fr) auto;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
   min-height: 72px;
   overflow: hidden;
   padding: 9px 8px;
@@ -1002,39 +1050,6 @@ body.onda-force-mobile-mode .history-list-row .library-track-meta {
   white-space: nowrap;
 }
 
-body.onda-force-mobile-mode .history-list-row .library-row-buttons {
-  align-items: center;
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 6px;
-  grid-area: buttons;
-  justify-content: flex-end;
-  min-width: max-content;
-  width: auto;
-}
-
-body.onda-force-mobile-mode .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode .history-list-row .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode #db-library-results .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode .playlist-detail-track-row .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-pill {
-  align-items: center;
-  border-radius: 999px;
-  color: var(--water-spray);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 1.05rem;
-  height: 34px;
-  justify-content: center;
-  line-height: 1;
-  min-height: 34px;
-  min-width: 34px;
-  overflow: hidden;
-  padding: 0;
-  text-indent: 0;
-  width: 34px;
-}
-
 body.onda-force-mobile-mode #metadata-display-card {
   max-width: 100%;
   min-width: 0;
@@ -1062,10 +1077,7 @@ body.onda-force-mobile-mode .now-playing-art {
   width: 100%;
 }
 
-body.onda-force-mobile-mode .now-playing-layout > div:not(.now-playing-art) {
-  display: contents;
-}
-
+body.onda-force-mobile-mode .now-playing-layout > div:not(.now-playing-art),
 body.onda-force-mobile-mode .now-playing-data-grid {
   display: contents;
 }
@@ -1089,44 +1101,13 @@ body.onda-force-mobile-mode .now-playing-data-grid .meta-source-value {
   word-break: break-word;
 }
 
-body.onda-force-mobile-mode .library-action-section[data-library-action-section="select"] .bulk-select-panel {
-  overflow: hidden;
-  padding: 8px;
-}
-
-body.onda-force-mobile-mode .library-action-section[data-library-action-section="select"] .bulk-actions-stack {
-  -webkit-overflow-scrolling: touch;
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  gap: 8px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 2px 0 5px;
-  scrollbar-width: none;
-  white-space: nowrap;
-}
-
-body.onda-force-mobile-mode .library-action-section[data-library-action-section="select"] .bulk-actions-stack::-webkit-scrollbar {
-  display: none;
-}
-
-body.onda-force-mobile-mode .library-action-section[data-library-action-section="select"] .bulk-actions-stack .btn-pill {
-  flex: 0 0 auto;
-  min-width: max-content;
-  padding: 8px 14px;
-  width: auto;
-}
-
-
-/* Mobile workspace tabs: fixed in the middle-panel layout; only the active workspace scrolls. */
 body.onda-force-mobile-mode .workspace-mode-bar {
   flex: 0 0 auto;
+  pointer-events: auto;
   position: relative;
   top: auto;
-  z-index: 2;
-  pointer-events: auto;
   touch-action: manipulation;
+  z-index: 2;
 }
 
 body.onda-force-mobile-mode .workspace-mode-bar .mode-tab-btn,
@@ -1135,9 +1116,9 @@ body.onda-force-mobile-mode .workspace-mode-bar .mode-tab-btn * {
 }
 
 body.onda-force-mobile-mode .mode-tab-btn {
+  -webkit-tap-highlight-color: transparent;
   position: relative;
   touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
 }
 
 body.onda-force-mobile-mode .workspace-card-shell {
@@ -1145,41 +1126,7 @@ body.onda-force-mobile-mode .workspace-card-shell {
   z-index: 1;
 }
 
-body.onda-force-mobile-mode .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode .history-list-row .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode #db-library-results .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode .playlist-detail-track-row .library-row-buttons .btn-pill,
-body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons .btn-pill {
-  color: transparent;
-  position: relative;
-}
-
-body.onda-force-mobile-mode .library-row-buttons .btn-onda-row-play::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-db-play-track::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-history-play::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-detail-play-track::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-now-play-track::before {
-  color: var(--water-spray);
-}
-
-body.onda-force-mobile-mode .library-row-buttons .btn-history-info::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-db-info-track::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-info-track::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-detail-info-track::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-now-info-track::before,
-body.onda-force-mobile-mode .library-row-buttons .btn-onda-info::before {
-  color: var(--water-spray);
-}
-
-body.onda-force-mobile-mode .library-row-buttons .btn-onda-add-playlist::before {
-  color: #a78bff;
-}
-
-body.onda-force-mobile-mode .library-row-buttons .btn-onda-add-playlist::after {
-  content: none;
-}
-
-/* Mobile fix pass 3: normalize circular row buttons and row alignment. */
+/* Mobile row actions have one canonical 36px presentation. */
 body.onda-force-mobile-mode .library-row-buttons {
   align-items: center;
 }
@@ -1260,6 +1207,21 @@ body.onda-force-mobile-mode .library-row-buttons .btn-onda-add-playlist::before 
   font-weight: 900;
 }
 
+body.onda-force-mobile-mode .library-row-buttons .btn-onda-add-playlist::after {
+  content: none;
+}
+
+body.onda-force-mobile-mode .history-list-row .library-row-buttons {
+  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  grid-area: buttons;
+  justify-content: flex-end;
+  min-width: max-content;
+  width: auto;
+}
+
 body.onda-force-mobile-mode .playlist-detail-track-row,
 body.onda-force-mobile-mode .now-playing-queue-row {
   align-items: center;
@@ -1312,30 +1274,13 @@ body.onda-force-mobile-mode .now-playing-queue-row .library-row-buttons {
   width: 100%;
 }
 
-body.onda-force-mobile-mode .history-list-row {
-  align-items: center;
-  display: grid;
-  gap: 4px 9px;
-  grid-template-areas: "num text buttons";
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-}
-
-body.onda-force-mobile-mode .history-list-row .library-row-buttons {
-  align-items: center;
-  display: flex;
-  gap: 8px;
-  grid-area: buttons;
-  justify-content: flex-end;
-}
-
-
-/* Mobile fix pass 4: repair tap play/pause fallout, playlist header emoji duplication, and Library results visibility. */
+/* Playlist-detail header controls retain the accepted single-emoji mobile presentation. */
 body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill {
   align-items: center;
   color: var(--water-spray);
   display: inline-flex;
   font-family: var(--font-mono);
-  font-size: 1.06rem;
+  font-size: 0;
   height: 42px;
   justify-content: center;
   line-height: 1;
@@ -1345,129 +1290,236 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pil
   width: 42px;
 }
 
-body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::before,
 body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::after {
   content: none;
-}
-
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-manager-content {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  overflow: hidden;
-}
-
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-sidebar {
-  flex: 0 0 auto;
-  min-height: 0;
-  overflow: visible;
-  padding: 0;
-}
-
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-panel {
-  background: transparent;
-  border: 0;
-  padding: 0;
-}
-
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-section {
-  margin: 0;
-  padding: 0;
-}
-
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-section:not(.active) {
   display: none;
 }
 
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-action-section h3,
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .bulk-selection-summary {
-  display: none;
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill::before {
+  display: block;
+  font-size: 1.08rem;
+  line-height: 1;
+  text-indent: 0;
 }
 
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .bulk-select-panel {
-  background: transparent;
-  border: 0;
-  padding: 0;
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-play-playlist::before,
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-detail-play-playlist::before {
+  content: "▶️";
 }
 
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-results-panel {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-shuffle-playlist::before,
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-detail-shuffle-playlist::before {
+  content: "🔀";
 }
 
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] #db-library-results {
-  flex: 1 1 auto;
-  min-height: 160px;
-  overflow-x: hidden;
-  overflow-y: auto;
-  padding-right: 4px;
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-edit-playlist::before,
+body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-detail-edit-playlist::before {
+  content: "✏️";
 }
 
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-section-label {
-  flex: 0 0 auto;
-}
-
-
-/* Mobile fix pass 5: stop password-manager autofill from hiding Library tracks and remove doubled playlist header icons. */
+/* Settings mobile behaviour migrated from final-ui-fixes.css. */
 @media (max-width: 768px) {
-  .playlist-detail-header .playlist-row-tools .btn-pill {
-    align-items: center;
-    display: inline-flex;
-    font-size: 0;
-    height: 42px;
-    justify-content: center;
-    line-height: 1;
-    min-width: 42px;
-    padding: 0;
-    text-indent: 0;
-    width: 42px;
+  body.onda-force-mobile-mode #settings-popup {
+    max-height: calc(100dvh - 28px);
+    overflow: hidden;
   }
 
-  .playlist-detail-header .playlist-row-tools .btn-pill::after {
-    content: none;
+  body.onda-force-mobile-mode #settings-popup .popup-body {
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    max-height: calc(100dvh - 82px);
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    padding-right: 12px;
+    scrollbar-color: var(--water-spray) rgba(0, 0, 0, 0.34);
+    scrollbar-width: auto;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .settings-tab-row {
+    background: var(--bg-card);
+    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.26);
+    margin: -1px -2px 0;
+    padding: 2px 2px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body::-webkit-scrollbar {
+    display: block;
+    width: 10px;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.34);
+    border-radius: 999px;
+  }
+
+  body.onda-force-mobile-mode #settings-popup .popup-body::-webkit-scrollbar-thumb {
+    background: var(--water-spray);
+    border: 2px solid var(--bg-card);
+    border-radius: 999px;
+  }
+}
+
+/* Library mobile behaviour migrated from final-ui-fixes.css and the historical fix-pass blocks. */
+@media (max-width: 768px) {
+  body.onda-force-mobile-mode #library-manager-drawer .library-manager-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-sidebar,
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-sidebar {
+    display: block;
+    flex: 0 0 auto;
+    min-width: 0;
+    order: 0;
+    overflow: visible;
+    padding: 0;
+    width: 100%;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-panel {
+    background: transparent;
+    border: 0;
+    display: block;
+    padding: 0 12px 8px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section {
+    margin: 0;
+    padding: 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section:not(.active) {
     display: none;
   }
 
-  .playlist-detail-header .playlist-row-tools .btn-pill::before {
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section.active {
     display: block;
-    font-size: 1.08rem;
-    line-height: 1;
-    text-indent: 0;
   }
 
-  .playlist-detail-header .playlist-row-tools .btn-play-playlist::before,
-  .playlist-detail-header .playlist-row-tools #btn-detail-play-playlist::before {
-    content: "▶️";
+  body.onda-force-mobile-mode #library-manager-drawer .library-action-section h3,
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-selection-summary {
+    display: none;
   }
 
-  .playlist-detail-header .playlist-row-tools .btn-shuffle-playlist::before,
-  .playlist-detail-header .playlist-row-tools #btn-detail-shuffle-playlist::before {
-    content: "🔀";
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-select-panel {
+    background: transparent;
+    border: 0;
+    overflow: hidden;
+    padding: 0;
   }
 
-  .playlist-detail-header .playlist-row-tools .btn-edit-playlist::before,
-  .playlist-detail-header .playlist-row-tools #btn-detail-edit-playlist::before {
-    content: "✏️";
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions {
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 3px 0 9px;
+    scrollbar-color: var(--water-spray) transparent;
+    scrollbar-width: thin;
+    white-space: nowrap;
   }
-}
 
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack::-webkit-scrollbar,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions::-webkit-scrollbar {
+    display: block;
+    height: 5px;
+  }
 
-/* Mobile fix pass 6: force Library results to be visible. */
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-results-panel {
-  display: flex;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: hidden;
-}
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack::-webkit-scrollbar-thumb,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions::-webkit-scrollbar-thumb {
+    background: var(--water-blue);
+    border-radius: 999px;
+  }
 
-body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] #db-library-results {
-  display: block;
-  flex: 1 1 auto;
-  min-height: 180px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack .btn-pill,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions .btn-pill {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 7px 13px;
+    white-space: nowrap;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-results-panel {
+    order: 1;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-manager-content {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-results-panel {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] #db-library-results {
+    -webkit-overflow-scrolling: touch;
+    display: block;
+    flex: 1 1 auto;
+    min-height: 180px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-section-label {
+    flex: 0 0 auto;
+  }
+
+  body.onda-force-mobile-mode .playlist-row {
+    align-items: center;
+    display: grid;
+    gap: 10px;
+    grid-template-areas: "thumb text tools";
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+    padding: 10px 12px;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content {
+    display: contents;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content .playlist-thumb {
+    grid-area: thumb;
+    height: 56px;
+    width: 56px;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-content > div:last-child {
+    grid-area: text;
+    min-width: 0;
+  }
+
+  body.onda-force-mobile-mode .playlist-row .playlist-row-tools {
+    grid-area: tools;
+    justify-self: end;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-title {
+    line-height: 1.2;
+    overflow: hidden;
+    overflow-wrap: normal;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-break: normal;
+  }
+
+  body.onda-force-mobile-mode .playlist-row-count {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
