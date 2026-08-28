@@ -68,10 +68,28 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.8';
+        const ONDA_VERSION = 'v3.9';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
+        const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const MOBILE_MARQUEE_GAP_PX = 32;
+        const MOBILE_MARQUEE_SELECTOR = [
+            '#history-list .library-track-title',
+            '#history-list .library-file-line',
+            '#history-card-grid .history-card-title',
+            '#history-card-grid .library-file-line',
+            '#db-library-results .library-track-title',
+            '#db-library-results .library-file-line',
+            '#db-recent-list .library-track-title',
+            '#db-recent-list .library-file-line',
+            '#playlist-detail-track-list .library-track-title',
+            '#playlist-detail-track-list .library-file-line',
+            '#playlist-edit-track-list .library-track-title',
+            '#playlist-edit-track-list .library-file-line',
+            '#now-playing-playlist-track-list .library-track-title',
+            '#now-playing-playlist-track-list .library-file-line'
+        ].join(', ');
 
         // Start with no hardcoded playlists.
         // User-created/imported playlists should be the only playlists shown.
@@ -1135,7 +1153,7 @@
                 <div class="history-card-index">${index + 1}</div>
                 <div class="history-card-title">${escapeHtml(getDisplayTitle(meta))}</div>
                 <div>
-                    <div class="history-card-meta">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
+                    <div class="history-card-meta library-file-line">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
                     ${playlistsForTrack.length ? `<div class="history-card-meta">${escapeHtml(playlistsForTrack.slice(0, 2).join(' / '))}</div>` : ''}
                     ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
                 </div>
@@ -1154,7 +1172,7 @@
                 <div class="history-list-number">${index + 1}</div>
                 <div class="onda-track-text-wrap">
                     <div class="library-track-title">${escapeHtml(getDisplayTitle(meta))}</div>
-                    <div class="library-track-meta">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
+                    <div class="library-track-meta library-file-line">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
                     ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
                 </div>
                 <div class="library-row-buttons">
@@ -1746,10 +1764,9 @@
 
         function syncMobileLibraryDrawerBounds() {
             if (!libraryDrawer) return;
-            const isMobile = window.matchMedia('(max-width: 768px)').matches;
             const savedHeight = getLibraryDrawerSavedHeight();
 
-            if (!isMobile) {
+            if (!isMobileLayoutMode()) {
                 document.documentElement.style.removeProperty('--mobile-library-drawer-top');
                 document.documentElement.style.removeProperty('--mobile-library-drawer-bottom');
                 const savedWidth = getLibraryDrawerSavedWidth();
@@ -1758,19 +1775,14 @@
                 return;
             }
 
-            if (savedHeight) {
-                applyLibraryDrawerHeight(savedHeight, { persist: false });
-                return;
-            }
-
-            const topPanel = document.getElementById('organon-top-panel');
-            const bottomEdge = getLibraryDrawerBottomOffset();
-            const topEdge = topPanel ? Math.ceil(topPanel.getBoundingClientRect().bottom + 10) : 178;
-            document.documentElement.style.setProperty('--mobile-library-drawer-top', `${topEdge}px`);
-            document.documentElement.style.setProperty('--mobile-library-drawer-bottom', `${bottomEdge}px`);
+            libraryDrawer.classList.remove('drawer-custom-width');
+            document.documentElement.style.removeProperty('--library-drawer-width');
+            document.documentElement.style.setProperty('--mobile-library-drawer-top', '8px');
+            document.documentElement.style.setProperty('--mobile-library-drawer-bottom', `${getLibraryDrawerBottomOffset()}px`);
         }
 
         function startLibraryDrawerResize(e) {
+            if (isMobileLayoutMode()) return;
             if (!libraryDrawer || !libraryDrawer.classList.contains('drawer-open')) return;
             if (e.button !== undefined && e.button !== 0) return;
             isLibraryDrawerResizing = true;
@@ -1803,6 +1815,7 @@
         }
 
         function startLibraryDrawerCornerResize(e) {
+            if (isMobileLayoutMode()) return;
             if (!libraryDrawer || !libraryDrawer.classList.contains('drawer-open')) return;
             if (e.button !== undefined && e.button !== 0) return;
             isLibraryDrawerCornerResizing = true;
@@ -1850,10 +1863,12 @@
             libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');
             if (btnDatabaseEngine) btnDatabaseEngine.classList.toggle('drawer-resize-ready', shouldOpen);
             if (shouldOpen) {
-                const savedHeight = getLibraryDrawerSavedHeight();
-                const savedWidth = getLibraryDrawerSavedWidth();
-                if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
-                if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
+                if (!isMobileLayoutMode()) {
+                    const savedHeight = getLibraryDrawerSavedHeight();
+                    const savedWidth = getLibraryDrawerSavedWidth();
+                    if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
+                    if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
+                }
                 setMobileLibraryView(isMobileLayoutActive() ? 'results' : (libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results'));
                 prepareLibrarySearchForDrawerOpen();
                 renderLibraryManager();
@@ -3365,7 +3380,7 @@
                     trackId: currentFile.name,
                     matchedRows: selectors.map(selector => document.querySelector(selector)).filter(Boolean).length
                 };
-                scheduleCurrentTrackMarqueeRefresh();
+                scheduleMobileMarqueeRefresh();
             }, 140);
         }
 
@@ -3473,7 +3488,7 @@
                             <div class="history-list-number">${idx + 1}</div>
                             <div class="onda-track-text-wrap">
                                 <div class="library-track-title">${active ? '▶ ' : ''}${escapeHtml(getDisplayTitle(trackMeta))}</div>
-                                <div class="library-track-meta">${escapeHtml(trackMeta.fileName || trackMeta.id)} · ${escapeHtml(sourceStatus(trackMeta))}</div>
+                                <div class="library-track-meta library-file-line">${escapeHtml(trackMeta.fileName || trackMeta.id)} · ${escapeHtml(sourceStatus(trackMeta))}</div>
                             </div>
                             <div class="library-row-buttons">
                                 <button type="button" class="btn-pill btn-now-play-track btn-onda-row-play" data-track-id="${escapeHtml(id)}" title="Play">▶️</button>
@@ -4576,7 +4591,7 @@
                             <input type="checkbox" class="playlist-edit-track-check" data-track-id="${escapeHtml(trackId)}">
                             <div>
                                 <div class="library-track-title">${index + 1}. ${escapeHtml(meta ? getDisplayTitle(meta) : trackId)}</div>
-                                <div class="library-track-meta">${escapeHtml(meta?.fileName || 'Missing library record')} · ${escapeHtml(meta ? sourceStatus(meta) : 'missing')}</div>
+                                <div class="library-track-meta library-file-line">${escapeHtml(meta?.fileName || 'Missing library record')} · ${escapeHtml(meta ? sourceStatus(meta) : 'missing')}</div>
                             </div>
                         <div class="library-row-buttons">
                             ${meta ? `<button type="button" class="btn-pill btn-playlist-edit-play" data-track-id="${escapeHtml(trackId)}">Play</button>` : ''}
@@ -4772,7 +4787,7 @@
                             <div class="history-list-number">${index + 1}</div>
                             <div class="onda-track-text-wrap">
                                 <div class="library-track-title">${isCurrent ? '▶ ' : ''}${escapeHtml(track ? getDisplayTitle(track) : id)}</div>
-                                <div class="library-track-meta">${escapeHtml(track?.fileName || 'Missing library record')} · ${escapeHtml(track ? sourceStatus(track) : 'missing')}</div>
+                                <div class="library-track-meta library-file-line">${escapeHtml(track?.fileName || 'Missing library record')} · ${escapeHtml(track ? sourceStatus(track) : 'missing')}</div>
                             </div>
                             <div class="library-row-buttons">
                                 ${track ? `<button type="button" class="btn-pill btn-detail-play-track" data-track-id="${escapeHtml(id)}" title="Play">▶️</button>` : ''}
@@ -5891,7 +5906,7 @@
                     ? 'Desktop layout forced. Tap for normal responsive layout.'
                     : 'Responsive layout active. Tap to force desktop layout.';
             }
-            scheduleCurrentTrackMarqueeRefresh();
+            scheduleMobileMarqueeRefresh();
         }
 
         function toggleDesktopMode() {
@@ -5939,56 +5954,109 @@
             updateFullscreenButton();
         }
 
-        function prepareCurrentTrackMarqueeTitle(title) {
-            let movingText = title.querySelector(':scope > .onda-title-marquee-text');
-            if (!movingText) {
-                movingText = document.createElement('span');
-                movingText.className = 'onda-title-marquee-text';
-                movingText.textContent = title.textContent;
-                title.replaceChildren(movingText);
+        function prepareMobileMarqueeText(element) {
+            if (!element) return;
+
+            let track = element.querySelector(':scope > .onda-marquee-track');
+            let sourceText = element.dataset.ondaMarqueeText || '';
+            if (!track) {
+                const liveText = (element.textContent || '').trim();
+                if (liveText) sourceText = liveText;
+            }
+            if (!sourceText) return;
+
+            element.dataset.ondaMarqueeText = sourceText;
+            element.classList.remove('is-marquee-overflowing');
+            element.style.removeProperty('--onda-marquee-distance');
+            element.style.removeProperty('--onda-marquee-duration');
+            element.style.setProperty('--onda-marquee-gap', `${MOBILE_MARQUEE_GAP_PX}px`);
+
+            if (!isMobileLayoutMode() || reducedMotionQuery.matches || element.clientWidth <= 0) {
+                if (track) element.textContent = sourceText;
+                element.classList.toggle('onda-mobile-marquee', isMobileLayoutMode());
+                return;
             }
 
-            title.classList.remove('is-title-overflowing');
-            title.style.removeProperty('--onda-title-shift');
-            title.style.removeProperty('--onda-title-duration');
+            element.classList.add('onda-mobile-marquee');
+            if (!track) {
+                track = document.createElement('span');
+                track.className = 'onda-marquee-track';
+                const firstSegment = document.createElement('span');
+                firstSegment.className = 'onda-marquee-segment';
+                firstSegment.textContent = sourceText;
+                track.appendChild(firstSegment);
+                element.replaceChildren(track);
+            }
 
-            if (!isMobileLayoutMode() || title.clientWidth <= 0) return;
-            const overflow = Math.ceil(movingText.scrollWidth - title.clientWidth);
-            if (overflow <= 2) return;
+            let firstSegment = track.querySelector(':scope > .onda-marquee-segment:not([data-marquee-copy])');
+            if (!firstSegment) {
+                firstSegment = document.createElement('span');
+                firstSegment.className = 'onda-marquee-segment';
+                track.prepend(firstSegment);
+            }
+            if (firstSegment.textContent !== sourceText) firstSegment.textContent = sourceText;
 
-            title.style.setProperty('--onda-title-shift', `${overflow + 12}px`);
-            title.style.setProperty('--onda-title-duration', `${Math.max(7, Math.min(18, 6 + overflow / 35))}s`);
-            title.classList.add('is-title-overflowing');
+            const contentWidth = Math.ceil(firstSegment.getBoundingClientRect().width || firstSegment.scrollWidth || 0);
+            const availableWidth = Math.floor(element.clientWidth);
+            let gap = track.querySelector(':scope > .onda-marquee-gap');
+            let copy = track.querySelector(':scope > .onda-marquee-segment[data-marquee-copy]');
+
+            if (contentWidth <= availableWidth + 2) {
+                if (gap) gap.remove();
+                if (copy) copy.remove();
+                return;
+            }
+
+            if (!gap) {
+                gap = document.createElement('span');
+                gap.className = 'onda-marquee-gap';
+                gap.setAttribute('aria-hidden', 'true');
+                track.appendChild(gap);
+            }
+            if (!copy) {
+                copy = document.createElement('span');
+                copy.className = 'onda-marquee-segment';
+                copy.dataset.marqueeCopy = 'true';
+                copy.setAttribute('aria-hidden', 'true');
+                track.appendChild(copy);
+            }
+            if (copy.textContent !== sourceText) copy.textContent = sourceText;
+
+            const characterCount = Math.max(1, Array.from(sourceText).length);
+            const durationSeconds = Math.max(4, (characterCount + 6) / 3);
+            element.style.setProperty('--onda-marquee-distance', `${contentWidth + MOBILE_MARQUEE_GAP_PX}px`);
+            element.style.setProperty('--onda-marquee-duration', `${durationSeconds.toFixed(2)}s`);
+            element.classList.add('is-marquee-overflowing');
         }
 
-        function refreshCurrentTrackMarquees() {
-            document.querySelectorAll('.library-track-title.is-title-overflowing').forEach(title => {
-                title.classList.remove('is-title-overflowing');
-            });
-            document.querySelectorAll('.now-playing-current-track .library-track-title').forEach(prepareCurrentTrackMarqueeTitle);
+        function refreshMobileMarquees() {
+            document.querySelectorAll(MOBILE_MARQUEE_SELECTOR).forEach(prepareMobileMarqueeText);
         }
 
-        function scheduleCurrentTrackMarqueeRefresh() {
+        function scheduleMobileMarqueeRefresh() {
             if (marqueeFrame) cancelAnimationFrame(marqueeFrame);
             marqueeFrame = requestAnimationFrame(() => {
                 marqueeFrame = 0;
-                refreshCurrentTrackMarquees();
+                refreshMobileMarquees();
             });
         }
 
-        function installCurrentTrackMarqueeObserver() {
-            const observer = new MutationObserver(scheduleCurrentTrackMarqueeRefresh);
+        function installMobileMarqueeObserver() {
+            const observer = new MutationObserver(scheduleMobileMarqueeRefresh);
             observer.observe(document.body, { childList: true, subtree: true });
 
             window.addEventListener('resize', () => {
                 window.clearTimeout(marqueeResizeTimer);
-                marqueeResizeTimer = window.setTimeout(scheduleCurrentTrackMarqueeRefresh, 120);
+                marqueeResizeTimer = window.setTimeout(scheduleMobileMarqueeRefresh, 120);
             });
             window.addEventListener('orientationchange', () => {
-                window.setTimeout(scheduleCurrentTrackMarqueeRefresh, 180);
+                window.setTimeout(scheduleMobileMarqueeRefresh, 180);
             });
-            if (document.fonts?.ready) document.fonts.ready.then(scheduleCurrentTrackMarqueeRefresh).catch(() => {});
-            scheduleCurrentTrackMarqueeRefresh();
+            if (typeof reducedMotionQuery.addEventListener === 'function') {
+                reducedMotionQuery.addEventListener('change', scheduleMobileMarqueeRefresh);
+            }
+            if (document.fonts?.ready) document.fonts.ready.then(scheduleMobileMarqueeRefresh).catch(() => {});
+            scheduleMobileMarqueeRefresh();
         }
 
         function announceOndaVersion() {
@@ -6033,7 +6101,7 @@
         });
         initLayoutControls();
         setSettingsTab(document.querySelector('.settings-tab-btn.active')?.dataset.settingsTab || 'audio');
-        installCurrentTrackMarqueeObserver();
+        installMobileMarqueeObserver();
         announceOndaVersion();
         document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
         safeBind('btn-open-cloud-setup-from-settings', 'click', () => { if (typeof openOndaCloudSetup === 'function') openOndaCloudSetup(false); else document.getElementById('onda-cloud-setup-modal')?.classList.add('open'); });
