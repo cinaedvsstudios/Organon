@@ -114,13 +114,13 @@
     right: 15px;
   }
 
-  #library-manager-drawer {
-    bottom: 62px;
+  body.onda-force-mobile-mode #library-manager-drawer {
+    bottom: var(--mobile-library-drawer-bottom, 62px);
     height: auto;
-    left: 15px;
+    left: 8px;
     max-height: none;
-    right: 15px;
-    top: var(--mobile-library-drawer-top, 178px);
+    right: 8px;
+    top: max(var(--mobile-library-drawer-top, 8px), env(safe-area-inset-top, 0px));
   }
 
   #library-manager-drawer .library-drawer-inner {
@@ -131,7 +131,7 @@
   .library-drawer-header {
     align-items: flex-start;
     gap: 8px;
-    padding: 10px 12px 8px;
+    padding: 7px 9px 6px;
   }
 
   .library-drawer-subtitle {
@@ -268,15 +268,13 @@
   }
 
   .library-manager-toolbar {
-    gap: 7px;
+    gap: 5px;
     grid-template-columns: minmax(0,1fr) auto auto minmax(112px,.58fr);
-    padding: 10px 12px;
+    padding: 7px 9px;
   }
 
-  .library-drawer-resize-handle {
-    height: 22px;
-    top: 7px;
-    width: 30px;
+  body.onda-force-mobile-mode .library-drawer-resize-handle {
+    display: none;
   }
 
   .library-drawer-resize-handle.left {
@@ -458,8 +456,26 @@
     width: auto;
   }
 
-  .library-playlist-strip-grid {
-    grid-template-columns: 1fr;
+  body.onda-force-mobile-mode .library-playlist-strip-grid {
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.onda-force-mobile-mode .library-playlist-strip-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.onda-force-mobile-mode .library-playlist-shortcut {
+    flex: 0 0 77%;
+    min-width: 0;
+    padding: 7px;
+    scroll-snap-align: start;
   }
 
   .playlist-detail-header,
@@ -1021,9 +1037,9 @@ body.onda-force-mobile-mode .history-list-row {
   gap: 4px 9px;
   grid-template-areas: "num text buttons";
   grid-template-columns: 30px minmax(0, 1fr) auto;
-  min-height: 72px;
+  min-height: 64px;
   overflow: hidden;
-  padding: 9px 8px;
+  padding: 6px 8px;
   width: 100%;
 }
 
@@ -1369,6 +1385,7 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
     display: flex;
     flex-direction: column;
     gap: 0;
+    padding: 7px 8px 9px;
   }
 
   body.onda-force-mobile-mode #library-manager-drawer .library-sidebar,
@@ -1386,7 +1403,7 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
     background: transparent;
     border: 0;
     display: block;
-    padding: 0 12px 8px;
+    padding: 0 7px 5px;
   }
 
   body.onda-force-mobile-mode #library-manager-drawer .library-action-section {
@@ -1419,10 +1436,10 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
     -webkit-overflow-scrolling: touch;
     display: flex;
     flex-wrap: nowrap;
-    gap: 8px;
+    gap: 6px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 3px 0 9px;
+    padding: 2px 0 5px;
     scrollbar-color: var(--water-spray) transparent;
     scrollbar-width: thin;
     white-space: nowrap;
@@ -1450,6 +1467,29 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
 
   body.onda-force-mobile-mode #library-manager-drawer .library-results-panel {
     order: 1;
+    padding: 6px 7px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-playlist-strip {
+    margin-bottom: 7px;
+    padding: 6px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-playlist-strip-title,
+  body.onda-force-mobile-mode #library-manager-drawer .library-section-label {
+    margin-bottom: 4px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer #db-library-results .library-result-row,
+  body.onda-force-mobile-mode #library-manager-drawer #db-recent-list .library-mini-row {
+    margin-bottom: 6px;
+    padding: 6px 8px;
+  }
+
+  body.onda-force-mobile-mode .playlist-detail-track-row,
+  body.onda-force-mobile-mode .now-playing-queue-row {
+    margin-bottom: 6px;
+    padding: 6px 8px;
   }
 
   body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="results"] .library-manager-content {
@@ -1524,48 +1564,57 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
   }
 }
 
-/* Current-track marquee is a canonical responsive behavior. Phase 3 upgrades its motion and scope. */
-@keyframes onda-mobile-title-marquee {
-  0%, 16% {
-    transform: translateX(0);
+/* Automatic mobile scrolling for overflowing track titles and file names. */
+@keyframes onda-mobile-marquee-loop {
+  from {
+    transform: translate3d(0, 0, 0);
   }
-
-  48%, 66% {
-    transform: translateX(calc(-1 * var(--onda-title-shift)));
-  }
-
-  100% {
-    transform: translateX(0);
+  to {
+    transform: translate3d(calc(-1 * var(--onda-marquee-distance)), 0, 0);
   }
 }
 
-body.onda-force-mobile-mode .now-playing-current-track .library-track-title {
+body.onda-force-mobile-mode .onda-mobile-marquee {
   display: block;
   max-width: 100%;
   min-width: 0;
   overflow: hidden;
+  overflow-wrap: normal;
   text-overflow: clip;
   white-space: nowrap;
 }
 
-body.onda-force-mobile-mode .now-playing-current-track .onda-title-marquee-text {
-  display: inline-block;
+body.onda-force-mobile-mode .onda-mobile-marquee .onda-marquee-track {
+  align-items: baseline;
+  display: inline-flex;
   min-width: max-content;
-  transform: translateX(0);
+  transform: translate3d(0, 0, 0);
+  white-space: nowrap;
   will-change: transform;
 }
 
-body.onda-force-mobile-mode .now-playing-current-track .library-track-title.is-title-overflowing .onda-title-marquee-text {
-  animation: onda-mobile-title-marquee var(--onda-title-duration, 10s) ease-in-out infinite;
+body.onda-force-mobile-mode .onda-mobile-marquee .onda-marquee-segment {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+body.onda-force-mobile-mode .onda-mobile-marquee .onda-marquee-gap {
+  display: inline-block;
+  flex: 0 0 var(--onda-marquee-gap, 32px);
+  width: var(--onda-marquee-gap, 32px);
+}
+
+body.onda-force-mobile-mode .onda-mobile-marquee.is-marquee-overflowing .onda-marquee-track {
+  animation: onda-mobile-marquee-loop var(--onda-marquee-duration, 10s) linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.onda-force-mobile-mode .now-playing-current-track .library-track-title {
+  body.onda-force-mobile-mode .onda-mobile-marquee {
     text-overflow: ellipsis;
   }
 
-  body.onda-force-mobile-mode .now-playing-current-track .library-track-title.is-title-overflowing .onda-title-marquee-text {
+  body.onda-force-mobile-mode .onda-mobile-marquee .onda-marquee-track {
     animation: none;
+    transform: none;
   }
 }
-
