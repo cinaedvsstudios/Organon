@@ -247,3 +247,16 @@
   line-height: 1;
   width: 24px;
 }
+
+/* Settings card visibility is owned here rather than by a late correction stylesheet. */
+#settings-popup .settings-card[hidden] {
+  display: none !important;
+}
+
+#settings-popup .settings-card.active:not(.control-row) {
+  display: block;
+}
+
+#settings-popup .control-row.settings-card.active {
+  display: flex;
+}
