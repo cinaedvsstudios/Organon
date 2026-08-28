@@ -1,0 +1,40 @@
+name: Onda mobile playlist marquee migration
+
+on:
+  push:
+    branches:
+      - onda-mobile-playlist-marquee-fix
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply migration
+        run: python .github/onda_mobile_playlist_marquee_fix.py
+
+      - name: Validate canonical sources
+        run: |
+          node --check tools/Onda/js/app-core.js
+          grep -q "const ONDA_VERSION = 'v3.10';" tools/Onda/js/app-core.js
+          grep -q "#playlists-explorer-group > .playlist-row" tools/Onda/css/responsive.css
+          grep -q "flex: 0 0 70%;" tools/Onda/css/responsive.css
+          grep -q "#tab-playlists > .help-text" tools/Onda/css/responsive.css
+          grep -q "const marqueeRoots =" tools/Onda/js/app-core.js
+          ! grep -q "observer.observe(document.body" tools/Onda/js/app-core.js
+          ! grep -q "final-ui-fixes.css\|onda-v3-5.css\|onda-v3-5.js\|layout-enhancements.js" tools/Onda/index.html
+
+      - name: Commit canonical result only
+        run: |
+          rm -f .github/onda_mobile_playlist_marquee_fix.py .github/workflows/onda-mobile-playlist-marquee-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix Onda mobile playlists and marquee stability"
+          git push
