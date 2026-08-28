@@ -64,6 +64,14 @@
         let isRepeatOne = false;
         let isRepeatAll = false;
         let isShuffle = false;
+        let shuffleQueue = [];
+        let shuffleSignature = '';
+        let marqueeFrame = 0;
+        let marqueeResizeTimer = 0;
+        const ONDA_VERSION = 'v3.8';
+        const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
+        const MOBILE_BREAKPOINT = 768;
+        const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
 
         // Start with no hardcoded playlists.
         // User-created/imported playlists should be the only playlists shown.
@@ -2026,7 +2034,6 @@
                 libraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
                 volumeBoost: parseFloat(volSlider?.value || '1') || 1,
                 playbackSpeed: parseFloat(speedSlider?.value || activeAudio?.playbackRate || '1') || 1,
-                speedCycleIndex: currentSpeedIdx || 0,
                 activeWorkspaceTab: document.querySelector('.viewport-content.active-content')?.id || localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY) || 'tab-files',
                 mobileLibraryView: libraryDrawer?.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results',
                 libraryFuzzySearch: librarySearchFuzziness,
@@ -2120,12 +2127,8 @@
                 if (activeAudio) activeAudio.playbackRate = speed;
                 const speedReadout = document.getElementById('speed-readout');
                 if (speedReadout) speedReadout.innerText = speed.toFixed(1) + 'x';
-                if (btnSpeedCycle) btnSpeedCycle.innerText = `🚀${speed.toFixed(1).replace('.0', '')}`;
             }
 
-            if (Number.isInteger(settings.speedCycleIndex)) {
-                currentSpeedIdx = Math.max(0, Math.min(speedCycles.length - 1, settings.speedCycleIndex));
-            }
 
             if (settings.activeWorkspaceTab) localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, settings.activeWorkspaceTab);
             if (settings.mobileLibraryView) localStorage.setItem(LIBRARY_MOBILE_VIEW_KEY, settings.mobileLibraryView);
@@ -2907,6 +2910,127 @@
             return audioCtx;
         }
 
+
+        function isMobileLayoutMode() {
+            return document.body.classList.contains('onda-force-mobile-mode')
+                || (!document.body.classList.contains('onda-force-desktop-mode') && mobileLayoutQuery.matches);
+        }
+
+        function getPlaylistSignature() {
+            return playlistTracks.map((track, index) => String(getTrackId(track) || index)).join('\u001f');
+        }
+
+        function shuffleIndexes(indexes) {
+            for (let index = indexes.length - 1; index > 0; index -= 1) {
+                const swapIndex = Math.floor(Math.random() * (index + 1));
+                [indexes[index], indexes[swapIndex]] = [indexes[swapIndex], indexes[index]];
+            }
+            return indexes;
+        }
+
+        function resetShuffleQueue(excludeIndex = currentTrackIndex) {
+            shuffleSignature = getPlaylistSignature();
+            shuffleQueue = shuffleIndexes(
+                Array.from({ length: playlistTracks.length }, (_, index) => index)
+                    .filter(index => index !== excludeIndex)
+            );
+        }
+
+        function takeNextShuffleIndex(allowWrap = false) {
+            if (playlistTracks.length <= 1) return -1;
+            const signature = getPlaylistSignature();
+            if (signature !== shuffleSignature) resetShuffleQueue(currentTrackIndex);
+            shuffleQueue = shuffleQueue.filter(index => index !== currentTrackIndex && index < playlistTracks.length);
+            if (shuffleQueue.length === 0) {
+                if (!allowWrap) return -1;
+                resetShuffleQueue(currentTrackIndex);
+            }
+            return shuffleQueue.shift() ?? -1;
+        }
+
+        function syncPlaybackModeButtons() {
+            const repeatOneButton = document.getElementById('btn-repeat-one');
+            const repeatAllButton = document.getElementById('btn-repeat-all');
+            const shuffleButton = document.getElementById('btn-shuffle');
+
+            if (repeatOneButton) {
+                repeatOneButton.textContent = '🔂';
+                repeatOneButton.dataset.tooltip = 'Repeat current track';
+                repeatOneButton.title = 'Repeat current track';
+                repeatOneButton.classList.toggle('active-state', isRepeatOne);
+                repeatOneButton.setAttribute('aria-pressed', String(isRepeatOne));
+            }
+            if (repeatAllButton) {
+                repeatAllButton.textContent = '🔁';
+                repeatAllButton.dataset.tooltip = 'Repeat entire playlist';
+                repeatAllButton.title = 'Repeat entire playlist';
+                repeatAllButton.classList.toggle('active-state', isRepeatAll);
+                repeatAllButton.setAttribute('aria-pressed', String(isRepeatAll));
+            }
+            if (shuffleButton) {
+                shuffleButton.classList.toggle('active-state', isShuffle);
+                shuffleButton.setAttribute('aria-pressed', String(isShuffle));
+            }
+        }
+
+        function setRepeatMode(mode = 'off') {
+            const currentMode = isRepeatOne ? 'one' : (isRepeatAll ? 'all' : 'off');
+            const nextMode = mode === currentMode ? 'off' : mode;
+            isRepeatOne = nextMode === 'one';
+            isRepeatAll = nextMode === 'all';
+            syncPlaybackModeButtons();
+        }
+
+        function setShuffleEnabled(enabled, { rebuild = true } = {}) {
+            isShuffle = Boolean(enabled);
+            if (isShuffle && rebuild) resetShuffleQueue(currentTrackIndex);
+            if (!isShuffle) {
+                shuffleQueue = [];
+                shuffleSignature = '';
+            }
+            syncPlaybackModeButtons();
+        }
+
+        function restartCurrentTrack(audioObject) {
+            if (!audioObject) return;
+            audioObject.currentTime = 0;
+            playAudio();
+        }
+
+        function stopAtPlaylistEnd(audioObject) {
+            pauseAudio();
+            if (!audioObject) return;
+            if (Number.isFinite(audioObject.duration)) audioObject.currentTime = audioObject.duration;
+        }
+
+        function handleTrackEnded(audioObject) {
+            if (!audioObject || audioObject !== activeAudio) return;
+
+            if (isRepeatOne) {
+                restartCurrentTrack(audioObject);
+                return;
+            }
+
+            if (isShuffle) {
+                if (playlistTracks.length === 1 && isRepeatAll) {
+                    restartCurrentTrack(audioObject);
+                    return;
+                }
+                const nextIndex = takeNextShuffleIndex(isRepeatAll);
+                if (nextIndex >= 0) switchTrack(nextIndex);
+                else stopAtPlaylistEnd(audioObject);
+                return;
+            }
+
+            if (currentTrackIndex >= 0 && currentTrackIndex < playlistTracks.length - 1) {
+                switchTrack(currentTrackIndex + 1);
+            } else if (isRepeatAll && playlistTracks.length > 0) {
+                switchTrack(0);
+            } else {
+                stopAtPlaylistEnd(audioObject);
+            }
+        }
+
         // Bind playback timeline events robustly to both dual-engine elements
         function attachAudioEvents(audioObj) {
             audioObj.addEventListener('loadedmetadata', (e) => {
@@ -2925,21 +3049,7 @@
 
             audioObj.addEventListener('ended', (e) => {
                 if (e.target !== activeAudio) return;
-                if (isRepeatOne) {
-                    audioObj.currentTime = 0;
-                    playAudio();
-                } else {
-                    if (isShuffle) {
-                        switchTrack(Math.floor(Math.random() * playlistTracks.length));
-                    } else if (currentTrackIndex < playlistTracks.length - 1) {
-                        switchTrack(currentTrackIndex + 1);
-                    } else if (isRepeatAll) {
-                        switchTrack(0);
-                    } else {
-                        pauseAudio();
-                        audioObj.currentTime = 0;
-                    }
-                }
+                handleTrackEnded(audioObj);
             });
         }
         attachAudioEvents(localAudio);
@@ -3232,19 +3342,33 @@
                     const row = document.querySelector(selector);
                     if (!row || row.offsetParent === null) return;
                     row.classList.add('jump-focus-pulse');
-                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                    if (isMobileLayoutMode()) {
+                        const scroller = row.closest('#now-playing-playlist-track-list, #playlist-detail-track-list, .now-playing-queue-list, .playlist-detail-track-list');
+                        if (scroller && scroller.scrollHeight > scroller.clientHeight) {
+                            const rowRect = row.getBoundingClientRect();
+                            const scrollerRect = scroller.getBoundingClientRect();
+                            const top = scroller.scrollTop
+                                + (rowRect.top - scrollerRect.top)
+                                - ((scroller.clientHeight - row.clientHeight) / 2);
+                            scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+                        }
+                    } else {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+
                     setTimeout(() => row.classList.remove('jump-focus-pulse'), 1100);
                 });
                 window.OndaDebug = window.OndaDebug || {};
-        window.OndaDebug.activeTrackScroll = {
+                window.OndaDebug.activeTrackScroll = {
                     reason,
                     trackId: currentFile.name,
                     matchedRows: selectors.map(selector => document.querySelector(selector)).filter(Boolean).length
                 };
+                scheduleCurrentTrackMarqueeRefresh();
             }, 140);
         }
 
-        
         function updateNowPlayingPlaylistPanel() {
             const card = document.getElementById('metadata-display-card');
             const panel = document.getElementById('now-playing-playlist-panel');
@@ -3645,20 +3769,17 @@
         btnNext.addEventListener('click', skipToNextTrack);
 
         function skipToNextTrack() {
-            if (playlistTracks.length === 0) return;
-            if (playlistTracks.length === 1 && !isRepeatAll && !isRepeatOne) {
-                activeAudio.currentTime = 0;
-                pauseAudio();
+            if (playlistTracks.length <= 1) return;
+
+            if (isShuffle) {
+                const nextIndex = takeNextShuffleIndex(isRepeatAll);
+                if (nextIndex >= 0) switchTrack(nextIndex);
                 return;
             }
 
-            let nextIndex = currentTrackIndex + 1;
-            if (isShuffle) {
-                nextIndex = Math.floor(Math.random() * playlistTracks.length);
-            } else if (nextIndex >= playlistTracks.length) {
-                nextIndex = isRepeatAll ? 0 : playlistTracks.length - 1;
-            }
-            switchTrack(nextIndex);
+            const nextIndex = currentTrackIndex + 1;
+            if (nextIndex < playlistTracks.length) switchTrack(nextIndex);
+            else if (isRepeatAll) switchTrack(0);
         }
         function formatTime(seconds) {
             if (isNaN(seconds)) return "0:00";
@@ -4666,8 +4787,10 @@
             if (playBtn) playBtn.addEventListener('click', () => loadPlaylistQueue(name));
             const shuffleBtn = document.getElementById('btn-detail-shuffle-playlist');
             if (shuffleBtn) shuffleBtn.addEventListener('click', () => {
-                isShuffle = true;
+                setShuffleEnabled(true, { rebuild: false });
                 loadPlaylistQueue(name);
+                resetShuffleQueue(currentTrackIndex);
+                syncPlaybackModeButtons();
                 showToast(`Shuffle play: ${name}`);
             });
             const editBtn = document.getElementById('btn-detail-edit-playlist');
@@ -4777,10 +4900,18 @@
         function triggerMetaEdit() {
             if (!currentFile) return;
             switchWorkspaceTab('tab-library');
-            const metadataCard = document.getElementById('metadata-display-card') || document.getElementById('tab-library');
-            if (metadataCard) {
-                metadataCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            if (isMobileLayoutMode()) {
+                const middlePanel = document.getElementById('organon-middle-panel');
+                if (middlePanel && middlePanel.scrollHeight > middlePanel.clientHeight) {
+                    middlePanel.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                activateInlineRename();
+                return;
             }
+
+            const metadataCard = document.getElementById('metadata-display-card') || document.getElementById('tab-library');
+            if (metadataCard) metadataCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
             activateInlineRename();
         }
 
@@ -4833,30 +4964,11 @@
             return el;
         }
 
-        // --- 10. RE-ROUTING METADATA UTILITY DISPATCH ---
-        
-        document.getElementById('btn-repeat-one').addEventListener('click', () => {
-            isRepeatOne = !isRepeatOne;
-            document.getElementById('btn-repeat-one').classList.toggle('active-state', isRepeatOne);
-            if (isRepeatOne) {
-                isRepeatAll = false;
-                document.getElementById('btn-repeat-all').classList.remove('active-state');
-            }
-        });
-
-        document.getElementById('btn-repeat-all').addEventListener('click', () => {
-            isRepeatAll = !isRepeatAll;
-            document.getElementById('btn-repeat-all').classList.toggle('active-state', isRepeatAll);
-            if (isRepeatAll) {
-                isRepeatOne = false;
-                document.getElementById('btn-repeat-one').classList.remove('active-state');
-            }
-        });
-
-        document.getElementById('btn-shuffle').addEventListener('click', () => {
-            isShuffle = !isShuffle;
-            document.getElementById('btn-shuffle').classList.toggle('active-state', isShuffle);
-        });
+        // --- 10. PLAYBACK MODE CONTROLS ---
+        document.getElementById('btn-repeat-one').addEventListener('click', () => setRepeatMode('one'));
+        document.getElementById('btn-repeat-all').addEventListener('click', () => setRepeatMode('all'));
+        document.getElementById('btn-shuffle').addEventListener('click', () => setShuffleEnabled(!isShuffle));
+        syncPlaybackModeButtons();
 
         safeBind('btn-lyrics-modal', 'click', () => {
             if (!currentFile) return;
@@ -5736,15 +5848,157 @@
 
 
 
-        // --- 8B. SETTINGS TABS / MENU HOUSEKEEPING ---
+
+        // --- 8B. SETTINGS, LAYOUT MODE, FULLSCREEN, AND CURRENT-TRACK MARQUEE ---
         function setSettingsTab(tab = 'audio') {
-            document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.settingsTab === tab));
-            document.querySelectorAll('[data-settings-card]').forEach(card => card.classList.toggle('active', card.dataset.settingsCard === tab));
-            if (tab === 'storage') updateSettingsHealthPanel();
+            const tabs = Array.from(document.querySelectorAll('.settings-tab-btn[data-settings-tab]'));
+            const cards = Array.from(document.querySelectorAll('.settings-card[data-settings-card]'));
+            const knownTab = tabs.some(button => button.dataset.settingsTab === tab) ? tab : 'audio';
+
+            tabs.forEach(button => {
+                const active = button.dataset.settingsTab === knownTab;
+                button.classList.toggle('active', active);
+                button.setAttribute('aria-selected', String(active));
+            });
+
+            cards.forEach(card => {
+                const active = card.dataset.settingsCard === knownTab;
+                card.classList.toggle('active', active);
+                card.hidden = !active;
+                card.style.display = active
+                    ? (card.classList.contains('control-row') ? 'flex' : 'block')
+                    : 'none';
+            });
+
+            if (knownTab === 'storage') updateSettingsHealthPanel();
         }
 
+        function isNaturallyMobile() {
+            return mobileLayoutQuery.matches;
+        }
 
-        // Mobile fix pass 2: bind workspace mode buttons through JS as real buttons.
+        function applySavedLayoutMode() {
+            const desktopForced = localStorage.getItem(DESKTOP_MODE_KEY) === '1';
+            const mobileActive = !desktopForced && isNaturallyMobile();
+            document.body.classList.toggle('onda-force-desktop-mode', desktopForced);
+            document.body.classList.toggle('onda-force-mobile-mode', mobileActive);
+
+            const button = document.getElementById('btn-toggle-layout-mode');
+            if (button) {
+                button.classList.toggle('active', desktopForced);
+                button.textContent = desktopForced ? '💻' : '📱';
+                button.title = desktopForced
+                    ? 'Desktop layout forced. Tap for normal responsive layout.'
+                    : 'Responsive layout active. Tap to force desktop layout.';
+            }
+            scheduleCurrentTrackMarqueeRefresh();
+        }
+
+        function toggleDesktopMode() {
+            const next = !document.body.classList.contains('onda-force-desktop-mode');
+            localStorage.setItem(DESKTOP_MODE_KEY, next ? '1' : '0');
+            applySavedLayoutMode();
+            showToast(next ? 'Desktop layout mode on.' : 'Responsive layout restored.');
+        }
+
+        async function toggleFullscreenMode() {
+            try {
+                if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+                else await document.exitFullscreen();
+            } catch (error) {
+                showToast('Fullscreen was blocked by this browser.');
+            }
+            updateFullscreenButton();
+        }
+
+        function updateFullscreenButton() {
+            const enabled = Boolean(document.fullscreenElement);
+            document.body.classList.toggle('onda-app-fullscreen', enabled);
+            const button = document.getElementById('btn-toggle-fullscreen');
+            if (button) {
+                button.classList.toggle('active', enabled);
+                button.textContent = enabled ? '↙' : '⛶';
+                button.title = enabled ? 'Exit fullscreen' : 'Enter fullscreen';
+            }
+        }
+
+        function bindOnceElement(element, eventName, handler, bindingName) {
+            if (!element || element.dataset[bindingName] === '1') return;
+            element.addEventListener(eventName, handler);
+            element.dataset[bindingName] = '1';
+        }
+
+        function initLayoutControls() {
+            const transport = document.getElementById('start-controls-pill');
+            if (transport) transport.classList.add('onda-transport-pill');
+
+            bindOnceElement(document.getElementById('btn-toggle-layout-mode'), 'click', toggleDesktopMode, 'ondaLayoutBound');
+            bindOnceElement(document.getElementById('btn-toggle-fullscreen'), 'click', toggleFullscreenMode, 'ondaFullscreenBound');
+
+            applySavedLayoutMode();
+            updateFullscreenButton();
+        }
+
+        function prepareCurrentTrackMarqueeTitle(title) {
+            let movingText = title.querySelector(':scope > .onda-title-marquee-text');
+            if (!movingText) {
+                movingText = document.createElement('span');
+                movingText.className = 'onda-title-marquee-text';
+                movingText.textContent = title.textContent;
+                title.replaceChildren(movingText);
+            }
+
+            title.classList.remove('is-title-overflowing');
+            title.style.removeProperty('--onda-title-shift');
+            title.style.removeProperty('--onda-title-duration');
+
+            if (!isMobileLayoutMode() || title.clientWidth <= 0) return;
+            const overflow = Math.ceil(movingText.scrollWidth - title.clientWidth);
+            if (overflow <= 2) return;
+
+            title.style.setProperty('--onda-title-shift', `${overflow + 12}px`);
+            title.style.setProperty('--onda-title-duration', `${Math.max(7, Math.min(18, 6 + overflow / 35))}s`);
+            title.classList.add('is-title-overflowing');
+        }
+
+        function refreshCurrentTrackMarquees() {
+            document.querySelectorAll('.library-track-title.is-title-overflowing').forEach(title => {
+                title.classList.remove('is-title-overflowing');
+            });
+            document.querySelectorAll('.now-playing-current-track .library-track-title').forEach(prepareCurrentTrackMarqueeTitle);
+        }
+
+        function scheduleCurrentTrackMarqueeRefresh() {
+            if (marqueeFrame) cancelAnimationFrame(marqueeFrame);
+            marqueeFrame = requestAnimationFrame(() => {
+                marqueeFrame = 0;
+                refreshCurrentTrackMarquees();
+            });
+        }
+
+        function installCurrentTrackMarqueeObserver() {
+            const observer = new MutationObserver(scheduleCurrentTrackMarqueeRefresh);
+            observer.observe(document.body, { childList: true, subtree: true });
+
+            window.addEventListener('resize', () => {
+                window.clearTimeout(marqueeResizeTimer);
+                marqueeResizeTimer = window.setTimeout(scheduleCurrentTrackMarqueeRefresh, 120);
+            });
+            window.addEventListener('orientationchange', () => {
+                window.setTimeout(scheduleCurrentTrackMarqueeRefresh, 180);
+            });
+            if (document.fonts?.ready) document.fonts.ready.then(scheduleCurrentTrackMarqueeRefresh).catch(() => {});
+            scheduleCurrentTrackMarqueeRefresh();
+        }
+
+        function announceOndaVersion() {
+            window.ONDA_VERSION = ONDA_VERSION;
+            document.documentElement.dataset.ondaVersion = ONDA_VERSION;
+            console.info(`Onda ${ONDA_VERSION} loaded`);
+            window.setTimeout(() => showToast(`Onda ${ONDA_VERSION} loaded`), 260);
+        }
+
+        // Workspace mode buttons are bound here as the canonical mobile/desktop tab controls.
         // This keeps mobile tab switching reliable even when labels are visually hidden
         // and prevents the active viewport from stealing tap focus.
         function bindWorkspaceModeButtons() {
@@ -5774,11 +6028,30 @@
         }
         bindWorkspaceModeButtons();
 
-        document.querySelectorAll('.settings-tab-btn').forEach(btn => btn.addEventListener('click', () => setSettingsTab(btn.dataset.settingsTab || 'audio')));
-        setSettingsTab('audio');
+        document.querySelectorAll('.settings-tab-btn[data-settings-tab]').forEach(button => {
+            bindOnceElement(button, 'click', () => setSettingsTab(button.dataset.settingsTab || 'audio'), 'ondaSettingsTabBound');
+        });
+        initLayoutControls();
+        setSettingsTab(document.querySelector('.settings-tab-btn.active')?.dataset.settingsTab || 'audio');
+        installCurrentTrackMarqueeObserver();
+        announceOndaVersion();
         document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
         safeBind('btn-open-cloud-setup-from-settings', 'click', () => { if (typeof openOndaCloudSetup === 'function') openOndaCloudSetup(false); else document.getElementById('onda-cloud-setup-modal')?.classList.add('open'); });
         safeBind('btn-settings-cloud-save', 'click', () => { const btn = document.getElementById('onda-cloud-save-current'); if (btn) btn.click(); else showToast('Cloud setup is not ready yet.'); });
+
+        document.addEventListener('fullscreenchange', updateFullscreenButton);
+        if (typeof mobileLayoutQuery.addEventListener === 'function') {
+            mobileLayoutQuery.addEventListener('change', applySavedLayoutMode);
+        } else if (typeof mobileLayoutQuery.addListener === 'function') {
+            mobileLayoutQuery.addListener(applySavedLayoutMode);
+        }
+
+        window.OndaLayoutControls = {
+            applySavedLayoutMode,
+            toggleDesktopMode,
+            toggleFullscreenMode,
+            activateSettingsTab: setSettingsTab
+        };
 
         window.addEventListener('resize', () => {
             saveLocalUiStateCheckpoint('screen-resize');
