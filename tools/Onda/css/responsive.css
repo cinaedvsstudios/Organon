@@ -1564,6 +1564,38 @@ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools #btn-det
   }
 }
 
+/* Mobile Playlist Management uses the same horizontal-card pattern as the Library playlist strip. */
+@media (max-width: 768px) {
+  body.onda-force-mobile-mode #tab-playlists > .help-text {
+    display: none;
+  }
+
+  body.onda-force-mobile-mode #playlists-explorer-group {
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-top: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 6px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  body.onda-force-mobile-mode #playlists-explorer-group::-webkit-scrollbar {
+    display: none;
+  }
+
+  body.onda-force-mobile-mode #playlists-explorer-group > .playlist-row {
+    flex: 0 0 70%;
+    margin-bottom: 0;
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+}
+
 /* Automatic mobile scrolling for overflowing track titles and file names. */
 @keyframes onda-mobile-marquee-loop {
   from {

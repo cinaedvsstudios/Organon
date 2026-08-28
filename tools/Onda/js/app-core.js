@@ -68,7 +68,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.9';
+        const ONDA_VERSION = 'v3.10';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -5954,30 +5954,45 @@
             updateFullscreenButton();
         }
 
+        function clearMobileMarqueeState(element, { keepMobileClass = false } = {}) {
+            if (!element) return;
+            const track = element.querySelector(':scope > .onda-marquee-track');
+            const sourceText = element.dataset.ondaMarqueeText || (track?.querySelector(':scope > .onda-marquee-segment:not([data-marquee-copy])')?.textContent || element.textContent || '').trim();
+            if (track && sourceText) element.textContent = sourceText;
+            element.classList.remove('is-marquee-overflowing');
+            if (!keepMobileClass) element.classList.remove('onda-mobile-marquee');
+            element.style.removeProperty('--onda-marquee-distance');
+            element.style.removeProperty('--onda-marquee-duration');
+            element.style.removeProperty('--onda-marquee-gap');
+            delete element.dataset.ondaMarqueeSignature;
+        }
+
         function prepareMobileMarqueeText(element) {
             if (!element) return;
 
             let track = element.querySelector(':scope > .onda-marquee-track');
             let sourceText = element.dataset.ondaMarqueeText || '';
-            if (!track) {
-                const liveText = (element.textContent || '').trim();
-                if (liveText) sourceText = liveText;
+            if (!sourceText) {
+                sourceText = (track?.querySelector(':scope > .onda-marquee-segment:not([data-marquee-copy])')?.textContent || element.textContent || '').trim();
             }
             if (!sourceText) return;
 
             element.dataset.ondaMarqueeText = sourceText;
-            element.classList.remove('is-marquee-overflowing');
-            element.style.removeProperty('--onda-marquee-distance');
-            element.style.removeProperty('--onda-marquee-duration');
-            element.style.setProperty('--onda-marquee-gap', `${MOBILE_MARQUEE_GAP_PX}px`);
+            const mobileMode = isMobileLayoutMode();
+            element.classList.toggle('onda-mobile-marquee', mobileMode);
 
-            if (!isMobileLayoutMode() || reducedMotionQuery.matches || element.clientWidth <= 0) {
-                if (track) element.textContent = sourceText;
-                element.classList.toggle('onda-mobile-marquee', isMobileLayoutMode());
+            if (!mobileMode) {
+                clearMobileMarqueeState(element);
                 return;
             }
 
-            element.classList.add('onda-mobile-marquee');
+            if (reducedMotionQuery.matches || element.clientWidth <= 0) {
+                clearMobileMarqueeState(element, { keepMobileClass: true });
+                element.classList.add('onda-mobile-marquee');
+                element.dataset.ondaMarqueeText = sourceText;
+                return;
+            }
+
             if (!track) {
                 track = document.createElement('span');
                 track.className = 'onda-marquee-track';
@@ -6004,6 +6019,11 @@
             if (contentWidth <= availableWidth + 2) {
                 if (gap) gap.remove();
                 if (copy) copy.remove();
+                element.classList.remove('is-marquee-overflowing');
+                element.style.removeProperty('--onda-marquee-distance');
+                element.style.removeProperty('--onda-marquee-duration');
+                element.style.setProperty('--onda-marquee-gap', `${MOBILE_MARQUEE_GAP_PX}px`);
+                element.dataset.ondaMarqueeSignature = `static:${sourceText}:${availableWidth}:${contentWidth}`;
                 return;
             }
 
@@ -6024,8 +6044,17 @@
 
             const characterCount = Math.max(1, Array.from(sourceText).length);
             const durationSeconds = Math.max(4, (characterCount + 6) / 3);
-            element.style.setProperty('--onda-marquee-distance', `${contentWidth + MOBILE_MARQUEE_GAP_PX}px`);
+            const marqueeDistance = contentWidth + MOBILE_MARQUEE_GAP_PX;
+            const signature = `scroll:${sourceText}:${availableWidth}:${contentWidth}:${marqueeDistance}:${durationSeconds.toFixed(2)}`;
+
+            if (element.dataset.ondaMarqueeSignature === signature && element.classList.contains('is-marquee-overflowing')) {
+                return;
+            }
+
+            element.style.setProperty('--onda-marquee-gap', `${MOBILE_MARQUEE_GAP_PX}px`);
+            element.style.setProperty('--onda-marquee-distance', `${marqueeDistance}px`);
             element.style.setProperty('--onda-marquee-duration', `${durationSeconds.toFixed(2)}s`);
+            element.dataset.ondaMarqueeSignature = signature;
             element.classList.add('is-marquee-overflowing');
         }
 
@@ -6042,8 +6071,25 @@
         }
 
         function installMobileMarqueeObserver() {
-            const observer = new MutationObserver(scheduleMobileMarqueeRefresh);
-            observer.observe(document.body, { childList: true, subtree: true });
+            const marqueeRoots = [
+                '#history-list',
+                '#history-card-grid',
+                '#db-library-results',
+                '#db-recent-list',
+                '#playlist-detail-panel',
+                '#playlist-edit-track-list',
+                '#now-playing-playlist-panel'
+            ].map(selector => document.querySelector(selector)).filter(Boolean);
+
+            const observer = new MutationObserver((mutations) => {
+                const hasRelevantMutation = mutations.some((mutation) => {
+                    const target = mutation.target?.nodeType === 1 ? mutation.target : mutation.target?.parentElement;
+                    return target && !target.closest('.onda-mobile-marquee');
+                });
+                if (hasRelevantMutation) scheduleMobileMarqueeRefresh();
+            });
+
+            marqueeRoots.forEach(root => observer.observe(root, { childList: true, subtree: true }));
 
             window.addEventListener('resize', () => {
                 window.clearTimeout(marqueeResizeTimer);
