@@ -42,6 +42,7 @@
         const row = document.getElementById('tab-row');
         if (!row) return;
         row.innerHTML = '';
+        const projectEditing = Boolean(window.CodeWriterState.project && window.CodeWriterState.project.editMode);
         window.CodeWriterState.tabs.forEach(tab => {
             const button = document.createElement('button');
             button.type = 'button';
@@ -49,7 +50,8 @@
             if (tab.id === window.CodeWriterState.activeTabId) button.classList.add('active');
             if (window.CodeWriterStore.isTabUnsaved(tab)) button.classList.add('unsaved');
             button.dataset.tabId = tab.id;
-            button.title = `${tab.filename}${tab.nickname ? ` · nickname: ${tab.nickname}` : ''}\nDouble-click to rename tab nickname.`;
+            button.draggable = projectEditing;
+            button.title = `${tab.filename}${tab.nickname ? ` · nickname: ${tab.nickname}` : ''}\nDouble-click to rename tab nickname.${projectEditing ? '\nDrag to reorder while Project Edit is on.' : ''}`;
 
             const dot = document.createElement('span');
             dot.className = 'unsaved-dot';
@@ -93,15 +95,76 @@
                 updateEverything({ skipPreview: true });
             });
 
+            button.addEventListener('dragstart', event => {
+                if (!projectEditing) {
+                    event.preventDefault();
+                    return;
+                }
+                window.CodeWriterState.draggingTabId = tab.id;
+                button.classList.add('dragging-tab');
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', tab.id);
+                }
+            });
+
+            button.addEventListener('dragend', () => {
+                button.classList.remove('dragging-tab');
+                document.querySelectorAll('.drag-over-tab').forEach(el => el.classList.remove('drag-over-tab'));
+                window.CodeWriterState.draggingTabId = null;
+            });
+
+            button.addEventListener('dragover', event => {
+                if (!projectEditing) return;
+                event.preventDefault();
+                button.classList.add('drag-over-tab');
+            });
+
+            button.addEventListener('dragleave', () => {
+                button.classList.remove('drag-over-tab');
+            });
+
+            button.addEventListener('drop', event => {
+                if (!projectEditing) return;
+                event.preventDefault();
+                button.classList.remove('drag-over-tab');
+                const dragId = (event.dataTransfer && event.dataTransfer.getData('text/plain')) || window.CodeWriterState.draggingTabId;
+                if (window.CodeWriterStore.reorderTab(dragId, tab.id)) {
+                    updateEverything({ skipPreview: true });
+                    toast('Project tab order updated.');
+                }
+            });
+
             row.appendChild(button);
         });
     }
 
     function renderProject() {
+        const project = window.CodeWriterState.project || {};
         const label = document.getElementById('project-name-label');
         const dot = document.querySelector('.project-color-dot');
-        if (label) label.textContent = window.CodeWriterState.project.name;
-        if (dot) dot.style.backgroundColor = window.CodeWriterState.project.color;
+        const strip = document.getElementById('project-strip');
+        const group = document.getElementById('project-group');
+        const collapse = document.getElementById('project-collapse-btn');
+        const restore = document.getElementById('project-restore-btn');
+        const editToggle = document.getElementById('project-edit-toggle-btn');
+        if (label) label.textContent = project.name || 'Project 1';
+        if (dot) dot.style.backgroundColor = project.color || '#4B84BF';
+        if (group) {
+            group.style.borderColor = project.color || '#4B84BF';
+            group.style.background = `linear-gradient(90deg, ${project.color || '#4B84BF'}55, rgba(24,25,25,0.66) 35%, rgba(24,25,25,0.42))`;
+        }
+        if (strip) {
+            strip.classList.toggle('project-collapsed', Boolean(project.collapsed));
+            strip.classList.toggle('project-hidden', Boolean(project.hidden));
+            strip.classList.toggle('project-editing', Boolean(project.editMode));
+        }
+        if (collapse) {
+            collapse.textContent = project.collapsed ? '▸' : '▾';
+            collapse.title = project.collapsed ? 'Expand this project' : 'Collapse this project';
+        }
+        if (restore) restore.classList.toggle('hidden', !project.hidden);
+        if (editToggle) editToggle.textContent = project.editMode ? 'Edit off' : 'Edit';
     }
 
     function renderCounts() {
@@ -136,11 +199,13 @@
 
     function syncPreviewHiddenState() {
         const app = document.getElementById('app-wrapper');
-        const button = document.getElementById('toggle-preview-btn');
+        const topShowButton = document.getElementById('open-preview-btn');
+        const previewHideButton = document.getElementById('preview-hide-btn');
         const tab = window.CodeWriterStore.getActiveTab();
         const hidden = Boolean(tab && tab.previewHidden);
         if (app) app.classList.toggle('preview-hidden', hidden);
-        if (button) button.textContent = hidden ? 'Show Preview' : 'Hide Preview';
+        if (topShowButton) topShowButton.classList.toggle('hidden', !hidden);
+        if (previewHideButton) previewHideButton.textContent = 'Hide window';
     }
 
     function syncBookmarkModeState() {
@@ -339,10 +404,13 @@
         registerHoverDescription('#export-html-btn', 'Export the current tab as an HTML/text file.');
         registerHoverDescription('#copy-html-btn', 'Copy the current raw code to the clipboard.');
         registerHoverDescription('#check-code-btn', 'Run the basic Code Writer structural check and open the report window.');
-        registerHoverDescription('#toggle-preview-btn', 'Hide or show the Preview / WYSIWYG View for this file.');
+        registerHoverDescription('#preview-hide-btn', 'Hide the Preview / WYSIWYG window for this file.');
+        registerHoverDescription('#open-preview-btn', 'Open the hidden Preview / WYSIWYG window again.');
         registerHoverDescription('#extended-raw-btn', 'Switch between normal split view and a wider Raw View workspace.');
         registerHoverDescription('#add-bookmark-btn', 'Add an editor-only bookmark at the current raw editor line.');
         registerHoverDescription('#insert-block-btn', 'Insert the selected building block at the current raw cursor position.');
+        registerHoverDescription('#bottom-panel-handle', 'Open or collapse the bottom action bar.');
+        registerHoverDescription('#bottom-lock-btn', 'Lock the bottom action bar open, or unlock it so it collapses again.');
     }
 
     window.CodeWriterUI = {

@@ -924,3 +924,309 @@ body.dragging-splitter {
         border-bottom: 1px solid rgba(137, 107, 73, 0.45);
     }
 }
+
+/* ==========================================================
+   v0.02 layout refinement pass
+   ========================================================== */
+.title-left-cluster {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.title-copy-cluster {
+    flex: 0 0 auto;
+    min-width: 150px;
+}
+
+.title-status-divider {
+    align-self: stretch;
+    width: 2px;
+    min-height: 31px;
+    margin: 0 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(154, 47, 79, 0.05), var(--brand-red), rgba(154, 47, 79, 0.05));
+    box-shadow: 0 0 8px rgba(154, 47, 79, 0.55);
+}
+
+.title-status-cluster {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.title-status-cluster .stat-pill {
+    min-height: 24px;
+    padding: 3px 9px;
+    background-color: rgba(74, 21, 37, 0.34);
+    border-color: rgba(154, 47, 79, 0.58);
+    color: var(--alabaster-paper);
+}
+
+.show-preview-btn.hidden {
+    display: none !important;
+}
+
+.project-strip {
+    position: relative;
+    gap: 8px;
+}
+
+.project-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px;
+    border: 1px solid rgba(75, 132, 191, 0.45);
+    border-radius: 9999px;
+    background: linear-gradient(90deg, rgba(75, 132, 191, 0.42), rgba(24, 25, 25, 0.66) 35%, rgba(24, 25, 25, 0.42));
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03), 0 3px 12px rgba(0, 0, 0, 0.22);
+}
+
+.project-strip.project-hidden .project-group {
+    display: none;
+}
+
+.project-chip {
+    min-width: 124px;
+    max-width: 220px;
+    border-color: rgba(117, 178, 222, 0.58);
+    background: rgba(24, 25, 25, 0.86);
+    font-weight: 700;
+}
+
+.project-edit-indicator {
+    display: none;
+    margin-left: auto;
+    padding: 1px 6px;
+    border-radius: 999px;
+    border: 1px solid rgba(154, 47, 79, 0.75);
+    color: #ffb2c7;
+    font-family: var(--font-mono);
+    font-size: 0.52rem;
+    letter-spacing: 0.05em;
+}
+
+.project-strip.project-editing .project-edit-indicator {
+    display: inline-flex;
+}
+
+.project-strip.project-editing .project-chip,
+.project-strip.project-editing .project-group {
+    animation: project-edit-pulse 1.05s ease-in-out infinite alternate;
+}
+
+@keyframes project-edit-pulse {
+    from {
+        box-shadow: 0 0 6px rgba(154, 47, 79, 0.28), inset 0 0 0 1px rgba(154, 47, 79, 0.18);
+    }
+    to {
+        box-shadow: 0 0 20px rgba(154, 47, 79, 0.72), inset 0 0 0 1px rgba(154, 47, 79, 0.38);
+    }
+}
+
+.project-mini-btn {
+    flex: 0 0 auto;
+    width: 27px;
+    height: 27px;
+    padding: 0;
+    border-radius: 9999px;
+    border: 1px solid var(--chiseled-bronze);
+    background-color: rgba(24, 25, 25, 0.9);
+    color: var(--water-spray);
+    cursor: pointer;
+}
+
+.project-mini-btn:hover {
+    border-color: var(--water-spray);
+    box-shadow: 0 0 8px rgba(117, 178, 222, 0.25);
+}
+
+.project-strip.project-collapsed .tab-row,
+.project-strip.project-collapsed .tab-add-btn {
+    display: none;
+}
+
+.project-strip.project-collapsed .project-group {
+    flex: 0 0 auto;
+    padding-right: 6px;
+}
+
+.project-menu {
+    position: fixed;
+    z-index: 80;
+    min-width: 154px;
+    padding: 6px;
+    border: 1px solid var(--chiseled-bronze);
+    border-radius: 14px;
+    background-color: rgba(24, 25, 25, 0.98);
+    box-shadow: 0 16px 45px rgba(0, 0, 0, 0.58);
+}
+
+.project-menu button {
+    display: block;
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--alabaster-paper);
+    text-align: left;
+    padding: 8px 10px;
+    cursor: pointer;
+    font-size: 0.78rem;
+}
+
+.project-menu button:hover {
+    background-color: rgba(75, 132, 191, 0.24);
+    color: var(--water-spray);
+}
+
+.file-tab[draggable="true"] {
+    cursor: grab;
+}
+
+.file-tab.dragging-tab {
+    opacity: 0.45;
+}
+
+.file-tab.drag-over-tab {
+    border-color: var(--brand-red);
+    box-shadow: 0 0 12px rgba(154, 47, 79, 0.45);
+}
+
+.toolbar-grid {
+    grid-template-columns: 1fr auto;
+}
+
+.mode-block {
+    justify-content: flex-start;
+}
+
+.raw-pane {
+    position: relative;
+}
+
+.raw-pane .floating-nav {
+    position: absolute;
+    right: 12px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    z-index: 18;
+}
+
+.bottom-control-panel {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 6px;
+    padding: 5px 12px 7px;
+    transition: padding 0.22s ease;
+}
+
+.bottom-panel-handle-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+.bottom-panel-handle,
+.bottom-lock-btn {
+    border-radius: 9999px;
+    border: 1px solid var(--chiseled-bronze);
+    background-color: rgba(24, 25, 25, 0.88);
+    color: var(--water-spray);
+    cursor: pointer;
+    min-height: 24px;
+    padding: 3px 12px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+}
+
+.bottom-lock-btn {
+    width: 30px;
+    padding: 0;
+}
+
+.bottom-panel-actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    max-height: 0;
+    opacity: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    pointer-events: none;
+    transform: translateY(8px);
+    transition: max-height 0.22s ease, opacity 0.22s ease, transform 0.22s ease;
+}
+
+.bottom-control-panel:hover .bottom-panel-actions,
+.bottom-control-panel.open .bottom-panel-actions,
+.bottom-control-panel.locked .bottom-panel-actions {
+    max-height: 58px;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.bottom-control-panel:hover,
+.bottom-control-panel.open,
+.bottom-control-panel.locked {
+    padding-top: 7px;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 760px) {
+    .title-pill {
+        flex-direction: column;
+    }
+
+    .title-left-cluster {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .title-status-divider {
+        display: none;
+    }
+
+    .title-status-cluster {
+        width: 100%;
+    }
+
+    .title-right-cluster {
+        width: 100%;
+        flex-direction: row;
+        justify-content: flex-end;
+    }
+
+    .project-group {
+        border-radius: 24px;
+        flex-wrap: wrap;
+    }
+
+    .project-chip {
+        width: auto;
+        max-width: calc(100% - 72px);
+    }
+
+    .tab-row {
+        width: calc(100% - 42px);
+    }
+
+    .raw-pane .floating-nav {
+        right: 8px;
+        bottom: 12px;
+    }
+
+    .bottom-panel-actions {
+        justify-content: flex-start;
+    }
+}

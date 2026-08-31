@@ -333,6 +333,123 @@
         }
     }
 
+    function setPreviewHidden(hidden) {
+        const tab = window.CodeWriterStore.getActiveTab();
+        if (!tab) return;
+        tab.previewHidden = Boolean(hidden);
+        window.CodeWriterStore.saveLocalState();
+        window.CodeWriterUI.updateEverything();
+        window.CodeWriterUI.toast(tab.previewHidden ? 'Preview hidden for this file.' : 'Preview window opened.');
+    }
+
+    function hideProjectMenu() {
+        const menu = document.getElementById('project-menu');
+        if (menu) menu.classList.add('hidden');
+    }
+
+    function setupProjectControls() {
+        const project = window.CodeWriterState.project;
+        const chip = document.getElementById('project-chip');
+        const group = document.getElementById('project-group');
+        const menu = document.getElementById('project-menu');
+        const collapse = document.getElementById('project-collapse-btn');
+        const hide = document.getElementById('project-hide-btn');
+        const restore = document.getElementById('project-restore-btn');
+        const editToggle = document.getElementById('project-edit-toggle-btn');
+        const rename = document.getElementById('project-rename-btn');
+        const properties = document.getElementById('project-properties-btn');
+
+        function openMenu(event) {
+            if (!menu) return;
+            event.preventDefault();
+            menu.style.left = `${Math.min(event.clientX, window.innerWidth - 180)}px`;
+            menu.style.top = `${Math.min(event.clientY, window.innerHeight - 150)}px`;
+            menu.classList.remove('hidden');
+        }
+
+        if (chip) chip.addEventListener('contextmenu', openMenu);
+        if (group) group.addEventListener('contextmenu', openMenu);
+
+        if (collapse) collapse.addEventListener('click', event => {
+            event.stopPropagation();
+            project.collapsed = !project.collapsed;
+            window.CodeWriterStore.saveLocalState();
+            window.CodeWriterUI.updateEverything({ skipPreview: true });
+            window.CodeWriterUI.toast(project.collapsed ? 'Project collapsed.' : 'Project expanded.');
+        });
+
+        if (hide) hide.addEventListener('click', event => {
+            event.stopPropagation();
+            project.hidden = true;
+            project.editMode = false;
+            window.CodeWriterStore.saveLocalState();
+            window.CodeWriterUI.updateEverything({ skipPreview: true });
+            window.CodeWriterUI.toast('Project strip hidden.');
+        });
+
+        if (restore) restore.addEventListener('click', () => {
+            project.hidden = false;
+            window.CodeWriterStore.saveLocalState();
+            window.CodeWriterUI.updateEverything({ skipPreview: true });
+            window.CodeWriterUI.toast('Project strip restored.');
+        });
+
+        if (editToggle) editToggle.addEventListener('click', () => {
+            project.editMode = !project.editMode;
+            window.CodeWriterStore.saveLocalState();
+            window.CodeWriterUI.updateEverything({ skipPreview: true });
+            hideProjectMenu();
+            window.CodeWriterUI.toast(project.editMode ? 'Project edit mode on. Tabs can be dragged.' : 'Project edit mode off. Tabs are locked.');
+        });
+
+        if (rename) rename.addEventListener('click', () => {
+            const nextName = prompt('Rename project', project.name || 'Project 1');
+            if (nextName !== null && nextName.trim()) {
+                project.name = nextName.trim();
+                window.CodeWriterStore.saveLocalState();
+                window.CodeWriterUI.updateEverything({ skipPreview: true });
+                window.CodeWriterUI.toast('Project renamed.');
+            }
+            hideProjectMenu();
+        });
+
+        if (properties) properties.addEventListener('click', () => {
+            const changedCount = window.CodeWriterState.tabs.filter(tab => window.CodeWriterStore.isTabUnsaved(tab)).length;
+            window.CodeWriterUI.toast(`${project.name || 'Project'}: ${window.CodeWriterState.tabs.length} tab(s), ${changedCount} changed.`);
+            hideProjectMenu();
+        });
+
+        document.addEventListener('click', event => {
+            if (!menu || menu.classList.contains('hidden')) return;
+            if (menu.contains(event.target)) return;
+            hideProjectMenu();
+        });
+    }
+
+    function setupBottomPanelControls() {
+        const panel = document.getElementById('bottom-control-panel');
+        const handle = document.getElementById('bottom-panel-handle');
+        const lock = document.getElementById('bottom-lock-btn');
+        if (!panel) return;
+
+        if (handle) handle.addEventListener('click', () => {
+            panel.classList.toggle('open');
+            if (panel.classList.contains('open')) {
+                handle.textContent = 'Actions ▼';
+            } else {
+                handle.textContent = 'Actions ▲';
+            }
+        });
+
+        if (lock) lock.addEventListener('click', () => {
+            panel.classList.toggle('locked');
+            const locked = panel.classList.contains('locked');
+            lock.textContent = locked ? '🔒' : '🔓';
+            if (handle) handle.textContent = locked ? 'Actions ▼' : 'Actions ▲';
+            window.CodeWriterUI.toast(locked ? 'Bottom action bar locked open.' : 'Bottom action bar unlocked.');
+        });
+    }
+
     function setupMainEvents() {
         const editor = getEditor();
         const app = document.getElementById('app-wrapper');
@@ -396,14 +513,16 @@
             }
         });
 
+        const previewHide = document.getElementById('preview-hide-btn');
+        if (previewHide) previewHide.addEventListener('click', () => setPreviewHidden(true));
+
+        const openPreview = document.getElementById('open-preview-btn');
+        if (openPreview) openPreview.addEventListener('click', () => setPreviewHidden(false));
+
         const togglePreview = document.getElementById('toggle-preview-btn');
         if (togglePreview) togglePreview.addEventListener('click', () => {
             const tab = window.CodeWriterStore.getActiveTab();
-            if (!tab) return;
-            tab.previewHidden = !tab.previewHidden;
-            window.CodeWriterStore.saveLocalState();
-            window.CodeWriterUI.updateEverything();
-            window.CodeWriterUI.toast(tab.previewHidden ? 'Preview hidden for this file.' : 'Preview shown for this file.');
+            setPreviewHidden(!(tab && tab.previewHidden));
         });
 
         const mobileToggle = document.getElementById('mobile-view-toggle');
@@ -474,6 +593,8 @@
             window.open('../../repository/index.html', '_blank', 'noopener,noreferrer');
         });
 
+        setupProjectControls();
+        setupBottomPanelControls();
         setupPasteDialogActions();
         setupSplitter();
     }
@@ -491,7 +612,7 @@
         window.CodeWriterFiles.loadDefaultBuildingBlocks();
         loadActiveTabIntoEditor({ preserveCursor: false });
         window.CodeWriterUI.updateEverything();
-        window.CodeWriterUI.toast('Code Writer v0.01 ready.');
+        window.CodeWriterUI.toast('Code Writer v0.02 ready.');
     }
 
     window.CodeWriterEditor = {

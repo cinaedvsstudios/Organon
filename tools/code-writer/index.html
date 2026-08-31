@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organon Code Writer v0.01</title>
+    <title>Organon Code Writer v0.02</title>
 
     <script>
         /*
@@ -30,37 +30,49 @@
             <div class="title-pill top-title-pill">
                 <div class="title-left-cluster">
                     <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the control bar">5</button>
-                    <div>
+                    <div class="title-copy-cluster">
                         <div class="tool-title">Code Writer</div>
-                        <div class="tool-subtitle">HTML editor v0.01 · Phase 1 base</div>
+                        <div class="tool-subtitle">HTML editor v0.02 · Phase 1 layout pass</div>
+                    </div>
+                    <div class="title-status-divider" aria-hidden="true"></div>
+                    <div class="title-status-cluster" aria-label="Active document stats">
+                        <span class="stat-pill" id="line-count-pill">Lines: 0</span>
+                        <span class="stat-pill" id="char-count-pill">Chars: 0</span>
+                        <span class="stat-pill" id="cursor-pill">Ln 1, Col 1</span>
                     </div>
                 </div>
                 <div class="title-right-cluster">
                     <span id="direct-open-badge" class="mini-badge hidden">standalone test mode</span>
+                    <button type="button" class="small-pill-btn show-preview-btn hidden" id="open-preview-btn" title="Open the hidden Preview / WYSIWYG window">Open Preview</button>
                     <button type="button" class="small-pill-btn" id="repository-btn" title="Open repository reference">Repository</button>
                 </div>
             </div>
 
             <div class="panel-content-hide top-controls-wrap">
                 <section class="project-strip" id="project-strip">
-                    <button type="button" class="project-chip" id="project-chip" title="Right-click project actions will expand in a later Phase 1 build">
-                        <span class="project-color-dot"></span>
-                        <span id="project-name-label">Project 1</span>
-                    </button>
-                    <div class="tab-row" id="tab-row" aria-label="Open file tabs"></div>
-                    <button type="button" class="tab-add-btn" id="new-tab-btn" title="Create a new blank tab">+</button>
+                    <div class="project-group" id="project-group">
+                        <button type="button" class="project-chip" id="project-chip" title="Right-click for project actions">
+                            <span class="project-color-dot"></span>
+                            <span id="project-name-label">Project 1</span>
+                            <span class="project-edit-indicator" aria-hidden="true">EDIT</span>
+                        </button>
+                        <button type="button" class="project-mini-btn" id="project-collapse-btn" title="Collapse or expand this project">▾</button>
+                        <button type="button" class="project-mini-btn" id="project-hide-btn" title="Hide this project strip">×</button>
+                        <div class="tab-row" id="tab-row" aria-label="Open file tabs"></div>
+                        <button type="button" class="tab-add-btn" id="new-tab-btn" title="Create a new blank tab">+</button>
+                    </div>
+                    <button type="button" class="small-pill-btn hidden" id="project-restore-btn">Show Project</button>
                 </section>
 
-                <section class="toolbar-grid" aria-label="Code writer controls">
-                    <div class="toolbar-block counts-block">
-                        <span class="stat-pill" id="line-count-pill">Lines: 0</span>
-                        <span class="stat-pill" id="char-count-pill">Chars: 0</span>
-                        <span class="stat-pill" id="cursor-pill">Ln 1, Col 1</span>
-                    </div>
+                <div class="project-menu hidden" id="project-menu" role="menu" aria-label="Project actions">
+                    <button type="button" id="project-edit-toggle-btn">Edit</button>
+                    <button type="button" id="project-rename-btn">Rename</button>
+                    <button type="button" id="project-properties-btn">Properties</button>
+                </div>
 
+                <section class="toolbar-grid" aria-label="Code writer controls">
                     <div class="toolbar-block mode-block">
                         <button type="button" class="small-pill-btn" id="mobile-view-toggle">Toggle Raw / Preview</button>
-                        <button type="button" class="small-pill-btn" id="toggle-preview-btn">Hide Preview</button>
                         <button type="button" class="small-pill-btn" id="extended-raw-btn">Extended Raw</button>
                     </div>
 
@@ -97,6 +109,12 @@
                     </div>
                     <textarea id="raw-editor" class="raw-editor" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Raw HTML editor"></textarea>
                 </div>
+
+                <aside class="floating-nav" aria-label="Raw View floating navigation controls">
+                    <button type="button" class="float-btn" id="page-up-btn" title="Page up, or previous bookmark when bookmark mode is on">▲</button>
+                    <button type="button" class="float-btn bookmark-toggle" id="bookmark-mode-btn" title="Toggle bookmark navigation mode">◇</button>
+                    <button type="button" class="float-btn" id="page-down-btn" title="Page down, or next bookmark when bookmark mode is on">▼</button>
+                </aside>
             </section>
 
             <div class="splitter" id="splitter" title="Drag to resize split view"></div>
@@ -109,6 +127,7 @@
                     </div>
                     <div class="pane-actions">
                         <button type="button" class="micro-btn" id="visual-edit-btn">Visual edit off</button>
+                        <button type="button" class="micro-btn" id="preview-hide-btn">Hide window</button>
                         <button type="button" class="micro-btn" id="refresh-preview-btn">Refresh</button>
                     </div>
                 </div>
@@ -116,20 +135,21 @@
             </section>
         </main>
 
-        <aside class="floating-nav" aria-label="Floating navigation controls">
-            <button type="button" class="float-btn" id="page-up-btn" title="Page up, or previous bookmark when bookmark mode is on">▲</button>
-            <button type="button" class="float-btn bookmark-toggle" id="bookmark-mode-btn" title="Toggle bookmark navigation mode">◇</button>
-            <button type="button" class="float-btn" id="page-down-btn" title="Page down, or next bookmark when bookmark mode is on">▼</button>
-        </aside>
 
         <footer class="bottom-control-panel" id="bottom-control-panel">
-            <button type="button" class="btn-pill" id="load-sample-btn">Load sample</button>
-            <button type="button" class="btn-pill" id="paste-html-btn">Paste HTML</button>
-            <button type="button" class="btn-pill" id="open-file-btn">Open file</button>
-            <button type="button" class="btn-pill" id="source-save-btn">Save</button>
-            <button type="button" class="btn-pill" id="export-html-btn">Export</button>
-            <button type="button" class="btn-pill" id="copy-html-btn">Copy HTML</button>
-            <button type="button" class="btn-pill" id="check-code-btn">Check Code</button>
+            <div class="bottom-panel-handle-row">
+                <button type="button" class="bottom-panel-handle" id="bottom-panel-handle">Actions ▲</button>
+                <button type="button" class="bottom-lock-btn" id="bottom-lock-btn" title="Lock the bottom action bar open">🔓</button>
+            </div>
+            <div class="bottom-panel-actions" id="bottom-panel-actions">
+                <button type="button" class="btn-pill" id="load-sample-btn">Load sample</button>
+                <button type="button" class="btn-pill" id="paste-html-btn">Paste HTML</button>
+                <button type="button" class="btn-pill" id="open-file-btn">Open file</button>
+                <button type="button" class="btn-pill" id="source-save-btn">Save</button>
+                <button type="button" class="btn-pill" id="export-html-btn">Export</button>
+                <button type="button" class="btn-pill" id="copy-html-btn">Copy HTML</button>
+                <button type="button" class="btn-pill" id="check-code-btn">Check Code</button>
+            </div>
             <input type="file" id="file-input" class="hidden" accept=".html,.htm,.txt,.css,.js,.json,.csv,text/html,text/plain">
         </footer>
     </div>

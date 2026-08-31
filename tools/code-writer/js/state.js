@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'organon-code-writer-v001-state';
+    const STORAGE_KEY = 'organon-code-writer-v002-state';
 
     function makeId(prefix) {
         return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -61,7 +61,7 @@
     }
 
     const state = {
-        version: '0.01',
+        version: '0.02',
         storageKey: STORAGE_KEY,
         tabs: [],
         activeTabId: null,
@@ -69,7 +69,9 @@
             id: 'project-1',
             name: 'Project 1',
             color: '#4B84BF',
-            collapsed: false
+            collapsed: false,
+            hidden: false,
+            editMode: false
         },
         rawWidth: 52,
         visualEditEnabled: false,
@@ -119,6 +121,18 @@
             const nextTab = state.tabs[Math.max(0, index - 1)] || state.tabs[0];
             state.activeTabId = nextTab.id;
         }
+        saveLocalState();
+        return true;
+    }
+
+    function reorderTab(dragTabId, targetTabId) {
+        if (!dragTabId || !targetTabId || dragTabId === targetTabId) return false;
+        const fromIndex = state.tabs.findIndex(tab => tab.id === dragTabId);
+        const toIndex = state.tabs.findIndex(tab => tab.id === targetTabId);
+        if (fromIndex === -1 || toIndex === -1) return false;
+        const [moved] = state.tabs.splice(fromIndex, 1);
+        const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+        state.tabs.splice(adjustedToIndex, 0, moved);
         saveLocalState();
         return true;
     }
@@ -204,6 +218,7 @@
         setActiveTab,
         addTab,
         closeTab,
+        reorderTab,
         updateActiveContent,
         isTabUnsaved,
         saveLocalState,

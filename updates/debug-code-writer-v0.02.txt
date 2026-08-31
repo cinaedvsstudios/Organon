@@ -1,0 +1,114 @@
+CODE WRITER v0.02 DEBUG NOTES
+Phase 1 layout and project-control refinement pass
+
+SUMMARY OF THIS VERSION
+
+This version updates the first Code Writer scaffold based on the screenshot feedback.
+
+Main changes:
+
+1. Moved document stats into the top CODE WRITER title box.
+   - Lines, characters, and cursor line/column now sit after a red vertical divider beside the title.
+   - The separate loose stats row has been removed.
+
+2. Rebuilt the project/tab strip.
+   - Project 1 is now a coloured grouped project pill/container.
+   - File tabs sit inside the project group instead of floating separately.
+   - The plus/new-tab button now sits in the same project/tab row.
+   - Project has a collapse/expand arrow.
+   - Project has an X/hide control.
+   - A hidden project can be restored with the Show Project button.
+
+3. Added project right-click menu.
+   - Right-click the project pill/group to open: Edit, Rename, Properties.
+   - Edit turns project edit mode on/off.
+   - Edit mode makes the project pill/group pulse.
+   - While edit mode is on, file tabs can be dragged to reorder them.
+   - When edit mode is off, tab dragging is disabled.
+   - Rename changes the project display name.
+   - Properties currently gives a simple project summary toast.
+
+4. Moved the raw navigation buttons.
+   - Page Up, Bookmark Mode, and Page Down are now attached to the Raw View window instead of the far-right side of the whole app.
+
+5. Changed preview hide/show placement.
+   - Preview header now has: Visual edit off, Hide window, Refresh.
+   - When Preview is hidden, an Open Preview button appears beside Repository in the top title bar.
+
+6. Made the bottom action bar collapsible.
+   - Bottom action bar now shows a small Actions handle by default.
+   - It opens on hover or when clicking the Actions handle.
+   - It has a lock button to keep it open.
+   - Lock changes between unlocked and locked states.
+
+7. Version/storage update.
+   - App title and subtitle changed to v0.02.
+   - Local working save key changed to v002 so this test does not inherit broken or messy v0.01 browser state.
+
+FILES CHANGED
+
+- tools/code-writer/index.html
+- tools/code-writer/css/code-editor.css
+- tools/code-writer/js/state.js
+- tools/code-writer/js/ui.js
+- tools/code-writer/js/editor.js
+- updates/debug-code-writer-v0.02.txt
+
+FILES KEPT FROM v0.01
+
+- tools/code-writer/js/preview.js
+- tools/code-writer/js/files.js
+- tools/code-writer/js/check-code.js
+- tools/code-writer/data/building-blocks.json
+- tools/code-writer/samples/sample-page.html
+
+DEBUG / FEEDBACK TABLE
+
+| Number | Area | Things to check | Debug / feedback |
+|---:|---|---|---|
+| 1 | Top title/status box | Check whether the red divider and stats are in the right place after CODE WRITER. |  |
+| 2 | Stats readability | Confirm Lines, Chars, and Ln/Col are readable and not too cramped. |  |
+| 3 | Project grouping | Confirm the project pill visually groups the open file tabs clearly. |  |
+| 4 | Project colour | Check whether the project colour is strong enough but not ugly. |  |
+| 5 | Plus button | Confirm the + button is now on the correct project/tab row. |  |
+| 6 | Project collapse | Click the project arrow and confirm tabs collapse/expand cleanly. |  |
+| 7 | Project hide | Click the X and confirm the project strip hides and can be restored. |  |
+| 8 | Project right-click | Right-click the project pill/group and confirm Edit, Rename, Properties appear. |  |
+| 9 | Project edit mode | Turn Edit on and confirm the project pill flashes/pulses. |  |
+| 10 | Tab drag mode | While Edit is on, drag a tab onto another tab and confirm order changes. |  |
+| 11 | Tab locked mode | Turn Edit off and confirm tabs can no longer be dragged. |  |
+| 12 | Project rename | Use Rename and confirm the project name changes without affecting file names. |  |
+| 13 | Project properties | Use Properties and confirm it shows a useful enough quick summary. |  |
+| 14 | Floating raw nav | Confirm Page Up / Bookmark / Page Down are attached to the Raw View right edge. |  |
+| 15 | Floating raw nav overlap | Check whether the nav buttons cover code too much when Raw View is narrow. |  |
+| 16 | Preview hide | Click Hide window in the Preview header and confirm preview disappears. |  |
+| 17 | Preview reopen | After hiding Preview, click Open Preview beside Repository and confirm it returns. |  |
+| 18 | Repository button | Confirm Repository still opens repository/index.html correctly. |  |
+| 19 | Bottom action bar hover | Mouse over the bottom bar and confirm it opens smoothly. |  |
+| 20 | Bottom action bar click | Click Actions and confirm it opens/closes without fighting hover. |  |
+| 21 | Bottom action bar lock | Click lock and confirm it stays open; unlock and confirm it collapses again. |  |
+| 22 | Bottom bar space | Confirm the collapsed bottom bar gives enough extra workspace height. |  |
+| 23 | Load sample | Confirm Load sample still opens the sample HTML file. |  |
+| 24 | Open file | Confirm Open file still works. |  |
+| 25 | Save/export/copy | Confirm Save, Export, and Copy HTML still work from the collapsed bar. |  |
+| 26 | Check Code | Confirm Check Code still opens and markers still appear in Raw View. |  |
+| 27 | Visual markers | Confirm title/table/hr/img/style/script/comment markers still line up. |  |
+| 28 | Mobile layout | Check the same changes on mobile width: stats, project group, bottom bar, preview hide/show. |  |
+| 29 | Local storage | Confirm v0.02 starts cleanly and does not load stale v0.01 tabs. |  |
+| 30 | Overall feel | Does this feel more like the intended Code Writer layout? |  |
+
+KNOWN LIMITS IN v0.02
+
+- Project edit mode currently supports tab reordering by drag/drop. It does not yet support moving tabs between multiple projects because multiple projects are not implemented yet.
+- Project Properties is only a simple summary toast for now.
+- Project Hide uses a Show Project restore button so the project is not permanently lost.
+- Bottom action bar collapse is CSS/JS based and should be checked carefully on mobile.
+- Find/replace is still not implemented.
+- The full right-click raw editor context menu is still not implemented.
+- Proper Extended Raw View smart grouping is still not implemented.
+- Full Building Block import/merge/duplicate review is still not implemented.
+- JSON Validator/Formatter has not been added yet.
+
+SUGGESTED NEXT STEP
+
+Use this v0.02 build, fill in the debug/feedback column above, and then generate v0.03 as the next Phase 1 refinement pass.
