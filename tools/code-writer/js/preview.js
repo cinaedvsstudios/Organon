@@ -8,6 +8,12 @@
         return document.getElementById('preview-frame');
     }
 
+    function getActiveTab() {
+        return window.CodeWriterStore && window.CodeWriterStore.getActiveTab
+            ? window.CodeWriterStore.getActiveTab()
+            : null;
+    }
+
     function setPreviewStatus(text) {
         const label = document.getElementById('preview-status-label');
         if (label) label.textContent = text;
@@ -20,29 +26,63 @@
         return html;
     }
 
-    function renderPreviewNow() {
-        const tab = window.CodeWriterStore.getActiveTab();
+    function isPreviewHidden(tab) {
+        return Boolean(tab && tab.previewHidden);
+    }
+
+    function isLargeFilePaused(tab) {
+        return Boolean(tab && window.CodeWriterState && window.CodeWriterState.largeFileMode);
+    }
+
+    function renderPreviewNow(options = {}) {
+        const tab = getActiveTab();
         const frame = getPreviewFrame();
         if (!tab || !frame) return;
 
-        const html = normalizePreviewHtml(tab.content);
-        frame.srcdoc = html;
-        setPreviewStatus(window.CodeWriterState.visualEditEnabled ? 'visual editing on' : 'live preview');
+        if (isPreviewHidden(tab)) {
+            setPreviewStatus('preview hidden');
+            return;
+        }
 
-        frame.addEventListener('load', () => {
-            applyVisualEditState();
-        }, { once: true });
+        if (isLargeFilePaused(tab) && !options.force) {
+            setPreviewStatus('large file mode · preview paused');
+            return;
+        }
+
+        const html = normalizePreviewHtml(tab.content);
+        setPreviewStatus(isLargeFilePaused(tab) ? 'rendering large preview…' : 'rendering preview…');
+
+        window.requestAnimationFrame(() => {
+            frame.srcdoc = html;
+            setPreviewStatus(window.CodeWriterState.visualEditEnabled ? 'visual editing on' : 'live preview');
+            frame.addEventListener('load', () => {
+                applyVisualEditState();
+                setPreviewStatus(window.CodeWriterState.visualEditEnabled ? 'visual editing on' : 'live preview');
+            }, { once: true });
+        });
     }
 
     function schedulePreviewRender() {
+        const tab = getActiveTab();
         clearTimeout(previewDebounce);
-        previewDebounce = setTimeout(renderPreviewNow, 160);
+
+        if (!tab) return;
+        if (isPreviewHidden(tab)) {
+            setPreviewStatus('preview hidden');
+            return;
+        }
+        if (isLargeFilePaused(tab)) {
+            setPreviewStatus('large file mode · preview paused');
+            return;
+        }
+
+        previewDebounce = setTimeout(() => renderPreviewNow(), 750);
     }
 
     function applyVisualEditState() {
         const frame = getPreviewFrame();
         const state = window.CodeWriterState;
-        if (!frame || !frame.contentDocument) return;
+        if (!frame || !frame.contentDocument || !state) return;
 
         try {
             const doc = frame.contentDocument;
@@ -62,7 +102,7 @@
 
     function handleVisualInput() {
         const state = window.CodeWriterState;
-        if (state.suppressPreviewSync) return;
+        if (!state || state.suppressPreviewSync) return;
         clearTimeout(visualDebounce);
         visualDebounce = setTimeout(() => {
             const frame = getPreviewFrame();
@@ -79,7 +119,7 @@
             } catch (error) {
                 console.warn('Visual edit sync failed:', error);
             }
-        }, 300);
+        }, 500);
     }
 
     function setVisualEdit(enabled) {
@@ -94,6 +134,7 @@
         renderPreviewNow,
         schedulePreviewRender,
         applyVisualEditState,
-        setVisualEdit
+        setVisualEdit,
+        setPreviewStatus
     };
 })();
