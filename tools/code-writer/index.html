@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Organon Code Writer v0.02</title>
+    <title>Organon Code Writer v0.03</title>
 
     <script>
         /*
@@ -23,6 +23,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/code-editor.css">
+    <link rel="stylesheet" href="css/code-writer-v003.css">
 </head>
 <body>
     <div class="app-wrapper" id="app-wrapper">
@@ -32,7 +33,7 @@
                     <button type="button" id="countdown-circle" class="countdown-circle-indicator" title="Double-click to lock or unlock the control bar">5</button>
                     <div class="title-copy-cluster">
                         <div class="tool-title">Code Writer</div>
-                        <div class="tool-subtitle">HTML editor v0.02 · Phase 1 layout pass</div>
+                        <div class="tool-subtitle">HTML editor v0.03 · Phase 1 performance + find</div>
                     </div>
                     <div class="title-status-divider" aria-hidden="true"></div>
                     <div class="title-status-cluster" aria-label="Active document stats">
@@ -95,7 +96,7 @@
                         <span class="pane-subtitle" id="active-file-label">untitled.html</span>
                     </div>
                     <div class="pane-actions">
-                        <button type="button" class="micro-btn" id="find-focus-btn" title="Find/replace arrives in a later Phase 1 build">Find</button>
+                        <button type="button" class="micro-btn" id="find-focus-btn" title="Open Find / Replace">Find</button>
                         <button type="button" class="micro-btn" id="select-all-btn">Select all</button>
                     </div>
                 </div>
@@ -134,7 +135,6 @@
                 <iframe id="preview-frame" class="preview-frame" title="Rendered HTML preview" sandbox="allow-same-origin allow-forms allow-popups allow-modals"></iframe>
             </section>
         </main>
-
 
         <footer class="bottom-control-panel" id="bottom-control-panel">
             <div class="bottom-panel-handle-row">
@@ -195,6 +195,7 @@
     <script src="js/files.js"></script>
     <script src="js/check-code.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/find-replace.js"></script>
     <script src="js/editor.js"></script>
 </body>
 </html>
