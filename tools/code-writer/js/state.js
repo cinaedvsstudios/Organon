@@ -1,7 +1,8 @@
 (function () {
     'use strict';
 
-    const STORAGE_KEY = 'organon-code-writer-v002-state';
+    const STORAGE_KEY = 'organon-code-writer-v001-state';
+    let localSaveTimer = null;
 
     function makeId(prefix) {
         return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -61,7 +62,7 @@
     }
 
     const state = {
-        version: '0.02',
+        version: '0.03',
         storageKey: STORAGE_KEY,
         tabs: [],
         activeTabId: null,
@@ -84,6 +85,8 @@
         topCountdownValue: 5,
         topCountdownTimer: null,
         buildingBlocks: [],
+        largeFileMode: false,
+        largeFileReason: '',
         lastCursor: {
             start: 0,
             end: 0,
@@ -125,18 +128,6 @@
         return true;
     }
 
-    function reorderTab(dragTabId, targetTabId) {
-        if (!dragTabId || !targetTabId || dragTabId === targetTabId) return false;
-        const fromIndex = state.tabs.findIndex(tab => tab.id === dragTabId);
-        const toIndex = state.tabs.findIndex(tab => tab.id === targetTabId);
-        if (fromIndex === -1 || toIndex === -1) return false;
-        const [moved] = state.tabs.splice(fromIndex, 1);
-        const adjustedToIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
-        state.tabs.splice(adjustedToIndex, 0, moved);
-        saveLocalState();
-        return true;
-    }
-
     function updateActiveContent(content) {
         const tab = getActiveTab();
         if (!tab) return;
@@ -173,12 +164,27 @@
         };
     }
 
-    function saveLocalState() {
+    function writeLocalState() {
         try {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(getSerializableState()));
         } catch (error) {
             console.warn('Local Working Save failed:', error);
         }
+    }
+
+    function saveLocalState(options = {}) {
+        if (options.immediate) {
+            clearTimeout(localSaveTimer);
+            localSaveTimer = null;
+            writeLocalState();
+            return;
+        }
+        clearTimeout(localSaveTimer);
+        localSaveTimer = setTimeout(writeLocalState, 900);
+    }
+
+    function flushLocalState() {
+        saveLocalState({ immediate: true });
     }
 
     function loadLocalState() {
@@ -187,8 +193,8 @@
             if (!saved) return false;
             const parsed = JSON.parse(saved);
             if (!parsed || !Array.isArray(parsed.tabs) || parsed.tabs.length === 0) return false;
-            state.version = parsed.version || state.version;
-            state.project = parsed.project || state.project;
+            state.version = '0.03';
+            state.project = Object.assign({}, state.project, parsed.project || {});
             state.rawWidth = Number(parsed.rawWidth) || state.rawWidth;
             state.bookmarkMode = Boolean(parsed.bookmarkMode);
             state.tabs = parsed.tabs.map(tab => createTab(tab));
@@ -209,6 +215,8 @@
         }
     }
 
+    window.addEventListener('beforeunload', flushLocalState);
+
     window.CodeWriterState = state;
     window.CodeWriterStore = {
         makeId,
@@ -218,10 +226,10 @@
         setActiveTab,
         addTab,
         closeTab,
-        reorderTab,
         updateActiveContent,
         isTabUnsaved,
         saveLocalState,
+        flushLocalState,
         loadLocalState,
         initializeState
     };
