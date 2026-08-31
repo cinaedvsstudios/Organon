@@ -1,0 +1,116 @@
+.find-replace-panel {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(137, 107, 73, 0.42);
+    background: rgba(24, 25, 25, 0.98);
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.find-main-row,
+.find-settings-panel {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex-wrap: wrap;
+}
+
+.find-field {
+    min-width: 150px;
+    flex: 1 1 170px;
+    height: 29px;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    border: 1px solid var(--chiseled-bronze);
+    background: rgba(0, 0, 0, 0.52);
+    color: var(--alabaster-paper);
+    outline: none;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+}
+
+.find-field:focus {
+    border-color: var(--water-spray);
+    box-shadow: 0 0 9px rgba(117, 178, 222, 0.28);
+}
+
+.find-count {
+    min-width: 62px;
+    text-align: center;
+    color: var(--stone-ochre);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    white-space: nowrap;
+}
+
+.find-settings-panel {
+    padding: 7px 9px;
+    border: 1px dashed rgba(137, 107, 73, 0.45);
+    border-radius: 16px;
+    background: rgba(0, 0, 0, 0.22);
+    color: rgba(245, 240, 219, 0.82);
+    font-size: 0.7rem;
+}
+
+.find-settings-panel label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+}
+
+.find-settings-panel input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--water-blue);
+}
+
+.find-settings-panel select {
+    min-height: 24px;
+    padding: 2px 22px 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--chiseled-bronze);
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--alabaster-paper);
+    font-size: 0.68rem;
+}
+
+.find-settings-note {
+    color: rgba(245, 240, 219, 0.55);
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+}
+
+.app-wrapper.large-file-mode .raw-pane .pane-subtitle::after {
+    content: ' · large file mode';
+    color: var(--terracotta-peach);
+}
+
+.app-wrapper.large-file-mode .preview-frame {
+    opacity: 0.72;
+}
+
+.marker-large-file {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: rgba(24, 25, 25, 0.96);
+}
+
+@media (max-width: 760px) {
+    .find-main-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .find-field,
+    .find-count,
+    .find-main-row .micro-btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .find-count {
+        grid-column: 1 / -1;
+    }
+}
