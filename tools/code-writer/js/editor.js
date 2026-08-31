@@ -1,7 +1,13 @@
 (function () {
     'use strict';
 
+    const LARGE_CHAR_LIMIT = 150000;
+    const LARGE_LINE_LIMIT = 1800;
+    const MARKER_LINE_LIMIT = 1800;
+
     let inputDebounce = null;
+    let markerDebounce = null;
+    let tabRefreshDebounce = null;
 
     function getEditor() {
         return document.getElementById('raw-editor');
@@ -9,6 +15,15 @@
 
     function splitLines(text) {
         return String(text || '').split('\n');
+    }
+
+    function countLines(text) {
+        if (!text) return 1;
+        let count = 1;
+        for (let i = 0; i < text.length; i += 1) {
+            if (text.charCodeAt(i) === 10) count += 1;
+        }
+        return count;
     }
 
     function cursorLineColumn(text, position) {
@@ -27,6 +42,144 @@
             index += lines[i].length + 1;
         }
         return index;
+    }
+
+    function analyzeLargeFile(text) {
+        const lines = countLines(text);
+        const chars = text.length;
+        const large = chars > LARGE_CHAR_LIMIT || lines > LARGE_LINE_LIMIT;
+        const reason = large
+            ? `${lines.toLocaleString()} lines · ${chars.toLocaleString()} chars`
+            : '';
+        return { lines, chars, large, reason };
+    }
+
+    function syncLargeFileMode(text) {
+        const app = document.getElementById('app-wrapper');
+        const info = analyzeLargeFile(text || '');
+        window.CodeWriterState.largeFileMode = info.large;
+        window.CodeWriterState.largeFileReason = info.reason;
+        if (app) app.classList.toggle('large-file-mode', info.large);
+        if (info.large && window.CodeWriterPreview && window.CodeWriterPreview.setPreviewStatus) {
+            window.CodeWriterPreview.setPreviewStatus('large file mode · preview paused');
+        }
+        return info;
+    }
+
+    function updateCursorState() {
+        const editor = getEditor();
+        if (!editor) return;
+        const cursor = cursorLineColumn(editor.value, editor.selectionStart || 0);
+        window.CodeWriterState.lastCursor = {
+            start: editor.selectionStart || 0,
+            end: editor.selectionEnd || editor.selectionStart || 0,
+            line: cursor.line,
+            column: cursor.column
+        };
+        window.CodeWriterUI.renderCounts();
+    }
+
+    function markerListForLine(line, lineNumber, tab, originalLines, issueMap, bookmarkMap) {
+        const markers = [];
+        const issue = issueMap.get(lineNumber);
+        const bookmarks = bookmarkMap.get(lineNumber) || [];
+
+        if (issue) markers.push({ label: issue.type === 'error' ? 'ERR' : 'WARN', type: issue.type === 'error' ? 'error' : 'warning', title: issue.message });
+        bookmarks.forEach(bookmark => markers.push({ label: 'BM', type: 'bookmark', title: bookmark.name || `Bookmark line ${lineNumber}` }));
+
+        if (/<title[\s>]/i.test(line) || /<\/title>/i.test(line)) markers.push({ label: 'TITLE', type: 'title', title: 'Title tag marker' });
+        if (/<table[\s>]/i.test(line) || /<\/table>/i.test(line)) markers.push({ label: 'TABLE', type: 'table', title: 'Table marker' });
+        if (/<hr\b/i.test(line)) markers.push({ label: 'HR', type: 'comment', title: 'Horizontal rule marker' });
+        if (/<img\b/i.test(line)) {
+            const src = line.match(/\bsrc\s*=\s*(["'])(.*?)\1/i);
+            markers.push({ label: 'IMG', type: 'img', title: src ? `Image: ${src[2]}` : 'Image marker' });
+        }
+        if (/<style[\s>]/i.test(line) || /<\/style>/i.test(line)) markers.push({ label: 'CSS', type: 'css', title: 'Style block marker' });
+        if (/<script[\s>]/i.test(line) || /<\/script>/i.test(line)) markers.push({ label: 'JS', type: 'script', title: 'Script block marker' });
+        if (/<!--/.test(line) || /-->/.test(line)) markers.push({ label: 'NOTE', type: 'comment', title: 'HTML comment marker' });
+
+        const originalLine = originalLines[lineNumber - 1];
+        if (originalLine !== undefined && originalLine !== line) {
+            markers.push({ label: 'MOD', type: 'unsaved', title: 'Line differs from the current source/original version.' });
+        }
+
+        return markers.slice(0, 3);
+    }
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function handleScrollSync() {
+        const editor = getEditor();
+        const lineNumbers = document.getElementById('line-numbers');
+        const markerGutter = document.getElementById('marker-gutter');
+        if (!editor) return;
+        const offset = `translateY(${-editor.scrollTop}px)`;
+        if (lineNumbers) lineNumbers.style.transform = offset;
+        if (markerGutter) markerGutter.style.transform = offset;
+    }
+
+    function renderLineNumbersAndMarkers() {
+        const editor = getEditor();
+        const numberEl = document.getElementById('line-numbers');
+        const markerEl = document.getElementById('marker-gutter');
+        const tab = window.CodeWriterStore.getActiveTab();
+        if (!editor || !numberEl || !markerEl || !tab) return;
+
+        const text = editor.value || '';
+        const info = syncLargeFileMode(text);
+        const lines = splitLines(text);
+        let numberHtml = '';
+        for (let i = 1; i <= lines.length; i += 1) {
+            numberHtml += `<div class="line-number">${i}</div>`;
+        }
+        numberEl.innerHTML = numberHtml;
+
+        if (info.large || lines.length > MARKER_LINE_LIMIT) {
+            markerEl.innerHTML = '<div class="marker-line marker-large-file"><span class="marker-tag marker-warning" title="Detailed markers are paused for large files">LARGE</span></div>';
+            handleScrollSync();
+            return;
+        }
+
+        const originalLines = tab.originalContent ? splitLines(tab.originalContent) : [];
+        const issueMap = new Map();
+        (tab.issues || []).forEach(issue => issueMap.set(issue.line, issue));
+        const bookmarkMap = new Map();
+        (tab.bookmarks || []).forEach(bookmark => {
+            const line = bookmark.line || 1;
+            if (!bookmarkMap.has(line)) bookmarkMap.set(line, []);
+            bookmarkMap.get(line).push(bookmark);
+        });
+
+        let markerHtml = '';
+        lines.forEach((line, index) => {
+            const lineNumber = index + 1;
+            const tags = markerListForLine(line, lineNumber, tab, originalLines, issueMap, bookmarkMap)
+                .map(marker => `<span class="marker-tag marker-${escapeHtml(marker.type)}" title="${escapeHtml(marker.title || marker.label)}">${escapeHtml(marker.label)}</span>`)
+                .join('');
+            markerHtml += `<div class="marker-line">${tags}</div>`;
+        });
+        markerEl.innerHTML = markerHtml;
+        handleScrollSync();
+    }
+
+    function scheduleMarkerRender(delay = 300) {
+        clearTimeout(markerDebounce);
+        markerDebounce = setTimeout(renderLineNumbersAndMarkers, delay);
+    }
+
+    function scheduleLightUiRefresh(delay = 900) {
+        clearTimeout(tabRefreshDebounce);
+        tabRefreshDebounce = setTimeout(() => {
+            window.CodeWriterUI.renderTabs();
+            window.CodeWriterUI.updateActiveFileLabel();
+            window.CodeWriterUI.syncPreviewHiddenState();
+        }, delay);
     }
 
     function loadActiveTabIntoEditor(options = {}) {
@@ -49,19 +202,27 @@
         updateCursorState();
         renderLineNumbersAndMarkers();
         if (!options.skipPreview) {
-            window.CodeWriterPreview.renderPreviewNow();
+            window.CodeWriterPreview.schedulePreviewRender();
         }
     }
 
     function handleRawInput() {
         const editor = getEditor();
-        if (!editor || window.CodeWriterState.suppressRawSync) return;
-        window.CodeWriterStore.updateActiveContent(editor.value);
+        const tab = window.CodeWriterStore.getActiveTab();
+        if (!editor || !tab || window.CodeWriterState.suppressRawSync) return;
+
+        tab.content = editor.value;
+        tab.updatedAt = Date.now();
+        window.CodeWriterStore.saveLocalState();
         updateCursorState();
+
+        const info = syncLargeFileMode(editor.value);
         clearTimeout(inputDebounce);
         inputDebounce = setTimeout(() => {
-            window.CodeWriterUI.updateEverything();
-        }, 120);
+            scheduleMarkerRender(info.large ? 800 : 180);
+            scheduleLightUiRefresh(info.large ? 1200 : 550);
+            window.CodeWriterPreview.schedulePreviewRender();
+        }, info.large ? 360 : 120);
     }
 
     function handlePlainTextPaste(event) {
@@ -77,95 +238,6 @@
         editor.setSelectionRange(nextCursor, nextCursor);
         handleRawInput();
         window.CodeWriterUI.toast('Pasted as plain text.');
-    }
-
-    function handleScrollSync() {
-        const editor = getEditor();
-        const lineNumbers = document.getElementById('line-numbers');
-        const markerGutter = document.getElementById('marker-gutter');
-        if (!editor) return;
-        const offset = `translateY(${-editor.scrollTop}px)`;
-        if (lineNumbers) lineNumbers.style.transform = offset;
-        if (markerGutter) markerGutter.style.transform = offset;
-    }
-
-    function updateCursorState() {
-        const editor = getEditor();
-        if (!editor) return;
-        const cursor = cursorLineColumn(editor.value, editor.selectionStart || 0);
-        window.CodeWriterState.lastCursor = {
-            start: editor.selectionStart || 0,
-            end: editor.selectionEnd || editor.selectionStart || 0,
-            line: cursor.line,
-            column: cursor.column
-        };
-        window.CodeWriterUI.renderCounts();
-    }
-
-    function markersForLine(line, lineNumber, tab, lines) {
-        const markers = [];
-        const lower = line.toLowerCase();
-        const issue = (tab.issues || []).find(item => item.line === lineNumber);
-        const bookmarks = (tab.bookmarks || []).filter(bookmark => bookmark.line === lineNumber);
-
-        if (issue) markers.push({ label: issue.type === 'error' ? 'ERR' : 'WARN', type: issue.type === 'error' ? 'error' : 'warning', title: issue.message });
-        bookmarks.forEach(bookmark => markers.push({ label: 'BM', type: 'bookmark', title: bookmark.name || `Bookmark line ${lineNumber}` }));
-
-        if (/<title[\s>]/i.test(line) || /<\/title>/i.test(line)) markers.push({ label: 'TITLE', type: 'title', title: 'Title tag marker' });
-        if (/<table[\s>]/i.test(line) || /<\/table>/i.test(line)) markers.push({ label: 'TABLE', type: 'table', title: 'Table marker' });
-        if (/<hr\b/i.test(line)) markers.push({ label: 'HR', type: 'comment', title: 'Horizontal rule marker' });
-        if (/<img\b/i.test(line)) {
-            const src = line.match(/\bsrc\s*=\s*(["'])(.*?)\1/i);
-            markers.push({ label: 'IMG', type: 'img', title: src ? `Image: ${src[2]}` : 'Image marker' });
-        }
-        if (/<style[\s>]/i.test(line) || /<\/style>/i.test(line)) markers.push({ label: 'CSS', type: 'css', title: 'Style block marker' });
-        if (/<script[\s>]/i.test(line) || /<\/script>/i.test(line)) markers.push({ label: 'JS', type: 'script', title: 'Script block marker' });
-        if (/<!--/.test(line) || /-->/.test(line)) markers.push({ label: 'NOTE', type: 'comment', title: 'HTML comment marker' });
-
-        const originalLine = tab.originalContent ? splitLines(tab.originalContent)[lineNumber - 1] : undefined;
-        if (originalLine !== undefined && originalLine !== line) {
-            markers.push({ label: 'MOD', type: 'unsaved', title: 'Line differs from the current source/original version.' });
-        }
-
-        if (markers.length > 3) return markers.slice(0, 3);
-        return markers;
-    }
-
-    function renderLineNumbersAndMarkers() {
-        const editor = getEditor();
-        const numberEl = document.getElementById('line-numbers');
-        const markerEl = document.getElementById('marker-gutter');
-        const tab = window.CodeWriterStore.getActiveTab();
-        if (!editor || !numberEl || !markerEl || !tab) return;
-
-        const lines = splitLines(editor.value);
-        const numberFragment = document.createDocumentFragment();
-        const markerFragment = document.createDocumentFragment();
-
-        lines.forEach((line, index) => {
-            const lineNumber = index + 1;
-            const num = document.createElement('div');
-            num.className = 'line-number';
-            num.textContent = lineNumber;
-            numberFragment.appendChild(num);
-
-            const markerLine = document.createElement('div');
-            markerLine.className = 'marker-line';
-            markersForLine(line, lineNumber, tab, lines).forEach(marker => {
-                const tag = document.createElement('span');
-                tag.className = `marker-tag marker-${marker.type}`;
-                tag.textContent = marker.label;
-                tag.title = marker.title || marker.label;
-                markerLine.appendChild(tag);
-            });
-            markerFragment.appendChild(markerLine);
-        });
-
-        numberEl.innerHTML = '';
-        markerEl.innerHTML = '';
-        numberEl.appendChild(numberFragment);
-        markerEl.appendChild(markerFragment);
-        handleScrollSync();
     }
 
     function insertAtCursor(text) {
@@ -211,8 +283,7 @@
         const index = lineStartIndex(lines, line);
         editor.focus();
         editor.setSelectionRange(index, index);
-        const approxTop = Math.max(0, (line - 4) * 20);
-        editor.scrollTop = approxTop;
+        editor.scrollTop = Math.max(0, (line - 4) * 20);
         handleScrollSync();
         updateCursorState();
     }
@@ -255,6 +326,10 @@
     function runCodeCheck() {
         const tab = window.CodeWriterStore.getActiveTab();
         if (!tab) return;
+        if (window.CodeWriterState.largeFileMode) {
+            const ok = confirm('This is a large file. Check Code may take a while. Continue?');
+            if (!ok) return;
+        }
         const issues = window.CodeWriterCheck.runCheck(tab.content);
         tab.issues = issues;
         window.CodeWriterState.currentReport = issues;
@@ -335,10 +410,13 @@
 
     function setPreviewHidden(hidden) {
         const tab = window.CodeWriterStore.getActiveTab();
+        const app = document.getElementById('app-wrapper');
         if (!tab) return;
         tab.previewHidden = Boolean(hidden);
+        if (app) app.classList.toggle('preview-hidden', tab.previewHidden);
         window.CodeWriterStore.saveLocalState();
-        window.CodeWriterUI.updateEverything();
+        window.CodeWriterUI.updateEverything({ skipPreview: true });
+        window.CodeWriterPreview.schedulePreviewRender();
         window.CodeWriterUI.toast(tab.previewHidden ? 'Preview hidden for this file.' : 'Preview window opened.');
     }
 
@@ -434,11 +512,7 @@
 
         if (handle) handle.addEventListener('click', () => {
             panel.classList.toggle('open');
-            if (panel.classList.contains('open')) {
-                handle.textContent = 'Actions ▼';
-            } else {
-                handle.textContent = 'Actions ▲';
-            }
+            handle.textContent = panel.classList.contains('open') ? 'Actions ▼' : 'Actions ▲';
         });
 
         if (lock) lock.addEventListener('click', () => {
@@ -547,7 +621,7 @@
 
         const refreshPreview = document.getElementById('refresh-preview-btn');
         if (refreshPreview) refreshPreview.addEventListener('click', () => {
-            window.CodeWriterPreview.renderPreviewNow();
+            window.CodeWriterPreview.renderPreviewNow({ force: true });
             window.CodeWriterUI.toast('Preview refreshed.');
         });
 
@@ -556,7 +630,11 @@
 
         const findFocus = document.getElementById('find-focus-btn');
         if (findFocus) findFocus.addEventListener('click', () => {
-            window.CodeWriterUI.toast('Find/replace is listed for the next Phase 1 pass.');
+            if (window.CodeWriterFind && window.CodeWriterFind.open) {
+                window.CodeWriterFind.open();
+            } else {
+                window.CodeWriterUI.toast('Find / Replace panel could not be loaded.');
+            }
         });
 
         const insertBlock = document.getElementById('insert-block-btn');
@@ -601,6 +679,7 @@
 
     function init() {
         window.CodeWriterStore.initializeState();
+        window.CodeWriterState.version = '0.03';
         document.documentElement.style.setProperty('--raw-width', `${window.CodeWriterState.rawWidth}%`);
         if (window.__organonDirectOpen) {
             const badge = document.getElementById('direct-open-badge');
@@ -612,7 +691,7 @@
         window.CodeWriterFiles.loadDefaultBuildingBlocks();
         loadActiveTabIntoEditor({ preserveCursor: false });
         window.CodeWriterUI.updateEverything();
-        window.CodeWriterUI.toast('Code Writer v0.02 ready.');
+        window.CodeWriterUI.toast('Code Writer v0.03 ready.');
     }
 
     window.CodeWriterEditor = {
@@ -627,6 +706,7 @@
         jumpToLine,
         navigatePage,
         runCodeCheck,
+        syncLargeFileMode,
         init
     };
 
