@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Organon — Contact Sheet Thumbs</title>
+  <script>if (window.self === window.top) window.location.href='../../index.html#contactsheetthumbnails';</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="top-panel">
+      <div class="title-row">
+        <div>
+          <span class="eyebrow">ORGANON UTILITY</span>
+          <h1>CONTACT SHEET THUMBS</h1>
+        </div>
+        <span id="folderName" class="folder-pill">No folder selected</span>
+      </div>
+      <div class="folder-actions">
+        <button id="chooseFolder" class="primary-action" type="button">Choose Folder</button>
+        <button id="fallbackPickerButton" class="secondary-action hidden" type="button">Use Browser Folder Picker</button>
+        <input id="fallbackPicker" type="file" webkitdirectory directory multiple hidden>
+      </div>
+      <p id="folderModeNote" class="micro-note">Select one folder. Files stay local; Chromium browsers can save contact sheets back into the same folder.</p>
+    </header>
+
+    <main class="main-panel">
+      <section class="card summary-card" aria-label="Folder summary">
+        <div class="card-heading">
+          <h2>Folder Summary</h2>
+          <button id="ignoredButton" class="link-button" type="button" disabled>Ignored: 0</button>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><span>Images</span><strong id="imageCount">0</strong></div>
+          <div class="stat"><span>Types</span><strong id="typeSummary">—</strong></div>
+          <div class="stat"><span>First</span><strong id="firstFile">—</strong></div>
+          <div class="stat"><span>Last</span><strong id="lastFile">—</strong></div>
+        </div>
+        <p id="summaryNote" class="note">Choose a folder to scan top-level JPG, PNG, WEBP and GIF image files.</p>
+      </section>
+
+      <section class="card settings-card" aria-label="Contact sheet settings">
+        <div class="card-heading">
+          <h2>Settings</h2>
+          <span id="liveStatus" class="status-pill">Ready</span>
+        </div>
+
+        <div class="settings-grid">
+          <label class="field wide">
+            <span>First sheet filename</span>
+            <input id="filenamePattern" type="text" value="contact_sheet01.jpg" spellcheck="false">
+            <small id="filenamePreview">Output: contact_sheet01.jpg, contact_sheet02.jpg...</small>
+          </label>
+
+          <label class="field">
+            <span>Images per sheet</span>
+            <input id="perSheet" type="number" min="1" max="500" step="1" value="50">
+          </label>
+
+          <label class="field">
+            <span>Columns</span>
+            <input id="columns" type="number" min="1" max="20" step="1" value="5">
+          </label>
+
+          <label class="field">
+            <span>Thumbnail width</span>
+            <input id="thumbWidth" type="number" min="80" max="1200" step="10" value="320">
+          </label>
+
+          <label class="field">
+            <span>Image box height</span>
+            <input id="tileHeight" type="number" min="80" max="1200" step="10" value="380">
+          </label>
+
+          <label class="field">
+            <span>Gap</span>
+            <input id="gap" type="number" min="0" max="120" step="1" value="24">
+          </label>
+
+          <label class="field">
+            <span>Outer padding</span>
+            <input id="padding" type="number" min="0" max="160" step="1" value="32">
+          </label>
+
+          <label class="field">
+            <span>Label mode</span>
+            <select id="labelMode">
+              <option value="index-short" selected>Index + shortened filename</option>
+              <option value="index-only">Index only + TXT key</option>
+              <option value="full">Full filename</option>
+              <option value="none">No tile label</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Label font size</span>
+            <input id="fontSize" type="number" min="8" max="28" step="1" value="12">
+          </label>
+
+          <label class="field">
+            <span>JPEG quality</span>
+            <input id="quality" type="number" min="0.3" max="1" step="0.01" value="0.88">
+          </label>
+
+          <label class="field">
+            <span>Sort order</span>
+            <select id="sortOrder">
+              <option value="name-asc" selected>Filename A–Z</option>
+              <option value="name-desc">Filename Z–A</option>
+              <option value="date-asc">Modified old → new</option>
+              <option value="date-desc">Modified new → old</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Background</span>
+            <select id="bgPreset">
+              <option value="#000000" selected>Black</option>
+              <option value="#1b1b1b">Dark grey</option>
+              <option value="#ffffff">White</option>
+              <option value="custom">Custom</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>Custom background</span>
+            <input id="bgCustom" type="color" value="#000000">
+          </label>
+
+          <label class="field">
+            <span>Text colour</span>
+            <input id="textColor" type="color" value="#ffffff">
+          </label>
+
+          <label class="toggle-field">
+            <input id="includeIndex" type="checkbox" checked>
+            <span>Include index numbers</span>
+          </label>
+
+          <label class="toggle-field">
+            <input id="includeHeader" type="checkbox" checked>
+            <span>Include sheet header</span>
+          </label>
+
+          <label class="toggle-field">
+            <input id="createKey" type="checkbox" checked>
+            <span>Create TXT filename key</span>
+          </label>
+
+          <label class="toggle-field">
+            <input id="cropFill" type="checkbox">
+            <span>Crop to fill thumbnails</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card estimate-card" aria-label="Estimate">
+        <div class="card-heading">
+          <h2>Live Estimate</h2>
+          <span id="sheetCountBadge" class="status-pill">0 sheets</span>
+        </div>
+        <div class="estimate-grid">
+          <div><span>Total images</span><strong id="estimateImages">0</strong></div>
+          <div><span>Images per sheet</span><strong id="estimatePerSheet">50</strong></div>
+          <div><span>Sheet dimensions</span><strong id="estimateDimensions">—</strong></div>
+          <div><span>Megapixels</span><strong id="estimateMp">—</strong></div>
+          <div><span>Approx JPEG each</span><strong id="estimateEach">—</strong></div>
+          <div><span>Approx total</span><strong id="estimateTotal">—</strong></div>
+        </div>
+        <p id="estimateWarning" class="warning-text hidden"></p>
+      </section>
+
+      <section class="card progress-card" aria-label="Generation progress">
+        <div class="card-heading">
+          <h2>Progress</h2>
+          <span id="progressLabel" class="status-pill">Idle</span>
+        </div>
+        <div class="progress-bar"><div id="progressFill"></div></div>
+        <p id="progressText" class="note">Generated sheets will be saved into the selected folder when write access is available.</p>
+        <div id="createdList" class="created-list"></div>
+      </section>
+    </main>
+
+    <footer class="bottom-panel">
+      <button id="createSheets" class="primary-action" type="button" disabled>Create Contact Sheets</button>
+    </footer>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modal-head">
+        <h2 id="modalTitle">Ignored Files</h2>
+        <button id="modalClose" class="modal-close" type="button" aria-label="Close">×</button>
+      </div>
+      <div id="modalBody" class="modal-body"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
