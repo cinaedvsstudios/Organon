@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#181919">
+  <title>Credits Roll — Organon</title>
+  <meta name="description" content="Create scrolling film and documentary credits, preview them, and export genuine MP4 or WebM video locally in your browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./credits.css">
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="eyebrow">ORGANON / VIDEO</span><h1>CREDITS ROLL</h1><p>Scrolling credits studio · v0.01</p></div>
+    <div class="header-actions"><span class="preset-chip">CLASSIC CREDITS</span><button type="button" id="restore-preset" class="subtle">Restore preset</button></div>
+  </header>
+  <main class="workspace">
+    <section class="editor-column" aria-label="Credits editing controls">
+      <div class="panel">
+        <div class="panel-heading"><h2>01 · Credits text</h2><span id="text-stats" class="muted">0 lines</span></div>
+        <div class="button-row">
+          <button id="import-text" type="button">Import .txt</button>
+          <button id="load-sample" type="button" class="subtle">Sample</button>
+          <button id="clear-text" type="button" class="danger">Clear</button>
+        </div>
+        <input id="text-file" type="file" accept=".txt,text/plain" hidden>
+        <label for="credits-text" class="field-label">Plain text · use # or ## at the beginning of a line for a heading</label>
+        <textarea id="credits-text" spellcheck="false" aria-label="Scrolling credits text" placeholder="# Production title&#10;## Historical sources&#10;First source&#10;Second source&#10;&#10;Acknowledgements"></textarea>
+        <small>Line breaks and blank lines are preserved. Headings are styled without printing their # markers. URLs remain plain text.</small>
+      </div>
+      <details class="panel" open>
+        <summary>02 · Typography and placement</summary>
+        <div class="fields">
+          <label>Font family<select id="font"><option value="Georgia">Georgia</option><option value="Arial">Arial</option><option value="Times New Roman">Times New Roman</option><option value="Verdana">Verdana</option><option value="Courier New">Courier New</option><option value="Cinzel">Cinzel</option><option value="Inter">Inter</option></select></label>
+          <label>Text alignment<select id="align"><option value="center">Centre</option><option value="left">Left</option><option value="right">Right</option></select></label>
+          <label>Body font (px @1080p)<input id="font-size" type="number" min="12" max="150" step="1"></label>
+          <label>Heading font (px @1080p)<input id="heading-size" type="number" min="14" max="180" step="1"></label>
+          <label>Text colour<input id="text-color" type="color"></label>
+          <label>Heading colour<input id="heading-color" type="color"></label>
+          <label class="checkbox-field"><input id="bold-headings" type="checkbox"> Bold headings</label>
+          <label>Line height ×<input id="line-height" type="number" min="1" max="3" step=".1"></label>
+          <label>Blank-line spacing (px)<input id="paragraph-spacing" type="number" min="0" max="200" step="2"></label>
+          <label>Heading spacing (px)<input id="heading-spacing" type="number" min="0" max="240" step="2"></label>
+          <label>Maximum text width (%)<input id="max-width" type="range" min="25" max="90" step="1"><output id="max-width-value"></output></label>
+          <label>Horizontal position (%)<input id="horizontal-position" type="range" min="5" max="95" step="1"><output id="horizontal-position-value"></output></label>
+        </div>
+      </details>
+      <details class="panel">
+        <summary>03 · Background</summary>
+        <div class="fields">
+          <label>Background colour<input id="background-color" type="color"></label>
+          <label>Image dark overlay (%)<input id="overlay" type="range" min="0" max="100" step="1"><output id="overlay-value"></output></label>
+        </div>
+        <div class="button-row"><button id="upload-background" type="button">Upload background image</button><button id="remove-background" type="button" class="subtle">Remove image</button></div>
+        <input id="background-file" type="file" accept="image/*" hidden>
+        <small id="background-note">No background image selected. Images stay on this device.</small>
+      </details>
+      <details class="panel" open>
+        <summary>04 · Scrolling and timing</summary>
+        <div class="fields">
+          <label>Scrolling duration (seconds)<input id="scroll-duration" type="number" min=".1" max="7200" step=".1"></label>
+          <label>Scroll speed (pixels/second @1080p)<input id="scroll-speed" type="number" min="1" max="2000" step="1"></label>
+          <label>Opening delay (seconds)<input id="opening-delay" type="number" min="0" max="300" step=".1"></label>
+          <label>Ending delay (seconds)<input id="ending-delay" type="number" min="0" max="300" step=".1"></label>
+          <label>Fade in (seconds)<input id="fade-in" type="number" min="0" max="120" step=".1"></label>
+          <label>Fade out (seconds)<input id="fade-out" type="number" min="0" max="120" step=".1"></label>
+        </div>
+        <small>Duration and speed stay linked. Content height is measured at the selected resolution, including long wrapped lines.</small>
+      </details>
+      <details class="panel">
+        <summary>05 · Save and restore project</summary>
+        <div class="button-row"><button type="button" id="download-project">Export .json</button><button type="button" id="import-project">Import .json</button><button type="button" id="reset-all" class="danger">Reset all</button></div>
+        <input id="project-file" type="file" accept=".json,application/json" hidden>
+        <small>Text and settings automatically save in this browser. Project JSON can include your background image.</small>
+      </details>
+    </section>
+    <section class="preview-column" aria-label="Video preview and export">
+      <div class="panel sticky-preview">
+        <div class="panel-heading"><h2>LIVE VIDEO PREVIEW</h2><span id="render-info">1920 × 1080 · 30 FPS</span></div>
+        <div class="canvas-frame"><canvas id="preview" width="1920" height="1080" aria-label="Credits video preview"></canvas></div>
+        <div class="playback"><button id="play" type="button">▶ Play</button><button id="restart" type="button" class="subtle">↺ Restart</button><button id="fullscreen" type="button" class="subtle">⛶ Fullscreen</button><span id="timecode" class="timecode">00:00 / 00:00</span></div>
+        <label for="seek" class="sr-only">Seek through credits</label>
+        <input type="range" id="seek" min="0" max="1000" value="0" step="1" aria-label="Video timeline">
+        <div class="preview-details"><span id="duration-info">Total duration: —</span><span id="travel-info">Travel: —</span></div>
+        <div class="export-panel">
+          <h2>06 · Export video</h2>
+          <div class="fields">
+            <label>Video format<select id="format"><option value="mp4">MP4 · H.264</option><option value="webm">WebM · VP9 / VP8</option></select></label>
+            <label>Resolution<select id="resolution"><option value="1920x1080">1920 × 1080</option><option value="1280x720">1280 × 720</option></select></label>
+            <label>Frame rate<select id="fps"><option value="30">30 FPS</option><option value="24">24 FPS</option><option value="60">60 FPS</option></select></label>
+            <label>Filename (without extension)<input id="filename" type="text" maxlength="120" spellcheck="false"></label>
+          </div>
+          <label class="checkbox-field direct-save"><input id="direct-save" type="checkbox"> Save directly to a selected file (less memory; Chrome/Edge)</label>
+          <div class="export-actions"><button id="export" type="button" class="primary">⬇ Export video</button><button id="cancel-export" type="button" class="danger" hidden>Cancel export</button></div>
+          <progress id="export-progress" max="100" value="0" hidden></progress>
+          <div class="export-meta"><span id="frame-progress"></span><span id="size-estimate">Estimated video size: —</span></div>
+          <p id="status" role="status" aria-live="polite">Ready. Select your settings and export a video with no audio.</p>
+          <small>Rendering and encoding happen locally. MP4 requires browser support for H.264/WebCodecs. Export uses exact frame timestamps rather than screen recording.</small>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="./credits.js"></script>
+</body>
+</html>
