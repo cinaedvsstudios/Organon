@@ -1,0 +1,60 @@
+:root{--ochre:#e0a360;--bronze:#896b49;--paper:#f5f0db;--blue:#75b2de;--blue-dark:#4b84bf;--red:#9a2f4f;--bg:#181919;--card:#292a24;--input:#171919;--muted:rgba(245,240,219,.68);font-family:Inter,system-ui,sans-serif;color:var(--paper);background:var(--bg);font-synthesis:none}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--paper)}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;border:1px solid var(--bronze);background:#1a1c1d;color:var(--blue);border-radius:999px;padding:9px 15px;font-size:.8rem;font-weight:600;transition:border-color .16s,background .16s,filter .16s}
+button:hover:not(:disabled){border-color:var(--blue);background:#303735}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:#26615c;color:#fff;border-color:#449e92;font-size:.9rem;padding:12px 22px}
+button.primary:hover{background:#34796d}
+button.danger{color:#f2a1af;border-color:#6e3445}
+button.danger:hover{background:#572535}
+button.subtle{color:var(--paper);background:rgba(13,14,14,.7)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.masthead{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:13px clamp(16px,3vw,38px);border-bottom:2px solid var(--bronze);background:linear-gradient(rgba(224,163,96,.8),rgba(224,163,96,.8)),url('../../images/stonetext.jpg'),#d79e5c;background-size:cover;color:#181919}
+.masthead h1{font:700 clamp(1.3rem,2.5vw,2.1rem) Cinzel,Georgia,serif;letter-spacing:.08em;margin:0}
+.brand p{margin:3px 0 0;font-size:.77rem;color:#3a2921}
+.eyebrow{display:block;letter-spacing:.17em;font-weight:700;font-size:.63rem}
+.header-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.preset-chip{color:#ffe8bd;background:#292a24;padding:8px 12px;border:1px solid var(--bronze);border-radius:999px;font:600 .69rem Cinzel,serif}
+.workspace{width:min(1550px,100%);margin:0 auto;display:grid;grid-template-columns:minmax(355px, .89fr) minmax(490px,1.11fr);gap:18px;padding:18px}
+.editor-column,.preview-column{min-width:0}
+.panel{margin-bottom:14px;padding:17px;border-radius:20px;background:var(--card);border:1px solid var(--bronze);box-shadow:0 5px 14px rgba(0,0,0,.17)}
+.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+h2{margin:0;font:700 .92rem Cinzel,Georgia,serif;color:var(--ochre);letter-spacing:.04em}
+.panel-heading span,small,.muted{font-size:.7rem;color:var(--muted)}
+small{display:block;line-height:1.5;margin-top:10px}
+summary{cursor:pointer;list-style-position:inside;font:700 .91rem Cinzel,Georgia,serif;color:var(--ochre);padding:0 0 4px}
+details[open]>summary{padding-bottom:14px}
+button-row,.button-row{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 12px}
+#credits-text{min-height:310px;resize:vertical;font-family:Inter,system-ui,sans-serif;font-size:.89rem;line-height:1.55;white-space:pre-wrap;border-radius:14px;padding:14px}
+.field-label{display:block;font-size:.73rem;color:var(--muted);margin-bottom:8px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.fields>label{display:flex;flex-direction:column;gap:6px;font-size:.73rem;font-weight:600;color:var(--paper);min-width:0}
+.fields>label.checkbox-field{flex-direction:row;align-items:center;gap:10px}
+input:not([type=checkbox]):not([type=range]):not([type=file]),select,textarea{background:var(--input);color:var(--paper);border:1px solid var(--bronze);border-radius:999px;outline:none;width:100%;padding:9px 12px;min-width:0}
+input:focus,select:focus,textarea:focus{border-color:var(--blue)!important;box-shadow:0 0 0 2px rgba(75,132,191,.26)}
+input[type=color]{height:38px;padding:4px!important;cursor:pointer}
+input[type=range]{accent-color:var(--red);width:100%;cursor:pointer}
+input[type=checkbox]{accent-color:#449e92;width:16px;height:16px}
+output{display:block;color:var(--blue);font-size:.68rem;text-align:right}
+.sticky-preview{position:sticky;top:14px}
+.canvas-frame{background:#000;aspect-ratio:16/9;width:100%;overflow:hidden;border-radius:10px;border:1px solid #464646;position:relative}
+#preview{display:block;width:100%;height:100%;object-fit:contain}
+.playback{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:13px}
+.timecode{margin-left:auto;font:500 .8rem ui-monospace,SFMono-Regular,Consolas,monospace;color:var(--blue)}
+#seek{margin-top:8px}
+.preview-details{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;color:var(--muted);font-size:.68rem;margin:5px 0 16px}
+.export-panel{border-top:1px solid rgba(137,107,73,.65);padding-top:16px}
+.export-panel h2{margin-bottom:14px}
+.direct-save{display:flex;gap:10px;align-items:center;margin:13px 0;color:var(--paper);font-size:.75rem}
+.export-actions{display:flex;gap:9px;align-items:center;margin-top:14px}
+progress{width:100%;height:12px;accent-color:#449e92;margin-top:14px}
+.export-meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:.71rem;color:var(--muted);margin-top:9px}
+#status{margin:12px 0 0;padding:10px 12px;border:1px solid #424c46;border-radius:11px;background:#1b2220;color:#b6d6c5;font-size:.77rem;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+#status.error{color:#ffb7c3;border-color:#783b4d;background:#342029}
+#status.success{color:#a4ecc7;border-color:#38775b;background:#162c25}
+.sr-only{position:absolute;overflow:hidden;width:1px;height:1px;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:1050px){.workspace{grid-template-columns:1fr}.preview-column{grid-row:1}.sticky-preview{position:static}.editor-column{grid-row:2}}
+@media(max-width:590px){.workspace{padding:9px;gap:6px}.panel{padding:13px;border-radius:15px}.fields{grid-template-columns:1fr 1fr;gap:11px}.masthead{padding:10px 13px;align-items:flex-start}.brand p{display:none}.header-actions{justify-content:flex-end}.preset-chip{display:none}.timecode{margin-left:0}.playback button{padding:8px 10px}.panel-heading{flex-wrap:wrap}#credits-text{min-height:245px}}
+@media(max-width:360px){.fields{grid-template-columns:1fr}.masthead{flex-wrap:wrap}}
