@@ -13,7 +13,7 @@
 </head>
 <body>
   <header class="masthead">
-    <div class="brand"><span class="eyebrow">ORGANON / VIDEO</span><h1>CREDITS ROLL</h1><p>Scrolling credits studio · v0.01</p></div>
+    <div class="brand"><span class="eyebrow">ORGANON / VIDEO</span><h1>CREDITS ROLL</h1><p>Scrolling credits studio · v0.02</p></div>
     <div class="header-actions"><span class="preset-chip">CLASSIC CREDITS</span><button type="button" id="restore-preset" class="subtle">Restore preset</button></div>
   </header>
   <main class="workspace">
@@ -21,14 +21,15 @@
       <div class="panel">
         <div class="panel-heading"><h2>01 · Credits text</h2><span id="text-stats" class="muted">0 lines</span></div>
         <div class="button-row">
+          <button id="paste-markdown" type="button">Paste Markdown Text</button>
           <button id="import-text" type="button">Import .txt</button>
           <button id="load-sample" type="button" class="subtle">Sample</button>
           <button id="clear-text" type="button" class="danger">Clear</button>
         </div>
         <input id="text-file" type="file" accept=".txt,text/plain" hidden>
-        <label for="credits-text" class="field-label">Plain text · use # or ## at the beginning of a line for a heading</label>
+        <label for="credits-text" class="field-label">Paste or edit plain text and Markdown · #, ## and ### for heading levels</label>
         <textarea id="credits-text" spellcheck="false" aria-label="Scrolling credits text" placeholder="# Production title&#10;## Historical sources&#10;First source&#10;Second source&#10;&#10;Acknowledgements"></textarea>
-        <small>Line breaks and blank lines are preserved. Headings are styled without printing their # markers. URLs remain plain text.</small>
+        <small>Markdown: # title, ## section, ### subsection, **bold**, and --- divider. The editor retains the original Markdown; the preview and video render its formatting. URLs remain plain text.</small>
       </div>
       <details class="panel" open>
         <summary>02 · Typography and placement</summary>
@@ -102,6 +103,6 @@
       </div>
     </section>
   </main>
-  <script type="module" src="./credits.js"></script>
+  <script type="module" src="./credits.js?v=0.02"></script>
 </body>
 </html>
