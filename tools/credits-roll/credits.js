@@ -100,38 +100,94 @@ function syncControls() {
   $('render-info').textContent=state.resolution.replace('x',' × ')+' · '+state.fps+' FPS';
   $('background-note').textContent=background?'Background image selected (local).':'No background image selected. Images stay on this device.';
 }
-function fontSpec(s,size,heading) {
-  return (heading && s.boldHeadings?'700':'400')+' '+size+'px "'+s.font+'", Georgia, serif';
+// Preserve Markdown in the text editor; only interpret supported syntax here.
+function parseMarkdownLine(original) {
+  if (/^\s{0,3}---+\s*$/u.test(original)) return {type:'separator'};
+  const headingMatch=/^\s{0,3}(#{1,3})[ \t]+(.*)$/u.exec(original);
+  const heading=headingMatch?headingMatch[1].length:0;
+  const text=headingMatch?headingMatch[2]:original;
+  if (!text.trim()) return {type:'blank'};
+  const runs=[];
+  const pattern=/\*\*(.+?)\*\*/gu;
+  let cursor=0, match;
+  while((match=pattern.exec(text))!==null) {
+    if(match.index>cursor)runs.push({text:text.slice(cursor,match.index),bold:false});
+    runs.push({text:match[1],bold:true});
+    cursor=pattern.lastIndex;
+  }
+  if(cursor<text.length)runs.push({text:text.slice(cursor),bold:false});
+  return {type:heading?'heading':'text',level:heading,runs};
 }
-function wrapLine(context,text,maxWidth) {
-  if(!text)return [''];
-  const parts=text.match(/\S+|\s+/gu)||[''];
+function fontSpec(s,size,heading=false,bold=false) {
+  return ((bold||(heading && s.boldHeadings))?'700':'400')+' '+size+'px "'+s.font+'", Georgia, serif';
+}
+// Wrap text with measurements taken from the actual font of each Markdown run.
+// Rows contain styled segments and their exact measured widths for Canvas drawing.
+function wrapStyledLine(context,runs,maxWidth,s,fontSize,heading) {
   const rows=[];
-  let current='';
-  const splitLong=(word) => {
-    let segment='';
-    for(const ch of Array.from(word)) {
-      if(segment && context.measureText(segment+ch).width>maxWidth) {
-        rows.push(segment);segment=ch;
-      } else segment+=ch;
-    }
-    return segment;
+  let segments=[], rowWidth=0;
+  const measure=(text,bold)=>{
+    context.font=fontSpec(s,fontSize,heading,bold);
+    return context.measureText(text).width;
   };
-  for (const part of parts) {
-    if(/^\s+$/u.test(part)) {
-      if(current && context.measureText(current+part).width<=maxWidth) current+=part;
-      continue;
-    }
-    const candidate=current+part;
-    if(context.measureText(candidate).width<=maxWidth) {
-      current=candidate;
+  function append(text,bold) {
+    if(!text)return;
+    const last=segments[segments.length-1];
+    if(last && last.bold===bold) {
+      const joined=last.text+text;
+      const newWidth=measure(joined,bold);
+      rowWidth+=newWidth-last.width;
+      last.text=joined;last.width=newWidth;
     } else {
-      if(current) rows.push(current.replace(/\s+$/u,''));
-      current=context.measureText(part).width>maxWidth?splitLong(part):part;
+      const width=measure(text,bold);
+      segments.push({text,bold,width});
+      rowWidth+=width;
     }
   }
-  if(current)rows.push(current.replace(/\s+$/u,''));
-  return rows.length?rows:[''];
+  function flush() {
+    while(segments.length && /^\s+$/u.test(segments[segments.length-1].text)){
+      rowWidth-=segments.pop().width;
+    }
+    const last=segments[segments.length-1];
+    if(last) {
+      const trimmed=last.text.replace(/\s+$/u,'');
+      if(trimmed!==last.text) {
+        const width=measure(trimmed,last.bold);
+        rowWidth+=width-last.width;last.text=trimmed;last.width=width;
+      }
+    }
+    if(segments.length)rows.push({segments,width:Math.max(0,rowWidth)});
+    segments=[];rowWidth=0;
+  }
+  function candidateWidth(text,bold) {
+    const last=segments[segments.length-1];
+    if(last && last.bold===bold) return rowWidth-last.width+measure(last.text+text,bold);
+    return rowWidth+measure(text,bold);
+  }
+  for(const run of runs) {
+    const tokens=run.text.match(/\s+|\S+/gu)||[];
+    for(const token of tokens) {
+      if(/^\s+$/u.test(token)) {
+        if(segments.length && candidateWidth(token,run.bold)<=maxWidth) append(token,run.bold);
+        continue;
+      }
+      if(segments.length && candidateWidth(token,run.bold)>maxWidth)flush();
+      if(measure(token,run.bold)<=maxWidth) {
+        append(token,run.bold);
+        continue;
+      }
+      // Break only genuinely oversized words, at grapheme boundaries where available.
+      const chars=typeof Intl!=='undefined' && Intl.Segmenter
+        ? Array.from(new Intl.Segmenter(undefined,{granularity:'grapheme'}).segment(token),part=>part.segment)
+        : Array.from(token);
+      for(const ch of chars){
+        if(segments.length && candidateWidth(ch,run.bold)>maxWidth)flush();
+        append(ch,run.bold);
+      }
+    }
+  }
+  flush();
+  return rows;
 }
 function makeLayout(s) {
   const context=measureCtx;
@@ -141,23 +197,31 @@ function makeLayout(s) {
   const lines=s.text.replace(/\r\n?/g,'\n').split('\n');
   const entries=[];
   let y=0;
-  lines.forEach((original,index)=>{
-    let text=original, heading=0;
-    if(/^##\s+/u.test(text)){heading=2;text=text.replace(/^##\s+/u,'');}
-    else if(/^#\s+/u.test(text)){heading=1;text=text.replace(/^#\s+/u,'');}
-    const fontSize=heading?s.headingSize*(heading===1?1.14:1):s.fontSize;
-    if(heading && entries.length)y+=s.headingSpacing;
-    if(text==='') {
+  for(const original of lines) {
+    const parsed=parseMarkdownLine(original);
+    if(parsed.type==='blank') {
       y+=s.fontSize*s.lineHeight+s.paragraphSpacing;
-      return;
+      continue;
     }
-    context.font=fontSpec(s,fontSize,heading>0);
-    for(const row of wrapLine(context,text,width)){
-      entries.push({text:row,y:y+fontSize,fontSize,heading:heading>0,x:textX});
+    if(parsed.type==='separator') {
+      if(entries.length)y+=s.headingSpacing*.45;
+      const ruleY=y+12;
+      entries.push({type:'separator',y:ruleY,
+        x1:left+width*.3,x2:left+width*.7});
+      y+=24+s.headingSpacing*.65;
+      continue;
+    }
+    const heading=parsed.type==='heading';
+    const fontSize=heading?s.headingSize*(parsed.level===1?1.16:parsed.level===3?.8:1):s.fontSize;
+    if(heading && entries.length)y+=s.headingSpacing;
+    const rows=wrapStyledLine(context,parsed.runs,width,s,fontSize,heading);
+    for(const row of rows) {
+      entries.push({type:'text',segments:row.segments,width:row.width,
+        y:y+fontSize,fontSize,heading,x:textX,level:parsed.level||0});
       y+=fontSize*s.lineHeight;
     }
     if(heading)y+=s.headingSpacing*.25;
-  });
+  }
   return {entries,height:Math.max(y,0),width,travel:H+Math.max(y,0)};
 }
 function getTotal(s) {return s.openingDelay+s.scrollDuration+s.endingDelay;}
@@ -183,14 +247,29 @@ function renderAt(targetCtx,s,l,t,img) {
   if(s.fadeIn>0)opacity=Math.min(opacity,clamp(t/s.fadeIn,0,1));
   if(s.fadeOut>0)opacity=Math.min(opacity,clamp((total-t)/s.fadeOut,0,1));
   targetCtx.globalAlpha=clamp(opacity,0,1);
-  targetCtx.textAlign=s.align;
+  targetCtx.textAlign='left';
   targetCtx.textBaseline='alphabetic';
   for(const row of l.entries){
+    if(row.type==='separator'){
+      const ruleY=top+row.y;
+      if(ruleY<0 || ruleY>H)continue;
+      targetCtx.beginPath();
+      targetCtx.moveTo(row.x1,ruleY);
+      targetCtx.lineTo(row.x2,ruleY);
+      targetCtx.lineWidth=2;
+      targetCtx.strokeStyle=s.headingColor;
+      targetCtx.stroke();
+      continue;
+    }
     const base=top+row.y;
     if(base < -row.fontSize || base>H+row.fontSize)continue;
-    targetCtx.font=fontSpec(s,row.fontSize,row.heading);
+    let runX=row.x-(s.align==='center'?row.width/2:s.align==='right'?row.width:0);
     targetCtx.fillStyle=row.heading?s.headingColor:s.textColor;
-    targetCtx.fillText(row.text,row.x,base);
+    for(const segment of row.segments) {
+      targetCtx.font=fontSpec(s,row.fontSize,row.heading,segment.bold);
+      targetCtx.fillText(segment.text,runX,base);
+      runX+=segment.width;
+    }
   }
   targetCtx.restore();
 }
@@ -392,6 +471,28 @@ function wire() {
       stopPlayback();currentTime=0;updateDerived();persist();
     });
   }
+  $('paste-markdown').addEventListener('click',async()=>{
+    if(!navigator.clipboard?.readText){
+      message('Clipboard access is unavailable. Click inside the credits editor and use Ctrl+V instead.','error');
+      return;
+    }
+    // Prefer text/plain: ChatGPT copies Markdown markers into plain clipboard text.
+    let clipboardText;
+    try { clipboardText=await navigator.clipboard.readText(); }
+    catch(err) {
+      message('Could not read the clipboard. Allow clipboard access, or click inside the editor and use Ctrl+V.','error');
+      return;
+    }
+    if(!clipboardText) {
+      message('The clipboard does not contain text. Copy the Markdown credits first.','error');
+      return;
+    }
+    if(state.text.trim() && !confirm('Replace the current credits with Markdown text from the clipboard?'))return;
+    state.text=clipboardText;
+    $('credits-text').value=clipboardText;
+    stopPlayback();currentTime=0;updateDerived();persist();
+    message('Pasted Markdown. The editor preserves its source; headings, bold text and separators are formatted in the preview.');
+  });
   $('import-text').addEventListener('click',()=>$('text-file').click());
   $('text-file').addEventListener('change',async e=>{
     try{await importText(e.target.files[0]);}catch(err){message('Text import failed: '+err.message,'error');}
