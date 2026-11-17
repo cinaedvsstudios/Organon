@@ -12,13 +12,20 @@ const AUDIO_TYPES = new Set(['video', 'audio']);
 const SUPPORTED_BLEND_MODES = new Set(['source-over', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn']);
 
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
-function waitForEvent(target, eventName) {
+function waitForEvent(target, eventName, signal = null) {
     return new Promise((resolve, reject) => {
-        const cleanup = () => { target.removeEventListener(eventName, onSuccess); target.removeEventListener('error', onError); };
+        const cleanup = () => {
+            target.removeEventListener(eventName, onSuccess);
+            target.removeEventListener('error', onError);
+            signal?.removeEventListener('abort', onAbort);
+        };
         const onSuccess = () => { cleanup(); resolve(); };
         const onError = () => { cleanup(); reject(new Error(`Could not load media (${eventName}).`)); };
+        const onAbort = () => { cleanup(); reject(new Error('Media loading was cancelled.')); };
+        if (signal?.aborted) { reject(new Error('Media loading was cancelled.')); return; }
         target.addEventListener(eventName, onSuccess, { once:true });
         target.addEventListener('error', onError, { once:true });
+        signal?.addEventListener('abort', onAbort, { once:true });
     });
 }
 function drawContained(context, source, width, height) {
@@ -69,6 +76,7 @@ export class AdvancedMediaEngine {
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
         this.analysisContext = null;
         this.playbackBoundaries = new PlaybackBoundaryTracker();
+        this.loadingTracks = new Set();
         this.projectFps = 30;
         this.seekGeneration = 0;
         this.seekController = null;
@@ -111,7 +119,17 @@ export class AdvancedMediaEngine {
     setTracks(tracks) {
         this.cancelPendingSeek();
         this.resumeAfterSeek = false;
-        this.tracks = Array.isArray(tracks) ? tracks : [];
+        const next = Array.isArray(tracks) ? tracks : [];
+        const retained = new Set(next);
+        // The controller may replace the array rather than call removeTrack().
+        // Dispose every removed clip even when the old array was simply filtered.
+        for (const previous of this.tracks) {
+            if (!retained.has(previous)) this.detachTrack(previous, false);
+        }
+        for (const pending of [...this.loadingTracks]) {
+            if (!retained.has(pending)) this.detachTrack(pending, false);
+        }
+        this.tracks = next;
         if (this.isPlaying && this.getTimelineDuration() <= 0) this.pause();
         else if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
         else this.syncAudioSettings(this.currentTime);
@@ -129,31 +147,34 @@ export class AdvancedMediaEngine {
     async loadTrack(track, file) {
         if (!track || !file) throw new Error('A track and a source file are required.');
         this.detachTrack(track, false);
+        const loadController = new AbortController();
+        track.loadController = loadController;
+        this.loadingTracks.add(track);
         track.file = file;
         track.sourceOffset = Math.max(0, Number(track.sourceOffset) || 0);
-        track.objectUrl = URL.createObjectURL(file);
-        track.sourceName = file.name;
-        track.fileType = file.type;
         try {
+            track.objectUrl = URL.createObjectURL(file);
+            track.sourceName = file.name;
+            track.fileType = file.type;
             if (track.type === 'sticker' || track.type === 'background') {
                 const image = new Image();
                 image.decoding = 'async';
                 image.src = track.objectUrl;
-                await waitForEvent(image, 'load');
                 track.media = image;
+                await waitForEvent(image, 'load', loadController.signal);
                 track.sourceDuration = 300;
                 if (!Number(track.clipDuration)) track.clipDuration = 3;
             } else if (track.type === 'video') {
                 const visual = document.createElement('video');
                 visual.preload = 'auto'; visual.playsInline = true; visual.muted = true; visual.playbackRate = 1; visual.src = track.objectUrl;
                 this.mediaBin.appendChild(visual);
-                await waitForEvent(visual, 'loadedmetadata');
+                track.media = visual;
+                await waitForEvent(visual, 'loadedmetadata', loadController.signal);
                 const sound = document.createElement('audio');
                 sound.preload = 'auto'; sound.playbackRate = 1; sound.src = track.objectUrl;
                 this.mediaBin.appendChild(sound);
-                await waitForEvent(sound, 'loadedmetadata');
-                track.media = visual;
                 track.soundMedia = sound;
+                await waitForEvent(sound, 'loadedmetadata', loadController.signal);
                 track.sourceDuration = Number.isFinite(visual.duration) ? visual.duration : 0;
                 if (!Number(track.clipDuration)) track.clipDuration = track.sourceDuration || 1;
                 await this.connectAudioTrack(track, sound);
@@ -161,15 +182,23 @@ export class AdvancedMediaEngine {
                 const audio = document.createElement('audio');
                 audio.preload = 'auto'; audio.playbackRate = 1; audio.src = track.objectUrl;
                 this.mediaBin.appendChild(audio);
-                await waitForEvent(audio, 'loadedmetadata');
                 track.media = audio;
+                await waitForEvent(audio, 'loadedmetadata', loadController.signal);
                 track.sourceDuration = Number.isFinite(audio.duration) ? audio.duration : 0;
                 if (!Number(track.clipDuration)) track.clipDuration = track.sourceDuration || 1;
                 await this.connectAudioTrack(track, audio);
             }
+            if (loadController.signal.aborted) throw new Error('Media loading was cancelled.');
         } catch (error) {
-            this.detachTrack(track, false);
+            // An older cancelled load must never destroy a newer load of the
+            // same timeline object.
+            if (track.loadController === loadController) this.detachTrack(track, false);
             throw error;
+        } finally {
+            if (track.loadController === loadController) {
+                track.loadController = null;
+                this.loadingTracks.delete(track);
+            }
         }
         this.syncAudioSettings();
         this.emitDuration();
@@ -205,11 +234,12 @@ export class AdvancedMediaEngine {
                 if (isPeak) normalised = clamp(normalised * 1.2, 0, 1);
                 return Number(normalised.toFixed(3));
             });
+            if (track.file !== file || !this.tracks.includes(track)) return null;
             track.analysis = { levels, sampleCount: bucketCount, analysed: true };
             return track.analysis;
         } catch (error) {
             console.warn(`Could not analyse ${file.name || 'audio'}:`, error);
-            track.analysis = null;
+            if (track.file === file && this.tracks.includes(track)) track.analysis = null;
             return null;
         }
     }
@@ -224,20 +254,43 @@ export class AdvancedMediaEngine {
 
     detachTrack(track, emit = true) {
         if (!track) return;
-        try { track.media?.pause?.(); } catch (_) { /* no-op */ }
-        try { track.soundMedia?.pause?.(); } catch (_) { /* no-op */ }
-        try { track.audioNode?.disconnect(); } catch (_) { /* no-op */ }
-        try { track.gainNode?.disconnect(); } catch (_) { /* no-op */ }
-        for (const element of [track.media, track.soundMedia]) if (element?.parentNode === this.mediaBin) element.remove();
-        if (track.objectUrl) URL.revokeObjectURL(track.objectUrl);
+        if (track.loadController) {
+            track.loadController.abort();
+            track.loadController = null;
+        }
+        this.loadingTracks.delete(track);
+        this.stopTrackMedia(track);
+        for (const node of [track.audioNode, track.gainNode]) {
+            try { node?.disconnect?.(); } catch (_) { /* already disconnected */ }
+        }
+        for (const element of [track.media, track.soundMedia]) {
+            if (!element) continue;
+            try {
+                if (typeof element.removeAttribute === 'function') element.removeAttribute('src');
+                if (typeof element.load === 'function') element.load();
+                if (element.parentNode === this.mediaBin) element.remove();
+            } catch (error) {
+                console.warn('Could not release MotoriClip media element:', error);
+            }
+        }
+        if (track.objectUrl) {
+            try { URL.revokeObjectURL(track.objectUrl); } catch (_) { /* already revoked */ }
+        }
         track.media = null; track.soundMedia = null; track.audioNode = null; track.gainNode = null; track.objectUrl = null;
         track.sourceName = ''; track.sourceDuration = 0; track.clipDuration = 0; track.file = null;
         if (emit) { this.emitDuration(); this.renderFrame(); }
     }
 
-    removeTrack(track) { this.detachTrack(track, false); this.tracks = this.tracks.filter((item) => item.id !== track.id); this.emitDuration(); this.renderFrame(); }
+    removeTrack(track) { this.setTracks(this.tracks.filter((item) => item !== track)); }
 
-    clearAll() { this.pause(); this.tracks.forEach((track) => this.detachTrack(track, false)); this.tracks = []; this.currentTime = 0; this.emitDuration(); this.emitTime(); this.renderFrame(); }
+    clearAll() {
+        this.pause();
+        const loading = [...this.loadingTracks];
+        this.setTracks([]);
+        for (const track of loading) this.detachTrack(track, false);
+        this.currentTime = 0;
+        this.emitDuration(); this.emitTime(); this.renderFrame();
+    }
 
     getAudioFadeGain(track, time = this.currentTime) {
         if (!AUDIO_TYPES.has(track.type)) return 0;

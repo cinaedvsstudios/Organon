@@ -5,7 +5,8 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase3';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase4';
+import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -17,7 +18,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
-        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map()
     };
 
     const elements = {
@@ -126,34 +127,27 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         state.toastTimer = setTimeout(() => elements.toast.classList.remove('visible'), duration);
     }
 
-    function cloneTrackForHistory(track) {
-        const { audio = {}, transparency = {}, analysis = null, ...rest } = track;
-        return {
-            ...rest,
-            audio: { ...audio },
-            transparency: { ...transparency },
-            analysis: analysis ? { ...analysis, levels: Array.isArray(analysis.levels) ? [...analysis.levels] : analysis.levels } : null
-        };
-    }
 
     function captureHistorySnapshot() {
-        return {
-            files: state.files.map((entry) => ({ ...entry })),
-            tracks: state.tracks.map(cloneTrackForHistory),
-            selectedTrackIds: [...state.selectedTrackIds],
-            selectedTrackId: state.selectedTrackId,
-            selectedFileId: state.selectedFileId,
+        return snapshotProject({
+            files: state.files, tracks: state.tracks, selectedTrackIds: state.selectedTrackIds,
+            selectedTrackId: state.selectedTrackId, selectedFileId: state.selectedFileId,
             currentTime: engine.currentTime
-        };
+        });
+    }
+
+    function pruneSourceRegistry() {
+        const keep = referencedFileIds(state.files, state.tracks, state.history.undo, state.history.redo);
+        for (const id of state.sourceFiles.keys()) if (!keep.has(id)) state.sourceFiles.delete(id);
     }
 
     function updateHistoryButtons() {
-        const canUndo = state.history.undo.length > 0;
-        const canRedo = state.history.redo.length > 0;
-        elements.btnUndo.disabled = !canUndo;
-        elements.btnRedo.disabled = !canRedo;
-        elements.btnUndo.title = canUndo ? `Undo ${state.history.undo[state.history.undo.length - 1].label}` : 'Nothing to undo';
-        elements.btnRedo.title = canRedo ? `Redo ${state.history.redo[state.history.redo.length - 1].label}` : 'Nothing to redo';
+        const undo = !state.historyRestoring && state.history.undo.length > 0;
+        const redo = !state.historyRestoring && state.history.redo.length > 0;
+        elements.btnUndo.disabled = !undo;
+        elements.btnRedo.disabled = !redo;
+        elements.btnUndo.title = undo ? `Undo ${state.history.undo.at(-1).label}` : 'Nothing to undo';
+        elements.btnRedo.title = redo ? `Redo ${state.history.redo.at(-1).label}` : 'Nothing to redo';
     }
 
     function recordHistory(label = 'timeline edit') {
@@ -161,44 +155,61 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         state.history.undo.push({ label, snapshot: captureHistorySnapshot() });
         if (state.history.undo.length > state.history.limit) state.history.undo.shift();
         state.history.redo = [];
+        pruneSourceRegistry();
         updateHistoryButtons();
     }
 
     async function restoreHistorySnapshot(snapshot) {
-        if (!snapshot) return;
+        if (!snapshot || state.historyRestoring) return;
         state.historyRestoring = true;
+        updateHistoryButtons();
         try {
+            const files = restoreFileEntries(snapshot.files, state.sourceFiles);
+            if (files.length !== snapshot.files.length) throw new Error('Source file needed by undo/redo is missing.');
             engine.pause();
-            state.files = snapshot.files.map((entry) => ({ ...entry }));
-            state.tracks = snapshot.tracks.map(cloneTrackForHistory);
+            // Prepare missing players before removing the current ones; reuse
+            // unchanged players for a trim, move, group or inspector undo.
+            const prepared = await prepareHistoryTracks({
+                records: snapshot.tracks, existingTracks: state.tracks, sourceFiles: state.sourceFiles,
+                loadTrack: (track, file) => engine.loadTrack(track, file),
+                disposeTrack: (track) => engine.detachTrack(track, false)
+            });
+            prepared.commit();
+            state.files = files;
+            state.tracks = prepared.tracks;
             state.selectedTrackIds = new Set(snapshot.selectedTrackIds || []);
             state.selectedTrackId = snapshot.selectedTrackId || [...state.selectedTrackIds][0] || null;
             state.selectedFileId = snapshot.selectedFileId || null;
             renderFiles();
-            refreshAll();
-            await engine.seek(Number(snapshot.currentTime) || 0);
+            refreshAll(); // setTracks disposes discarded media objects.
+            await engine.seek(Number(snapshot.currentTime) || 0, { resume: false });
         } finally {
             state.historyRestoring = false;
+            updateHistoryButtons();
         }
     }
 
-    async function undoTimelineEdit() {
-        const entry = state.history.undo.pop();
-        if (!entry) return;
-        state.history.redo.push({ label: entry.label, snapshot: captureHistorySnapshot() });
-        await restoreHistorySnapshot(entry.snapshot);
-        updateHistoryButtons();
-        showToast(`Undid ${entry.label}`);
+    async function runHistoryStep(from, to, pastTense) {
+        if (state.historyRestoring || !from.length) return;
+        const entry = from[from.length - 1];
+        const previous = captureHistorySnapshot();
+        try {
+            await restoreHistorySnapshot(entry.snapshot);
+            from.pop();
+            to.push({ label: entry.label, snapshot: previous });
+            if (to.length > state.history.limit) to.shift();
+            pruneSourceRegistry();
+            showToast(`${pastTense} ${entry.label}`);
+        } catch (error) {
+            console.error('MotoriClip history restore failed:', error);
+            elements.previewState.textContent = `History restore failed: ${error.message}`;
+            showToast('Undo/redo unavailable for this media');
+        } finally {
+            updateHistoryButtons();
+        }
     }
-
-    async function redoTimelineEdit() {
-        const entry = state.history.redo.pop();
-        if (!entry) return;
-        state.history.undo.push({ label: entry.label, snapshot: captureHistorySnapshot() });
-        await restoreHistorySnapshot(entry.snapshot);
-        updateHistoryButtons();
-        showToast(`Redid ${entry.label}`);
-    }
+    async function undoTimelineEdit() { await runHistoryStep(state.history.undo, state.history.redo, 'Undid'); }
+    async function redoTimelineEdit() { await runHistoryStep(state.history.redo, state.history.undo, 'Redid'); }
 
     function registerInspectorHistory(control, label) {
         if (!control) return;
@@ -314,6 +325,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         }
         if (!usable.length) { elements.previewState.textContent = 'No supported media files found.'; return; }
         recordHistory(`Import ${usable.length} project file${usable.length === 1 ? '' : 's'}`);
+        for (const entry of usable) state.sourceFiles.set(entry.id, entry.file);
         state.files.push(...usable);
         renderFiles();
         elements.previewState.textContent = `Added ${usable.length} file${usable.length === 1 ? '' : 's'} to Project Files`;
@@ -421,18 +433,26 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
 
     async function loadTrackFromFile(track, entry, start = 0) {
         track.start = Math.max(0, Number(start) || 0);
+        track.sourceFileId = entry.id || track.sourceFileId || state.files.find((item) => item.file === entry.file)?.id;
+        if (track.sourceFileId && entry.file) state.sourceFiles.set(track.sourceFileId, entry.file);
         try {
             await engine.loadTrack(track, entry.file);
+            if (!state.tracks.includes(track)) {
+                engine.detachTrack(track, false);
+                return;
+            }
             if (!track.clipDuration) track.clipDuration = (track.type === 'sticker' || track.type === 'background') ? 3 : track.sourceDuration || 1;
             refreshAll(); selectTrack(track.id);
             elements.previewState.textContent = `Loaded ${entry.name}`;
             if (track.type === 'audio' || track.type === 'video') {
-                engine.analyzeTrackAudio(track, entry.file).then(() => {
+                engine.analyzeTrackAudio(track, entry.file).then((result) => {
+                    if (!result || !state.tracks.includes(track) || track.file !== entry.file) return;
                     timeline.setTracks(state.tracks);
                     elements.previewState.textContent = `Analysed ${entry.name}`;
                 });
             }
         } catch (error) {
+            if (!state.tracks.includes(track) && /cancelled/i.test(error.message)) return;
             elements.previewState.textContent = `Could not load ${entry.name}`;
             alert(`Could not load ${entry.name}. ${error.message}`);
         }
@@ -517,9 +537,9 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         const video = getTrack();
         if (!video || video.type !== 'video' || !video.file) return;
         recordHistory(`Extract audio from ${video.sourceName || video.laneLabel}`);
-        const audio = createTrack('audio', { extractedFrom: video.id, start: video.start, sourceOffset: video.sourceOffset, clipDuration: video.clipDuration, label: `Extracted Audio ${nextLaneOrder('audio')}` });
+        const audio = createTrack('audio', { extractedFrom: video.id, sourceFileId: video.sourceFileId, start: video.start, sourceOffset: video.sourceOffset, clipDuration: video.clipDuration, label: `Extracted Audio ${nextLaneOrder('audio')}` });
         state.tracks.push(audio); video.audio.muted = true;
-        await loadTrackFromFile(audio, { file: video.file, name: video.sourceName }, video.start);
+        await loadTrackFromFile(audio, { id: video.sourceFileId, file: video.file, name: video.sourceName }, video.start);
         audio.clipDuration = Math.min(video.clipDuration, Math.max(.15, (audio.sourceDuration || video.clipDuration) - audio.sourceOffset));
         refreshAll(); selectTrack(audio.id);
     }
@@ -552,11 +572,12 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
             transparency: { ...track.transparency },
             groupId: track.groupId,
             extractedFrom: track.extractedFrom,
-            analysis: track.analysis
+            analysis: track.analysis,
+            sourceFileId: track.sourceFileId
         });
         track.clipDuration = leftDuration;
         state.tracks.push(split);
-        await loadTrackFromFile(split, { file: track.file, name: track.sourceName }, cutTime);
+        await loadTrackFromFile(split, { id: track.sourceFileId, file: track.file, name: track.sourceName }, cutTime);
         split.clipDuration = rightDuration;
         refreshAll(); selectTrack(split.id);
         showToast('Clip split at now line');
@@ -598,6 +619,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
                 order: isVideo ? undefined : original.order,
                 start: Math.max(0, (Number(original.start) || 0) + originalDuration),
                 sourceOffset: Number(original.sourceOffset) || 0,
+                sourceFileId: original.sourceFileId,
                 clipDuration: originalDuration,
                 visible: original.visible,
                 opacity: original.opacity,
@@ -899,7 +921,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
         recordHistory('Clear project');
-        engine.pause(); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll();
+        engine.clearAll(); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 

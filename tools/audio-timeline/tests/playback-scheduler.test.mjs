@@ -166,9 +166,12 @@ test('Removing all clips during playback stops players and the timeline clock',a
     const app=createFakeEngine(),clip=app.makeClip('one',0,5);
     app.engine.setTracks([clip]);
     await app.engine.play();
-    assert.equal(clip.media.paused,false);
+    const videoPlayer=clip.media, soundPlayer=clip.soundMedia;
+    assert.equal(videoPlayer.paused,false);
     app.engine.setTracks([]);
-    assert.equal(clip.media.paused,true);
-    assert.equal(clip.soundMedia.paused,true);
+    assert.equal(videoPlayer.paused,true);
+    assert.equal(soundPlayer.paused,true);
+    assert.equal(clip.media,null,'removed media element must be released');
+    assert.equal(clip.soundMedia,null,'removed linked sound must be released');
     assert.equal(app.engine.isPlaying,false);
 });
