@@ -45,11 +45,11 @@ command('ffmpeg',['-hide_banner','-loglevel','error','-y',
 // Sum proportional set size (PSS) for Chrome's process tree, including GPU and
 // renderer subprocesses, to avoid counting shared memory fully for each process.
 // RSS is also recorded as a coarse secondary metric, NOT used as total memory.
-function chromeMemory(browserPid){
+function chromeMemory(nodePid){
     const processes=command('ps',['-eo','pid=,ppid=,comm=']);
     const rows=processes.split('\n').map(x=>x.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/)).filter(Boolean)
         .map(x=>({pid:Number(x[1]),ppid:Number(x[2]),name:x[3]}));
-    const descendants=new Set([browserPid]);
+    const descendants=new Set([nodePid]);
     let changed=true;
     while(changed){
         changed=false;
@@ -61,6 +61,7 @@ function chromeMemory(browserPid){
     }
     let pss=0,rss=0,pssProcesses=0,rssProcesses=0;
     for(const pid of descendants){
+        if(pid === nodePid) continue; // Do not count the Node test runner itself.
         try{
             const report=readFileSync('/proc/'+pid+'/smaps_rollup','utf8');
             const p=report.match(/^Pss:\s+(\d+)\s+kB/m);
@@ -70,7 +71,7 @@ function chromeMemory(browserPid){
         }catch{/* Process exited or smaps_rollup is not accessible */}
     }
     return {pssKiB:pssProcesses?pss:null,rssKiB:rssProcesses?rss:null,
-        processCount:descendants.size,pssProcesses,rssProcesses};
+        processCount:Math.max(0,descendants.size-1),pssProcesses,rssProcesses};
 }
 
 const mime={'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript',
@@ -113,10 +114,10 @@ try{
     const records=[];
     for(const cfg of scenarios){
         console.log('[MotoriClip 6G] START',cfg.name);
-        const base=chromeMemory(browser.process().pid);
+        const base=chromeMemory(process.pid);
         const samples=[base];
         const timer=setInterval(()=>{
-            try{samples.push(chromeMemory(browser.process().pid))}catch(error){
+            try{samples.push(chromeMemory(process.pid))}catch(error){
                 console.warn('Memory sample failed: '+String(error));
             }
         },400);
