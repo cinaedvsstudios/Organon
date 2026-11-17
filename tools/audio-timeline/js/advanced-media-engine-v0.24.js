@@ -149,10 +149,10 @@ export class AdvancedMediaEngine {
         this.loadingTracks.add(track);
         track.file = file;
         track.sourceOffset = Math.max(0, Number(track.sourceOffset) || 0);
-        track.objectUrl = URL.createObjectURL(file);
-        track.sourceName = file.name;
-        track.fileType = file.type;
         try {
+            track.objectUrl = URL.createObjectURL(file);
+            track.sourceName = file.name;
+            track.fileType = file.type;
             if (track.type === 'sticker' || track.type === 'background') {
                 const image = new Image();
                 image.decoding = 'async';
@@ -185,12 +185,15 @@ export class AdvancedMediaEngine {
                 if (!Number(track.clipDuration)) track.clipDuration = track.sourceDuration || 1;
                 await this.connectAudioTrack(track, audio);
             }
+            if (loadController.signal.aborted) throw new Error('Media loading was cancelled.');
         } catch (error) {
             this.detachTrack(track, false);
             throw error;
         } finally {
-            if (track.loadController === loadController) track.loadController = null;
-            this.loadingTracks.delete(track);
+            if (track.loadController === loadController) {
+                track.loadController = null;
+                this.loadingTracks.delete(track);
+            }
         }
         this.syncAudioSettings();
         this.emitDuration();
@@ -226,11 +229,12 @@ export class AdvancedMediaEngine {
                 if (isPeak) normalised = clamp(normalised * 1.2, 0, 1);
                 return Number(normalised.toFixed(3));
             });
+            if (track.file !== file || !this.tracks.includes(track)) return null;
             track.analysis = { levels, sampleCount: bucketCount, analysed: true };
             return track.analysis;
         } catch (error) {
             console.warn(`Could not analyse ${file.name || 'audio'}:`, error);
-            track.analysis = null;
+            if (track.file === file && this.tracks.includes(track)) track.analysis = null;
             return null;
         }
     }
