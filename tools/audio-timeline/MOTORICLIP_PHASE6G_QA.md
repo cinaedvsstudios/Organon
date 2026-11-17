@@ -22,9 +22,31 @@ PSS is a *sampled estimate* of total Chrome process memory, not an exact GPU all
 
 **No arbitrary pass/fail memory ceiling is assigned** without an established device requirement. The test fails if memory metrics cannot be obtained or the encoded output is invalid.
 
-## Status
+## Verified results — 17 November 2026
 
-Awaiting actual GitHub Actions execution. A successful test-script commit is not sufficient evidence of passing results. The longer tests do not justify automatically removing the two-minute beta limit.
+**GitHub Actions run [44153464101](https://github.com/cinaedvsstudios/Organon/actions/runs/44153464101) completed successfully** on pinned Ubuntu 24.04. All **91 Node regression tests** and the earlier real-media browser suites passed alongside these new stress checks.
+
+| Metric | 1080p H.264/AAC | 720p VP9/Opus |
+|---|---:|---:|
+| Length | 18.005 seconds | 30.020 seconds |
+| Clips | 8 videos + background + PNG | 25 videos + background + PNG |
+| Decoded output frames | 540 | 750 |
+| Output size | 10.97 MiB | 7.77 MiB |
+| Browser encoding elapsed | 22.792 seconds | 24.926 seconds |
+| Total test elapsed | 24.435 seconds | 26.618 seconds |
+| Sampled Chrome PSS before | 351.3 MiB | 923.0 MiB |
+| Sampled Chrome PSS peak | **1,034.3 MiB** | **1,045.7 MiB** |
+| Sampled Chrome PSS at last observation | 911.4 MiB | 1,016.1 MiB |
+| Number of PSS samples | 58 | 63 |
+| Audio RMS during source clip | 0.0436 | 0.0437 |
+
+The moving footage outputs included the expected stream types, exact frame counts and output dimensions. Sampled start/mid/end frames differed, so the visual result was not a frozen image. Audio was audible at the chosen active-clip sample. The beta returned a single completed download, reached 100% progress and released its `Input` registry after both scenarios.
+
+**Interpretation:** On this runner, the browser's sampled proportional memory reached approximately **1 GiB** during both cases, substantially more than the baseline of an idle browser. After the first export the last sampled PSS was 911.4 MiB, rather than returning to 351.3 MiB, and the second began at 923.0 MiB. This is **not conclusive evidence of a memory leak** because Chromium may retain memory, decoder state and caches; the test did not force garbage collection, wait through an idle stabilization period or measure GPU allocations separately. It does establish a reproducible reason for keeping the two-minute beta limit until repeated-export memory behaviour is tested.
+
+The first CI attempt failed at dependency setup when `ubuntu-latest` did not offer `ffmpeg`; the workflow is now pinned to Ubuntu 24.04 for consistent FFmpeg/ffprobe packages. A later harness failure stemmed from using Puppeteer's `browser.process()` API with Playwright; the memory profiler now discovers Chrome processes as descendants of the Node runner and explicitly excludes Node's own memory. Neither error was an editor encoding failure.
+
+
 
 ## Remaining stabilization gaps
 
