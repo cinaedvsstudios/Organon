@@ -51,3 +51,7 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/extended-export.browser.mjs
+      - name: Exercise desktop and mobile editor UI in real Chrome
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/editor-ui.browser.mjs
