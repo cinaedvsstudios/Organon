@@ -14,9 +14,13 @@ export function sourceMime(file) {
     const extension = String(file?.name || '').toLowerCase().split('.').pop();
     return MEDIA_EXTENSIONS[extension] || '';
 }
-export function checkBrowserMediaSupport(player, file) {
+export function checkBrowserMediaSupport(player, file, { audioFromVideo = false } = {}) {
     const mime = sourceMime(file);
     if (!mime || !player || typeof player.canPlayType !== 'function') return;
+    // Extract Audio deliberately opens a video container in an audio element.
+    // A browser's video MIME verdict on an audio-only player may be negative
+    // even if the contained audio track is decodable. Let its decoder decide.
+    if (audioFromVideo && mime.startsWith('video/')) return;
     // A negative result is conclusive for this container type, whereas 'maybe'
     // and 'probably' still require an actual decoder load to verify codecs.
     if (player.canPlayType(mime) === '') {
