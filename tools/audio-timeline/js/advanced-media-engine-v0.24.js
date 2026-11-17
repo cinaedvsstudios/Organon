@@ -60,6 +60,10 @@ export class AdvancedMediaEngine {
         this.stickerWorkCanvas = document.createElement('canvas');
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
         this.analysisContext = null;
+        this.visualStackCache = null;
+        this.visualStackCacheKey = '';
+        this.stickerEffectCache = new Map();
+        this.stickerEffectCacheLimit = 3;
         this.playbackBoundaries = new PlaybackBoundaryTracker();
         this.loadingTracks = new Set();
         this.projectFps = 30;
@@ -115,6 +119,12 @@ export class AdvancedMediaEngine {
             if (!retained.has(pending)) this.detachTrack(pending, false);
         }
         this.tracks = next;
+        // A reorder changes the paint stack, even when clip objects are reused.
+        this.visualStackCacheKey = '';
+        this.visualStackCache = null;
+        for (const track of this.stickerEffectCache.keys()) {
+            if (!retained.has(track)) this.stickerEffectCache.delete(track);
+        }
         if (this.isPlaying && this.getTimelineDuration() <= 0) this.pause();
         else if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
         else this.syncAudioSettings(this.currentTime);
@@ -255,6 +265,7 @@ export class AdvancedMediaEngine {
             track.loadController = null;
         }
         this.loadingTracks.delete(track);
+        this.stickerEffectCache.delete(track);
         this.stopTrackMedia(track);
         if (track.mediaErrorHandler && track.media?.removeEventListener) {
             track.media.removeEventListener('error', track.mediaErrorHandler);
@@ -502,13 +513,17 @@ export class AdvancedMediaEngine {
     stopRenderLoop() { if (this.frameRequest !== null) cancelAnimationFrame(this.frameRequest); this.frameRequest = null; }
 
     getVisualTracksTopToBottom() {
-        // The returned order describes the visual stack from highest to lowest.
-        // renderFrame reverses this to paint the background first, then videos,
-        // then Sticker 2 and finally Sticker 1 on top.
+        // Most preview frames keep the same layer order. Clip timing, opacity,
+        // mute, visibility and media frames do not alter paint-stack sorting.
+        // The signature also catches live order edits before setTracks().
+        const signature = this.tracks.map((track) => `${track.id}:${track.type}:${track.order}`).join('|');
+        if (this.visualStackCache && this.visualStackCacheKey === signature) return this.visualStackCache;
         const stickers = this.tracks.filter((track) => track.type === 'sticker').sort((a,b) => a.order - b.order);
         const videos = this.tracks.filter((track) => track.type === 'video').sort((a,b) => a.order - b.order);
         const backgrounds = this.tracks.filter((track) => track.type === 'background').sort((a,b) => a.order - b.order);
-        return [...stickers, ...videos, ...backgrounds];
+        this.visualStackCacheKey = signature;
+        this.visualStackCache = [...stickers, ...videos, ...backgrounds];
+        return this.visualStackCache;
     }
     ensureCanvasSize() {
         if (this.canvas.width !== this.outputWidth || this.canvas.height !== this.outputHeight) {
@@ -554,21 +569,65 @@ export class AdvancedMediaEngine {
 
     drawSticker(track, width, height) {
         const settings = track.transparency || { mode:'native', keyColour:'#00ff00', tolerance:30, feather:8 };
-        if (settings.mode === 'native') { drawContained(this.context, track.media, width, height); return; }
+        if (settings.mode === 'native') {
+            drawContained(this.context, track.media, width, height);
+            return;
+        }
         const sourceWidth = track.media.naturalWidth || track.media.width || 0;
         const sourceHeight = track.media.naturalHeight || track.media.height || 0;
         if (!sourceWidth || !sourceHeight) return;
-        const limit=1600, scale=Math.min(1,limit/Math.max(sourceWidth,sourceHeight)), processWidth=Math.max(1,Math.round(sourceWidth*scale)), processHeight=Math.max(1,Math.round(sourceHeight*scale));
-        if (this.stickerWorkCanvas.width!==processWidth || this.stickerWorkCanvas.height!==processHeight) { this.stickerWorkCanvas.width=processWidth; this.stickerWorkCanvas.height=processHeight; }
-        this.stickerWorkContext.clearRect(0,0,processWidth,processHeight); this.stickerWorkContext.drawImage(track.media,0,0,processWidth,processHeight);
-        const imageData=this.stickerWorkContext.getImageData(0,0,processWidth,processHeight), pixels=imageData.data, key=hexToRgb(settings.keyColour), tolerance=clamp(Number(settings.tolerance)||0,0,100)*2.55, feather=Math.max(1,clamp(Number(settings.feather)||0,0,100)*2.55);
-        for(let index=0; index<pixels.length; index+=4) {
-            const r=pixels[index],g=pixels[index+1],b=pixels[index+2],alpha=pixels[index+3]; let multiplier=1;
-            if(settings.mode==='chroma') { const distance=Math.hypot(r-key.r,g-key.g,b-key.b); multiplier=clamp((distance-tolerance)/feather,0,1); }
-            else { const luminance=.2126*r+.7152*g+.0722*b; if(settings.mode==='light') multiplier=clamp(((255-tolerance)-luminance)/feather,0,1); if(settings.mode==='dark') multiplier=clamp((luminance-tolerance)/feather,0,1); }
+        const limit = 1600;
+        const scale = Math.min(1, limit / Math.max(sourceWidth, sourceHeight));
+        const processWidth = Math.max(1, Math.round(sourceWidth * scale));
+        const processHeight = Math.max(1, Math.round(sourceHeight * scale));
+        const signature = [settings.mode, settings.keyColour, settings.tolerance, settings.feather, processWidth, processHeight].join('|');
+        // GIF/WebP may animate. Always reprocess those instead of freezing the
+        // first keyed frame in the cache.
+        const dynamic = /image\/(gif|webp)/i.test(track.fileType || '')
+            || /\.(gif|webp)$/i.test(track.sourceName || '');
+        const cached = !dynamic ? this.stickerEffectCache.get(track) : null;
+        if (cached && cached.media === track.media && cached.signature === signature) {
+            this.stickerEffectCache.delete(track);
+            this.stickerEffectCache.set(track, cached); // bounded LRU
+            drawContained(this.context, cached.canvas, width, height);
+            return;
+        }
+
+        const processed = document.createElement('canvas');
+        processed.width = processWidth;
+        processed.height = processHeight;
+        const workContext = processed.getContext('2d', { willReadFrequently:true });
+        if (!workContext) throw new Error('Could not create sticker-processing canvas.');
+        workContext.drawImage(track.media, 0, 0, processWidth, processHeight);
+        const imageData = workContext.getImageData(0,0,processWidth,processHeight);
+        const pixels = imageData.data;
+        const key = hexToRgb(settings.keyColour);
+        const tolerance = clamp(Number(settings.tolerance)||0,0,100)*2.55;
+        const feather = Math.max(1,clamp(Number(settings.feather)||0,0,100)*2.55);
+        for (let index=0; index<pixels.length; index+=4) {
+            const r=pixels[index],g=pixels[index+1],b=pixels[index+2],alpha=pixels[index+3];
+            let multiplier=1;
+            if (settings.mode==='chroma') {
+                const distance=Math.hypot(r-key.r,g-key.g,b-key.b);
+                multiplier=clamp((distance-tolerance)/feather,0,1);
+            } else {
+                const luminance=.2126*r+.7152*g+.0722*b;
+                if (settings.mode==='light') multiplier=clamp(((255-tolerance)-luminance)/feather,0,1);
+                if (settings.mode==='dark') multiplier=clamp((luminance-tolerance)/feather,0,1);
+            }
             pixels[index+3]=Math.round(alpha*multiplier);
         }
-        this.stickerWorkContext.putImageData(imageData,0,0); drawContained(this.context,this.stickerWorkCanvas,width,height);
+        workContext.putImageData(imageData,0,0);
+        if (!dynamic) {
+            this.stickerEffectCache.delete(track);
+            this.stickerEffectCache.set(track, {media:track.media,signature,canvas:processed});
+            while (this.stickerEffectCache.size > this.stickerEffectCacheLimit) {
+                this.stickerEffectCache.delete(this.stickerEffectCache.keys().next().value);
+            }
+        } else {
+            this.stickerEffectCache.delete(track);
+        }
+        drawContained(this.context,processed,width,height);
     }
 
     async snapshot() {
