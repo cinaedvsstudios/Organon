@@ -246,3 +246,24 @@ test('a bad layer does not stop good layers from rendering',()=>{
         assert.equal(app.context.globalCompositeOperation,'source-over');
     }finally{app.cleanup()}
 });
+
+test('extracting video sound does not falsely reject video MIME on audio player',async()=>{
+    const app=setup({support:''});
+    try {
+        const track=mkTrack('extracted','audio');
+        app.engine.setTracks([track]);
+        await app.engine.loadTrack(track,{name:'camera.mp4',type:'video/mp4'});
+        assert.equal(track.media.kind,'audio');
+        assert.equal(app.connections[0],track.media);
+    }finally{app.cleanup()}
+});
+test('an explicitly unsupported audio-only format fails cleanly',async()=>{
+    const app=setup({support:''});
+    try {
+        const track=mkTrack('unsupported-audio','audio');
+        app.engine.setTracks([track]);
+        await assert.rejects(app.engine.loadTrack(track,{name:'song.flac',type:'audio/flac'}),/cannot play audio\/flac/);
+        assert.equal(track.media,null);
+        assert.deepEqual(app.revoked,['blob:test-1']);
+    }finally{app.cleanup()}
+});
