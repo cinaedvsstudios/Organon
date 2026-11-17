@@ -253,6 +253,96 @@ try {
         measurements.push(m);
         console.log('[MotoriClip 6E] PASS '+scenario.name,JSON.stringify(m));
     }
+
+    // Real WebCodecs cancellation: stop a running encoder, verify no partial
+    // download, release decoders, then immediately retry a short project.
+    const interruption=await page.evaluate(async()=>{
+        const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
+            import('../js/advanced-offline-export.mjs'),
+            import('../js/advanced-media-engine-v0.24.js')
+        ]);
+        const response=await fetch('./fixtures/red-440.mp4');
+        const file=new File([await response.blob()],'red-440.mp4',{type:'video/mp4'});
+        const canvas=document.createElement('canvas');
+        canvas.width=1280;canvas.height=720;
+        const engine=new AdvancedMediaEngine({canvas,mediaBin:document.createElement('div'),
+            onTimeChange(){},onDurationChange(){},onPlaybackChange(){},
+            onRenderError(error){throw error}
+        });
+        engine.tracks=[{
+            id:'interrupt',type:'video',file,sourceName:file.name,media:null,
+            start:0,sourceOffset:0,clipDuration:8,sourceDuration:2,
+            visible:true,opacity:1,order:1,blendMode:'source-over',
+            audio:{volume:0,muted:true,fadeIn:0,fadeOut:0}
+        }];
+        const statuses=[],downloads=[];
+        let cancelEnabled=true;
+        const exporter=new AdvancedOfflineExporter({
+            engine,onState:s=>statuses.push(s.phase),
+            onProgress:({percent})=>{
+                if(cancelEnabled&&percent>=5){
+                    cancelEnabled=false;
+                    void exporter.cancel();
+                }
+            },
+            onDownload:({blob})=>downloads.push(blob.size)
+        });
+        const first=await exporter.start({format:'webm',fps:60,bitrateKbps:2000});
+        const cancelled=first===false&&!exporter.busy
+            &&exporter.inputs.size===0&&exporter.output===null
+            &&downloads.length===0&&statuses.includes('cancelled')
+            &&engine.currentTime===0;
+        // The original file and timeline remain usable after cancellation.
+        engine.tracks[0].clipDuration=.8;
+        const retry=await exporter.start({format:'webm',fps:24,bitrateKbps:2000});
+        return {cancelled,retry,downloads:downloads.length,downloadSize:downloads[0]||0,
+            statuses,previewTime:engine.currentTime,trackCount:engine.tracks.length};
+    });
+    assert.equal(interruption.cancelled,true,'actual encoding cancellation did not clean up');
+    assert.equal(interruption.retry,true,'export did not recover after cancellation');
+    assert.equal(interruption.downloads,1,'retry must download once, not twice');
+    assert.equal(interruption.trackCount,1);
+    assert.equal(interruption.previewTime,0);
+    console.log('[MotoriClip 6E] PASS mid-encode cancellation and retry',interruption);
+
+    // A corrupt File must fail before producing a misleading playable file,
+    // and the same exporter must be ready for another import afterwards.
+    const badMedia=await page.evaluate(async()=>{
+        const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
+            import('../js/advanced-offline-export.mjs'),
+            import('../js/advanced-media-engine-v0.24.js')
+        ]);
+        const bad=new File([new Uint8Array([0,1,2,3,4,5,6,7])],'corrupt.mp4',{type:'video/mp4'});
+        const canvas=document.createElement('canvas');canvas.width=320;canvas.height=180;
+        const engine=new AdvancedMediaEngine({canvas,mediaBin:document.createElement('div'),
+            onTimeChange(){},onDurationChange(){},onPlaybackChange(){},
+            onRenderError(error){throw error}
+        });
+        engine.tracks=[{
+            id:'corrupt',type:'video',file:bad,sourceName:bad.name,
+            start:0,sourceOffset:0,clipDuration:1,sourceDuration:1,
+            visible:true,opacity:1,order:1,blendMode:'source-over',
+            audio:{volume:0,muted:true,fadeIn:0,fadeOut:0}
+        }];
+        const states=[],downloads=[];
+        const exporter=new AdvancedOfflineExporter({
+            engine,onState:s=>states.push(s.phase),
+            onDownload:x=>downloads.push(x)
+        });
+        let failure='';
+        try{await exporter.start({format:'webm',fps:24})}
+        catch(error){failure=String(error.message||error)}
+        return {failure,downloads:downloads.length,busy:exporter.busy,
+            pendingInputs:exporter.inputs.size,states};
+    });
+    assert.ok(/decode|read|format|media/i.test(badMedia.failure),
+        'Corrupt media must produce a decoder error: '+badMedia.failure);
+    assert.equal(badMedia.downloads,0);
+    assert.equal(badMedia.busy,false);
+    assert.equal(badMedia.pendingInputs,0);
+    assert.ok(badMedia.states.includes('error'));
+    console.log('[MotoriClip 6E] PASS corrupt input rejection',badMedia);
+
     assert.deepEqual(errors,[],'Browser errors detected');
     console.log('[MotoriClip 6E] All extended real-media cases passed.',JSON.stringify(measurements));
 } finally {
