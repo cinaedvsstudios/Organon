@@ -4,7 +4,7 @@
  * This beta exporter never plays the timeline or modifies existing players.
  */
 const MEDIABUNNY_MODULE = 'https://cdn.jsdelivr.net/npm/mediabunny@1.66.0/+esm';
-const AAC_ENCODER_MODULE = 'https://cdn.jsdelivr.net/npm/@mediabunny/aac-encoder@1.66.0/+esm';
+const AAC_ENCODER_MODULE = 'https://esm.sh/@mediabunny/aac-encoder@1.66.0?external=mediabunny';
 const AUDIO_RATE = 48000;
 export const OFFLINE_EXPORT_LIMIT_SECONDS = 120;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
