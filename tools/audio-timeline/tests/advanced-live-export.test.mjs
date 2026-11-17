@@ -215,3 +215,16 @@ test('undefined original playback callback is restored after export',async()=>{
     await output;
     assert.equal(app.engine.onPlaybackChange,undefined);
 });
+
+test('a decoder error while exporting aborts instead of saving broken footage',async()=>{
+    const app=fixture();
+    const original=app.engine.onRenderError;
+    const output=app.exporter.start({format:'webm'});
+    await app.settlePrepare();
+    app.engine.onRenderError?.(new Error('Media decoder failed'));
+    await assert.rejects(output,/Media decoder failed/);
+    assert.equal(app.downloaded.length,0);
+    assert.equal(app.engine.onRenderError,original);
+    assert.equal(app.video.stopped,1);
+    assert.equal(app.audioTrack.stopped,1);
+});
