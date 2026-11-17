@@ -1,5 +1,5 @@
 /**
- * ORGANON STUDIO: ADVANCED AUDIO TIMELINE CONTROLLER
+ * ORGANON STUDIO: MOTORICLIP ADVANCED CONTROLLER
  * v0.24 — direct basin iframe file-drop route, robust preview resize, preview zoom, delete and duplicate selection.
  * Basic Mode is untouched.
  */
@@ -893,7 +893,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js';
 
     elements.btnImport.addEventListener('click', () => elements.fileInput.click());
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
-    elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html'; });
+    elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
     elements.btnClear.addEventListener('click', () => {
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
@@ -975,5 +975,5 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js';
     window.addEventListener('beforeunload', () => engine.destroy());
 
     installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
-    requestAnimationFrame(() => showToast('Advanced Audio Timeline v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
+    requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
