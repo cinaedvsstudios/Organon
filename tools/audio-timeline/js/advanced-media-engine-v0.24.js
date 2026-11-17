@@ -5,6 +5,7 @@
  */
 
 import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-scheduler.mjs';
+import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-seek.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -68,6 +69,11 @@ export class AdvancedMediaEngine {
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
         this.analysisContext = null;
         this.playbackBoundaries = new PlaybackBoundaryTracker();
+        this.projectFps = 30;
+        this.seekGeneration = 0;
+        this.seekController = null;
+        this.pendingSeekPromise = null;
+        this.resumeAfterSeek = false;
     }
 
     async ensureAudioGraph() {
@@ -76,6 +82,19 @@ export class AdvancedMediaEngine {
         this.previewGain = this.audioContext.createGain();
         this.previewGain.connect(this.audioContext.destination);
         this.applyPreviewGain();
+    }
+
+    setProjectFrameRate(fps) {
+        this.projectFps = normalizeProjectFps(fps);
+        return this.projectFps;
+    }
+
+    cancelPendingSeek() {
+        this.seekGeneration += 1;
+        if (this.seekController) {
+            this.seekController.abort();
+            this.seekController = null;
+        }
     }
 
     setCanvasResolution(width, height) {
@@ -90,6 +109,8 @@ export class AdvancedMediaEngine {
     }
 
     setTracks(tracks) {
+        this.cancelPendingSeek();
+        this.resumeAfterSeek = false;
         this.tracks = Array.isArray(tracks) ? tracks : [];
         if (this.isPlaying && this.getTimelineDuration() <= 0) this.pause();
         else if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
@@ -304,7 +325,8 @@ export class AdvancedMediaEngine {
         this.syncAudioSettings(time);
     }
 
-    async play() {
+    async play({ skipSeekWait = false } = {}) {
+        if (!skipSeekWait && this.pendingSeekPromise) await this.pendingSeekPromise;
         const duration = this.getTimelineDuration();
         if (duration <= 0) throw new Error('Place a video, audio or image clip on the timeline before pressing Play.');
         if (this.isPlaying) return;
@@ -325,6 +347,8 @@ export class AdvancedMediaEngine {
     }
 
     pause() {
+        this.cancelPendingSeek();
+        this.resumeAfterSeek = false;
         if (this.isPlaying) this.currentTime = clamp(this.getCurrentTime(), 0, this.getTimelineDuration());
         this.isPlaying = false;
         this.playbackBoundaries.reset((track, media, soundMedia) => this.stopTrackMedia(track, media, soundMedia));
@@ -336,17 +360,62 @@ export class AdvancedMediaEngine {
     }
     async togglePlay() { if (this.isPlaying) { this.pause(); return false; } await this.play(); return true; }
 
-    async seek(time) {
-        const wasPlaying = this.isPlaying;
-        if (wasPlaying) this.pause();
-        this.currentTime = clamp(Number(time) || 0, 0, Math.max(0, this.getTimelineDuration()));
-        for (const track of this.tracks) if (AUDIO_TYPES.has(track.type) && track.sourceName) this.setTrackMediaTime(track, this.currentTime);
-        this.syncAudioSettings(this.currentTime);
-        this.emitTime();
-        this.renderFrame();
-        if (wasPlaying) await this.play();
+    seek(time, { resume = true } = {}) {
+        // Capture playback intent before pausing. Slider 'input' scrubs without
+        // resuming; its final 'change' resumes if playback was active beforehand.
+        const shouldResume = this.isPlaying || this.resumeAfterSeek;
+        if (this.isPlaying) this.pause();
+        this.cancelPendingSeek();
+        this.resumeAfterSeek = shouldResume;
+
+        const generation = this.seekGeneration;
+        const controller = new AbortController();
+        this.seekController = controller;
+        const duration = this.getTimelineDuration();
+        this.currentTime = clamp(Number(time) || 0, 0, duration);
+        const destination = this.currentTime;
+
+        const pending = (async () => {
+            const videoFrames = [];
+            for (const track of this.tracks) {
+                if (!AUDIO_TYPES.has(track.type) || !track.sourceName) continue;
+                const sourceTime = getTrackSourceTime(track, destination);
+                if (track.type === 'video' && this.isTrackActive(track, destination) && track.media && track.visible !== false) {
+                    videoFrames.push(waitForVideoSeek(track.media, sourceTime, { signal: controller.signal }));
+                    // The linked sound does not need a decoded video frame.
+                    try { if (track.soundMedia) track.soundMedia.currentTime = sourceTime; } catch (_) { /* not seekable */ }
+                } else {
+                    this.setTrackMediaTime(track, destination);
+                }
+            }
+            this.syncAudioSettings(destination);
+            this.emitTime();
+            const results = await Promise.all(videoFrames);
+            if (controller.signal.aborted || generation !== this.seekGeneration || results.some((ready) => !ready)) return false;
+            this.renderFrame(); // Never draw a stale, pre-seek video frame.
+            if (resume && this.resumeAfterSeek) {
+                this.resumeAfterSeek = false;
+                if (destination < duration) await this.play({ skipSeekWait: true });
+            } else if (resume) {
+                this.resumeAfterSeek = false;
+            }
+            return true;
+        })();
+
+        this.pendingSeekPromise = pending;
+        void pending.finally(() => {
+            if (this.pendingSeekPromise === pending) this.pendingSeekPromise = null;
+            if (this.seekController === controller) this.seekController = null;
+        }).catch(() => {});
+        return pending;
     }
-    async stepFrame(direction = 1) { await this.seek(this.currentTime + direction / 30); }
+
+    async stepFrame(direction = 1) {
+        const target = stepFrameTime(this.currentTime, direction, this.projectFps, this.getTimelineDuration());
+        // Stepping is a deliberate pause operation, not an automatic resume.
+        this.resumeAfterSeek = false;
+        return this.seek(target, { resume: false });
+    }
 
     startRenderLoop() {
         this.stopRenderLoop();
@@ -425,12 +494,22 @@ export class AdvancedMediaEngine {
     }
 
     async snapshot() {
-        this.renderFrame();
+        // A snapshot requested immediately after scrubbing must wait until the
+        // *latest* decoded still frame, never a previous seek's canvas contents.
+        while (this.pendingSeekPromise) {
+            const pending = this.pendingSeekPromise;
+            await pending;
+            if (this.pendingSeekPromise === pending) break;
+        }
+        if (!this.isPlaying) await this.seek(this.currentTime, { resume: false });
+        else this.renderFrame();
         const blob = await new Promise((resolve) => this.canvas.toBlob(resolve, 'image/png'));
         if (!blob) throw new Error('PNG snapshot could not be created.');
-        const url=URL.createObjectURL(blob), link=document.createElement('a'); link.href=url; link.download='organon-advanced-composite.png'; document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        const url=URL.createObjectURL(blob), link=document.createElement('a'); link.href=url;
+        link.download='motoriclip-frame.png';
+        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
     }
     emitTime() { this.onTimeChange?.({ currentTime:this.currentTime, duration:this.getTimelineDuration() }); }
     emitDuration() { this.onDurationChange?.(this.getTimelineDuration()); }
-    destroy() { this.clearAll(); try { this.previewGain?.disconnect(); } catch (_) {} this.audioContext?.close?.(); this.analysisContext?.close?.(); }
+    destroy() { this.cancelPendingSeek(); this.clearAll(); try { this.previewGain?.disconnect(); } catch (_) {} this.audioContext?.close?.(); this.analysisContext?.close?.(); }
 }
