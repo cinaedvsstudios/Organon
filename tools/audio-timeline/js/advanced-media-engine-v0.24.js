@@ -4,6 +4,8 @@
  * Video sound is linked to its video clip. It only becomes a movable audio track when explicitly extracted.
  */
 
+import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-scheduler.mjs';
+
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
 const SUPPORTED_BLEND_MODES = new Set(['source-over', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn']);
@@ -65,6 +67,7 @@ export class AdvancedMediaEngine {
         this.stickerWorkCanvas = document.createElement('canvas');
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
         this.analysisContext = null;
+        this.playbackBoundaries = new PlaybackBoundaryTracker();
     }
 
     async ensureAudioGraph() {
@@ -88,7 +91,8 @@ export class AdvancedMediaEngine {
 
     setTracks(tracks) {
         this.tracks = Array.isArray(tracks) ? tracks : [];
-        this.syncAudioSettings(this.currentTime);
+        if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
+        else this.syncAudioSettings(this.currentTime);
         this.emitDuration();
         this.renderFrame();
     }
@@ -247,10 +251,10 @@ export class AdvancedMediaEngine {
     isTrackActive(track, time = this.currentTime) {
         const start = Number(track.start) || 0;
         const duration = Number(track.clipDuration) || 0;
-        return Boolean(track.sourceName) && time >= start && time <= start + duration;
+        return Boolean(track.sourceName) && duration > 0 && time >= start && time < start + duration;
     }
     setTrackMediaTime(track, time) {
-        const localTime = clamp((Number(track.sourceOffset) || 0) + time - (Number(track.start) || 0), 0, Math.max(0, Number(track.sourceDuration) || 0));
+        const localTime = getTrackSourceTime(track, time);
         if (track.type === 'video') {
             try { track.media.currentTime = localTime; } catch (_) { /* no-op */ }
             try { track.soundMedia.currentTime = localTime; } catch (_) { /* no-op */ }
@@ -259,32 +263,75 @@ export class AdvancedMediaEngine {
         }
     }
 
+    stopTrackMedia(track, media = track?.media, soundMedia = track?.soundMedia) {
+        for (const element of [media, soundMedia]) {
+            try { element?.pause?.(); } catch (error) {
+                console.warn('Could not pause a MotoriClip media element:', error);
+            }
+        }
+    }
+
+    startTrackMedia(track, time) {
+        // Always align a newly activated clip to its own source offset.
+        // Start both video and linked sound without sequential awaits.
+        this.setTrackMediaTime(track, time);
+        const players = track.type === 'video' ? [track.media, track.soundMedia] : [track.media];
+        for (const player of players) {
+            if (!player) continue;
+            try {
+                const started = player.play();
+                if (started && typeof started.catch === 'function') {
+                    started.catch((error) => {
+                        if (this.isPlaying && this.isTrackActive(track, this.currentTime)) {
+                            console.warn(`Could not start ${track.sourceName}:`, error);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.warn(`Could not start ${track.sourceName}:`, error);
+            }
+        }
+    }
+
+    syncPlaybackAtTime(time) {
+        this.playbackBoundaries.update(
+            this.tracks,
+            time,
+            (track) => this.startTrackMedia(track, time),
+            (track, media, soundMedia) => this.stopTrackMedia(track, media, soundMedia)
+        );
+        this.syncAudioSettings(time);
+    }
+
     async play() {
-        const playable = this.tracks.filter((track) => AUDIO_TYPES.has(track.type) && this.isTrackActive(track));
-        if (!playable.length) throw new Error('Place a video or audio clip on the timeline before pressing Play.');
+        const duration = this.getTimelineDuration();
+        if (duration <= 0) throw new Error('Place a video, audio or image clip on the timeline before pressing Play.');
+        if (this.isPlaying) return;
+        if (this.currentTime >= duration) this.currentTime = 0;
+
         await this.ensureAudioGraph();
         if (this.audioContext.state === 'suspended') await this.audioContext.resume();
-        const time = this.currentTime;
-        for (const track of playable) {
-            this.setTrackMediaTime(track, time);
-            try {
-                if (track.type === 'video') { await track.media.play(); await track.soundMedia.play(); }
-                else { await track.media.play(); }
-            } catch (error) { console.warn(`Could not play ${track.sourceName}:`, error); }
-        }
-        this.updateAudioFades(time);
-        this.playStartTimeline = time;
+
+        // The composition clock runs even when the first clip starts later.
+        this.playStartTimeline = this.currentTime;
         this.playStartClock = this.audioContext.currentTime;
         this.isPlaying = true;
+        this.syncPlaybackAtTime(this.currentTime);
         this.onPlaybackChange?.(true);
         this.startRenderLoop();
+        this.emitTime();
+        this.renderFrame();
     }
 
     pause() {
-        if (this.isPlaying) this.currentTime = this.getCurrentTime();
+        if (this.isPlaying) this.currentTime = clamp(this.getCurrentTime(), 0, this.getTimelineDuration());
         this.isPlaying = false;
-        this.tracks.forEach((track) => { try { track.media?.pause?.(); track.soundMedia?.pause?.(); } catch (_) { /* no-op */ } });
-        this.stopRenderLoop(); this.emitTime(); this.renderFrame(); this.onPlaybackChange?.(false);
+        this.playbackBoundaries.reset((track, media, soundMedia) => this.stopTrackMedia(track, media, soundMedia));
+        this.tracks.forEach((track) => this.stopTrackMedia(track));
+        this.stopRenderLoop();
+        this.emitTime();
+        this.renderFrame();
+        this.onPlaybackChange?.(false);
     }
     async togglePlay() { if (this.isPlaying) { this.pause(); return false; } await this.play(); return true; }
 
@@ -293,7 +340,9 @@ export class AdvancedMediaEngine {
         if (wasPlaying) this.pause();
         this.currentTime = clamp(Number(time) || 0, 0, Math.max(0, this.getTimelineDuration()));
         for (const track of this.tracks) if (AUDIO_TYPES.has(track.type) && track.sourceName) this.setTrackMediaTime(track, this.currentTime);
-        this.emitTime(); this.renderFrame();
+        this.syncAudioSettings(this.currentTime);
+        this.emitTime();
+        this.renderFrame();
         if (wasPlaying) await this.play();
     }
     async stepFrame(direction = 1) { await this.seek(this.currentTime + direction / 30); }
@@ -303,9 +352,17 @@ export class AdvancedMediaEngine {
         const render = () => {
             if (!this.isPlaying) return;
             const duration = this.getTimelineDuration();
-            this.currentTime = this.getCurrentTime();
-            if (duration > 0 && this.currentTime >= duration) { this.currentTime = duration; this.pause(); return; }
-            this.updateAudioFades(this.currentTime); this.emitTime(); this.renderFrame(); this.frameRequest = requestAnimationFrame(render);
+            const nextTime = this.getCurrentTime();
+            if (duration > 0 && nextTime >= duration) {
+                this.currentTime = duration;
+                this.pause();
+                return;
+            }
+            this.currentTime = nextTime;
+            this.syncPlaybackAtTime(this.currentTime);
+            this.emitTime();
+            this.renderFrame();
+            this.frameRequest = requestAnimationFrame(render);
         };
         this.frameRequest = requestAnimationFrame(render);
     }
