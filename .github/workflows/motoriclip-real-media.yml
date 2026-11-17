@@ -55,3 +55,7 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/editor-ui.browser.mjs
+      - name: Verify real variable-frame-rate input and overlapping transparent layers
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/vfr-overlap.browser.mjs
