@@ -13,8 +13,10 @@
 - **Phase 3:** Paused frame-seeking, latest-scrub cancellation, project FPS stepping and PNG capture fixes merged in [PR #27](https://github.com/cinaedvsstudios/Organon/pull/27) (commit `d56316ad9e0b42c010330b0d9de3172bdfd75d25`).
 - **Phase 4:** Undo/redo metadata isolation, cached File source IDs, efficient live-media restoration, automatic media disposal and abortable pending file loads merged in [PR #28](https://github.com/cinaedvsstudios/Organon/pull/28) (commit `c40fc220c40885a1515d157747ca6180ae325af6`). [Phase 4 QA report](./MOTORICLIP_PHASE4_QA.md).
 - **Phase 5:** Single-player linked picture/sound, Web Audio routing, resilient media decoding/error reporting, safe media-edit failure handling and canvas layering fixes merged in [PR #29](https://github.com/cinaedvsstudios/Organon/pull/29) (commit `226511bb80ef0ccb272263d17f12076c314b4d6f`). [Phase 5 QA report](./MOTORICLIP_PHASE5_QA.md).
-- **Automated testing:** 54/54 JavaScript simulated-media regression cases passed across Phases 2–5 (14 + 12 + 13 + 15). These do **not** replace outstanding real-browser/codec tests in the QA reports.
-- **Next:** Phase 6 — profile larger projects, build a reliable first Advanced video export, and verify timeline/preview/export consistency. Keep transitions out of scope until the stabilization release gate.
+- **Phase 6A — preview performance:** Cached layer ordering and bounded static keyed-sticker processing merged in [PR #30](https://github.com/cinaedvsstudios/Organon/pull/30) (commit `5f2862de8ac180041629d56b6f9442926aa733d2`). [Phase 6A QA](./MOTORICLIP_PHASE6A_QA.md).
+- **Phase 6B — initial Advanced export:** Real-time canvas + Web Audio recording, browser-detected WebM/MP4 formats, progress, cancellation, error handling and cleanup merged in [PR #31](https://github.com/cinaedvsstudios/Organon/pull/31) (commit `15e87d26bef5a8026b02703c8980cdfd92772a90`). [Phase 6B QA](./MOTORICLIP_PHASE6B_QA.md). **This is not deterministic offline export.**
+- **Automated testing:** 72/72 JavaScript simulated-media regression cases passed across Phases 2–6B (14 + 12 + 13 + 15 + 5 + 13). These do **not** replace outstanding real-browser/codec tests.
+- **Next before Phase 7:** Real browser testing with 2/10/25 clips and actual exported 720p/1080p videos, measured frame/audio parity, and a deterministic WebCodecs/Mediabunny (or equivalent) export pipeline. Phase 6 remains **partially complete**; do not claim its release gate is passed or add transitions prematurely.
 
 ## Confirmed baseline and design constraints
 
@@ -99,7 +101,7 @@ Work:
 
 **Gate:** Audio stays synchronized with the visual timeline; output canvas composition remains consistent while editing and seeking.
 
-## Phase 6 — Performance, responsiveness and baseline export
+## Phase 6 — Performance, responsiveness and baseline export [INITIAL IMPLEMENTATION; DETERMINISTIC EXPORT & REAL-MEDIA QA PENDING]
 
 **Code-review finding:** Advanced mode currently offers PNG snapshots but no wired finished-video exporter. Basic mode uses a realtime `MediaRecorder` path, which is not the required deterministic Advanced export.
 
