@@ -253,3 +253,40 @@ test('cancelling during a slow encoder frame discards the unfinished file',async
         assert.equal(app.exporter.busy,false);
     }finally{app.restore()}
 });
+
+test('MP4 uses built-in AAC support without loading extension when available', async()=>{
+    const app=makeEnvironment();
+    try {
+        let loads=0;
+        app.MB.canEncodeAudio=async()=>true;
+        app.exporter.aacEncoderLoader=async()=>{loads++;return {registerAacEncoder(){}}};
+        assert.equal(await app.exporter.start({format:'mp4',fps:25}),true);
+        assert.equal(loads,0);
+        assert.equal(app.metrics.audioCodec,'aac');
+    }finally{app.restore()}
+});
+test('MP4 loads and registers AAC extension when the browser cannot encode natively', async()=>{
+    const app=makeEnvironment();
+    try {
+        let supported=false,registered=0;
+        app.MB.canEncodeAudio=async()=>supported;
+        app.exporter.aacEncoderLoader=async()=>({
+            registerAacEncoder(){registered++;supported=true}
+        });
+        assert.equal(await app.exporter.start({format:'mp4',fps:25}),true);
+        assert.equal(registered,1);
+        assert.equal(app.metrics.audioCodec,'aac');
+    }finally{app.restore()}
+});
+test('an unusable AAC fallback gives a WebM alternative without creating a partial MP4', async()=>{
+    const app=makeEnvironment();
+    try {
+        app.MB.canEncodeAudio=async()=>false;
+        app.exporter.aacEncoderLoader=async()=>({
+            registerAacEncoder(){}
+        });
+        await assert.rejects(()=>app.exporter.start({format:'mp4',fps:25}),/Choose WebM\/Opus/);
+        assert.equal(app.metrics.download.length,0);
+        assert.equal(app.exporter.busy,false);
+    }finally{app.restore()}
+});
