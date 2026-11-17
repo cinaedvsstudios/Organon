@@ -47,7 +47,7 @@ const clip = (media, { id = 'video', start = 0, duration = 10, offset = 0 } = {}
     id, type: 'video', start, clipDuration: duration,
     sourceOffset: offset, sourceDuration: 20, sourceName: id + '.mp4',
     visible: true, opacity: 1, blendMode: 'source-over',
-    media, soundMedia: { currentTime: 0, play() { return Promise.resolve(); }, pause() {} },
+    media, soundMedia: null,
     audio: { volume: 1, muted: false, fadeIn: 0, fadeOut: 0 },
 });
 function fixture() {
