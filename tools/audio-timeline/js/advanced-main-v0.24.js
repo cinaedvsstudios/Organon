@@ -5,7 +5,7 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase4';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase5';
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 
 (() => {
@@ -431,7 +431,7 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         syncInspector();
     }
 
-    async function loadTrackFromFile(track, entry, start = 0) {
+    async function loadTrackFromFile(track, entry, start = 0, { removeOnFailure = false } = {}) {
         track.start = Math.max(0, Number(start) || 0);
         track.sourceFileId = entry.id || track.sourceFileId || state.files.find((item) => item.file === entry.file)?.id;
         if (track.sourceFileId && entry.file) state.sourceFiles.set(track.sourceFileId, entry.file);
@@ -451,10 +451,18 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
                     elements.previewState.textContent = `Analysed ${entry.name}`;
                 });
             }
+            return true;
         } catch (error) {
-            if (!state.tracks.includes(track) && /cancelled/i.test(error.message)) return;
-            elements.previewState.textContent = `Could not load ${entry.name}`;
+            if (removeOnFailure && state.tracks.includes(track)) {
+                state.tracks = state.tracks.filter((item) => item !== track);
+                state.selectedTrackIds.delete(track.id);
+                refreshAll();
+            }
+            if (!state.tracks.includes(track) && /cancelled/i.test(error.message)) return false;
+            elements.previewState.textContent = `Could not load ${entry.name}: ${error.message}`;
+            showToast(`Could not import ${entry.name}`);
             alert(`Could not load ${entry.name}. ${error.message}`);
+            return false;
         }
     }
 
@@ -506,16 +514,18 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         recordHistory(`Place ${entry.name}`);
         const laneTracks = laneId ? state.tracks.filter((track) => track.laneId === laneId) : [];
         let track = null;
+        let created = false;
         if (entry.kind !== 'video') {
             track = laneTracks.find((candidate) => !candidate.sourceName && candidate.type === entry.kind) || null;
             if (!track && laneTracks.length && laneType === entry.kind) {
                 const lane = laneTracks[0];
                 track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
                 state.tracks.push(track);
+                created = true;
             }
         }
-        if (!track) { track = createTrack(entry.kind); state.tracks.push(track); }
-        await loadTrackFromFile(track, entry, start);
+        if (!track) { track = createTrack(entry.kind); state.tracks.push(track); created = true; }
+        await loadTrackFromFile(track, entry, start, { removeOnFailure: created });
     }
 
     function onTimelineTrackChanged(track, detail = {}) {
@@ -536,11 +546,19 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
     async function extractAudioFromSelectedVideo() {
         const video = getTrack();
         if (!video || video.type !== 'video' || !video.file) return;
-        recordHistory(`Extract audio from ${video.sourceName || video.laneLabel}`);
         const audio = createTrack('audio', { extractedFrom: video.id, sourceFileId: video.sourceFileId, start: video.start, sourceOffset: video.sourceOffset, clipDuration: video.clipDuration, label: `Extracted Audio ${nextLaneOrder('audio')}` });
-        state.tracks.push(audio); video.audio.muted = true;
-        await loadTrackFromFile(audio, { id: video.sourceFileId, file: video.file, name: video.sourceName }, video.start);
+        try {
+            await engine.loadTrack(audio, video.file);
+            if (!state.tracks.includes(video)) { engine.detachTrack(audio, false); return; }
+        } catch (error) {
+            engine.detachTrack(audio, false);
+            elements.previewState.textContent = `Could not extract audio: ${error.message}`;
+            return;
+        }
+        recordHistory(`Extract audio from ${video.sourceName || video.laneLabel}`);
         audio.clipDuration = Math.min(video.clipDuration, Math.max(.15, (audio.sourceDuration || video.clipDuration) - audio.sourceOffset));
+        state.tracks.push(audio);
+        video.audio.muted = true;
         refreshAll(); selectTrack(audio.id);
     }
 
@@ -553,7 +571,6 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
     async function splitTrackAtNow(trackId, { record = true } = {}) {
         const track = getTrack(trackId);
         if (!canSplitTrack(track)) { showToast('Move the now line inside a clip before splitting'); return false; }
-        if (record) recordHistory(`Split ${track.sourceName || track.laneLabel}`);
         const cutTime = engine.currentTime;
         const leftDuration = cutTime - track.start;
         const rightDuration = track.clipDuration - leftDuration;
@@ -575,10 +592,19 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
             analysis: track.analysis,
             sourceFileId: track.sourceFileId
         });
+        try {
+            await engine.loadTrack(split, track.file);
+            if (!state.tracks.includes(track)) { engine.detachTrack(split, false); return false; }
+        } catch (error) {
+            engine.detachTrack(split, false);
+            elements.previewState.textContent = `Could not split clip: ${error.message}`;
+            showToast('Split failed; original clip has not changed');
+            return false;
+        }
+        if (record) recordHistory(`Split ${track.sourceName || track.laneLabel}`);
         track.clipDuration = leftDuration;
-        state.tracks.push(split);
-        await loadTrackFromFile(split, { id: track.sourceFileId, file: track.file, name: track.sourceName }, cutTime);
         split.clipDuration = rightDuration;
+        state.tracks.push(split);
         refreshAll(); selectTrack(split.id);
         showToast('Clip split at now line');
         return true;
@@ -588,8 +614,9 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         const targetIds = state.tracks.filter((track) => canSplitTrack(track)).map((track) => track.id);
         if (!targetIds.length) { showToast('No clips cross the now line'); return; }
         recordHistory(`Split all at ${formatTime(engine.currentTime)}`);
-        for (const id of targetIds) await splitTrackAtNow(id, { record: false });
-        showToast(`Split ${targetIds.length} clip${targetIds.length === 1 ? '' : 's'} at ${formatTime(engine.currentTime)}`);
+        let completed = 0;
+        for (const id of targetIds) if (await splitTrackAtNow(id, { record: false })) completed += 1;
+        showToast(`Split ${completed} of ${targetIds.length} clip${targetIds.length === 1 ? '' : 's'} at ${formatTime(engine.currentTime)}`);
     }
 
     async function deleteSelectedTracks() {
@@ -606,8 +633,8 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
     async function duplicateSelectedTracks() {
         const selected = state.tracks.filter((track) => state.selectedTrackIds.has(track.id));
         if (!selected.length) { showToast('Select one or more clips to duplicate'); return; }
-        recordHistory(`Duplicate ${selected.length} clip${selected.length === 1 ? '' : 's'}`);
         const duplicates = [];
+        try {
         for (const original of selected) {
             if (!original.file) continue;
             const isVideo = original.type === 'video';
@@ -643,7 +670,14 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
             clone.analysis = original.analysis ? { ...original.analysis, levels: Array.isArray(original.analysis.levels) ? [...original.analysis.levels] : original.analysis.levels } : null;
             duplicates.push(clone);
         }
+        } catch (error) {
+            for (const clone of duplicates) engine.detachTrack(clone, false);
+            elements.previewState.textContent = `Could not duplicate clips: ${error.message}`;
+            showToast('Duplicate failed; no new clips were added');
+            return;
+        }
         if (!duplicates.length) { showToast('The selected clips do not have source files to duplicate'); return; }
+        recordHistory(`Duplicate ${selected.length} clip${selected.length === 1 ? '' : 's'}`);
         state.tracks.push(...duplicates);
         state.selectedTrackIds = new Set(duplicates.map((track) => track.id));
         state.selectedTrackId = duplicates[0].id;

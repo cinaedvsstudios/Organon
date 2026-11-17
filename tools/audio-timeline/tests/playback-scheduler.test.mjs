@@ -115,7 +115,7 @@ function createFakeEngine() {
         pause(){if(!this.paused)actions.push('stop:'+name);this.paused=true}
     });
     const makeClip=(id,start,duration,sourceOffset=0)=>({
-        ...video(id,start,duration,sourceOffset),media:player(id+'-video'),soundMedia:player(id+'-sound'),
+        ...video(id,start,duration,sourceOffset),media:player(id+'-video'),soundMedia:null,
         audio:{volume:1,muted:false,fadeIn:0,fadeOut:0}
     });
     return {engine,actions,makeClip,
@@ -123,18 +123,17 @@ function createFakeEngine() {
         setClock(time){now=time}
     };
 }
-test('Advanced engine starts later clips, linked audio, and stops at boundaries',async()=>{
+test('Advanced engine starts each video and its integrated audio on one shared clock',async()=>{
     const app=createFakeEngine(),first=app.makeClip('first',3,3),second=app.makeClip('second',7,3,5);
     app.engine.setTracks([first,second]);
     await app.engine.play();
     assert.equal(app.engine.isPlaying,true);
     assert.deepEqual(app.actions,[]);
     app.tick(3.05);
-    assert.deepEqual(app.actions.slice(0,2),['start:first-video','start:first-sound']);
+    assert.deepEqual(app.actions.slice(0,1),['start:first-video']);
     assert.ok(Math.abs(first.media.currentTime-.05)<.001);
     app.tick(6.05);
     assert.ok(app.actions.includes('stop:first-video'));
-    assert.ok(app.actions.includes('stop:first-sound'));
     app.tick(7.25);
     assert.ok(app.actions.includes('start:second-video'));
     assert.ok(Math.abs(second.media.currentTime-5.25)<.001);
@@ -149,10 +148,8 @@ test('Advanced engine can seek directly into a later clip and pause',async()=>{
     await app.engine.seek(8);
     await app.engine.play();
     assert.equal(clip.media.currentTime,6);
-    assert.equal(clip.soundMedia.currentTime,6);
     app.engine.pause();
     assert.equal(clip.media.paused,true);
-    assert.equal(clip.soundMedia.paused,true);
 });
 test('Advanced engine permits background-only compositions and empty starting gaps',async()=>{
     const app=createFakeEngine();
@@ -166,12 +163,11 @@ test('Removing all clips during playback stops players and the timeline clock',a
     const app=createFakeEngine(),clip=app.makeClip('one',0,5);
     app.engine.setTracks([clip]);
     await app.engine.play();
-    const videoPlayer=clip.media, soundPlayer=clip.soundMedia;
+    const videoPlayer=clip.media;
     assert.equal(videoPlayer.paused,false);
     app.engine.setTracks([]);
     assert.equal(videoPlayer.paused,true);
-    assert.equal(soundPlayer.paused,true);
     assert.equal(clip.media,null,'removed media element must be released');
-    assert.equal(clip.soundMedia,null,'removed linked sound must be released');
+    assert.equal(clip.soundMedia,null,'no second sound player is created');
     assert.equal(app.engine.isPlaying,false);
 });
