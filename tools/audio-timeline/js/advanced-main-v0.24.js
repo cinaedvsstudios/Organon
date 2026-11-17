@@ -5,8 +5,9 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase6a';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase6b';
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
+import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -29,6 +30,8 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnBasicMode: document.getElementById('btn-basic-mode'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
+        exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
+        exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), btnExtractAudio: document.getElementById('btn-extract-audio'),
@@ -42,7 +45,7 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         canvas: elements.canvas,
         mediaBin: elements.mediaBin,
         onTimeChange: updateTimeDisplay,
-        onDurationChange: (duration) => { timeline.setDuration(duration); updateTimeDisplay({ currentTime: engine.currentTime, duration }); },
+        onDurationChange: (duration) => { timeline.setDuration(duration); updateTimeDisplay({ currentTime: engine.currentTime, duration }); updateExportAvailability(); },
         onPlaybackChange: setPlayButton,
         onRenderError: (error) => { elements.previewState.textContent = `Preview error: ${error.message}`; }
     });
@@ -59,6 +62,81 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         onSeek: (time) => { void engine.seek(time).catch((error) => { elements.previewState.textContent = error.message; }); },
         onSplitAtPlayhead: splitTrackAtNow
     });
+
+    const exporter = new AdvancedLiveExporter({
+        engine, canvas:elements.canvas,
+        onProgress: ({current,duration,percent}) => {
+            elements.exportProgress.value = percent;
+            elements.exportProgressText.textContent = `${Math.round(percent)}% · ${formatTime(current)} / ${formatTime(duration)}`;
+        },
+        onState: ({phase,message}) => {
+            elements.exportStatus.textContent = message;
+            elements.exportOverlayStatus.textContent = message;
+            elements.exportOverlay.hidden = !['preparing','recording','finalizing'].includes(phase);
+            updateExportAvailability();
+            if (phase === 'error') {
+                elements.previewState.textContent = `Export error: ${message}`;
+                showToast('Video export failed');
+            }
+            if (phase === 'complete') showToast(message);
+            if (phase === 'cancelled') showToast('Export cancelled');
+        },
+        onDownload: ({blob,extension}) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `motoriclip-project.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+        }
+    });
+
+    function updateExportAvailability() {
+        const supported = exporter.getFormats();
+        elements.btnExportVideo.disabled = exporter.busy || supported.length === 0 || engine.getTimelineDuration() <= 0;
+    }
+    function initVideoExportUi() {
+        const formats = exporter.getFormats();
+        elements.exportFormat.textContent = '';
+        for (const format of formats) {
+            const option = document.createElement('option');
+            option.value = format.format;
+            option.textContent = format.format === 'mp4' ? 'MP4 · browser-native' : 'WebM · browser-native';
+            elements.exportFormat.appendChild(option);
+        }
+        if (!formats.length) {
+            const unavailable = document.createElement('option');
+            unavailable.value = '';
+            unavailable.textContent = 'No recording format';
+            elements.exportFormat.appendChild(unavailable);
+            elements.exportStatus.textContent = 'This browser does not support canvas video recording.';
+        } else {
+            elements.exportStatus.textContent = 'Ready · full-timeline, real-time export';
+        }
+        updateExportAvailability();
+    }
+
+    elements.btnExportVideo.addEventListener('click', () => {
+        elements.exportProgress.value = 0;
+        elements.exportProgressText.textContent = '0%';
+        void exporter.start({
+            format:elements.exportFormat.value,
+            fps:engine.projectFps,
+            bitrateKbps:Number(elements.exportBitrate.value)
+        }).catch((error) => {
+            elements.exportStatus.textContent = `Export failed: ${error.message}`;
+            elements.previewState.textContent = `Export error: ${error.message}`;
+        });
+    });
+    elements.btnExportCancel.addEventListener('click', () => { void exporter.cancel(); });
+    document.addEventListener('keydown', (event) => {
+        if (!exporter.busy) return;
+        if (event.key === 'Escape') void exporter.cancel();
+        event.preventDefault();
+        event.stopImmediatePropagation();
+    }, true);
 
     function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
     function formatTime(seconds) {
@@ -1029,8 +1107,15 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         if (event.key.toLowerCase() === 'z' && !event.shiftKey) { event.preventDefault(); undoTimelineEdit(); }
         if ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y') { event.preventDefault(); redoTimelineEdit(); }
     });
-    window.addEventListener('beforeunload', () => engine.destroy());
+    window.addEventListener('beforeunload', (event) => {
+        if (exporter.busy) {
+            event.preventDefault();
+            event.returnValue = '';
+        } else {
+            engine.destroy();
+        }
+    });
 
-    installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons();
+    installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
