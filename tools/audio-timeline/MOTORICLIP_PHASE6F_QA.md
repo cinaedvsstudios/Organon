@@ -14,11 +14,22 @@ Files:
 - [vfr-overlap.browser.mjs](./tests/vfr-overlap.browser.mjs)
 - [motoriclip-real-media.yml](../../.github/workflows/motoriclip-real-media.yml)
 
-## Execution status
+## Execution status — confirmed passing
 
-GitHub Actions testing is required before this phase can be marked as passed. Initial UI run reached import but failed a *case-sensitive assertion* because the UI displays `1 MEDIA`, not `1 media`; that test assertion has been corrected. The VFR/layer test has been added and has not yet been verified at this point.
+**GitHub Actions run [44147408452](https://github.com/cinaedvsstudios/Organon/actions/runs/44147408452) completed successfully on 17 November 2026.**
 
-Tests are based on locally generated synthetic sources, not uploaded personal footage. Phase 6F does not modify the editor's production features or existing live MediaRecorder exporter.
+- **91/91 Node regression tests passed** (88 previous tests plus three new static DOM wiring checks).
+- Desktop Chrome UI: advanced-default navigation, 24 fps selector, 640×360 canvas sizing, zoom and reset, JPEG import, Clear Project, Undo, Redo and Basic/Advanced navigation **passed**.
+- Android-style Chrome mobile emulation: Basic default, manual Advanced entry and return to Basic **passed**. This is an emulated phone, **not** physical-device certification.
+- Genuine variable-frame-rate H.264 source has verified frame intervals **0.033 s and 0.067 s**. The trimmed video exported into a 30 fps MP4; output frame samples matched their requested source timestamps **within test tolerance**.
+- Overlapping video layer export **passed**: central sample red [253,23,0], 50%-alpha blue-over-red purple [124,18,126], background-gap yellow [253,253,0], transparent sticker green [0,254,0].
+- Earlier MP4/WebM smoke tests and Phase 6E HD/FHD and 25-clip scenarios also **passed** in the same workflow.
+
+### Real defect discovered and repaired
+
+The actual Advanced HTML was missing four required audio-inspector elements: `audio-fade-in`, `audio-fade-in-value`, `audio-fade-out`, and `audio-fade-out-value`. Its existing controller referenced them and failed at `addEventListener` during initialization. Phase 6F restores the two range sliders and their labels in `advanced.html`. The permanent `dom-wiring.test.mjs` now checks that all required controller IDs exist in the HTML; the optional parent-document `basin-frame` ID is excluded explicitly.
+
+Initial failures were addressed before recording a green result: a case-sensitive file count assertion and incorrect escaping in the synthetic FFmpeg VFR expression.
 
 ## Release gate still open
 
