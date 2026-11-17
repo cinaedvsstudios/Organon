@@ -154,7 +154,7 @@ function fakeEngine() {
         return {...clip('file-a',id),media,file:rawFile(),objectUrl:'blob:'+id,
             soundMedia:null,
             audioNode:{disconnected:0,disconnect(){this.disconnected++}},
-            gainNode:{disconnected:0,disconnect(){this.disconnected++}}};
+            gainNode:{gain:{value:1},disconnected:0,disconnect(){this.disconnected++}}};
     };
     return {
         engine,revoked,track,
