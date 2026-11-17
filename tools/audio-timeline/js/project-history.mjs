@@ -74,3 +74,65 @@ export function referencedFileIds(files, tracks, undo = [], redo = []) {
     }
     return retained;
 }
+
+/** Apply snapshot data without replacing a live clip's HTMLMediaElement/AudioNodes. */
+export function applyClipData(target, record) {
+    for (const key of CLIP_DATA_KEYS) {
+        if (Object.hasOwn(record, key)) target[key] = record[key];
+    }
+    target.audio = { ...record.audio };
+    target.transparency = { ...record.transparency };
+    target.analysis = record.analysis ? {
+        ...record.analysis, levels: [...(record.analysis.levels || [])]
+    } : null;
+    return target;
+}
+
+/**
+ * Prepare all missing media before committing history. Unchanged clip IDs keep
+ * their existing decoder/player instead of re-importing the source on every
+ * move, trim, opacity or selection undo.
+ *
+ * The caller is responsible for engine.setTracks(prepared), which releases
+ * old tracks only once the preparation has succeeded.
+ */
+export async function prepareHistoryTracks({
+    records, existingTracks, sourceFiles, loadTrack, disposeTrack
+}) {
+    validateTrackRecords(records, sourceFiles);
+    const existingById = new Map((existingTracks || []).map(track => [track.id, track]));
+    const created = [];
+    const prepared = [];
+    try {
+        for (const record of records) {
+            const current = existingById.get(record.id);
+            if (current && current.sourceFileId === record.sourceFileId
+                && (!record.sourceFileId || (current.file === sourceFiles.get(record.sourceFileId) && current.media))) {
+                prepared.push({ track: current, record, reused: true });
+                continue;
+            }
+            const track = snapshotClip(record);
+            if (record.sourceFileId) {
+                const file = sourceFiles.get(record.sourceFileId);
+                await loadTrack(track, file);
+            }
+            applyClipData(track, record);
+            created.push(track);
+            prepared.push({ track, record, reused: false });
+        }
+    } catch (error) {
+        for (const track of created) disposeTrack(track);
+        throw error;
+    }
+    return {
+        tracks: prepared.map(item => item.track),
+        commit() {
+            for (const { track, record, reused } of prepared) {
+                if (reused) applyClipData(track, record);
+            }
+        },
+        rollback() {
+            for (const track of created) disposeTrack(track);
+        }
+    };
+}
