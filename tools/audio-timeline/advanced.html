@@ -54,6 +54,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .dimension-input { width:100%; min-width:0; height:31px; padding:6px 8px; border:1px solid rgba(137,107,73,.8); border-radius:9px; outline:0; background:var(--bg-input); color:var(--alabaster-paper); font:.62rem var(--font-mono); }
 .dimension-input:focus { border-color:var(--water-spray); }
 .dimension-apply { width:auto; min-width:56px; min-height:31px; padding:6px 8px; }
+.project-frame-rate { margin-top:8px; max-width:190px; }
+.project-frame-rate select { cursor:pointer; }
 .file-list-card { min-height:260px; max-height:calc(100vh - 348px); margin-top:10px; overflow:hidden; border:1px solid rgba(137,107,73,.78); border-radius:14px; background:#070807; box-shadow:inset 0 0 18px rgba(0,0,0,.66); cursor:copy; transition:.15s ease; }
 .file-list-card:hover,.file-list-card:focus-visible,.file-list-card.drop-target-active { border-color:var(--water-spray); box-shadow:inset 0 0 18px rgba(0,0,0,.66),0 0 14px rgba(117,178,222,.18); }
 .file-list { display:flex; flex-direction:column; gap:7px; min-height:260px; max-height:calc(100vh - 348px); overflow:auto; padding:9px; }
@@ -223,6 +225,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <label class="dimension-field"><span>H</span><input class="dimension-input" id="canvas-height" type="number" min="64" max="7680" step="1" value="720" inputmode="numeric" aria-label="Output height"></label>
                         <button type="button" class="btn dimension-apply" id="btn-apply-canvas" title="Apply canvas dimensions">✓</button>
                     </div>
+                    <label class="dimension-field project-frame-rate" for="project-fps"><span>Project frame rate</span>
+                        <select class="dimension-input" id="project-fps" aria-label="Project frame rate for stepping and future export">
+                            <option value="24">24 fps</option><option value="25">25 fps</option>
+                            <option value="30" selected>30 fps</option><option value="50">50 fps</option><option value="60">60 fps</option>
+                        </select>
+                    </label>
                 </section>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
@@ -350,6 +358,6 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase2"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase3"></script>
 </body>
 </html>
