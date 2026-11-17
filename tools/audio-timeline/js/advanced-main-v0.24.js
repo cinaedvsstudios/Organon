@@ -186,7 +186,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
             elements.exportStatus.textContent = `Fixed-frame export failed: ${error.message}`;
             elements.previewState.textContent = `Export error: ${error.message}`;
             updateExportAvailability();
-        });
+        }).finally(() => updateExportAvailability());
     });
     elements.btnExportCancel.addEventListener('click', () => {
         if (offlineExporter.busy) void offlineExporter.cancel();
