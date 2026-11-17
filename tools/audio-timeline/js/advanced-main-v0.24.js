@@ -5,7 +5,7 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase4';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase5';
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 
 (() => {
