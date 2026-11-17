@@ -70,7 +70,7 @@ try {
     }));
     assert.deepEqual(available,{video:'function',decoder:'function',audio:'function'});
 
-    for (const format of ['mp4','webm']) {
+    for (const format of ['webm','mp4']) {
         console.log('[MotoriClip E2E] Encoding',format,'at 25 fps, 320x180...');
         const downloadPromise=page.waitForEvent('download',{timeout:180000});
         const exportPromise=page.evaluate(async fmt=>{
