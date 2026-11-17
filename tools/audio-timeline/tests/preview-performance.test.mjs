@@ -61,7 +61,8 @@ test('preview cache remains bounded and discards deleted clip media',()=>{
         const images=[0,1,2,3,4].map(i=>app.sticker('logo'+i));
         app.engine.setTracks(images);
         assert.equal(app.engine.stickerEffectCache.size,3);
-        assert.equal(app.engine.stickerEffectCache.has(images[0]),false);
+        // Reverse painter order means the last image is processed first and evicted.
+        assert.equal(app.engine.stickerEffectCache.has(images[4]),false);
         app.engine.setTracks([images[4]]);
         assert.equal(app.engine.stickerEffectCache.size,1);
         app.engine.clearAll();
