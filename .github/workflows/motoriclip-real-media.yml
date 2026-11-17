@@ -63,3 +63,7 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/long-export-memory.browser.mjs
+      - name: Measure repeated exports and post-GC Chrome memory recovery
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/repeated-export-memory.browser.mjs
