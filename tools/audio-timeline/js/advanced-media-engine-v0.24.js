@@ -378,11 +378,13 @@ export class AdvancedMediaEngine {
         const pending = (async () => {
             const videoFrames = [];
             for (const track of this.tracks) {
-                if (!AUDIO_TYPES.has(track.type) || !track.sourceName) continue;
+                if (!AUDIO_TYPES.has(track.type) || !track.sourceName || !this.isTrackActive(track, destination)) continue;
                 const sourceTime = getTrackSourceTime(track, destination);
-                if (track.type === 'video' && this.isTrackActive(track, destination) && track.media && track.visible !== false) {
-                    videoFrames.push(waitForVideoSeek(track.media, sourceTime, { signal: controller.signal }));
-                    // The linked sound does not need a decoded video frame.
+                if (track.type === 'video') {
+                    // Avoid decoding dozens of inactive/off-screen videos during scrubbing.
+                    if (track.media && track.visible !== false) {
+                        videoFrames.push(waitForVideoSeek(track.media, sourceTime, { signal: controller.signal }));
+                    }
                     try { if (track.soundMedia) track.soundMedia.currentTime = sourceTime; } catch (_) { /* not seekable */ }
                 } else {
                     this.setTrackMediaTime(track, destination);
