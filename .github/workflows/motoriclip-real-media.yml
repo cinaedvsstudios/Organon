@@ -1,6 +1,12 @@
 name: MotoriClip real-media export QA
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/audio-timeline/**'
+      - '.github/workflows/motoriclip-real-media.yml'
   pull_request:
     paths:
       - 'tools/audio-timeline/**'
