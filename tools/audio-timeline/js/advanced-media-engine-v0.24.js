@@ -6,28 +6,13 @@
 
 import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-scheduler.mjs';
 import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-seek.mjs';
+import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from './media-support.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
 const SUPPORTED_BLEND_MODES = new Set(['source-over', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'color-dodge', 'color-burn']);
 
 function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
-function waitForEvent(target, eventName, signal = null) {
-    return new Promise((resolve, reject) => {
-        const cleanup = () => {
-            target.removeEventListener(eventName, onSuccess);
-            target.removeEventListener('error', onError);
-            signal?.removeEventListener('abort', onAbort);
-        };
-        const onSuccess = () => { cleanup(); resolve(); };
-        const onError = () => { cleanup(); reject(new Error(`Could not load media (${eventName}).`)); };
-        const onAbort = () => { cleanup(); reject(new Error('Media loading was cancelled.')); };
-        if (signal?.aborted) { reject(new Error('Media loading was cancelled.')); return; }
-        target.addEventListener(eventName, onSuccess, { once:true });
-        target.addEventListener('error', onError, { once:true });
-        signal?.addEventListener('abort', onAbort, { once:true });
-    });
-}
 function drawContained(context, source, width, height) {
     const sourceWidth = source.videoWidth || source.naturalWidth || source.width || 0;
     const sourceHeight = source.videoHeight || source.naturalHeight || source.height || 0;
@@ -161,34 +146,45 @@ export class AdvancedMediaEngine {
                 image.decoding = 'async';
                 image.src = track.objectUrl;
                 track.media = image;
-                await waitForEvent(image, 'load', loadController.signal);
+                await waitForMediaReady(image, 'load', { signal:loadController.signal, timeoutMs:15000, label:file.name });
                 track.sourceDuration = 300;
                 if (!Number(track.clipDuration)) track.clipDuration = 3;
             } else if (track.type === 'video') {
                 const visual = document.createElement('video');
-                visual.preload = 'auto'; visual.playsInline = true; visual.muted = true; visual.playbackRate = 1; visual.src = track.objectUrl;
+                checkBrowserMediaSupport(visual, file);
+                // Picture and sound share one media clock; Web Audio retains
+                // per-clip volume, mute and fade controls.
+                visual.preload = 'auto'; visual.playsInline = true;
+                visual.muted = false; visual.volume = 1;
+                visual.playbackRate = 1; visual.src = track.objectUrl;
                 this.mediaBin.appendChild(visual);
                 track.media = visual;
-                await waitForEvent(visual, 'loadedmetadata', loadController.signal);
-                const sound = document.createElement('audio');
-                sound.preload = 'auto'; sound.playbackRate = 1; sound.src = track.objectUrl;
-                this.mediaBin.appendChild(sound);
-                track.soundMedia = sound;
-                await waitForEvent(sound, 'loadedmetadata', loadController.signal);
+                await waitForMediaReady(visual, 'loadedmetadata', { signal:loadController.signal, label:file.name });
+                await waitForMediaReady(visual, 'loadeddata', { signal:loadController.signal, label:file.name });
                 track.sourceDuration = Number.isFinite(visual.duration) ? visual.duration : 0;
                 if (!Number(track.clipDuration)) track.clipDuration = track.sourceDuration || 1;
-                await this.connectAudioTrack(track, sound);
+                await this.connectAudioTrack(track, visual);
             } else if (track.type === 'audio') {
                 const audio = document.createElement('audio');
+                checkBrowserMediaSupport(audio, file);
                 audio.preload = 'auto'; audio.playbackRate = 1; audio.src = track.objectUrl;
                 this.mediaBin.appendChild(audio);
                 track.media = audio;
-                await waitForEvent(audio, 'loadedmetadata', loadController.signal);
+                await waitForMediaReady(audio, 'loadedmetadata', { signal:loadController.signal, label:file.name });
                 track.sourceDuration = Number.isFinite(audio.duration) ? audio.duration : 0;
                 if (!Number(track.clipDuration)) track.clipDuration = track.sourceDuration || 1;
                 await this.connectAudioTrack(track, audio);
             }
             if (loadController.signal.aborted) throw new Error('Media loading was cancelled.');
+            if (track.type === 'video' || track.type === 'audio') {
+                const playingMedia = track.media;
+                track.mediaErrorHandler = () => {
+                    if (track.media !== playingMedia) return;
+                    this.stopTrackMedia(track);
+                    this.onRenderError?.(new Error(mediaFailureMessage(playingMedia, track.sourceName)));
+                };
+                playingMedia.addEventListener('error', track.mediaErrorHandler);
+            }
         } catch (error) {
             // An older cancelled load must never destroy a newer load of the
             // same timeline object.
@@ -260,6 +256,10 @@ export class AdvancedMediaEngine {
         }
         this.loadingTracks.delete(track);
         this.stopTrackMedia(track);
+        if (track.mediaErrorHandler && track.media?.removeEventListener) {
+            track.media.removeEventListener('error', track.mediaErrorHandler);
+        }
+        track.mediaErrorHandler = null;
         for (const node of [track.audioNode, track.gainNode]) {
             try { node?.disconnect?.(); } catch (_) { /* already disconnected */ }
         }
@@ -331,8 +331,7 @@ export class AdvancedMediaEngine {
     setTrackMediaTime(track, time) {
         const localTime = getTrackSourceTime(track, time);
         if (track.type === 'video') {
-            try { track.media.currentTime = localTime; } catch (_) { /* no-op */ }
-            try { track.soundMedia.currentTime = localTime; } catch (_) { /* no-op */ }
+            try { if (track.media) track.media.currentTime = localTime; } catch (_) { /* no-op */ }
         } else if (track.type === 'audio') {
             try { track.media.currentTime = localTime; } catch (_) { /* no-op */ }
         }
@@ -350,7 +349,7 @@ export class AdvancedMediaEngine {
         // Always align a newly activated clip to its own source offset.
         // Start both video and linked sound without sequential awaits.
         this.setTrackMediaTime(track, time);
-        const players = track.type === 'video' ? [track.media, track.soundMedia] : [track.media];
+        const players = [track.media];
         for (const player of players) {
             if (!player) continue;
             try {
@@ -359,11 +358,13 @@ export class AdvancedMediaEngine {
                     started.catch((error) => {
                         if (this.isPlaying && this.isTrackActive(track, this.currentTime)) {
                             console.warn(`Could not start ${track.sourceName}:`, error);
+                            this.onRenderError?.(new Error(`Playback failed for ${track.sourceName}: ${error?.message || 'Browser blocked this media.'}`));
                         }
                     });
                 }
             } catch (error) {
                 console.warn(`Could not start ${track.sourceName}:`, error);
+                this.onRenderError?.(new Error(`Playback failed for ${track.sourceName}: ${error?.message || 'Browser blocked this media.'}`));
             }
         }
     }
@@ -438,7 +439,7 @@ export class AdvancedMediaEngine {
                     if (track.media && track.visible !== false) {
                         videoFrames.push(waitForVideoSeek(track.media, sourceTime, { signal: controller.signal }));
                     }
-                    try { if (track.soundMedia) track.soundMedia.currentTime = sourceTime; } catch (_) { /* not seekable */ }
+                    // No separate sound player: the video supplies both clocks.
                 } else {
                     this.setTrackMediaTime(track, destination);
                 }
