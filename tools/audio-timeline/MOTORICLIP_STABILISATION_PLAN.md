@@ -12,8 +12,9 @@
 - **Phase 2:** Timeline playback scheduling merged in [PR #26](https://github.com/cinaedvsstudios/Organon/pull/26) (commit `68c8724890a54b6eba630012bb3db35e62916ce8`).
 - **Phase 3:** Paused frame-seeking, latest-scrub cancellation, project FPS stepping and PNG capture fixes merged in [PR #27](https://github.com/cinaedvsstudios/Organon/pull/27) (commit `d56316ad9e0b42c010330b0d9de3172bdfd75d25`).
 - **Phase 4:** Undo/redo metadata isolation, cached File source IDs, efficient live-media restoration, automatic media disposal and abortable pending file loads merged in [PR #28](https://github.com/cinaedvsstudios/Organon/pull/28) (commit `c40fc220c40885a1515d157747ca6180ae325af6`). [Phase 4 QA report](./MOTORICLIP_PHASE4_QA.md).
-- **Automated testing:** 39/39 JavaScript simulated-media regression cases passed across Phases 2–4 (14 + 12 + 13). These do not replace the outstanding interactive browser/real codec tests in the three QA reports.
-- **Next:** Phase 5 — linked audio/video synchronization, visual compositing fidelity, supported/unsupported media handling and robust error reporting. Keep transitions out of scope until the stabilization release gate.
+- **Phase 5:** Single-player linked picture/sound, Web Audio routing, resilient media decoding/error reporting, safe media-edit failure handling and canvas layering fixes merged in [PR #29](https://github.com/cinaedvsstudios/Organon/pull/29) (commit `226511bb80ef0ccb272263d17f12076c314b4d6f`). [Phase 5 QA report](./MOTORICLIP_PHASE5_QA.md).
+- **Automated testing:** 54/54 JavaScript simulated-media regression cases passed across Phases 2–5 (14 + 12 + 13 + 15). These do **not** replace outstanding real-browser/codec tests in the QA reports.
+- **Next:** Phase 6 — profile larger projects, build a reliable first Advanced video export, and verify timeline/preview/export consistency. Keep transitions out of scope until the stabilization release gate.
 
 ## Confirmed baseline and design constraints
 
@@ -88,7 +89,7 @@ Work:
 
 **Gate:** A user can split, move, duplicate, delete, undo and redo repeatedly with the correct video and audio still attached. Clear releases the project and importing again works without resource accumulation.
 
-## Phase 5 — Audio, compositing and file handling consistency
+## Phase 5 — Audio, compositing and file handling consistency [IMPLEMENTED; browser QA outstanding]
 
 1. Review linked audio: each video currently creates separate visual `<video>` and sound `<audio>` elements, which may drift if started or sought independently. Measure synchronization and fix the coupling.
 2. Test audio fade-in/out, mute, extracted audio, parallel audio tracks and transitions across video clip boundaries (no *visual transition effects* yet).
