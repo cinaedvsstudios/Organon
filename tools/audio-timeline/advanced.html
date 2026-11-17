@@ -60,6 +60,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .export-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:8px; }
 .export-setting { display:grid; gap:4px; color:rgba(245,240,219,.68); font:.55rem var(--font-mono); }
 .export-settings .btn { width:100%; margin-top:3px; }
+.export-offline-beta { margin-top:10px; padding-top:10px; border-top:1px dashed rgba(117,178,222,.35); }
+.export-offline-beta .btn { margin-top:8px; background:rgba(75,132,191,.18); border-color:rgba(117,178,222,.8); }
+.export-offline-beta .export-note { margin-top:7px; }
 .export-note,.export-status { margin:6px 0 0; color:rgba(245,240,219,.62); font:.54rem/1.5 var(--font-body); }
 .export-status { color:var(--water-spray); }
 .export-overlay { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; padding:20px; background:rgba(4,7,12,.87); backdrop-filter:blur(4px); }
@@ -257,7 +260,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         </select></label>
                     </div>
                     <button type="button" class="btn btn-primary" id="btn-export-video" disabled>🎬 Render &amp; Save</button>
-                    <p class="export-note">Records the complete timeline in real time at the canvas resolution and project FPS. Keep this tab visible. Frame-accurate offline export is planned separately.</p>
+                    <p class="export-note">Real-time browser recording at the chosen resolution and FPS. Keep this tab visible.</p>
+                    <div class="export-offline-beta">
+                        <label class="export-setting" for="export-offline-format"><span>Fixed-frame format (beta)</span>
+                            <select class="dimension-input" id="export-offline-format" aria-label="Offline fixed-frame export format">
+                                <option value="mp4" selected>MP4 · H.264 / AAC</option>
+                                <option value="webm">WebM · VP9 / Opus</option>
+                            </select>
+                        </label>
+                        <button type="button" class="btn" id="btn-export-offline" disabled>🧪 Fixed-frame export (beta)</button>
+                        <p class="export-note">Up to 2 minutes. Uses WebCodecs + Mediabunny to render frames at exact project timestamps and mix audio offline. Beta; encoding requires browser support and downloads the export library on first use. The original real-time option remains available.</p>
+                    </div>
                     <p class="export-status" id="export-status" role="status" aria-live="polite">Checking recording support…</p>
                 </section>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
@@ -386,14 +399,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase6b"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase6c"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
             <p id="export-overlay-status">Preparing full timeline…</p>
             <progress id="export-progress" max="100" value="0" aria-label="Video rendering progress"></progress>
             <p id="export-progress-text">0%</p>
-            <p>This is a real-time recording. Keep MotoriClip visible until it finishes.</p>
+            <p id="export-overlay-note">This is a real-time recording. Keep MotoriClip visible until it finishes.</p>
             <button type="button" class="btn btn-danger" id="btn-export-cancel">Cancel &amp; discard</button>
         </div>
     </div>

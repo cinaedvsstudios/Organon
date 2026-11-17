@@ -8,6 +8,7 @@ import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
 import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase6b';
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
+import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -31,6 +32,7 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
+        exportOfflineFormat: document.getElementById('export-offline-format'), btnExportOffline: document.getElementById('btn-export-offline'), exportOverlayNote: document.getElementById('export-overlay-note'),
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
@@ -73,6 +75,7 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
             elements.exportStatus.textContent = message;
             elements.exportOverlayStatus.textContent = message;
             elements.exportOverlay.hidden = !['preparing','recording','finalizing'].includes(phase);
+            elements.exportOverlayNote.textContent = 'This is a real-time recording. Keep MotoriClip visible until it finishes.';
             updateExportAvailability();
             if (phase === 'error') {
                 elements.previewState.textContent = `Export error: ${message}`;
@@ -93,10 +96,48 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
         }
     });
 
+    const offlineExporter = new AdvancedOfflineExporter({
+        engine,
+        onProgress: ({current,duration,percent}) => {
+            elements.exportProgress.value = percent;
+            elements.exportProgressText.textContent = `${Math.round(percent)}% · ${formatTime(current)} / ${formatTime(duration)}`;
+        },
+        onState: ({phase,message}) => {
+            elements.exportStatus.textContent = message;
+            elements.exportOverlayStatus.textContent = message;
+            elements.exportOverlay.hidden = !['preparing','recording','finalizing'].includes(phase);
+            elements.exportOverlayNote.textContent = 'Fixed-timestamp offline encoding (beta). Your project stays on this device; cancellation discards incomplete output.';
+            updateExportAvailability();
+            if (phase === 'error') {
+                elements.previewState.textContent = `Export error: ${message}`;
+                showToast('Fixed-frame export failed');
+            }
+            if (phase === 'complete') showToast(message);
+            if (phase === 'cancelled') showToast('Fixed-frame export cancelled');
+        },
+        onDownload: ({blob,extension}) => {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `motoriclip-fixedframe-beta.${extension}`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.setTimeout(() => URL.revokeObjectURL(url), 30000);
+        }
+    });
+
     function updateExportAvailability() {
         const supported = exporter.getFormats();
+        const duration = engine.getTimelineDuration();
+        const busy = exporter.busy || offlineExporter.busy;
         const captureReady = typeof elements.canvas.captureStream === 'function' && typeof window.MediaStream === 'function';
-        elements.btnExportVideo.disabled = exporter.busy || !captureReady || supported.length === 0 || engine.getTimelineDuration() <= 0;
+        elements.btnExportVideo.disabled = busy || !captureReady || supported.length === 0 || duration <= 0;
+        elements.btnExportOffline.disabled = busy || !offlineExporter.getAvailable()
+            || duration <= 0 || duration > OFFLINE_EXPORT_LIMIT_SECONDS;
+        elements.btnExportOffline.title = duration > OFFLINE_EXPORT_LIMIT_SECONDS
+            ? 'Fixed-frame beta currently supports projects up to 2 minutes'
+            : (offlineExporter.getAvailable() ? 'Render with fixed timestamps (experimental)' : 'Requires WebCodecs and OfflineAudioContext');
     }
     function initVideoExportUi() {
         const formats = exporter.getFormats();
@@ -134,10 +175,29 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
             elements.previewState.textContent = `Export error: ${error.message}`;
         });
     });
-    elements.btnExportCancel.addEventListener('click', () => { void exporter.cancel(); });
+    elements.btnExportOffline.addEventListener('click', () => {
+        elements.exportProgress.value = 0;
+        elements.exportProgressText.textContent = '0%';
+        void offlineExporter.start({
+            format:elements.exportOfflineFormat.value,
+            fps:engine.projectFps,
+            bitrateKbps:Number(elements.exportBitrate.value)
+        }).catch((error) => {
+            elements.exportStatus.textContent = `Fixed-frame export failed: ${error.message}`;
+            elements.previewState.textContent = `Export error: ${error.message}`;
+            updateExportAvailability();
+        }).finally(() => updateExportAvailability());
+    });
+    elements.btnExportCancel.addEventListener('click', () => {
+        if (offlineExporter.busy) void offlineExporter.cancel();
+        else void exporter.cancel();
+    });
     document.addEventListener('keydown', (event) => {
-        if (!exporter.busy) return;
-        if (event.key === 'Escape') void exporter.cancel();
+        if (!exporter.busy && !offlineExporter.busy) return;
+        if (event.key === 'Escape') {
+            if (offlineExporter.busy) void offlineExporter.cancel();
+            else void exporter.cancel();
+        }
         event.preventDefault();
         event.stopImmediatePropagation();
     }, true);
@@ -1112,7 +1172,7 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
         if ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y') { event.preventDefault(); redoTimelineEdit(); }
     });
     window.addEventListener('beforeunload', (event) => {
-        if (exporter.busy) {
+        if (exporter.busy || offlineExporter.busy) {
             event.preventDefault();
             event.returnValue = '';
         } else {
