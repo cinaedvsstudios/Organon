@@ -390,7 +390,13 @@ export class AdvancedMediaEngine {
             }
             this.syncAudioSettings(destination);
             this.emitTime();
-            const results = await Promise.all(videoFrames);
+            let results;
+            try {
+                results = await Promise.all(videoFrames);
+            } catch (error) {
+                if (generation === this.seekGeneration) this.resumeAfterSeek = false;
+                throw error;
+            }
             if (controller.signal.aborted || generation !== this.seekGeneration || results.some((ready) => !ready)) return false;
             this.renderFrame(); // Never draw a stale, pre-seek video frame.
             if (resume && this.resumeAfterSeek) {
@@ -411,9 +417,10 @@ export class AdvancedMediaEngine {
     }
 
     async stepFrame(direction = 1) {
-        const target = stepFrameTime(this.currentTime, direction, this.projectFps, this.getTimelineDuration());
-        // Stepping is a deliberate pause operation, not an automatic resume.
+        // A manual frame step always stops playback, including pending auto-resume.
+        if (this.isPlaying) this.pause();
         this.resumeAfterSeek = false;
+        const target = stepFrameTime(this.currentTime, direction, this.projectFps, this.getTimelineDuration());
         return this.seek(target, { resume: false });
     }
 
