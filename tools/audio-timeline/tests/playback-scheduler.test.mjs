@@ -94,8 +94,23 @@ function createFakeEngine() {
     engine.ensureAudioGraph=async()=>{engine.audioContext={state:'running',get currentTime(){return now}}};
     engine.renderFrame=()=>{};
     engine.syncAudioSettings=()=>{};
+    // Simulate HTMLMediaElement's asynchronous 'seeked' lifecycle so this
+    // playback regression suite remains valid after Phase 3 frame gating.
     const player=name=>({
-        paused:true,currentTime:0,
+        paused:true,readyState:2,seeking:false,_time:0,_listeners:new Map(),
+        get currentTime(){return this._time},
+        set currentTime(value){
+            this._time=value;this.seeking=true;this.readyState=1;
+            queueMicrotask(()=>{
+                this.seeking=false;this.readyState=2;
+                for(const handler of [...(this._listeners.get('seeked')||[])])handler();
+            });
+        },
+        addEventListener(name,handler){
+            if(!this._listeners.has(name))this._listeners.set(name,new Set());
+            this._listeners.get(name).add(handler);
+        },
+        removeEventListener(name,handler){this._listeners.get(name)?.delete(handler)},
         play(){this.paused=false;actions.push('start:'+name);return Promise.resolve()},
         pause(){if(!this.paused)actions.push('stop:'+name);this.paused=true}
     });
