@@ -521,19 +521,34 @@ export class AdvancedMediaEngine {
         try {
             this.ensureCanvasSize();
             const { width, height } = this.canvas;
-            this.context.save(); this.context.globalCompositeOperation = 'source-over'; this.context.clearRect(0,0,width,height); this.context.fillStyle='#000'; this.context.fillRect(0,0,width,height);
-            const visualTracks = this.getVisualTracksTopToBottom();
-            for (const track of [...visualTracks].reverse()) {
-                if (!track.media || !this.isTrackActive(track) || track.visible === false) continue;
-                this.context.save();
-                this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
-                this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1);
-                if (track.type === 'background') drawCovered(this.context, track.media, width, height);
-                if (track.type === 'video' && track.media.readyState >= 2) drawContained(this.context, track.media, width, height);
-                if (track.type === 'sticker') this.drawSticker(track, width, height);
+            this.context.save();
+            try {
+                this.context.globalCompositeOperation = 'source-over';
+                this.context.clearRect(0, 0, width, height);
+                this.context.fillStyle = '#000';
+                this.context.fillRect(0, 0, width, height);
+                for (const track of [...this.getVisualTracksTopToBottom()].reverse()) {
+                    if (!track.media || !this.isTrackActive(track) || track.visible === false
+                        || Number(track.opacity ?? 1) <= 0) continue;
+                    this.context.save();
+                    try {
+                        this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
+                        this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1);
+                        if (track.type === 'background') drawCovered(this.context, track.media, width, height);
+                        else if (track.type === 'video' && track.media.readyState >= 2) drawContained(this.context, track.media, width, height);
+                        else if (track.type === 'sticker') this.drawSticker(track, width, height);
+                    } catch (error) {
+                        // Do not break the entire composite because one layer
+                        // has an undecodable or temporarily unavailable frame.
+                        console.warn(`Could not render ${track.sourceName || track.type}:`, error);
+                        this.onRenderError?.(new Error(`Could not render ${track.sourceName || track.type}: ${error.message}`));
+                    } finally {
+                        this.context.restore();
+                    }
+                }
+            } finally {
                 this.context.restore();
             }
-            this.context.restore();
         } catch (error) { console.error('Advanced render error:', error); this.onRenderError?.(error); }
     }
 
