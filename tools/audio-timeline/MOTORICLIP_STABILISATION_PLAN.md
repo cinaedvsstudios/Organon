@@ -5,6 +5,13 @@
 **Current engine:** Advanced v0.24; Basic editor retained for mobile  
 **Scope:** Stabilise the **existing** application before adding transitions, transition designer, JPEG options, or other new effects.
 
+## Implementation status — 17 November 2026
+
+- **Phase 1: Source audit, reproducible test cases and automated scheduling harness complete.** Interactive real-file QA remains pending and is documented in [MOTORICLIP_PHASE1_BASELINE_QA.md](./MOTORICLIP_PHASE1_BASELINE_QA.md).
+- **Phase 2: Playback scheduling implemented and merged into main** in [PR #26](https://github.com/cinaedvsstudios/Organon/pull/26) (merge commit `68c8724890a54b6eba630012bb3db35e62916ce8`). A boundary tracker starts and stops media at timeline clip boundaries, including gaps and overlays.
+- **Tests:** 14 automated cases passed in a simulated media-element environment using the updated engine. Browser tests with actual MP4/WAV/JPEG files are not yet verified.
+- **Next:** Phase 3 frame-accurate seeking, with remaining real-media regression checks before any transition features.
+
 ## Confirmed baseline and design constraints
 
 - Keep internal ID `audio-timeline` and folder `tools/audio-timeline/` for existing bookmarks and imports.
