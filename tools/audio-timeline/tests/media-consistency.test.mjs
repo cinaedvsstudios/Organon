@@ -104,6 +104,7 @@ test('MIME detection respects supplied type and falls back to extension',()=>{
 test('unsupported codecs/containers produce an actionable message',()=>{
     assert.throws(()=>checkBrowserMediaSupport({canPlayType:()=>''},{name:'bad.mkv',type:''}),/cannot play video\/x-matroska/);
     assert.doesNotThrow(()=>checkBrowserMediaSupport({canPlayType:()=> 'maybe'},{name:'okay.mp4',type:''}));
+    assert.doesNotThrow(()=>checkBrowserMediaSupport({canPlayType:()=> ''},{name:'film.mp4',type:'video/mp4'}, {audioFromVideo:true}));
     assert.match(mediaFailureMessage({error:{code:3}},'Clip X'),/decode/);
     assert.match(mediaFailureMessage({error:{code:4}},'Clip X'),/not supported/);
 });
