@@ -56,6 +56,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .dimension-apply { width:auto; min-width:56px; min-height:31px; padding:6px 8px; }
 .project-frame-rate { margin-top:8px; max-width:190px; }
 .project-frame-rate select { cursor:pointer; }
+.export-settings { margin-top:10px; padding:9px; border:1px solid rgba(117,178,222,.6); border-radius:14px; background:rgba(16,29,43,.3); }
+.export-row { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-bottom:8px; }
+.export-setting { display:grid; gap:4px; color:rgba(245,240,219,.68); font:.55rem var(--font-mono); }
+.export-settings .btn { width:100%; margin-top:3px; }
+.export-note,.export-status { margin:6px 0 0; color:rgba(245,240,219,.62); font:.54rem/1.5 var(--font-body); }
+.export-status { color:var(--water-spray); }
+.export-overlay { position:fixed; inset:0; z-index:9999; display:grid; place-items:center; padding:20px; background:rgba(4,7,12,.87); backdrop-filter:blur(4px); }
+.export-overlay[hidden] { display:none !important; }
+.export-dialog { width:min(440px,100%); padding:24px; border:1px solid var(--water-spray); border-radius:16px; background:#151a20; box-shadow:0 12px 45px #000; text-align:center; color:var(--alabaster-paper); }
+.export-dialog h2 { margin:0 0 9px; color:var(--stone-ochre); font:.88rem var(--font-headers); }
+.export-dialog p { margin:7px 0; font:.7rem var(--font-body); }
+.export-dialog progress { display:block; width:100%; height:17px; margin:16px 0 5px; accent-color:var(--water-spray); }
+.export-dialog .btn { margin-top:13px; min-width:130px; }
 .file-list-card { min-height:260px; max-height:calc(100vh - 348px); margin-top:10px; overflow:hidden; border:1px solid rgba(137,107,73,.78); border-radius:14px; background:#070807; box-shadow:inset 0 0 18px rgba(0,0,0,.66); cursor:copy; transition:.15s ease; }
 .file-list-card:hover,.file-list-card:focus-visible,.file-list-card.drop-target-active { border-color:var(--water-spray); box-shadow:inset 0 0 18px rgba(0,0,0,.66),0 0 14px rgba(117,178,222,.18); }
 .file-list { display:flex; flex-direction:column; gap:7px; min-height:260px; max-height:calc(100vh - 348px); overflow:auto; padding:9px; }
@@ -232,6 +245,21 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         </select>
                     </label>
                 </section>
+                <section class="export-settings" aria-label="Video export">
+                    <div class="canvas-settings-title"><span>🎞 Video export</span><small>Real-time</small></div>
+                    <div class="export-row">
+                        <label class="export-setting"><span>Format</span><select class="dimension-input" id="export-format" aria-label="Export format"><option value="">Checking browser…</option></select></label>
+                        <label class="export-setting"><span>Video quality</span><select class="dimension-input" id="export-bitrate" aria-label="Export video bitrate">
+                            <option value="3000">Compact · 3 Mbps</option>
+                            <option value="6000" selected>Standard · 6 Mbps</option>
+                            <option value="10000">High · 10 Mbps</option>
+                            <option value="16000">Very high · 16 Mbps</option>
+                        </select></label>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btn-export-video" disabled>🎬 Render &amp; Save</button>
+                    <p class="export-note">Records the complete timeline in real time at the canvas resolution and project FPS. Keep this tab visible. Frame-accurate offline export is planned separately.</p>
+                    <p class="export-status" id="export-status" role="status" aria-live="polite">Checking recording support…</p>
+                </section>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
                 </div>
@@ -358,6 +386,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase6a"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase6b"></script>
+    <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
+        <div class="export-dialog">
+            <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
+            <p id="export-overlay-status">Preparing full timeline…</p>
+            <progress id="export-progress" max="100" value="0" aria-label="Video rendering progress"></progress>
+            <p id="export-progress-text">0%</p>
+            <p>This is a real-time recording. Keep MotoriClip visible until it finishes.</p>
+            <button type="button" class="btn btn-danger" id="btn-export-cancel">Cancel &amp; discard</button>
+        </div>
+    </div>
 </body>
 </html>
