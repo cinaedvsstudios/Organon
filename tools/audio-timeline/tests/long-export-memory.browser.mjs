@@ -1,0 +1,294 @@
+/**
+ * Phase 6G: longer, moving-image fixtures and Linux Chrome-process PSS profiling.
+ * Real exports use Chrome WebCodecs/Mediabunny. Output is verified by FFprobe.
+ * This is NOT a general-purpose memory benchmark or a mobile device test.
+ */
+import assert from 'node:assert/strict';
+import { chromium } from 'playwright-core';
+import { createServer } from 'node:http';
+import { existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { join, resolve, extname } from 'node:path';
+import { tmpdir } from 'node:os';
+import { spawnSync } from 'node:child_process';
+
+const root=process.cwd(), fixtures=join(root,'tools/audio-timeline/tests/fixtures');
+mkdirSync(fixtures,{recursive:true});
+const temp=await mkdtemp(join(tmpdir(),'motoriclip-long-'));
+function command(bin,args,{binary=false,timeout=120000}={}){
+    const run=spawnSync(bin,args,{encoding:binary?undefined:'utf8',maxBuffer:64000000,timeout});
+    if(run.error||run.signal||run.status!==0){
+        throw Error(bin+' failed '+JSON.stringify({
+            status:run.status,signal:run.signal,error:run.error?.message,
+            stderr:String(run.stderr||'').slice(-3200),args
+        }));
+    }
+    return run.stdout;
+}
+function makeSource(name,filter,freq){
+    const output=join(fixtures,name);
+    const args=['-hide_banner','-loglevel','error','-y',
+        '-f','lavfi','-i','testsrc2=size=640x360:rate=30:duration=10',
+        '-f','lavfi','-i','sine=frequency='+freq+':sample_rate=48000:duration=10'];
+    if(filter)args.push('-vf',filter);
+    args.push('-threads','1','-filter_threads','1',
+        '-c:v','libx264','-preset','ultrafast','-crf','28','-pix_fmt','yuv420p',
+        '-c:a','aac','-b:a','96k','-t','10',output);
+    command('ffmpeg',args);
+}
+makeSource('moving-a.mp4','',440);
+makeSource('moving-b.mp4','hue=h=90',660);
+command('ffmpeg',['-hide_banner','-loglevel','error','-y',
+    '-f','lavfi','-i','color=c=yellow:s=640x360:d=1',
+    '-frames:v','1','-update','1',join(fixtures,'moving-background.jpg')]);
+
+// Sum proportional set size (PSS) for Chrome's process tree, including GPU and
+// renderer subprocesses, to avoid counting shared memory fully for each process.
+// RSS is also recorded as a coarse secondary metric, NOT used as total memory.
+function chromeMemory(nodePid){
+    const processes=command('ps',['-eo','pid=,ppid=,comm=']);
+    const rows=processes.split('\n').map(x=>x.trim().match(/^(\d+)\s+(\d+)\s+(.+)$/)).filter(Boolean)
+        .map(x=>({pid:Number(x[1]),ppid:Number(x[2]),name:x[3]}));
+    const descendants=new Set([nodePid]);
+    let changed=true;
+    while(changed){
+        changed=false;
+        for(const row of rows){
+            if(descendants.has(row.ppid)&&!descendants.has(row.pid)){
+                descendants.add(row.pid);changed=true;
+            }
+        }
+    }
+    let pss=0,rss=0,pssProcesses=0,rssProcesses=0;
+    for(const pid of descendants){
+        if(pid === nodePid) continue; // Do not count the Node test runner itself.
+        try{
+            const report=readFileSync('/proc/'+pid+'/smaps_rollup','utf8');
+            const p=report.match(/^Pss:\s+(\d+)\s+kB/m);
+            const r=report.match(/^Rss:\s+(\d+)\s+kB/m);
+            if(p){pss+=Number(p[1]);pssProcesses++}
+            if(r){rss+=Number(r[1]);rssProcesses++}
+        }catch{/* Process exited or smaps_rollup is not accessible */}
+    }
+    return {pssKiB:pssProcesses?pss:null,rssKiB:rssProcesses?rss:null,
+        processCount:Math.max(0,descendants.size-1),pssProcesses,rssProcesses};
+}
+
+const mime={'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript',
+    '.mp4':'video/mp4','.jpg':'image/jpeg','.png':'image/png'};
+const server=createServer((request,response)=>{
+    try{
+        const file=resolve(root,'.'+new URL(request.url,'http://localhost').pathname);
+        if(!file.startsWith(root+'/')||!existsSync(file)){
+            response.writeHead(404);response.end('Not found');return;
+        }
+        const buffer=readFileSync(file);
+        response.writeHead(200,{'Content-Type':mime[extname(file)]||'application/octet-stream',
+            'Cache-Control':'no-store'});
+        response.end(buffer);
+    }catch(error){response.writeHead(500);response.end(String(error))}
+});
+await new Promise(done=>server.listen(0,'127.0.0.1',done));
+const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(existsSync);
+assert.ok(chrome,'Chrome unavailable');
+const browser=await chromium.launch({executablePath:chrome,headless:true,
+    args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
+try{
+    const context=await browser.newContext({acceptDownloads:true});
+    const page=await context.newPage(),errors=[];
+    page.on('pageerror',error=>errors.push(String(error)));
+    await page.goto('http://127.0.0.1:'+server.address().port+
+        '/tools/audio-timeline/tests/browser-harness.html');
+    const scenarios=[
+        {
+            name:'1080p-18s-motion-8clips',format:'mp4',width:1920,height:1080,
+            duration:18,fps:30,bitrateKbps:5000,clipCount:8,
+            clipStep:2.1,clipDuration:3.1
+        },
+        {
+            name:'720p-30s-motion-25clips',format:'webm',width:1280,height:720,
+            duration:30,fps:25,bitrateKbps:3500,clipCount:25,
+            clipStep:1.12,clipDuration:1.8
+        }
+    ];
+    const records=[];
+    for(const cfg of scenarios){
+        console.log('[MotoriClip 6G] START',cfg.name);
+        const base=chromeMemory(process.pid);
+        const samples=[base];
+        const timer=setInterval(()=>{
+            try{samples.push(chromeMemory(process.pid))}catch(error){
+                console.warn('Memory sample failed: '+String(error));
+            }
+        },400);
+        const started=Date.now();
+        try{
+            const downloadPromise=page.waitForEvent('download',{timeout:420000});
+            const renderPromise=page.evaluate(async scenario=>{
+                const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
+                    import('../js/advanced-offline-export.mjs'),
+                    import('../js/advanced-media-engine-v0.24.js')
+                ]);
+                const readFixture=async(name,type)=>{
+                    const response=await fetch('./fixtures/'+name);
+                    if(!response.ok)throw Error('Fixture missing '+name);
+                    return new File([await response.blob()],name,{type});
+                };
+                const [first,second,backgroundFile]=await Promise.all([
+                    readFixture('moving-a.mp4','video/mp4'),
+                    readFixture('moving-b.mp4','video/mp4'),
+                    readFixture('moving-background.jpg','image/jpeg')
+                ]);
+                const readImage=async(file)=>{
+                    const image=new Image(),url=URL.createObjectURL(file);
+                    try{
+                        await new Promise((done,fail)=>{
+                            image.onload=done;image.onerror=fail;image.src=url;
+                        });
+                        return image;
+                    }finally{URL.revokeObjectURL(url)}
+                };
+                const background=await readImage(backgroundFile);
+                const overlayCanvas=document.createElement('canvas');
+                overlayCanvas.width=640;overlayCanvas.height=360;
+                const layer=overlayCanvas.getContext('2d');
+                layer.fillStyle='rgba(0,255,0,0.9)';
+                layer.fillRect(12,12,48,48);
+                const overlayBlob=await new Promise(resolve=>overlayCanvas.toBlob(resolve,'image/png'));
+                const overlayFile=new File([overlayBlob],'long-overlay.png',{type:'image/png'});
+                const overlay=await readImage(overlayFile);
+                const defaultAudio={volume:.35,muted:false,fadeIn:.1,fadeOut:.12};
+                const tracks=[
+                    {
+                        id:'background',type:'background',file:backgroundFile,
+                        sourceName:backgroundFile.name,media:background,
+                        start:0,sourceOffset:0,sourceDuration:scenario.duration,
+                        clipDuration:scenario.duration,visible:true,opacity:1,
+                        order:1,blendMode:'source-over'
+                    }
+                ];
+                for(let index=0;index<scenario.clipCount;index++){
+                    const file=index%2?second:first;
+                    const start=Number((index*scenario.clipStep).toFixed(5));
+                    const duration=Math.min(scenario.clipDuration,scenario.duration-start);
+                    tracks.push({
+                        id:'motion-'+index,type:'video',file,sourceName:file.name,
+                        sourceDuration:10,sourceOffset:index%2?1.4:.8,
+                        start,clipDuration:duration,visible:true,opacity:1,
+                        blendMode:'source-over',order:index+1,
+                        audio:{...defaultAudio}
+                    });
+                }
+                tracks.push({
+                    id:'overlay',type:'sticker',file:overlayFile,
+                    sourceName:overlayFile.name,media:overlay,
+                    sourceDuration:scenario.duration,sourceOffset:0,start:0,
+                    clipDuration:scenario.duration,visible:true,opacity:1,
+                    blendMode:'source-over',order:1,
+                    transparency:{mode:'native'}
+                });
+                const canvas=document.createElement('canvas');
+                canvas.width=scenario.width;canvas.height=scenario.height;
+                document.body.appendChild(canvas);
+                const engine=new AdvancedMediaEngine({
+                    canvas,mediaBin:document.createElement('div'),
+                    onTimeChange(){},onDurationChange(){},
+                    onPlaybackChange(){},onRenderError(error){throw error}
+                });
+                engine.tracks=tracks;
+                const phases=[],percentages=[];
+                let downloaded=0;
+                const exporter=new AdvancedOfflineExporter({
+                    engine,onState:s=>phases.push(s.phase),
+                    onProgress:s=>percentages.push(s.percent),
+                    onDownload({blob,extension}){
+                        downloaded++;
+                        const link=document.createElement('a'),url=URL.createObjectURL(blob);
+                        link.href=url;link.download='motoriclip-'+scenario.name+'.'+extension;
+                        document.body.appendChild(link);link.click();link.remove();
+                        setTimeout(()=>URL.revokeObjectURL(url),12000);
+                    }
+                });
+                const began=performance.now();
+                try{
+                    const ok=await exporter.start({
+                        format:scenario.format,fps:scenario.fps,
+                        bitrateKbps:scenario.bitrateKbps
+                    });
+                    return {
+                        ok,busy:exporter.busy,retainedInputs:exporter.inputs.size,
+                        downloadCount:downloaded,phases,
+                        progressLast:percentages.at(-1),clipCount:tracks.length,
+                        renderMs:Math.round(performance.now()-began),
+                        unchangedPlayhead:engine.currentTime===0
+                    };
+                }finally{
+                    canvas.remove();
+                }
+            },cfg);
+            const download=await downloadPromise;
+            const result=await renderPromise;
+            assert.equal(result.ok,true);
+            assert.equal(result.busy,false);
+            assert.equal(result.retainedInputs,0);
+            assert.equal(result.unchangedPlayhead,true);
+            assert.equal(result.downloadCount,1);
+            assert.equal(result.clipCount,cfg.clipCount+2);
+            assert.equal(result.progressLast,100);
+            assert.ok(result.phases.includes('complete'));
+            const file=join(temp,cfg.name+'.'+cfg.format);
+            await download.saveAs(file);
+            const metadata=JSON.parse(command('ffprobe',['-v','error','-count_frames',
+                '-show_entries','stream=codec_type,codec_name,width,height,nb_read_frames',
+                '-show_entries','format=duration,size','-of','json',file]));
+            const video=metadata.streams.find(x=>x.codec_type==='video');
+            const audio=metadata.streams.find(x=>x.codec_type==='audio');
+            assert.ok(video&&audio,'Output must contain both video and audio');
+            assert.equal(Number(video.width),cfg.width);
+            assert.equal(Number(video.height),cfg.height);
+            assert.equal(Number(video.nb_read_frames),cfg.duration*cfg.fps);
+            assert.ok(Math.abs(Number(metadata.format.duration)-cfg.duration)<.16,
+                'Output duration mismatch '+metadata.format.duration);
+            const sampleFrame=time=>command('ffmpeg',['-v','error',
+                '-ss',String(time),'-i',file,'-frames:v','1',
+                '-vf','scale=20:12,format=rgb24','-f','rawvideo','pipe:1'],{binary:true});
+            const beginning=sampleFrame(1),middle=sampleFrame(cfg.duration/2),ending=sampleFrame(cfg.duration-1);
+            assert.ok(beginning.length>0&&middle.length>0&&ending.length>0);
+            assert.notDeepEqual(beginning,middle,'Rendered moving source is unexpectedly frozen');
+            assert.notDeepEqual(middle,ending,'Rendered frames should vary over the longer timeline');
+            const motion=command('ffmpeg',['-v','error','-ss','1','-t','0.15',
+                '-i',file,'-vn','-ac','1','-ar','16000','-f','f32le','pipe:1'],{binary:true});
+            let squares=0;
+            for(let i=0;i+3<motion.length;i+=4){
+                const sample=motion.readFloatLE(i);squares+=sample*sample;
+            }
+            const audioRms=Math.sqrt(squares/Math.max(1,motion.length/4));
+            assert.ok(audioRms>.005,'Missing audio in a moving clip: RMS '+audioRms);
+            const measurements=samples.filter(x=>x.pssKiB!==null);
+            assert.ok(measurements.length>1,'Native PSS metrics unavailable on test runner');
+            const peakPssMiB=Number((Math.max(...measurements.map(x=>x.pssKiB))/1024).toFixed(1));
+            const baselinePssMiB=Number((base.pssKiB/1024).toFixed(1));
+            const endPssMiB=Number((measurements.at(-1).pssKiB/1024).toFixed(1));
+            const record={
+                name:cfg.name,codec:video.codec_name,container:cfg.format,
+                clips:cfg.clipCount,frames:Number(video.nb_read_frames),
+                width:cfg.width,height:cfg.height,duration:Number(metadata.format.duration),
+                sizeMB:Number((Number(metadata.format.size)/1048576).toFixed(2)),
+                wallMs:Date.now()-started,browserRenderMs:result.renderMs,
+                chromePssBaselineMiB:baselinePssMiB,chromePssPeakMiB:peakPssMiB,
+                chromePssLastMiB:endPssMiB,chromeProcessCountPeak:Math.max(...samples.map(x=>x.processCount)),
+                memorySamples:measurements.length,audioRms:Number(audioRms.toFixed(4))
+            };
+            records.push(record);
+            console.log('[MotoriClip 6G] PASS '+cfg.name+' '+JSON.stringify(record));
+        }finally{
+            clearInterval(timer);
+        }
+    }
+    assert.deepEqual(errors,[],'Browser uncaught errors');
+    console.log('[MotoriClip 6G] PASS completed long moving-video exports and native PSS samples '+JSON.stringify(records));
+}finally{
+    await browser.close();
+    await new Promise(resolve=>server.close(resolve));
+    if(!process.env.KEEP_MOTORICLIP_OUTPUT)await rm(temp,{recursive:true,force:true});
+}
