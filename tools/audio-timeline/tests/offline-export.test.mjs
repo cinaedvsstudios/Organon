@@ -214,3 +214,42 @@ test('a cancelled library load completes without download',async()=>{
         assert.equal(app.exporter.busy,false);
     }finally{app.restore()}
 });
+
+test('the beta refuses to start while preview playback is running',async()=>{
+    const app=makeEnvironment({audio:false});
+    try{
+        app.engine.isPlaying=true;
+        await assert.rejects(()=>app.exporter.start({format:'mp4'}),/Pause the preview/);
+        assert.equal(app.metrics.download.length,0);
+        assert.equal(app.exporter.busy,false);
+    }finally{app.restore()}
+});
+test('muted video sound is not mixed into the fixed-frame output',async()=>{
+    const app=makeEnvironment({audio:true});
+    try{
+        app.engine.tracks[0].audio.muted=true;
+        assert.equal(await app.exporter.start({format:'mp4',fps:24}),true);
+        assert.equal(app.metrics.audioTracks,0);
+    }finally{app.restore()}
+});
+test('cancelling during a slow encoder frame discards the unfinished file',async()=>{
+    const app=makeEnvironment({audio:false});
+    try{
+        let release,seen;
+        app.MB.CanvasSource=class {
+            async add() {
+                seen?.();
+                await new Promise(resolve=>{release=resolve});
+            }
+        };
+        const encountered=new Promise(resolve=>{seen=resolve});
+        const started=app.exporter.start({format:'webm',fps:24});
+        await encountered;
+        await app.exporter.cancel();
+        release();
+        assert.equal(await started,false);
+        assert.equal(app.metrics.download.length,0);
+        assert.ok(app.metrics.cancelled>=1);
+        assert.equal(app.exporter.busy,false);
+    }finally{app.restore()}
+});
