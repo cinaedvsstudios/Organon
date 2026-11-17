@@ -63,6 +63,8 @@ export class AdvancedLiveExporter {
         this.connectedGains = [];
         this.recorder = null;
         this.oldPlaybackChange = null;
+        this.playbackHooked = false;
+        this.recordingError = null;
         this.savedTime = 0;
         this.savedPreviewGain = null;
         this.totalDuration = 0;
@@ -73,7 +75,7 @@ export class AdvancedLiveExporter {
         this._resolveResult = null;
         this._rejectResult = null;
         this.onVisibility = () => {
-            if (this.phase === 'recording' || this.phase === 'preparing') {
+            if (this.visibilityTarget?.hidden && (this.phase === 'recording' || this.phase === 'preparing')) {
                 void this.finish('error', new Error('Live export was interrupted when the tab became hidden. Keep MotoriClip visible throughout recording.'));
             }
         };
@@ -96,6 +98,7 @@ export class AdvancedLiveExporter {
         this.fps = [24, 25, 30, 50, 60].includes(Number(fps)) ? Number(fps) : 30;
         this.bitrate = exportBitrate(bitrateKbps);
         this.recordedChunks = [];
+        this.recordingError = null;
         const result = new Promise((resolve, reject) => {
             this._resolveResult = resolve;
             this._rejectResult = reject;
@@ -139,12 +142,14 @@ export class AdvancedLiveExporter {
             };
             this.recorder.onstop = () => resolve();
             this.recorder.onerror = event => {
-                void this.finish('error', event.error || new Error('The browser could not encode this video.'));
+                this.recordingError = event.error || new Error('The browser could not encode this video.');
+                void this.finish('error', this.recordingError);
             };
         });
         this.savedPreviewGain = this.engine.previewGain?.gain.value ?? null;
         if (this.engine.previewGain) this.engine.previewGain.gain.value = 0; // no speaker echo; export mix unaffected
         this.oldPlaybackChange = this.engine.onPlaybackChange;
+        this.playbackHooked = true;
         this.engine.onPlaybackChange = playing => {
             this.oldPlaybackChange?.(playing);
             if (!playing && this.phase === 'recording') void this.finish('complete');
@@ -190,6 +195,7 @@ export class AdvancedLiveExporter {
                     new Promise((_,reject)=>setTimeout(()=>reject(new Error('Browser recorder did not finish stopping.')),5000))
                 ]);
             }
+            if (this.recordingError) failure = this.recordingError;
             if (reason === 'complete' && !failure) {
                 if (!this.recordedChunks.length) throw new Error('The browser produced an empty video recording.');
                 const actualMime = this.recorder.mimeType || this.profile.mimeType;
@@ -223,14 +229,18 @@ export class AdvancedLiveExporter {
     async cleanup() {
         this.visibilityTarget?.removeEventListener?.('visibilitychange',this.onVisibility);
         if (this.frameId !== null) {this.cancelFrame(this.frameId);this.frameId=null;}
-        if (this.oldPlaybackChange) this.engine.onPlaybackChange = this.oldPlaybackChange;
+        if (this.playbackHooked) this.engine.onPlaybackChange = this.oldPlaybackChange;
         this.oldPlaybackChange = null;
+        this.playbackHooked = false;
         for (const gain of this.connectedGains) {
             try {gain.disconnect(this.audioMix)} catch (_) { /* node may have been removed */ }
         }
         this.connectedGains = [];
+        const usedTracks = new Set();
         for (const stream of [this.combinedStream,this.canvasStream,this.audioMix?.stream]) {
             for (const track of stream?.getTracks?.() || []) {
+                if (usedTracks.has(track)) continue;
+                usedTracks.add(track);
                 try {track.stop()} catch (_) { /* already ended */ }
             }
         }
