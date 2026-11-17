@@ -18,14 +18,22 @@ mkdirSync(fixtures, { recursive:true });
 const temp = await mkdtemp(join(tmpdir(), 'motoriclip-qa-'));
 const mime = {'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.mp4':'video/mp4','.jpg':'image/jpeg'};
 function run(bin, args, options={}) {
-    const process = spawnSync(bin, args, { encoding:options.binary?undefined:'utf8', maxBuffer:32*1024*1024, ...options });
-    if (process.status !== 0) throw new Error(bin+' failed: '+String(process.stderr).slice(-3000));
-    return process.stdout;
+    const child = spawnSync(bin, args, {
+        encoding:options.binary?undefined:'utf8', maxBuffer:32*1024*1024,
+        timeout:90000, ...options
+    });
+    if (child.error || child.signal || child.status !== 0) {
+        throw new Error(bin+' failed ('+JSON.stringify({
+            status:child.status, signal:child.signal, error:child.error?.message,
+            stderr:String(child.stderr||'').slice(-3000), args
+        })+')');
+    }
+    return child.stdout;
 }
 function makeVideo(label, colour, tone) {
     run('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i',`color=c=${colour}:s=320x180:r=25:d=2`,
         '-f','lavfi','-i',`sine=f=${tone}:sample_rate=48000:d=2`,
-        '-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',
+        '-threads','1','-filter_threads','1','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',
         '-c:a','aac','-b:a','128k','-t','2',join(fixtures,label+'.mp4')]);
 }
 makeVideo('red-440','red',440);
