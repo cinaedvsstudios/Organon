@@ -83,7 +83,9 @@ export class AdvancedLiveExporter {
     getFormats() { return supportedExportFormats(this.Recorder); }
     start({ format = 'webm', fps = 30, bitrateKbps = 6000 } = {}) {
         if (this.busy) return Promise.reject(new Error('An export is already in progress.'));
-        const profile = selectExportFormat(format, this.Recorder);
+        let profile;
+        try { profile = selectExportFormat(format, this.Recorder); }
+        catch (error) { return Promise.reject(error); }
         if (!this.Stream || typeof this.canvas.captureStream !== 'function') {
             return Promise.reject(new Error('This browser cannot capture a canvas video stream.'));
         }
@@ -190,10 +192,17 @@ export class AdvancedLiveExporter {
             if (this.engine.isPlaying) this.engine.pause();
             if (this.recorder && this.recorder.state !== 'inactive') this.recorder.stop();
             if (this.recordedStop) {
-                await Promise.race([
-                    this.recordedStop,
-                    new Promise((_,reject)=>setTimeout(()=>reject(new Error('Browser recorder did not finish stopping.')),5000))
-                ]);
+                let stopTimer = null;
+                try {
+                    await Promise.race([
+                        this.recordedStop,
+                        new Promise((_,reject)=>{
+                            stopTimer = setTimeout(()=>reject(new Error('Browser recorder did not finish stopping.')),5000);
+                        })
+                    ]);
+                } finally {
+                    if (stopTimer !== null) clearTimeout(stopTimer);
+                }
             }
             if (this.recordingError) failure = this.recordingError;
             if (reason === 'complete' && !failure) {
@@ -209,7 +218,8 @@ export class AdvancedLiveExporter {
         } catch (caught) {
             failure = caught;
         } finally {
-            await this.cleanup();
+            try { await this.cleanup(); }
+            catch (cleanupError) { failure ||= cleanupError; }
             if (failure) {
                 this.onState({phase:'error',message:failure.message || String(failure)});
                 this._rejectResult?.(failure);
