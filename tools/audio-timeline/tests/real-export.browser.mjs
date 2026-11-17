@@ -161,7 +161,7 @@ try {
         assert.ok(gap[0]>100&&gap[1]>100&&gap[2]<150,`${format}: expected background gap at 2s, got ${gap}`);
         assert.ok(bluePixel[2]>bluePixel[0]*1.5&&bluePixel[2]>bluePixel[1]*1.5,`${format}: expected blue at 3s, got ${bluePixel}`);
         function rms(t) {
-            const raw=run('ffmpeg',['-v','error','-ss',String(t),'-t','.15','-i',file,
+            const raw=run('ffmpeg',['-v','error','-ss',String(t),'-t','0.15','-i',file,
                 '-vn','-ac','1','-ar','16000','-f','f32le','pipe:1'],{binary:true});
             let squares=0;const count=Math.floor(raw.length/4);
             for(let i=0;i<count;i++){const value=raw.readFloatLE(i*4);squares+=value*value}
