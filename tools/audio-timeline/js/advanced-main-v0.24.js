@@ -5,7 +5,7 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase2';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase3';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -27,7 +27,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         btnPlay: document.getElementById('btn-play'), btnPreviewMute: document.getElementById('btn-preview-mute'), btnStepBack: document.getElementById('btn-step-back'), btnStepForward: document.getElementById('btn-step-forward'), btnSnapshot: document.getElementById('btn-snapshot'),
         fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnBasicMode: document.getElementById('btn-basic-mode'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
-        canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'),
+        canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), btnExtractAudio: document.getElementById('btn-extract-audio'),
@@ -874,6 +874,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         engine.updateAudioFades(engine.currentTime);
     }
 
+    elements.projectFps.addEventListener('change', () => { const fps = engine.setProjectFrameRate(elements.projectFps.value); showToast(`Project frame rate: ${fps} fps`); });
     elements.btnApplyCanvas.addEventListener('click', () => applyCanvasResolution({ announce: true }));
     for (const input of [elements.canvasWidth, elements.canvasHeight]) {
         input.addEventListener('change', () => applyCanvasResolution({ announce: true }));
@@ -903,14 +904,14 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
     elements.btnPlay.addEventListener('click', async () => { try { await engine.togglePlay(); } catch (error) { elements.previewState.textContent = error.message; } });
-    elements.btnStepBack.addEventListener('click', () => engine.stepFrame(-1));
-    elements.btnStepForward.addEventListener('click', () => engine.stepFrame(1));
+    elements.btnStepBack.addEventListener('click', () => { void engine.stepFrame(-1).catch((error) => { elements.previewState.textContent = error.message; }); });
+    elements.btnStepForward.addEventListener('click', () => { void engine.stepFrame(1).catch((error) => { elements.previewState.textContent = error.message; }); });
     elements.btnSnapshot.addEventListener('click', async () => { try { await engine.snapshot(); } catch (error) { elements.previewState.textContent = error.message; } });
     elements.btnPreviewMute.addEventListener('click', () => { engine.togglePreviewMute(); syncPreviewMuteButton(); });
     elements.previewVolume.addEventListener('input', (event) => { engine.setPreviewVolume(Number(event.target.value) / 100); syncPreviewMuteButton(); });
     elements.previewSeek.addEventListener('pointerdown', () => { state.isSeeking = true; });
-    elements.previewSeek.addEventListener('input', (event) => engine.seek(Number(event.target.value)));
-    elements.previewSeek.addEventListener('change', (event) => { state.isSeeking = false; engine.seek(Number(event.target.value)); });
+    elements.previewSeek.addEventListener('input', (event) => { void engine.seek(Number(event.target.value), { resume: false }).catch((error) => { elements.previewState.textContent = error.message; }); });
+    elements.previewSeek.addEventListener('change', (event) => { state.isSeeking = false; void engine.seek(Number(event.target.value), { resume: true }).catch((error) => { elements.previewState.textContent = error.message; }); });
 
     elements.videoVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle video visibility'); const track = getTrack(); if (!track || track.type !== 'video') return; track.visible = !track.visible; refreshAll(); });
     elements.videoAudioSwitch.addEventListener('click', () => { recordHistory('Toggle linked video audio'); const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
