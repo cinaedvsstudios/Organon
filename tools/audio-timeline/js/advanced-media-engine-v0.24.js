@@ -126,6 +126,9 @@ export class AdvancedMediaEngine {
         for (const previous of this.tracks) {
             if (!retained.has(previous)) this.detachTrack(previous, false);
         }
+        for (const pending of [...this.loadingTracks]) {
+            if (!retained.has(pending)) this.detachTrack(pending, false);
+        }
         this.tracks = next;
         if (this.isPlaying && this.getTimelineDuration() <= 0) this.pause();
         else if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
@@ -187,7 +190,9 @@ export class AdvancedMediaEngine {
             }
             if (loadController.signal.aborted) throw new Error('Media loading was cancelled.');
         } catch (error) {
-            this.detachTrack(track, false);
+            // An older cancelled load must never destroy a newer load of the
+            // same timeline object.
+            if (track.loadController === loadController) this.detachTrack(track, false);
             throw error;
         } finally {
             if (track.loadController === loadController) {
