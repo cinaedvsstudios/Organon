@@ -85,7 +85,7 @@ try {
             segments:twoClips,checkAudioSync:true},
         {name:'1080p-30-MP4',format:'mp4',width:1920,height:1080,fps:30,duration:1.8,
             segments:twoClips,checkAudioSync:true},
-        {name:'720p-60-WebM',format:'webm',width:1280,height:720,fps:60,duration:1.5,
+        {name:'720p-60-WebM',format:'webm',width:1280,height:720,fps:60,duration:1.8,
             segments:twoClips,checkAudioSync:false},
         {name:'10-clip-WebM',format:'webm',width:640,height:360,fps:25,duration:4.4,
             segments:stressSegments(10,.42,.32),checkAudioSync:false},
