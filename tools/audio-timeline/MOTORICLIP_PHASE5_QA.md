@@ -15,7 +15,7 @@
 
 ## Automated verification
 
-**52/52 simulated-media regression tests passed**: 14 Phase 2, 12 Phase 3, 13 Phase 4, and 13 new Phase 5 tests, exercising the updated engine and its media-support module. The Advanced controller changes were additionally syntax-checked.
+**54/54 simulated-media regression tests passed**: 14 Phase 2, 12 Phase 3, 13 Phase 4, and 15 new Phase 5 tests, exercising the updated engine and its media-support module. The Advanced controller changes were additionally syntax-checked.
 
 New test coverage:
 - MIME detection and unsupported formats
@@ -30,6 +30,8 @@ New test coverage:
 - Background/video/sticker order and compositing alpha/blend
 - Hidden/transparent layers
 - Rendering failure in one layer not stopping others
+- Audio extracted from a video container without premature MIME rejection
+- Unsupported audio-only import cleanup
 
 **Limitation:** These pass in a JavaScript simulated browser-media harness, not against a real browser decoding files. The new controller's UI workflow is syntax-checked but real drag/drop and edit interactions remain unverified.
 
