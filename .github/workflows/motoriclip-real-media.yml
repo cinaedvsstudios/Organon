@@ -1,0 +1,42 @@
+name: MotoriClip real-media export QA
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/audio-timeline/**'
+      - '.github/workflows/motoriclip-real-media.yml'
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/**'
+      - '.github/workflows/motoriclip-real-media.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out Organon source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install browser automation dependency
+        run: npm install --no-save playwright-core@1.56.1
+      - name: Check Chromium and FFmpeg
+        run: |
+          google-chrome --version
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+      - name: Run existing MotoriClip regression suites
+        run: node --test tools/audio-timeline/tests/*.test.mjs
+      - name: Generate real MP4 inputs, export in Chromium, and verify media
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/real-export.browser.mjs
