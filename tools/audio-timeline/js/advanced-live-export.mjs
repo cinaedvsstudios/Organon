@@ -157,8 +157,10 @@ export class AdvancedLiveExporter {
         this.oldRenderError = this.engine.onRenderError;
         this.renderHooked = true;
         this.engine.onRenderError = error => {
-            this.oldRenderError?.(error);
-            if (this.phase === 'recording') void this.finish('error', error);
+            try { this.oldRenderError?.(error); }
+            finally {
+                if (this.phase === 'recording') void this.finish('error', error);
+            }
         };
         this.engine.onPlaybackChange = playing => {
             this.oldPlaybackChange?.(playing);
