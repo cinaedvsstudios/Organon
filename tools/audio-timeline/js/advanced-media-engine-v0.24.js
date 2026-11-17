@@ -91,7 +91,8 @@ export class AdvancedMediaEngine {
 
     setTracks(tracks) {
         this.tracks = Array.isArray(tracks) ? tracks : [];
-        if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
+        if (this.isPlaying && this.getTimelineDuration() <= 0) this.pause();
+        else if (this.isPlaying) this.syncPlaybackAtTime(this.currentTime);
         else this.syncAudioSettings(this.currentTime);
         this.emitDuration();
         this.renderFrame();
