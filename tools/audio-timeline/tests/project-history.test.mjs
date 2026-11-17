@@ -197,3 +197,75 @@ test('clearAll stops every media track and permits importing new ones',()=>{
         assert.deepEqual(app.revoked,['blob:one','blob:two','blob:next']);
     }finally{app.cleanup()}
 });
+
+test('clearing while a video is loading aborts its metadata wait and revokes its URL', async () => {
+    const app=fakeEngine();
+    const oldCreate=URL.createObjectURL;
+    const oldElementFactory=globalThis.document.createElement;
+    const removed=[];
+    try {
+        URL.createObjectURL=()=> 'blob:pending';
+        const mediaBin={appendChild(element){element.parentNode=this}};
+        app.engine.mediaBin=mediaBin;
+        globalThis.document.createElement=(type)=>{
+            if(type==='canvas')return {getContext(){return {}}};
+            const listeners=new Map();
+            return {
+                readyState:0, paused:true, src:'', parentNode:null,
+                addEventListener(name,fn){
+                    if(!listeners.has(name))listeners.set(name,new Set());
+                    listeners.get(name).add(fn);
+                },
+                removeEventListener(name,fn){listeners.get(name)?.delete(fn)},
+                pause(){this.paused=true},
+                removeAttribute(name){if(name==='src')this.src=''},
+                load(){},
+                remove(){removed.push(type);this.parentNode=null}
+            };
+        };
+        const track={...clip(),media:null,file:null};
+        const loading=app.engine.loadTrack(track,rawFile());
+        assert.equal(app.engine.loadingTracks.has(track),true);
+        app.engine.clearAll();
+        await assert.rejects(()=>loading,/cancelled/);
+        assert.equal(app.engine.loadingTracks.size,0);
+        assert.equal(track.media,null);
+        assert.equal(track.objectUrl,null);
+        assert.deepEqual(app.revoked,['blob:pending']);
+        assert.deepEqual(removed,['video']);
+    } finally {
+        URL.createObjectURL=oldCreate;
+        globalThis.document.createElement=oldElementFactory;
+        app.cleanup();
+    }
+});
+test('removing a pending clip from setTracks cancels its decoder load', async () => {
+    const app=fakeEngine();
+    const oldCreate=URL.createObjectURL,oldFactory=globalThis.document.createElement;
+    try {
+        URL.createObjectURL=()=> 'blob:unloaded';
+        app.engine.mediaBin={appendChild(element){element.parentNode=this}};
+        globalThis.document.createElement=(type)=>{
+            if(type==='canvas')return {getContext(){return {}}};
+            const listeners=new Map();
+            return {
+                readyState:0,src:'',paused:true,
+                addEventListener(event,cb){if(!listeners.has(event))listeners.set(event,new Set());listeners.get(event).add(cb)},
+                removeEventListener(event,cb){listeners.get(event)?.delete(cb)},
+                pause(){this.paused=true},removeAttribute(){},load(){},remove(){this.parentNode=null}
+            };
+        };
+        const track={...clip(),media:null,file:null};
+        const loading=app.engine.loadTrack(track,rawFile());
+        app.engine.setTracks([track]);
+        app.engine.setTracks([]);
+        await assert.rejects(()=>loading,/cancelled/);
+        assert.equal(track.media,null);
+        assert.equal(track.objectUrl,null);
+        assert.deepEqual(app.revoked,['blob:unloaded']);
+    }finally{
+        URL.createObjectURL=oldCreate;
+        globalThis.document.createElement=oldFactory;
+        app.cleanup();
+    }
+});
