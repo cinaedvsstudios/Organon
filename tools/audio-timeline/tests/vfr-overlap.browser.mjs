@@ -22,7 +22,7 @@ const vfrFile=join(dir,'vfr-pattern.mp4');
 exec('ffmpeg',['-hide_banner','-loglevel','error','-y',
     '-f','lavfi','-i','testsrc2=size=320x180:rate=30:duration=2',
     '-f','lavfi','-i','sine=f=440:sample_rate=48000:duration=2',
-    '-vf','select=not(mod(n\,2))+not(mod(n\,3))','-fps_mode','vfr',
+    '-vf','select=not(mod(n\\,2))+not(mod(n\\,3))','-fps_mode','vfr',
     '-threads','1','-filter_threads','1','-c:v','libx264','-preset','ultrafast',
     '-pix_fmt','yuv420p','-c:a','aac','-b:a','96k','-t','2',vfrFile]);
 for(const colour of ['red','blue']){
