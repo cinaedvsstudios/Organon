@@ -211,3 +211,25 @@ test('still-image-only seek does not block on video decoder', async () => {
         assert.equal(app.engine.currentTime, 5);
     } finally { app.cleanup(); }
 });
+
+test('scrubbing does not seek inactive video clips', async () => {
+    const app = fixture();
+    try {
+        const early = new FakeVideo(), late = new FakeVideo();
+        app.engine.setTracks([
+            clip(early, { id: 'early', start: 0, duration: 2 }),
+            clip(late, { id: 'late', start: 5, duration: 3 }),
+        ]);
+        assert.equal(await app.engine.seek(1), true);
+        assert.equal(early.currentTime, 1);
+        assert.equal(late.currentTime, 0);
+        assert.equal(await app.engine.seek(6), true);
+        assert.equal(late.currentTime, 1);
+        assert.equal(early.currentTime, 1, 'inactive early video should not decode again');
+    } finally { app.cleanup(); }
+});
+test('paused browser without compositor callbacks still completes after seeked', async () => {
+    const video = new FakeVideo({ frameCallbacks: false });
+    assert.equal(await waitForVideoSeek(video, 2), true);
+    assert.equal(video.decodedTime, 2);
+});
