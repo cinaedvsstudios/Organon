@@ -55,14 +55,14 @@ try{
     assert.match(await page.locator('#preview-zoom-value').innerText(),/100%/);
     await page.locator('#file-input').setInputFiles(file);
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
-    assert.match(await page.locator('#file-count').innerText(),/1 media/);
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     assert.ok(!(await page.locator('#btn-undo').isDisabled()),'Import should create undo history');
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
-    assert.match(await page.locator('#file-count').innerText(),/0 media/);
+    assert.match(await page.locator('#file-count').innerText(),/0 media/i);
     await page.locator('#btn-undo').click();
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
-    assert.match(await page.locator('#file-count').innerText(),/1 media/);
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     await page.locator('#btn-redo').click();
     await page.waitForFunction(()=>document.querySelector('#file-count')?.textContent?.includes('0 media'));
     await page.locator('#btn-basic-mode').click();
