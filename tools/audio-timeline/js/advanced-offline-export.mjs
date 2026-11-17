@@ -177,6 +177,7 @@ export class AdvancedOfflineExporter {
 
     async start({ format = 'mp4', fps = 30, bitrateKbps = 6000 } = {}) {
         if (this.busy) throw new Error('An offline export is already running.');
+        if (this.engine.isPlaying) throw new Error('Pause the preview before using fixed-frame export.');
         if (!this.getAvailable()) throw new Error('This browser does not support the WebCodecs/OfflineAudioContext export APIs.');
         if (!['mp4','webm'].includes(format)) throw new Error('Select MP4 or WebM.');
         const duration = this.engine.getTimelineDuration();
