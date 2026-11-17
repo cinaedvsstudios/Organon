@@ -63,7 +63,9 @@ export class AdvancedLiveExporter {
         this.connectedGains = [];
         this.recorder = null;
         this.oldPlaybackChange = null;
+        this.oldRenderError = null;
         this.playbackHooked = false;
+        this.renderHooked = false;
         this.recordingError = null;
         this.savedTime = 0;
         this.savedPreviewGain = null;
@@ -152,6 +154,12 @@ export class AdvancedLiveExporter {
         if (this.engine.previewGain) this.engine.previewGain.gain.value = 0; // no speaker echo; export mix unaffected
         this.oldPlaybackChange = this.engine.onPlaybackChange;
         this.playbackHooked = true;
+        this.oldRenderError = this.engine.onRenderError;
+        this.renderHooked = true;
+        this.engine.onRenderError = error => {
+            this.oldRenderError?.(error);
+            if (this.phase === 'recording') void this.finish('error', error);
+        };
         this.engine.onPlaybackChange = playing => {
             this.oldPlaybackChange?.(playing);
             if (!playing && this.phase === 'recording') void this.finish('complete');
@@ -240,8 +248,11 @@ export class AdvancedLiveExporter {
         this.visibilityTarget?.removeEventListener?.('visibilitychange',this.onVisibility);
         if (this.frameId !== null) {this.cancelFrame(this.frameId);this.frameId=null;}
         if (this.playbackHooked) this.engine.onPlaybackChange = this.oldPlaybackChange;
+        if (this.renderHooked) this.engine.onRenderError = this.oldRenderError;
         this.oldPlaybackChange = null;
+        this.oldRenderError = null;
         this.playbackHooked = false;
+        this.renderHooked = false;
         for (const gain of this.connectedGains) {
             try {gain.disconnect(this.audioMix)} catch (_) { /* node may have been removed */ }
         }
