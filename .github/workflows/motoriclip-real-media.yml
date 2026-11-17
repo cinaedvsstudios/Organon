@@ -19,7 +19,7 @@ permissions:
 jobs:
   export-browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out Organon source
         uses: actions/checkout@v4
@@ -47,3 +47,7 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/real-export.browser.mjs
+      - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/extended-export.browser.mjs
