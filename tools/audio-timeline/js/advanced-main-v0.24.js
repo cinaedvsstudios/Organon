@@ -437,16 +437,22 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         if (track.sourceFileId && entry.file) state.sourceFiles.set(track.sourceFileId, entry.file);
         try {
             await engine.loadTrack(track, entry.file);
+            if (!state.tracks.includes(track)) {
+                engine.detachTrack(track, false);
+                return;
+            }
             if (!track.clipDuration) track.clipDuration = (track.type === 'sticker' || track.type === 'background') ? 3 : track.sourceDuration || 1;
             refreshAll(); selectTrack(track.id);
             elements.previewState.textContent = `Loaded ${entry.name}`;
             if (track.type === 'audio' || track.type === 'video') {
-                engine.analyzeTrackAudio(track, entry.file).then(() => {
+                engine.analyzeTrackAudio(track, entry.file).then((result) => {
+                    if (!result || !state.tracks.includes(track) || track.file !== entry.file) return;
                     timeline.setTracks(state.tracks);
                     elements.previewState.textContent = `Analysed ${entry.name}`;
                 });
             }
         } catch (error) {
+            if (!state.tracks.includes(track) && /cancelled/i.test(error.message)) return;
             elements.previewState.textContent = `Could not load ${entry.name}`;
             alert(`Could not load ${entry.name}. ${error.message}`);
         }
