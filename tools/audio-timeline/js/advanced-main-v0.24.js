@@ -95,7 +95,8 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 
     function updateExportAvailability() {
         const supported = exporter.getFormats();
-        elements.btnExportVideo.disabled = exporter.busy || supported.length === 0 || engine.getTimelineDuration() <= 0;
+        const captureReady = typeof elements.canvas.captureStream === 'function' && typeof window.MediaStream === 'function';
+        elements.btnExportVideo.disabled = exporter.busy || !captureReady || supported.length === 0 || engine.getTimelineDuration() <= 0;
     }
     function initVideoExportUi() {
         const formats = exporter.getFormats();
@@ -106,12 +107,15 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
             option.textContent = format.format === 'mp4' ? 'MP4 · browser-native' : 'WebM · browser-native';
             elements.exportFormat.appendChild(option);
         }
-        if (!formats.length) {
+        const captureReady = typeof elements.canvas.captureStream === 'function' && typeof window.MediaStream === 'function';
+        if (!formats.length || !captureReady) {
             const unavailable = document.createElement('option');
             unavailable.value = '';
             unavailable.textContent = 'No recording format';
             elements.exportFormat.appendChild(unavailable);
-            elements.exportStatus.textContent = 'This browser does not support canvas video recording.';
+            elements.exportStatus.textContent = !captureReady
+                ? 'This browser cannot capture the canvas and audio as a recording.'
+                : 'This browser has no supported video-recording format.';
         } else {
             elements.exportStatus.textContent = 'Ready · full-timeline, real-time export';
         }
