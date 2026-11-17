@@ -55,7 +55,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
         onDropProjectFile: placeProjectFile,
         onTrackChange: onTimelineTrackChanged,
         onTrackInteractionStart: (track, detail) => recordHistory(`${detail.mode === 'resize' ? 'Trim' : 'Move'} ${track.sourceName || track.laneLabel}`),
-        onSeek: (time) => engine.seek(time),
+        onSeek: (time) => { void engine.seek(time).catch((error) => { elements.previewState.textContent = error.message; }); },
         onSplitAtPlayhead: splitTrackAtNow
     });
 
