@@ -3,7 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Organon - Audio Timeline</title>
+<title>Organon - MotoriClip | Basic Editor</title>
+<script>
+/* MotoriClip launch policy: desktop opens Advanced; phones open Basic.
+   ?mode=basic always keeps Basic accessible, regardless of device.
+   Existing /tools/audio-timeline URLs remain valid. */
+(() => {
+    const requestedMode = new URLSearchParams(window.location.search).get('mode');
+    if (requestedMode === 'basic') return;
+    const userAgent = navigator.userAgent || '';
+    const mobilePhone = navigator.userAgentData?.mobile === true
+        || /iPhone|iPod|Windows Phone|Android.+Mobile|Mobi/i.test(userAgent)
+        || (screen.width <= 600 && navigator.maxTouchPoints > 0 && window.matchMedia('(pointer: coarse)').matches);
+    if (requestedMode === 'advanced' || !mobilePhone) {
+        window.location.replace(new URL('./advanced.html?v=0.25', window.location.href).href);
+    }
+})();
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -458,11 +474,11 @@ h4 {
         <div class="title-pill">
             <div class="title-left">
                 <div id="countdown-circle" class="countdown-circle-indicator">0</div>
-                <span>AUDIO TIMELINE</span>
+                <span>MOTORICLIP</span>
             </div>
             <div class="header-actions">
                 <button type="button" id="btn-add-media" class="nav-btn-mini">IMPORT MEDIA</button>
-                <button type="button" id="btn-advanced-mode" class="nav-btn-mini" onclick="window.location.href='./advanced.html'">ADVANCED MODE</button>
+                <button type="button" id="btn-advanced-mode" class="nav-btn-mini" onclick="window.location.href='./advanced.html?v=0.25'">ADVANCED EDITOR</button>
             </div>
         </div>
         <div class="panel-content-hide">
