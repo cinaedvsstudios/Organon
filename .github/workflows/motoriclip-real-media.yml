@@ -29,9 +29,16 @@ jobs:
           node-version: '22'
       - name: Install browser automation dependency
         run: npm install --no-save playwright-core@1.56.1
+      - name: Install FFmpeg and ffprobe
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y ffmpeg
       - name: Check Chromium and FFmpeg
         run: |
+          set -euo pipefail
           google-chrome --version
+          command -v ffmpeg
+          command -v ffprobe
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
       - name: Run existing MotoriClip regression suites

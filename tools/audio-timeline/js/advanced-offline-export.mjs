@@ -4,6 +4,7 @@
  * This beta exporter never plays the timeline or modifies existing players.
  */
 const MEDIABUNNY_MODULE = 'https://cdn.jsdelivr.net/npm/mediabunny@1.66.0/+esm';
+const AAC_ENCODER_MODULE = 'https://esm.sh/@mediabunny/aac-encoder@1.66.0?external=mediabunny';
 const AUDIO_RATE = 48000;
 export const OFFLINE_EXPORT_LIMIT_SECONDS = 120;
 const clamp = (value, min, max) => Math.min(max, Math.max(min, Number(value) || 0));
@@ -64,12 +65,13 @@ function offlineAudioTracks(tracks) {
 }
 
 export class AdvancedOfflineExporter {
-    constructor({ engine, onProgress, onState, onDownload, libraryLoader, renderEngineFactory } = {}) {
+    constructor({ engine, onProgress, onState, onDownload, libraryLoader, aacEncoderLoader, renderEngineFactory } = {}) {
         this.engine = engine;
         this.onProgress = onProgress;
         this.onState = onState;
         this.onDownload = onDownload;
         this.libraryLoader = libraryLoader || (() => import(MEDIABUNNY_MODULE));
+        this.aacEncoderLoader = aacEncoderLoader || (() => import(AAC_ENCODER_MODULE));
         this.renderEngineFactory = renderEngineFactory || ((canvas) => new engine.constructor({
             canvas, mediaBin: document.createElement('div'),
             onTimeChange(){}, onDurationChange(){}, onPlaybackChange(){},
@@ -175,6 +177,27 @@ export class AdvancedOfflineExporter {
         return offline.startRendering();
     }
 
+    async ensureAacEncoder(MB) {
+        if (typeof MB.canEncodeAudio !== 'function') return;
+        const encoding = { numberOfChannels:2, sampleRate:AUDIO_RATE, bitrate:192000 };
+        if (await MB.canEncodeAudio('aac', encoding)) return;
+        this.status('preparing', 'Loading an AAC encoder for MP4 audio…');
+        let extension;
+        try {
+            extension = await this.aacEncoderLoader();
+        } catch (error) {
+            throw new Error('MP4 audio encoding is unavailable and the AAC fallback could not load. Choose WebM/Opus or retry with internet access.');
+        }
+        this.assertActive();
+        if (typeof extension?.registerAacEncoder !== 'function') {
+            throw new Error('The AAC encoder extension is invalid. Choose WebM/Opus.');
+        }
+        extension.registerAacEncoder();
+        if (!await MB.canEncodeAudio('aac', encoding)) {
+            throw new Error('This browser cannot encode AAC for MP4, even with the fallback. Choose WebM/Opus or the real-time exporter.');
+        }
+    }
+
     async start({ format = 'mp4', fps = 30, bitrateKbps = 6000 } = {}) {
         if (this.busy) throw new Error('An offline export is already running.');
         if (this.engine.isPlaying) throw new Error('Pause the preview before using fixed-frame export.');
@@ -214,6 +237,8 @@ export class AdvancedOfflineExporter {
             this.assertActive();
             this.status('preparing', 'Mixing audio offline…');
             const mixed = await this.mixAudio(MB, tracks, duration);
+            this.assertActive();
+            if (mixed && format === 'mp4') await this.ensureAacEncoder(MB);
             this.assertActive();
 
             const outputFormat = format === 'mp4' ? new MB.Mp4OutputFormat() : new MB.WebMOutputFormat();

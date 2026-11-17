@@ -16,7 +16,7 @@ class FakeRecorder {
         if(this.state==='inactive')throw Error('already stopped');
         this.state='inactive';this.stopped=true;
         queueMicrotask(()=>{
-            this.ondataavailable?.({data:{size:120,tag:'video-chunk'}});
+            this.ondataavailable?.({data:new Blob([new Uint8Array(120)], {type:this.mimeType})});
             this.onstop?.();
         });
     }

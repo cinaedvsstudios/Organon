@@ -18,14 +18,22 @@ mkdirSync(fixtures, { recursive:true });
 const temp = await mkdtemp(join(tmpdir(), 'motoriclip-qa-'));
 const mime = {'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.mp4':'video/mp4','.jpg':'image/jpeg'};
 function run(bin, args, options={}) {
-    const process = spawnSync(bin, args, { encoding:options.binary?undefined:'utf8', maxBuffer:32*1024*1024, ...options });
-    if (process.status !== 0) throw new Error(bin+' failed: '+String(process.stderr).slice(-3000));
-    return process.stdout;
+    const child = spawnSync(bin, args, {
+        encoding:options.binary?undefined:'utf8', maxBuffer:32*1024*1024,
+        timeout:90000, ...options
+    });
+    if (child.error || child.signal || child.status !== 0) {
+        throw new Error(bin+' failed ('+JSON.stringify({
+            status:child.status, signal:child.signal, error:child.error?.message,
+            stderr:String(child.stderr||'').slice(-3000), args
+        })+')');
+    }
+    return child.stdout;
 }
 function makeVideo(label, colour, tone) {
     run('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i',`color=c=${colour}:s=320x180:r=25:d=2`,
         '-f','lavfi','-i',`sine=f=${tone}:sample_rate=48000:d=2`,
-        '-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',
+        '-threads','1','-filter_threads','1','-c:v','libx264','-preset','ultrafast','-pix_fmt','yuv420p',
         '-c:a','aac','-b:a','128k','-t','2',join(fixtures,label+'.mp4')]);
 }
 makeVideo('red-440','red',440);
@@ -62,7 +70,7 @@ try {
     }));
     assert.deepEqual(available,{video:'function',decoder:'function',audio:'function'});
 
-    for (const format of ['mp4','webm']) {
+    for (const format of ['webm','mp4']) {
         console.log('[MotoriClip E2E] Encoding',format,'at 25 fps, 320x180...');
         const downloadPromise=page.waitForEvent('download',{timeout:180000});
         const exportPromise=page.evaluate(async fmt=>{
@@ -153,7 +161,7 @@ try {
         assert.ok(gap[0]>100&&gap[1]>100&&gap[2]<150,`${format}: expected background gap at 2s, got ${gap}`);
         assert.ok(bluePixel[2]>bluePixel[0]*1.5&&bluePixel[2]>bluePixel[1]*1.5,`${format}: expected blue at 3s, got ${bluePixel}`);
         function rms(t) {
-            const raw=run('ffmpeg',['-v','error','-ss',String(t),'-t','.15','-i',file,
+            const raw=run('ffmpeg',['-v','error','-ss',String(t),'-t','0.15','-i',file,
                 '-vn','-ac','1','-ar','16000','-f','f32le','pipe:1'],{binary:true});
             let squares=0;const count=Math.floor(raw.length/4);
             for(let i=0;i<count;i++){const value=raw.readFloatLE(i*4);squares+=value*value}
