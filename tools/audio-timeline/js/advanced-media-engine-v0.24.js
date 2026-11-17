@@ -166,7 +166,7 @@ export class AdvancedMediaEngine {
                 await this.connectAudioTrack(track, visual);
             } else if (track.type === 'audio') {
                 const audio = document.createElement('audio');
-                checkBrowserMediaSupport(audio, file);
+                checkBrowserMediaSupport(audio, file, { audioFromVideo:track.type === 'audio' });
                 audio.preload = 'auto'; audio.playbackRate = 1; audio.src = track.objectUrl;
                 this.mediaBin.appendChild(audio);
                 track.media = audio;
