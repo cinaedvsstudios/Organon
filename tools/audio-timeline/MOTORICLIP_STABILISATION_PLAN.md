@@ -7,12 +7,13 @@
 
 ## Implementation status — 17 November 2026
 
-- **Phase 1: Source audit, reproducible test cases and automated scheduling harness complete.** Interactive real-file QA remains pending and is documented in [MOTORICLIP_PHASE1_BASELINE_QA.md](./MOTORICLIP_PHASE1_BASELINE_QA.md).
-- **Phase 2: Playback scheduling implemented and merged into main** in [PR #26](https://github.com/cinaedvsstudios/Organon/pull/26) (merge commit `68c8724890a54b6eba630012bb3db35e62916ce8`). A boundary tracker starts and stops media at timeline clip boundaries, including gaps and overlays.
-- **Tests:** 14 automated cases passed in a simulated media-element environment using the updated engine. Browser tests with actual MP4/WAV/JPEG files are not yet verified.
-- **Phase 3: Implemented and merged** in [PR #27](https://github.com/cinaedvsstudios/Organon/pull/27) (merge commit `d56316ad9e0b42c010330b0d9de3172bdfd75d25`). The Advanced preview now waits for decoded frames, cancels superseded seeks, skips inactive-video decode, supports selectable 24/25/30/50/60 project FPS stepping, and makes PNG snapshots await paused-frame readiness.
-- **Tests:** 26 automated JavaScript mock-media cases passed across Phases 2 and 3. Real browser/video QA is still pending and is documented in [MOTORICLIP_PHASE3_QA.md](./MOTORICLIP_PHASE3_QA.md).
-- **Next:** Phase 4 undo/redo and resource cleanup, following interactive regression checks.
+- **Phase 0:** MotoriClip branding and desktop-Advanced/mobile-Basic routing committed; live device QA remains open.
+- **Phase 1:** Source audit and reproducible real-media browser QA inventory documented in [MOTORICLIP_PHASE1_BASELINE_QA.md](./MOTORICLIP_PHASE1_BASELINE_QA.md).
+- **Phase 2:** Timeline playback scheduling merged in [PR #26](https://github.com/cinaedvsstudios/Organon/pull/26) (commit `68c8724890a54b6eba630012bb3db35e62916ce8`).
+- **Phase 3:** Paused frame-seeking, latest-scrub cancellation, project FPS stepping and PNG capture fixes merged in [PR #27](https://github.com/cinaedvsstudios/Organon/pull/27) (commit `d56316ad9e0b42c010330b0d9de3172bdfd75d25`).
+- **Phase 4:** Undo/redo metadata isolation, cached File source IDs, efficient live-media restoration, automatic media disposal and abortable pending file loads merged in [PR #28](https://github.com/cinaedvsstudios/Organon/pull/28) (commit `c40fc220c40885a1515d157747ca6180ae325af6`). [Phase 4 QA report](./MOTORICLIP_PHASE4_QA.md).
+- **Automated testing:** 39/39 JavaScript simulated-media regression cases passed across Phases 2–4 (14 + 12 + 13). These do not replace the outstanding interactive browser/real codec tests in the three QA reports.
+- **Next:** Phase 5 — linked audio/video synchronization, visual compositing fidelity, supported/unsupported media handling and robust error reporting. Keep transitions out of scope until the stabilization release gate.
 
 ## Confirmed baseline and design constraints
 
@@ -71,7 +72,7 @@ Work:
 
 **Gate:** Pausing and jumping to a specific time consistently shows the correct frame; PNG snapshots match the paused preview. JPEG snapshot is a *later enhancement*, not a prerequisite for this stabilization gate.
 
-## Phase 4 — Undo/redo, editing integrity and media-resource cleanup
+## Phase 4 — Undo/redo, editing integrity and media-resource cleanup [IMPLEMENTED; browser QA outstanding]
 
 **Code-review findings:**
 - `captureHistorySnapshot()` spreads entire live track objects, including browser media elements, object URLs and audio nodes. Such state is unsafe to restore as if it were durable data.
