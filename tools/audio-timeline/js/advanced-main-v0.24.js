@@ -514,15 +514,16 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
         recordHistory(`Place ${entry.name}`);
         const laneTracks = laneId ? state.tracks.filter((track) => track.laneId === laneId) : [];
         let track = null;
+        let created = false;
         if (entry.kind !== 'video') {
             track = laneTracks.find((candidate) => !candidate.sourceName && candidate.type === entry.kind) || null;
             if (!track && laneTracks.length && laneType === entry.kind) {
                 const lane = laneTracks[0];
                 track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
                 state.tracks.push(track);
+                created = true;
             }
         }
-        let created = false;
         if (!track) { track = createTrack(entry.kind); state.tracks.push(track); created = true; }
         await loadTrackFromFile(track, entry, start, { removeOnFailure: created });
     }
