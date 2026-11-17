@@ -246,9 +246,13 @@ try{
     const afterTeardown=processMemory(process.pid);
     assert.ok(afterTeardown.pssMiB!==null);
     assert.deepEqual(uncaught,[],'Unexpected uncaught browser errors');
-    const summary={initial,records,afterSession,afterTeardown};
-    console.log('[MotoriClip 6H] COMPLETE '+JSON.stringify(summary));
+    // Closing the tab/context distinguishes renderer-owned retained memory
+    // from memory held across tabs in the underlying Chrome browser process.
     await context.close();
+    await new Promise(resolve=>setTimeout(resolve,2500));
+    const afterContextClose=processMemory(process.pid);
+    const summary={initial,records,afterSession,afterTeardown,afterContextClose};
+    console.log('[MotoriClip 6H] COMPLETE '+JSON.stringify(summary));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
