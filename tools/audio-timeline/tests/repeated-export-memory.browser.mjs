@@ -203,6 +203,14 @@ try{
             assert.equal(video.height,720);
             assert.equal(Number(video.nb_read_frames),200);
             assert.ok(Math.abs(Number(media.format.duration)-8)<.14);
+            const samples=run('ffmpeg',['-v','error','-ss','2','-t','0.15',
+                '-i',saved,'-vn','-ac','1','-ar','16000','-f','f32le','pipe:1'],{raw:true});
+            let power=0;
+            for(let i=0;i+3<samples.length;i+=4){
+                const v=samples.readFloatLE(i);power+=v*v;
+            }
+            const rms=Math.sqrt(power/Math.max(1,samples.length/4));
+            assert.ok(rms>.005,'Audio missing or silent in repeat '+cycle+': '+rms);
             const peak=Math.max(...readings.map(x=>x.pssMiB));
             await page.waitForTimeout(1550);
             await cdp.send('HeapProfiler.collectGarbage');
@@ -216,7 +224,7 @@ try{
                 chromePeakMiB:peak,
                 chromeAfterIdleGcMiB:after.pssMiB,
                 chromeProcessCount:after.sampledChromeProcesses,
-                memorySamples:readings.length
+                audioRms:Number(rms.toFixed(4)),memorySamples:readings.length
             };
             records.push(summary);
             console.log('[MotoriClip 6H] PASS cycle '+cycle+' '+JSON.stringify(summary));
@@ -241,7 +249,6 @@ try{
     const summary={initial,records,afterSession,afterTeardown};
     console.log('[MotoriClip 6H] COMPLETE '+JSON.stringify(summary));
     await context.close();
-    await page.waitForTimeout?.(0).catch(()=>{}); // No-op after context close; compatibility.
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
