@@ -24,9 +24,27 @@ A separate actual-browser test cancels an export while frames are being encoded,
 
 Elapsed render time, output file size and available JavaScript heap information are recorded. These measurements are exploratory, not yet strict pass/fail performance budgets.
 
-## Status
+## Status — verified real-media tests
 
-**New tests added on an isolated branch; test execution not yet confirmed.** Results must come from a completed GitHub Actions job before being marked passing. This phase does not change the existing real-time exporter or introduce transitions.
+**All Phase 6E tests passed** in [GitHub Actions run 44143534849](https://github.com/cinaedvsstudios/Organon/actions/runs/44143534849) on 17 November 2026, including the previous smoke test and **88 existing Node regression tests**.
+
+| Case | Actual output | Frames | Browser render time* | Outcome |
+|---|---|---:|---:|---|
+| 720p / 24 fps MP4 | 2.005 s, H.264/AAC | 48 | 978 ms | PASS |
+| 1080p / 30 fps MP4 | 1.813 s, H.264/AAC | 54 | 858 ms | PASS |
+| 720p / 60 fps WebM | 1.820 s, VP9/Opus | 108 | 901 ms | PASS |
+| 10-clip / 25 fps WebM | 4.420 s, VP9/Opus | 110 | 395 ms | PASS |
+| 25-clip / 24 fps MP4 | 6.251 s, H.264/AAC | 150 | 667 ms | PASS |
+
+*Measured on the GitHub CI runner with solid-colour synthetic clips; **not** representative of export speed for high-bitrate real-world footage. Media files were 320×180 constant-frame-rate source clips, scaled/encoded at the stated outputs.
+
+The two sequential-video HD/FHD scenarios met the timing assertions: video and audio starts within 90ms and ends within 110ms of the requested clip boundaries. Real frame sampling verified red/blue source order, including 24fps and 60fps **constant-frame-rate** input videos.
+
+The browser also passed **live cancellation and retry**: the cancelled WebM produced no partial download, cleared its decoder/output state, and the next export succeeded. Corrupt input was rejected as undecodable, with no output or retained inputs.
+
+JavaScript heap deltas were logged (from about -6.9MB to +11.3MB across runs), but they are only snapshots affected by garbage collection; **peak native decoder memory was not measured**. The tests did not exercise long-form exports, other platforms or genuine VFR source media.
+
+This phase introduces **test code only**, with no changes to the live MotoriClip export/preview engines or transitions.
 
 ## Remaining release-gate limitations
 
