@@ -159,13 +159,13 @@ test('video gaps and layered time offsets use local clip positions',async()=>{
     const app=makeEnvironment({audio:false});
     try{
         app.engine.tracks=[source('late','video',{start:.5,sourceOffset:3,clipDuration:.5})];
-        assert.equal(await app.exporter.start({format:'webm',fps:4}),true);
+        assert.equal(await app.exporter.start({format:'webm',fps:24}),true);
         const frames=app.metrics.framesPainted;
-        assert.equal(frames.length,4);
+        assert.equal(frames.length,24);
         assert.equal(frames[0].clips[0].time,null);
-        assert.equal(frames[1].clips[0].time,null);
-        assert.equal(frames[2].clips[0].time,3);
-        assert.equal(frames[3].clips[0].time,3.25);
+        assert.equal(frames[11].clips[0].time,null);
+        assert.equal(frames[12].clips[0].time,3);
+        assert.equal(frames[18].clips[0].time,3.25);
     }finally{app.restore()}
 });
 test('audio clipping schedules trimmed source sections at timeline offsets',async()=>{
