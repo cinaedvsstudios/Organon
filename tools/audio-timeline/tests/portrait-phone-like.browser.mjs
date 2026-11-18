@@ -43,9 +43,9 @@ createVideo(landscape,'640x360',
     'drawbox=x=0:y=0:w=110:h=110:color=red:t=fill,'+
     'drawbox=x=530:y=250:w=110:h=110:color=blue:t=fill');
 run('ffmpeg',['-hide_banner','-loglevel','error','-y',
-    '-i',landscape,'-c','copy','-metadata:s:v:0','rotate=90',rotated]);
+    '-display_rotation:v:0','90','-i',landscape,'-c','copy',rotated]);
 const orientation=JSON.parse(run('ffprobe',['-v','error','-show_entries',
-    'stream=width,height,side_data_list','-of','json',rotated]));
+    'stream=width,height:stream_side_data=rotation','-of','json',rotated]));
 const sourceVideo=orientation.streams.find(s=>s.width===640);
 assert.ok(sourceVideo,'Rotation source dimension missing');
 const metadata=JSON.stringify(sourceVideo.side_data_list||[]);
