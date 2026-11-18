@@ -74,9 +74,14 @@ function offlineAudioTracks(tracks) {
  * Opus and AAC streams despite a non-silent OfflineAudioContext mix.
  * Do not generalize this observed defect to Safari on Apple devices.
  */
-export function isAffectedLinuxWebKit(userAgent = globalThis.navigator?.userAgent || '') {
+export function isAffectedLinuxWebKit(
+    userAgent = globalThis.navigator?.userAgent || '',
+    platform = globalThis.navigator?.platform || ''
+) {
     const ua = String(userAgent);
-    return /Linux/i.test(ua) && /AppleWebKit/i.test(ua)
+    // Playwright WebKit on Linux advertises a macOS Safari user-agent, while
+    // navigator.platform correctly identifies its Linux runtime.
+    return /Linux/i.test(String(platform)) && /AppleWebKit/i.test(ua)
         && !/Chrome|Chromium|CriOS|Edg|OPR|Firefox/i.test(ua);
 }
 
