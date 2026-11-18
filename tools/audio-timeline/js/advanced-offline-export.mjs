@@ -69,6 +69,17 @@ function offlineAudioTracks(tracks) {
  * an unavailable/mock representation. Only a full absence of decoded signal
  * is considered a silent-output failure, never a quiet or intentionally muted mix.
  */
+/**
+ * An isolated Linux WebKit 1.56.1 test browser was observed to encode silent
+ * Opus and AAC streams despite a non-silent OfflineAudioContext mix.
+ * Do not generalize this observed defect to Safari on Apple devices.
+ */
+export function isAffectedLinuxWebKit(userAgent = globalThis.navigator?.userAgent || '') {
+    const ua = String(userAgent);
+    return /Linux/i.test(ua) && /AppleWebKit/i.test(ua)
+        && !/Chrome|Chromium|CriOS|Edg|OPR|Firefox/i.test(ua);
+}
+
 export function audioBufferHasSignal(buffer, threshold = 0.0001) {
     if (typeof buffer?.getChannelData !== 'function'
         || !Number.isInteger(buffer.numberOfChannels)) return null;
@@ -291,6 +302,9 @@ export class AdvancedOfflineExporter {
             this.status('preparing', 'Mixing audio offline…');
             const mixed = await this.mixAudio(MB, tracks, duration);
             this.assertActive();
+            if (audioBufferHasSignal(mixed) === true && isAffectedLinuxWebKit()) {
+                throw new Error('Linux WebKit cannot reliably encode audio for fixed-frame export in this environment. No file was downloaded. Use Firefox or Chrome for projects with sound.');
+            }
             if (mixed && format === 'mp4') await this.ensureAacEncoder(MB);
             this.assertActive();
 
