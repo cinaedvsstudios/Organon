@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     offlineFrameSchedule, clipAtTime, clipSourceTime, clipAudioEnvelope,
-    fadeBreakpoints, AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS
+    fadeBreakpoints, audioBufferHasSignal, AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS
 } from '../js/advanced-offline-export.mjs';
 
 function source(id, type, opts={}) {
@@ -289,4 +289,59 @@ test('an unusable AAC fallback gives a WebM alternative without creating a parti
         assert.equal(app.metrics.download.length,0);
         assert.equal(app.exporter.busy,false);
     }finally{app.restore()}
+});
+
+test('audioBufferHasSignal detects audible, quiet and silent Web Audio PCM', () => {
+    const audible={numberOfChannels:2,getChannelData:index=>
+        index===0?Float32Array.from([0,0.00003,0.05]):Float32Array.from([0,0,0])};
+    const silent={numberOfChannels:1,getChannelData:()=>new Float32Array(12)};
+    assert.equal(audioBufferHasSignal(audible),true);
+    assert.equal(audioBufferHasSignal(silent),false);
+    assert.equal(audioBufferHasSignal({duration:1}),null);
+});
+
+test('encoded audio verification refuses to download an entirely silent encoded mix', async () => {
+    let disposed=0;
+    const outputAudio={numberOfChannels:1,getChannelData:()=>new Float32Array(40)};
+    const mb={
+        Input:class{
+            async canRead(){return true}
+            async getPrimaryAudioTrack(){return {canDecode:async()=>true}}
+            dispose(){disposed++}
+        },
+        ALL_FORMATS:[],BlobSource:class {},
+        AudioBufferSink:class {
+            async *buffers(){yield {buffer:outputAudio}}
+        }
+    };
+    const exporter=new AdvancedOfflineExporter({engine:{}});
+    const mixed={numberOfChannels:1,getChannelData:()=>Float32Array.from([0,0.8,0])};
+    await assert.rejects(
+        exporter.verifyEncodedAudio(mb,new Uint8Array([1,2,3]),mixed,1),
+        /encoded silence despite audible timeline audio/i
+    );
+    assert.equal(disposed,1);
+});
+
+test('encoded audio verification accepts an audible output and skips intentionally silent mixes', async () => {
+    let decodingCalls=0,disposed=0;
+    const outputAudio={numberOfChannels:1,getChannelData:()=>Float32Array.from([0,0.15])};
+    const mb={
+        Input:class{
+            async canRead(){return true}
+            async getPrimaryAudioTrack(){return {canDecode:async()=>true}}
+            dispose(){disposed++}
+        },ALL_FORMATS:[],BlobSource:class {},
+        AudioBufferSink:class {
+            async *buffers(){decodingCalls++;yield {buffer:outputAudio}}
+        }
+    };
+    const exporter=new AdvancedOfflineExporter({engine:{}});
+    const mixed={numberOfChannels:1,getChannelData:()=>Float32Array.from([0,0.12])};
+    const silence={numberOfChannels:1,getChannelData:()=>new Float32Array(4)};
+    await exporter.verifyEncodedAudio(mb,new Uint8Array([1]),silence,1);
+    assert.equal(decodingCalls,0);
+    await exporter.verifyEncodedAudio(mb,new Uint8Array([1]),mixed,1);
+    assert.equal(decodingCalls,1);
+    assert.equal(disposed,1);
 });
