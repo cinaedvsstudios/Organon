@@ -67,3 +67,25 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/repeated-export-memory.browser.mjs
+      - name: Verify synthetic portrait MOV and rotated MP4 camera-like exports
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/portrait-phone-like.browser.mjs
+
+
+  cross-browser-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out Organon source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright library and Firefox/WebKit browser engines
+        run: |
+          npm install --no-save playwright-core@1.56.1
+          npx playwright-core install --with-deps firefox webkit
+      - name: Test editor routing and capability handling in Firefox and WebKit
+        run: node tools/audio-timeline/tests/cross-browser.browser.mjs
