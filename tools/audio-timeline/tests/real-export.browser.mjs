@@ -75,6 +75,12 @@ try {
         video:typeof VideoEncoder,decoder:typeof VideoDecoder,audio:typeof OfflineAudioContext,
     }));
     assert.deepEqual(available,{video:'function',decoder:'function',audio:'function'});
+    if(browserName==='webkit'){
+        const userAgent=await page.evaluate(()=>navigator.userAgent);
+        console.log('[MotoriClip WebKit Linux UA]',userAgent);
+        assert.match(userAgent,/Linux.+AppleWebKit/i,
+            'Linux-specific audio safeguard must only be tested with a Linux WebKit UA');
+    }
 
     for (const format of (browserName==='chromium'?['webm','mp4']:browserName==='webkit'?['mp4']:['webm'])) {
         console.log('[MotoriClip E2E] Encoding',browserName,format,'at 25 fps, 320x180...');
