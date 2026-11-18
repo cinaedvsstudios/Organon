@@ -297,6 +297,11 @@ test('audioBufferHasSignal detects audible, quiet and silent Web Audio PCM', () 
     const silent={numberOfChannels:1,getChannelData:()=>new Float32Array(12)};
     assert.equal(audioBufferHasSignal(audible),true);
     assert.equal(audioBufferHasSignal(silent),false);
+    const alternating=new Float32Array(60000);
+    for(let i=1;i<alternating.length;i+=2)alternating[i]=.25;
+    assert.equal(audioBufferHasSignal({
+        numberOfChannels:1,getChannelData:()=>alternating
+    }),true,'PCM integrity check must not alias tones to silence');
     assert.equal(audioBufferHasSignal({duration:1}),null);
 });
 
