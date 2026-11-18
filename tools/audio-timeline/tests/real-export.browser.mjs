@@ -4,7 +4,7 @@
  * Synthetic fixtures are created in a local ignored tests/fixtures folder.
  */
 import assert from 'node:assert/strict';
-import { chromium, firefox } from 'playwright-core';
+import { chromium, firefox, webkit } from 'playwright-core';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -55,13 +55,15 @@ const server = createServer((request,response)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port;
 const browserName=process.env.MOTORICLIP_BROWSER||'chromium';
-if(!['chromium','firefox'].includes(browserName))throw Error('Only chromium and firefox are supported by this smoke test');
+if(!['chromium','firefox','webkit'].includes(browserName))throw Error('Only chromium, firefox and webkit are supported by this smoke test');
 const chromePaths=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium'];
 const executablePath=process.env.CHROME_BIN||chromePaths.find(existsSync);
 if(browserName==='chromium'&&!executablePath)throw Error('No Chrome/Chromium browser installed');
 const browser=browserName==='firefox'
     ? await firefox.launch({headless:true})
-    : await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
+    : browserName==='webkit'
+        ? await webkit.launch({headless:true})
+        : await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
 const errors=[];
 try {
     const context=await browser.newContext({acceptDownloads:true});
@@ -74,7 +76,7 @@ try {
     }));
     assert.deepEqual(available,{video:'function',decoder:'function',audio:'function'});
 
-    for (const format of (browserName==='firefox'?['webm']:['webm','mp4'])) {
+    for (const format of (browserName==='chromium'?['webm','mp4']:['webm'])) {
         console.log('[MotoriClip E2E] Encoding',browserName,format,'at 25 fps, 320x180...');
         const downloadPromise=page.waitForEvent('download',{timeout:180000});
         const exportPromise=page.evaluate(async fmt=>{
