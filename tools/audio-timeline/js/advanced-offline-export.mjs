@@ -90,8 +90,9 @@ export function audioBufferHasSignal(buffer, threshold = 0.0001) {
         || !Number.isInteger(buffer.numberOfChannels)) return null;
     for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
         const samples = buffer.getChannelData(channel);
-        const stride = Math.max(1, Math.floor(samples.length / 30000));
-        for (let i = 0; i < samples.length; i += stride) {
+        // Inspect every sample: fixed strides can alias steady tones whose
+        // period is an exact divisor of the stride, falsely reporting silence.
+        for (let i = 0; i < samples.length; i++) {
             if (Math.abs(samples[i]) > threshold) return true;
         }
     }
