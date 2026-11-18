@@ -95,6 +95,4 @@ jobs:
       - name: Use preinstalled Firefox/WebKit with matching Playwright library
         run: npm install --no-save playwright-core@1.56.1
       - name: Test editor routing and capability handling in Firefox and WebKit
-        env:
-          HOME: /root
-        run: node tools/audio-timeline/tests/cross-browser.browser.mjs
+        run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser node tools/audio-timeline/tests/cross-browser.browser.mjs'
