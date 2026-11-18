@@ -16,6 +16,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: motoriclip-real-media-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   export-browser:
     runs-on: ubuntu-24.04
@@ -30,9 +34,12 @@ jobs:
       - name: Install browser automation dependency
         run: npm install --no-save playwright-core@1.56.1
       - name: Install FFmpeg and ffprobe
+        timeout-minutes: 5
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y ffmpeg
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            sudo apt-get update -qq
+            sudo apt-get install -y ffmpeg
+          fi
       - name: Check Chromium and FFmpeg
         run: |
           set -euo pipefail
@@ -75,7 +82,9 @@ jobs:
 
   cross-browser-ui:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    container:
+      image: mcr.microsoft.com/playwright:v1.56.1-noble
+    timeout-minutes: 15
     steps:
       - name: Check out Organon source
         uses: actions/checkout@v4
@@ -83,9 +92,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install Playwright library and Firefox/WebKit browser engines
-        run: |
-          npm install --no-save playwright-core@1.56.1
-          npx playwright-core install --with-deps firefox webkit
+      - name: Use preinstalled Firefox/WebKit with matching Playwright library
+        run: npm install --no-save playwright-core@1.56.1
       - name: Test editor routing and capability handling in Firefox and WebKit
         run: node tools/audio-timeline/tests/cross-browser.browser.mjs
