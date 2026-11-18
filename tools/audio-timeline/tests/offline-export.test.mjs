@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     offlineFrameSchedule, clipAtTime, clipSourceTime, clipAudioEnvelope,
-    fadeBreakpoints, audioBufferHasSignal, AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS
+    fadeBreakpoints, audioBufferHasSignal, isAffectedLinuxWebKit, AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS
 } from '../js/advanced-offline-export.mjs';
 
 function source(id, type, opts={}) {
@@ -344,4 +344,19 @@ test('encoded audio verification accepts an audible output and skips intentional
     await exporter.verifyEncodedAudio(mb,new Uint8Array([1]),mixed,1);
     assert.equal(decodingCalls,1);
     assert.equal(disposed,1);
+});
+
+test('Linux WebKit audio guard is targeted and does not block Safari, Firefox or Chrome', () => {
+    assert.equal(isAffectedLinuxWebKit(
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+    ), true);
+    assert.equal(isAffectedLinuxWebKit(
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+    ), false);
+    assert.equal(isAffectedLinuxWebKit(
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/157.0.0.0 Safari/537.36'
+    ), false);
+    assert.equal(isAffectedLinuxWebKit(
+        'Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0'
+    ), false);
 });
