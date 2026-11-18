@@ -348,15 +348,19 @@ test('encoded audio verification accepts an audible output and skips intentional
 
 test('Linux WebKit audio guard is targeted and does not block Safari, Firefox or Chrome', () => {
     assert.equal(isAffectedLinuxWebKit(
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15',
+        'Linux x86_64'
     ), true);
     assert.equal(isAffectedLinuxWebKit(
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15'
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15',
+        'MacIntel'
     ), false);
     assert.equal(isAffectedLinuxWebKit(
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/157.0.0.0 Safari/537.36'
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/157.0.0.0 Safari/537.36',
+        'Linux x86_64'
     ), false);
     assert.equal(isAffectedLinuxWebKit(
-        'Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0'
+        'Mozilla/5.0 (X11; Linux x86_64; rv:145.0) Gecko/20100101 Firefox/145.0',
+        'Linux x86_64'
     ), false);
 });
