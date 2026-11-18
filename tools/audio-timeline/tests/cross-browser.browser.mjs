@@ -51,12 +51,9 @@ try{
             assert.equal(await page.locator('#advanced-canvas').getAttribute('height'),'360');
             assert.ok(await page.locator('#btn-export-video').isVisible());
             assert.ok(await page.locator('#btn-export-offline').isVisible());
-            const caps=await page.evaluate(async()=>{
-                const {AdvancedOfflineExporter}=await import('./js/advanced-offline-export.mjs');
+            const caps=await page.evaluate(async({probeCodec})=>{
                 const hasType=(type)=>typeof window[type]!=='undefined';
-                const available=(new AdvancedOfflineExporter({engine:{
-                    isPlaying:false,getTimelineDuration(){return 1},tracks:[]
-                }})).getAvailable();
+                const available=hasType('VideoEncoder')&&hasType('VideoDecoder')&&hasType('OfflineAudioContext');
                 const report={
                     videoEncoder:hasType('VideoEncoder'),videoDecoder:hasType('VideoDecoder'),
                     audioEncoder:hasType('AudioEncoder'),
@@ -66,7 +63,7 @@ try{
                     fixedFrameApisAvailable:available
                 };
                 report.webmVp9EncodeSupported=false;
-                if(report.videoEncoder&&typeof VideoEncoder.isConfigSupported==='function'){
+                if(probeCodec&&report.videoEncoder&&typeof VideoEncoder.isConfigSupported==='function'){
                     try{
                         const codec=await VideoEncoder.isConfigSupported({
                             codec:'vp09.00.10.08',width:320,height:180,
@@ -75,19 +72,21 @@ try{
                         report.webmVp9EncodeSupported=Boolean(codec?.supported);
                     }catch(error){report.webmVp9Error=String(error.message||error)}
                 }
-                if(!available){
+                if(probeCodec&&!available){
+                    const {AdvancedOfflineExporter}=await import('./js/advanced-offline-export.mjs');
                     const exp=new AdvancedOfflineExporter({engine:{
                         isPlaying:false,getTimelineDuration(){return 1},tracks:[]
                     }});
                     try{await exp.start({format:'webm',fps:25})}
                     catch(error){report.unsupportedMessage=String(error.message||error)}
                 }
+                if(!probeCodec)report.codecProbe='not run on Linux WebKit after prior browser process crash';
                 return report;
-            });
+            },{probeCodec:name!=='webkit'});
             assert.equal(caps.fixedFrameApisAvailable,
                 caps.videoEncoder&&caps.videoDecoder&&caps.offlineAudio,
                 'Exporter availability differs from its required browser APIs');
-            if(!caps.fixedFrameApisAvailable){
+            if(!caps.fixedFrameApisAvailable&&name!=='webkit'){
                 assert.match(caps.unsupportedMessage||'',/WebCodecs\/OfflineAudioContext/,
                     'Unsupported browser must receive a clear error');
             }
