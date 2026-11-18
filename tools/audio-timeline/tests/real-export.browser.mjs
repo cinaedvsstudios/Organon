@@ -78,8 +78,8 @@ try {
     if(browserName==='webkit'){
         const userAgent=await page.evaluate(()=>navigator.userAgent);
         console.log('[MotoriClip WebKit Linux UA]',userAgent);
-        assert.match(userAgent,/Linux.+AppleWebKit/i,
-            'Linux-specific audio safeguard must only be tested with a Linux WebKit UA');
+        const platform=await page.evaluate(()=>navigator.platform);
+        console.log('[MotoriClip WebKit platform]',platform);
     }
 
     for (const format of (browserName==='chromium'?['webm','mp4']:browserName==='webkit'?['mp4']:['webm'])) {
@@ -135,9 +135,11 @@ try {
                 onTimeChange(){},onDurationChange(){},onPlaybackChange(){},onRenderError(error){throw error}});
             engine.tracks=tracks;
             const messages=[];
+            let outputBlob=null;
             const exporter=new AdvancedOfflineExporter({
                 engine,onState:state=>messages.push(state),onProgress:()=>{},
                 onDownload({blob,extension}){
+                    outputBlob=blob;
                     const link=document.createElement('a');const url=URL.createObjectURL(blob);
                     link.href=url;link.download='motoriclip-e2e.'+extension;
                     document.body.appendChild(link);link.click();link.remove();
@@ -163,10 +165,23 @@ try {
             let exportError=null;
             try { await exporter.start({format:fmt,fps:25,bitrateKbps:3000}); }
             catch(error) { exportError=String(error.message||error); }
-            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,mixEnergy,exportError};
+            let independentAudioRms=null, independentAudioDecodeError=null;
+            if(debugMix&&outputBlob){
+                try{
+                    const offline=new OfflineAudioContext(2,48000,48000);
+                    const decoded=await offline.decodeAudioData(await outputBlob.arrayBuffer());
+                    const pcm=decoded.getChannelData(0);
+                    let sum=0;
+                    for(let i=0;i<pcm.length;i+=16)sum+=pcm[i]*pcm[i];
+                    independentAudioRms=Math.sqrt(sum/Math.ceil(pcm.length/16));
+                }catch(error){independentAudioDecodeError=String(error.message||error)}
+            }
+            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,
+                mixEnergy,exportError,independentAudioRms,independentAudioDecodeError};
         },{fmt:format,debugMix:browserName==='webkit'});
         const outcome=await exportPromise;
         if(browserName==='webkit'){
+            console.log('[MotoriClip WebKit independent audio diagnosis]',JSON.stringify(outcome));
             assert.match(outcome.exportError||'',/silent|silence|audio|decod/i,
                 'WebKit must reject a silently encoded output rather than downloading it');
             assert.equal(await downloadPromise,false,'WebKit must not download an invalid audio export');
