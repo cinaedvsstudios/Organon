@@ -79,7 +79,7 @@ try {
     for (const format of (browserName==='chromium'?['webm','mp4']:['webm'])) {
         console.log('[MotoriClip E2E] Encoding',browserName,format,'at 25 fps, 320x180...');
         const downloadPromise=page.waitForEvent('download',{timeout:180000});
-        const exportPromise=page.evaluate(async fmt=>{
+        const exportPromise=page.evaluate(async ({fmt,debugMix})=>{
             const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
                 import('../js/advanced-offline-export.mjs'),
                 import('../js/advanced-media-engine-v0.24.js'),
@@ -136,9 +136,25 @@ try {
                     setTimeout(()=>URL.revokeObjectURL(url),15000);
                 }
             });
+            let mixEnergy=null;
+            if(debugMix){
+                const originalMixAudio=exporter.mixAudio.bind(exporter);
+                exporter.mixAudio=async (...args)=>{
+                    const buffer=await originalMixAudio(...args);
+                    if(buffer?.getChannelData){
+                        const floats=buffer.getChannelData(0);
+                        let squares=0;
+                        for(let i=0;i<floats.length;i+=Math.max(1,Math.floor(floats.length/10000))){
+                            squares+=floats[i]*floats[i];
+                        }
+                        mixEnergy=Math.sqrt(squares/Math.ceil(floats.length/Math.max(1,Math.floor(floats.length/10000))));
+                    }
+                    return buffer;
+                };
+            }
             await exporter.start({format:fmt,fps:25,bitrateKbps:3000});
-            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length};
-        },format);
+            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,mixEnergy};
+        },{fmt:format,debugMix:browserName==='webkit'});
         const outcome=await exportPromise;
         const download=await downloadPromise;
         assert.equal(outcome.trackCount,4);
@@ -174,6 +190,10 @@ try {
             return Math.sqrt(squares/Math.max(1,count));
         }
         const rmsValues=[.1,.9,2,2.9,3.8].map(rms);
+        if(browserName==='webkit'){
+            console.log('[MotoriClip WebKit diagnosis]',JSON.stringify({mixEnergy:outcome.mixEnergy,outputRms:rmsValues,
+                streams:info.streams.map(x=>({codec:x.codec_name,type:x.codec_type}))}));
+        }
         assert.ok(rmsValues[0]<.006&&rmsValues[2]<.006&&rmsValues[4]<.006,`${format}: expected silence in gaps, got ${rmsValues}`);
         assert.ok(rmsValues[1]>.015&&rmsValues[3]>.015,`${format}: expected audio in both clips, got ${rmsValues}`);
         console.log('[MotoriClip E2E] PASS',format,{duration:info.format.duration,frames:count,codecs:[vid.codec_name,aud.codec_name],colors:{yellow,redPixel,gap,bluePixel},rms:rmsValues,states:outcome.messages.map(x=>x.phase)});
