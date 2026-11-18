@@ -113,3 +113,6 @@ jobs:
       - name: Diagnose isolated WebKit fixed-frame encoding without treating crashes as passes
         timeout-minutes: 2
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser node tools/audio-timeline/tests/webkit-export-diagnostic.browser.mjs'
+      - name: Validate full WebKit fixed-frame WebM audio and multitrack output
+        timeout-minutes: 5
+        run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser MOTORICLIP_BROWSER=webkit node tools/audio-timeline/tests/real-export.browser.mjs'
