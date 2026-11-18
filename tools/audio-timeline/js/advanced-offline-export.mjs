@@ -64,6 +64,24 @@ function offlineAudioTracks(tracks) {
         && Number(track.audio?.volume ?? 1) > 0);
 }
 
+/**
+ * Return true/false for a real Web Audio buffer's signal; null when inspecting
+ * an unavailable/mock representation. Only a full absence of decoded signal
+ * is considered a silent-output failure, never a quiet or intentionally muted mix.
+ */
+export function audioBufferHasSignal(buffer, threshold = 0.0001) {
+    if (typeof buffer?.getChannelData !== 'function'
+        || !Number.isInteger(buffer.numberOfChannels)) return null;
+    for (let channel = 0; channel < buffer.numberOfChannels; channel++) {
+        const samples = buffer.getChannelData(channel);
+        const stride = Math.max(1, Math.floor(samples.length / 30000));
+        for (let i = 0; i < samples.length; i += stride) {
+            if (Math.abs(samples[i]) > threshold) return true;
+        }
+    }
+    return false;
+}
+
 export class AdvancedOfflineExporter {
     constructor({ engine, onProgress, onState, onDownload, libraryLoader, aacEncoderLoader, renderEngineFactory } = {}) {
         this.engine = engine;
@@ -175,6 +193,41 @@ export class AdvancedOfflineExporter {
         if (!scheduled) return null;
         this.assertActive();
         return offline.startRendering();
+    }
+
+    async verifyEncodedAudio(MB, buffer, mixed, duration) {
+        // Native WebCodecs encoders may report success while writing silence.
+        // Verify by decoding the finalized file, before exposing a download.
+        if (audioBufferHasSignal(mixed) !== true) return;
+        this.status('finalizing', 'Checking encoded audio integrity…');
+        const testInput = new MB.Input({
+            formats:MB.ALL_FORMATS,
+            source:new MB.BlobSource(new Blob([buffer])),
+        });
+        try {
+            if (!await testInput.canRead()) {
+                throw new Error('The completed file cannot be checked for audio. Nothing was downloaded.');
+            }
+            const audioTrack = await testInput.getPrimaryAudioTrack();
+            if (!audioTrack || !await audioTrack.canDecode()) {
+                throw new Error('This browser did not produce a decodable audio track. Nothing was downloaded.');
+            }
+            let samplesChecked = false;
+            let audioPresent = false;
+            const sink = new MB.AudioBufferSink(audioTrack);
+            for await (const wrapped of sink.buffers(0, duration)) {
+                this.assertActive();
+                const signal = audioBufferHasSignal(wrapped?.buffer);
+                if (signal === null) continue;
+                samplesChecked = true;
+                if (signal) { audioPresent = true; break; }
+            }
+            if (!samplesChecked || !audioPresent) {
+                throw new Error('This browser encoded silence despite audible timeline audio. Nothing was downloaded. Try another browser or export format.');
+            }
+        } finally {
+            try { testInput.dispose(); } catch (_) { /* best effort */ }
+        }
     }
 
     async ensureAacEncoder(MB) {
@@ -296,6 +349,8 @@ export class AdvancedOfflineExporter {
             await output.finalize();
             this.assertActive();
             if (!target.buffer?.byteLength) throw new Error('Video encoder produced an empty file.');
+            await this.verifyEncodedAudio(MB, target.buffer, mixed, duration);
+            this.assertActive();
             const mime = format === 'mp4' ? 'video/mp4' : 'video/webm';
             this.onDownload?.({ blob: new Blob([target.buffer], { type:mime }), extension:format });
             this.progress(duration, duration);
