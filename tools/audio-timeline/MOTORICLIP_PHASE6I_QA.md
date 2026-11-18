@@ -30,9 +30,29 @@ Both are imported as video sources into a 720×1280 portrait output canvas, trim
 
 These fixtures approximate encoding, aspect ratio and metadata seen in phone videos. They are **not** footage taken by an actual Pixel or iPhone and do not establish compatibility with every camera bitrate, pixel format, colour profile, variable frame-rate or HEVC variant.
 
-## Status
+## Verified results — 18 November 2026
 
-**Pending actual GitHub Actions results.** Cross-browser tests and both phone-like outputs must report real successes before this phase is marked passing. If an engine lacks a codec, record that limitation separately from genuine startup/UI regressions.
+**Cross-browser GitHub Actions job [44225657213](https://github.com/cinaedvsstudios/Organon/actions/runs/44225657213) passed** in the Playwright 1.56.1 Ubuntu 24.04 container. Firefox and Linux WebKit both passed desktop Advanced startup, project frame-rate/canvas controls, Basic↔Advanced navigation, and iPhone-style user-agent routing to Basic.
+
+| Browser engine | UI navigation and controls | WebCodecs API presence | VP9 configuration probe | MediaRecorder |
+|---|---|---|---|---|
+| Firefox (Playwright Linux) | PASS | VideoEncoder/VideoDecoder/AudioEncoder/OfflineAudioContext present | `VideoEncoder.isConfigSupported` returned true | Present |
+| WebKit (Playwright Linux) | PASS | VideoEncoder/VideoDecoder/AudioEncoder/OfflineAudioContext present | **Not certified**; prior combined probe crashed WebKit process | **Absent** |
+
+**Caveats:** The cross-browser job does not yet encode a real output in Firefox or WebKit. Firefox's VP9 support result is a capability check, not proof that Mediabunny export works. Linux WebKit's API-presence check returned successfully, but running codec configuration plus module inspection had previously closed its browser process after ~29 seconds. The final UI test isolates those operations and intentionally does not claim codec support or export success for WebKit. The visible real-time export control is not evidence of functional `MediaRecorder` support on that engine. A real Mac Safari and Android Firefox/Chrome test remains needed.
+
+**Chrome real-file results:** The separate Chrome/FFmpeg run [44225296879](https://github.com/cinaedvsstudios/Organon/actions/runs/44225296879) completed successfully and confirmed:
+
+| Fixture | Export | Frames | Duration | Audio RMS | Orientation |
+|---|---|---:|---:|---:|---|
+| Synthetic portrait 360×640 QuickTime H.264/AAC MOV | 720×1280 H.264/AAC MP4 | 75 | 3.008 s | 0.1249 | Passed corner-marker checks |
+| Synthetic landscape 640×360 MP4 with **90° rotation metadata** | 720×1280 H.264/AAC MP4 | 75 | 3.008 s | 0.1249 | Rotation baked correctly; corner-marker checks passed |
+
+Both output videos contained moving content and non-silent audio, and all **91/91 Node regression tests** plus previous real-browser suites passed in that Chrome run.
+
+The Linux WebKit browser initially failed to launch as root because GitHub set `HOME` to a different user's directory; using the Playwright container's `pwuser` resolved the launch issue, though the deeper codec probe still crashed. The rotation fixture was also corrected to use FFmpeg's `-display_rotation` input option and to verify actual stream side data, rather than relying on an ineffective `rotate` metadata tag.
+
+
 
 ## Remaining release-gate checks
 
