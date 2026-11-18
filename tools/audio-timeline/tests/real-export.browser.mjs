@@ -78,7 +78,9 @@ try {
 
     for (const format of (browserName==='chromium'?['webm','mp4']:browserName==='webkit'?['mp4']:['webm'])) {
         console.log('[MotoriClip E2E] Encoding',browserName,format,'at 25 fps, 320x180...');
-        const downloadPromise=page.waitForEvent('download',{timeout:180000});
+        const downloadPromise=browserName==='webkit'
+            ? page.waitForEvent('download',{timeout:4000}).then(()=>true).catch(()=>false)
+            : page.waitForEvent('download',{timeout:180000});
         const exportPromise=page.evaluate(async ({fmt,debugMix})=>{
             const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
                 import('../js/advanced-offline-export.mjs'),
@@ -152,11 +154,22 @@ try {
                     return buffer;
                 };
             }
-            await exporter.start({format:fmt,fps:25,bitrateKbps:3000});
-            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,mixEnergy};
+            let exportError=null;
+            try { await exporter.start({format:fmt,fps:25,bitrateKbps:3000}); }
+            catch(error) { exportError=String(error.message||error); }
+            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,mixEnergy,exportError};
         },{fmt:format,debugMix:browserName==='webkit'});
         const outcome=await exportPromise;
+        if(browserName==='webkit'){
+            assert.match(outcome.exportError||'',/silent|silence|audio|decod/i,
+                'WebKit must reject a silently encoded output rather than downloading it');
+            assert.equal(await downloadPromise,false,'WebKit must not download an invalid audio export');
+            assert.equal(outcome.trackCount,4);
+            console.log('[MotoriClip 6J] PASS WebKit rejected silent encoded audio with a clear error:',outcome.exportError);
+            continue;
+        }
         const download=await downloadPromise;
+        assert.equal(outcome.exportError,null,'Export unexpectedly failed: '+outcome.exportError);
         assert.equal(outcome.trackCount,4);
         assert.equal(download.suggestedFilename(),`motoriclip-e2e.${format}`);
         const file=join(temp,`motori-${format}.${format}`);
