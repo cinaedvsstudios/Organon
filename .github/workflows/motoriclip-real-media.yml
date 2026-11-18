@@ -110,3 +110,6 @@ jobs:
       - name: Decode, render and inspect an actual Firefox WebM export
         timeout-minutes: 7
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser MOTORICLIP_BROWSER=firefox node tools/audio-timeline/tests/real-export.browser.mjs'
+      - name: Diagnose isolated WebKit fixed-frame encoding without treating crashes as passes
+        timeout-minutes: 2
+        run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser node tools/audio-timeline/tests/webkit-export-diagnostic.browser.mjs'
