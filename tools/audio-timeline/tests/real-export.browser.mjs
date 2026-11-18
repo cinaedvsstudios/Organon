@@ -4,7 +4,7 @@
  * Synthetic fixtures are created in a local ignored tests/fixtures folder.
  */
 import assert from 'node:assert/strict';
-import { chromium } from 'playwright-core';
+import { chromium, firefox } from 'playwright-core';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -54,10 +54,14 @@ const server = createServer((request,response)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port;
+const browserName=process.env.MOTORICLIP_BROWSER||'chromium';
+if(!['chromium','firefox'].includes(browserName))throw Error('Only chromium and firefox are supported by this smoke test');
 const chromePaths=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium'];
 const executablePath=process.env.CHROME_BIN||chromePaths.find(existsSync);
-if(!executablePath)throw Error('No Chrome/Chromium browser installed');
-const browser=await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
+if(browserName==='chromium'&&!executablePath)throw Error('No Chrome/Chromium browser installed');
+const browser=browserName==='firefox'
+    ? await firefox.launch({headless:true})
+    : await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
 const errors=[];
 try {
     const context=await browser.newContext({acceptDownloads:true});
@@ -70,8 +74,8 @@ try {
     }));
     assert.deepEqual(available,{video:'function',decoder:'function',audio:'function'});
 
-    for (const format of ['webm','mp4']) {
-        console.log('[MotoriClip E2E] Encoding',format,'at 25 fps, 320x180...');
+    for (const format of (browserName==='firefox'?['webm']:['webm','mp4'])) {
+        console.log('[MotoriClip E2E] Encoding',browserName,format,'at 25 fps, 320x180...');
         const downloadPromise=page.waitForEvent('download',{timeout:180000});
         const exportPromise=page.evaluate(async fmt=>{
             const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
@@ -133,8 +137,8 @@ try {
             await exporter.start({format:fmt,fps:25,bitrateKbps:3000});
             return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length};
         },format);
-        const download=await downloadPromise;
         const outcome=await exportPromise;
+        const download=await downloadPromise;
         assert.equal(outcome.trackCount,4);
         assert.equal(download.suggestedFilename(),`motoriclip-e2e.${format}`);
         const file=join(temp,`motori-${format}.${format}`);
@@ -173,7 +177,7 @@ try {
         console.log('[MotoriClip E2E] PASS',format,{duration:info.format.duration,frames:count,codecs:[vid.codec_name,aud.codec_name],colors:{yellow,redPixel,gap,bluePixel},rms:rmsValues,states:outcome.messages.map(x=>x.phase)});
     }
     assert.deepEqual(errors,[],'Browser reported script errors');
-    console.log('[MotoriClip E2E] Both MP4 and WebM real-media export checks passed.');
+    console.log('[MotoriClip E2E] PASS complete for '+browserName);
 } finally {
     await browser.close();
     await new Promise(resolve=>server.close(resolve));
