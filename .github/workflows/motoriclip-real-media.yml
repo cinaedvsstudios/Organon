@@ -96,3 +96,17 @@ jobs:
         run: npm install --no-save playwright-core@1.56.1
       - name: Test editor routing and capability handling in Firefox and WebKit
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser node tools/audio-timeline/tests/cross-browser.browser.mjs'
+      - name: Install FFmpeg and prepare synthetic media fixtures
+        timeout-minutes: 5
+        run: |
+          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
+            apt-get update -qq
+            apt-get install -y ffmpeg
+          fi
+          mkdir -p tools/audio-timeline/tests/fixtures
+          chown pwuser:pwuser tools/audio-timeline/tests/fixtures
+          command -v ffmpeg
+          command -v ffprobe
+      - name: Decode, render and inspect an actual Firefox WebM export
+        timeout-minutes: 7
+        run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser MOTORICLIP_BROWSER=firefox node tools/audio-timeline/tests/real-export.browser.mjs'
