@@ -5,13 +5,14 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase6b';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261119-phase9-gain-image';
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
 import { TRANSITION_CATALOG } from './transition-catalog.mjs';
-import { planPairedTransition, isPairedFadeActive } from './clip-pair-transitions.mjs';
+import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
+import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 
 (() => {
@@ -37,12 +38,13 @@ import { planClipSnap } from './clip-snap.mjs';
         transitionModalFrom: document.getElementById('transition-modal-from'), transitionModalTo: document.getElementById('transition-modal-to'),
         transitionModalEffect: document.getElementById('transition-modal-effect'), transitionModalDuration: document.getElementById('transition-modal-duration'),
         btnApplyTransitionModal: document.getElementById('btn-apply-transition-modal'), transitionModalStatus: document.getElementById('transition-modal-status'),
-        btnToggleRuler: document.getElementById('btn-toggle-ruler'), timelineRuler: document.getElementById('timeline-ruler'),
+        timelineRuler: document.getElementById('timeline-ruler'),
+        transitionPreviewCanvas: document.getElementById('transition-preview-canvas'), transitionPreviewProgress: document.getElementById('transition-preview-progress'), btnTransitionPlayPreview: document.getElementById('btn-transition-play-preview'),
         canvas: document.getElementById('advanced-canvas'), mediaBin: document.getElementById('media-bin'),
         previewStage: document.getElementById('preview-stage'), previewResizeHandle: document.getElementById('preview-resize-handle'), previewZoom: document.getElementById('preview-zoom'), previewZoomValue: document.getElementById('preview-zoom-value'), btnResetPreviewZoom: document.getElementById('btn-reset-preview-zoom'), previewEmpty: document.getElementById('preview-empty'), previewState: document.getElementById('preview-state'),
         previewSeek: document.getElementById('preview-seek'), previewVolume: document.getElementById('preview-volume'), timeReadout: document.getElementById('time-readout'),
         btnPlay: document.getElementById('btn-play'), btnPreviewMute: document.getElementById('btn-preview-mute'), btnStepBack: document.getElementById('btn-step-back'), btnStepForward: document.getElementById('btn-step-forward'), btnSnapshot: document.getElementById('btn-snapshot'),
-        fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnBasicMode: document.getElementById('btn-basic-mode'),
+        fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnRelink: document.getElementById('btn-relink'), mediaRememberNote: document.getElementById('media-remember-note'), btnBasicMode: document.getElementById('btn-basic-mode'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
@@ -50,9 +52,9 @@ import { planClipSnap } from './clip-snap.mjs';
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
-        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
+        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
-        selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
+        selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioTrackGain: document.getElementById('audio-track-gain'), audioTrackGainValue: document.getElementById('audio-track-gain-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
         contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
     };
@@ -260,7 +262,7 @@ import { planClipSnap } from './clip-snap.mjs';
             blendMode: 'source-over',
             groupId: null,
             transitionFromId: null, transitionEffectId: null,
-            audio: { volume: 1, muted: false, fadeIn: 0, fadeOut: 0 },
+            audio: { volume: 1, gain: 0, muted: false, fadeIn: 0, fadeOut: 0 },
             visualTransitions: normalizeVisualTransitions(),
             transparency: { mode: 'native', keyColour: '#00ff00', tolerance: 30, feather: 8 }
         };
@@ -385,23 +387,52 @@ import { planClipSnap } from './clip-snap.mjs';
         return ghost;
     }
 
+    const MEDIA_INDEX_KEY = 'motori-advanced-media-index-v1';
+    function persistMediaIndex() {
+        // Disk paths cannot be silently restored from browser drag-and-drop.
+        // Store only small identifying metadata, never the actual media bytes.
+        try {
+            const records=state.files.slice(0,400).map(entry=>({
+                id:entry.id,name:entry.name,kind:entry.kind,
+                size:entry.file?.size ?? entry.size ?? 0,
+                lastModified:entry.file?.lastModified ?? entry.lastModified ?? 0,
+                relativePath:entry.file?.webkitRelativePath || entry.relativePath || ''
+            }));
+            localStorage.setItem(MEDIA_INDEX_KEY,JSON.stringify(records));
+        } catch(error) { console.warn('Media index cannot be persisted:',error); }
+    }
+    function restoreMediaIndex() {
+        try {
+            const saved=JSON.parse(localStorage.getItem(MEDIA_INDEX_KEY)||'[]');
+            if (!Array.isArray(saved)) return;
+            state.files=saved.slice(0,400).filter(e=>e&&typeof e.id==='string'&&typeof e.name==='string'
+                &&['video','audio','sticker','background'].includes(e.kind))
+                .map(e=>({id:e.id,name:e.name,kind:e.kind,file:null,
+                    size:Number(e.size)||0,lastModified:Number(e.lastModified)||0,
+                    relativePath:String(e.relativePath||''),needsRelink:true}));
+        } catch(error) { console.warn('Could not restore media index:',error); }
+    }
     function renderFiles() {
         elements.fileList.innerHTML = '';
         elements.fileCount.textContent = `${state.files.length} media`;
+        const unlinked=state.files.filter(entry=>!entry.file).length;
+        elements.mediaRememberNote.textContent = unlinked
+            ? `${unlinked} remembered · reimport to relink` : 'Media names remembered locally';
+        persistMediaIndex();
         if (!state.files.length) {
             elements.fileList.innerHTML = '<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
             return;
         }
         for (const entry of state.files) {
             const row = document.createElement('div');
-            row.className = `file-row kind-${entry.kind}${entry.id === state.selectedFileId ? ' active' : ''}`;
+            row.className = `file-row kind-${entry.kind}${entry.id === state.selectedFileId ? ' active' : ''}${!entry.file ? ' is-unlinked' : ''}`;
             // Native HTML drag was unreliable after the v0.17 lane update in some Chromium builds.
             // The pointer drag below deliberately owns Project File placement instead.
             row.draggable = false;
             row.tabIndex = 0;
             row.dataset.fileId = entry.id;
-            row.title = 'Drag this file to the timeline.';
-            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file.size)} · drag to timeline</span></span>`;
+            row.title = entry.file ? 'Drag this file to the timeline.' : 'File remembered; click to reimport it and grant access.';
+            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file?.size ?? entry.size)} · ${entry.file ? 'drag to timeline' : 'reimport to relink'}</span></span>`;
 
             let pointerDrag = null;
             let suppressClick = false;
@@ -447,7 +478,7 @@ import { planClipSnap } from './clip-snap.mjs';
             };
 
             row.addEventListener('pointerdown', (event) => {
-                if (event.button !== 0) return;
+                if (event.button !== 0 || !entry.file) return;
                 pointerDrag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, started: false, ghost: null };
                 row.setPointerCapture?.(event.pointerId);
             });
@@ -459,12 +490,14 @@ import { planClipSnap } from './clip-snap.mjs';
             });
             row.addEventListener('click', () => {
                 if (suppressClick) return;
+                if (!entry.file) { showToast('Choose this file again to relink it'); elements.fileInput.click(); return; }
                 state.selectedFileId = entry.id;
                 renderFiles();
             });
             row.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
+                    if (!entry.file) { elements.fileInput.click(); return; }
                     state.selectedFileId = entry.id;
                     renderFiles();
                 }
@@ -474,19 +507,34 @@ import { planClipSnap } from './clip-snap.mjs';
     }
 
     async function addFiles(files) {
-        const usable = [];
-        for (const file of Array.from(files || [])) {
-            const kind = getKind(file);
-            if (!kind || !FILE_PATTERN.test(file.name)) continue;
-            const duplicate = state.files.some((entry) => entry.file.name === file.name && entry.file.size === file.size && entry.file.lastModified === file.lastModified);
-            if (!duplicate) usable.push({ id: `file-${Date.now()}-${++state.serial}`, file, name: file.name, kind });
+        const usable=[], relinked=[];
+        for(const file of Array.from(files||[])){
+            const kind=getKind(file);
+            if(!kind || !FILE_PATTERN.test(file.name))continue;
+            const duplicate=state.files.some(entry=>entry.file && entry.file.name===file.name
+                && entry.file.size===file.size && entry.file.lastModified===file.lastModified);
+            if(duplicate)continue;
+            const missing=state.files.find(entry=>!entry.file && entry.name===file.name
+                && entry.kind===kind && (!entry.size || entry.size===file.size));
+            if(missing) relinked.push({entry:missing,file});
+            else usable.push({id:`file-${Date.now()}-${++state.serial}`,file,
+                name:file.name,kind,size:file.size,lastModified:file.lastModified});
         }
-        if (!usable.length) { elements.previewState.textContent = 'No supported media files found.'; return; }
-        recordHistory(`Import ${usable.length} project file${usable.length === 1 ? '' : 's'}`);
-        for (const entry of usable) state.sourceFiles.set(entry.id, entry.file);
+        if(!usable.length && !relinked.length){
+            elements.previewState.textContent='No new or matching media files found.';
+            return;
+        }
+        recordHistory(`Import/relink ${usable.length+relinked.length} project media file(s)`);
+        for(const {entry,file} of relinked) {
+            entry.file=file; entry.needsRelink=false;
+            entry.size=file.size; entry.lastModified=file.lastModified;
+            state.sourceFiles.set(entry.id,file);
+        }
+        for(const entry of usable) state.sourceFiles.set(entry.id,entry.file);
         state.files.push(...usable);
         renderFiles();
-        elements.previewState.textContent = `Added ${usable.length} file${usable.length === 1 ? '' : 's'} to Project Files`;
+        elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked`;
+        showToast(`${usable.length} imported · ${relinked.length} relinked`);
     }
 
     function updateTimeDisplay({ currentTime, duration }) {
@@ -534,7 +582,7 @@ import { planClipSnap } from './clip-snap.mjs';
         elements.btnSnapOptions.disabled = !snapEligible;
         elements.btnSnapSelected.title = count === 2
             ? 'Snap the later selected clip start to the earlier clip end, keeping both on their tracks'
-            : 'Snap selected clip to the now line; use the arrow for start/end options';
+            : 'Snap selected clip START to the playhead; arrow opens alternate snap options';
     }
 
     function getPairSelection() {
@@ -574,6 +622,8 @@ import { planClipSnap } from './clip-snap.mjs';
             setSwitch(elements.videoAudioSwitch, !track.audio.muted);
             elements.videoAudioVolume.value = String(Math.round(track.audio.volume * 100));
             elements.videoAudioVolumeValue.textContent = `${Math.round(track.audio.volume * 100)}%`;
+            elements.videoAudioGain.value = String(Math.round(track.audio.gain || 0));
+            elements.videoAudioGainValue.textContent = `+${Math.round(track.audio.gain || 0)}% · ${Math.round(track.audio.volume * 100 + (track.audio.gain || 0))}% total`;
             elements.videoOpacity.value = String(opacity); elements.videoOpacityValue.textContent = `${opacity}%`;
             elements.videoBlendMode.value = track.blendMode || 'source-over'; elements.btnExtractAudio.disabled = !track.file;
             const transitions=normalizeVisualTransitions(track.visualTransitions);
@@ -611,6 +661,8 @@ import { planClipSnap } from './clip-snap.mjs';
             elements.selectedAudioName.textContent = track.sourceName || track.laneLabel;
             setSwitch(elements.audioAuditionSwitch, !track.audio.muted);
             elements.audioTrackVolume.value = String(Math.round(track.audio.volume * 100)); elements.audioTrackVolumeValue.textContent = `${Math.round(track.audio.volume * 100)}%`;
+            elements.audioTrackGain.value = String(Math.round(track.audio.gain || 0));
+            elements.audioTrackGainValue.textContent = `+${Math.round(track.audio.gain || 0)}% · ${Math.round(track.audio.volume * 100 + (track.audio.gain || 0))}% total`;
             elements.audioFadeIn.max = String(duration); elements.audioFadeIn.value = String(fadeIn); elements.audioFadeInValue.textContent = formatSeconds(fadeIn);
             elements.audioFadeOut.max = String(duration); elements.audioFadeOut.value = String(fadeOut); elements.audioFadeOutValue.textContent = formatSeconds(fadeOut);
         }
@@ -743,6 +795,7 @@ import { planClipSnap } from './clip-snap.mjs';
     async function placeProjectFile({ fileId, laneId, laneType, start }) {
         const entry = getFile(fileId);
         if (!entry) return;
+        if (!entry.file) { showToast('Relink this remembered file before placing it on the timeline'); return; }
         recordHistory(`Place ${entry.name}`);
         const laneTracks = laneId ? state.tracks.filter((track) => track.laneId === laneId) : [];
         let track = null;
@@ -784,22 +837,26 @@ import { planClipSnap } from './clip-snap.mjs';
         if (relocated) showToast(`${track.sourceName || 'Video'} moved to ${track.laneLabel} so video clips do not overlap`);
     }
 
-    function applySelectedVideoPair() {
+    function applySelectedVideoPair(preserveOrder = false) {
         let plan;
         const effectId=elements.pairTransitionEffect.value;
         const effect=TRANSITION_CATALOG.find(item=>item.id===effectId);
         try{
             if(effect?.status!=='available')throw Error('This effect is selected for later development, not implemented yet.');
-            plan=planPairedTransition(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value,effectId);
-        }catch(error){showToast(error.message);return;}
+            plan=planPairedTransition(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value,effectId,{preserveOrder:preserveOrder===true});
+        }catch(error){
+            showToast(error.message);
+            if (!elements.transitionModal.hidden) elements.transitionModalStatus.textContent = error.message;
+            return false;
+        }
         const a=getTrack(plan.fromId),b=getTrack(plan.toId);
         recordHistory(`Pair ${a.sourceName} → ${b.sourceName} (${plan.duration.toFixed(2)}s ${effect.label})`);
         a.visualTransitions=plan.outgoingTransitions;
         b.visualTransitions=plan.incomingTransitions;
         b.start=plan.start;
         if(plan.needsNewLane){
-            b.laneId=`video-transition-${Date.now()}-${++state.serial}`;
-            b.laneLabel=`Video ${nextLaneOrder('video')} · Transition`;
+            b.laneId=`${b.type}-transition-${Date.now()}-${++state.serial}`;
+            b.laneLabel=`${laneName(b.type,nextLaneOrder(b.type))} · Transition`;
             b.label=b.laneLabel;
             b.order=plan.incomingOrder;
         }
@@ -811,6 +868,7 @@ import { planClipSnap } from './clip-snap.mjs';
             elements.previewState.textContent=`Transition preview unavailable: ${error.message}`;
         });
         showToast(`Paired ${effect.label} ${plan.duration.toFixed(2)}s: ${a.sourceName} → ${b.sourceName}`);
+        return true;
     }
 
     function unlinkSelectedVideoPair(){
@@ -1222,7 +1280,7 @@ import { planClipSnap } from './clip-snap.mjs';
 
         if (localZone) {
             localZone.addEventListener('click', (event) => {
-                if (!event.target.closest('.file-row')) elements.fileInput.click();
+                if (!event.target.closest('.file-row,.file-list-footer')) elements.fileInput.click();
             });
             localZone.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
@@ -1253,60 +1311,127 @@ import { planClipSnap } from './clip-snap.mjs';
     function closeEditorModals() {
         for (const item of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) item.hidden = true;
     }
+
+    const transitionPreviewScratch = {tracks:[]};
+    let transitionPreviewFrame = 0;
+    function previewDrawContained(ctx,source,width,height) {
+        const sw=source.videoWidth || source.naturalWidth || source.width || 0;
+        const sh=source.videoHeight || source.naturalHeight || source.height || 0;
+        if(!sw || !sh || (source.readyState !== undefined && source.readyState < 2)) return false;
+        const factor=Math.min(width/sw,height/sh),dw=sw*factor,dh=sh*factor;
+        ctx.drawImage(source,(width-dw)/2,(height-dh)/2,dw,dh);
+        return true;
+    }
+    function getTransitionChoices() {
+        return state.tracks.filter(track => PAIR_VISUAL_TYPES.has(track.type) && track.file && track.sourceName)
+            .sort((a,b)=>(Number(a.start)||0)-(Number(b.start)||0));
+    }
+    function renderTransitionPreview() {
+        if (elements.transitionModal.hidden) return;
+        const canvas=elements.transitionPreviewCanvas,ctx=canvas.getContext('2d');
+        const a=getTrack(elements.transitionModalFrom.value),b=getTrack(elements.transitionModalTo.value);
+        const width=canvas.width,height=canvas.height;
+        ctx.clearRect(0,0,width,height);
+        ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
+        if (!a || !b || a.id === b.id) {
+            ctx.fillStyle='#f5f0db';ctx.font='13px sans-serif';ctx.textAlign='center';
+            ctx.fillText('Select two different video or image clips',width/2,height/2);
+            return;
+        }
+        const effectId=elements.transitionModalEffect.value;
+        const progress=Number(elements.transitionPreviewProgress.value)/100;
+        const duration=Math.max(.1,Number(elements.transitionModalDuration.value)||1);
+        ctx.save();
+        try {
+            previewDrawContained(ctx,a.media,width,height);
+            if (progress <= 0) return;
+            const draft={...b,start:0,transitionFromId:a.id,transitionEffectId:effectId,
+                visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
+            if(effectId==='fade') {
+                ctx.globalAlpha=progress;
+                previewDrawContained(ctx,b.media,width,height);
+            } else {
+                ctx.globalAlpha=1;
+                transitionPreviewScratch.tracks=[a,draft];
+                if (!paintPairedEffect(transitionPreviewScratch,ctx,draft,width,height,duration*progress,previewDrawContained))
+                    previewDrawContained(ctx,b.media,width,height);
+            }
+        } catch(error) {
+            console.warn('Transition thumbnail preview unavailable:',error);
+            ctx.fillStyle='#f5f0db';ctx.font='12px sans-serif';ctx.fillText('Preview unavailable for this frame',15,height/2);
+        } finally { ctx.restore(); }
+    }
     function refreshTransitionModal() {
-        const videos = state.tracks.filter((track) => track.type === 'video' && track.file && track.sourceName)
-            .sort((a,b) => (Number(a.start)||0)-(Number(b.start)||0));
-        const selected = videos.filter((track) => state.selectedTrackIds.has(track.id));
-        const choose = (select, previous, fallback) => {
+        const visuals=getTransitionChoices(),selected=visuals.filter(track=>state.selectedTrackIds.has(track.id));
+        const choose=(select,previous,fallback)=>{
             select.replaceChildren();
-            for (const track of videos) {
-                const option = document.createElement('option');
-                option.value = track.id;
-                option.textContent = `${track.sourceName} · ${formatTime(track.start)} (${track.laneLabel})`;
+            for(const clip of visuals){
+                const option=document.createElement('option');
+                option.value=clip.id;
+                option.textContent=`${clip.sourceName} · ${formatTime(clip.start)} (${clip.laneLabel})`;
                 select.appendChild(option);
             }
-            select.value = videos.some((track) => track.id === previous) ? previous : fallback || videos[0]?.id || '';
+            select.value=visuals.some(clip=>clip.id===previous)?previous:(fallback || visuals[0]?.id || '');
         };
-        choose(elements.transitionModalFrom, elements.transitionModalFrom.value, selected[0]?.id || videos[0]?.id);
-        choose(elements.transitionModalTo, elements.transitionModalTo.value, selected[1]?.id || videos[1]?.id);
+        choose(elements.transitionModalFrom,elements.transitionModalFrom.value,selected[0]?.id || visuals[0]?.id);
+        choose(elements.transitionModalTo,elements.transitionModalTo.value,selected[1]?.id || visuals[1]?.id);
         elements.transitionModalEffect.replaceChildren();
-        for (const effect of TRANSITION_CATALOG.filter((item) => item.status === 'available')) {
-            const option = document.createElement('option');
-            option.value = effect.id;
-            option.textContent = effect.label;
+        for(const effect of TRANSITION_CATALOG.filter(item=>item.status==='available')){
+            const option=document.createElement('option');option.value=effect.id;option.textContent=effect.label;
             elements.transitionModalEffect.appendChild(option);
         }
-        elements.transitionModalEffect.value = elements.pairTransitionEffect.value || 'fade';
-        const canPair = videos.length >= 2;
-        elements.btnApplyTransitionModal.disabled = !canPair;
-        elements.transitionModalStatus.textContent = canPair
-            ? `${videos.length} video clips available · ${elements.transitionModalEffect.options.length} effects`
-            : 'Import and place at least two video clips on the timeline to use a transition.';
+        elements.transitionModalEffect.value=elements.pairTransitionEffect.value || 'fade';
+        updateTransitionModalValidation();
+    }
+    function updateTransitionModalValidation() {
+        const a=elements.transitionModalFrom.value,b=elements.transitionModalTo.value;
+        const count=getTransitionChoices().length;
+        const valid=count>=2 && a && b && a!==b;
+        elements.btnApplyTransitionModal.disabled=!valid;
+        elements.transitionModalStatus.textContent=count<2
+            ? 'Place at least two visual clips (video, PNG, JPEG, GIF or WebP) on the timeline.'
+            : !valid ? 'Choose two different clips. A clip cannot transition into itself.'
+            : `${count} available visual clips · 41 transitions. Preview the effect, then Apply.`;
+        renderTransitionPreview();
     }
     function applyTransitionFromModal() {
-        const a = elements.transitionModalFrom.value, b = elements.transitionModalTo.value;
-        if (!a || !b || a === b) {
-            elements.transitionModalStatus.textContent = 'Choose two different video clips.';
-            return;
+        const a=elements.transitionModalFrom.value,b=elements.transitionModalTo.value;
+        if(!a || !b || a===b){updateTransitionModalValidation();return;}
+        const from=getTrack(a),to=getTrack(b);
+        if(!from || !to || !PAIR_VISUAL_TYPES.has(from.type) || !PAIR_VISUAL_TYPES.has(to.type)){
+            elements.transitionModalStatus.textContent='Choose two loaded visual clips.';return;
         }
-        const first = getTrack(a), second = getTrack(b);
-        if (!first || !second || first.type !== 'video' || second.type !== 'video') return;
-        state.selectedTrackIds = new Set([a,b]);
-        state.selectedTrackId = a;
+        const requested=Number(elements.transitionModalDuration.value);
+        const max=Math.min(30,from.clipDuration||0,to.clipDuration||0);
+        if(!Number.isFinite(requested)||requested<.1||requested>max){
+            elements.transitionModalStatus.textContent=`Choose an overlap from 0.1 to ${max.toFixed(2)} seconds.`;return;
+        }
+        state.selectedTrackIds=new Set([a,b]);
+        state.selectedTrackId=a;
         timeline.setSelectedTrackIds(state.selectedTrackIds);
-        elements.pairTransitionEffect.value = elements.transitionModalEffect.value;
-        elements.pairTransitionDuration.value = elements.transitionModalDuration.value;
+        elements.pairTransitionEffect.value=elements.transitionModalEffect.value;
+        elements.pairTransitionDuration.value=elements.transitionModalDuration.value;
         syncSelectionTools();
         syncInspector();
-        const requested = Number(elements.transitionModalDuration.value);
-        const max = Math.min(30, first.clipDuration || 0, second.clipDuration || 0);
-        if (!Number.isFinite(requested) || requested < .1 || requested > max) {
-            elements.transitionModalStatus.textContent = `Choose an overlap from 0.1 to ${max.toFixed(2)} seconds.`;
-            return;
-        }
-        applySelectedVideoPair();
-        closeEditorModals();
+        if(applySelectedVideoPair(true)) closeEditorModals();
     }
+    elements.transitionModalFrom.addEventListener('change',updateTransitionModalValidation);
+    elements.transitionModalTo.addEventListener('change',updateTransitionModalValidation);
+    elements.transitionModalEffect.addEventListener('change',()=>{renderTransitionPreview();});
+    elements.transitionModalDuration.addEventListener('input',renderTransitionPreview);
+    elements.transitionPreviewProgress.addEventListener('input',renderTransitionPreview);
+    elements.btnTransitionPlayPreview.addEventListener('click',()=>{
+        cancelAnimationFrame(transitionPreviewFrame);
+        const start=performance.now();
+        const animate=now=>{
+            if(elements.transitionModal.hidden)return;
+            const progress=Math.min(1,(now-start)/1100);
+            elements.transitionPreviewProgress.value=String(Math.round(progress*100));
+            renderTransitionPreview();
+            if(progress<1)transitionPreviewFrame=requestAnimationFrame(animate);
+        };
+        transitionPreviewFrame=requestAnimationFrame(animate);
+    });
     elements.btnToggleHeader.addEventListener('click', () => {
         const collapsed = elements.editorHeader.classList.toggle('is-collapsed');
         elements.btnToggleHeader.setAttribute('aria-expanded', String(!collapsed));
@@ -1405,21 +1530,13 @@ import { planClipSnap } from './clip-snap.mjs';
     }
     elements.btnSnapSelected.addEventListener('click', () => {
         if (state.selectedTrackIds.size === 2) performSelectedSnap('pair');
-        else toggleSnapOptions();
+        else performSelectedSnap('start-playhead');
     });
     elements.btnSnapOptions.addEventListener('click', toggleSnapOptions);
     elements.snapOptionsMenu.querySelectorAll('[data-snap-mode]').forEach(button => {
         button.addEventListener('click', () => performSelectedSnap(button.dataset.snapMode));
     });
 
-    elements.btnToggleRuler.addEventListener('click', () => {
-        elements.timelineRuler.hidden = !elements.timelineRuler.hidden;
-        const visible = !elements.timelineRuler.hidden;
-        elements.btnToggleRuler.setAttribute('aria-pressed', String(visible));
-        elements.btnToggleRuler.title = visible
-            ? 'Hide timeline ruler (click the numbers to move the playhead)'
-            : 'Show timeline ruler (click the numbers to move the playhead)';
-    });
     for (const modal of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) {
         modal.querySelector('[data-close-modal]').addEventListener('click', closeEditorModals);
         modal.addEventListener('pointerdown', (event) => { if (event.target === modal) closeEditorModals(); });
@@ -1447,6 +1564,7 @@ import { planClipSnap } from './clip-snap.mjs';
 
     elements.btnImport.addEventListener('click', () => elements.fileInput.click());
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
+    elements.btnRelink.addEventListener('click', () => elements.fileInput.click());
     elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
     elements.btnClear.addEventListener('click', () => {
         if (!state.files.length && !state.tracks.length) return;
@@ -1468,7 +1586,13 @@ import { planClipSnap } from './clip-snap.mjs';
 
     elements.videoVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle video visibility'); const track = getTrack(); if (!track || track.type !== 'video') return; track.visible = !track.visible; refreshAll(); });
     elements.videoAudioSwitch.addEventListener('click', () => { recordHistory('Toggle linked video audio'); const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
-    elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; engine.syncAudioSettings(); });
+    elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; elements.videoAudioGainValue.textContent = `+${track.audio.gain || 0}% · ${Math.round(track.audio.volume*100+(track.audio.gain||0))}% total`; engine.syncAudioSettings(); });
+    elements.videoAudioGain.addEventListener('input', () => {
+        const track=getTrack(); if(!track || track.type!=='video') return;
+        track.audio.gain=Number(elements.videoAudioGain.value);
+        elements.videoAudioGainValue.textContent=`+${track.audio.gain}% · ${Math.round(track.audio.volume*100+track.audio.gain)}% total`;
+        engine.syncAudioSettings();
+    });
     elements.videoOpacity.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.opacity = Number(elements.videoOpacity.value) / 100; elements.videoOpacityValue.textContent = `${elements.videoOpacity.value}%`; engine.renderFrame(); });
     elements.videoBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.blendMode = elements.videoBlendMode.value; engine.renderFrame(); });
     function updateVideoVisualFade(edge,control) {
@@ -1500,7 +1624,13 @@ import { planClipSnap } from './clip-snap.mjs';
     elements.backgroundBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'background') return; track.blendMode = elements.backgroundBlendMode.value; engine.renderFrame(); });
 
     elements.audioAuditionSwitch.addEventListener('click', () => { recordHistory('Toggle audio audition'); const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
-    elements.audioTrackVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.volume = Number(elements.audioTrackVolume.value) / 100; elements.audioTrackVolumeValue.textContent = `${elements.audioTrackVolume.value}%`; engine.syncAudioSettings(); });
+    elements.audioTrackVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.volume = Number(elements.audioTrackVolume.value) / 100; elements.audioTrackVolumeValue.textContent = `${elements.audioTrackVolume.value}%`; elements.audioTrackGainValue.textContent = `+${track.audio.gain || 0}% · ${Math.round(track.audio.volume*100+(track.audio.gain||0))}% total`; engine.syncAudioSettings(); });
+    elements.audioTrackGain.addEventListener('input', () => {
+        const track=getTrack(); if(!track || track.type!=='audio') return;
+        track.audio.gain=Number(elements.audioTrackGain.value);
+        elements.audioTrackGainValue.textContent=`+${track.audio.gain}% · ${Math.round(track.audio.volume*100+track.audio.gain)}% total`;
+        engine.syncAudioSettings();
+    });
     elements.audioFadeIn.addEventListener('input', () => updateAudioFade('fadeIn', elements.audioFadeIn, elements.audioFadeInValue));
     elements.audioFadeOut.addEventListener('input', () => updateAudioFade('fadeOut', elements.audioFadeOut, elements.audioFadeOutValue));
 
@@ -1514,6 +1644,7 @@ import { planClipSnap } from './clip-snap.mjs';
     elements.stickerEdgeFeather.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.feather = Number(elements.stickerEdgeFeather.value); elements.stickerEdgeFeatherValue.textContent = `${track.transparency.feather}%`; engine.renderFrame(); });
 
     registerInspectorHistory(elements.videoAudioVolume, 'Change video audio volume');
+    registerInspectorHistory(elements.videoAudioGain, 'Change video audio gain');
     registerInspectorHistory(elements.videoOpacity, 'Change video opacity');
     registerInspectorHistory(elements.videoBlendMode, 'Change video blend mode');
     registerInspectorHistory(elements.videoTransitionEnter, 'Change video entrance fade');
@@ -1523,6 +1654,7 @@ import { planClipSnap } from './clip-snap.mjs';
     registerInspectorHistory(elements.backgroundOpacity, 'Change background opacity');
     registerInspectorHistory(elements.backgroundBlendMode, 'Change background blend mode');
     registerInspectorHistory(elements.audioTrackVolume, 'Change audio volume');
+    registerInspectorHistory(elements.audioTrackGain, 'Change audio gain');
     registerInspectorHistory(elements.audioFadeIn, 'Change audio fade in');
     registerInspectorHistory(elements.audioFadeOut, 'Change audio fade out');
     registerInspectorHistory(elements.stickerOpacity, 'Change sticker opacity');
@@ -1562,6 +1694,7 @@ import { planClipSnap } from './clip-snap.mjs';
     });
 
     document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
+    restoreMediaIndex();
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();

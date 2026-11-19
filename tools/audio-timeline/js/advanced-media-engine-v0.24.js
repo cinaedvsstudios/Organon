@@ -326,7 +326,7 @@ export class AdvancedMediaEngine {
         for (const track of this.tracks) {
             if (!AUDIO_TYPES.has(track.type) || !track.gainNode) continue;
             const muted = Boolean(track.audio?.muted);
-            const volume = clamp(Number(track.audio?.volume ?? 1), 0, 1);
+            const volume = clamp(Number(track.audio?.volume ?? 1), 0, 1) + clamp(Number(track.audio?.gain ?? 0), 0, 200) / 100;
             const envelope = this.isTrackActive(track, time) ? this.getAudioFadeGain(track, time) : 0;
             track.gainNode.gain.value = muted ? 0 : volume * envelope;
         }
@@ -523,14 +523,26 @@ export class AdvancedMediaEngine {
         // Most preview frames keep the same layer order. Clip timing, opacity,
         // mute, visibility and media frames do not alter paint-stack sorting.
         // The signature also catches live order edits before setTracks().
-        const signature = this.tracks.map((track) => `${track.id}:${track.type}:${track.order}`).join('|');
+        const signature = this.tracks.map((track) => `${track.id}:${track.type}:${track.order}:${track.transitionFromId||''}`).join('|');
         if (this.visualStackCache && this.visualStackCacheKey === signature) return this.visualStackCache;
         const stickers = this.tracks.filter((track) => track.type === 'sticker').sort((a,b) => a.order - b.order);
         const videos = this.tracks.filter((track) => track.type === 'video').sort((a,b) => a.order - b.order);
         const backgrounds = this.tracks.filter((track) => track.type === 'background').sort((a,b) => a.order - b.order);
         this.visualStackCacheKey = signature;
-        this.visualStackCache = [...stickers, ...videos, ...backgrounds];
-        return this.visualStackCache;
+        const stack = [...stickers, ...videos, ...backgrounds];
+        // A paired still-image B must render above its A even if B normally
+        // lives in the background group. Keep other layer ordering intact.
+        for (const incoming of [...stack]) {
+            if (!incoming.transitionFromId) continue;
+            const a = stack.findIndex(item => item.id === incoming.transitionFromId);
+            const b = stack.indexOf(incoming);
+            if (a >= 0 && b > a) {
+                stack.splice(b, 1);
+                stack.splice(a, 0, incoming);
+            }
+        }
+        this.visualStackCache = stack;
+        return stack;
     }
     ensureCanvasSize() {
         if (this.canvas.width !== this.outputWidth || this.canvas.height !== this.outputHeight) {
@@ -555,16 +567,18 @@ export class AdvancedMediaEngine {
                     this.context.save();
                     try {
                         this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
-                        const pairedSpatial = track.type === 'video' && track.transitionEffectId !== 'fade'
+                        const pairedSpatial = VISUAL_TYPES.has(track.type) && track.transitionEffectId !== 'fade'
                             && isPairedFadeActive(track,this.tracks);
                         this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1)
                             * visualFadeOpacity(track, this.currentTime, {ignoreEnter:pairedSpatial});
-                        if (track.type === 'background') drawCovered(this.context, track.media, width, height);
-                        else if (track.type === 'video' && (track.media.readyState === undefined || track.media.readyState >= 2)) {
-                            if(!pairedSpatial || !paintPairedEffect(this,this.context,track,width,height,this.currentTime,drawContained))
-                                drawContained(this.context, track.media, width, height);
+                        if (track.media.readyState === undefined || track.media.readyState >= 2) {
+                            const painted = pairedSpatial && paintPairedEffect(this,this.context,track,width,height,this.currentTime,drawContained);
+                            if (!painted) {
+                                if (track.type === 'background') drawCovered(this.context, track.media, width, height);
+                                else if (track.type === 'video') drawContained(this.context, track.media, width, height);
+                                else if (track.type === 'sticker') this.drawSticker(track, width, height);
+                            }
                         }
-                        else if (track.type === 'sticker') this.drawSticker(track, width, height);
                     } catch (error) {
                         // Do not break the entire composite because one layer
                         // has an undecodable or temporarily unavailable frame.

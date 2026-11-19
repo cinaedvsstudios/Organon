@@ -20,6 +20,11 @@ const files=['pair-a.mp4','pair-b.mp4'].map((name,index)=>{
     assert.equal(run.status,0,run.stderr||'FFmpeg fixture generation failed');
     return file;
 });
+const imageFile=join(dir,'pair-image.png');
+const png=spawnSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i',
+    'color=c=green:s=128x72:d=1','-frames:v','1','-update','1',imageFile],
+    {encoding:'utf8',timeout:60000});
+assert.equal(png.status,0,png.stderr||'Still image generation failed');
 const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.json':'application/json'};
 const server=createServer((request,response)=>{
     const file=resolve(root,'.'+new URL(request.url,'http://localhost').pathname);
@@ -133,6 +138,52 @@ try{
     assert.equal(await page.locator('#transition-modal').isVisible(),false);
     await page.locator('#video-transition-pair-note').waitFor({state:'visible'});
     assert.match(await page.locator('#video-transition-pair-note').innerText(),/Paired Sphere/);
+    await page.locator('#video-audio-gain').fill('20');
+    await page.locator('#video-audio-gain').dispatchEvent('input');
+    assert.match(await page.locator('#video-audio-gain-value').innerText(),/120% total/,
+        'Audio gain must add 20 percentage points to 100% volume');
+
+    // Regression: a still image can be the B side of a real A/B transition.
+    await page.locator('#file-input').setInputFiles(imageFile);
+    await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===3);
+    await page.evaluate(()=>{
+        const row=document.querySelectorAll('.file-row')[2],dt=new DataTransfer();
+        dt.setData('application/x-organon-project-file',row.dataset.fileId);
+        document.querySelector('.timeline-zoom-bar').dispatchEvent(
+            new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt,clientX:280,clientY:450}));
+    });
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===1,null,{timeout:20000});
+    await page.locator('#btn-open-transitions').click();
+    assert.equal(await page.locator('#transition-modal-effect option').count(),41);
+    assert.equal(await page.locator('#transition-modal-from option').count(),3);
+    assert.equal(await page.locator('#transition-modal-to option').count(),3);
+    const choices=await page.locator('#transition-modal-from option').evaluateAll(opts=>
+        opts.map(option=>({id:option.value,label:option.textContent})));
+    const fromId=choices.find(x=>x.label.includes('pair-a.mp4'))?.id;
+    const imageId=choices.find(x=>x.label.includes('pair-image.png'))?.id;
+    assert.ok(fromId && imageId,'Both outgoing video and incoming still image must be selectable');
+    await page.locator('#transition-modal-from').selectOption(fromId);
+    await page.locator('#transition-modal-to').selectOption(imageId);
+    await page.locator('#transition-modal-effect').selectOption('sphere');
+    await page.locator('#transition-preview-progress').fill('50');
+    await page.locator('#transition-preview-progress').dispatchEvent('input');
+    assert.ok(await page.locator('#transition-preview-canvas').evaluate(el=>el.getContext('2d')
+        .getImageData(0,0,el.width,el.height).data.some(value=>value>0)),
+        'Transition preview should render actual frame pixels');
+    await page.locator('#btn-apply-transition-modal').click();
+    assert.equal(await page.locator('#transition-modal').isVisible(),false,
+        'A valid still-image transition should be applied and close its modal');
+    const stillDebug=await page.evaluate(()=>({
+        toast:document.querySelector('#app-toast')?.textContent,
+        clips:[...document.querySelectorAll('.timeline-clip')].map(el=>({
+            className:el.className,filename:el.querySelector('.clip-label')?.textContent,
+            markerCount:el.querySelectorAll('.visual-transition-marker.enter').length,
+            id:el.dataset.trackId,start:el.style.left
+        }))
+    }));
+    console.log('[Phase9 still-image transition diagnostic]',JSON.stringify(stillDebug));
+    assert.ok(await page.locator('.timeline-clip.sticker .visual-transition-marker.enter').count()>=1,
+        'Image B must show the gold transition entry marker');
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
     console.log('[MotoriClip 8O] PASS 41-candidate library, 2 video imports, forty-one paired effects, gold marker, undo/redo '+JSON.stringify(positions));
 }finally{

@@ -14,6 +14,16 @@ const movie=(overrides={})=>({
     visualTransitions:emptyVisualTransitions(),
     ...overrides
 });
+test('image clips use the same non-destructive visual fade envelopes as video',()=>{
+    const image={...movie(),type:'sticker',visualTransitions:{
+        enter:{type:'fade',duration:1,curve:'linear'},
+        exit:{type:'fade',duration:0,curve:'linear'}
+    }};
+    assert.equal(fadeDuration(image,'enter'),1);
+    assert.equal(visualFadeOpacity(image,image.start),0);
+    assert.equal(visualFadeOpacity(image,image.start+.5),.5);
+    assert.equal(visualFadeOpacity({...image,type:'background'},image.start+.5),.5);
+});
 test('default video clips retain their original constant opacity',()=>{
     const v=movie();
     for(const time of [2,2.1,3,5.99,6])assert.equal(visualFadeOpacity(v,time),1);

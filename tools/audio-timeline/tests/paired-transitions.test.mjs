@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRANSITION_CATALOG, SELECTED_TRANSITION_NAMES, transitionId } from '../js/transition-catalog.mjs';
-import { planPairedFade, isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
+import { planPairedFade, planPairedTransition, isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
 const clip=(id,start,duration,order=1,laneId='lane-'+id)=>({
     id,type:'video',sourceName:id+'.mp4',file:{name:id+'.mp4'},
@@ -56,10 +56,25 @@ test('pair planner refuses invalid selection and clamps to safe available media'
     const a=clip('A',0,2,1),b=clip('B',2,3,2);
     assert.throws(()=>planPairedFade([a,b],['A'],1),/exactly two/);
     assert.throws(()=>planPairedFade([a,b],['A','A'],1),/different/);
-    assert.throws(()=>planPairedFade([a,{...b,file:null}],['A','B'],1),/loaded video/);
+    assert.throws(()=>planPairedFade([a,{...b,file:null}],['A','B'],1),/loaded visual/);
     assert.throws(()=>planPairedFade([a,b],['A','B'],0),/greater than zero/);
     assert.equal(planPairedFade([a,b],['A','B'],5).duration,2);
     assert.throws(()=>planPairedFade([a,{...b,clipDuration:.02}],['A','B'],1),/at least 0.1/);
+});
+test('still image and video clips can form the same 41-effect A/B transition',()=>{
+    const image={...clip('IMAGE',0,4,1),type:'sticker',sourceName:'image.png'};
+    const video=clip('VIDEO',6,5,1);
+    const plan=planPairedTransition([image,video],['IMAGE','VIDEO'],1,'sphere');
+    assert.equal(plan.start,3);
+    assert.equal(plan.effectId,'sphere');
+    const stillB={...clip('STILL',6,3,2),type:'background',sourceName:'poster.jpg'};
+    const second=planPairedTransition([video,stillB],['VIDEO','STILL'],1,'gallery');
+    assert.equal(second.effectId,'gallery');
+    assert.equal(second.start,10);
+    const explicit=planPairedTransition([video,image],['VIDEO','IMAGE'],1,'sphere',{preserveOrder:true});
+    assert.equal(explicit.fromId,'VIDEO');
+    assert.equal(explicit.toId,'IMAGE');
+    assert.equal(explicit.start,10);
 });
 test('pair link metadata is valid only while media exists and overlap is intact',()=>{
     const a=clip('A',2,4,1),b=clip('B',5,3,.5);
