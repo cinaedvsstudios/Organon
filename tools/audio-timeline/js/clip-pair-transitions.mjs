@@ -8,14 +8,14 @@ export const PAIR_VISUAL_TYPES = new Set(['video','sticker','background']);
 const finite=value=>Number.isFinite(Number(value))?Number(value):0;
 const end=track=>finite(track.start)+Math.max(0,finite(track.clipDuration));
 const overlaps=(start,duration,other)=>start<end(other)-.001&&start+duration>finite(other.start)+.001;
-export function planPairedTransition(tracks,selectedIds,requestedDuration=1,effectId='fade'){
+export function planPairedTransition(tracks,selectedIds,requestedDuration=1,effectId='fade',{preserveOrder=false}={}){
     if(!isAvailablePairEffect(effectId))throw new Error('Transition effect is not implemented yet.');
     if(!Array.isArray(selectedIds)||selectedIds.length!==2||new Set(selectedIds).size!==2)
         throw new Error('Select exactly two different video or still-image clips.');
     const selected=selectedIds.map(id=>(tracks||[]).find(t=>t.id===id));
     if(selected.some(t=>!t||!PAIR_VISUAL_TYPES.has(t.type)||!t.sourceName||!t.file))
         throw new Error('Select two loaded visual clips (video or still images) to create a transition.');
-    const [a,b]=selected.sort((x,y)=>finite(x.start)-finite(y.start)
+    const [a,b]=preserveOrder?selected:selected.sort((x,y)=>finite(x.start)-finite(y.start)
         || (tracks.indexOf(x)-tracks.indexOf(y)));
     const aDuration=finite(a.clipDuration), bDuration=finite(b.clipDuration);
     const max=Math.min(30,aDuration,bDuration);
