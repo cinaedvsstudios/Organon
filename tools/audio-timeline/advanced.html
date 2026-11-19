@@ -232,6 +232,13 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 @media (max-width:760px) { .advanced-app { width:100%; padding:0 8px 20px; } .top-panel { margin:0 0 10px; border-radius:0 0 20px 20px; } .online-label,.title-divider { display:none; } .advanced-grid { grid-template-columns:1fr; } .right-column { grid-column:auto; } .preview-stage { width:100%; min-width:0; } .inspector-scroll { display:flex; } .header-btn { min-height:30px; padding:6px 8px; } .header-btn span { display:none; } .file-toolbar { grid-template-columns:1fr 1fr 1fr; } }
 
 /* Compact, collapsible editor chrome and contextual controls. */
+.timeline-panel { overflow:visible; }
+.timeline-scroll { overflow-x:auto; overflow-y:hidden; border-radius:0 0 13px 13px; }
+.timeline-zoom-bar .track-type-menu { pointer-events:auto; }
+#btn-open-transitions { border-color:rgba(227,183,92,.8); color:#e3b75c; }
+#btn-open-transitions:hover { color:#111; background:#e3b75c; }
+#btn-toggle-ruler[aria-pressed="true"] { background:rgba(75,132,191,.45); }
+
 .top-panel { position:relative; padding-top:20px; }
 .top-strip-trigger { position:absolute; inset:0 0 auto; display:flex; justify-content:center; align-items:center; width:100%; height:15px; padding:0; border:0; border-radius:0 0 9px 9px; background:rgba(18,19,16,.82); color:var(--stone-ochre); cursor:pointer; font:700 11px var(--font-mono); }
 .top-strip-trigger:hover,.top-strip-trigger:focus-visible { background:var(--water-blue); color:#fff; outline:1px solid var(--water-spray); }
@@ -499,7 +506,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="editor-modal" id="transition-modal" hidden role="dialog" aria-modal="true" aria-label="Video transitions"><div class="editor-modal-card"><div class="editor-modal-head"><h2>✦ A/B Video Transitions</h2><button type="button" class="editor-modal-close" data-close-modal title="Close" aria-label="Close dialog">×</button></div><p class="modal-help">Choose two video clips. Video B overlaps Video A on a separate layer while the effect plays.</p><label class="editor-modal-field">From · Video A<select id="transition-modal-from" class="compact-select" aria-label="First video clip"></select></label><label class="editor-modal-field">To · Video B<select id="transition-modal-to" class="compact-select" aria-label="Second video clip"></select></label><label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label><label class="editor-modal-field">Overlap (seconds)<input id="transition-modal-duration" class="compact-input" type="number" min="0.1" max="30" step="0.05" value="1"></label><button class="btn btn-primary" type="button" id="btn-apply-transition-modal">✦ Apply Transition</button><p class="modal-help" id="transition-modal-status" role="status"></p></div></div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase6c"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-compact-controls"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
