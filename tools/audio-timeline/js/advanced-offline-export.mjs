@@ -4,6 +4,7 @@
  * This beta exporter never plays the timeline or modifies existing players.
  */
 import { connectOrgavoxAudioChain } from './orgavox-audio-chain.mjs';
+import { planClipSegmentExport } from './clip-segment-export.mjs';
 const MEDIABUNNY_MODULE = 'https://cdn.jsdelivr.net/npm/mediabunny@1.66.0/+esm';
 const AAC_ENCODER_MODULE = 'https://esm.sh/@mediabunny/aac-encoder@1.66.0?external=mediabunny';
 const AUDIO_RATE = 48000;
@@ -274,25 +275,29 @@ export class AdvancedOfflineExporter {
         }
     }
 
-    async start({ format = 'mp4', fps = 30, bitrateKbps = 6000 } = {}) {
+    async start({ format = 'mp4', fps = 30, bitrateKbps = 6000, segmentTrackId = null } = {}) {
         if (this.busy) throw new Error('An offline export is already running.');
         if (this.engine.isPlaying) throw new Error('Pause the preview before using fixed-frame export.');
         if (!this.getAvailable()) throw new Error('This browser does not support the WebCodecs/OfflineAudioContext export APIs.');
         if (!['mp4','webm'].includes(format)) throw new Error('Select MP4 or WebM.');
-        const duration = this.engine.getTimelineDuration();
+        const projectTracks = this.engine.tracks.filter(track => track.sourceName);
+        const segment = segmentTrackId
+            ? planClipSegmentExport(projectTracks,segmentTrackId,OFFLINE_EXPORT_LIMIT_SECONDS)
+            : null;
+        const duration = segment?.duration ?? this.engine.getTimelineDuration();
         if (!duration || duration > OFFLINE_EXPORT_LIMIT_SECONDS) {
             throw new Error('Experimental frame-accurate export currently supports projects up to 2 minutes.');
         }
         const rate = Number(fps);
         if (![24,25,30,50,60].includes(rate)) throw new Error('Choose a supported project frame rate.');
-        const tracks = this.engine.tracks.filter(track => track.sourceName);
+        const tracks = segment ? segment.tracks : projectTracks;
         if (tracks.some(track => !track.file)) throw new Error('Some source media is missing. Reimport the file before exporting.');
         const frames = offlineFrameSchedule(duration, rate);
         this.busy = true;
         this.controller = new AbortController();
         let output = null;
         try {
-            this.status('preparing', 'Loading frame-accurate export tools…');
+            this.status('preparing', segment ? 'Preparing selected trimmed clip section…' : 'Loading frame-accurate export tools…');
             const MB = await this.libraryLoader();
             this.assertActive();
             const width = this.engine.outputWidth, height = this.engine.outputHeight;
@@ -378,9 +383,11 @@ export class AdvancedOfflineExporter {
             await this.verifyEncodedAudio(MB, target.buffer, mixed, duration);
             this.assertActive();
             const mime = format === 'mp4' ? 'video/mp4' : 'video/webm';
-            this.onDownload?.({ blob: new Blob([target.buffer], { type:mime }), extension:format });
+            const originalStem=segment?.sourceName?.replace(/\.[^.]+$/,'').replace(/[^a-z0-9._-]+/gi,'-').slice(0,90) || 'motoriclip';
+            const filename=segment ? `${originalStem}-trimmed-${duration.toFixed(2)}s.${format}` : null;
+            this.onDownload?.({ blob: new Blob([target.buffer], { type:mime }), extension:format, filename, segmentTrackId });
             this.progress(duration, duration);
-            this.status('complete', 'Frame-accurate beta export completed');
+            this.status('complete', segment ? 'Trimmed clip exported successfully' : 'Frame-accurate beta export completed');
             return true;
         } catch (error) {
             if (this.controller?.signal.aborted || /cancelled/i.test(String(error))) {
