@@ -1,4 +1,4 @@
-/** Phase 8C–8J: verify actual Canvas 2D pixels for twenty-four additional selected transitions.
+/** Phase 8C–8K: verify actual Canvas 2D pixels for twenty-seven additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,7 +82,7 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']){
             b.transitionEffectId=effect;
             b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve'].includes(effect)?source('red'):source('stripes');
             results[effect]={
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -252,9 +252,34 @@ try{
     assert.equal(cell.middle.fingerprint,cell.repeat.fingerprint);
     assert.equal(bloom.middle.fingerprint,bloom.repeat.fingerprint);
     assert.equal(smoke.middle.fingerprint,smoke.repeat.fingerprint);
+    const vortex=result.vortex,heat=result['heat-haze'],lens=result.refraction;
+    console.log('[MotoriClip 8K] New distorted-frame pixel counts '+JSON.stringify({
+        vortex:vortex.middle,heat:heat.middle,refraction:lens.middle
+    }));
+    assert.ok(vortex.middle.blue>150&&vortex.middle.mixed>90,
+        'Vortex must rotate strips of B into a growing region over visible A');
+    assert.notEqual(vortex.middle.fingerprint,result.fade.middle.fingerprint,
+        'Vortex must not look like a plain fade on the same incoming stripes');
+    assert.ok(heat.middle.mixed>900,
+        'Heat haze should create a smoothly displaced blended B image');
+    assert.notEqual(heat.middle.fingerprint,result.fade.middle.fingerprint,
+        'Heat haze must visibly displace patterned B, not just crossfade');
+    assert.notEqual(heat.middle.fingerprint,vortex.middle.fingerprint,
+        'Heat haze and Vortex must render different distortions');
+    assert.ok(lens.middle.mixed>900,
+        'Refraction should bend the entire incoming striped image through triangular facets');
+    assert.notEqual(lens.middle.fingerprint,result.fade.middle.fingerprint,
+        'Refraction must render prismatic facet boundaries, not an ordinary fade');
+    assert.notEqual(lens.middle.fingerprint,heat.middle.fingerprint,
+        'Refraction lenses must differ from thermal heat waves');
+    assert.notEqual(lens.middle.fingerprint,vortex.middle.fingerprint,
+        'Refraction must differ from annular vortex rotation');
+    assert.equal(vortex.middle.fingerprint,vortex.repeat.fingerprint);
+    assert.equal(heat.middle.fingerprint,heat.repeat.fingerprint);
+    assert.equal(lens.middle.fingerprint,lens.repeat.fingerprint);
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8J] PASS real Chrome 25-effect pixel checks (Cell, Bloom, Smoke dissolve), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8K] PASS real Chrome 28-effect pixel checks (Vortex, Heat haze, Refraction), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
