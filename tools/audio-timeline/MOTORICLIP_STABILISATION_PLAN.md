@@ -163,6 +163,20 @@ Regression checklist:
 
 [Phase 8B QA](./MOTORICLIP_PHASE8B_QA.md).
 
+## Phase 8C — first three additional visual transitions [MERGED]
+
+[PR #45](https://github.com/cinaedvsstudios/Organon/pull/45) merged 19 November 2026 at `de0cb83838f2469bea7a8cffa89845fe6e358cb4`, after all three [GitHub Actions jobs 44457748582](https://github.com/cinaedvsstudios/Organon/actions/runs/44457748582) passed (**114/114 Node tests**, real Chrome effect pixels/paired UI, Firefox, 1080p full-duration MP4, memory and portrait-media regressions).
+
+- **Four available paired effects:** Fade (8B), plus **Pixelize**, **Random squares** and **Glitch flicker** (8C).
+- **Pixelize:** B is revealed with shrinking pixel blocks; returns to a clean source frame at completion.
+- **Random squares:** A deterministic 14×8 tile mask reveals fully opaque areas of B over A, with no global-alpha darkening. Browser samples at midpoint: **708 red / 664 blue / 0 blended**.
+- **Glitch flicker:** Deterministic horizontal strip offsets and intermittent dropouts, reducing to an undistorted incoming B; reverse scrubbing and export generate identical frames at the same time.
+- **No regression to previous fades:** Visual effects use the shared compositing renderer with independent clip opacity and exit fades; the separate clip files and linked audio are not rewritten. Two scratch canvases are reused and explicitly released during project clear.
+- **Remaining user selections:** The wishlist stays at **41 total / 4 available / 37 queued**, so the user can add more names after browsing the rest of the GL Transitions gallery.
+- **Upcoming increments:** More selected effects and optional per-effect parameter controls, stronger transition clip timing UX and presets. No claim of exact shader copying or transparent-alpha export, and no Apple-specific certification work required.
+
+[Phase 8C QA](./MOTORICLIP_PHASE8C_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
