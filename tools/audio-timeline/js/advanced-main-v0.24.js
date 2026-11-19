@@ -23,7 +23,7 @@ import { planClipSnap } from './clip-snap.mjs';
     const BACKGROUND_PATTERN = /\.(jpe?g)$/i;
     const state = {
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
-        contextTrackId: null, contextClickTime: 0, contextClipboard: null, dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
+        contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
         history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map()
     };
@@ -50,7 +50,10 @@ import { planClipSnap } from './clip-snap.mjs';
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
         exportOfflineFormat: document.getElementById('export-offline-format'), btnExportOffline: document.getElementById('btn-export-offline'), exportOverlayNote: document.getElementById('export-overlay-note'),
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
-        toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
+        toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'),
+        btnAddMarker: document.getElementById('btn-add-marker'), btnPreviousMarker: document.getElementById('btn-previous-marker'), btnNextMarker: document.getElementById('btn-next-marker'),
+        btnNudgeLeft: document.getElementById('btn-nudge-left'), btnNudgeRight: document.getElementById('btn-nudge-right'),
+        btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
@@ -1649,7 +1652,62 @@ import { planClipSnap } from './clip-snap.mjs';
     elements.btnRedo.addEventListener('click', () => { redoTimelineEdit(); });
     elements.timelineZoom.addEventListener('input', () => { timeline.setZoom(Number(elements.timelineZoom.value) / 100); syncTimelineZoom(); });
     elements.btnResetTimelineZoom.addEventListener('click', () => { timeline.resetZoom(); syncTimelineZoom(); showToast('Timeline zoom reset'); });
+    function addOrRemoveCueMarker() {
+        const time=Math.max(0,Number(engine.currentTime)||0);
+        const existing=state.timelineMarkers.findIndex(t=>Math.abs(t-time)<.05);
+        if(existing>=0) {
+            state.timelineMarkers.splice(existing,1);
+            showToast(`Removed marker at ${formatTime(time)}`);
+        } else {
+            state.timelineMarkers.push(time);
+            state.timelineMarkers.sort((a,b)=>a-b);
+            showToast(`Added marker at ${formatTime(time)}`);
+        }
+        timeline.setMarkers(state.timelineMarkers);
+    }
+    function moveToCueMarker(direction) {
+        const now=engine.currentTime;
+        const candidates=state.timelineMarkers.filter(t=>direction<0?t<now-.02:t>now+.02);
+        const target=direction<0?candidates[candidates.length-1]:candidates[0];
+        if(target===undefined){showToast(direction<0?'No earlier markers':'No later markers');return;}
+        void engine.seek(target).catch(error=>showToast(error.message));
+    }
+    function nudgeTimeline(direction) {
+        const seconds=direction/Math.max(1,Number(engine.projectFps)||30);
+        if(!state.selectedTrackIds.size) {
+            void engine.seek(Math.max(0,engine.currentTime+seconds))
+                .catch(error=>showToast(error.message));
+            return;
+        }
+        const movingIds=new Set(state.selectedTrackIds);
+        for(const track of state.tracks) {
+            if(track.groupId && state.tracks.some(other=>movingIds.has(other.id)&&other.groupId===track.groupId))
+                movingIds.add(track.id);
+        }
+        const moving=state.tracks.filter(track=>movingIds.has(track.id));
+        if(!moving.length)return;
+        for(const clip of moving) {
+            const start=(Number(clip.start)||0)+seconds;
+            const end=start+Math.max(0,Number(clip.clipDuration)||0);
+            if(start<0 || end>36000) {showToast('Nudge blocked at timeline boundary');return;}
+            const collision=state.tracks.some(other=>!movingIds.has(other.id)
+                && other.sourceName && clip.sourceName
+                && other.laneId===clip.laneId
+                && start < (Number(other.start)||0)+(Number(other.clipDuration)||0)-.0001
+                && end > (Number(other.start)||0)+.0001);
+            if(collision){showToast('Nudge stopped: another clip occupies this track');return;}
+        }
+        recordHistory(`Nudge ${direction<0?'left':'right'} by one frame`);
+        for(const clip of moving) clip.start=Number((Math.max(0,Number(clip.start)||0)+seconds).toFixed(6));
+        refreshAll();
+        showToast(`Nudged ${moving.length} clip(s) ${direction<0?'left':'right'} by one frame`);
+    }
     elements.btnSplitAll.addEventListener('click', splitAllAtNow);
+    elements.btnAddMarker.addEventListener('click',addOrRemoveCueMarker);
+    elements.btnPreviousMarker.addEventListener('click',()=>moveToCueMarker(-1));
+    elements.btnNextMarker.addEventListener('click',()=>moveToCueMarker(1));
+    elements.btnNudgeLeft.addEventListener('click',()=>nudgeTimeline(-1));
+    elements.btnNudgeRight.addEventListener('click',()=>nudgeTimeline(1));
     elements.btnSelectionMode.addEventListener('click', () => { state.selectionMode = !state.selectionMode; timeline.setSelectionMode(state.selectionMode); syncSelectionTools(); showToast(state.selectionMode ? 'Select mode on — click clips to select multiple' : 'Select mode off'); });
     elements.btnGroupSelection.addEventListener('click', groupSelectedTracks);
     elements.btnApplyPairTransition.addEventListener('click', applySelectedVideoPair);
@@ -1667,7 +1725,7 @@ import { planClipSnap } from './clip-snap.mjs';
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
         recordHistory('Clear project');
-        engine.clearAll(); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
+        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
@@ -1782,6 +1840,9 @@ import { planClipSnap } from './clip-snap.mjs';
             event.preventDefault();
             void deleteSelectedTracks();
             return;
+        }
+        if(!isTyping && event.altKey && (event.key==='ArrowLeft'||event.key==='ArrowRight')) {
+            event.preventDefault();nudgeTimeline(event.key==='ArrowLeft'?-1:1);return;
         }
         if (!modifier || isTyping) return;
         if (event.key.toLowerCase() === 'z' && !event.shiftKey) { event.preventDefault(); undoTimelineEdit(); }
