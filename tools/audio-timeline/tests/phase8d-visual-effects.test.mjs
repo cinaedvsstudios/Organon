@@ -17,7 +17,7 @@ test('Phase 8D enables three new selected effects without renumbering the origin
         assert.ok(isAvailablePairEffect(id),id+' should be implemented');
         assert.equal(TRANSITION_CATALOG.find(effect=>effect.id===id)?.status,'available');
     }
-    assert.equal(TRANSITION_CATALOG.find(effect=>effect.id==='hologram')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(effect=>effect.id==='hologram')?.status,'available');
 });
 
 test('Aperture expands smoothly from center and reaches the farthest corner',()=>{
