@@ -12,9 +12,9 @@ const selected=['liquid-fill','disintegrate','light-rays'];
 test('Phase 8L adds three chosen effects without losing any of the 41 originals',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(new Set(TRANSITION_CATALOG.map(x=>x.id)).size,41);
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(-3),selected);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,31);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,10);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(28,31),selected);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,34);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,7);
     for(const id of selected)assert.equal(TRANSITION_CATALOG.find(x=>x.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(x=>x.id==='spiralblockwipe')?.status,'requested');
 });
