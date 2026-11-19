@@ -8,7 +8,7 @@ import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
 import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261120-orgavox-eq-drive-dynamics-stereo';
 import { snapshotProject, snapshotClip, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs?build=20261120-orgavox-audio';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
-import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-orgavox-audio';
+import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-trimmed-export';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
 import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
@@ -68,7 +68,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
         selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioTrackGain: document.getElementById('audio-track-gain'), audioTrackGainValue: document.getElementById('audio-track-gain-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
-        contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), ContextClipActions: ['cut','copy','paste','slice-click','toggle-visible','download-source'].reduce((acc,action)=>{acc[action]=document.getElementById('context-'+action);return acc;},{}), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
+        contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), ContextClipActions: ['cut','copy','paste','slice-click','toggle-visible','download-source'].reduce((acc,action)=>{acc[action]=document.getElementById('context-'+action);return acc;},{}), contextDownloadSection: document.getElementById('context-download-section'), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
     };
 
     const engine = new AdvancedMediaEngine({
@@ -143,11 +143,11 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             if (phase === 'complete') showToast(message);
             if (phase === 'cancelled') showToast('Fixed-frame export cancelled');
         },
-        onDownload: ({blob,extension}) => {
+        onDownload: ({blob,extension,filename}) => {
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
-            link.download = `motoriclip-fixedframe-beta.${extension}`;
+            link.download = filename || `motoriclip-fixedframe-beta.${extension}`;
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -1294,6 +1294,8 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         elements.ContextClipActions['slice-click'].disabled=!canSplitTrack(track,state.contextClickTime);
         elements.ContextClipActions.paste.disabled=!state.contextClipboard?.file;
         elements.ContextClipActions['download-source'].disabled=!track.file;
+        elements.contextDownloadSection.disabled=!track.file || !offlineExporter.getAvailable() || offlineExporter.busy || exporter.busy || !(track.clipDuration>0) || track.clipDuration>OFFLINE_EXPORT_LIMIT_SECONDS;
+        elements.contextDownloadSection.title=track.clipDuration>OFFLINE_EXPORT_LIMIT_SECONDS ? 'Split the clip into sections of 120 seconds or less first' : 'Export this trimmed section only, with its effects and audio, to MP4/WebM';
         elements.ContextClipActions['toggle-visible'].textContent=track.visible===false?'◉ Show clip':'◉ Hide clip';
         elements.contextMenu.hidden = false;
         const maxX = window.innerWidth - elements.contextMenu.offsetWidth - 8;
@@ -1400,6 +1402,32 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         document.body.appendChild(link);link.click();link.remove();
         window.setTimeout(()=>URL.revokeObjectURL(url),15000);
         showToast('Downloading original source; trimmed-section export is a separate action');
+    }
+
+    function downloadContextSection() {
+        const clip=getTrack(state.contextTrackId);
+        hideContextMenu();
+        if(!clip?.file){showToast('Relink the original clip before exporting its section');return;}
+        if(!offlineExporter.getAvailable()){
+            showToast('Trimmed section export requires WebCodecs and OfflineAudioContext. Try Chrome or Firefox.');return;
+        }
+        if(exporter.busy || offlineExporter.busy){showToast('Finish or cancel the current export first');return;}
+        if(clip.clipDuration>OFFLINE_EXPORT_LIMIT_SECONDS){
+            showToast('Split the clip into sections shorter than 120 seconds first');return;
+        }
+        if(engine.isPlaying)engine.pause();
+        const format=elements.exportOfflineFormat.value || 'mp4';
+        elements.exportProgress.value=0;
+        elements.exportProgressText.textContent='0%';
+        showToast(`Rendering only ${clip.sourceName} · ${formatSeconds(clip.clipDuration)}`);
+        void offlineExporter.start({
+            format,fps:engine.projectFps,bitrateKbps:Number(elements.exportBitrate.value),
+            segmentTrackId:clip.id
+        }).catch(error=>{
+            elements.exportStatus.textContent=`Trimmed section export failed: ${error.message}`;
+            elements.previewState.textContent=`Export error: ${error.message}`;
+            showToast('Trimmed section export failed');
+        }).finally(updateExportAvailability);
     }
 
     function syncPreviewZoom() {
@@ -2069,6 +2097,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
     elements.ContextClipActions['slice-click'].addEventListener('click',()=>{void sliceContextClip();});
     elements.ContextClipActions['toggle-visible'].addEventListener('click',toggleContextClipVisible);
     elements.ContextClipActions['download-source'].addEventListener('click',downloadContextSource);
+    elements.contextDownloadSection.addEventListener('click',downloadContextSection);
     elements.contextSplitNow.addEventListener('click', async () => { await splitTrackAtNow(state.contextTrackId); hideContextMenu(); });
     elements.contextAddLayer.addEventListener('click', addLayerFromContext);
     elements.contextExtractAudio.addEventListener('click', async () => { await extractAudioFromSelectedVideo(); hideContextMenu(); });
