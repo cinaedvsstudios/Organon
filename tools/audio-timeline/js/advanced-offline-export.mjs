@@ -60,7 +60,7 @@ function offlineAudioTracks(tracks) {
     return tracks.filter(track => ['video','audio'].includes(track.type)
         && track.file && track.sourceName
         && Number(track.clipDuration) > 0
-        && track.audio?.muted !== true
+        && track.audio?.muted !== true && track.visible !== false
         && (Number(track.audio?.volume ?? 1) + Number(track.audio?.gain ?? 0)/100) > 0);
 }
 

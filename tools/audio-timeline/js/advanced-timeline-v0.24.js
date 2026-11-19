@@ -58,6 +58,7 @@ export class AdvancedTimeline {
         this.onSeek = onSeek;
         this.onSplitAtPlayhead = onSplitAtPlayhead;
         this.tracks = [];
+        this.markers = [];
         this.selectedTrackIds = new Set();
         this.activeProjectFileId = '';
         this.dragState = null;
@@ -131,6 +132,11 @@ export class AdvancedTimeline {
         this.duration = Math.max(0, Number(duration) || 0);
         this.ensureViewportForTime(this.duration, true);
         this.render();
+    }
+
+    setMarkers(markers) {
+        this.markers = Array.isArray(markers) ? markers.map(Number).filter(Number.isFinite).sort((a,b)=>a-b) : [];
+        this.updateMarkers();
     }
 
     setCurrentTime(time) {
@@ -340,6 +346,17 @@ export class AdvancedTimeline {
         this.endMarker.style.left = `${endLeft}px`;
         this.endMarker.style.setProperty('--end-marker-colour', TYPE_CSS_COLOUR[endingTrack?.type] || TYPE_CSS_COLOUR.sticker);
         this.endMarker.hidden = end <= 0;
+        this.markerLayer.querySelectorAll('.timeline-cue-marker').forEach(marker => marker.remove());
+        for (const cue of this.markers) {
+            const mark = document.createElement('div');
+            mark.className = 'timeline-cue-marker';
+            mark.style.left = `${this.labelWidth + cue * this.pixelsPerSecond}px`;
+            mark.setAttribute('aria-label', `Cue marker ${this.formatTime(cue)}`);
+            const caption = document.createElement('span');
+            caption.textContent = `⚑ ${this.formatTime(cue)}`;
+            mark.appendChild(caption);
+            this.markerLayer.appendChild(mark);
+        }
         const label = this.endMarker.querySelector('span');
         if (label) label.textContent = `END ${this.formatTime(end)}`;
     }
@@ -483,7 +500,7 @@ export class AdvancedTimeline {
             for (const track of laneModel.tracks) {
                 const clip = document.createElement('div');
                 const hasSource = Boolean(track.sourceName);
-                clip.className = `timeline-clip ${defaults.className}${hasSource ? '' : ' placeholder'}${this.selectedTrackIds.has(track.id) ? ' selected' : ''}${track.groupId ? ' grouped' : ''}`;
+                clip.className = `timeline-clip ${defaults.className}${hasSource ? '' : ' placeholder'}${this.selectedTrackIds.has(track.id) ? ' selected' : ''}${track.groupId ? ' grouped' : ''}${track.visible === false ? ' is-hidden' : ''}`;
                 clip.dataset.trackId = track.id;
                 this.updateClipStyle(clip, track);
 

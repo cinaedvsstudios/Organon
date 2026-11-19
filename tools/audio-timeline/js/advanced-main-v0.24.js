@@ -6,7 +6,7 @@
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
 import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261119-phase9-gain-image';
-import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
+import { snapshotProject, snapshotClip, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
@@ -23,7 +23,7 @@ import { planClipSnap } from './clip-snap.mjs';
     const BACKGROUND_PATTERN = /\.(jpe?g)$/i;
     const state = {
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
-        contextTrackId: null, dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
+        contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
         history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map()
     };
@@ -50,13 +50,16 @@ import { planClipSnap } from './clip-snap.mjs';
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
         exportOfflineFormat: document.getElementById('export-offline-format'), btnExportOffline: document.getElementById('btn-export-offline'), exportOverlayNote: document.getElementById('export-overlay-note'),
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
-        toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
+        toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'),
+        btnAddMarker: document.getElementById('btn-add-marker'), btnPreviousMarker: document.getElementById('btn-previous-marker'), btnNextMarker: document.getElementById('btn-next-marker'),
+        btnNudgeLeft: document.getElementById('btn-nudge-left'), btnNudgeRight: document.getElementById('btn-nudge-right'),
+        btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
         selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioTrackGain: document.getElementById('audio-track-gain'), audioTrackGainValue: document.getElementById('audio-track-gain-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
-        contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
+        contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), ContextClipActions: ['cut','copy','paste','slice-click','toggle-visible','download-source'].reduce((acc,action)=>{acc[action]=document.getElementById('context-'+action);return acc;},{}), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
     };
 
     const engine = new AdvancedMediaEngine({
@@ -1072,7 +1075,16 @@ import { planClipSnap } from './clip-snap.mjs';
         elements.contextMenuTitle.textContent = track.sourceName || track.laneLabel;
         elements.contextAddLayer.textContent = `➕ Add ${track.type === 'sticker' ? 'Sticker' : track.type === 'video' ? 'Video' : track.type === 'background' ? 'Background' : 'Audio'} layer`;
         elements.contextExtractAudio.hidden = track.type !== 'video' || !track.file;
+        const clipNode=[...document.querySelectorAll('.timeline-clip')].find(node=>node.dataset.trackId===trackId);
+        const workspace=clipNode?.closest('.lane-workspace');
+        state.contextClickTime=workspace
+            ? clamp((x-workspace.getBoundingClientRect().left)/timeline.pixelsPerSecond,0,timeline.getViewDuration())
+            : engine.currentTime;
         elements.contextSplitNow.disabled = !canSplitTrack(track);
+        elements.ContextClipActions['slice-click'].disabled=!canSplitTrack(track,state.contextClickTime);
+        elements.ContextClipActions.paste.disabled=!state.contextClipboard?.file;
+        elements.ContextClipActions['download-source'].disabled=!track.file;
+        elements.ContextClipActions['toggle-visible'].textContent=track.visible===false?'◉ Show clip':'◉ Hide clip';
         elements.contextMenu.hidden = false;
         const maxX = window.innerWidth - elements.contextMenu.offsetWidth - 8;
         const maxY = window.innerHeight - elements.contextMenu.offsetHeight - 8;
@@ -1090,6 +1102,94 @@ import { planClipSnap } from './clip-snap.mjs';
         state.tracks = state.tracks.filter((item) => item.id !== track.id);
         state.selectedTrackIds.delete(track.id); state.selectedTrackId = [...state.selectedTrackIds][0] || null;
         refreshAll(); hideContextMenu();
+    }
+
+    function saveContextClip({cut=false}={}) {
+        const clip=getTrack(state.contextTrackId);
+        if(!clip?.file){hideContextMenu();showToast('Select a loaded media clip first');return;}
+        state.contextClipboard={data:snapshotClip(clip),file:clip.file,sourceId:clip.sourceFileId};
+        if(cut) {
+            recordHistory(`Cut ${clip.sourceName}`);
+            state.tracks=state.tracks.filter(t=>t.id!==clip.id);
+            state.selectedTrackIds.delete(clip.id);
+            state.selectedTrackId=[...state.selectedTrackIds][0]||null;
+            refreshAll();
+        }
+        hideContextMenu();
+        showToast(cut?'Clip cut — right-click and Paste to place it':'Clip copied — right-click and Paste to place it');
+    }
+    async function pasteContextClip() {
+        const target=getTrack(state.contextTrackId);
+        const clipData=state.contextClipboard?.data;
+        const file=state.contextClipboard?.file;
+        const suggestedTime=state.contextClickTime;
+        hideContextMenu();
+        if(!clipData||!file){showToast('Copy or cut a clip first');return;}
+        const sameLane=target?.type===clipData.type;
+        const clone=createTrack(clipData.type,{
+            ...clipData,
+            id:`${clipData.type}-${Date.now()}-${++state.serial}`,
+            laneId:sameLane?target.laneId:undefined,
+            laneLabel:sameLane?target.laneLabel:undefined,
+            label:sameLane?target.label:undefined,
+            order:sameLane?target.order:undefined,
+            start:Math.max(0,suggestedTime),
+            transitionFromId:null,transitionEffectId:null,groupId:null,
+            sourceFileId:state.contextClipboard.sourceId
+        });
+        if(!sameLane){
+            clone.laneId=`${clone.type}-lane-${Date.now()}-${++state.serial}`;
+            clone.order=nextLaneOrder(clone.type);
+            clone.laneLabel=laneName(clone.type,clone.order);
+            clone.label=clone.laneLabel;
+        }
+        try {
+            await engine.loadTrack(clone,file);
+            clone.start=Math.max(0,suggestedTime);
+            clone.sourceOffset=clipData.sourceOffset||0;
+            clone.clipDuration=clipData.clipDuration;
+            clone.visible=clipData.visible;
+            clone.opacity=clipData.opacity;
+            clone.blendMode=clipData.blendMode;
+            clone.audio={...clipData.audio};
+            clone.visualTransitions=normalizeVisualTransitions(clipData.visualTransitions);
+            clone.transparency={...clipData.transparency};
+            fitInsertedClipToLane(clone);
+            recordHistory(`Paste ${clone.sourceName}`);
+            state.tracks.push(clone);
+            refreshAll();selectTrack(clone.id);
+            showToast(`Pasted ${clone.sourceName} at ${formatTime(clone.start)}`);
+        }catch(error) {
+            engine.detachTrack(clone,false);
+            showToast(`Paste failed: ${error.message}`);
+        }
+    }
+    async function sliceContextClip() {
+        const id=state.contextTrackId,time=state.contextClickTime;
+        hideContextMenu();
+        const clip=getTrack(id);
+        if(!canSplitTrack(clip,time)){showToast('Right-click inside a clip to slice it at that position');return;}
+        try { await engine.seek(time);await splitTrackAtNow(id); }
+        catch(error){showToast(`Slice unavailable: ${error.message}`);}
+    }
+    function toggleContextClipVisible() {
+        const clip=getTrack(state.contextTrackId);
+        if(!clip){hideContextMenu();return;}
+        recordHistory(`${clip.visible===false?'Show':'Hide'} ${clip.sourceName||clip.label}`);
+        clip.visible=clip.visible===false;
+        refreshAll();hideContextMenu();
+        showToast(clip.visible?'Clip visible again':'Clip temporarily hidden (not deleted)');
+    }
+    function downloadContextSource() {
+        const clip=getTrack(state.contextTrackId);
+        hideContextMenu();
+        if(!clip?.file){showToast('Source file unavailable — relink the original');return;}
+        const url=URL.createObjectURL(clip.file);
+        const link=document.createElement('a');
+        link.download=clip.sourceName||clip.file.name;link.href=url;
+        document.body.appendChild(link);link.click();link.remove();
+        window.setTimeout(()=>URL.revokeObjectURL(url),15000);
+        showToast('Downloading original source; trimmed-section export is a separate action');
     }
 
     function syncPreviewZoom() {
@@ -1552,7 +1652,62 @@ import { planClipSnap } from './clip-snap.mjs';
     elements.btnRedo.addEventListener('click', () => { redoTimelineEdit(); });
     elements.timelineZoom.addEventListener('input', () => { timeline.setZoom(Number(elements.timelineZoom.value) / 100); syncTimelineZoom(); });
     elements.btnResetTimelineZoom.addEventListener('click', () => { timeline.resetZoom(); syncTimelineZoom(); showToast('Timeline zoom reset'); });
+    function addOrRemoveCueMarker() {
+        const time=Math.max(0,Number(engine.currentTime)||0);
+        const existing=state.timelineMarkers.findIndex(t=>Math.abs(t-time)<.05);
+        if(existing>=0) {
+            state.timelineMarkers.splice(existing,1);
+            showToast(`Removed marker at ${formatTime(time)}`);
+        } else {
+            state.timelineMarkers.push(time);
+            state.timelineMarkers.sort((a,b)=>a-b);
+            showToast(`Added marker at ${formatTime(time)}`);
+        }
+        timeline.setMarkers(state.timelineMarkers);
+    }
+    function moveToCueMarker(direction) {
+        const now=engine.currentTime;
+        const candidates=state.timelineMarkers.filter(t=>direction<0?t<now-.02:t>now+.02);
+        const target=direction<0?candidates[candidates.length-1]:candidates[0];
+        if(target===undefined){showToast(direction<0?'No earlier markers':'No later markers');return;}
+        void engine.seek(target).catch(error=>showToast(error.message));
+    }
+    function nudgeTimeline(direction) {
+        const seconds=direction/Math.max(1,Number(engine.projectFps)||30);
+        if(!state.selectedTrackIds.size) {
+            void engine.seek(Math.max(0,engine.currentTime+seconds))
+                .catch(error=>showToast(error.message));
+            return;
+        }
+        const movingIds=new Set(state.selectedTrackIds);
+        for(const track of state.tracks) {
+            if(track.groupId && state.tracks.some(other=>movingIds.has(other.id)&&other.groupId===track.groupId))
+                movingIds.add(track.id);
+        }
+        const moving=state.tracks.filter(track=>movingIds.has(track.id));
+        if(!moving.length)return;
+        for(const clip of moving) {
+            const start=(Number(clip.start)||0)+seconds;
+            const end=start+Math.max(0,Number(clip.clipDuration)||0);
+            if(start<0 || end>36000) {showToast('Nudge blocked at timeline boundary');return;}
+            const collision=state.tracks.some(other=>!movingIds.has(other.id)
+                && other.sourceName && clip.sourceName
+                && other.laneId===clip.laneId
+                && start < (Number(other.start)||0)+(Number(other.clipDuration)||0)-.0001
+                && end > (Number(other.start)||0)+.0001);
+            if(collision){showToast('Nudge stopped: another clip occupies this track');return;}
+        }
+        recordHistory(`Nudge ${direction<0?'left':'right'} by one frame`);
+        for(const clip of moving) clip.start=Number((Math.max(0,Number(clip.start)||0)+seconds).toFixed(6));
+        refreshAll();
+        showToast(`Nudged ${moving.length} clip(s) ${direction<0?'left':'right'} by one frame`);
+    }
     elements.btnSplitAll.addEventListener('click', splitAllAtNow);
+    elements.btnAddMarker.addEventListener('click',addOrRemoveCueMarker);
+    elements.btnPreviousMarker.addEventListener('click',()=>moveToCueMarker(-1));
+    elements.btnNextMarker.addEventListener('click',()=>moveToCueMarker(1));
+    elements.btnNudgeLeft.addEventListener('click',()=>nudgeTimeline(-1));
+    elements.btnNudgeRight.addEventListener('click',()=>nudgeTimeline(1));
     elements.btnSelectionMode.addEventListener('click', () => { state.selectionMode = !state.selectionMode; timeline.setSelectionMode(state.selectionMode); syncSelectionTools(); showToast(state.selectionMode ? 'Select mode on — click clips to select multiple' : 'Select mode off'); });
     elements.btnGroupSelection.addEventListener('click', groupSelectedTracks);
     elements.btnApplyPairTransition.addEventListener('click', applySelectedVideoPair);
@@ -1570,7 +1725,7 @@ import { planClipSnap } from './clip-snap.mjs';
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
         recordHistory('Clear project');
-        engine.clearAll(); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
+        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
@@ -1665,6 +1820,12 @@ import { planClipSnap } from './clip-snap.mjs';
     registerInspectorHistory(elements.stickerKeyTolerance, 'Change sticker tolerance');
     registerInspectorHistory(elements.stickerEdgeFeather, 'Change sticker feather');
 
+    elements.ContextClipActions.cut.addEventListener('click',()=>saveContextClip({cut:true}));
+    elements.ContextClipActions.copy.addEventListener('click',()=>saveContextClip());
+    elements.ContextClipActions.paste.addEventListener('click',()=>{void pasteContextClip();});
+    elements.ContextClipActions['slice-click'].addEventListener('click',()=>{void sliceContextClip();});
+    elements.ContextClipActions['toggle-visible'].addEventListener('click',toggleContextClipVisible);
+    elements.ContextClipActions['download-source'].addEventListener('click',downloadContextSource);
     elements.contextSplitNow.addEventListener('click', async () => { await splitTrackAtNow(state.contextTrackId); hideContextMenu(); });
     elements.contextAddLayer.addEventListener('click', addLayerFromContext);
     elements.contextExtractAudio.addEventListener('click', async () => { await extractAudioFromSelectedVideo(); hideContextMenu(); });
@@ -1679,6 +1840,9 @@ import { planClipSnap } from './clip-snap.mjs';
             event.preventDefault();
             void deleteSelectedTracks();
             return;
+        }
+        if(!isTyping && event.altKey && (event.key==='ArrowLeft'||event.key==='ArrowRight')) {
+            event.preventDefault();nudgeTimeline(event.key==='ArrowLeft'?-1:1);return;
         }
         if (!modifier || isTyping) return;
         if (event.key.toLowerCase() === 'z' && !event.shiftKey) { event.preventDefault(); undoTimelineEdit(); }
