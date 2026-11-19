@@ -2,7 +2,7 @@
 
 Adds original Canvas 2D interpretations of Sphere, Snapshot, Gallery and Brokey dissolve. The 41 selected labels and IDs remain unchanged; all 41 are marked available in this development branch.
 
-This branch depends on **Phase 8N PR #56** and must not be merged independently into `main` before Phase 8N passes its validation gates.
+This branch contains the Phase 8N changes from **PR #56** and must not be merged before PR #56 passes validation and lands on `main`. PR #57 is targeted at `main` for independent GitHub Actions validation; after PR #56 merges, review the final PR #57 diff again.
 
 ## Required checks before merging
 
@@ -12,4 +12,4 @@ This branch depends on **Phase 8N PR #56** and must not be merged independently 
 4. `node tools/audio-timeline/tests/paired-transitions.browser.mjs` — import two actual MP4s, select all 41, verify overlap markers and undo/redo.
 5. Firefox, 1080p 120-second export, audio continuity and memory regression workflow.
 
-**Not yet verified:** this session could commit source and test updates but did not execute Node, browser or export suites. Do not treat test source changes as passing test results.
+**Validation status (19 November 2026):** Phase 8N transition smoke and Firefox/WebKit jobs passed. The extended export job was still running when this note was updated. Phase 8O's own 41-effect CI has not yet been confirmed passing. Do not merge either PR solely on the basis of test source changes.
