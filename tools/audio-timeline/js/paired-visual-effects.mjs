@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8E: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8F: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -117,6 +117,48 @@ function traceRingMask(ctx,progress,width,height) {
             radius*(i+1)/count,-Math.PI/2,1);
     }
 }
+/** Each square is covered briefly by an opaque slate tile before B replaces it.
+ * Stable cell permutations avoid changing the effect during seek/export.
+ * Unlike Random squares, the cover stage is a visibly separate state.
+ */
+export function blockCoverState(progress,cellIndex) {
+    const p=unit(progress);
+    if(p<=0)return 'old';
+    if(p>=1)return 'new';
+    const delay=seededCell(cellIndex)*.55;
+    if(p<=delay)return 'old';
+    return p<delay+.17?'cover':'new';
+}
+/** Two passes of ±45-degree diagonal hatching widen to reveal incoming B. */
+export function crossHatchWidth(progress,orientation=0) {
+    const p=unit(progress);
+    const delay=orientation===0?0:.18;
+    return unit((p-delay)/(1-delay))*.95;
+}
+function traceCrossHatch(context,progress,width,height) {
+    const pitch=Math.max(16,Math.min(width,height)/3);
+    const left=-height,right=width+height;
+    context.beginPath();
+    for(let orientation=0;orientation<2;orientation++){
+        const half=pitch*crossHatchWidth(progress,orientation)/2;
+        if(half<=0)continue;
+        const slope=orientation===0?1:-1;
+        for(let intercept=-width-height;intercept<=width+height;intercept+=pitch){
+            const y0=slope*left+intercept,y1=slope*right+intercept;
+            context.moveTo(left,y0-half);
+            context.lineTo(right,y1-half);
+            context.lineTo(right,y1+half);
+            context.lineTo(left,y0+half);
+            context.closePath();
+        }
+    }
+}
+/** Alternating film frames enter from opposite edges with staggered timing. */
+export function filmStripProgress(progress,row,count=5){
+    const n=Math.max(1,Math.trunc(count)||5);
+    const i=Math.min(n-1,Math.max(0,Math.trunc(row)||0));
+    return unit((unit(progress)-i*.065)/.74);
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -174,6 +216,14 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
+    if(id==='cross-hatch'){
+        context.save();
+        traceCrossHatch(context,progress,width,height);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        return true;
+    }
     if(id==='pixelize'){
         const block=pixelScale(progress);
         const small=scratchCanvas(renderer,'transitionPixelScratch',
@@ -217,6 +267,56 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
+    if(id==='block-cover'){
+        const cols=10,rows=6;
+        context.save();
+        for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+            const sx=Math.floor(col*width/cols),sy=Math.floor(row*height/rows);
+            const ex=col===cols-1?width:Math.floor((col+1)*width/cols);
+            const ey=row===rows-1?height:Math.floor((row+1)*height/rows);
+            const state=blockCoverState(progress,row*cols+col);
+            if(state==='old')continue;
+            if(state==='cover'){
+                context.fillStyle=(row+col)%2===0?'#253348':'#ae8050';
+                context.fillRect(sx,sy,ex-sx,ey-sy);
+            }else{
+                context.drawImage(full,sx,sy,ex-sx,ey-sy,sx,sy,ex-sx,ey-sy);
+            }
+        }
+        context.restore();
+        return true;
+    }
+    if(id==='film-strip'){
+        // Five sliding strips with narrow dark film-frame bars and light
+        // perforations. Each strip is moved by clipping to a growing window;
+        // outgoing A remains untouched beneath the unrevealed region.
+        const count=5;
+        context.save();
+        for(let row=0;row<count;row++){
+            const y=Math.floor(row*height/count);
+            const yEnd=row===count-1?height:Math.floor((row+1)*height/count);
+            const bandHeight=yEnd-y;
+            const p=filmStripProgress(progress,row,count);
+            if(p<=0)continue;
+            const shown=Math.min(width,Math.ceil(width*p));
+            const x=row%2===0?0:width-shown;
+            context.drawImage(full,x,y,shown,bandHeight,x,y,shown,bandHeight);
+            const rail=Math.max(1,Math.round(bandHeight*.13));
+            context.fillStyle='#141414';
+            context.fillRect(x,y,shown,rail);
+            context.fillRect(x,yEnd-rail,shown,rail);
+            context.fillStyle='#e6d9b6';
+            const holeWidth=Math.max(2,Math.round(width/65));
+            const holeHeight=Math.max(1,Math.floor(rail/2));
+            for(let hx=Math.ceil(x/(holeWidth*6))*(holeWidth*6);hx<x+shown;hx+=holeWidth*6){
+                if(hx+holeWidth>x+shown)break;
+                context.fillRect(hx,y+Math.floor((rail-holeHeight)/2),holeWidth,holeHeight);
+                context.fillRect(hx,yEnd-rail+Math.floor((rail-holeHeight)/2),holeWidth,holeHeight);
+            }
+        }
+        context.restore();
+        return true;
+    }
     if(id==='color-panel-wipe'){
         // Six tinted panels sweep over A before revealing their portion of B.
         // Each panel is a bounded draw, with no new full-resolution textures.
