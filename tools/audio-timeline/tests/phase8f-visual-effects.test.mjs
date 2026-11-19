@@ -17,7 +17,7 @@ test('8F retains all 41 wishlist entries and enables exactly three additional ef
     assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
     assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
     for(const id of newEffects)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'available');
 });
 
 test('Block cover cells move old → opaque temporary cover → new monotonically',()=>{
