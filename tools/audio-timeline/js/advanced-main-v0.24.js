@@ -693,6 +693,87 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         elements.pairTransitionDuration.value=String(Math.min(Math.max(.1,original),Math.max(.1,max)));
         elements.btnApplyPairTransition.disabled=max<.1;
     }
+    const visualPropertyFactor = property => ['transform.scale','transform.opacity'].includes(property)?100:1;
+    function syncVisualInspectorValues() {
+        const track=getTrack();
+        if(!track || state.selectedTrackIds.size!==1 || !VISIBLE_VISUAL_TYPES.has(track.type))return;
+        for(const input of elements.visualInputs){
+            const property=input.dataset.visualParam;
+            const value=visualParameterAt(track,property,engine.currentTime)*visualPropertyFactor(property);
+            if(document.activeElement!==input) input.value=String(Number(value.toFixed(2)));
+            const output=document.querySelector('[data-visual-output="'+property+'"]');
+            const unit=property==='transform.scale'||property==='transform.opacity'?'%'
+                :property==='transform.rotation'?'°':property==='transform.x'||property==='transform.y'?'px':'';
+            if(output)output.textContent=Number(value.toFixed(1))+unit;
+        }
+        for(const button of elements.visualKeyframes){
+            const property=button.dataset.keyframe;
+            const local=clamp(engine.currentTime-(Number(track.start)||0),0,Math.max(0,Number(track.clipDuration)||0));
+            const active=(track.keyframes?.[property]||[]).some(frame=>Math.abs(frame.time-local)<.03);
+            button.classList.toggle('active',active);
+            button.textContent=active?'◆':'◇';
+            button.setAttribute('aria-pressed',String(active));
+        }
+        elements.visualBlendMode.value=track.blendMode||'source-over';
+        const speed=clamp(Number(track.speed)||1,.25,4);
+        elements.visualSpeed.value=String(Math.round(speed*100));
+        elements.visualSpeedValue.textContent=speed.toFixed(2)+'×';
+        elements.visualSpeedDuration.textContent=formatSeconds(track.clipDuration);
+    }
+    function updateVisualProperty(input) {
+        const track=getTrack(),property=input.dataset.visualParam;
+        if(!track || !VISIBLE_VISUAL_TYPES.has(track.type) || !property)return;
+        let raw=Number(input.value);
+        if(!Number.isFinite(raw))return;
+        const group=property.split('.')[0],key=property.split('.')[1];
+        const value=raw/visualPropertyFactor(property);
+        if((track.keyframes?.[property]||[]).length){
+            upsertVisualKeyframe(track,property,engine.currentTime,value);
+        } else {
+            track[group] ||= {};
+            track[group][key]=value;
+        }
+        engine.renderFrame();
+        syncVisualInspectorValues();
+    }
+    function toggleVisualKeyframe(button) {
+        const track=getTrack(),property=button.dataset.keyframe;
+        if(!track || !VISIBLE_VISUAL_TYPES.has(track.type))return;
+        const local=clamp(engine.currentTime-(Number(track.start)||0),0,Math.max(0,Number(track.clipDuration)||0));
+        const existing=(track.keyframes?.[property]||[]).some(frame=>Math.abs(frame.time-local)<.03);
+        const value=visualParameterAt(track,property,engine.currentTime);
+        recordHistory(`${existing?'Remove':'Add'} ${property} keyframe`);
+        upsertVisualKeyframe(track,property,engine.currentTime,value,{remove:existing});
+        syncVisualInspectorValues();
+        engine.renderFrame();
+    }
+    function updateVisualSpeed() {
+        const track=getTrack();
+        if(track?.type!=='video'||!track.file)return;
+        const requested=clamp(Number(elements.visualSpeed.value)/100,.25,4);
+        const previous=clamp(Number(track.speed)||1,.25,4);
+        if(Math.abs(requested-previous)<.001)return;
+        const nextDuration=Math.max(.15,Math.min(
+            (Number(track.clipDuration)||1)*previous/requested,
+            Math.max(.15,(Number(track.sourceDuration)||1)-(Number(track.sourceOffset)||0))/requested));
+        const nextEnd=(Number(track.start)||0)+nextDuration;
+        const blocked=state.tracks.some(other=>other.id!==track.id && other.sourceName
+            && other.laneId===track.laneId
+            && (Number(track.start)||0)<(Number(other.start)||0)+(Number(other.clipDuration)||0)-.001
+            && nextEnd>(Number(other.start)||0)+.001);
+        if(blocked){
+            elements.visualSpeed.value=String(previous*100);
+            showToast('Speed change blocked: clip would overlap a neighbour');
+            return;
+        }
+        track.speed=requested;
+        track.clipDuration=nextDuration;
+        if(track.media && 'playbackRate' in track.media)track.media.playbackRate=requested;
+        refreshAll();
+        syncVisualInspectorValues();
+        showToast(`Clip playback speed ${requested.toFixed(2)}× · ${formatSeconds(nextDuration)}`);
+    }
+
     function syncInspector() {
         const track = getTrack();
         const multiple = state.selectedTrackIds.size > 1;
@@ -1887,6 +1968,19 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
     elements.stickerKeyTolerance.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.tolerance = Number(elements.stickerKeyTolerance.value); elements.stickerKeyToleranceValue.textContent = `${track.transparency.tolerance}%`; engine.renderFrame(); });
     elements.stickerEdgeFeather.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.feather = Number(elements.stickerEdgeFeather.value); elements.stickerEdgeFeatherValue.textContent = `${track.transparency.feather}%`; engine.renderFrame(); });
 
+    elements.visualInputs.forEach(input=>{
+        input.addEventListener('input',()=>updateVisualProperty(input));
+        registerInspectorHistory(input,'Adjust '+input.dataset.visualParam);
+    });
+    elements.visualKeyframes.forEach(button=>button.addEventListener('click',()=>toggleVisualKeyframe(button)));
+    elements.visualBlendMode.addEventListener('change',()=>{
+        const track=getTrack();if(!track||!VISIBLE_VISUAL_TYPES.has(track.type))return;
+        recordHistory('Change visual blend mode');
+        track.blendMode=elements.visualBlendMode.value;
+        engine.renderFrame();syncInspector();
+    });
+    elements.visualSpeed.addEventListener('pointerdown',()=>recordHistory('Adjust clip speed'));
+    elements.visualSpeed.addEventListener('input',updateVisualSpeed);
     registerInspectorHistory(elements.videoAudioVolume, 'Change video audio volume');
     registerInspectorHistory(elements.videoAudioGain, 'Change video audio gain');
     registerInspectorHistory(elements.videoOpacity, 'Change video opacity');
