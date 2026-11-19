@@ -1,4 +1,4 @@
-/** Phase 8C–8N: verify actual Canvas 2D pixels for thirty-three additional selected transitions.
+/** Phase 8C–8O: verify actual Canvas 2D pixels for thirty-three additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,7 +82,7 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','brokey-dissolve']){
             b.transitionEffectId=effect;
             b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','liquid-fill','disintegrate','light-rays','color-codes'].includes(effect)?source('red'):source('stripes');
             results[effect]={
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','brokey-dissolve']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -334,7 +334,7 @@ try{
         'Prisms must use spectral radial facets rather than triangular Refraction tiles');
     assert.notEqual(prisms.middle.fingerprint,result.vortex.middle.fingerprint,
         'Prisms must differ from swirling annular Vortex');
-    for(const id of ['spiralblockwipe','hologram','crumple']){
+    for(const id of ['spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','brokey-dissolve']){
         const frame=result[id];
         assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,id+' must scrub deterministically');
         assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,id+' must differ from Fade');
@@ -343,9 +343,15 @@ try{
     assert.notEqual(result.spiralblockwipe.middle.fingerprint,result['spiral-wipe'].middle.fingerprint);
     assert.notEqual(result.hologram.middle.fingerprint,result['vhs-tracking'].middle.fingerprint);
     assert.notEqual(result.crumple.middle.fingerprint,result.refraction.middle.fingerprint);
+    for(const id of ['sphere','snapshot','gallery','brokey-dissolve']){
+        const frame=result[id];
+        assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,id+' must be deterministic');
+        assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,id+' must differ from Fade');
+        assert.notDeepEqual(frame.finished.center,[0,0,255],id+' must finish on B');
+    }
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8N] PASS real Chrome 37-effect pixel checks (ASCII, Color codes, Prisms), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8O] PASS real Chrome 41-effect pixel checks (ASCII, Color codes, Prisms), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
