@@ -425,7 +425,7 @@ export function disintegrateFragmentProgress(progress,index){
     const p=unit(progress);
     if(p===0)return 0;
     if(p===1)return 1;
-    const delay=seededCell(index*41+107)*.57;
+    const delay=seededCell(index*41+107)*.67;
     return unit((p-delay)/.40);
 }
 export function disintegrateFragmentOffset(progress,index,width,height) {
