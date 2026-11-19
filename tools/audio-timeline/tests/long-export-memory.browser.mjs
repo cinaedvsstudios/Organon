@@ -93,16 +93,25 @@ const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromiu
 assert.ok(chrome,'Chrome unavailable');
 const browser=await chromium.launch({executablePath:chrome,headless:true,
     args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs',
-        ...(process.env.MOTORICLIP_LONGFORM==='1'?['--js-flags=--expose-gc']:[])]});
+        ...((process.env.MOTORICLIP_LONGFORM==='1'||process.env.MOTORICLIP_FULLHD120==='1')?['--js-flags=--expose-gc']:[])]});
 try{
     const context=await browser.newContext({acceptDownloads:true});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
     await page.goto('http://127.0.0.1:'+server.address().port+
         '/tools/audio-timeline/tests/browser-harness.html');
-    const longform=process.env.MOTORICLIP_LONGFORM==='1';
-    const phase=longform?'6K':'6G';
-    const scenarios=longform ? [
+    const fullHd120=process.env.MOTORICLIP_FULLHD120==='1';
+    const longform=process.env.MOTORICLIP_LONGFORM==='1'||fullHd120;
+    const phase=fullHd120?'6L':longform?'6K':'6G';
+    const scenarios=fullHd120 ? [
+        {
+            // 16 staggered 8.4s clips from two 10s H.264/AAC camera-like sources;
+            // last clip ends at 118.65s, leaving a testable silent tail.
+            name:'1080p-120s-motion-16clips',format:'mp4',width:1920,height:1080,
+            duration:120,fps:30,bitrateKbps:5000,clipCount:16,
+            clipStep:7.35,clipDuration:8.4
+        }
+    ] : longform ? [
         {
             name:'1080p-60s-motion-8clips',format:'mp4',width:1920,height:1080,
             duration:60,fps:30,bitrateKbps:5000,clipCount:8,
@@ -323,6 +332,20 @@ try{
         }
     }
     assert.deepEqual(errors,[],'Browser uncaught errors');
+    if(fullHd120){
+        // A second observation after closing the Playwright context, because
+        // GC within a still-open tab does not necessarily reclaim native media.
+        const beforeContextClose=chromeMemory(process.pid);
+        await context.close();
+        await new Promise(resolve=>setTimeout(resolve,1500));
+        const afterContextClose=chromeMemory(process.pid);
+        assert.ok(beforeContextClose.pssKiB!==null&&afterContextClose.pssKiB!==null,
+            'Native PSS sampling unavailable during context-close recovery');
+        console.log('[MotoriClip 6L] CONTEXT CLOSE '+JSON.stringify({
+            chromePssBeforeCloseMiB:Number((beforeContextClose.pssKiB/1024).toFixed(1)),
+            chromePssAfterCloseMiB:Number((afterContextClose.pssKiB/1024).toFixed(1))
+        }));
+    }
     console.log('[MotoriClip '+phase+'] PASS completed long moving-video exports and native PSS samples '+JSON.stringify(records));
 }finally{
     await browser.close();

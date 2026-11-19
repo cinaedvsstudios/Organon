@@ -74,6 +74,12 @@ jobs:
           CHROME_BIN: /usr/bin/google-chrome
           MOTORICLIP_LONGFORM: '1'
         run: node tools/audio-timeline/tests/long-export-memory.browser.mjs
+      - name: Verify 120-second 1080p MP4 and context-close Chrome memory recovery
+        timeout-minutes: 14
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+          MOTORICLIP_FULLHD120: '1'
+        run: node tools/audio-timeline/tests/long-export-memory.browser.mjs
       - name: Measure repeated exports and post-GC Chrome memory recovery
         env:
           CHROME_BIN: /usr/bin/google-chrome
