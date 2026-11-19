@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8F: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8G: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -159,6 +159,33 @@ export function filmStripProgress(progress,row,count=5){
     const i=Math.min(n-1,Math.max(0,Math.trunc(row)||0));
     return unit((unit(progress)-i*.065)/.74);
 }
+/** Card swipe: an intact rectangular B frame enters as a card from right. */
+export function cardSwipeOffset(progress,width) {
+    return (1-unit(progress))*width;
+}
+/** One stable camera displacement per frame, rather than Math.random(),
+ * with a sinusoidal shake envelope that returns to rest at both endpoints.
+ */
+export function cameraShakeOffset(progress,frame,width,height) {
+    const p=unit(progress);
+    const envelope=Math.sin(Math.PI*p);
+    const tick=Math.floor(Number.isFinite(Number(frame))?Number(frame):0);
+    return {
+        x:Math.round((seededCell(tick*71+3)*2-1)*Math.min(30,width*.09)*envelope),
+        y:Math.round((seededCell(tick*71+8)*2-1)*Math.min(22,height*.12)*envelope)
+    };
+}
+/** VHS tracking has a persistent rolling bar and horizontal offsets, quite
+ * distinct from the intermittent blanked bands of Glitch flicker.
+ */
+export function vhsTrackingShift(progress,band,frame,width) {
+    const p=unit(progress);
+    if(p>=1)return 0;
+    const tick=Math.floor(Number.isFinite(Number(frame))?Number(frame):0);
+    const noise=seededCell(tick*139+band*17+11)*2-1;
+    const drift=Math.sin(tick*.37+band*.83);
+    return Math.round((noise*.75+drift*.25)*Math.min(34,width*.085)*(1-p));
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -267,6 +294,63 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
+    if(id==='card-swipe'){
+        const dx=cardSwipeOffset(progress,width);
+        context.save();
+        // The shadow and thin card edge separate the incoming B frame from
+        // the outgoing A without altering either video source.
+        context.fillStyle='rgba(0,0,0,.6)';
+        context.fillRect(Math.max(0,dx-7),0,8,height);
+        context.drawImage(full,dx,0,width,height);
+        context.fillStyle='rgba(245,228,198,.95)';
+        context.fillRect(dx,0,Math.max(1,Math.round(width*.009)),height);
+        context.restore();
+        return true;
+    }
+    if(id==='camera-shake'){
+        const from=renderer.tracks.find(t=>t.id===track.transitionFromId);
+        const source=progress<.5?(from?.media||media):media;
+        if(source&&(source.readyState===undefined||source.readyState>=2)){
+            sc.clearRect(0,0,width,height);
+            renderContained(sc,source,width,height);
+        }
+        const {x,y}=cameraShakeOffset(progress,Math.floor(time*30),width,height);
+        context.save();
+        context.fillStyle='#08080c';
+        context.fillRect(0,0,width,height);
+        context.drawImage(full,x,y,width,height);
+        const flash=Math.max(0,1-Math.abs(progress-.5)/.09);
+        if(flash>0){
+            context.globalAlpha=alpha*.42*flash;
+            context.fillStyle='#fff';
+            context.fillRect(0,0,width,height);
+        }
+        context.restore();
+        return true;
+    }
+    if(id==='vhs-tracking'){
+        const bands=24,frame=Math.floor(time*24);
+        context.save();
+        context.globalAlpha=alpha*(.28+progress*.72);
+        for(let row=0;row<bands;row++){
+            const y=Math.floor(row*height/bands);
+            const next=row===bands-1?height:Math.floor((row+1)*height/bands);
+            const dx=vhsTrackingShift(progress,row,frame,width);
+            context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
+        }
+        // A strong rolling tracking line and fine scanlines produce an
+        // analog tape feel; their phase is a pure function of time.
+        const scanY=Math.floor((frame*7 % (height+24)))-12;
+        context.globalAlpha=alpha*(1-progress)*.55;
+        context.fillStyle='#73c7cf';
+        context.fillRect(0,scanY,width,Math.max(2,Math.round(height*.045)));
+        context.globalAlpha=alpha*(1-progress)*.19;
+        context.fillStyle='#d4c4ef';
+        const stride=Math.max(3,Math.round(height/28));
+        for(let y=0;y<height;y+=stride)context.fillRect(0,y,width,1);
+        context.restore();
+        return true;
+    }
     if(id==='block-cover'){
         const cols=10,rows=6;
         context.save();
