@@ -203,6 +203,30 @@ Regression checklist:
 
 [Phase 8E QA](./MOTORICLIP_PHASE8E_QA.md).
 
+## Phase 8F — Block cover, Cross hatch and Film strip [MERGED]
+
+[PR #48](https://github.com/cinaedvsstudios/Organon/pull/48) merged 19 November 2026 at `18a6e9afeeca92d1867bd73bd8e2f27005332535`, after all three [CI jobs 44464562638](https://github.com/cinaedvsstudios/Organon/actions/runs/44464562638) passed: **129/129 Node tests**, real Chrome pixels and 13-effect Advanced editor, Firefox compatibility and full 120-second 1080p MP4 export/memory regressions.
+
+- **Block cover:** A 10×6 deterministic mosaic changes tile-by-tile through old A → temporary slate/gold cover → fully opaque B.
+- **Cross hatch:** Two staggered families of diagonal stripes widen to reveal B in intersecting bands.
+- **Film strip:** Five alternating horizontal film frames slide in with dark frame borders and pale sprocket/perforation marks.
+- **Effect library status after 8F:** 41 selected / 13 working / 28 queued. All use shared preview/export rendering and preserve original media and audio.
+
+[Phase 8F QA](./MOTORICLIP_PHASE8F_QA.md).
+
+## Phase 8G — Card swipe, Camera shake and VHS tracking [MERGED]
+
+[PR #49](https://github.com/cinaedvsstudios/Organon/pull/49) merged 19 November 2026 at `17579c305baab42cd2299c6841a2cd2bae7af1da`, after all three [CI jobs 44465971423](https://github.com/cinaedvsstudios/Organon/actions/runs/44465971423) passed: **134/134 Node tests**, real Chrome 16-effect pixels and two-video editor/Undo/Redo, Firefox, 720p/1080p real media, full 120-second 1080p H.264/AAC MP4 (3,600 frames, 16 moving clips) and memory recovery.
+
+- **Card swipe:** An intact Video B card enters from the right with a shadow and thin pale leading border over A.
+- **Camera shake:** A shakes, a short white flash marks the switch, and B shakes into place; timestamp-derived jitter returns exactly to zero at each boundary.
+- **VHS tracking:** 24 drifting horizontal bands, a rolling cyan tracking line and pale analog scanlines decay into clean Video B. This is distinct from earlier Glitch flicker.
+- **Current user-selected catalog:** **41 original names / 16 implemented / 25 queued**; available choices appear in the same Pair Video A → Video B inspector. Original selected spelling/order remains stable; future names can be appended.
+- **Limits unchanged:** Non-destructive videos and original linked audio, existing 120-second export limit, no automatic audio crossfade and no alpha-bearing file export. These Canvas interpretations are not pixel-identical shader copies or physical Windows/Android device certification.
+- **Future increments:** Implement remaining user-selected effects in batches; optionally add transition-specific parameters, timeline duration handles and presets.
+
+[Phase 8G QA](./MOTORICLIP_PHASE8G_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
