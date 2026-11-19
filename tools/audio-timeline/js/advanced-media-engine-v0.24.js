@@ -10,6 +10,7 @@ import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from
 import { isPairedFadeActive } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
+import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -169,7 +170,7 @@ export class AdvancedMediaEngine {
                 // per-clip volume, mute and fade controls.
                 visual.preload = 'auto'; visual.playsInline = true;
                 visual.muted = false; visual.volume = 1;
-                visual.playbackRate = 1; visual.src = track.objectUrl;
+                visual.playbackRate = Math.min(4,Math.max(.25,Number(track.speed)||1)); visual.src = track.objectUrl;
                 this.mediaBin.appendChild(visual);
                 track.media = visual;
                 await waitForMediaReady(visual, 'loadedmetadata', { signal:loadController.signal, label:file.name });
@@ -180,7 +181,7 @@ export class AdvancedMediaEngine {
             } else if (track.type === 'audio') {
                 const audio = document.createElement('audio');
                 checkBrowserMediaSupport(audio, file, { audioFromVideo:track.type === 'audio' });
-                audio.preload = 'auto'; audio.playbackRate = 1; audio.src = track.objectUrl;
+                audio.preload = 'auto'; audio.playbackRate = Math.min(4,Math.max(.25,Number(track.speed)||1)); audio.src = track.objectUrl;
                 this.mediaBin.appendChild(audio);
                 track.media = audio;
                 await waitForMediaReady(audio, 'loadedmetadata', { signal:loadController.signal, label:file.name });
@@ -348,6 +349,7 @@ export class AdvancedMediaEngine {
     }
     setTrackMediaTime(track, time) {
         const localTime = getTrackSourceTime(track, time);
+        if(track.media && 'playbackRate' in track.media)track.media.playbackRate=Math.min(4,Math.max(.25,Number(track.speed)||1));
         if (track.type === 'video') {
             try { if (track.media) track.media.currentTime = localTime; } catch (_) { /* no-op */ }
         } else if (track.type === 'audio') {
@@ -571,6 +573,7 @@ export class AdvancedMediaEngine {
                             && isPairedFadeActive(track,this.tracks);
                         this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1)
                             * visualFadeOpacity(track, this.currentTime, {ignoreEnter:pairedSpatial});
+                        applyVisualContext(this.context,track,this.currentTime,width,height);
                         if (track.media.readyState === undefined || track.media.readyState >= 2) {
                             const painted = pairedSpatial && paintPairedEffect(this,this.context,track,width,height,this.currentTime,drawContained);
                             if (!painted) {
@@ -578,6 +581,7 @@ export class AdvancedMediaEngine {
                                 else if (track.type === 'video') drawContained(this.context, track.media, width, height);
                                 else if (track.type === 'sticker') this.drawSticker(track, width, height);
                             }
+                            if(track.type!=='sticker')drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {
                         // Do not break the entire composite because one layer

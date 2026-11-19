@@ -15,6 +15,7 @@ import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './c
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -59,6 +60,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         btnAddMarker: document.getElementById('btn-add-marker'), btnPreviousMarker: document.getElementById('btn-previous-marker'), btnNextMarker: document.getElementById('btn-next-marker'),
         btnNudgeLeft: document.getElementById('btn-nudge-left'), btnNudgeRight: document.getElementById('btn-nudge-right'),
         btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
+        visualTools: document.getElementById('inspector-visual-tools'), visualInputs: [...document.querySelectorAll('[data-visual-param]')], visualKeyframes: [...document.querySelectorAll('[data-keyframe]')], visualBlendMode: document.getElementById('visual-blend-mode'), visualSpeedPanel: document.getElementById('visual-speed-panel'), visualSpeed: document.getElementById('visual-speed'), visualSpeedValue: document.getElementById('visual-speed-value'), visualSpeedDuration: document.getElementById('visual-speed-duration'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
@@ -268,13 +270,17 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
             visible: true,
             opacity: 1,
             blendMode: 'source-over',
+            transform: { ...DEFAULT_TRANSFORM },
+            adjustments: { ...DEFAULT_ADJUSTMENTS },
+            keyframes: {},
+            speed:1,
             groupId: null,
             transitionFromId: null, transitionEffectId: null,
             audio: { volume: 1, gain: 0, muted: false, fadeIn: 0, fadeOut: 0 },
             visualTransitions: normalizeVisualTransitions(),
             transparency: { mode: 'native', keyColour: '#00ff00', tolerance: 30, feather: 8 }
         };
-        return { ...base, ...extras, audio: { ...base.audio, ...(extras.audio || {}) }, transparency: { ...base.transparency, ...(extras.transparency || {}) }, visualTransitions: normalizeVisualTransitions(extras.visualTransitions) };
+        return { ...base, ...extras, audio: { ...base.audio, ...(extras.audio || {}) }, transparency: { ...base.transparency, ...(extras.transparency || {}) }, visualTransitions: normalizeVisualTransitions(extras.visualTransitions), transform:{...base.transform,...(extras.transform||{})}, adjustments:{...base.adjustments,...(extras.adjustments||{})}, keyframes:Object.fromEntries(Object.entries(extras.keyframes||{}).map(([key,frames])=>[key,Array.isArray(frames)?frames.map(frame=>({...frame})):[]])) };
     }
 
     function greatestCommonDivisor(a, b) { let x = Math.abs(a), y = Math.abs(b); while (y) [x, y] = [y, x % y]; return x || 1; }
@@ -626,6 +632,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         if (!state.isSeeking) { elements.previewSeek.max = String(safeDuration); elements.previewSeek.value = String(Math.min(safeCurrent, safeDuration)); }
         elements.previewSeek.disabled = safeDuration <= 0;
         timeline.setCurrentTime(safeCurrent);
+        syncVisualInspectorValues();
         elements.previewEmpty.hidden = state.tracks.some((track) => track.type === 'video' && track.sourceName);
     }
     function setPlayButton(isPlaying) { elements.btnPlay.textContent = isPlaying ? '⏸️' : '▶️'; elements.btnPlay.title = isPlaying ? 'Pause preview' : 'Play preview'; }
@@ -686,6 +693,87 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         elements.pairTransitionDuration.value=String(Math.min(Math.max(.1,original),Math.max(.1,max)));
         elements.btnApplyPairTransition.disabled=max<.1;
     }
+    const visualPropertyFactor = property => ['transform.scale','transform.opacity'].includes(property)?100:1;
+    function syncVisualInspectorValues() {
+        const track=getTrack();
+        if(!track || state.selectedTrackIds.size!==1 || !VISIBLE_VISUAL_TYPES.has(track.type))return;
+        for(const input of elements.visualInputs){
+            const property=input.dataset.visualParam;
+            const value=visualParameterAt(track,property,engine.currentTime)*visualPropertyFactor(property);
+            if(document.activeElement!==input) input.value=String(Number(value.toFixed(2)));
+            const output=document.querySelector('[data-visual-output="'+property+'"]');
+            const unit=property==='transform.scale'||property==='transform.opacity'?'%'
+                :property==='transform.rotation'?'°':property==='transform.x'||property==='transform.y'?'px':'';
+            if(output)output.textContent=Number(value.toFixed(1))+unit;
+        }
+        for(const button of elements.visualKeyframes){
+            const property=button.dataset.keyframe;
+            const local=clamp(engine.currentTime-(Number(track.start)||0),0,Math.max(0,Number(track.clipDuration)||0));
+            const active=(track.keyframes?.[property]||[]).some(frame=>Math.abs(frame.time-local)<.03);
+            button.classList.toggle('active',active);
+            button.textContent=active?'◆':'◇';
+            button.setAttribute('aria-pressed',String(active));
+        }
+        elements.visualBlendMode.value=track.blendMode||'source-over';
+        const speed=clamp(Number(track.speed)||1,.25,4);
+        elements.visualSpeed.value=String(Math.round(speed*100));
+        elements.visualSpeedValue.textContent=speed.toFixed(2)+'×';
+        elements.visualSpeedDuration.textContent=formatSeconds(track.clipDuration);
+    }
+    function updateVisualProperty(input) {
+        const track=getTrack(),property=input.dataset.visualParam;
+        if(!track || !VISIBLE_VISUAL_TYPES.has(track.type) || !property)return;
+        let raw=Number(input.value);
+        if(!Number.isFinite(raw))return;
+        const group=property.split('.')[0],key=property.split('.')[1];
+        const value=raw/visualPropertyFactor(property);
+        if((track.keyframes?.[property]||[]).length){
+            upsertVisualKeyframe(track,property,engine.currentTime,value);
+        } else {
+            track[group] ||= {};
+            track[group][key]=value;
+        }
+        engine.renderFrame();
+        syncVisualInspectorValues();
+    }
+    function toggleVisualKeyframe(button) {
+        const track=getTrack(),property=button.dataset.keyframe;
+        if(!track || !VISIBLE_VISUAL_TYPES.has(track.type))return;
+        const local=clamp(engine.currentTime-(Number(track.start)||0),0,Math.max(0,Number(track.clipDuration)||0));
+        const existing=(track.keyframes?.[property]||[]).some(frame=>Math.abs(frame.time-local)<.03);
+        const value=visualParameterAt(track,property,engine.currentTime);
+        recordHistory(`${existing?'Remove':'Add'} ${property} keyframe`);
+        upsertVisualKeyframe(track,property,engine.currentTime,value,{remove:existing});
+        syncVisualInspectorValues();
+        engine.renderFrame();
+    }
+    function updateVisualSpeed() {
+        const track=getTrack();
+        if(track?.type!=='video'||!track.file)return;
+        const requested=clamp(Number(elements.visualSpeed.value)/100,.25,4);
+        const previous=clamp(Number(track.speed)||1,.25,4);
+        if(Math.abs(requested-previous)<.001)return;
+        const nextDuration=Math.max(.15,Math.min(
+            (Number(track.clipDuration)||1)*previous/requested,
+            Math.max(.15,(Number(track.sourceDuration)||1)-(Number(track.sourceOffset)||0))/requested));
+        const nextEnd=(Number(track.start)||0)+nextDuration;
+        const blocked=state.tracks.some(other=>other.id!==track.id && other.sourceName
+            && other.laneId===track.laneId
+            && (Number(track.start)||0)<(Number(other.start)||0)+(Number(other.clipDuration)||0)-.001
+            && nextEnd>(Number(other.start)||0)+.001);
+        if(blocked){
+            elements.visualSpeed.value=String(previous*100);
+            showToast('Speed change blocked: clip would overlap a neighbour');
+            return;
+        }
+        track.speed=requested;
+        track.clipDuration=nextDuration;
+        if(track.media && 'playbackRate' in track.media)track.media.playbackRate=requested;
+        refreshAll();
+        syncVisualInspectorValues();
+        showToast(`Clip playback speed ${requested.toFixed(2)}× · ${formatSeconds(nextDuration)}`);
+    }
+
     function syncInspector() {
         const track = getTrack();
         const multiple = state.selectedTrackIds.size > 1;
@@ -696,6 +784,8 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         elements.inspectorAudio.hidden = multiple || track?.type !== 'audio';
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         updatePairInspector();
+        elements.visualTools.hidden = !track || multiple || !VISIBLE_VISUAL_TYPES.has(track.type);
+        elements.visualSpeedPanel.hidden = track?.type !== 'video';
         if (!track || multiple) return;
         if (track.type === 'video') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
@@ -760,6 +850,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
             elements.stickerKeyTolerance.value = String(settings.tolerance ?? 30); elements.stickerKeyToleranceValue.textContent = `${settings.tolerance ?? 30}%`;
             elements.stickerEdgeFeather.value = String(settings.feather ?? 8); elements.stickerEdgeFeatherValue.textContent = `${settings.feather ?? 8}%`;
         }
+        syncVisualInspectorValues();
     }
 
     function refreshAll() {
@@ -1013,6 +1104,20 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         return Boolean(track?.file && time > start + .04 && time < end - .04);
     }
 
+    function splitClipKeyframes(track,cutOffset) {
+        const left={},right={};
+        for(const [property,frames] of Object.entries(track.keyframes||{})){
+            if(!Array.isArray(frames)||!frames.length)continue;
+            const value=visualParameterAt(track,property,(Number(track.start)||0)+cutOffset);
+            left[property]=[...frames.filter(frame=>frame.time<cutOffset-.001).map(frame=>({...frame})),
+                {time:Number(cutOffset.toFixed(3)),value}];
+            right[property]=[{time:0,value},
+                ...frames.filter(frame=>frame.time>cutOffset+.001).map(frame=>({
+                    time:Number((frame.time-cutOffset).toFixed(3)),value:frame.value
+                }))];
+        }
+        return {left,right};
+    }
     async function splitTrackAtNow(trackId, { record = true } = {}) {
         const track = getTrack(trackId);
         if (!canSplitTrack(track)) { showToast('Move the now line inside a clip before splitting'); return false; }
@@ -1020,6 +1125,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         const leftDuration = cutTime - track.start;
         const rightDuration = track.clipDuration - leftDuration;
         const transitionParts=splitVisualTransitions(track.visualTransitions);
+        const keyframeParts=splitClipKeyframes(track,leftDuration);
         const split = createTrack(track.type, {
             laneId: track.laneId,
             laneLabel: track.laneLabel,
@@ -1032,6 +1138,8 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
             opacity: track.opacity,
             blendMode: track.blendMode,
             audio: { ...track.audio },
+            transform: {...(track.transform||{})}, adjustments:{...(track.adjustments||{})},
+            keyframes:keyframeParts.right,speed:track.speed||1,
             visualTransitions: transitionParts.right,
             transparency: { ...track.transparency },
             groupId: track.groupId,
@@ -1050,7 +1158,8 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         }
         if (record) recordHistory(`Split ${track.sourceName || track.laneLabel}`);
         track.clipDuration = leftDuration;
-        if(track.type==='video')track.visualTransitions=transitionParts.left;
+        if(VISIBLE_VISUAL_TYPES.has(track.type))track.visualTransitions=transitionParts.left;
+        track.keyframes=keyframeParts.left;
         split.clipDuration = rightDuration;
         state.tracks.push(split);
         refreshAll(); selectTrack(split.id);
@@ -1100,6 +1209,8 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
                 opacity: original.opacity,
                 blendMode: original.blendMode,
                 audio: { ...original.audio },
+                transform:{...(original.transform||{})}, adjustments:{...(original.adjustments||{})},
+                keyframes:original.keyframes,speed:original.speed||1,
                 visualTransitions: normalizeVisualTransitions(original.visualTransitions),
                 transparency: { ...original.transparency },
                 groupId: null,
@@ -1115,6 +1226,9 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
             clone.opacity = original.opacity;
             clone.blendMode = original.blendMode;
             clone.audio = { ...original.audio };
+            clone.transform={...(original.transform||{})};clone.adjustments={...(original.adjustments||{})};
+            clone.keyframes=Object.fromEntries(Object.entries(original.keyframes||{}).map(([key,frames])=>[key,frames.map(frame=>({...frame}))]));
+            clone.speed=original.speed||1;
             clone.visualTransitions = normalizeVisualTransitions(original.visualTransitions);
             clone.transparency = { ...original.transparency };
             clone.analysis = original.analysis ? { ...original.analysis, levels: Array.isArray(original.analysis.levels) ? [...original.analysis.levels] : original.analysis.levels } : null;
@@ -1877,6 +1991,19 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
     elements.stickerKeyTolerance.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.tolerance = Number(elements.stickerKeyTolerance.value); elements.stickerKeyToleranceValue.textContent = `${track.transparency.tolerance}%`; engine.renderFrame(); });
     elements.stickerEdgeFeather.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.feather = Number(elements.stickerEdgeFeather.value); elements.stickerEdgeFeatherValue.textContent = `${track.transparency.feather}%`; engine.renderFrame(); });
 
+    elements.visualInputs.forEach(input=>{
+        input.addEventListener('input',()=>updateVisualProperty(input));
+        registerInspectorHistory(input,'Adjust '+input.dataset.visualParam);
+    });
+    elements.visualKeyframes.forEach(button=>button.addEventListener('click',()=>toggleVisualKeyframe(button)));
+    elements.visualBlendMode.addEventListener('change',()=>{
+        const track=getTrack();if(!track||!VISIBLE_VISUAL_TYPES.has(track.type))return;
+        recordHistory('Change visual blend mode');
+        track.blendMode=elements.visualBlendMode.value;
+        engine.renderFrame();syncInspector();
+    });
+    elements.visualSpeed.addEventListener('pointerdown',()=>recordHistory('Adjust clip speed'));
+    elements.visualSpeed.addEventListener('input',updateVisualSpeed);
     registerInspectorHistory(elements.videoAudioVolume, 'Change video audio volume');
     registerInspectorHistory(elements.videoAudioGain, 'Change video audio gain');
     registerInspectorHistory(elements.videoOpacity, 'Change video opacity');

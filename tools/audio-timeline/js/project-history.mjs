@@ -9,7 +9,7 @@ export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
     'start', 'sourceOffset', 'sourceDuration', 'clipDuration',
     'sourceFileId', 'sourceName', 'fileType',
-    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom', 'transitionFromId', 'transitionEffectId'
+    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom', 'transitionFromId', 'transitionEffectId', 'speed'
 ]);
 
 export function snapshotClip(track) {
@@ -20,6 +20,11 @@ export function snapshotClip(track) {
     data.transitionFromId = track.transitionFromId || null;
     data.transitionEffectId = track.transitionEffectId || null;
     data.audio = { volume:1, muted:false, fadeIn:0, fadeOut:0, ...(track.audio || {}) };
+    data.transform = { ...(track.transform||{}) };
+    data.adjustments = { ...(track.adjustments||{}) };
+    data.keyframes = Object.fromEntries(Object.entries(track.keyframes||{}).map(([key,frames])=>[
+        key,Array.isArray(frames)?frames.map(frame=>({...frame})):[]
+    ]));
     data.visualTransitions = normalizeVisualTransitions(track.visualTransitions);
     data.transparency = {
         mode:'native', keyColour:'#00ff00', tolerance:30, feather:8,
@@ -88,6 +93,11 @@ export function applyClipData(target, record) {
     target.transitionFromId = record.transitionFromId || null;
     target.transitionEffectId = record.transitionEffectId || null;
     target.audio = { ...record.audio };
+    target.transform = { ...(record.transform||{}) };
+    target.adjustments = { ...(record.adjustments||{}) };
+    target.keyframes = Object.fromEntries(Object.entries(record.keyframes||{}).map(([key,frames])=>[
+        key,Array.isArray(frames)?frames.map(frame=>({...frame})):[]
+    ]));
     target.visualTransitions = normalizeVisualTransitions(record.visualTransitions);
     target.transparency = { ...record.transparency };
     target.analysis = record.analysis ? {

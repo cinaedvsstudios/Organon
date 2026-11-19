@@ -20,7 +20,8 @@ export function getTrackSourceTime(track, timelineTime) {
     const start = Number(track?.start) || 0;
     const sourceOffset = Math.max(0, Number(track?.sourceOffset) || 0);
     const sourceDuration = Number(track?.sourceDuration);
-    const sourceTime = Math.max(0, sourceOffset + (Number(timelineTime) || 0) - start);
+    const speed = Math.min(4,Math.max(.25,Number(track?.speed)||1));
+    const sourceTime = Math.max(0, sourceOffset + ((Number(timelineTime) || 0) - start)*speed);
     return Number.isFinite(sourceDuration) && sourceDuration > 0
         ? Math.min(sourceTime, sourceDuration)
         : sourceTime;
