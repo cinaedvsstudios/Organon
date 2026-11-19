@@ -1,4 +1,4 @@
-/** Phase 8C–8I: verify actual Canvas 2D pixels for twenty-one additional selected transitions.
+/** Phase 8C–8J: verify actual Canvas 2D pixels for twenty-four additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,9 +82,9 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -221,9 +221,40 @@ try{
         'Splatter should expand from left to right as time advances');
     assert.ok(ink.finished.red>1300&&splatter.finished.red>1300,
         'Both masks must resolve to a clean incoming B source');
+    const cell=result['cell-dissolve'],bloom=result['bloom-dissolve'],smoke=result['smoke-dissolve'];
+    console.log('[MotoriClip 8J] New midpoint samples '+JSON.stringify({
+        cell:cell.middle,bloom:bloom.middle,smoke:smoke.middle
+    }));
+    assert.ok(cell.middle.red>150&&cell.middle.blue>150,
+        'Cell dissolve must show open and unopened hexagonal areas');
+    assert.ok(cell.middle.mixed>4,
+        'Cell dissolve must use antialiased growing cell edges, not hard square tiles');
+    assert.notEqual(cell.middle.fingerprint,result['random-squares'].middle.fingerprint,
+        'Cell dissolve must differ from random squares');
+    assert.notEqual(cell.middle.fingerprint,result['ink-bleed'].middle.fingerprint,
+        'Cell dissolve must differ from ink bleed');
+    assert.ok(bloom.middle.mixed>500,'Bloom dissolve must blend the two source videos');
+    assert.ok(bloom.middle.center[1]>10,
+        'Bloom dissolve must introduce white glow at the center rather than a plain fade');
+    assert.notEqual(bloom.middle.fingerprint,result.fade.middle.fingerprint,
+        'Bloom dissolve must visibly differ from a plain fade');
+    assert.notEqual(bloom.middle.fingerprint,cell.middle.fingerprint,
+        'Bloom must differ from the growing cell mask');
+    assert.ok(smoke.middle.mixed>500,'Smoke dissolve must create a translucent midframe');
+    assert.ok(smoke.middle.center[1]>6,
+        'Smoke must introduce pale grey cloudy color over the video');
+    assert.notEqual(smoke.middle.fingerprint,bloom.middle.fingerprint,
+        'Smoke and Bloom must be visually distinct');
+    assert.notEqual(smoke.middle.fingerprint,result.fade.middle.fingerprint,
+        'Smoke dissolve must not be a disguised fade');
+    assert.ok(smoke.quarter.blue>0||smoke.quarter.mixed>0,
+        'Outgoing A must remain represented early in the smoke reveal');
+    assert.equal(cell.middle.fingerprint,cell.repeat.fingerprint);
+    assert.equal(bloom.middle.fingerprint,bloom.repeat.fingerprint);
+    assert.equal(smoke.middle.fingerprint,smoke.repeat.fingerprint);
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8I] PASS real Chrome 22-effect pixel checks (Paper tear, Ink bleed, Splatter wipe), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8J] PASS real Chrome 25-effect pixel checks (Cell, Bloom, Smoke dissolve), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));

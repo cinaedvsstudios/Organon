@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8I: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8J: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -302,6 +302,60 @@ function traceSplatter(ctx,progress,width,height){
             (seededCell(i+101)-.5)*.8,0,2*Math.PI);
     }
 }
+/** Phase 8J: hexagonal cellular reveals begin in stable shuffled order.
+ * Unlike Random squares, each growing, offset cell is a six-sided island.
+ */
+export function cellDissolveGrowth(progress,index) {
+    const p=unit(progress);
+    if(p<=0)return 0;
+    if(p>=1)return 1;
+    const delay=seededCell(index*71+31)*.57;
+    return unit((p-delay)/.38);
+}
+function traceCellDissolve(ctx,progress,width,height) {
+    const columns=12,rows=7,tileW=width/columns,tileH=height/rows;
+    ctx.beginPath();
+    for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
+        const i=row*columns+col,growth=cellDissolveGrowth(progress,i);
+        if(growth<=0)continue;
+        const cx=(col+.5+(seededCell(i*13+51)-.5)*.24)*tileW;
+        const cy=(row+.5+(seededCell(i*19+81)-.5)*.24)*tileH;
+        const rx=tileW*.73*growth,ry=tileH*.76*growth;
+        for(let v=0;v<6;v++){
+            const a=Math.PI*(v/3+1/6);
+            const x=cx+Math.cos(a)*rx,y=cy+Math.sin(a)*ry;
+            if(v===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+        }
+        ctx.closePath();
+    }
+}
+/** A brief overexposed glow accompanies B's entrance, settling to zero
+ * at both endpoints and leaving the ordinary rendered B at completion.
+ */
+export function bloomPulse(progress) {
+    const p=unit(progress);
+    if(p===0||p===1)return 0;
+    return Math.pow(Math.sin(Math.PI*p),1.35);
+}
+/** Soft smoke clouds drift sideways with a time-derived, per-cloud vertical
+ * wobble. No random state is consumed during seeks or fixed-frame export.
+ */
+export function smokeCloud(progress,index,width,height) {
+    const p=unit(progress),col=index%6,row=Math.floor(index/6);
+    const drift=p*width*.66;
+    return {
+        x:(col/6-.15)*width+drift+(seededCell(index*31+101)-.5)*width*.16,
+        y:(row+.45)*height/3+
+            Math.sin(p*9+index*1.17)*height*.07+
+            (seededCell(index*29+211)-.5)*height*.10,
+        radius:Math.min(width,height)*(.28+seededCell(index*17+317)*.20)
+    };
+}
+export function smokeDensity(progress) {
+    const p=unit(progress);
+    if(p===0||p===1)return 0;
+    return Math.sin(Math.PI*p);
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -398,6 +452,69 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             context.stroke();
             context.restore();
         }
+        return true;
+    }
+    if(id==='cell-dissolve'){
+        context.save();
+        traceCellDissolve(context,progress,width,height);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        // A soft hand-off closes any small gaps between tessellated hexagons.
+        // Cells remain plainly recognizable in early and middle frames.
+        if(progress>.84){
+            context.save();
+            context.globalAlpha=alpha*unit((progress-.84)/.16);
+            renderContained(context,media,width,height);
+            context.restore();
+        }
+        return true;
+    }
+    if(id==='bloom-dissolve'){
+        context.save();
+        context.globalAlpha=alpha*progress;
+        renderContained(context,media,width,height);
+        const glow=bloomPulse(progress);
+        if(glow>0){
+            context.globalCompositeOperation='screen';
+            context.globalAlpha=alpha*glow*.68;
+            context.filter='blur('+Math.max(2,Math.round(Math.min(width,height)*.045))+'px) brightness(1.7)';
+            renderContained(context,media,width,height);
+            context.filter='none';
+            const gradient=context.createRadialGradient(
+                width*.52,height*.47,0,width*.52,height*.47,
+                Math.hypot(width,height)*.68);
+            gradient.addColorStop(0,'rgba(255,255,255,.9)');
+            gradient.addColorStop(.42,'rgba(255,242,218,.4)');
+            gradient.addColorStop(1,'rgba(255,245,220,0)');
+            context.globalAlpha=alpha*glow*.48;
+            context.fillStyle=gradient;
+            context.fillRect(0,0,width,height);
+        }
+        context.restore();
+        return true;
+    }
+    if(id==='smoke-dissolve'){
+        context.save();
+        context.globalAlpha=alpha*progress;
+        renderContained(context,media,width,height);
+        const density=smokeDensity(progress);
+        if(density>0){
+            for(let i=0;i<18;i++){
+                const cloud=smokeCloud(progress,i,width,height);
+                const gradient=context.createRadialGradient(
+                    cloud.x,cloud.y,0,cloud.x,cloud.y,cloud.radius);
+                gradient.addColorStop(0,'rgba(222,227,237,.90)');
+                gradient.addColorStop(.36,'rgba(193,203,221,.45)');
+                gradient.addColorStop(.75,'rgba(159,170,195,.13)');
+                gradient.addColorStop(1,'rgba(159,170,195,0)');
+                context.globalAlpha=alpha*density*(.32+seededCell(i+407)*.2);
+                context.fillStyle=gradient;
+                context.fillRect(cloud.x-cloud.radius,cloud.y-cloud.radius,
+                    cloud.radius*2,cloud.radius*2);
+            }
+        }
+        context.restore();
         return true;
     }
     if(id==='spin'){

@@ -11,9 +11,9 @@ const chosen=['paper-tear','ink-bleed','splatter-wipe'];
 test('8I preserves the complete 41-name wishlist and enables only three more',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(-3),chosen);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,22);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,19);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(19,22),chosen);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,25);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,16);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
 });
