@@ -22,7 +22,14 @@ Gold regions mark active fade extents at each video clip edge in the timeline. T
 
 New Node regression cases cover default behaviour, alpha at entrance/exit boundaries, curve/overlap calculations, deep-copy history, split metadata and render-engine alpha independent of linked sound. A real-Chrome canvas test renders blue and red overlapping sources at six timestamps, compares actual pixel colours and verifies schematic controls are present. Existing Chrome/Firefox, multi-clip exports and long-form performance CI must continue to pass.
 
-**Status at authoring:** PR CI pending; do not merge without successful checks.
+**Verified and merged:** [PR #43](https://github.com/cinaedvsstudios/Organon/pull/43) was merged as commit `2f0938ea0884518437b13b6ab96f559693e80b1c` after all three jobs passed in [GitHub Actions 44448320745](https://github.com/cinaedvsstudios/Organon/actions/runs/44448320745).
+
+- **101/101 Node tests passed**, including all six new fade/undo/compositing assertions.
+- Actual Chrome canvas test passed pixel checks at six moments: blue before B, blue at B's start, magenta midpoint (RGB 128,0,126), red at full B, magenta at B's exit midpoint, blue after B; inspector schematic controls were verified.
+- Real Chrome MP4/WebM export regression, repeated-export memory tests, and synthetic portrait/rotation checks passed. In particular, full 120-second 1080p MP4 decoded 3,600 frames with audio, and the existing 120-second 720p WebM export still passed.
+- Existing Firefox and Linux WebKit compatibility/safety tests passed unchanged.
+
+**Important scope:** This verifies the first independently adjustable alpha-fade implementation, **not** automatic transition pairing or transparent-alpha file export. Physical Windows/Android camera-media acceptance remains unverified.
 
 ## Later increments (not yet included)
 
