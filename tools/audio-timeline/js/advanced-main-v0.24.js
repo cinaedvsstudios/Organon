@@ -646,6 +646,7 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
                 return;
             }
             if (!track.clipDuration) track.clipDuration = (track.type === 'sticker' || track.type === 'background') ? 3 : track.sourceDuration || 1;
+            fitInsertedClipToLane(track);
             refreshAll(); selectTrack(track.id);
             elements.previewState.textContent = `Loaded ${entry.name}`;
             if (track.type === 'audio' || track.type === 'video') {
@@ -712,6 +713,22 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         return true;
     }
 
+    function fitInsertedClipToLane(track) {
+        if (!track?.sourceName || !track.clipDuration) return;
+        const existing = state.tracks.filter((other) => other.id !== track.id
+            && other.laneId === track.laneId && other.sourceName)
+            .sort((a,b) => (Number(a.start)||0)-(Number(b.start)||0));
+        let candidate = Math.max(0, Number(track.start)||0);
+        const duration = Math.max(.15, Number(track.clipDuration)||0);
+        for (const other of existing) {
+            const start = Number(other.start)||0, end = start + Math.max(.15,Number(other.clipDuration)||0);
+            if (candidate + duration <= start + .001) break;
+            if (candidate >= end - .001) continue;
+            candidate = end;
+        }
+        track.start = candidate;
+    }
+
     async function placeProjectFile({ fileId, laneId, laneType, start }) {
         const entry = getFile(fileId);
         if (!entry) return;
@@ -719,14 +736,15 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         const laneTracks = laneId ? state.tracks.filter((track) => track.laneId === laneId) : [];
         let track = null;
         let created = false;
-        if (entry.kind !== 'video') {
-            track = laneTracks.find((candidate) => !candidate.sourceName && candidate.type === entry.kind) || null;
-            if (!track && laneTracks.length && laneType === entry.kind) {
-                const lane = laneTracks[0];
-                track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
-                state.tracks.push(track);
-                created = true;
-            }
+        track = laneTracks.find((candidate) => !candidate.sourceName && candidate.type === entry.kind) || null;
+        if (!track && laneTracks.length && laneType === entry.kind) {
+            // Adding media onto an existing lane should reuse it rather than
+            // silently multiplying tracks. The new clip is placed after any
+            // occupied region when necessary.
+            const lane = laneTracks[0];
+            track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
+            state.tracks.push(track);
+            created = true;
         }
         if (!track) { track = createTrack(entry.kind); state.tracks.push(track); created = true; }
         await loadTrackFromFile(track, entry, start, { removeOnFailure: created });
@@ -1453,7 +1471,7 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         }
     });
 
-    document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\\s+/g,' ').slice(0,90); });
+    document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
