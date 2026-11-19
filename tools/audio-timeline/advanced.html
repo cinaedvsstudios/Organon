@@ -314,6 +314,21 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .asset-preset-card:active {cursor:grabbing;}
 .asset-preset-card canvas {display:block;width:100%;aspect-ratio:16/9;background:#141719;border-radius:6px;}
 .asset-preset-card span {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:.51rem var(--font-mono);padding:3px 0 0;}
+
+.advanced-visual-panel details {border-top:1px solid rgba(137,107,73,.42);padding:6px 0;}
+.advanced-visual-panel summary {cursor:pointer;font:700 .68rem var(--font-mono);color:var(--stone-ochre);padding:3px 0;}
+.visual-property-row {display:grid;grid-template-columns:minmax(62px,.85fr) minmax(40px,1fr) 48px 25px;gap:5px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(137,107,73,.12);font:.55rem var(--font-body);}
+.visual-property-row label {overflow:hidden;text-overflow:ellipsis;}
+.visual-property-row input[type=range] {width:100%;min-width:30px;accent-color:var(--brand-red);}
+.visual-property-row input[type=number] {width:100%;min-width:0;padding:4px 2px;text-align:center;border:1px solid var(--chiseled-bronze);border-radius:5px;background:#101214;color:var(--alabaster-paper);font:.57rem var(--font-mono);}
+.visual-property-row output {text-align:right;color:var(--water-spray);font:.55rem var(--font-mono);white-space:nowrap;}
+.visual-keyframe-btn {display:grid;place-items:center;width:24px;height:24px;padding:0;border:0;border-radius:5px;background:transparent;color:#9a9ca0;cursor:pointer;font-size:17px;}
+.visual-keyframe-btn:hover,.visual-keyframe-btn.active {color:var(--stone-ochre);background:rgba(227,183,92,.2);}
+.visual-speed-row {grid-template-columns:minmax(70px,.9fr) minmax(60px,1fr) 50px;}
+.visual-info-row {display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px;margin-top:6px;font:.55rem var(--font-body);}
+.visual-group-label {margin:7px 0 2px;color:rgba(245,240,219,.62);border-bottom:1px solid rgba(137,107,73,.3);font:.55rem var(--font-mono);}
+.visual-note {margin:5px 0;color:rgba(245,240,219,.56);font:.51rem/1.5 var(--font-body);}
+.advanced-visual-panel .compact-select {max-width:128px;}
 </style>
 </head>
 <body>
@@ -522,6 +537,110 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <div class="control-row"><span>Edge feather</span><span class="value-pill" id="sticker-edge-feather-value">8%</span></div>
                     <input type="range" class="range-control" id="sticker-edge-feather" min="0" max="100" value="8" aria-label="Sticker chroma key edge feather">
                 </section>
+
+                <section class="control-card advanced-visual-panel" id="inspector-visual-tools" hidden>
+                    <h3>Visual clip adjustments</h3>
+                    <details open>
+                        <summary>Transform</summary>
+                        <div class="visual-property-row">
+            <label for="visual-transform-scale">Scale</label>
+            <input type="range" id="visual-transform-scale" data-visual-param="transform.scale" min="10" max="500" step="1" value="100" aria-label="Scale" />
+            <output data-visual-output="transform.scale">100%</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="transform.scale" title="Add or remove keyframe at the playhead for Scale" aria-label="Toggle Scale keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-transform-x">Position X</label>
+            <input type="number" id="visual-transform-x" data-visual-param="transform.x" min="-4000" max="4000" step="1" value="0" aria-label="Position X" />
+            <output data-visual-output="transform.x">0px</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="transform.x" title="Add or remove keyframe at the playhead for Position X" aria-label="Toggle Position X keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-transform-y">Position Y</label>
+            <input type="number" id="visual-transform-y" data-visual-param="transform.y" min="-4000" max="4000" step="1" value="0" aria-label="Position Y" />
+            <output data-visual-output="transform.y">0px</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="transform.y" title="Add or remove keyframe at the playhead for Position Y" aria-label="Toggle Position Y keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-transform-rotation">Rotation</label>
+            <input type="range" id="visual-transform-rotation" data-visual-param="transform.rotation" min="-360" max="360" step="1" value="0" aria-label="Rotation" />
+            <output data-visual-output="transform.rotation">0°</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="transform.rotation" title="Add or remove keyframe at the playhead for Rotation" aria-label="Toggle Rotation keyframe">◇</button>
+        </div>
+                    </details>
+                    <details id="visual-speed-panel" open>
+                        <summary>Speed</summary>
+                        <div class="visual-property-row visual-speed-row">
+                            <label for="visual-speed">Playback speed</label>
+                            <input id="visual-speed" type="range" min="25" max="400" value="100" step="5" aria-label="Clip playback speed percentage">
+                            <output id="visual-speed-value">1.00×</output>
+                        </div>
+                        <div class="visual-info-row"><span>Result duration</span><output id="visual-speed-duration">0.0s</output></div>
+                        <p class="visual-note">Changes clip duration and playback rate. Fixed-frame beta exports change audio pitch with speed.</p>
+                    </details>
+                    <details open>
+                        <summary>Blend</summary>
+                        <label class="visual-info-row"><span>Mode</span>
+                            <select class="compact-select" id="visual-blend-mode">
+                                <option value="source-over">Default</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option>
+                            </select>
+                        </label>
+                        <div class="visual-property-row">
+            <label for="visual-transform-opacity">Keyframed opacity</label>
+            <input type="range" id="visual-transform-opacity" data-visual-param="transform.opacity" min="0" max="100" step="1" value="100" aria-label="Keyframed opacity" />
+            <output data-visual-output="transform.opacity">100%</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="transform.opacity" title="Add or remove keyframe at the playhead for Keyframed opacity" aria-label="Toggle Keyframed opacity keyframe">◇</button>
+        </div>
+                    </details>
+                    <details open>
+                        <summary>Adjust</summary>
+                        <div class="visual-group-label">Colour</div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-temperature">Temperature</label>
+            <input type="range" id="visual-adjustments-temperature" data-visual-param="adjustments.temperature" min="-100" max="100" step="1" value="0" aria-label="Temperature" />
+            <output data-visual-output="adjustments.temperature">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.temperature" title="Add or remove keyframe at the playhead for Temperature" aria-label="Toggle Temperature keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-tint">Tint</label>
+            <input type="range" id="visual-adjustments-tint" data-visual-param="adjustments.tint" min="-100" max="100" step="1" value="0" aria-label="Tint" />
+            <output data-visual-output="adjustments.tint">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.tint" title="Add or remove keyframe at the playhead for Tint" aria-label="Toggle Tint keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-saturation">Saturation</label>
+            <input type="range" id="visual-adjustments-saturation" data-visual-param="adjustments.saturation" min="-100" max="200" step="1" value="0" aria-label="Saturation" />
+            <output data-visual-output="adjustments.saturation">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.saturation" title="Add or remove keyframe at the playhead for Saturation" aria-label="Toggle Saturation keyframe">◇</button>
+        </div>
+                        <div class="visual-group-label">Lightness</div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-exposure">Exposure</label>
+            <input type="range" id="visual-adjustments-exposure" data-visual-param="adjustments.exposure" min="-100" max="100" step="1" value="0" aria-label="Exposure" />
+            <output data-visual-output="adjustments.exposure">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.exposure" title="Add or remove keyframe at the playhead for Exposure" aria-label="Toggle Exposure keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-brightness">Brightness</label>
+            <input type="range" id="visual-adjustments-brightness" data-visual-param="adjustments.brightness" min="-100" max="100" step="1" value="0" aria-label="Brightness" />
+            <output data-visual-output="adjustments.brightness">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.brightness" title="Add or remove keyframe at the playhead for Brightness" aria-label="Toggle Brightness keyframe">◇</button>
+        </div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-contrast">Contrast</label>
+            <input type="range" id="visual-adjustments-contrast" data-visual-param="adjustments.contrast" min="-100" max="200" step="1" value="0" aria-label="Contrast" />
+            <output data-visual-output="adjustments.contrast">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.contrast" title="Add or remove keyframe at the playhead for Contrast" aria-label="Toggle Contrast keyframe">◇</button>
+        </div>
+                        <div class="visual-group-label">Effect</div>
+                        <div class="visual-property-row">
+            <label for="visual-adjustments-vignette">Vignette</label>
+            <input type="range" id="visual-adjustments-vignette" data-visual-param="adjustments.vignette" min="0" max="100" step="1" value="0" aria-label="Vignette" />
+            <output data-visual-output="adjustments.vignette">0</output>
+            <button type="button" class="visual-keyframe-btn" data-keyframe="adjustments.vignette" title="Add or remove keyframe at the playhead for Vignette" aria-label="Toggle Vignette keyframe">◇</button>
+        </div>
+                    </details>
+                    <p class="visual-note">Diamond ◆ sets a keyframe at the current playhead. Move the playhead, then change the slider to animate. Colour controls use browser canvas filters.</p>
+                </section>
             </div>
         </aside>
     </main>
@@ -604,7 +723,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-phase9c-asset-library"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-phase9d-keyframes"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
