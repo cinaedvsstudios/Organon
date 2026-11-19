@@ -1304,10 +1304,30 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
     elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
     elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
     elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);
+    // Portal the floating menu to <body>: the timeline and editor cards
+    // intentionally clip their contents, but must never clip a menu.
+    document.body.appendChild(elements.trackTypeMenu);
+    function positionTrackMenu() {
+        if (elements.trackTypeMenu.hidden) return;
+        const anchor = elements.btnAddTrack.getBoundingClientRect();
+        const menu = elements.trackTypeMenu;
+        const width = menu.offsetWidth;
+        const height = menu.offsetHeight;
+        const left = clamp(anchor.left, 8, Math.max(8, window.innerWidth - width - 8));
+        const below = anchor.bottom + 6;
+        const above = anchor.top - height - 6;
+        const top = below + height <= window.innerHeight - 8
+            ? below : above >= 8 ? above : clamp(below, 8, Math.max(8, window.innerHeight - height - 8));
+        menu.style.left = `${Math.round(left)}px`;
+        menu.style.top = `${Math.round(top)}px`;
+    }
     elements.btnAddTrack.addEventListener('click', () => {
         elements.trackTypeMenu.hidden = !elements.trackTypeMenu.hidden;
         elements.btnAddTrack.setAttribute('aria-expanded', String(!elements.trackTypeMenu.hidden));
+        positionTrackMenu();
     });
+    window.addEventListener('resize', positionTrackMenu);
+    document.addEventListener('scroll', positionTrackMenu, true);
     elements.trackTypeMenu.querySelectorAll('[data-add-track-type]').forEach((button) => button.addEventListener('click', () => {
         const type = button.dataset.addTrackType;
         if (!['video','audio','sticker','background'].includes(type)) return;
@@ -1328,7 +1348,11 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
     });
     elements.btnToggleRuler.addEventListener('click', () => {
         elements.timelineRuler.hidden = !elements.timelineRuler.hidden;
-        elements.btnToggleRuler.setAttribute('aria-pressed', String(!elements.timelineRuler.hidden));
+        const visible = !elements.timelineRuler.hidden;
+        elements.btnToggleRuler.setAttribute('aria-pressed', String(visible));
+        elements.btnToggleRuler.title = visible
+            ? 'Hide timeline ruler (click the numbers to move the playhead)'
+            : 'Show timeline ruler (click the numbers to move the playhead)';
     });
     for (const modal of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) {
         modal.querySelector('[data-close-modal]').addEventListener('click', closeEditorModals);
