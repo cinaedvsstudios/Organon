@@ -11,11 +11,11 @@ const selected=['card-swipe','camera-shake','vhs-tracking'];
 test('8G preserves every selected gallery effect and enables exactly three new effects',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,34);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,7);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(13,16),selected);
     for(const id of selected)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='hologram')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='hologram')?.status,'available');
 });
 test('Card swipe moves an intact frame right-to-left at a stable speed',()=>{
     assert.equal(cardSwipeOffset(0,192),192);

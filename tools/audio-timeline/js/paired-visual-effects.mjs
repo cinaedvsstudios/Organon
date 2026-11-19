@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8M: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8N: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -504,6 +504,30 @@ export function prismFacetOffset(progress,facet,width,height) {
     };
 }
 /** Create or resize a scratch canvas held by the renderer instance. */
+
+/** Phase 8N: stable per-cell spiral order, no frame-to-frame randomness. */
+export function spiralBlockProgress(progress,index,cols=12,rows=8){
+    if(unit(progress)===0)return 0;
+    if(unit(progress)===1)return 1;
+    const x=index%cols,y=Math.floor(index/cols);
+    const angle=(Math.atan2(y-(rows-1)/2,x-(cols-1)/2)+Math.PI)/(2*Math.PI);
+    const distance=Math.hypot((x-(cols-1)/2)/cols,(y-(rows-1)/2)/rows);
+    return unit((unit(progress)-(.57*angle+.18*distance))/.34);
+}
+/** A hologram scans in without ever modifying the original video pixels. */
+export function hologramStrength(progress,row=0){
+    const p=unit(progress);
+    return Math.sin(Math.PI*p)*(.6+.4*Math.sin(row*1.71+11*p)**2);
+}
+/** Deterministic paper fold displacement that closes at both endpoints. */
+export function crumpleFold(progress,index,width,height){
+    const p=unit(progress);
+    if(p===0||p===1)return {x:0,y:0};
+    const envelope=Math.sin(Math.PI*p);
+    return {x:(seededCell(index*17+41)*2-1)*width*.12*envelope,
+        y:(seededCell(index*19+67)*2-1)*height*.12*envelope};
+}
+
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
     if(!canvas)canvas=renderer[key]=document.createElement('canvas');
@@ -526,6 +550,66 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const alpha=context.globalAlpha;
     const media=track.media;
 
+
+    if(id==='spiralblockwipe'||id==='hologram'||id==='crumple'){
+        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
+        const fc=full.getContext('2d');
+        fc.clearRect(0,0,width,height);
+        renderContained(fc,media,width,height);
+        context.save();
+        if(id==='spiralblockwipe'){
+            const cols=12,rows=8;
+            for(let i=0;i<cols*rows;i++){
+                const x=i%cols,y=Math.floor(i/cols);
+                const x0=Math.floor(x*width/cols),y0=Math.floor(y*height/rows);
+                const x1=Math.ceil((x+1)*width/cols),y1=Math.ceil((y+1)*height/rows);
+                const p=spiralBlockProgress(progress,i,cols,rows);
+                if(p<=0)continue;
+                const w=x1-x0,h=y1-y0;
+                context.save();
+                context.translate(x0+w/2,y0+h/2);
+                context.rotate((1-p)*.45);
+                context.scale(Math.max(.01,p),Math.max(.01,p));
+                context.globalAlpha=alpha*p;
+                context.drawImage(full,x0,y0,w,h,-w/2,-h/2,w,h);
+                context.restore();
+            }
+        }else if(id==='hologram'){
+            context.globalAlpha=alpha*progress;
+            context.drawImage(full,0,0,width,height);
+            const rows=48;
+            for(let i=0;i<rows;i++){
+                const y=Math.floor(i*height/rows);
+                const h=Math.max(1,Math.ceil(height/rows*.26));
+                context.globalAlpha=alpha*hologramStrength(progress,i)*.34;
+                context.fillStyle=i%3===0?'#65f4ff':'#ad77ff';
+                context.fillRect(0,y,width,h);
+            }
+            context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.2;
+            context.fillStyle='#8cefff';
+            const scanY=Math.floor(progress*height);
+            context.fillRect(0,scanY,width,Math.max(1,Math.floor(height*.022)));
+        }else{
+            const cols=8,rows=6;
+            context.globalAlpha=alpha*progress;
+            context.drawImage(full,0,0,width,height);
+            const fold=Math.sin(Math.PI*progress);
+            for(let i=0;i<cols*rows;i++){
+                const x=i%cols,y=Math.floor(i/cols);
+                const sx=Math.floor(x*width/cols),sy=Math.floor(y*height/rows);
+                const sw=Math.ceil(width/cols),sh=Math.ceil(height/rows);
+                const d=crumpleFold(progress,i,width,height);
+                context.globalAlpha=alpha*fold*.68;
+                context.drawImage(full,sx,sy,Math.min(sw,width-sx),Math.min(sh,height-sy),
+                    sx+d.x,sy+d.y,Math.min(sw,width-sx),Math.min(sh,height-sy));
+                context.fillStyle=(i%2)?'#f0e5d5':'#1b1724';
+                context.globalAlpha=alpha*fold*.16;
+                context.fillRect(sx+d.x,sy+d.y,sw,Math.max(1,sh*.12));
+            }
+        }
+        context.restore();
+        return true;
+    }
     if(id==='vortex'||id==='heat-haze'||id==='refraction'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fullCtx=full.getContext('2d');
