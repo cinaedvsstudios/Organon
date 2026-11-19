@@ -21,8 +21,8 @@ test('the first 41 requested effects stay in user order and are additively exten
     assert.equal(TRANSITION_CATALOG[18].label,'Brokey dissolve');
     assert.equal(TRANSITION_CATALOG.at(-1).label,'Ripple');
     assert.equal(transitionId('Cell dissolve'),'cell-dissolve');
-    assert.deepEqual(TRANSITION_CATALOG.filter(x=>x.status==='available').map(x=>x.label),['Rings wipe','Color panel wipe','VHS tracking','Card swipe','Camera shake','Block cover','Film strip','Spin','Aperture wipe','Spiral wipe','TV turn off','Cross warp','Cross hatch','Cube','Fade','Glitch flicker','Pixelize','Random squares','Ripple']);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,22);
+    assert.deepEqual(TRANSITION_CATALOG.filter(x=>x.status==='available').map(x=>x.label),['Rings wipe','Color panel wipe','VHS tracking','Card swipe','Camera shake','Splatter wipe','Block cover','Film strip','Ink bleed','Spin','Paper tear','Aperture wipe','Spiral wipe','TV turn off','Cross warp','Cross hatch','Cube','Fade','Glitch flicker','Pixelize','Random squares','Ripple']);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,19);
 });
 test('pair planner creates exact overlap for non-adjacent videos without changing sources/audio',()=>{
     const a=clip('A',2,4,1),b=clip('B',6,3,2);
