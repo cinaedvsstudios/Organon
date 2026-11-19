@@ -77,10 +77,11 @@ try{
         'Timeline second labels must be visible without extra clicks');
     assert.ok(await page.locator('#timeline-ruler span:not(.ruler-spacer)').count() > 0,
         'Timeline ruler should expose clickable second markers');
-    await page.locator('#btn-toggle-ruler').click();
-    assert.equal(await page.locator('#timeline-ruler').isVisible(),false);
-    await page.locator('#btn-toggle-ruler').click();
-    assert.equal(await page.locator('#timeline-ruler').isVisible(),true);
+    assert.equal(await page.locator('#btn-toggle-ruler').count(),0,'Ruler toggle should not waste toolbar space');
+    assert.equal(await page.locator('#timeline-ruler').evaluate(el=>el.nextElementSibling?.id),'timeline-lanes',
+        'Timeline ruler must sit above the tracks');
+    assert.equal(await page.locator('#timeline-ruler').evaluate(el=>getComputedStyle(el).userSelect),'none',
+        'Timeline ruler must never select highlighted text');
     await page.locator('#btn-add-track').click();
     assert.equal(await page.locator('#track-type-menu').isVisible(),true);
     const menuGeometry=await page.evaluate(()=>{
@@ -99,7 +100,7 @@ try{
     assert.match(await page.locator('.lane-name').first().innerText(),/Video 1/i);
     await page.locator('#btn-open-transitions').click();
     assert.ok(await page.locator('#transition-modal').isVisible());
-    assert.match(await page.locator('#transition-modal-status').innerText(),/at least two video clips/i);
+    assert.match(await page.locator('#transition-modal-status').innerText(),/at least two visual clips/i);
     await page.locator('#transition-modal [data-close-modal]').click();
     await page.locator('#btn-toggle-header').click();
     await page.locator('#btn-basic-mode').click();
