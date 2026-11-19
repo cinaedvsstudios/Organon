@@ -329,6 +329,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .visual-group-label {margin:7px 0 2px;color:rgba(245,240,219,.62);border-bottom:1px solid rgba(137,107,73,.3);font:.55rem var(--font-mono);}
 .visual-note {margin:5px 0;color:rgba(245,240,219,.56);font:.51rem/1.5 var(--font-body);}
 .advanced-visual-panel .compact-select {max-width:128px;}
+/* Clip-local Orgavox effects share one compact Inspector section. */
+.orgavox-fx-card { margin:10px 0; padding:7px 9px; border:1px solid rgba(137,107,73,.55); border-radius:10px; background:rgba(7,12,15,.45); }
+.orgavox-fx-card summary { display:flex; justify-content:space-between; align-items:center; gap:10px; color:#ecc17b; cursor:pointer; font:.64rem var(--font-mono); user-select:none; }
+.orgavox-fx-card summary:hover { color:#7fc0f3; }
+.orgavox-fx-card summary::marker { color:#ecc17b; }
+.orgavox-fx-count { font-size:.51rem; color:#8dc7f1; }
+.orgavox-fx-field { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.24fr); align-items:center; gap:8px; margin:8px 0; color:#eee3cd; font:.53rem var(--font-mono); }
+.orgavox-fx-field .compact-select { width:100%; min-width:0; padding:6px 4px; font-size:.54rem; }
+.orgavox-fx-help { color:rgba(230,225,207,.58); font:.53rem/1.5 var(--font-body); margin:7px 0 5px; }
 </style>
 </head>
 <body>
@@ -480,6 +489,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <input type="range" class="range-control" id="video-audio-volume" min="0" max="100" value="100" aria-label="Video embedded audio volume">
                     <div class="control-row"><span>Gain · additive boost</span><span class="value-pill" id="video-audio-gain-value">+0% · 100% total</span></div>
                     <input type="range" class="range-control" id="video-audio-gain" min="0" max="200" value="0" step="1" aria-label="Video embedded audio gain from 0 to plus 200 percent" title="Adds percentage points to the clip volume; 100% volume + 20% gain = 120%">
+                    <details class="orgavox-fx-card" id="video-orgavox-effects">
+                        <summary>🎛 Orgavox Audio Effects <span class="orgavox-fx-count" id="video-orgavox-fx-count">Off</span></summary>
+                        <p class="orgavox-fx-help">Clip-level effects. Applied in preview, WebM recording and offline export; not to your original file.</p>
+                        <label class="orgavox-fx-field"><span>EQ / Filter</span><select class="compact-select" id="video-orgavox-eq" aria-label="Video EQ / Filter preset"><option value="off">Off (clean)</option><option value="voice">Voice Clear</option><option value="warm">Warm Bass</option><option value="bright">Brighten</option><option value="phone">Phone / Radio</option><option value="muffled">Muffled</option></select></label>
+                        <label class="orgavox-fx-field"><span>Drive / Saturation</span><select class="compact-select" id="video-orgavox-drive" aria-label="Video Drive / Saturation preset"><option value="off">Off (clean)</option><option value="warm">Warm Saturation</option><option value="tube">Tube Drive</option><option value="tape">Tape Crunch</option><option value="fuzz">Fuzz</option><option value="speaker">Broken Speaker</option><option value="softclip">Soft Clip Limiter</option></select></label>
+                        <label class="orgavox-fx-field"><span>Dynamics / Compressor</span><select class="compact-select" id="video-orgavox-dynamics" aria-label="Video Dynamics / Compressor preset"><option value="off">Off (clean)</option><option value="leveler">Voice Leveler</option><option value="glue">Gentle Glue</option><option value="limiter">Peak Limiter</option><option value="broadcast">Broadcast Tight</option><option value="pump">Pumping Effect</option><option value="soft">Soft Control</option></select></label>
+                        <label class="orgavox-fx-field"><span>Stereo / Pan</span><select class="compact-select" id="video-orgavox-stereo" aria-label="Video Stereo / Pan preset"><option value="off">Off (clean)</option><option value="center">Centered</option><option value="left">Left Side</option><option value="right">Right Side</option><option value="wide">Wide Stereo</option><option value="narrow">Narrow Focus</option><option value="mono">Mono Center</option></select></label>
+                        <p class="orgavox-fx-help">These use Orgavox EQ, Drive, Dynamics and Stereo processing. Lo-Fi buffer processing is not included in this version.</p>
+                    </details>
+
                     <div class="control-row"><span>Opacity</span><span class="value-pill" id="video-opacity-value">100%</span></div>
                     <input type="range" class="range-control" id="video-opacity" min="0" max="100" value="100" aria-label="Video opacity">
                     <label class="control-row"><span>Blend mode</span><select class="compact-select" id="video-blend-mode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option></select></label>
@@ -518,6 +537,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <input type="range" class="range-control" id="audio-track-volume" min="0" max="100" value="100" aria-label="Audio track volume">
                     <div class="control-row"><span>Gain · additive boost</span><span class="value-pill" id="audio-track-gain-value">+0% · 100% total</span></div>
                     <input type="range" class="range-control" id="audio-track-gain" min="0" max="200" value="0" step="1" aria-label="Audio track gain from 0 to plus 200 percent" title="Adds percentage points to the clip volume; 100% volume + 20% gain = 120%">
+                    <details class="orgavox-fx-card" id="audio-orgavox-effects">
+                        <summary>🎛 Orgavox Audio Effects <span class="orgavox-fx-count" id="audio-orgavox-fx-count">Off</span></summary>
+                        <p class="orgavox-fx-help">Clip-level effects. Applied in preview, WebM recording and offline export; not to your original file.</p>
+                        <label class="orgavox-fx-field"><span>EQ / Filter</span><select class="compact-select" id="audio-orgavox-eq" aria-label="Audio EQ / Filter preset"><option value="off">Off (clean)</option><option value="voice">Voice Clear</option><option value="warm">Warm Bass</option><option value="bright">Brighten</option><option value="phone">Phone / Radio</option><option value="muffled">Muffled</option></select></label>
+                        <label class="orgavox-fx-field"><span>Drive / Saturation</span><select class="compact-select" id="audio-orgavox-drive" aria-label="Audio Drive / Saturation preset"><option value="off">Off (clean)</option><option value="warm">Warm Saturation</option><option value="tube">Tube Drive</option><option value="tape">Tape Crunch</option><option value="fuzz">Fuzz</option><option value="speaker">Broken Speaker</option><option value="softclip">Soft Clip Limiter</option></select></label>
+                        <label class="orgavox-fx-field"><span>Dynamics / Compressor</span><select class="compact-select" id="audio-orgavox-dynamics" aria-label="Audio Dynamics / Compressor preset"><option value="off">Off (clean)</option><option value="leveler">Voice Leveler</option><option value="glue">Gentle Glue</option><option value="limiter">Peak Limiter</option><option value="broadcast">Broadcast Tight</option><option value="pump">Pumping Effect</option><option value="soft">Soft Control</option></select></label>
+                        <label class="orgavox-fx-field"><span>Stereo / Pan</span><select class="compact-select" id="audio-orgavox-stereo" aria-label="Audio Stereo / Pan preset"><option value="off">Off (clean)</option><option value="center">Centered</option><option value="left">Left Side</option><option value="right">Right Side</option><option value="wide">Wide Stereo</option><option value="narrow">Narrow Focus</option><option value="mono">Mono Center</option></select></label>
+                        <p class="orgavox-fx-help">These use Orgavox EQ, Drive, Dynamics and Stereo processing. Lo-Fi buffer processing is not included in this version.</p>
+                    </details>
+
                     <div class="control-row"><span>Fade in</span><span class="value-pill" id="audio-fade-in-value">0.0s</span></div>
                     <input type="range" class="range-control" id="audio-fade-in" min="0" max="30" step="0.05" value="0" aria-label="Audio fade in duration">
                     <div class="control-row"><span>Fade out</span><span class="value-pill" id="audio-fade-out-value">0.0s</span></div>
