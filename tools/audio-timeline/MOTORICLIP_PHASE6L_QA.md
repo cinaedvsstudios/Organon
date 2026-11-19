@@ -23,4 +23,14 @@ This phase targets **Chrome**, with existing **Firefox** and mobile-layout/Andro
 
 [GitHub Actions real-media workflow](../../.github/workflows/motoriclip-real-media.yml) runs the 6L scenario as a separate opt-in invocation using `MOTORICLIP_FULLHD120=1`, keeping 6G/6K and the other browser tests intact.
 
-**Status:** Pending initial PR CI. Record actual decoded-media, memory and regression results after the run before merging.
+## Verified results — 19 November 2026
+
+[GitHub Actions 44444292206](https://github.com/cinaedvsstudios/Organon/actions/runs/44444292206) passed both Chrome and cross-browser CI jobs; [PR #42](https://github.com/cinaedvsstudios/Organon/pull/42) is merged.
+
+- Real downloaded **MP4 H.264/AAC**, **1920×1080 / 30 fps**, **120.000 seconds** duration and **3,600 decoded video frames**.
+- Exported file size: **73.08 MiB**. Browser render time: **229.9 seconds**.
+- Validated 16 moving clips, background, transparent sticker, changing early/middle/late frames, audio RMS **0.0436** early and **0.0439** at 108 seconds, with **0.0000** in the trailing background-only interval.
+- Chrome process-tree PSS: **340.5 MiB baseline**, **1,194.1 MiB peak**, **949.3 MiB after idle/explicit GC**, and **307.4 MiB after closing the browser context** (949.4 MiB immediately before closing).
+- Existing UI, media integrity, near-limit 720p, repeat-export and Firefox tests passed in the same run.
+
+These results demonstrate real Linux Chrome full-duration 1080p export success at the existing beta cap. Memory measurements are observational, not a guarantee of leak-free operation on Windows/Android. Physical Windows and Android real-camera exports remain unverified. Apple-device certification is out of the user-requested priority scope and does not gate transition development.
