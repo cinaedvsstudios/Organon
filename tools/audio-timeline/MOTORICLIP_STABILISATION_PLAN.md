@@ -253,6 +253,19 @@ Regression checklist:
 
 [Phase 8I QA](./MOTORICLIP_PHASE8I_QA.md).
 
+## Phase 8J — Cell dissolve, Bloom dissolve and Smoke dissolve [MERGED]
+
+[PR #52](https://github.com/cinaedvsstudios/Organon/pull/52) merged 19 November 2026 at `783c19a2a78e3fffb36460768832d01af48e7fa1`. [GitHub Actions run 44482881817](https://github.com/cinaedvsstudios/Organon/actions/runs/44482881817) passed **all three jobs**: 149/149 Node tests, 25-effect Chrome pixel tests and the two-video editor workflow with Undo/Redo, Firefox and 120-second full-HD export/memory regressions.
+
+- **Cell dissolve:** 84 growing, independently delayed hexagonal cells reveal B over A; a brief closing reveal joins small gaps into a pristine B near completion.
+- **Bloom dissolve:** B emerges under a transient brightened/blurred screen-composited glow and warm radial bloom, which fully decays at the transition boundaries.
+- **Smoke dissolve:** 18 drifting translucent smoke-cloud gradients sweep over the A→B blend, declining to a clean B at the end. All motion depends only on timeline time for stable seeking/export.
+- **Current library:** Original **41 user-selected names / 25 available / 16 queued**, with stable order and IDs. Paired-timeline placement, source media and audio, gold transition markers, Undo/Redo and the existing 120-second export cap are preserved.
+- **Rendering and validation:** No extra persistent full-HD buffers; Chrome verified all new effects were distinct from Fade and prior dissolves. Full 120-second 1920×1080, 30fps H.264/AAC MP4 exported 3,600 frames with 16 moving clips.
+- **Next work:** Continue the remaining 16 selections in small tested batches. Exact GLSL shader reproductions, per-effect presets, timeline handles, automatic audio crossfades and alpha video-file export remain separate.
+
+[Phase 8J QA](./MOTORICLIP_PHASE8J_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
