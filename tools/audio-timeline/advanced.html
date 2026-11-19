@@ -207,6 +207,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .transition-summary { margin:6px 0 8px; color:rgba(245,240,219,.72); font:.55rem/1.45 var(--font-mono); text-align:center; }
 .visual-transition-card .range-control { accent-color:#e3b75c; }
 .visual-transition-card .control-row { font-size:.61rem; }
+.pair-transition-panel { margin:10px 0; padding:10px; border:1px solid #e3b75c; border-radius:10px; background:rgba(197,143,40,.1); }
+.pair-transition-panel[hidden],.pair-note[hidden] { display:none!important; }
+.pair-transition-panel h4 { margin:0 0 7px; color:#e3b75c; font:.64rem var(--font-mono); text-transform:uppercase; }
+.pair-transition-panel .compact-input { max-width:110px; }
+.pair-transition-panel .btn { margin-top:7px; width:100%; }
+.pair-note { padding:7px 8px; margin:6px 0; border-radius:7px; background:rgba(227,183,92,.13); color:#e3b75c; font:.58rem/1.5 var(--font-mono); }
+.transition-library-summary { cursor:pointer; color:#e3b75c; font:.61rem var(--font-mono); }
+.transition-library-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px 9px; margin:10px 0 2px; }
+.transition-library-item { display:flex; justify-content:space-between; gap:4px; padding:3px 0; font:.54rem/1.3 var(--font-mono); color:rgba(245,240,219,.75); overflow-wrap:anywhere; }
+.transition-library-item span { color:rgba(245,240,219,.47); }
+.transition-library-item.ready span { color:#e3b75c; }
 .context-menu { position:fixed; z-index:60; min-width:190px; padding:7px; border:1px solid var(--chiseled-bronze); border-radius:12px; background:#171814; box-shadow:0 12px 28px rgba(0,0,0,.7); }
 .context-menu-title { margin:2px 4px 6px; color:var(--stone-ochre); font:.56rem var(--font-mono); }
 .context-menu button { justify-content:flex-start; width:100%; min-height:29px; margin:2px 0; border-radius:8px; }
@@ -353,7 +364,20 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <div class="column-content inspector-scroll">
                 <section class="control-card" id="inspector-project">
                     <h3>Project</h3>
-                    <p class="control-copy">Select a timeline clip to show its controls here. Clip position and duration are changed directly by dragging or resizing its pill in the timeline.</p>
+                    <p class="control-copy">Select a timeline clip to show its controls here. Clip position and duration are changed directly by dragging or resizing its pill in the timeline. Use Select mode to choose two loaded videos for a paired transition.</p>
+                    <div class="pair-transition-panel" id="pair-transition-panel" hidden>
+                        <h4>✦ Pair Video A → Video B</h4>
+                        <p class="control-copy" id="pair-transition-description">Select two video clips.</p>
+                        <label class="control-row"><span>Effect</span><select class="compact-select" id="pair-transition-effect" aria-label="Paired transition effect"></select></label>
+                        <label class="control-row"><span>Overlap duration (seconds)</span><input class="compact-input" id="pair-transition-duration" type="number" min="0.1" max="30" step="0.05" value="1" aria-label="Paired video transition duration"></label>
+                        <button type="button" class="btn btn-primary" id="btn-apply-pair-transition">✦ Apply paired transition</button>
+                        <p class="blend-help">Video B moves to overlap the end of Video A and fades over it. Existing media stays unmodified; undo restores the original placement. Linked audio is not crossfaded.</p>
+                    </div>
+                    <details id="transition-library-details">
+                        <summary class="transition-library-summary">Transition library · 41 selected from gallery pages 1–10</summary>
+                        <p class="blend-help">Only Fade is implemented as a paired transition so far. The other selections are saved for later additions.</p>
+                        <div class="transition-library-grid" id="transition-library-grid"></div>
+                    </details>
                 </section>
                 <section class="control-card" id="inspector-video" hidden>
                     <h3 id="selected-video-name">Video</h3>
@@ -372,6 +396,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <span class="transition-from">Video A</span><span class="transition-bridge">✦</span><span class="transition-to">Video B</span>
                         </div>
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
+                        <p class="pair-note" id="video-transition-pair-note" hidden></p>
+                        <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
                         <div class="control-row"><span>Fade in / entrance</span><span class="value-pill" id="video-transition-enter-value">0.0s</span></div>
                         <input type="range" class="range-control" id="video-transition-enter" min="0" max="5" step="0.05" value="0" aria-label="Video visual entrance fade seconds">
                         <label class="control-row"><span>Entrance curve</span><select class="compact-select" id="video-transition-enter-curve"><option value="linear">Linear</option><option value="smooth">Smooth</option></select></label>
