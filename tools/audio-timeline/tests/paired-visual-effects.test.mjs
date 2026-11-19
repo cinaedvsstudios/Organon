@@ -14,14 +14,14 @@ const clip=(id,start,order)=>({
     audio:{volume:1,muted:false,fadeIn:0,fadeOut:0}
 });
 test('new batch enables only selected, genuinely available effects',()=>{
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']);
     assert.deepEqual(TRANSITION_CATALOG.filter(x=>x.status==='available').map(x=>x.id),
-        ['rings-wipe','color-panel-wipe','vhs-tracking','card-swipe','camera-shake','block-cover','film-strip','spin','aperture-wipe','spiral-wipe','tv-turn-off','cross-warp','cross-hatch','cube','fade','glitch-flicker','pixelize','random-squares','ripple']);
+        ['rings-wipe','color-panel-wipe','vhs-tracking','card-swipe','camera-shake','splatter-wipe','block-cover','film-strip','ink-bleed','spin','paper-tear','aperture-wipe','spiral-wipe','tv-turn-off','cross-warp','cross-hatch','cube','fade','glitch-flicker','pixelize','random-squares','ripple']);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,22);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,19);
     assert.equal(isAvailablePairEffect('hologram'),false);
 });
-test('all nineteen paired effects compute the same overlap but preserve effect ID',()=>{
+test('all twenty-two paired effects compute the same overlap but preserve effect ID',()=>{
     const a=clip('a',0,2),b=clip('b',4,1);
     for(const effectId of ACTIVE_PAIR_EFFECTS){
         const plan=planPairedTransition([a,b],['b','a'],1.5,effectId);
