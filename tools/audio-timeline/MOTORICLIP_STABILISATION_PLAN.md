@@ -293,6 +293,19 @@ Regression checklist:
 
 [Phase 8L QA](./MOTORICLIP_PHASE8L_QA.md).
 
+## Phase 8M — ASCII, Color codes and Prisms [MERGED]
+
+[PR #55](https://github.com/cinaedvsstudios/Organon/pull/55) merged 19 November 2026 at `880d3dd59ed5697336d4d7b655a553dfba21f512`. [GitHub Actions run 44521729465](https://github.com/cinaedvsstudios/Organon/actions/runs/44521729465) passed all three jobs: **164/164 Node tests**, Chrome 34-effect real-pixel and two-MP4 editor/Undo/Redo checks, Firefox and full media export/memory regression.
+
+- **ASCII:** Incoming B becomes a 32×18 luminance-sampled field of cyan-green monospace characters, then resolves to clean B. Actual source pixels choose glyphs; not merely a static text overlay.
+- **Color codes:** 7×4 panels show sampled source RGB hexadecimal values and corresponding color swatches, appearing with staggered timing before resolving to B.
+- **Prisms:** Nine angular radial facets offset the incoming image independently with rose/cyan/gold spectral highlights. Visually distinct from earlier 24-tile Refraction and Vortex.
+- **Current catalog:** The user's original **41 names / 34 available / 7 queued**, with stable IDs, original order and unavailable effects remaining disabled.
+- **Performance/integrity:** Tiny offscreen source samples (32×18 or 7×4), not full-HD CPU pixel scans; existing scratch canvases and shared preview/export compositor, non-destructive paired video and audio, gold markers, Undo/Redo. Full 120-second 1080p H.264/AAC MP4 produced 3,600 frames across 16 moving clips.
+- **Next:** Implement the remaining seven original effect selections in tested batches. Adjustable presets, alpha-bearing exports, automatic linked-audio crossfades and physical device certification remain separate projects. These original Canvas effects are not pixel-identical copies of third-party shaders.
+
+[Phase 8M QA](./MOTORICLIP_PHASE8M_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
