@@ -6,9 +6,9 @@ const selected=['spiralblockwipe','hologram','crumple'];
 test('8N catalog retains 41 stable choices, 37 enabled',()=>{
  assert.equal(SELECTED_TRANSITION_NAMES.length,41);
  assert.equal(new Set(TRANSITION_CATALOG.map(e=>e.id)).size,41);
- assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(-3),selected);
- assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
- assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
+ assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(34,37),selected);
+ assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,41);
+ assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,0);
 });
 test('spiral blocks progress deterministically and resolve at endpoints',()=>{
  const a=Array.from({length:96},(_,i)=>spiralBlockProgress(.55,i));
