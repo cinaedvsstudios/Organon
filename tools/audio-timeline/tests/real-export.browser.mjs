@@ -4,7 +4,7 @@
  * Synthetic fixtures are created in a local ignored tests/fixtures folder.
  */
 import assert from 'node:assert/strict';
-import { chromium } from 'playwright-core';
+import { chromium, firefox, webkit } from 'playwright-core';
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { mkdtemp, rm } from 'node:fs/promises';
@@ -54,10 +54,16 @@ const server = createServer((request,response)=>{
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const port=server.address().port;
+const browserName=process.env.MOTORICLIP_BROWSER||'chromium';
+if(!['chromium','firefox','webkit'].includes(browserName))throw Error('Only chromium, firefox and webkit are supported by this smoke test');
 const chromePaths=['/usr/bin/google-chrome','/usr/bin/google-chrome-stable','/usr/bin/chromium'];
 const executablePath=process.env.CHROME_BIN||chromePaths.find(existsSync);
-if(!executablePath)throw Error('No Chrome/Chromium browser installed');
-const browser=await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
+if(browserName==='chromium'&&!executablePath)throw Error('No Chrome/Chromium browser installed');
+const browser=browserName==='firefox'
+    ? await firefox.launch({headless:true})
+    : browserName==='webkit'
+        ? await webkit.launch({headless:true})
+        : await chromium.launch({executablePath,headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
 const errors=[];
 try {
     const context=await browser.newContext({acceptDownloads:true});
@@ -69,11 +75,19 @@ try {
         video:typeof VideoEncoder,decoder:typeof VideoDecoder,audio:typeof OfflineAudioContext,
     }));
     assert.deepEqual(available,{video:'function',decoder:'function',audio:'function'});
+    if(browserName==='webkit'){
+        const userAgent=await page.evaluate(()=>navigator.userAgent);
+        console.log('[MotoriClip WebKit Linux UA]',userAgent);
+        const platform=await page.evaluate(()=>navigator.platform);
+        console.log('[MotoriClip WebKit platform]',platform);
+    }
 
-    for (const format of ['webm','mp4']) {
-        console.log('[MotoriClip E2E] Encoding',format,'at 25 fps, 320x180...');
-        const downloadPromise=page.waitForEvent('download',{timeout:180000});
-        const exportPromise=page.evaluate(async fmt=>{
+    for (const format of (browserName==='chromium'?['webm','mp4']:browserName==='webkit'?['mp4']:['webm'])) {
+        console.log('[MotoriClip E2E] Encoding',browserName,format,'at 25 fps, 320x180...');
+        const downloadPromise=browserName==='webkit'
+            ? page.waitForEvent('download',{timeout:4000}).then(()=>true).catch(()=>false)
+            : page.waitForEvent('download',{timeout:180000});
+        const exportPromise=page.evaluate(async ({fmt,debugMix})=>{
             const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
                 import('../js/advanced-offline-export.mjs'),
                 import('../js/advanced-media-engine-v0.24.js'),
@@ -121,20 +135,62 @@ try {
                 onTimeChange(){},onDurationChange(){},onPlaybackChange(){},onRenderError(error){throw error}});
             engine.tracks=tracks;
             const messages=[];
+            let outputBlob=null;
             const exporter=new AdvancedOfflineExporter({
                 engine,onState:state=>messages.push(state),onProgress:()=>{},
                 onDownload({blob,extension}){
+                    outputBlob=blob;
                     const link=document.createElement('a');const url=URL.createObjectURL(blob);
                     link.href=url;link.download='motoriclip-e2e.'+extension;
                     document.body.appendChild(link);link.click();link.remove();
                     setTimeout(()=>URL.revokeObjectURL(url),15000);
                 }
             });
-            await exporter.start({format:fmt,fps:25,bitrateKbps:3000});
-            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length};
-        },format);
-        const download=await downloadPromise;
+            let mixEnergy=null;
+            if(debugMix){
+                const originalMixAudio=exporter.mixAudio.bind(exporter);
+                exporter.mixAudio=async (...args)=>{
+                    const buffer=await originalMixAudio(...args);
+                    if(buffer?.getChannelData){
+                        const floats=buffer.getChannelData(0);
+                        let squares=0;
+                        for(let i=0;i<floats.length;i+=Math.max(1,Math.floor(floats.length/10000))){
+                            squares+=floats[i]*floats[i];
+                        }
+                        mixEnergy=Math.sqrt(squares/Math.ceil(floats.length/Math.max(1,Math.floor(floats.length/10000))));
+                    }
+                    return buffer;
+                };
+            }
+            let exportError=null;
+            try { await exporter.start({format:fmt,fps:25,bitrateKbps:3000}); }
+            catch(error) { exportError=String(error.message||error); }
+            let independentAudioRms=null, independentAudioDecodeError=null;
+            if(debugMix&&outputBlob){
+                try{
+                    const offline=new OfflineAudioContext(2,48000,48000);
+                    const decoded=await offline.decodeAudioData(await outputBlob.arrayBuffer());
+                    const pcm=decoded.getChannelData(0);
+                    let sum=0;
+                    for(let i=0;i<pcm.length;i+=16)sum+=pcm[i]*pcm[i];
+                    independentAudioRms=Math.sqrt(sum/Math.ceil(pcm.length/16));
+                }catch(error){independentAudioDecodeError=String(error.message||error)}
+            }
+            return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,
+                mixEnergy,exportError,independentAudioRms,independentAudioDecodeError};
+        },{fmt:format,debugMix:browserName==='webkit'});
         const outcome=await exportPromise;
+        if(browserName==='webkit'){
+            console.log('[MotoriClip WebKit independent audio diagnosis]',JSON.stringify(outcome));
+            assert.match(outcome.exportError||'',/silent|silence|audio|decod/i,
+                'WebKit must reject a silently encoded output rather than downloading it');
+            assert.equal(await downloadPromise,false,'WebKit must not download an invalid audio export');
+            assert.equal(outcome.trackCount,4);
+            console.log('[MotoriClip 6J] PASS WebKit rejected silent encoded audio with a clear error:',outcome.exportError);
+            continue;
+        }
+        const download=await downloadPromise;
+        assert.equal(outcome.exportError,null,'Export unexpectedly failed: '+outcome.exportError);
         assert.equal(outcome.trackCount,4);
         assert.equal(download.suggestedFilename(),`motoriclip-e2e.${format}`);
         const file=join(temp,`motori-${format}.${format}`);
@@ -168,12 +224,16 @@ try {
             return Math.sqrt(squares/Math.max(1,count));
         }
         const rmsValues=[.1,.9,2,2.9,3.8].map(rms);
+        if(browserName==='webkit'){
+            console.log('[MotoriClip WebKit diagnosis]',JSON.stringify({mixEnergy:outcome.mixEnergy,outputRms:rmsValues,
+                streams:info.streams.map(x=>({codec:x.codec_name,type:x.codec_type}))}));
+        }
         assert.ok(rmsValues[0]<.006&&rmsValues[2]<.006&&rmsValues[4]<.006,`${format}: expected silence in gaps, got ${rmsValues}`);
         assert.ok(rmsValues[1]>.015&&rmsValues[3]>.015,`${format}: expected audio in both clips, got ${rmsValues}`);
         console.log('[MotoriClip E2E] PASS',format,{duration:info.format.duration,frames:count,codecs:[vid.codec_name,aud.codec_name],colors:{yellow,redPixel,gap,bluePixel},rms:rmsValues,states:outcome.messages.map(x=>x.phase)});
     }
     assert.deepEqual(errors,[],'Browser reported script errors');
-    console.log('[MotoriClip E2E] Both MP4 and WebM real-media export checks passed.');
+    console.log('[MotoriClip E2E] PASS complete for '+browserName);
 } finally {
     await browser.close();
     await new Promise(resolve=>server.close(resolve));

@@ -90,6 +90,14 @@ try{
                 assert.match(caps.unsupportedMessage||'',/WebCodecs\/OfflineAudioContext/,
                     'Unsupported browser must receive a clear error');
             }
+            if(!caps.mediaRecorder){
+                assert.equal(await page.locator('#btn-export-video').isDisabled(),true,
+                    'Real-time export must be disabled when MediaRecorder is absent');
+                assert.match(await page.locator('#export-status').innerText(),
+                    /no supported video-recording format|cannot capture/i,
+                    'Unavailable real-time export must be clearly explained');
+                console.log('[MotoriClip 6J] '+name+' correctly disables unavailable MediaRecorder export');
+            }
             await page.locator('#btn-basic-mode').click();
             await page.waitForURL(/mode=basic/,{timeout:20000});
             await page.locator('#btn-advanced-mode').click();
