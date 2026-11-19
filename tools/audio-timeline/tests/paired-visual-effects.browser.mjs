@@ -1,4 +1,4 @@
-/** Phase 8C–8F: verify actual Canvas 2D pixels for twelve additional selected transitions.
+/** Phase 8C–8G: verify actual Canvas 2D pixels for fifteen additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,9 +82,9 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -164,9 +164,23 @@ try{
     assert.notEqual(hatch.fingerprint,result['spiral-wipe'].middle.fingerprint,
         'Cross hatch must show diagonal band geometry, not a spiral');
     assert.notEqual(film.fingerprint,block.fingerprint,'Film strip must differ from block cover');
+    const card=result['card-swipe'],camera=result['camera-shake'],vhs=result['vhs-tracking'];
+    assert.ok(card.middle.red>400&&card.middle.blue>400,
+        'Card swipe should leave A on the left and slide an intact B card over the right');
+    assert.notEqual(card.middle.fingerprint,result.fade.middle.fingerprint,
+        'Card swipe must not look like a simple fade');
+    assert.ok(camera.quarter.blue>900,
+        'Camera shake should still show outgoing A during the first half');
+    assert.ok(camera.threeQuarter.red>900,
+        'Camera shake should show incoming B during the second half');
+    assert.notEqual(camera.middle.fingerprint,card.middle.fingerprint,
+        'Camera shake must not look like a card swipe');
+    assert.ok(vhs.middle.mixed>400,'VHS tracking must show analog scanline and tracking distortion');
+    assert.notEqual(vhs.middle.fingerprint,result['glitch-flicker'].middle.fingerprint,
+        'VHS tracking must have distinct frame pixels from Glitch flicker');
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8F] PASS real Chrome 13-effect pixel checks (Block cover, Cross hatch, Film strip), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8G] PASS real Chrome 16-effect pixel checks (Card swipe, Camera shake, VHS tracking), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
