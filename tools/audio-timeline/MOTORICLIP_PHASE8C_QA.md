@@ -27,4 +27,11 @@ Preview, snapshots, live recording and fixed-frame exports use the shared `Advan
 - Real Chrome Advanced UI: import two MP4 sources, select a pair, cycle all four effects, verify inspector descriptions/gold markers and Undo/Redo.
 - Existing 108-node regression matrix from 8B, full Chrome/Firefox UI and 720p/1080p real-media export/memory CI must remain green.
 
-**Status:** Awaiting PR workflow verification. No claim of device certification or exact third-party shader replication.
+**Status: MERGED AND VERIFIED.** [PR #45](https://github.com/cinaedvsstudios/Organon/pull/45) merged on 19 November 2026 at commit `de0cb83838f2469bea7a8cffa89845fe6e358cb4`. [GitHub Actions run 44457748582](https://github.com/cinaedvsstudios/Organon/actions/runs/44457748582) passed all three jobs: **transition-smoke, cross-browser-ui and export-browser**.
+
+- **114/114 Node tests passed**, including the new deterministic square-mask, pixel-block progression, glitch displacement, pair-planner and opacity-envelope tests.
+- **Actual Chrome pixel checks passed:** 708 red / 664 blue / 0 mixed sampled locations at the midpoint of Random squares (confirming discrete full-opacity reveals); Pixelize and Glitch flicker differed from ordinary Fade; repeated timestamps gave identical rendered frames; transition scratch textures were released.
+- **Chrome UI test passed:** 41 wishlist entries, two real MP4 imports, all four effects applied through the pairing controls, gold marker displayed, Undo/Redo restored the last selection.
+- **Existing real-media export and browser regressions passed**, including near-limit 720p/1080p projects, the 120-second 1080p MP4 + audio export, repeated-export memory recovery, portrait/rotated inputs and Firefox media export.
+
+No claim of physical Windows/Android device certification or exact third-party shader replication.
