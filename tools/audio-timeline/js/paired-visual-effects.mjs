@@ -125,7 +125,7 @@ export function blockCoverState(progress,cellIndex) {
     const p=unit(progress);
     if(p<=0)return 'old';
     if(p>=1)return 'new';
-    const delay=seededCell(cellIndex)*.55;
+    const delay=seededCell(cellIndex)*.75;
     if(p<=delay)return 'old';
     return p<delay+.17?'cover':'new';
 }
