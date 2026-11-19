@@ -227,6 +227,19 @@ Regression checklist:
 
 [Phase 8G QA](./MOTORICLIP_PHASE8G_QA.md).
 
+## Phase 8H — Spin, Cube and Cross warp [MERGED]
+
+[PR #50](https://github.com/cinaedvsstudios/Organon/pull/50) merged 19 November 2026, commit `eab7203846f7f38e50a092e29d0978b3ff565641`. [CI run 44472665292](https://github.com/cinaedvsstudios/Organon/actions/runs/44472665292): **all three jobs passed**; 139/139 Node tests, real Chrome 19-effect pixels/editor workflow with Undo/Redo, Firefox media checks and the complete 120-second 1080p MP4 export/memory suite.
+
+- **Spin:** Incoming B rotates through one revolution while scaling to a clean full-size frame.
+- **Cube:** Incoming and outgoing video surfaces create a cube-style two-face turn with bounded horizontal perspective offsets.
+- **Cross warp:** A widening plus-shaped reveal with temporary horizontal distortion of incoming B.
+- **Current catalog:** Original **41 selected / 19 enabled / 22 queued**. Existing non-destructive paired timeline, gold markers, source media and embedded audio remain unchanged.
+- **CI improvement:** Browser media tests now use packaged FFmpeg tools accessible to the Firefox test user, avoiding an unreliable Ubuntu apt installation.
+- **Future work:** Continue remaining 22 selected effects, consider adjustable transition presets and audio crossfade. These Canvas effects are independent interpretations, not exact shader reproductions.
+
+[Phase 8H QA](./MOTORICLIP_PHASE8H_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
