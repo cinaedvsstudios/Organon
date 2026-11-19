@@ -25,4 +25,10 @@ All effects use `AdvancedMediaEngine.renderFrame()`, shared by playback preview,
 3. **Real editor UI:** import two MP4 videos, apply all ten effects, retain gold marker, Inspector text and Undo/Redo.
 4. **Full CI:** existing Node suites, cross-browser UI/Firefox, 720p/1080p MP4/WebM export, memory recovery and 120-second 1080p benchmark remain green.
 
-**Status at authoring:** PR CI pending; merge only after green jobs. Physical Windows/Android device validation is a separate release check.
+**Status: MERGED AND VERIFIED.** [PR #47](https://github.com/cinaedvsstudios/Organon/pull/47) merged 19 November 2026 at `6cbb159e79bef92c96087df107dff1f074db86fb`. [GitHub Actions run 44462261691](https://github.com/cinaedvsstudios/Organon/actions/runs/44462261691) passed **all three jobs**: transition-smoke, cross-browser-ui and export-browser.
+
+- **124/124 Node tests passed**, including five additional Phase 8E mathematical, catalog and history cases.
+- **Actual Chrome Canvas pixel checks passed** for all ten effects, with Spiral, Rings and Color panel wipes producing distinct middle frames; red B, blue A and tinted panel regions were verified, as were same-time deterministic rerenders.
+- **Chrome Advanced UI passed:** Two imported MP4s, all ten paired effects, gold marker, inspector labels and Undo/Redo; 41 catalog names remain in place, with 31 queued.
+- **Previous real-media regression checks passed**, including Firefox, 720p/1080p projects, repeated-export memory testing and the full **120-second 1920×1080/30fps H.264/AAC MP4** test: 3,600 frames over 16 moving clips, size 73.07 MiB, Chrome PSS peak 1,182.5 MiB.
+- No claim of physical Windows/Android device certification, linked-audio crossfade, transparent file export or exact third-party shader copying.
