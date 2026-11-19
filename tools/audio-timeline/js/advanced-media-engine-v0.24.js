@@ -265,14 +265,17 @@ export class AdvancedMediaEngine {
 
     refreshOrgavoxAudioEffects(track) {
         if (!track?.audioNode || !track.gainNode || !this.audioContext) return;
-        // Rewire only the clip's source/effect section. The final gain stays
-        // connected to speakers and to any active MediaRecorder export mix.
+        const signature=JSON.stringify(track.audio?.fx || {});
+        if (track.orgavoxFxSignature===signature && track.orgavoxFxNodes?.length) return;
+        // Rewire only this source's effect section. The final gain stays
+        // connected to the speaker bus and any active MediaRecorder export mix.
         try { track.audioNode.disconnect(); } catch (_) {}
         for (const node of track.orgavoxFxNodes || []) {
             try { node.disconnect(); } catch (_) {}
         }
         const chain=connectOrgavoxAudioChain(this.audioContext,track.gainNode,track.audio?.fx,track.audioNode);
         track.orgavoxFxNodes=chain.nodes;
+        track.orgavoxFxSignature=signature;
     }
 
     detachTrack(track, emit = true) {
@@ -305,7 +308,7 @@ export class AdvancedMediaEngine {
         if (track.objectUrl) {
             try { URL.revokeObjectURL(track.objectUrl); } catch (_) { /* already revoked */ }
         }
-        track.media = null; track.soundMedia = null; track.audioNode = null; track.gainNode = null; track.orgavoxFxNodes = []; track.objectUrl = null;
+        track.media = null; track.soundMedia = null; track.audioNode = null; track.gainNode = null; track.orgavoxFxNodes = []; track.orgavoxFxSignature = null; track.objectUrl = null;
         track.sourceName = ''; track.sourceDuration = 0; track.clipDuration = 0; track.file = null;
         if (emit) { this.emitDuration(); this.renderFrame(); }
     }
