@@ -521,7 +521,9 @@ export function hologramStrength(progress,row=0){
 }
 /** Deterministic paper fold displacement that closes at both endpoints. */
 export function crumpleFold(progress,index,width,height){
-    const envelope=Math.sin(Math.PI*unit(progress));
+    const p=unit(progress);
+    if(p===0||p===1)return {x:0,y:0};
+    const envelope=Math.sin(Math.PI*p);
     return {x:(seededCell(index*17+41)*2-1)*width*.12*envelope,
         y:(seededCell(index*19+67)*2-1)*height*.12*envelope};
 }
