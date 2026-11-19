@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8D: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8E: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -68,6 +68,55 @@ function traceIris(context,effectId,progress,width,height) {
         context.closePath();
     }
 }
+/** For a true spiral, each annular band reveals a different angular extent.
+ * Only Canvas paths are used, so there is no per-pixel JavaScript processing.
+ */
+export function spiralRingFraction(progress,ringIndex,count=32) {
+    const n=Math.max(1,Math.trunc(count)||32);
+    const r=Math.min(n-1,Math.max(0,Math.trunc(ringIndex)||0));
+    return unit(unit(progress)*1.6-((r+.5)/n)*.6);
+}
+/** Concentric rings intentionally enter out of strict radial order to create
+ * distinct alternating radial bands, rather than another circular aperture.
+ */
+export function ringsRevealThreshold(ringIndex,count=10) {
+    const n=Math.max(1,Math.trunc(count)||10);
+    const r=Math.min(n-1,Math.max(0,Math.trunc(ringIndex)||0));
+    return .02+(r/n)*.68+(r%2)*.20;
+}
+export function panelProgress(progress,panelIndex,count=6) {
+    const n=Math.max(1,Math.trunc(count)||6);
+    const i=Math.min(n-1,Math.max(0,Math.trunc(panelIndex)||0));
+    return unit((unit(progress)-(i/n)*.63)/.46);
+}
+function annulusSectorPath(ctx,cx,cy,inner,outer,start,fraction) {
+    if(fraction<=0)return;
+    const end=start+Math.PI*2*unit(fraction);
+    ctx.moveTo(cx+inner*Math.cos(start),cy+inner*Math.sin(start));
+    ctx.lineTo(cx+outer*Math.cos(start),cy+outer*Math.sin(start));
+    ctx.arc(cx,cy,outer,start,end,false);
+    ctx.lineTo(cx+inner*Math.cos(end),cy+inner*Math.sin(end));
+    if(inner>0)ctx.arc(cx,cy,inner,end,start,true);
+    ctx.closePath();
+}
+function traceSpiralMask(ctx,progress,width,height) {
+    const cx=width/2,cy=height/2,radius=Math.hypot(cx,cy),count=32;
+    ctx.beginPath();
+    for(let i=0;i<count;i++){
+        const fraction=spiralRingFraction(progress,i,count);
+        annulusSectorPath(ctx,cx,cy,radius*i/count,
+            radius*(i+1)/count,-Math.PI/2,fraction);
+    }
+}
+function traceRingMask(ctx,progress,width,height) {
+    const cx=width/2,cy=height/2,radius=Math.hypot(cx,cy),count=10;
+    ctx.beginPath();
+    for(let i=0;i<count;i++){
+        if(unit(progress)<ringsRevealThreshold(i,count))continue;
+        annulusSectorPath(ctx,cx,cy,radius*i/count,
+            radius*(i+1)/count,-Math.PI/2,1);
+    }
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -115,6 +164,16 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
+    if(id==='spiral-wipe'||id==='rings-wipe'){
+        context.save();
+        if(id==='spiral-wipe')traceSpiralMask(context,progress,width,height);
+        else traceRingMask(context,progress,width,height);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        return true;
+    }
+
     if(id==='pixelize'){
         const block=pixelScale(progress);
         const small=scratchCanvas(renderer,'transitionPixelScratch',
@@ -157,6 +216,32 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
     renderContained(sc,media,width,height);
+
+    if(id==='color-panel-wipe'){
+        // Six tinted panels sweep over A before revealing their portion of B.
+        // Each panel is a bounded draw, with no new full-resolution textures.
+        const colors=['#9c733a','#284f9e','#6a377c','#aa8647','#30577c','#855e43'];
+        const count=colors.length;
+        context.save();
+        for(let i=0;i<count;i++){
+            const x=Math.floor(i*width/count);
+            const edge=i===count-1?width:Math.floor((i+1)*width/count);
+            const panelWidth=edge-x;
+            const phase=panelProgress(progress,i,count);
+            if(phase<=0)continue;
+            const shown=Math.min(panelWidth,Math.ceil(2*phase*panelWidth));
+            context.fillStyle=colors[i];
+            if(phase<.5){
+                context.fillRect(x,0,shown,height);
+            }else{
+                context.fillRect(x,0,panelWidth,height);
+                const reveal=Math.min(panelWidth,Math.ceil((phase-.5)*2*panelWidth));
+                if(reveal>0)context.drawImage(full,x,0,reveal,height,x,0,reveal,height);
+            }
+        }
+        context.restore();
+        return true;
+    }
 
     if(id==='random-squares'){
         // Whole-image tile reveal: 112 cells per frame at most. Each tile

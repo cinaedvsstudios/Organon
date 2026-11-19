@@ -9,10 +9,10 @@ import { TRANSITION_CATALOG } from '../js/transition-catalog.mjs';
 
 test('Phase 8D enables three new selected effects without renumbering the original 41',()=>{
     const expected=['ripple','tv-turn-off','aperture-wipe'];
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(-3),expected);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(4,7),expected);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='available').length,7);
-    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='requested').length,34);
+    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='available').length,10);
+    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='requested').length,31);
     for(const id of expected){
         assert.ok(isAvailablePairEffect(id),id+' should be implemented');
         assert.equal(TRANSITION_CATALOG.find(effect=>effect.id===id)?.status,'available');
@@ -67,7 +67,7 @@ test('New effects retain pair timeline and video-audio metadata without mutation
         start:0,clipDuration:4,laneId:'1',order:2,audio:{volume:.6}};
     const b={id:'B',type:'video',sourceName:'b.mp4',file:{name:'b.mp4'},
         start:4,clipDuration:3,laneId:'2',order:1,audio:{volume:.8}};
-    for(const effectId of ACTIVE_PAIR_EFFECTS.slice(-3)){
+    for(const effectId of ['ripple','tv-turn-off','aperture-wipe']){
         const plan=planPairedTransition([a,b],['B','A'],1.25,effectId);
         assert.equal(plan.start,2.75);
         assert.equal(plan.duration,1.25);
