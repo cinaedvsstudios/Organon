@@ -44,7 +44,7 @@ import { planClipSnap } from './clip-snap.mjs';
         previewStage: document.getElementById('preview-stage'), previewResizeHandle: document.getElementById('preview-resize-handle'), previewZoom: document.getElementById('preview-zoom'), previewZoomValue: document.getElementById('preview-zoom-value'), btnResetPreviewZoom: document.getElementById('btn-reset-preview-zoom'), previewEmpty: document.getElementById('preview-empty'), previewState: document.getElementById('preview-state'),
         previewSeek: document.getElementById('preview-seek'), previewVolume: document.getElementById('preview-volume'), timeReadout: document.getElementById('time-readout'),
         btnPlay: document.getElementById('btn-play'), btnPreviewMute: document.getElementById('btn-preview-mute'), btnStepBack: document.getElementById('btn-step-back'), btnStepForward: document.getElementById('btn-step-forward'), btnSnapshot: document.getElementById('btn-snapshot'),
-        fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnBasicMode: document.getElementById('btn-basic-mode'),
+        fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnRelink: document.getElementById('btn-relink'), mediaRememberNote: document.getElementById('media-remember-note'), btnBasicMode: document.getElementById('btn-basic-mode'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
@@ -387,23 +387,52 @@ import { planClipSnap } from './clip-snap.mjs';
         return ghost;
     }
 
+    const MEDIA_INDEX_KEY = 'motori-advanced-media-index-v1';
+    function persistMediaIndex() {
+        // Disk paths cannot be silently restored from browser drag-and-drop.
+        // Store only small identifying metadata, never the actual media bytes.
+        try {
+            const records=state.files.slice(0,400).map(entry=>({
+                id:entry.id,name:entry.name,kind:entry.kind,
+                size:entry.file?.size ?? entry.size ?? 0,
+                lastModified:entry.file?.lastModified ?? entry.lastModified ?? 0,
+                relativePath:entry.file?.webkitRelativePath || entry.relativePath || ''
+            }));
+            localStorage.setItem(MEDIA_INDEX_KEY,JSON.stringify(records));
+        } catch(error) { console.warn('Media index cannot be persisted:',error); }
+    }
+    function restoreMediaIndex() {
+        try {
+            const saved=JSON.parse(localStorage.getItem(MEDIA_INDEX_KEY)||'[]');
+            if (!Array.isArray(saved)) return;
+            state.files=saved.slice(0,400).filter(e=>e&&typeof e.id==='string'&&typeof e.name==='string'
+                &&['video','audio','sticker','background'].includes(e.kind))
+                .map(e=>({id:e.id,name:e.name,kind:e.kind,file:null,
+                    size:Number(e.size)||0,lastModified:Number(e.lastModified)||0,
+                    relativePath:String(e.relativePath||''),needsRelink:true}));
+        } catch(error) { console.warn('Could not restore media index:',error); }
+    }
     function renderFiles() {
         elements.fileList.innerHTML = '';
         elements.fileCount.textContent = `${state.files.length} media`;
+        const unlinked=state.files.filter(entry=>!entry.file).length;
+        elements.mediaRememberNote.textContent = unlinked
+            ? `${unlinked} remembered · reimport to relink` : 'Media names remembered locally';
+        persistMediaIndex();
         if (!state.files.length) {
             elements.fileList.innerHTML = '<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
             return;
         }
         for (const entry of state.files) {
             const row = document.createElement('div');
-            row.className = `file-row kind-${entry.kind}${entry.id === state.selectedFileId ? ' active' : ''}`;
+            row.className = `file-row kind-${entry.kind}${entry.id === state.selectedFileId ? ' active' : ''}${!entry.file ? ' is-unlinked' : ''}`;
             // Native HTML drag was unreliable after the v0.17 lane update in some Chromium builds.
             // The pointer drag below deliberately owns Project File placement instead.
             row.draggable = false;
             row.tabIndex = 0;
             row.dataset.fileId = entry.id;
-            row.title = 'Drag this file to the timeline.';
-            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file.size)} · drag to timeline</span></span>`;
+            row.title = entry.file ? 'Drag this file to the timeline.' : 'File remembered; click to reimport it and grant access.';
+            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file?.size ?? entry.size)} · ${entry.file ? 'drag to timeline' : 'reimport to relink'}</span></span>`;
 
             let pointerDrag = null;
             let suppressClick = false;
@@ -449,7 +478,7 @@ import { planClipSnap } from './clip-snap.mjs';
             };
 
             row.addEventListener('pointerdown', (event) => {
-                if (event.button !== 0) return;
+                if (event.button !== 0 || !entry.file) return;
                 pointerDrag = { pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, started: false, ghost: null };
                 row.setPointerCapture?.(event.pointerId);
             });
@@ -461,12 +490,14 @@ import { planClipSnap } from './clip-snap.mjs';
             });
             row.addEventListener('click', () => {
                 if (suppressClick) return;
+                if (!entry.file) { showToast('Choose this file again to relink it'); elements.fileInput.click(); return; }
                 state.selectedFileId = entry.id;
                 renderFiles();
             });
             row.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
+                    if (!entry.file) { elements.fileInput.click(); return; }
                     state.selectedFileId = entry.id;
                     renderFiles();
                 }
@@ -749,6 +780,7 @@ import { planClipSnap } from './clip-snap.mjs';
     async function placeProjectFile({ fileId, laneId, laneType, start }) {
         const entry = getFile(fileId);
         if (!entry) return;
+        if (!entry.file) { showToast('Relink this remembered file before placing it on the timeline'); return; }
         recordHistory(`Place ${entry.name}`);
         const laneTracks = laneId ? state.tracks.filter((track) => track.laneId === laneId) : [];
         let track = null;
@@ -1517,6 +1549,7 @@ import { planClipSnap } from './clip-snap.mjs';
 
     elements.btnImport.addEventListener('click', () => elements.fileInput.click());
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
+    elements.btnRelink.addEventListener('click', () => elements.fileInput.click());
     elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
     elements.btnClear.addEventListener('click', () => {
         if (!state.files.length && !state.tracks.length) return;
@@ -1646,6 +1679,7 @@ import { planClipSnap } from './clip-snap.mjs';
     });
 
     document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
+    restoreMediaIndex();
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
