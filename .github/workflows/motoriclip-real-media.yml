@@ -144,21 +144,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Use preinstalled Firefox/WebKit with matching Playwright library
-        run: npm install --no-save playwright-core@1.56.1
+      - name: Use preinstalled Firefox and packaged FFmpeg binaries
+        timeout-minutes: 6
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
       - name: Test editor routing and capability handling in Firefox and WebKit
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser node tools/audio-timeline/tests/cross-browser.browser.mjs'
-      - name: Install FFmpeg and prepare synthetic media fixtures
-        timeout-minutes: 5
+      - name: Expose packaged FFmpeg and prepare synthetic media fixtures
+        timeout-minutes: 2
         run: |
-          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-            apt-get update -qq
-            apt-get install -y ffmpeg
-          fi
+          set -euo pipefail
+          node -e "const fs=require('fs');for(const [name,path] of [['ffmpeg',require('ffmpeg-static')],['ffprobe',require('@ffprobe-installer/ffprobe').path]]){const target='/usr/local/bin/'+name;if(fs.existsSync(target))fs.unlinkSync(target);fs.symlinkSync(path,target);}"
           mkdir -p tools/audio-timeline/tests/fixtures
           chown pwuser:pwuser tools/audio-timeline/tests/fixtures
-          command -v ffmpeg
-          command -v ffprobe
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
       - name: Decode, render and inspect an actual Firefox WebM export
         timeout-minutes: 7
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser MOTORICLIP_BROWSER=firefox node tools/audio-timeline/tests/real-export.browser.mjs'
