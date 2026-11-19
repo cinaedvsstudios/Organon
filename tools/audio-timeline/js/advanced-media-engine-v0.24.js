@@ -302,6 +302,10 @@ export class AdvancedMediaEngine {
         const loading = [...this.loadingTracks];
         this.setTracks([]);
         for (const track of loading) this.detachTrack(track, false);
+        // Drop any 1080p+ offscreen transition textures when a project clears.
+        for(const name of ['transitionPixelScratch','transitionFullScratch']){
+            if(this[name]){ this[name].width=0; this[name].height=0; this[name]=null; }
+        }
         this.currentTime = 0;
         this.emitDuration(); this.emitTime(); this.renderFrame();
     }
