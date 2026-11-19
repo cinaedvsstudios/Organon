@@ -204,7 +204,8 @@ export class AdvancedOfflineExporter {
                 const position = start + (overlapStart - sourceStart) / speed;
                 const node = offline.createBufferSource();
                 node.buffer = wrapped.buffer;
-                node.playbackRate.value=speed;
+                if (node.playbackRate) node.playbackRate.value = speed;
+                else if (speed !== 1) throw new Error('This browser cannot adjust audio playback rate during fixed-frame export.');
                 node.connect(gain);
                 node.start(position, overlapStart - chunkStart, overlapEnd - overlapStart);
                 scheduled += 1;
