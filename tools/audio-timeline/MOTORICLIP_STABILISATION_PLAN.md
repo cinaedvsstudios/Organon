@@ -240,6 +240,19 @@ Regression checklist:
 
 [Phase 8H QA](./MOTORICLIP_PHASE8H_QA.md).
 
+## Phase 8I — Paper tear, Ink bleed and Splatter wipe [MERGED]
+
+[PR #51](https://github.com/cinaedvsstudios/Organon/pull/51) merged 19 November 2026 at `67439a2b5b84bfd9ed608aaf42bfb25adfafa1fe`. [GitHub Actions 44475059943](https://github.com/cinaedvsstudios/Organon/actions/runs/44475059943) passed all three jobs: **144/144 Node tests**, Chrome pixel and editor coverage across 22 effects, Firefox compatibility, the 120-second full-HD MP4 exporter and repeated-export memory recovery.
+
+- **Paper tear:** A left-to-right irregular edge with pale paper-fiber detail reveals Video B over A.
+- **Ink bleed:** 24 staggered organic pools with dark-violet outlines reveal B, spreading and joining into a complete incoming frame near the end.
+- **Splatter wipe:** 72 scattered droplets with a progressing horizontal paint front reveal B, intentionally distinct from Ink bleed and Random squares.
+- **Current library:** User-selected **41 total / 22 available / 19 queued**, preserving spelling, order and IDs. Only genuinely implemented effects are enabled.
+- **Compatibility:** No source-media changes, existing linked audio unchanged, same two-clip pair planner, gold markers and Undo/Redo. All three new effects use the shared preview/export compositor without allocating new persistent full-resolution textures.
+- **Further work:** Implement the 19 remaining selections in manageable batches; effect presets, clip timing handles and optional audio crossfades remain separate.
+
+[Phase 8I QA](./MOTORICLIP_PHASE8I_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
