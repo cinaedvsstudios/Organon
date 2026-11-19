@@ -173,6 +173,15 @@ try{
     await page.locator('#btn-apply-transition-modal').click();
     assert.equal(await page.locator('#transition-modal').isVisible(),false,
         'A valid still-image transition should be applied and close its modal');
+    const stillDebug=await page.evaluate(()=>({
+        toast:document.querySelector('#app-toast')?.textContent,
+        clips:[...document.querySelectorAll('.timeline-clip')].map(el=>({
+            className:el.className,filename:el.querySelector('.clip-label')?.textContent,
+            markerCount:el.querySelectorAll('.visual-transition-marker.enter').length,
+            id:el.dataset.trackId,start:el.style.left
+        }))
+    }));
+    console.log('[Phase9 still-image transition diagnostic]',JSON.stringify(stillDebug));
     assert.ok(await page.locator('.timeline-clip.sticker .visual-transition-marker.enter').count()>=1,
         'Image B must show the gold transition entry marker');
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
