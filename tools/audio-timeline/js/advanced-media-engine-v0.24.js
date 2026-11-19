@@ -7,6 +7,7 @@
 import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-scheduler.mjs';
 import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-seek.mjs';
 import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from './media-support.mjs';
+import { visualFadeOpacity } from './visual-transitions.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -548,7 +549,7 @@ export class AdvancedMediaEngine {
                     this.context.save();
                     try {
                         this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
-                        this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1);
+                        this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1) * visualFadeOpacity(track, this.currentTime);
                         if (track.type === 'background') drawCovered(this.context, track.media, width, height);
                         else if (track.type === 'video' && (track.media.readyState === undefined || track.media.readyState >= 2)) drawContained(this.context, track.media, width, height);
                         else if (track.type === 'sticker') this.drawSticker(track, width, height);
