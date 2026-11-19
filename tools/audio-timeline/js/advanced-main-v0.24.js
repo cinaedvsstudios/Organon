@@ -1104,6 +1104,20 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         return Boolean(track?.file && time > start + .04 && time < end - .04);
     }
 
+    function splitClipKeyframes(track,cutOffset) {
+        const left={},right={};
+        for(const [property,frames] of Object.entries(track.keyframes||{})){
+            if(!Array.isArray(frames)||!frames.length)continue;
+            const value=visualParameterAt(track,property,(Number(track.start)||0)+cutOffset);
+            left[property]=[...frames.filter(frame=>frame.time<cutOffset-.001).map(frame=>({...frame})),
+                {time:Number(cutOffset.toFixed(3)),value}];
+            right[property]=[{time:0,value},
+                ...frames.filter(frame=>frame.time>cutOffset+.001).map(frame=>({
+                    time:Number((frame.time-cutOffset).toFixed(3)),value:frame.value
+                }))];
+        }
+        return {left,right};
+    }
     async function splitTrackAtNow(trackId, { record = true } = {}) {
         const track = getTrack(trackId);
         if (!canSplitTrack(track)) { showToast('Move the now line inside a clip before splitting'); return false; }
@@ -1111,6 +1125,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         const leftDuration = cutTime - track.start;
         const rightDuration = track.clipDuration - leftDuration;
         const transitionParts=splitVisualTransitions(track.visualTransitions);
+        const keyframeParts=splitClipKeyframes(track,leftDuration);
         const split = createTrack(track.type, {
             laneId: track.laneId,
             laneLabel: track.laneLabel,
@@ -1123,6 +1138,8 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             opacity: track.opacity,
             blendMode: track.blendMode,
             audio: { ...track.audio },
+            transform: {...(track.transform||{})}, adjustments:{...(track.adjustments||{})},
+            keyframes:keyframeParts.right,speed:track.speed||1,
             visualTransitions: transitionParts.right,
             transparency: { ...track.transparency },
             groupId: track.groupId,
@@ -1141,7 +1158,8 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         }
         if (record) recordHistory(`Split ${track.sourceName || track.laneLabel}`);
         track.clipDuration = leftDuration;
-        if(track.type==='video')track.visualTransitions=transitionParts.left;
+        if(VISIBLE_VISUAL_TYPES.has(track.type))track.visualTransitions=transitionParts.left;
+        track.keyframes=keyframeParts.left;
         split.clipDuration = rightDuration;
         state.tracks.push(split);
         refreshAll(); selectTrack(split.id);
@@ -1191,6 +1209,8 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
                 opacity: original.opacity,
                 blendMode: original.blendMode,
                 audio: { ...original.audio },
+                transform:{...(original.transform||{})}, adjustments:{...(original.adjustments||{})},
+                keyframes:original.keyframes,speed:original.speed||1,
                 visualTransitions: normalizeVisualTransitions(original.visualTransitions),
                 transparency: { ...original.transparency },
                 groupId: null,
@@ -1206,6 +1226,9 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             clone.opacity = original.opacity;
             clone.blendMode = original.blendMode;
             clone.audio = { ...original.audio };
+            clone.transform={...(original.transform||{})};clone.adjustments={...(original.adjustments||{})};
+            clone.keyframes=Object.fromEntries(Object.entries(original.keyframes||{}).map(([key,frames])=>[key,frames.map(frame=>({...frame}))]));
+            clone.speed=original.speed||1;
             clone.visualTransitions = normalizeVisualTransitions(original.visualTransitions);
             clone.transparency = { ...original.transparency };
             clone.analysis = original.analysis ? { ...original.analysis, levels: Array.isArray(original.analysis.levels) ? [...original.analysis.levels] : original.analysis.levels } : null;
