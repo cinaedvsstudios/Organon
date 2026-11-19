@@ -13,10 +13,10 @@ test('Phase 8M retains all 41 names and enables only the three new choices',()=>
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(new Set(TRANSITION_CATALOG.map(x=>x.id)).size,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(31,34),selected);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,37);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,4);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,41);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,0);
     for(const id of selected)assert.equal(TRANSITION_CATALOG.find(x=>x.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='gallery')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='gallery')?.status,'available');
 });
 
 test('ASCII glyph mapping is luminance-derived and fades only within overlap',()=>{
