@@ -185,6 +185,8 @@ try{
     assert.ok(await page.locator('.timeline-clip.sticker .visual-transition-marker.enter').count()>=1,
         'Image B must show the gold transition entry marker');
     // Speed controls must change real video duration while retaining the source.
+    if(await page.locator('#btn-selection-mode').getAttribute('aria-pressed')==='true')
+        await page.locator('#btn-selection-mode').click();
     await page.locator('.timeline-clip.video').first().click();
     assert.ok(await page.locator('#visual-speed-panel').isVisible());
     await page.locator('#visual-speed').fill('150');
