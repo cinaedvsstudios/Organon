@@ -21,6 +21,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  transition-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out Organon source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Playwright browser driver
+        run: npm install --no-save playwright-core@1.56.1
+      - name: Verify visual alpha envelopes and undo history
+        run: node --test tools/audio-timeline/tests/visual-transitions.test.mjs
+      - name: Verify Chrome compositor pixels and A/B inspector schematic
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/visual-transitions.browser.mjs
+
   export-browser:
     runs-on: ubuntu-24.04
     timeout-minutes: 55
