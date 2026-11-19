@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8J: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8K: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -356,6 +356,43 @@ export function smokeDensity(progress) {
     if(p===0||p===1)return 0;
     return Math.sin(Math.PI*p);
 }
+/** Phase 8K: twelve annular video slices rotate independently into a
+ * growing circular reveal, producing a vortex rather than a flat rotation.
+ */
+export function vortexRadius(progress,width,height) {
+    return Math.hypot(width/2,height/2)*unit(progress);
+}
+export function vortexTurn(progress,ring,count=12) {
+    const p=unit(progress),n=Math.max(1,Math.trunc(count)||12);
+    const i=Math.min(n-1,Math.max(0,Math.trunc(ring)||0));
+    if(p===0||p===1)return 0;
+    return (1-p)*Math.PI*1.9*(1-i/n*.85);
+}
+/** Thermal shimmer is smoothly wave-shaped, not the discrete random
+ * horizontal jitter or dropout used by VHS and Glitch flicker.
+ */
+export function heatHazeShift(progress,band,frame,width) {
+    const p=unit(progress);
+    if(p===0||p===1)return 0;
+    const t=Number.isFinite(Number(frame))?Math.floor(Number(frame)):0;
+    const envelope=Math.sin(Math.PI*p);
+    const wave=Math.sin(band*.73+t*.19)*.72+Math.sin(band*1.41-t*.13)*.28;
+    return Math.round(wave*envelope*Math.min(width*.065,34));
+}
+/** Refraction bends the sampled incoming footage inside alternating
+ * triangular lens facets; all offsets relax to zero at the boundaries.
+ */
+export function refractionFacetOffset(progress,facet,width,height) {
+    const p=unit(progress);
+    if(p===0||p===1)return {x:0,y:0};
+    const amplitude=Math.sin(Math.PI*p);
+    const angle=seededCell(facet*47+11)*Math.PI*2;
+    const magnitude=.45+seededCell(facet*23+29)*.55;
+    return {
+        x:Math.round(Math.cos(angle)*amplitude*magnitude*Math.min(width*.085,28)),
+        y:Math.round(Math.sin(angle)*amplitude*magnitude*Math.min(height*.09,20))
+    };
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -378,6 +415,106 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     if(progress>=1)return false; // Let normal renderer draw a pristine B.
     const alpha=context.globalAlpha;
     const media=track.media;
+
+    if(id==='vortex'||id==='heat-haze'||id==='refraction'){
+        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
+        const fullCtx=full.getContext('2d');
+        fullCtx.clearRect(0,0,width,height);
+        renderContained(fullCtx,media,width,height);
+        const cx=width/2,cy=height/2;
+        context.save();
+        if(id==='vortex'){
+            // Annular slices rotate the same incoming frame by different
+            // angles. The center grows outward while A remains visible
+            // outside the vortex. Twelve clipped draws, no pixel loops.
+            const radius=vortexRadius(progress,width,height),count=12;
+            for(let ring=0;ring<count;ring++){
+                const inner=radius*ring/count,outer=radius*(ring+1)/count;
+                context.save();
+                context.beginPath();
+                context.arc(cx,cy,outer,0,Math.PI*2);
+                if(inner>0)context.arc(cx,cy,inner,0,Math.PI*2);
+                context.clip('evenodd');
+                context.translate(cx,cy);
+                context.rotate(vortexTurn(progress,ring,count));
+                context.translate(-cx,-cy);
+                context.drawImage(full,0,0,width,height);
+                context.restore();
+            }
+            // Faint curved energy traces make the swirling edges visible
+            // even on uniform-color footage, without altering the sources.
+            const glow=(1-progress)*.23;
+            context.strokeStyle='#9fd9ef';
+            context.lineWidth=Math.max(1,Math.min(width,height)*.012);
+            context.globalAlpha=alpha*glow;
+            for(let arm=0;arm<3;arm++){
+                context.beginPath();
+                context.arc(cx,cy,radius*(.3+arm*.24),
+                    arm*Math.PI*.66+progress*4,
+                    arm*Math.PI*.66+progress*4+Math.PI*.72);
+                context.stroke();
+            }
+        }else if(id==='heat-haze'){
+            const bands=28,frame=Math.floor(time*30);
+            context.globalAlpha=alpha*progress;
+            for(let band=0;band<bands;band++){
+                const y=Math.floor(band*height/bands);
+                const end=band===bands-1?height:Math.floor((band+1)*height/bands);
+                const dx=heatHazeShift(progress,band,frame,width);
+                context.drawImage(full,0,y,width,end-y,dx,y,width,end-y);
+            }
+            // Gentle hot-air highlights ripple through the frame instead
+            // of VHS scan lines, glitch dropouts, or sharp tile boundaries.
+            const shimmer=Math.sin(Math.PI*progress);
+            context.globalAlpha=alpha*shimmer*.09;
+            context.fillStyle='#ffc46e';
+            for(let band=0;band<bands;band+=4){
+                const y=Math.floor((band+.4)*height/bands);
+                context.fillRect(0,y,width,Math.max(1,Math.round(height/bands*.5)));
+            }
+        }else{
+            // Two triangular facets per cell create an angled, multi-lens
+            // refraction rather than a uniform crossfade or square mosaic.
+            const cols=4,rows=3;
+            context.globalAlpha=alpha*progress;
+            for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+                const x0=col*width/cols,x1=(col+1)*width/cols;
+                const y0=row*height/rows,y1=(row+1)*height/rows;
+                for(let half=0;half<2;half++){
+                    const idx=(row*cols+col)*2+half;
+                    const shift=refractionFacetOffset(progress,idx,width,height);
+                    context.save();
+                    context.beginPath();
+                    context.moveTo(x0,y0);
+                    if(half===0){
+                        context.lineTo(x1,y0);
+                        context.lineTo(x1,y1);
+                    }else{
+                        context.lineTo(x0,y1);
+                        context.lineTo(x1,y1);
+                    }
+                    context.closePath();
+                    context.clip();
+                    context.drawImage(full,shift.x,shift.y,width,height);
+                    context.restore();
+                }
+            }
+            // Subtle prismatic seams catch the boundaries between lenses.
+            context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.23;
+            context.lineWidth=Math.max(1,Math.min(width,height)*.011);
+            for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+                const x0=col*width/cols,x1=(col+1)*width/cols;
+                const y0=row*height/rows,y1=(row+1)*height/rows;
+                context.strokeStyle=(row+col)%2?'#b7efff':'#f7a7d9';
+                context.beginPath();
+                context.moveTo(x0,y0);
+                context.lineTo(x1,y1);
+                context.stroke();
+            }
+        }
+        context.restore();
+        return true;
+    }
 
     if(id==='aperture-wipe'||id==='ripple'){
         context.save();

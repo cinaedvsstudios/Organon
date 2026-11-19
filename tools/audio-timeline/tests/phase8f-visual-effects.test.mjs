@@ -14,8 +14,8 @@ test('8F retains all 41 wishlist entries and enables exactly three additional ef
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(10,13),newEffects);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,25);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,16);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,28);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,13);
     for(const id of newEffects)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
 });

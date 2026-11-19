@@ -11,8 +11,8 @@ test('Phase 8D enables three new selected effects without renumbering the origin
     const expected=['ripple','tv-turn-off','aperture-wipe'];
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(4,7),expected);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='available').length,25);
-    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='requested').length,16);
+    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='available').length,28);
+    assert.equal(TRANSITION_CATALOG.filter(effect=>effect.status==='requested').length,13);
     for(const id of expected){
         assert.ok(isAvailablePairEffect(id),id+' should be implemented');
         assert.equal(TRANSITION_CATALOG.find(effect=>effect.id===id)?.status,'available');
