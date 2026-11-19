@@ -297,6 +297,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .context-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
 .context-action-grid button { font-size:.52rem; justify-content:center; }
 .timeline-clip.is-hidden { opacity:.43; filter:grayscale(1); border-style:dashed; }
+ .timeline-cue-marker {position:absolute;top:0;bottom:0;width:1px;background:rgba(245,182,75,.83);pointer-events:none;z-index:41;}
+.timeline-cue-marker span {position:absolute;top:0;left:2px;background:#3d301a;color:#f7d899;border:1px solid #e0a360;border-radius:4px;padding:2px 4px;font:.48rem var(--font-mono);white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -366,6 +368,11 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <button type="button" class="btn timeline-tool" id="btn-undo" title="Undo last timeline edit" aria-label="Undo last timeline edit" disabled>↶ Undo</button>
                             <button type="button" class="btn timeline-tool" id="btn-redo" title="Redo last timeline edit" aria-label="Redo last timeline edit" disabled>↷ Redo</button>
                             <button type="button" class="btn timeline-tool" id="btn-split-all" title="Split every clip crossing the now line">✂️ Split all</button>
+                            <button type="button" class="btn timeline-tool" id="btn-add-marker" title="Add or remove a cue marker at the playhead">⚑ Marker</button>
+                            <button type="button" class="btn timeline-tool" id="btn-previous-marker" title="Jump to previous marker">⟵</button>
+                            <button type="button" class="btn timeline-tool" id="btn-next-marker" title="Jump to next marker">⟶</button>
+                            <button type="button" class="btn timeline-tool" id="btn-nudge-left" title="Nudge selected clip left by one project frame (or move playhead if none)">◀ Nudge</button>
+                            <button type="button" class="btn timeline-tool" id="btn-nudge-right" title="Nudge selected clip right by one project frame (or move playhead if none)">Nudge ▶</button>
                             <button type="button" class="btn timeline-tool" id="btn-snap-selection" title="Select two clips to align A end → B start; one clip to see playhead snap options" disabled>⇥ Snap</button>
                             <button type="button" class="btn timeline-tool snap-options-toggle" id="btn-snap-options" title="Snap options: clip edges or the current playhead" aria-label="Show snap options" aria-expanded="false" disabled>▾</button>
                             <button type="button" class="btn timeline-tool" id="btn-add-track" title="Add a video, audio, sticker or background track" aria-expanded="false">＋ Track</button>
