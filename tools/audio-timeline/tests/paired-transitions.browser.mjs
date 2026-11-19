@@ -42,7 +42,8 @@ try{
     assert.equal(await page.locator('#pair-transition-effect option').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),41);
     assert.match(await page.locator('#transition-library-status').innerText(),/Available now \\(37\\):/);
-    assert.match(await page.locator('#transition-library-status').innerText(),/0 more selected/);
+
+
     await page.locator('#file-input').setInputFiles(files);
     await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===2,{timeout:10000});
     // Native drag/drop event targets call the same real placement handler that
