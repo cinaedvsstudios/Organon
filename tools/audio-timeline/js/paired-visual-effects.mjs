@@ -251,8 +251,11 @@ function tracePaperTear(ctx,progress,width,height) {
 export function inkBleedRadius(progress,index,width,height){
     const p=unit(progress);
     const delayed=Math.max(0,p-seededCell(index*13+37)*.22);
+    // Final broadening merges the irregular pools before the clean B frame,
+    // avoiding a sudden jump in coverage at the exact transition endpoint.
+    const finish=unit((p-.58)/.41)*Math.hypot(width,height);
     return Math.max(0,Math.min(width,height)*.34*delayed
-        *(.8+seededCell(index*23+79)*.5));
+        *(.8+seededCell(index*23+79)*.5)+finish);
 }
 function traceInkBleed(ctx,progress,width,height) {
     const cols=6,rows=4,vertices=16;
@@ -285,6 +288,10 @@ export function splatterDropRadius(progress,index,width,height) {
 function traceSplatter(ctx,progress,width,height){
     const count=72;
     ctx.beginPath();
+    // Advancing paint front fills the small remaining gaps at the end, while
+    // deterministic droplets fly ahead of the frontier throughout the wipe.
+    const front=unit((unit(progress)-.38)/.60);
+    if(front>0)ctx.rect(0,0,width*front,height);
     for(let i=0;i<count;i++){
         const r=splatterDropRadius(progress,i,width,height);
         if(r<=0)continue;
