@@ -286,6 +286,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .transition-dialog .modal-help { margin:6px 0 0; min-height:18px; }
 .transition-dialog #btn-apply-transition-modal { min-height:31px; }
 .timeline-ruler,.timeline-ruler * { user-select:none!important; -webkit-user-select:none!important; }
+
+.file-list-footer { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:6px 8px; border-top:1px solid rgba(137,107,73,.55); background:#111512; }
+.file-list-footer span { font:.48rem var(--font-mono); color:rgba(245,240,219,.58); }
+.file-list-footer #btn-clear { width:auto; min-height:22px; padding:3px 9px; font-size:.48rem; }
+.file-row.is-unlinked { opacity:.8; border-style:dashed; cursor:pointer; }
+.file-row.is-unlinked .file-meta { color:#e6ba7e; }
 </style>
 </head>
 <body>
@@ -312,12 +318,13 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <div class="file-toolbar">
                         <button type="button" class="btn" id="btn-import">➕ Import</button>
                         <button type="button" class="btn" id="btn-browse">📁 Browse</button>
-                        <button type="button" class="btn btn-danger" id="btn-clear" title="Clear all project files and timeline clips">🗑 Clear</button>
+                        <button type="button" class="btn" id="btn-relink" title="Relink files remembered from your last visit">↻ Relink</button>
                     </div>
                     <div class="project-action-buttons"><button type="button" class="btn" id="btn-project-settings" title="Canvas dimensions and frame rate">⚙ Project Settings</button><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button></div>
                 </section>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
+                    <div class="file-list-footer"><span id="media-remember-note" title="Only filenames, sizes and dates are remembered. Reimport to grant access after reload.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear all remembered media and timeline clips">🗑 Clear all</button></div>
                 </div>
             </div>
         </aside>
