@@ -15,7 +15,7 @@ const movie=(overrides={})=>({
     ...overrides
 });
 test('image clips use the same non-destructive visual fade envelopes as video',()=>{
-    const image={...baseVideo(),type:'sticker',visualTransitions:{
+    const image={...movie(),type:'sticker',visualTransitions:{
         enter:{type:'fade',duration:1,curve:'linear'},
         exit:{type:'fade',duration:0,curve:'linear'}
     }};
