@@ -230,6 +230,37 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .media-bin { display:none; }
 @media (max-width:1120px) { .advanced-grid { grid-template-columns:minmax(210px,270px) minmax(500px,1fr); } .right-column { grid-column:1/-1; } .inspector-scroll { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); max-height:none; } }
 @media (max-width:760px) { .advanced-app { width:100%; padding:0 8px 20px; } .top-panel { margin:0 0 10px; border-radius:0 0 20px 20px; } .online-label,.title-divider { display:none; } .advanced-grid { grid-template-columns:1fr; } .right-column { grid-column:auto; } .preview-stage { width:100%; min-width:0; } .inspector-scroll { display:flex; } .header-btn { min-height:30px; padding:6px 8px; } .header-btn span { display:none; } .file-toolbar { grid-template-columns:1fr 1fr 1fr; } }
+
+/* Compact, collapsible editor chrome and contextual controls. */
+.top-panel { position:relative; padding-top:20px; }
+.top-strip-trigger { position:absolute; inset:0 0 auto; display:flex; justify-content:center; align-items:center; width:100%; height:15px; padding:0; border:0; border-radius:0 0 9px 9px; background:rgba(18,19,16,.82); color:var(--stone-ochre); cursor:pointer; font:700 11px var(--font-mono); }
+.top-strip-trigger:hover,.top-strip-trigger:focus-visible { background:var(--water-blue); color:#fff; outline:1px solid var(--water-spray); }
+.top-panel.is-collapsed { display:block; height:13px; min-height:13px; padding:0; margin:0 0 8px; border-width:0 0 1px; border-radius:0; background:transparent; box-shadow:none; }
+.top-panel.is-collapsed .title-pill,.top-panel.is-collapsed .header-actions { display:none; }
+.top-panel.is-collapsed .top-strip-trigger { height:12px; }
+.project-action-buttons { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; margin-top:7px; }
+.project-action-buttons .btn { padding:7px 5px; font-size:.52rem; }
+.project-column .column-content { padding-top:10px; }
+.project-column .file-list-card,.project-column .file-list { max-height:calc(100vh - 190px); }
+.timeline-zoom-bar { position:relative; }
+.track-type-menu { position:absolute; top:calc(100% - 1px); left:8px; z-index:80; width:min(240px,calc(100% - 16px)); display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; border:1px solid var(--water-spray); border-radius:10px; background:#14191d; box-shadow:0 10px 28px #000; }
+.track-type-menu[hidden],.timeline-ruler[hidden],.editor-modal[hidden] { display:none!important; }
+.track-type-menu .btn { font-size:.52rem; white-space:nowrap; }
+.editor-modal { position:fixed; inset:0; z-index:3000; display:grid; place-items:center; padding:15px; background:rgba(0,0,0,.82); backdrop-filter:blur(3px); }
+.editor-modal-card { width:min(480px,100%); max-height:min(88vh,900px); overflow:auto; padding:14px; border:1px solid var(--water-spray); border-radius:15px; background:#191c1e; box-shadow:0 16px 48px #000; }
+.editor-modal-head { display:flex; align-items:center; justify-content:space-between; gap:9px; margin-bottom:9px; }
+.editor-modal-head h2 { color:var(--stone-ochre); font:700 .78rem var(--font-headers); margin:0; }
+.editor-modal-close { width:30px; height:30px; border:1px solid var(--chiseled-bronze); border-radius:50%; background:#101214; color:var(--white-accent); font-size:20px; cursor:pointer; }
+.editor-modal-close:hover { border-color:var(--water-spray); background:var(--water-blue); }
+.editor-modal .canvas-settings,.editor-modal .export-settings { margin:0; }
+.editor-modal-field { display:grid; gap:5px; margin:10px 0; color:var(--alabaster-paper); font:.6rem var(--font-mono); }
+.editor-modal-field .compact-select,.editor-modal-field .compact-input { width:100%; max-width:none; }
+.editor-modal .btn-primary { width:100%; }
+.modal-help { color:rgba(245,240,219,.66); font:.62rem/1.5 var(--font-body); margin:7px 0; }
+.export-help { margin-top:7px; font:.58rem var(--font-mono); color:rgba(245,240,219,.62); }
+.export-help summary { cursor:pointer; }
+.export-help summary:hover { color:var(--water-spray); }
+@media (max-width:760px) { .top-panel.is-collapsed { margin:0 0 8px; border-radius:0; } .file-toolbar .btn { padding:6px 3px; } }
 </style>
 </head>
 <body>
