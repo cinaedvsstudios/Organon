@@ -1,7 +1,7 @@
 # MotoriClip Phase 8J — Cell dissolve, Bloom dissolve, Smoke dissolve
 
 **Date:** 19 November 2026 (Berlin)
-**Status:** Pending pull request and full three-job CI verification.
+**Status: MERGED AND VERIFIED.** [PR #52](https://github.com/cinaedvsstudios/Organon/pull/52) merged on 19 November 2026 at `783c19a2a78e3fffb36460768832d01af48e7fa1`.
 
 ## Selected effects and behavior
 
@@ -27,5 +27,13 @@ The 120-second export limit, Basic mode, unrelated visual fades and earlier tran
 2. **Actual Chrome Canvas**: two solid-color media inputs; previous A before transition and clean B afterwards; visible red/blue cell regions at midpoint with antialiased hex edges; Bloom must add a bright warm component and differ from Fade; Smoke must produce pale translucent clouds, remain different from Bloom, and produce identical pixels when seeking the same timestamp. Render all 25 effects without errors.
 3. **Real Chrome Advanced editor**: import two generated MP4 files and apply all 25 paired choices, gold region marker, active effect names and Undo/Redo.
 4. **Regression**: existing Node tests, Firefox and browser UI/export checks, 60-second 1080p and 120-second 720p near-limit exports, full 120-second 1080p H.264/AAC MP4 3,600-frame case, repeated-export memory recovery, portrait/rotated media files.
+
+**Release QA: PASS.** [GitHub Actions run 44482881817](https://github.com/cinaedvsstudios/Organon/actions/runs/44482881817) completed **all three jobs successfully** (`transition-smoke`, `cross-browser-ui`, `export-browser`).
+
+- **149/149 Node tests passed**, including the five new Phase 8J mathematical, deterministic and history invariants.
+- **Actual Chrome pixel checks passed for all 25 effects.** At the midpoint, Cell dissolve sampled 746 incoming red, 496 outgoing blue, 130 antialiased mixed pixels; Bloom sampled a luminous center [230,101,177]; Smoke sampled a cloudy center [149,80,161]. All differed from previous effects and reproduced identical pixels at repeated timeline timestamps.
+- **Chrome editor workflow passed:** imported two real MP4s, applied all 25 effects, verified the gold transition marker and effect label, and tested Undo/Redo.
+- **Firefox and browser-compatibility tests passed.** The existing full 120-second 1920×1080/30fps H.264/AAC MP4 test successfully exported **3,600 frames from 16 moving clips**, at 73.06 MiB; Chrome PSS peak 1,233 MiB. Near-limit exports, repeated-export memory recovery and portrait/rotated-media checks also passed.
+- Physical Windows/Android device certification, exact GLSL gallery reproduction, linked-audio crossfades and transparent-alpha output remain outside this phase.
 
 **Merge rule:** All three GitHub Actions jobs must pass; no unsupported claim of physical device verification.
