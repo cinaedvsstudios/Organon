@@ -1,7 +1,7 @@
 # MotoriClip Phase 8F — Block cover, Cross hatch, Film strip
 
 **Date:** 19 November 2026 (Berlin)
-**Status:** Awaiting PR verification.
+**Status: MERGED AND VERIFIED.** [PR #48](https://github.com/cinaedvsstudios/Organon/pull/48) merged 19 November 2026 at `18a6e9afeeca92d1867bd73bd8e2f27005332535`.
 
 ## Selection and effect behaviour
 
@@ -28,4 +28,9 @@ Existing media files, trims, audio and audio-volume settings remain untouched. A
 3. **Real Advanced editor:** import two MP4 clips, apply all 13 transition choices, verify gold marker and inspector effect names, undo and redo.
 4. **Full CI:** previous 124+ Node suites, Chrome/Firefox browser checks, multi-resolution export, memory recovery and 120-second 1080p 16-clip MP4 stress scenario must all pass before merge.
 
-**QA status:** Pending CI results.
+**QA result: PASS.** [GitHub Actions run 44464562638](https://github.com/cinaedvsstudios/Organon/actions/runs/44464562638) passed **all three jobs**: transition-smoke, cross-browser-ui and export-browser.
+- **129/129 Node tests** passed, including the Phase 8F deterministic stage/geometry/history tests.
+- **Actual Chrome Canvas pixels** confirmed the distinct Block cover, Cross hatch and Film strip visuals. Block cover midpoint contained 596 incoming red, 431 outgoing blue and 345 transient cover samples. Film strip showed 175 dark frame-border samples.
+- **Advanced editor UI** applied all 13 paired effects to two imported MP4s with gold region marker, inspector labels and Undo/Redo; Firefox compatibility checks passed.
+- **Real-media export suite passed**, including the full 120-second 1920×1080 MP4 with 3,600 frames / 16 moving clips and repeated-export memory recovery.
+- Physical Windows/Android certification and exact gallery GLSL reproduction were not part of this release.
