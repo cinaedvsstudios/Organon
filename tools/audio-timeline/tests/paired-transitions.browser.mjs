@@ -40,7 +40,7 @@ try{
     await page.locator('#transition-library-grid .transition-library-item').first().waitFor({state:'visible'});
     assert.equal(await page.locator('#transition-library-grid .transition-library-item').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option').count(),41);
-    assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),1);
+    assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),4);
     await page.locator('#file-input').setInputFiles(files);
     await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===2,{timeout:10000});
     // Native drag/drop event targets call the same real placement handler that
