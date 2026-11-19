@@ -28,8 +28,9 @@ export function clipAtTime(track, time) {
 }
 
 export function clipSourceTime(track, time) {
+    const speed = clamp(Number(track.speed)||1,.25,4);
     return Math.max(0, Number(track.sourceOffset) || 0)
-        + Math.max(0, time - (Number(track.start) || 0));
+        + Math.max(0, time - (Number(track.start) || 0))*speed;
 }
 
 export function clipAudioEnvelope(track, localTime) {
@@ -179,6 +180,7 @@ export class AdvancedOfflineExporter {
             if (end <= start) continue;
             const sourceStart = Math.max(0, Number(track.sourceOffset) || 0);
             const localEnd = end - start;
+            const speed = clamp(Number(track.speed)||1,.25,4);
             const points = fadeBreakpoints(track).filter(t => t <= localEnd);
             if (!points.includes(localEnd)) points.push(localEnd);
             gain.gain.setValueAtTime(volume * clipAudioEnvelope(track, 0), start);
@@ -190,7 +192,7 @@ export class AdvancedOfflineExporter {
             // Read a small lead-in so the first returned chunk spanning a
             // trimmed in-point isn't silently skipped.
             const from = Math.max(0, sourceStart - 1);
-            const to = sourceStart + localEnd;
+            const to = sourceStart + localEnd * speed;
             for await (const wrapped of sink.buffers(from, to)) {
                 this.assertActive();
                 if (!wrapped?.buffer) continue;
@@ -199,9 +201,10 @@ export class AdvancedOfflineExporter {
                 const overlapStart = Math.max(chunkStart, sourceStart);
                 const overlapEnd = Math.min(chunkEnd, to);
                 if (overlapEnd - overlapStart <= 1 / AUDIO_RATE) continue;
-                const position = start + overlapStart - sourceStart;
+                const position = start + (overlapStart - sourceStart) / speed;
                 const node = offline.createBufferSource();
                 node.buffer = wrapped.buffer;
+                node.playbackRate.value=speed;
                 node.connect(gain);
                 node.start(position, overlapStart - chunkStart, overlapEnd - overlapStart);
                 scheduled += 1;
