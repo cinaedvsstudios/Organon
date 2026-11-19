@@ -1,7 +1,7 @@
 # MotoriClip Phase 8B — paired Fade and transition catalog
 
 **Date:** 19 November 2026 (Berlin)  
-**PR:** (link after PR creation)
+**PR:** [#44](https://github.com/cinaedvsstudios/Organon/pull/44) — merged at `4a6e55050f083f29ff4c38e3ec49298ad713ea6c`
 
 ## User-selected catalog, batch 1
 
@@ -31,4 +31,4 @@ The 41 transition names from the user's first 10 pages of the GL Transitions gal
 - Node test: catalog has exactly 41 unique names, preserves user spelling and order, exposes only Fade as implemented; plan computes exact duration/overlap, detects lane collisions, rejects unsupported inputs, retains media/audio and preserves link metadata through history.
 - Real Chrome UI test: two generated MP4s imported, added to timeline, selected, paired, gold marker shown, and Undo/Redo returns the inspector link. All prior Chrome/Firefox and real export CI jobs must remain green.
 
-**Status:** Awaiting PR CI verification.
+**Status: MERGED AND VERIFIED.** [GitHub Actions run 44454652162](https://github.com/cinaedvsstudios/Organon/actions/runs/44454652162) passed **all three jobs**: transition-smoke, cross-browser-ui, export-browser. The new paired UI test reported: `PASS 41-candidate library, 2 video imports, actual paired fade, gold marker, undo/redo`, with the two visible clips at 20px and 0px timeline starts. Node suite: **108 passing tests**. Existing 60s/120s near-limit export tests, full 120s 1080p MP4 export, memory and portrait-media checks also passed. FFmpeg setup was stabilized with pinned `ffmpeg-static@5.3.0` (FFmpeg 6.1.1), instead of the hanging Ubuntu apt step or an obsolete binary that lacked `fps_mode` support. No production export-code or Basic-mode changes.
