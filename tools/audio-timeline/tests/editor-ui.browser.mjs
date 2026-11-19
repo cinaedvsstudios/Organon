@@ -38,6 +38,9 @@ try{
     page.on('pageerror',error=>crashes.push(String(error)));
     await page.goto(url+'index.html',{waitUntil:'domcontentloaded'});
     await page.waitForURL(/advanced\.html/,{timeout:20000});
+    assert.equal(await page.locator('#motori-header').getAttribute('class'),'top-panel is-collapsed');
+    assert.equal(await page.locator('#project-export-modal').isVisible(),false);
+    await page.locator('#btn-project-settings').click();
     await page.locator('#project-fps').waitFor({state:'visible'});
     assert.match(await page.title(),/MotoriClip.+Advanced/i);
     assert.equal(await page.locator('#project-fps').inputValue(),'30');
@@ -48,6 +51,11 @@ try{
     await page.locator('#btn-apply-canvas').click();
     assert.equal(await page.locator('#advanced-canvas').getAttribute('width'),'640');
     assert.equal(await page.locator('#advanced-canvas').getAttribute('height'),'360');
+    await page.locator('#project-settings-modal [data-close-modal]').click();
+    await page.locator('#btn-project-export').click();
+    assert.ok(await page.locator('#btn-export-video').isVisible());
+    assert.ok(await page.locator('#btn-export-offline').isVisible());
+    await page.locator('#project-export-modal [data-close-modal]').click();
     await page.locator('#preview-zoom').fill('135');
     await page.locator('#preview-zoom').dispatchEvent('input');
     assert.match(await page.locator('#preview-zoom-value').innerText(),/135%/);
@@ -65,13 +73,25 @@ try{
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     await page.locator('#btn-redo').click();
     await page.waitForFunction(()=>document.querySelector('#file-count')?.textContent?.includes('0 media'));
+    assert.equal(await page.locator('#timeline-ruler').isVisible(),false);
+    await page.locator('#btn-toggle-ruler').click();
+    assert.equal(await page.locator('#timeline-ruler').isVisible(),true);
+    await page.locator('#btn-toggle-ruler').click();
+    await page.locator('#btn-add-track').click();
+    await page.locator('[data-add-track-type="video"]').click();
+    assert.match(await page.locator('.lane-name').first().innerText(),/Video 1/i);
+    await page.locator('#btn-open-transitions').click();
+    assert.ok(await page.locator('#transition-modal').isVisible());
+    assert.match(await page.locator('#transition-modal-status').innerText(),/at least two video clips/i);
+    await page.locator('#transition-modal [data-close-modal]').click();
+    await page.locator('#btn-toggle-header').click();
     await page.locator('#btn-basic-mode').click();
     await page.waitForURL(/index\.html\?mode=basic/,{timeout:15000});
     assert.ok(await page.locator('#btn-advanced-mode').isVisible());
     await page.locator('#btn-advanced-mode').click();
     await page.waitForURL(/advanced\.html/,{timeout:15000});
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
-    console.log('[MotoriClip UI] PASS desktop routing, FPS/canvas/zoom, import-clear-undo-redo, Basic/Advanced switches');
+    console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
 
     const mobile=await browser.newContext({viewport:{width:393,height:851},isMobile:true,hasTouch:true,
         userAgent:'Mozilla/5.0 (Linux; Android 16; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/157.0.0.0 Mobile Safari/537.36'});
@@ -83,6 +103,7 @@ try{
     assert.match(await phone.title(),/MotoriClip.+Basic/i);
     await phone.locator('#btn-advanced-mode').click();
     await phone.waitForURL(/advanced\.html/,{timeout:15000});
+    await phone.locator('#btn-toggle-header').click();
     assert.ok(await phone.locator('#btn-basic-mode').isVisible());
     await phone.locator('#btn-basic-mode').click();
     await phone.waitForURL(/mode=basic/,{timeout:15000});
