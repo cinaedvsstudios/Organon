@@ -95,6 +95,23 @@ try{
     await page.locator('#btn-redo').click();
     await page.locator('#video-transition-pair-note').waitFor({state:'visible'});
     assert.match(await page.locator('#video-transition-pair-note').innerText(),/Brokey dissolve/);
+    // Right-click should expose actions without silently splitting the clip.
+    await page.locator('.timeline-clip.video:not(.placeholder)').first().click({button:'right'});
+    assert.ok(await page.locator('#timeline-context-menu').isVisible());
+    assert.equal(await page.locator('.timeline-clip.video:not(.placeholder)').count(),2);
+    await page.locator('#btn-open-transitions').click();
+    assert.ok(await page.locator('#transition-modal').isVisible());
+    assert.equal(await page.locator('#transition-modal-effect option').count(),41);
+    assert.equal(await page.locator('#transition-modal-from option').count(),2);
+    assert.equal(await page.locator('#transition-modal-to option').count(),2);
+    await page.locator('#transition-modal-from').selectOption({index:0});
+    await page.locator('#transition-modal-to').selectOption({index:1});
+    await page.locator('#transition-modal-effect').selectOption('sphere');
+    await page.locator('#transition-modal-duration').fill('0.75');
+    await page.locator('#btn-apply-transition-modal').click();
+    assert.equal(await page.locator('#transition-modal').isVisible(),false);
+    await page.locator('#video-transition-pair-note').waitFor({state:'visible'});
+    assert.match(await page.locator('#video-transition-pair-note').innerText(),/Paired Sphere/);
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
     console.log('[MotoriClip 8O] PASS 41-candidate library, 2 video imports, forty-one paired effects, gold marker, undo/redo '+JSON.stringify(positions));
 }finally{

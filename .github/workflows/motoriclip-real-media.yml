@@ -42,6 +42,8 @@ jobs:
           echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
       - name: Verify visual alpha envelopes and undo history
         run: node --test tools/audio-timeline/tests/visual-transitions.test.mjs
+      - name: Verify edge-constrained same-lane timeline movement
+        run: node --test tools/audio-timeline/tests/lane-collision.test.mjs
       - name: Validate all forty-one selected visual effects and paired edit invariants in Node
         run: node --test tools/audio-timeline/tests/paired-visual-effects.test.mjs tools/audio-timeline/tests/phase8d-visual-effects.test.mjs tools/audio-timeline/tests/phase8e-visual-effects.test.mjs tools/audio-timeline/tests/phase8f-visual-effects.test.mjs tools/audio-timeline/tests/phase8g-visual-effects.test.mjs tools/audio-timeline/tests/phase8h-visual-effects.test.mjs tools/audio-timeline/tests/phase8i-visual-effects.test.mjs tools/audio-timeline/tests/phase8j-visual-effects.test.mjs tools/audio-timeline/tests/phase8k-visual-effects.test.mjs tools/audio-timeline/tests/phase8l-visual-effects.test.mjs tools/audio-timeline/tests/phase8m-visual-effects.test.mjs tools/audio-timeline/tests/phase8n-visual-effects.test.mjs tools/audio-timeline/tests/phase8o-visual-effects.test.mjs
       - name: Verify Chrome compositor pixels and A/B inspector schematic
@@ -56,6 +58,10 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/paired-transitions.browser.mjs
+      - name: Verify compact editor dialogs, tracks, transitions and header in Chrome
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/editor-ui.browser.mjs
 
   export-browser:
     runs-on: ubuntu-24.04

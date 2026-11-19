@@ -501,10 +501,10 @@ export class AdvancedTimeline {
                     resizeHandle.title = 'Drag to trim or extend this clip';
                     clip.appendChild(resizeHandle);
                     this.installClipDrag(clip, workspace, track, resizeHandle);
+                    clip.title = 'Drag to move. Right-click for clip actions, including Split.';
                     clip.addEventListener('contextmenu', (event) => {
                         event.preventDefault(); event.stopPropagation();
-                        if (event.shiftKey) this.onContextMenu?.(track.id, event.clientX, event.clientY);
-                        else this.onSplitAtPlayhead?.(track.id);
+                        this.onContextMenu?.(track.id, event.clientX, event.clientY);
                     });
                 }
                 workspace.appendChild(clip);
@@ -553,6 +553,28 @@ export class AdvancedTimeline {
             const clip = this.lanesElement?.querySelector(`.timeline-clip[data-track-id="${cssEscape(track.id)}"]`);
             if (clip) this.updateClipStyle(clip, track);
         }
+    }
+
+    getLaneMoveBounds(movingTracks, originalStarts) {
+        // A drag may contain grouped clips in different lanes. Preserve all
+        // relative offsets; stop at the nearest occupied same-lane boundary.
+        const movingIds = new Set(movingTracks.map((item) => item.id));
+        let minDelta = -Math.min(...movingTracks.map((item) => originalStarts.get(item.id) || 0));
+        let maxDelta = 36000;
+        for (const track of movingTracks) {
+            if (!track.sourceName) continue;
+            const start = originalStarts.get(track.id) || 0;
+            const end = start + this.getClipDuration(track);
+            maxDelta = Math.min(maxDelta, 36000 - end);
+            for (const other of this.tracks) {
+                if (!other.sourceName || other.laneId !== track.laneId || movingIds.has(other.id)) continue;
+                const otherStart = Number(other.start) || 0;
+                const otherEnd = otherStart + this.getClipDuration(other);
+                if (otherStart >= end - .001) maxDelta = Math.min(maxDelta, otherStart - end);
+                else if (otherEnd <= start + .001) minDelta = Math.max(minDelta, otherEnd - start);
+            }
+        }
+        return { min: Math.min(minDelta,maxDelta), max: Math.max(minDelta,maxDelta) };
     }
 
     getVideoSnapResult(track, desiredStart, movingTracks = []) {
@@ -623,8 +645,10 @@ export class AdvancedTimeline {
             if (drag.mode === 'move') {
                 const desiredStart = clamp((drag.originalStarts.get(track.id) || 0) + deltaSeconds, 0, 36000);
                 const snap = this.getVideoSnapResult(track, desiredStart, drag.movingTracks);
-                const effectiveDelta = snap.start - (drag.originalStarts.get(track.id) || 0);
-                clip.classList.toggle('is-snapping', snap.snapped);
+                const desiredDelta = snap.start - (drag.originalStarts.get(track.id) || 0);
+                const bounds = this.getLaneMoveBounds(drag.movingTracks, drag.originalStarts);
+                const effectiveDelta = clamp(desiredDelta, bounds.min, bounds.max);
+                clip.classList.toggle('is-snapping', snap.snapped && Math.abs(effectiveDelta - desiredDelta) < .001);
                 for (const movingTrack of drag.movingTracks) {
                     movingTrack.start = clamp((drag.originalStarts.get(movingTrack.id) || 0) + effectiveDelta, 0, 36000);
                 }
@@ -634,7 +658,13 @@ export class AdvancedTimeline {
             } else {
                 const sourceLimit = (track.type === 'sticker' || track.type === 'background') ? 300 : Math.max(.15, (Number(track.sourceDuration) || drag.originalDuration) - (Number(track.sourceOffset) || 0));
                 // Right-edge resize is a trim/crop: sourceOffset stays fixed and only the source end moves.
-                track.clipDuration = clamp(drag.originalDuration + deltaSeconds, .15, sourceLimit);
+                const clipStart = Number(track.start) || 0;
+                const nextClipStart = Math.min(Infinity, ...this.tracks
+                    .filter((item) => item.id !== track.id && item.laneId === track.laneId
+                        && item.sourceName && (Number(item.start) || 0) >= clipStart + .001)
+                    .map((item) => Number(item.start) || 0));
+                const safeEnd = Number.isFinite(nextClipStart) ? Math.max(.15, nextClipStart - clipStart) : sourceLimit;
+                track.clipDuration = clamp(drag.originalDuration + deltaSeconds, .15, Math.max(.15, Math.min(sourceLimit, safeEnd)));
                 this.ensureViewportForTime((Number(track.start) || 0) + this.getClipDuration(track));
                 this.updateLayoutMetrics();
                 this.updateClipStyle(clip, track);

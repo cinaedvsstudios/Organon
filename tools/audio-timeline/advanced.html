@@ -230,11 +230,50 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .media-bin { display:none; }
 @media (max-width:1120px) { .advanced-grid { grid-template-columns:minmax(210px,270px) minmax(500px,1fr); } .right-column { grid-column:1/-1; } .inspector-scroll { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); max-height:none; } }
 @media (max-width:760px) { .advanced-app { width:100%; padding:0 8px 20px; } .top-panel { margin:0 0 10px; border-radius:0 0 20px 20px; } .online-label,.title-divider { display:none; } .advanced-grid { grid-template-columns:1fr; } .right-column { grid-column:auto; } .preview-stage { width:100%; min-width:0; } .inspector-scroll { display:flex; } .header-btn { min-height:30px; padding:6px 8px; } .header-btn span { display:none; } .file-toolbar { grid-template-columns:1fr 1fr 1fr; } }
+
+/* Compact, collapsible editor chrome and contextual controls. */
+.timeline-panel { overflow:visible; }
+.timeline-scroll { overflow-x:auto; overflow-y:hidden; border-radius:0 0 13px 13px; }
+.timeline-zoom-bar .track-type-menu { pointer-events:auto; }
+#btn-open-transitions { border-color:rgba(227,183,92,.8); color:#e3b75c; }
+#btn-open-transitions:hover { color:#111; background:#e3b75c; }
+#btn-toggle-ruler[aria-pressed="true"] { background:rgba(75,132,191,.45); }
+
+.top-panel { position:relative; padding-top:20px; }
+.top-strip-trigger { position:absolute; inset:0 0 auto; display:flex; justify-content:center; align-items:center; width:100%; height:15px; padding:0; border:0; border-radius:0 0 9px 9px; background:rgba(18,19,16,.82); color:var(--stone-ochre); cursor:pointer; font:700 11px var(--font-mono); }
+.top-strip-trigger:hover,.top-strip-trigger:focus-visible { background:var(--water-blue); color:#fff; outline:1px solid var(--water-spray); }
+.top-panel.is-collapsed { display:block; height:13px; min-height:13px; padding:0; margin:0 0 8px; border-width:0 0 1px; border-radius:0; background:transparent; box-shadow:none; }
+.top-panel.is-collapsed .title-pill,.top-panel.is-collapsed .header-actions { display:none; }
+.top-panel.is-collapsed .top-strip-trigger { height:12px; }
+.project-action-buttons { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:6px; margin-top:7px; }
+.project-action-buttons .btn { padding:7px 5px; font-size:.52rem; }
+.project-column .column-content { padding-top:10px; }
+.project-column .file-list-card,.project-column .file-list { max-height:calc(100vh - 190px); }
+.timeline-zoom-bar { position:relative; }
+.track-type-menu { position:absolute; top:calc(100% - 1px); left:8px; z-index:80; width:min(240px,calc(100% - 16px)); display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; border:1px solid var(--water-spray); border-radius:10px; background:#14191d; box-shadow:0 10px 28px #000; }
+.track-type-menu[hidden],.timeline-ruler[hidden],.editor-modal[hidden] { display:none!important; }
+.track-type-menu .btn { font-size:.52rem; white-space:nowrap; }
+.editor-modal { position:fixed; inset:0; z-index:3000; display:grid; place-items:center; padding:15px; background:rgba(0,0,0,.82); backdrop-filter:blur(3px); }
+.editor-modal-card { width:min(480px,100%); max-height:min(88vh,900px); overflow:auto; padding:14px; border:1px solid var(--water-spray); border-radius:15px; background:#191c1e; box-shadow:0 16px 48px #000; }
+.editor-modal-head { display:flex; align-items:center; justify-content:space-between; gap:9px; margin-bottom:9px; }
+.editor-modal-head h2 { color:var(--stone-ochre); font:700 .78rem var(--font-headers); margin:0; }
+.editor-modal-close { width:30px; height:30px; border:1px solid var(--chiseled-bronze); border-radius:50%; background:#101214; color:var(--white-accent); font-size:20px; cursor:pointer; }
+.editor-modal-close:hover { border-color:var(--water-spray); background:var(--water-blue); }
+.editor-modal .canvas-settings,.editor-modal .export-settings { margin:0; }
+.editor-modal-field { display:grid; gap:5px; margin:10px 0; color:var(--alabaster-paper); font:.6rem var(--font-mono); }
+.editor-modal-field .compact-select,.editor-modal-field .compact-input { width:100%; max-width:none; }
+.editor-modal .btn-primary { width:100%; }
+.modal-help { color:rgba(245,240,219,.66); font:.62rem/1.5 var(--font-body); margin:7px 0; }
+.export-help { margin-top:7px; font:.58rem var(--font-mono); color:rgba(245,240,219,.62); }
+.export-help summary { cursor:pointer; }
+.export-help summary:hover { color:var(--water-spray); }
+@media (max-width:760px) { .top-panel.is-collapsed { margin:0 0 8px; border-radius:0; } .file-toolbar .btn { padding:6px 3px; } }
 </style>
 </head>
 <body>
 <div class="advanced-app" id="advanced-app">
-    <header class="top-panel">
+    <header class="top-panel is-collapsed" id="motori-header">
+        <button type="button" id="btn-toggle-header" class="top-strip-trigger" aria-expanded="false" title="Show editor header">▾</button>
         <div class="title-pill">
             <span class="status-dot" aria-hidden="true"></span>
             <span class="online-label">Organon Online</span>
@@ -249,54 +288,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 
     <main class="advanced-grid">
         <aside class="column-card project-column">
-            <div class="column-heading"><h2>Project Files</h2><span class="micro-label" id="file-count">0 media</span></div>
             <div class="column-content">
                 <section class="project-controls">
-                    <div class="project-controls-title"><span>Project controls</span><small>whole project</small></div>
+                    <div class="project-controls-title"><span>Project controls</span><small id="file-count">0 media</small></div>
                     <div class="file-toolbar">
                         <button type="button" class="btn" id="btn-import">➕ Import</button>
                         <button type="button" class="btn" id="btn-browse">📁 Browse</button>
-                        <button type="button" class="btn btn-danger" id="btn-clear">🗑 Clear</button>
+                        <button type="button" class="btn btn-danger" id="btn-clear" title="Clear all project files and timeline clips">🗑 Clear</button>
                     </div>
-                </section>
-                <section class="canvas-settings" aria-label="Canvas dimensions">
-                    <div class="canvas-settings-title"><span>Canvas dimensions</span><small id="canvas-aspect-label">16:9</small></div>
-                    <div class="dimension-grid">
-                        <label class="dimension-field"><span>W</span><input class="dimension-input" id="canvas-width" type="number" min="64" max="7680" step="1" value="1280" inputmode="numeric" aria-label="Output width"></label>
-                        <label class="dimension-field"><span>H</span><input class="dimension-input" id="canvas-height" type="number" min="64" max="7680" step="1" value="720" inputmode="numeric" aria-label="Output height"></label>
-                        <button type="button" class="btn dimension-apply" id="btn-apply-canvas" title="Apply canvas dimensions">✓</button>
-                    </div>
-                    <label class="dimension-field project-frame-rate" for="project-fps"><span>Project frame rate</span>
-                        <select class="dimension-input" id="project-fps" aria-label="Project frame rate for stepping and future export">
-                            <option value="24">24 fps</option><option value="25">25 fps</option>
-                            <option value="30" selected>30 fps</option><option value="50">50 fps</option><option value="60">60 fps</option>
-                        </select>
-                    </label>
-                </section>
-                <section class="export-settings" aria-label="Video export">
-                    <div class="canvas-settings-title"><span>🎞 Video export</span><small>Real-time</small></div>
-                    <div class="export-row">
-                        <label class="export-setting"><span>Format</span><select class="dimension-input" id="export-format" aria-label="Export format"><option value="">Checking browser…</option></select></label>
-                        <label class="export-setting"><span>Video quality</span><select class="dimension-input" id="export-bitrate" aria-label="Export video bitrate">
-                            <option value="3000">Compact · 3 Mbps</option>
-                            <option value="6000" selected>Standard · 6 Mbps</option>
-                            <option value="10000">High · 10 Mbps</option>
-                            <option value="16000">Very high · 16 Mbps</option>
-                        </select></label>
-                    </div>
-                    <button type="button" class="btn btn-primary" id="btn-export-video" disabled>🎬 Render &amp; Save</button>
-                    <p class="export-note">Real-time browser recording at the chosen resolution and FPS. Keep this tab visible.</p>
-                    <div class="export-offline-beta">
-                        <label class="export-setting" for="export-offline-format"><span>Fixed-frame format (beta)</span>
-                            <select class="dimension-input" id="export-offline-format" aria-label="Offline fixed-frame export format">
-                                <option value="mp4" selected>MP4 · H.264 / AAC</option>
-                                <option value="webm">WebM · VP9 / Opus</option>
-                            </select>
-                        </label>
-                        <button type="button" class="btn" id="btn-export-offline" disabled>🧪 Fixed-frame export (beta)</button>
-                        <p class="export-note">Up to 2 minutes. Uses WebCodecs + Mediabunny to render frames at exact project timestamps and mix audio offline. Beta; encoding requires browser support and downloads the export library on first use. The original real-time option remains available.</p>
-                    </div>
-                    <p class="export-status" id="export-status" role="status" aria-live="polite">Checking recording support…</p>
+                    <div class="project-action-buttons"><button type="button" class="btn" id="btn-project-settings" title="Canvas dimensions and frame rate">⚙ Project Settings</button><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button></div>
                 </section>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
@@ -336,11 +336,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <button type="button" class="btn timeline-tool" id="btn-undo" title="Undo last timeline edit" aria-label="Undo last timeline edit" disabled>↶ Undo</button>
                             <button type="button" class="btn timeline-tool" id="btn-redo" title="Redo last timeline edit" aria-label="Redo last timeline edit" disabled>↷ Redo</button>
                             <button type="button" class="btn timeline-tool" id="btn-split-all" title="Split every clip crossing the now line">✂️ Split all</button>
+                            <button type="button" class="btn timeline-tool" id="btn-add-track" title="Add a video, audio, sticker or background track" aria-expanded="false">＋ Track</button>
+                            <button type="button" class="btn timeline-tool" id="btn-open-transitions" title="Apply one of the 41 A/B video transitions">✦ Transitions</button>
+                            <button type="button" class="btn timeline-tool" id="btn-toggle-ruler" title="Show or hide timeline seconds" aria-pressed="false">⌛ Ruler</button>
                             <button type="button" class="btn timeline-tool" id="btn-selection-mode" title="Select multiple clips" aria-label="Toggle select mode" aria-pressed="false">☝️ Select</button>
                             <button type="button" class="btn timeline-tool" id="btn-group-selection" title="Select two or more clips first" aria-label="Group selected clips" disabled>👏 Group</button>
                             <button type="button" class="btn timeline-tool" id="btn-duplicate-selection" title="Select one or more clips first" aria-label="Duplicate selected clips" disabled>⧉ Duplicate</button>
                             <button type="button" class="btn timeline-tool btn-danger" id="btn-delete-selection" title="Select one or more clips first" aria-label="Delete selected clips" disabled>🗑 Delete</button>
                         </div>
+                        <div id="track-type-menu" class="track-type-menu" hidden aria-label="Choose track type"><button type="button" class="btn" data-add-track-type="video">🎬 Video</button><button type="button" class="btn" data-add-track-type="audio">🎵 Audio</button><button type="button" class="btn" data-add-track-type="sticker">✨ Sticker</button><button type="button" class="btn" data-add-track-type="background">🖼 Background</button></div>
                         <div class="timeline-zoom-controls" aria-label="Timeline zoom controls">
                             <span class="timeline-zoom-label">Zoom</span>
                             <input class="timeline-zoom" id="timeline-zoom" type="range" min="25" max="400" value="100" step="5" aria-label="Timeline zoom">
@@ -348,11 +352,11 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <button type="button" class="btn timeline-zoom-reset" id="btn-reset-timeline-zoom" title="Reset timeline zoom" aria-label="Reset timeline zoom">↺</button>
                         </div>
                     </div>
-                    <div class="timeline-empty" id="timeline-empty">Drag a Project File here to create a movable clip. Videos keep their own sound by default; use <strong>Extract Audio</strong> from a video’s right-click menu only when you need a separate audio clip.</div>
+                    <div class="timeline-empty" id="timeline-empty">Drag a Project File here or use ＋ Track to add an empty lane. Right-click clips for Split, Add Layer and Extract Audio.</div>
                     <div class="timeline-scroll">
                         <div class="timeline-inner">
                             <div id="timeline-lanes"></div>
-                            <div class="timeline-ruler" id="timeline-ruler"></div>
+                            <div class="timeline-ruler" id="timeline-ruler" hidden></div>
                         </div>
                     </div>
                 </section>
@@ -364,7 +368,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <div class="column-content inspector-scroll">
                 <section class="control-card" id="inspector-project">
                     <h3>Project</h3>
-                    <p class="control-copy">Select a timeline clip to show its controls here. Clip position and duration are changed directly by dragging or resizing its pill in the timeline. Use Select mode to choose two loaded videos for a paired transition.</p>
+                    <p class="control-copy">Select a clip to edit it, or use the ✦ Transitions button above the timeline for A/B effects.</p>
                     <div class="pair-transition-panel" id="pair-transition-panel" hidden>
                         <h4>✦ Pair Video A → Video B</h4>
                         <p class="control-copy" id="pair-transition-description">Select two video clips.</p>
@@ -456,8 +460,53 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
+    <div class="editor-modal" id="project-settings-modal" hidden role="dialog" aria-modal="true" aria-label="⚙ Project Settings"><div class="editor-modal-card"><div class="editor-modal-head"><h2>⚙ Project Settings</h2><button type="button" class="editor-modal-close" data-close-modal title="Close" aria-label="Close dialog">×</button></div>
+                <section class="canvas-settings" aria-label="Canvas dimensions">
+                    <div class="canvas-settings-title"><span>Canvas dimensions</span><small id="canvas-aspect-label">16:9</small></div>
+                    <div class="dimension-grid">
+                        <label class="dimension-field"><span>W</span><input class="dimension-input" id="canvas-width" type="number" min="64" max="7680" step="1" value="1280" inputmode="numeric" aria-label="Output width"></label>
+                        <label class="dimension-field"><span>H</span><input class="dimension-input" id="canvas-height" type="number" min="64" max="7680" step="1" value="720" inputmode="numeric" aria-label="Output height"></label>
+                        <button type="button" class="btn dimension-apply" id="btn-apply-canvas" title="Apply canvas dimensions">✓</button>
+                    </div>
+                    <label class="dimension-field project-frame-rate" for="project-fps"><span>Project frame rate</span>
+                        <select class="dimension-input" id="project-fps" aria-label="Project frame rate for stepping and future export">
+                            <option value="24">24 fps</option><option value="25">25 fps</option>
+                            <option value="30" selected>30 fps</option><option value="50">50 fps</option><option value="60">60 fps</option>
+                        </select>
+                    </label>
+                </section>
+    </div></div>
+    <div class="editor-modal" id="project-export-modal" hidden role="dialog" aria-modal="true" aria-label="🎞 Video Export"><div class="editor-modal-card"><div class="editor-modal-head"><h2>🎞 Video Export</h2><button type="button" class="editor-modal-close" data-close-modal title="Close" aria-label="Close dialog">×</button></div>
+                <section class="export-settings" aria-label="Video export">
+                    <div class="canvas-settings-title"><span>🎞 Video export</span><small>Real-time</small></div>
+                    <div class="export-row">
+                        <label class="export-setting"><span>Format</span><select class="dimension-input" id="export-format" aria-label="Export format"><option value="">Checking browser…</option></select></label>
+                        <label class="export-setting"><span>Video quality</span><select class="dimension-input" id="export-bitrate" aria-label="Export video bitrate">
+                            <option value="3000">Compact · 3 Mbps</option>
+                            <option value="6000" selected>Standard · 6 Mbps</option>
+                            <option value="10000">High · 10 Mbps</option>
+                            <option value="16000">Very high · 16 Mbps</option>
+                        </select></label>
+                    </div>
+                    <button type="button" class="btn btn-primary" id="btn-export-video" disabled>🎬 Render &amp; Save</button>
+                    <details class="export-help"><summary>About real-time export</summary><p class="export-note">Records the timeline in real time at the selected resolution and FPS. Keep the tab visible.</p></details>
+                    <div class="export-offline-beta">
+                        <label class="export-setting" for="export-offline-format"><span>Fixed-frame format (beta)</span>
+                            <select class="dimension-input" id="export-offline-format" aria-label="Offline fixed-frame export format">
+                                <option value="mp4" selected>MP4 · H.264 / AAC</option>
+                                <option value="webm">WebM · VP9 / Opus</option>
+                            </select>
+                        </label>
+                        <button type="button" class="btn" id="btn-export-offline" disabled>🧪 Fixed-frame export (beta)</button>
+                        <details class="export-help"><summary>About fixed-frame export</summary><p class="export-note">Up to 2 minutes. WebCodecs + Mediabunny render at exact timestamps. Requires browser support and may download the export library.</p></details>
+                    </div>
+                    <p class="export-status" id="export-status" role="status" aria-live="polite">Checking recording support…</p>
+                </section>
+    </div></div>
+    <div class="editor-modal" id="transition-modal" hidden role="dialog" aria-modal="true" aria-label="Video transitions"><div class="editor-modal-card"><div class="editor-modal-head"><h2>✦ A/B Video Transitions</h2><button type="button" class="editor-modal-close" data-close-modal title="Close" aria-label="Close dialog">×</button></div><p class="modal-help">Choose two video clips. Video B overlaps Video A on a separate layer while the effect plays.</p><label class="editor-modal-field">From · Video A<select id="transition-modal-from" class="compact-select" aria-label="First video clip"></select></label><label class="editor-modal-field">To · Video B<select id="transition-modal-to" class="compact-select" aria-label="Second video clip"></select></label><label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label><label class="editor-modal-field">Overlap (seconds)<input id="transition-modal-duration" class="compact-input" type="number" min="0.1" max="30" step="0.05" value="1"></label><button class="btn btn-primary" type="button" id="btn-apply-transition-modal">✦ Apply Transition</button><p class="modal-help" id="transition-modal-status" role="status"></p></div></div>
+
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261117-phase6c"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-compact-controls"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
