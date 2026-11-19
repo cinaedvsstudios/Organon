@@ -46,6 +46,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/visual-clip-adjustments.test.mjs
       - name: Verify edge-constrained movement and multi-track snapping
         run: node --test tools/audio-timeline/tests/lane-collision.test.mjs tools/audio-timeline/tests/clip-snap.test.mjs
+      - name: Verify shared Orgavox clip-level Web Audio processing and Undo/Redo
+        run: node --test tools/audio-timeline/tests/orgavox-audio-chain.test.mjs
       - name: Validate all forty-one selected visual effects and paired edit invariants in Node
         run: node --test tools/audio-timeline/tests/paired-visual-effects.test.mjs tools/audio-timeline/tests/phase8d-visual-effects.test.mjs tools/audio-timeline/tests/phase8e-visual-effects.test.mjs tools/audio-timeline/tests/phase8f-visual-effects.test.mjs tools/audio-timeline/tests/phase8g-visual-effects.test.mjs tools/audio-timeline/tests/phase8h-visual-effects.test.mjs tools/audio-timeline/tests/phase8i-visual-effects.test.mjs tools/audio-timeline/tests/phase8j-visual-effects.test.mjs tools/audio-timeline/tests/phase8k-visual-effects.test.mjs tools/audio-timeline/tests/phase8l-visual-effects.test.mjs tools/audio-timeline/tests/phase8m-visual-effects.test.mjs tools/audio-timeline/tests/phase8n-visual-effects.test.mjs tools/audio-timeline/tests/phase8o-visual-effects.test.mjs
       - name: Verify Chrome compositor pixels and A/B inspector schematic
