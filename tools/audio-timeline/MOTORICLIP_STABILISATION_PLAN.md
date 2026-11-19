@@ -279,6 +279,20 @@ Regression checklist:
 
 [Phase 8K QA](./MOTORICLIP_PHASE8K_QA.md).
 
+## Phase 8L — Liquid fill, Disintegrate and Light rays [MERGED]
+
+[PR #54](https://github.com/cinaedvsstudios/Organon/pull/54) merged 19 November 2026 at `6faa164815fb2c3e30831c35185f67e34bc59c11`. [GitHub Actions run 44515019544](https://github.com/cinaedvsstudios/Organon/actions/runs/44515019544) passed all three jobs: **159/159 Node tests**, real Chrome 31-effect pixels and two-MP4 editor/Undo/Redo, Firefox and full long-form export/memory regression.
+
+- **Liquid fill:** A rising, timestamp-animated wave boundary reveals B from the bottom over A, with a pale cyan foam/crest line.
+- **Disintegrate:** Old Video A fractures into 12×8 independently delayed, drifting and fading picture shards. B appears beneath; these moving fragments distinguish it from static square reveals. Fragment timing was balanced against real Chrome pixel tests before merging.
+- **Light rays:** Sixteen independently widening radial wedges reveal B, accompanied by subtle gold-white beams from the frame center.
+- **Current wishlist:** Original **41 names / 31 available / 10 queued**, stable spelling, order and IDs; unimplemented effects remain disabled in the dropdown.
+- **Continuity:** Non-destructive source video/trims/audio, existing two-clip overlap planner, upper-lane compositing, gold markers and Undo/Redo; same shared preview and fixed-frame export renderer. No extra persistent full-frame effect textures.
+- **Verified export:** The unchanged 120-second 1080p/30fps H.264/AAC MP4 test encoded 3,600 frames across 16 moving clips; peak Chrome PSS was 1,180.7 MiB. Full browser, near-limit, memory and portrait checks passed.
+- **Future increments:** 10 original selections remain. Transition parameters, automatic linked-audio crossfades, transparent-alpha video output and physical device certification are separate tasks. These Canvas interpretations are not claimed to be pixel-identical to third-party gallery shaders.
+
+[Phase 8L QA](./MOTORICLIP_PHASE8L_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
