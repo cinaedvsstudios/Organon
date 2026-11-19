@@ -5,7 +5,7 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261117-phase6b';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261119-phase9-gain-image';
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
@@ -52,9 +52,9 @@ import { planClipSnap } from './clip-snap.mjs';
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
-        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
+        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
-        selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
+        selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioTrackGain: document.getElementById('audio-track-gain'), audioTrackGainValue: document.getElementById('audio-track-gain-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
         contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
     };
@@ -262,7 +262,7 @@ import { planClipSnap } from './clip-snap.mjs';
             blendMode: 'source-over',
             groupId: null,
             transitionFromId: null, transitionEffectId: null,
-            audio: { volume: 1, muted: false, fadeIn: 0, fadeOut: 0 },
+            audio: { volume: 1, gain: 0, muted: false, fadeIn: 0, fadeOut: 0 },
             visualTransitions: normalizeVisualTransitions(),
             transparency: { mode: 'native', keyColour: '#00ff00', tolerance: 30, feather: 8 }
         };
@@ -536,7 +536,7 @@ import { planClipSnap } from './clip-snap.mjs';
         elements.btnSnapOptions.disabled = !snapEligible;
         elements.btnSnapSelected.title = count === 2
             ? 'Snap the later selected clip start to the earlier clip end, keeping both on their tracks'
-            : 'Snap selected clip to the now line; use the arrow for start/end options';
+            : 'Snap selected clip START to the playhead; arrow opens alternate snap options';
     }
 
     function getPairSelection() {
@@ -576,6 +576,8 @@ import { planClipSnap } from './clip-snap.mjs';
             setSwitch(elements.videoAudioSwitch, !track.audio.muted);
             elements.videoAudioVolume.value = String(Math.round(track.audio.volume * 100));
             elements.videoAudioVolumeValue.textContent = `${Math.round(track.audio.volume * 100)}%`;
+            elements.videoAudioGain.value = String(Math.round(track.audio.gain || 0));
+            elements.videoAudioGainValue.textContent = `+${Math.round(track.audio.gain || 0)}% · ${Math.round(track.audio.volume * 100 + (track.audio.gain || 0))}% total`;
             elements.videoOpacity.value = String(opacity); elements.videoOpacityValue.textContent = `${opacity}%`;
             elements.videoBlendMode.value = track.blendMode || 'source-over'; elements.btnExtractAudio.disabled = !track.file;
             const transitions=normalizeVisualTransitions(track.visualTransitions);
@@ -613,6 +615,8 @@ import { planClipSnap } from './clip-snap.mjs';
             elements.selectedAudioName.textContent = track.sourceName || track.laneLabel;
             setSwitch(elements.audioAuditionSwitch, !track.audio.muted);
             elements.audioTrackVolume.value = String(Math.round(track.audio.volume * 100)); elements.audioTrackVolumeValue.textContent = `${Math.round(track.audio.volume * 100)}%`;
+            elements.audioTrackGain.value = String(Math.round(track.audio.gain || 0));
+            elements.audioTrackGainValue.textContent = `+${Math.round(track.audio.gain || 0)}% · ${Math.round(track.audio.volume * 100 + (track.audio.gain || 0))}% total`;
             elements.audioFadeIn.max = String(duration); elements.audioFadeIn.value = String(fadeIn); elements.audioFadeInValue.textContent = formatSeconds(fadeIn);
             elements.audioFadeOut.max = String(duration); elements.audioFadeOut.value = String(fadeOut); elements.audioFadeOutValue.textContent = formatSeconds(fadeOut);
         }
@@ -1479,7 +1483,7 @@ import { planClipSnap } from './clip-snap.mjs';
     }
     elements.btnSnapSelected.addEventListener('click', () => {
         if (state.selectedTrackIds.size === 2) performSelectedSnap('pair');
-        else toggleSnapOptions();
+        else performSelectedSnap('start-playhead');
     });
     elements.btnSnapOptions.addEventListener('click', toggleSnapOptions);
     elements.snapOptionsMenu.querySelectorAll('[data-snap-mode]').forEach(button => {
@@ -1534,7 +1538,13 @@ import { planClipSnap } from './clip-snap.mjs';
 
     elements.videoVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle video visibility'); const track = getTrack(); if (!track || track.type !== 'video') return; track.visible = !track.visible; refreshAll(); });
     elements.videoAudioSwitch.addEventListener('click', () => { recordHistory('Toggle linked video audio'); const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
-    elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; engine.syncAudioSettings(); });
+    elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; elements.videoAudioGainValue.textContent = `+${track.audio.gain || 0}% · ${Math.round(track.audio.volume*100+(track.audio.gain||0))}% total`; engine.syncAudioSettings(); });
+    elements.videoAudioGain.addEventListener('input', () => {
+        const track=getTrack(); if(!track || track.type!=='video') return;
+        track.audio.gain=Number(elements.videoAudioGain.value);
+        elements.videoAudioGainValue.textContent=`+${track.audio.gain}% · ${Math.round(track.audio.volume*100+track.audio.gain)}% total`;
+        engine.syncAudioSettings();
+    });
     elements.videoOpacity.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.opacity = Number(elements.videoOpacity.value) / 100; elements.videoOpacityValue.textContent = `${elements.videoOpacity.value}%`; engine.renderFrame(); });
     elements.videoBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.blendMode = elements.videoBlendMode.value; engine.renderFrame(); });
     function updateVideoVisualFade(edge,control) {
@@ -1566,7 +1576,13 @@ import { planClipSnap } from './clip-snap.mjs';
     elements.backgroundBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'background') return; track.blendMode = elements.backgroundBlendMode.value; engine.renderFrame(); });
 
     elements.audioAuditionSwitch.addEventListener('click', () => { recordHistory('Toggle audio audition'); const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
-    elements.audioTrackVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.volume = Number(elements.audioTrackVolume.value) / 100; elements.audioTrackVolumeValue.textContent = `${elements.audioTrackVolume.value}%`; engine.syncAudioSettings(); });
+    elements.audioTrackVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'audio') return; track.audio.volume = Number(elements.audioTrackVolume.value) / 100; elements.audioTrackVolumeValue.textContent = `${elements.audioTrackVolume.value}%`; elements.audioTrackGainValue.textContent = `+${track.audio.gain || 0}% · ${Math.round(track.audio.volume*100+(track.audio.gain||0))}% total`; engine.syncAudioSettings(); });
+    elements.audioTrackGain.addEventListener('input', () => {
+        const track=getTrack(); if(!track || track.type!=='audio') return;
+        track.audio.gain=Number(elements.audioTrackGain.value);
+        elements.audioTrackGainValue.textContent=`+${track.audio.gain}% · ${Math.round(track.audio.volume*100+track.audio.gain)}% total`;
+        engine.syncAudioSettings();
+    });
     elements.audioFadeIn.addEventListener('input', () => updateAudioFade('fadeIn', elements.audioFadeIn, elements.audioFadeInValue));
     elements.audioFadeOut.addEventListener('input', () => updateAudioFade('fadeOut', elements.audioFadeOut, elements.audioFadeOutValue));
 
@@ -1580,6 +1596,7 @@ import { planClipSnap } from './clip-snap.mjs';
     elements.stickerEdgeFeather.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'sticker') return; track.transparency.feather = Number(elements.stickerEdgeFeather.value); elements.stickerEdgeFeatherValue.textContent = `${track.transparency.feather}%`; engine.renderFrame(); });
 
     registerInspectorHistory(elements.videoAudioVolume, 'Change video audio volume');
+    registerInspectorHistory(elements.videoAudioGain, 'Change video audio gain');
     registerInspectorHistory(elements.videoOpacity, 'Change video opacity');
     registerInspectorHistory(elements.videoBlendMode, 'Change video blend mode');
     registerInspectorHistory(elements.videoTransitionEnter, 'Change video entrance fade');
@@ -1589,6 +1606,7 @@ import { planClipSnap } from './clip-snap.mjs';
     registerInspectorHistory(elements.backgroundOpacity, 'Change background opacity');
     registerInspectorHistory(elements.backgroundBlendMode, 'Change background blend mode');
     registerInspectorHistory(elements.audioTrackVolume, 'Change audio volume');
+    registerInspectorHistory(elements.audioTrackGain, 'Change audio gain');
     registerInspectorHistory(elements.audioFadeIn, 'Change audio fade in');
     registerInspectorHistory(elements.audioFadeOut, 'Change audio fade out');
     registerInspectorHistory(elements.stickerOpacity, 'Change sticker opacity');
