@@ -1,7 +1,7 @@
 # MotoriClip Phase 8G — Card swipe, Camera shake and VHS tracking
 
 **Date:** 19 November 2026 (Berlin)  
-**Status:** Pending PR CI verification. This phase follows 8F.
+**Status: MERGED AND VERIFIED.** [PR #49](https://github.com/cinaedvsstudios/Organon/pull/49) merged 19 November 2026 at `17579c305baab42cd2299c6841a2cd2bae7af1da` after Phase 8F.
 
 ## Library and visual effect specification
 
@@ -28,4 +28,9 @@ This increment does not change clip trims, source files, audio, existing volume 
 3. **End-to-end editor:** Two real generated MP4 clips, all 16 options in the Project inspector, gold marker and effect-specific label, Undo/Redo.
 4. **Complete CI:** Existing Node suite, browser compatibility, full fixed-frame MP4/WebM export tests, 60s/120s near-limit checks, 120-second 1080p 16-clip MP4, and repeated-export memory recovery must pass before merge.
 
-**Release status:** Awaiting all green CI.
+**Release result: PASS.** [GitHub Actions run 44465971423](https://github.com/cinaedvsstudios/Organon/actions/runs/44465971423) passed **all three jobs**: transition-smoke, cross-browser-ui and export-browser.
+- **134/134 Node tests** passed, including five added 8G tests for card movement, deterministic camera displacement, VHS scanlines and non-destructive pair history.
+- **Actual Chrome Canvas pixels** showed distinct Card swipe, Camera shake and VHS tracking frames, deterministic same-timestamp rerenders, and completed frames returning to clean B.
+- **Advanced Chrome UI** imported two real MP4s, applied all **16** effects, displayed the gold marker and active effect label, and restored the final effect through Undo/Redo. Firefox compatibility and browser tests passed.
+- **Export regression passed:** 120-second 1920×1080/30fps H.264/AAC MP4 encoded **3,600 frames across 16 moving clips**, with repeated-export memory checks passing. Peak Chrome proportional resident memory was 1,174.8 MiB in the full-HD case.
+- Physical Windows/Android device certification, linked-audio crossfades and transparent-alpha file output remain separate features; gallery shader pixel identity is not claimed.
