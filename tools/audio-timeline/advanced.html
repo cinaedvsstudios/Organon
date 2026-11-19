@@ -371,11 +371,11 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <label class="control-row"><span>Effect</span><select class="compact-select" id="pair-transition-effect" aria-label="Paired transition effect"></select></label>
                         <label class="control-row"><span>Overlap duration (seconds)</span><input class="compact-input" id="pair-transition-duration" type="number" min="0.1" max="30" step="0.05" value="1" aria-label="Paired video transition duration"></label>
                         <button type="button" class="btn btn-primary" id="btn-apply-pair-transition">✦ Apply paired transition</button>
-                        <p class="blend-help">Video B moves to overlap the end of Video A and fades over it. Existing media stays unmodified; undo restores the original placement. Linked audio is not crossfaded.</p>
+                        <p class="blend-help">Video B moves above the end of Video A. Your chosen effect reveals it during the overlap. Original media stays unchanged; Undo restores the previous placement. Linked audio is not crossfaded.</p>
                     </div>
                     <details id="transition-library-details">
                         <summary class="transition-library-summary">Transition library · 41 selected from gallery pages 1–10</summary>
-                        <p class="blend-help">Only Fade is implemented as a paired transition so far. The other selections are saved for later additions.</p>
+                        <p class="blend-help">Available now: Fade, Pixelize, Random squares and Glitch flicker. The other 37 selections are saved for later development.</p>
                         <div class="transition-library-grid" id="transition-library-grid"></div>
                     </details>
                 </section>
