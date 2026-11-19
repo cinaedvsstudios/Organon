@@ -153,11 +153,12 @@ jobs:
         timeout-minutes: 2
         run: |
           set -eu
-          node -e "const fs=require('fs');for(const [name,path] of [['ffmpeg',require('ffmpeg-static')],['ffprobe',require('@ffprobe-installer/ffprobe').path]]){const target='/usr/local/bin/'+name;if(fs.existsSync(target))fs.unlinkSync(target);fs.symlinkSync(path,target);}"
+          node -e "const fs=require('fs');for(const [name,path] of [['ffmpeg',require('ffmpeg-static')],['ffprobe',require('@ffprobe-installer/ffprobe').path]]){const target='/usr/local/bin/'+name;fs.rmSync(target,{force:true});fs.copyFileSync(path,target);fs.chmodSync(target,0o755);}"
           mkdir -p tools/audio-timeline/tests/fixtures
           chown pwuser:pwuser tools/audio-timeline/tests/fixtures
           ffmpeg -version | head -n 1
           ffprobe -version | head -n 1
+          su pwuser -s /bin/sh -c 'ffmpeg -version >/dev/null && ffprobe -version >/dev/null'
       - name: Decode, render and inspect an actual Firefox WebM export
         timeout-minutes: 7
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser MOTORICLIP_BROWSER=firefox node tools/audio-timeline/tests/real-export.browser.mjs'
