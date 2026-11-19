@@ -1,4 +1,4 @@
-/** Phase 8C–8H: verify actual Canvas 2D pixels for eighteen additional selected transitions.
+/** Phase 8C–8I: verify actual Canvas 2D pixels for twenty-one additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,9 +82,9 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -197,9 +197,33 @@ try{
     assert.notEqual(cube.fingerprint,spin.fingerprint,'Cube and Spin must be different effects');
     assert.notEqual(crossWarp.fingerprint,result['cross-hatch'].middle.fingerprint,
         'Cross warp must differ from diagonal cross hatch');
+    const paper=result['paper-tear'],ink=result['ink-bleed'],splatter=result['splatter-wipe'];
+    console.log('[MotoriClip 8I] Mask midframe counts '+JSON.stringify({
+        paper:paper.middle,ink:ink.middle,splatter:splatter.middle
+    }));
+    for(const [name,frame] of [['paper-tear',paper],['ink-bleed',ink],['splatter-wipe',splatter]]){
+        assert.ok(frame.middle.red>120&&frame.middle.blue>120,
+            name+' must reveal distinct regions of both A and B at midpoint');
+        assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,
+            name+' should reproduce exactly when seeking to the same time');
+        assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,
+            name+' must differ from an ordinary fade');
+    }
+    assert.ok(paper.middle.red>350&&paper.middle.blue>350,
+        'Paper tear must be visibly torn along a progressing left-to-right boundary');
+    assert.ok(ink.middle.mixed>5,'Organic ink edges must be different from rectangular tiles');
+    assert.notEqual(ink.middle.fingerprint,splatter.middle.fingerprint,
+        'Spreading ink pools and directional splatter should look different');
+    assert.notEqual(splatter.middle.fingerprint,result['random-squares'].middle.fingerprint,
+        'Paint splatter must not collapse to a simple square mosaic');
+    assert.ok(ink.threeQuarter.red>ink.quarter.red,'Ink must spread as time advances');
+    assert.ok(splatter.threeQuarter.red>splatter.quarter.red,
+        'Splatter should expand from left to right as time advances');
+    assert.ok(ink.finished.red>1300&&splatter.finished.red>1300,
+        'Both masks must resolve to a clean incoming B source');
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8H] PASS real Chrome 19-effect pixel checks (Spin, Cube, Cross warp), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8I] PASS real Chrome 22-effect pixel checks (Paper tear, Ink bleed, Splatter wipe), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));

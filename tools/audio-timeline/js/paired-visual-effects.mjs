@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8H: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8I: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -227,6 +227,81 @@ function traceCrossWarp(context,progress,width,height) {
     context.rect(0,(height-horizontalHeight)/2,width,horizontalHeight);
     context.rect((width-verticalWidth)/2,0,verticalWidth,height);
 }
+/** Phase 8I: a steadily advancing jagged paper edge.
+ * Jitter is reproducible per sample; the envelope decays at both endpoints.
+ */
+export function paperTearEdge(progress,segment,width) {
+    const p=unit(progress);
+    if(p===0)return 0;
+    if(p===1)return width;
+    const grain=(seededCell(segment*17+193)*2-1);
+    return Math.max(0,Math.min(width,width*p+
+        grain*Math.min(width*.072,44)*Math.sin(Math.PI*p)));
+}
+function tracePaperTear(ctx,progress,width,height) {
+    const segments=36;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    for(let i=0;i<=segments;i++)
+        ctx.lineTo(paperTearEdge(progress,i,width),height*i/segments);
+    ctx.lineTo(0,height);
+    ctx.closePath();
+}
+/** Ink slowly blossoms from a fairly even distribution of irregular pools. */
+export function inkBleedRadius(progress,index,width,height){
+    const p=unit(progress);
+    const delayed=Math.max(0,p-seededCell(index*13+37)*.22);
+    // Final broadening merges the irregular pools before the clean B frame,
+    // avoiding a sudden jump in coverage at the exact transition endpoint.
+    const finish=unit((p-.58)/.41)*Math.hypot(width,height);
+    return Math.max(0,Math.min(width,height)*.34*delayed
+        *(.8+seededCell(index*23+79)*.5)+finish);
+}
+function traceInkBleed(ctx,progress,width,height) {
+    const cols=6,rows=4,vertices=16;
+    ctx.beginPath();
+    for(let i=0;i<cols*rows;i++){
+        const radius=inkBleedRadius(progress,i,width,height);
+        if(radius<=0)continue;
+        const x=(i%cols+.5+(seededCell(i+131)-.5)*.38)*width/cols;
+        const y=(Math.floor(i/cols)+.5+(seededCell(i+251)-.5)*.38)*height/rows;
+        for(let v=0;v<=vertices;v++){
+            const k=v%vertices,angle=v/vertices*Math.PI*2;
+            const jagged=radius*(.83+seededCell(i*97+k*11+317)*.34);
+            const px=x+Math.cos(angle)*jagged,py=y+Math.sin(angle)*jagged;
+            if(v===0)ctx.moveTo(px,py);
+            else ctx.lineTo(px,py);
+        }
+        ctx.closePath();
+    }
+}
+/** Splatter advances horizontally in isolated drops and long spray dots.
+ * This has a different spatial order and size distribution than ink bleed.
+ */
+export function splatterDropRadius(progress,index,width,height) {
+    const p=unit(progress);
+    const delay=seededCell(index*29+431)*.82+seededCell(index*13+593)*.08;
+    const grown=unit((p-delay)/.22);
+    const size=.032+seededCell(index*61+719)*.09;
+    return grown*Math.min(width,height)*size;
+}
+function traceSplatter(ctx,progress,width,height){
+    const count=72;
+    ctx.beginPath();
+    // Advancing paint front fills the small remaining gaps at the end, while
+    // deterministic droplets fly ahead of the frontier throughout the wipe.
+    const front=unit((unit(progress)-.38)/.60);
+    if(front>0)ctx.rect(0,0,width*front,height);
+    for(let i=0;i<count;i++){
+        const r=splatterDropRadius(progress,i,width,height);
+        if(r<=0)continue;
+        const x=seededCell(i*29+431)*width,y=seededCell(i*53+883)*height;
+        const stretch=i%5===0?1.85:.9+seededCell(i*7+991)*.3;
+        ctx.moveTo(x+r*stretch,y);
+        ctx.ellipse(x,y,Math.max(.01,r*stretch),Math.max(.01,r*.68),
+            (seededCell(i+101)-.5)*.8,0,2*Math.PI);
+    }
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -290,6 +365,39 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.clip();
         renderContained(context,media,width,height);
         context.restore();
+        return true;
+    }
+    if(id==='paper-tear'||id==='ink-bleed'||id==='splatter-wipe'){
+        context.save();
+        if(id==='paper-tear')tracePaperTear(context,progress,width,height);
+        else if(id==='ink-bleed')traceInkBleed(context,progress,width,height);
+        else traceSplatter(context,progress,width,height);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        if(id==='paper-tear'){
+            // Thin paper fibers accentuate the discontinuous torn edge.
+            context.save();
+            context.strokeStyle='rgba(245,230,207,.62)';
+            context.lineWidth=Math.max(1,Math.min(width,height)*.009);
+            context.beginPath();
+            for(let i=0;i<=36;i++){
+                const x=paperTearEdge(progress,i,width),y=height*i/36;
+                if(i===0)context.moveTo(x,y);else context.lineTo(x,y);
+            }
+            context.stroke();
+            context.restore();
+        }
+        if(id==='ink-bleed'){
+            // Opaque violet-black ink rims make the organic blotches visible
+            // even over footage of similar color; no raster CPU loops.
+            context.save();
+            traceInkBleed(context,progress,width,height);
+            context.strokeStyle='rgba(25,12,44,.32)';
+            context.lineWidth=Math.max(1,Math.min(width,height)*.018);
+            context.stroke();
+            context.restore();
+        }
         return true;
     }
     if(id==='spin'){
