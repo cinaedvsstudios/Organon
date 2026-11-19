@@ -266,6 +266,19 @@ Regression checklist:
 
 [Phase 8J QA](./MOTORICLIP_PHASE8J_QA.md).
 
+## Phase 8K — Vortex, Heat haze and Refraction [MERGED]
+
+[PR #53](https://github.com/cinaedvsstudios/Organon/pull/53) merged 19 November 2026 at `dd074e8fce32efef0c3e73a05ecdad64adade308`. [GitHub Actions run 44486732187](https://github.com/cinaedvsstudios/Organon/actions/runs/44486732187) passed **all three jobs**: **154/154 Node tests**, Chrome 28-effect actual-pixel and editor/Undo/Redo tests, Firefox and the complete long-form media-export/memory suite.
+
+- **Vortex:** 12 independently rotated concentric portions of Video B emerge in an expanding circular swirl over A, with subtle curved glow traces; distinct from whole-frame Spin.
+- **Heat haze:** 28 horizontally displaced thermal shimmer bands of B blend into A, with faint amber accent bands; smooth wave distortion, not the discrete glitch/VHS effect.
+- **Refraction:** 24 displaced triangular lens facets and subtle cyan/magenta seam accents refract B over A, different from a simple fade or block mosaic.
+- **Current library:** Original **41 user-selected names / 28 available / 13 queued**, stable order and IDs. Same A→B pairing, clip duration, upper-lane selection, gold markers, Undo/Redo and original media/audio.
+- **Performance/reproducibility:** Shared preview/export Canvas engine; no new persistent full-resolution textures, no per-frame CPU image-data loops; repeated same-time pixel renders were identical. Full 120-second 1080p H.264/AAC MP4 exported 3,600 frames from 16 moving clips.
+- **Next:** Continue the remaining 13 effects in small verified batches. Original Canvas effects are not pixel-exact GL shader reproductions; effect presets and automatic audio crossfade remain separate projects.
+
+[Phase 8K QA](./MOTORICLIP_PHASE8K_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
