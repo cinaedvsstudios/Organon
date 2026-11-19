@@ -14,14 +14,14 @@ const clip=(id,start,order)=>({
     audio:{volume:1,muted:false,fadeIn:0,fadeOut:0}
 });
 test('new batch enables only selected, genuinely available effects',()=>{
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms']);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple']);
     assert.deepEqual(TRANSITION_CATALOG.filter(x=>x.status==='available').map(x=>x.id),
-        ['cell-dissolve','vortex','liquid-fill','heat-haze','rings-wipe','color-panel-wipe','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip','ink-bleed','refraction','spin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','color-codes','cross-warp','cross-hatch','cube','fade','glitch-flicker','pixelize','random-squares','ripple']);
+        ['cell-dissolve','vortex','liquid-fill','heat-haze','rings-wipe','color-panel-wipe','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip','ink-bleed','refraction','spin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','color-codes','cross-warp','cross-hatch','cube','fade','glitch-flicker','pixelize','random-squares','ripple','spiralblockwipe','hologram','crumple']);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,7);
-    assert.equal(isAvailablePairEffect('hologram'),false);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,4);
+    assert.equal(isAvailablePairEffect('gallery'),false);
 });
-test('all thirty-four paired effects compute the same overlap but preserve effect ID',()=>{
+test('all thirty-seven paired effects compute the same overlap but preserve effect ID',()=>{
     const a=clip('a',0,2),b=clip('b',4,1);
     for(const effectId of ACTIVE_PAIR_EFFECTS){
         const plan=planPairedTransition([a,b],['b','a'],1.5,effectId);
@@ -34,7 +34,7 @@ test('all thirty-four paired effects compute the same overlap but preserve effec
             visualTransitions:plan.incomingTransitions};
         assert.equal(isPairedFadeActive(next,[a,next]),true,effectId);
     }
-    assert.throws(()=>planPairedTransition([a,b],['a','b'],1,'hologram'),/not implemented/);
+    assert.throws(()=>planPairedTransition([a,b],['a','b'],1,'gallery'),/not implemented/);
     assert.equal(a.audio.volume,1,'Pair planning may not alter linked audio');
 });
 test('reveal mask is deterministic, monotonic and ends fully revealed',()=>{
