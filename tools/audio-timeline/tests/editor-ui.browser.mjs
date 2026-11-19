@@ -73,11 +73,28 @@ try{
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     await page.locator('#btn-redo').click();
     await page.waitForFunction(()=>document.querySelector('#file-count')?.textContent?.includes('0 media'));
+    assert.equal(await page.locator('#timeline-ruler').isVisible(),true,
+        'Timeline second labels must be visible without extra clicks');
+    assert.ok(await page.locator('#timeline-ruler span:not(.ruler-spacer)').count() > 0,
+        'Timeline ruler should expose clickable second markers');
+    await page.locator('#btn-toggle-ruler').click();
     assert.equal(await page.locator('#timeline-ruler').isVisible(),false);
     await page.locator('#btn-toggle-ruler').click();
     assert.equal(await page.locator('#timeline-ruler').isVisible(),true);
-    await page.locator('#btn-toggle-ruler').click();
     await page.locator('#btn-add-track').click();
+    assert.equal(await page.locator('#track-type-menu').isVisible(),true);
+    const menuGeometry=await page.evaluate(()=>{
+        const menu=document.getElementById('track-type-menu');
+        const box=menu.getBoundingClientRect();
+        return {parent:menu.parentElement?.tagName,top:box.top,bottom:box.bottom,
+            left:box.left,right:box.right,viewportHeight:window.innerHeight,
+            viewportWidth:window.innerWidth};
+    });
+    assert.equal(menuGeometry.parent,'BODY','Popup must escape the editor panel overflow');
+    assert.ok(menuGeometry.top>=0&&menuGeometry.bottom<=menuGeometry.viewportHeight,
+        'Add Track popup must fit vertically within viewport: '+JSON.stringify(menuGeometry));
+    assert.ok(menuGeometry.left>=0&&menuGeometry.right<=menuGeometry.viewportWidth,
+        'Add Track popup must fit horizontally within viewport: '+JSON.stringify(menuGeometry));
     await page.locator('[data-add-track-type="video"]').click();
     assert.match(await page.locator('.lane-name').first().innerText(),/Video 1/i);
     await page.locator('#btn-open-transitions').click();
