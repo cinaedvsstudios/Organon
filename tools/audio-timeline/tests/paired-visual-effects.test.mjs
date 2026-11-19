@@ -14,14 +14,14 @@ const clip=(id,start,order)=>({
     audio:{volume:1,muted:false,fadeIn:0,fadeOut:0}
 });
 test('new batch enables only selected, genuinely available effects',()=>{
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker']);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']);
     assert.deepEqual(TRANSITION_CATALOG.filter(x=>x.status==='available').map(x=>x.id),
-        ['fade','glitch-flicker','pixelize','random-squares']);
+        ['aperture-wipe','tv-turn-off','fade','glitch-flicker','pixelize','random-squares','ripple']);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,37);
-    assert.equal(isAvailablePairEffect('ripple'),false);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,34);
+    assert.equal(isAvailablePairEffect('hologram'),false);
 });
-test('all four paired effects compute the same overlap but preserve effect ID',()=>{
+test('all seven paired effects compute the same overlap but preserve effect ID',()=>{
     const a=clip('a',0,2),b=clip('b',4,1);
     for(const effectId of ACTIVE_PAIR_EFFECTS){
         const plan=planPairedTransition([a,b],['b','a'],1.5,effectId);
@@ -34,7 +34,7 @@ test('all four paired effects compute the same overlap but preserve effect ID',(
             visualTransitions:plan.incomingTransitions};
         assert.equal(isPairedFadeActive(next,[a,next]),true,effectId);
     }
-    assert.throws(()=>planPairedTransition([a,b],['a','b'],1,'ripple'),/not implemented/);
+    assert.throws(()=>planPairedTransition([a,b],['a','b'],1,'hologram'),/not implemented/);
     assert.equal(a.audio.volume,1,'Pair planning may not alter linked audio');
 });
 test('reveal mask is deterministic, monotonic and ends fully revealed',()=>{
