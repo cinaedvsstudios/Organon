@@ -47,7 +47,7 @@ try{
             onRenderError:e=>{throw e;}});
         engine.outputWidth=w;engine.outputHeight=h;
         const a={id:'A',type:'video',sourceName:'A.mp4',file:{name:'A.mp4'},
-            order:2,start:0,clipDuration:4,media:source('blue'),
+            order:2,start:0,clipDuration:2,media:source('blue'),
             opacity:1,visible:true,blendMode:'source-over'};
         const b={id:'B',type:'video',sourceName:'B.mp4',file:{name:'B.mp4'},
             order:1,start:1,clipDuration:3,media:source('red'),
