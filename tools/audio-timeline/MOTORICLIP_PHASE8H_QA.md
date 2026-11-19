@@ -1,7 +1,7 @@
 # MotoriClip Phase 8H — Spin, Cube and Cross warp
 
 **Date:** 19 November 2026 (Berlin)
-**Status:** Pending PR and all three CI job results.
+**Status:** Merged and verified — PR #50, commit eab7203846f7f38e50a092e29d0978b3ff565641; all three jobs passed (run 44472665292).
 
 ## User selection and implementation
 
@@ -26,4 +26,4 @@ Spin uses one incoming draw with transform. Cross warp uses one existing full-si
 3. **Actual Chrome editor UI:** import two MP4 clips, cycle all 19 available effect selections, verify inspector labels, gold fade marker and Undo/Redo.
 4. **Full regression gate:** all Node suites, Chrome/Firefox compatibility, near-limit media exports, 120-second 1080p H.264/AAC MP4 (3,600 frames), repeated-export memory and portrait-media checks remain passing.
 
-**Merge only after all three CI jobs succeed.** Physical Windows and Android device certification is separate.
+**Verification:** 139/139 Node tests passed, 19 effect Chrome tests passed, Firefox passed, and the 120-second 1080p MP4 and memory checks passed. Physical Windows and Android device certification is separate.
