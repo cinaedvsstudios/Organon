@@ -507,6 +507,8 @@ export function prismFacetOffset(progress,facet,width,height) {
 
 /** Phase 8N: stable per-cell spiral order, no frame-to-frame randomness. */
 export function spiralBlockProgress(progress,index,cols=12,rows=8){
+    if(unit(progress)===0)return 0;
+    if(unit(progress)===1)return 1;
     const x=index%cols,y=Math.floor(index/cols);
     const angle=(Math.atan2(y-(rows-1)/2,x-(cols-1)/2)+Math.PI)/(2*Math.PI);
     const distance=Math.hypot((x-(cols-1)/2)/cols,(y-(rows-1)/2)/rows);
