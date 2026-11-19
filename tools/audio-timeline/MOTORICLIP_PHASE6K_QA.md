@@ -22,4 +22,8 @@ The standard Phase 6G 18-second/30-second test matrix still runs as before. Phas
 
 These are **synthetic-media, Linux Chrome** tests. They do not validate actual iPhone/Android camera media, hardware-accelerated Safari/macOS encoding, mobile long-form stability, or Linux WebKit audible export (guarded in Phase 6J). No transitions or transition designer have been introduced. Phase 7 signoff remains open until hardware and manual acceptance tests are completed.
 
-**CI status at authoring:** Pending PR workflow results. Report exact run and measured results in the PR after GitHub Actions finishes.
+## Verified results
+
+**GitHub Actions:** [Run 44439211155](https://github.com/cinaedvsstudios/Organon/actions/runs/44439211155) passed both `export-browser` and `cross-browser-ui`, and [PR #41](https://github.com/cinaedvsstudios/Organon/pull/41) was merged. The near-limit Chrome test decoded **1,800 frames** from a **60.0107-second** 1080p MP4 (35.41 MB), with **1,090.8 MiB peak PSS** and **907.1 MiB post-GC PSS**. The 120-second 720p WebM decoded **3,000 frames** over **120.02 seconds** (32.63 MB), with **1,099.7 MiB peak PSS** and **906.8 MiB post-GC PSS**. Early/late audible RMS was approximately 0.044 and the final background-only gap was silent (RMS 0) in both scenarios. Playback was not mutated; export progress and input cleanup assertions passed.
+
+These measurements establish real Linux Chrome export success at the existing 120-second beta limit, not a guarantee of leak-free or hardware-accelerated behaviour on all devices.
