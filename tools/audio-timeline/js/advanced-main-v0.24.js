@@ -27,6 +27,15 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
     };
 
     const elements = {
+        editorHeader: document.getElementById('motori-header'), btnToggleHeader: document.getElementById('btn-toggle-header'),
+        btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
+        projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
+        btnAddTrack: document.getElementById('btn-add-track'), trackTypeMenu: document.getElementById('track-type-menu'),
+        btnOpenTransitions: document.getElementById('btn-open-transitions'), transitionModal: document.getElementById('transition-modal'),
+        transitionModalFrom: document.getElementById('transition-modal-from'), transitionModalTo: document.getElementById('transition-modal-to'),
+        transitionModalEffect: document.getElementById('transition-modal-effect'), transitionModalDuration: document.getElementById('transition-modal-duration'),
+        btnApplyTransitionModal: document.getElementById('btn-apply-transition-modal'), transitionModalStatus: document.getElementById('transition-modal-status'),
+        btnToggleRuler: document.getElementById('btn-toggle-ruler'), timelineRuler: document.getElementById('timeline-ruler'),
         canvas: document.getElementById('advanced-canvas'), mediaBin: document.getElementById('media-bin'),
         previewStage: document.getElementById('preview-stage'), previewResizeHandle: document.getElementById('preview-resize-handle'), previewZoom: document.getElementById('preview-zoom'), previewZoomValue: document.getElementById('preview-zoom-value'), btnResetPreviewZoom: document.getElementById('btn-reset-preview-zoom'), previewEmpty: document.getElementById('preview-empty'), previewState: document.getElementById('preview-state'),
         previewSeek: document.getElementById('preview-seek'), previewVolume: document.getElementById('preview-volume'), timeReadout: document.getElementById('time-readout'),
@@ -1202,6 +1211,112 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         engine.updateAudioFades(engine.currentTime);
     }
 
+    function openEditorModal(dialog) {
+        hideContextMenu();
+        elements.trackTypeMenu.hidden = true;
+        elements.btnAddTrack.setAttribute('aria-expanded', 'false');
+        for (const item of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) item.hidden = item !== dialog;
+        dialog.hidden = false;
+        dialog.querySelector('[data-close-modal]')?.focus();
+    }
+    function closeEditorModals() {
+        for (const item of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) item.hidden = true;
+    }
+    function refreshTransitionModal() {
+        const videos = state.tracks.filter((track) => track.type === 'video' && track.file && track.sourceName)
+            .sort((a,b) => (Number(a.start)||0)-(Number(b.start)||0));
+        const selected = videos.filter((track) => state.selectedTrackIds.has(track.id));
+        const choose = (select, previous, fallback) => {
+            select.replaceChildren();
+            for (const track of videos) {
+                const option = document.createElement('option');
+                option.value = track.id;
+                option.textContent = `${track.sourceName} · ${formatTime(track.start)} (${track.laneLabel})`;
+                select.appendChild(option);
+            }
+            select.value = videos.some((track) => track.id === previous) ? previous : fallback || videos[0]?.id || '';
+        };
+        choose(elements.transitionModalFrom, elements.transitionModalFrom.value, selected[0]?.id || videos[0]?.id);
+        choose(elements.transitionModalTo, elements.transitionModalTo.value, selected[1]?.id || videos[1]?.id);
+        elements.transitionModalEffect.replaceChildren();
+        for (const effect of TRANSITION_CATALOG.filter((item) => item.status === 'available')) {
+            const option = document.createElement('option');
+            option.value = effect.id;
+            option.textContent = effect.label;
+            elements.transitionModalEffect.appendChild(option);
+        }
+        elements.transitionModalEffect.value = elements.pairTransitionEffect.value || 'fade';
+        const canPair = videos.length >= 2;
+        elements.btnApplyTransitionModal.disabled = !canPair;
+        elements.transitionModalStatus.textContent = canPair
+            ? `${videos.length} video clips available · ${elements.transitionModalEffect.options.length} effects`
+            : 'Import and place at least two video clips on the timeline to use a transition.';
+    }
+    function applyTransitionFromModal() {
+        const a = elements.transitionModalFrom.value, b = elements.transitionModalTo.value;
+        if (!a || !b || a === b) {
+            elements.transitionModalStatus.textContent = 'Choose two different video clips.';
+            return;
+        }
+        const first = getTrack(a), second = getTrack(b);
+        if (!first || !second || first.type !== 'video' || second.type !== 'video') return;
+        state.selectedTrackIds = new Set([a,b]);
+        state.selectedTrackId = a;
+        timeline.setSelectedTrackIds(state.selectedTrackIds);
+        elements.pairTransitionEffect.value = elements.transitionModalEffect.value;
+        elements.pairTransitionDuration.value = elements.transitionModalDuration.value;
+        syncSelectionTools();
+        syncInspector();
+        const requested = Number(elements.transitionModalDuration.value);
+        const max = Math.min(30, first.clipDuration || 0, second.clipDuration || 0);
+        if (!Number.isFinite(requested) || requested < .1 || requested > max) {
+            elements.transitionModalStatus.textContent = `Choose an overlap from 0.1 to ${max.toFixed(2)} seconds.`;
+            return;
+        }
+        applySelectedVideoPair();
+        closeEditorModals();
+    }
+    elements.btnToggleHeader.addEventListener('click', () => {
+        const collapsed = elements.editorHeader.classList.toggle('is-collapsed');
+        elements.btnToggleHeader.setAttribute('aria-expanded', String(!collapsed));
+        elements.btnToggleHeader.textContent = collapsed ? '▾' : '▴';
+        elements.btnToggleHeader.title = collapsed ? 'Show editor header' : 'Hide editor header';
+    });
+    elements.btnProjectSettings.addEventListener('click', () => openEditorModal(elements.projectSettingsModal));
+    elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
+    elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
+    elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);
+    elements.btnAddTrack.addEventListener('click', () => {
+        elements.trackTypeMenu.hidden = !elements.trackTypeMenu.hidden;
+        elements.btnAddTrack.setAttribute('aria-expanded', String(!elements.trackTypeMenu.hidden));
+    });
+    elements.trackTypeMenu.querySelectorAll('[data-add-track-type]').forEach((button) => button.addEventListener('click', () => {
+        const type = button.dataset.addTrackType;
+        if (!['video','audio','sticker','background'].includes(type)) return;
+        recordHistory(`Add ${type} track`);
+        const track = createTrack(type);
+        state.tracks.push(track);
+        refreshAll();
+        selectTrack(track.id);
+        elements.trackTypeMenu.hidden = true;
+        elements.btnAddTrack.setAttribute('aria-expanded','false');
+        showToast(`Added ${track.laneLabel} — drag media here`);
+    }));
+    document.addEventListener('click', (event) => {
+        if (!elements.trackTypeMenu.contains(event.target) && event.target !== elements.btnAddTrack) {
+            elements.trackTypeMenu.hidden = true;
+            elements.btnAddTrack.setAttribute('aria-expanded','false');
+        }
+    });
+    elements.btnToggleRuler.addEventListener('click', () => {
+        elements.timelineRuler.hidden = !elements.timelineRuler.hidden;
+        elements.btnToggleRuler.setAttribute('aria-pressed', String(!elements.timelineRuler.hidden));
+    });
+    for (const modal of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) {
+        modal.querySelector('[data-close-modal]').addEventListener('click', closeEditorModals);
+        modal.addEventListener('pointerdown', (event) => { if (event.target === modal) closeEditorModals(); });
+    }
+
     elements.projectFps.addEventListener('change', () => { const fps = engine.setProjectFrameRate(elements.projectFps.value); showToast(`Project frame rate: ${fps} fps`); });
     elements.btnApplyCanvas.addEventListener('click', () => applyCanvasResolution({ announce: true }));
     for (const input of [elements.canvasWidth, elements.canvasHeight]) {
@@ -1316,7 +1431,7 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
     elements.contextRemoveLayer.addEventListener('click', removeLayerFromContext);
     document.addEventListener('click', (event) => { if (!elements.contextMenu.contains(event.target)) hideContextMenu(); });
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') hideContextMenu();
+        if (event.key === 'Escape') { hideContextMenu(); closeEditorModals(); elements.trackTypeMenu.hidden = true; elements.btnAddTrack.setAttribute('aria-expanded','false'); }
         const modifier = event.ctrlKey || event.metaKey;
         const target = event.target;
         const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
@@ -1338,6 +1453,7 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         }
     });
 
+    document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\\s+/g,' ').slice(0,90); });
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
