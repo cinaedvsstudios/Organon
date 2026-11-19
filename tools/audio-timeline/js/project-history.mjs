@@ -9,7 +9,7 @@ export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
     'start', 'sourceOffset', 'sourceDuration', 'clipDuration',
     'sourceFileId', 'sourceName', 'fileType',
-    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom'
+    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom', 'transitionFromId', 'transitionEffectId'
 ]);
 
 export function snapshotClip(track) {
