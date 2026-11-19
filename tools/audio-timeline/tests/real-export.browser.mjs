@@ -232,6 +232,66 @@ try {
         assert.ok(rmsValues[1]>.015&&rmsValues[3]>.015,`${format}: expected audio in both clips, got ${rmsValues}`);
         console.log('[MotoriClip E2E] PASS',format,{duration:info.format.duration,frames:count,codecs:[vid.codec_name,aud.codec_name],colors:{yellow,redPixel,gap,bluePixel},rms:rmsValues,states:outcome.messages.map(x=>x.phase)});
     }
+    if (browserName === 'chromium') {
+        // A right-click "download section" must export the isolated trimmed
+        // source in/out instead of the original file or full project.
+        const sectionDownload=page.waitForEvent('download',{timeout:180000});
+        const sectionResult=await page.evaluate(async()=>{
+            const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
+                import('../js/advanced-offline-export.mjs'),
+                import('../js/advanced-media-engine-v0.24.js')
+            ]);
+            const redResponse=await fetch('./fixtures/red-440.mp4');
+            const blueResponse=await fetch('./fixtures/blue-660.mp4');
+            const red=new File([await redResponse.blob()],'red-440.mp4',{type:'video/mp4'});
+            const blue=new File([await blueResponse.blob()],'blue-660.mp4',{type:'video/mp4'});
+            const audio={volume:1,gain:0,muted:false,fadeIn:0,fadeOut:0,fx:{eq:'voice',drive:'off',dynamics:'off',stereo:'off'}};
+            const tracks=[
+                {id:'trimmed-red',type:'video',sourceName:red.name,file:red,media:null,
+                    start:8,sourceOffset:.45,sourceDuration:2,clipDuration:.8,speed:1,
+                    visible:true,opacity:1,order:1,blendMode:'source-over',audio:{...audio}},
+                {id:'other-blue',type:'video',sourceName:blue.name,file:blue,media:null,
+                    start:0,sourceOffset:0,sourceDuration:2,clipDuration:2,speed:1,
+                    visible:true,opacity:1,order:2,blendMode:'source-over',audio:{...audio}}
+            ];
+            const canvas=document.createElement('canvas');canvas.width=320;canvas.height=180;
+            const engine=new AdvancedMediaEngine({canvas,mediaBin:document.createElement('div'),
+                onTimeChange(){},onDurationChange(){},onPlaybackChange(){},
+                onRenderError(error){throw error}});
+            engine.tracks=tracks;
+            const downloads=[],phases=[];
+            const exporter=new AdvancedOfflineExporter({engine,
+                onState:state=>phases.push(state.phase),
+                onDownload({blob,extension,filename,segmentTrackId}){
+                    downloads.push({extension,filename,segmentTrackId,size:blob.size});
+                    const link=document.createElement('a'),url=URL.createObjectURL(blob);
+                    link.href=url;link.download=filename;document.body.appendChild(link);
+                    link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);
+                }
+            });
+            await exporter.start({format:'mp4',fps:25,bitrateKbps:2500,segmentTrackId:'trimmed-red'});
+            return {downloads,phases,tracks:tracks.map(t=>({
+                id:t.id,start:t.start,sourceOffset:t.sourceOffset,clipDuration:t.clipDuration
+            })),previewTime:engine.currentTime};
+        });
+        const download=await sectionDownload;
+        assert.equal(download.suggestedFilename(),'red-440-trimmed-0.80s.mp4');
+        assert.deepEqual(sectionResult.downloads.map(d=>d.segmentTrackId),['trimmed-red']);
+        assert.deepEqual(sectionResult.tracks.map(t=>[t.start,t.sourceOffset]),[[8,.45],[0,0]],
+            'Trimming must not modify or move any clips in the editor');
+        assert.equal(sectionResult.previewTime,0);
+        assert.ok(sectionResult.phases.includes('complete'));
+        const path=join(temp,'trimmed-section.mp4');
+        await download.saveAs(path);
+        const info=JSON.parse(run('ffprobe',['-v','error','-show_entries',
+            'stream=codec_type,width,height','-show_entries','format=duration','-of','json',path]));
+        const types=info.streams.map(stream=>stream.codec_type);
+        assert.ok(types.includes('video')&&types.includes('audio'),
+            'Trimmed output must contain picture and the original linked clip audio');
+        assert.ok(Math.abs(Number(info.format.duration)-.8)<.12,
+            'Expected ONLY .8s trimmed section, got '+info.format.duration);
+        console.log('[MotoriClip trimmed-section] PASS real 0.8s MP4 export with audio, source offset, no project mutations');
+    }
     assert.deepEqual(errors,[],'Browser reported script errors');
     console.log('[MotoriClip E2E] PASS complete for '+browserName);
 } finally {
