@@ -12,6 +12,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
 import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive } from './clip-pair-transitions.mjs';
+import { planClipSnap } from './clip-snap.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -31,6 +32,7 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
         projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
         btnAddTrack: document.getElementById('btn-add-track'), trackTypeMenu: document.getElementById('track-type-menu'),
+        btnSnapSelected: document.getElementById('btn-snap-selection'), btnSnapOptions: document.getElementById('btn-snap-options'), snapOptionsMenu: document.getElementById('snap-options-menu'),
         btnOpenTransitions: document.getElementById('btn-open-transitions'), transitionModal: document.getElementById('transition-modal'),
         transitionModalFrom: document.getElementById('transition-modal-from'), transitionModalTo: document.getElementById('transition-modal-to'),
         transitionModalEffect: document.getElementById('transition-modal-effect'), transitionModalDuration: document.getElementById('transition-modal-duration'),
@@ -524,6 +526,15 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         elements.btnDuplicateSelection.title = count < 1 ? 'Select one or more clips first' : `Duplicate ${count} selected clip${count === 1 ? '' : 's'}`;
         elements.btnDeleteSelection.disabled = count < 1;
         elements.btnDeleteSelection.title = count < 1 ? 'Select one or more clips first' : `Delete ${count} selected clip${count === 1 ? '' : 's'}`;
+        const snapEligible = count >= 1 && count <= 2 && [...state.selectedTrackIds].every(id => {
+            const track = getTrack(id);
+            return Boolean(track?.sourceName && Number(track.clipDuration) > 0);
+        });
+        elements.btnSnapSelected.disabled = !snapEligible;
+        elements.btnSnapOptions.disabled = !snapEligible;
+        elements.btnSnapSelected.title = count === 2
+            ? 'Snap the later selected clip start to the earlier clip end, keeping both on their tracks'
+            : 'Snap selected clip to the now line; use the arrow for start/end options';
     }
 
     function getPairSelection() {
@@ -1233,6 +1244,8 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
         hideContextMenu();
         elements.trackTypeMenu.hidden = true;
         elements.btnAddTrack.setAttribute('aria-expanded', 'false');
+        elements.snapOptionsMenu.hidden = true;
+        elements.btnSnapOptions.setAttribute('aria-expanded', 'false');
         for (const item of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) item.hidden = item !== dialog;
         dialog.hidden = false;
         dialog.querySelector('[data-close-modal]')?.focus();
@@ -1304,30 +1317,28 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
     elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
     elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
     elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);
-    // Portal the floating menu to <body>: the timeline and editor cards
-    // intentionally clip their contents, but must never clip a menu.
-    document.body.appendChild(elements.trackTypeMenu);
-    function positionTrackMenu() {
-        if (elements.trackTypeMenu.hidden) return;
-        const anchor = elements.btnAddTrack.getBoundingClientRect();
-        const menu = elements.trackTypeMenu;
-        const width = menu.offsetWidth;
-        const height = menu.offsetHeight;
+    // Portal all small menus to <body> so panels cannot clip them.
+    document.body.append(elements.trackTypeMenu, elements.snapOptionsMenu);
+    function positionFloatingMenu(menu, trigger) {
+        if (menu.hidden) return;
+        const anchor = trigger.getBoundingClientRect();
+        const width = menu.offsetWidth, height = menu.offsetHeight;
         const left = clamp(anchor.left, 8, Math.max(8, window.innerWidth - width - 8));
-        const below = anchor.bottom + 6;
-        const above = anchor.top - height - 6;
+        const below = anchor.bottom + 6, above = anchor.top - height - 6;
         const top = below + height <= window.innerHeight - 8
             ? below : above >= 8 ? above : clamp(below, 8, Math.max(8, window.innerHeight - height - 8));
         menu.style.left = `${Math.round(left)}px`;
         menu.style.top = `${Math.round(top)}px`;
     }
+    function positionTrackMenu() { positionFloatingMenu(elements.trackTypeMenu, elements.btnAddTrack); }
+    function positionSnapMenu() { positionFloatingMenu(elements.snapOptionsMenu, elements.btnSnapOptions); }
     elements.btnAddTrack.addEventListener('click', () => {
         elements.trackTypeMenu.hidden = !elements.trackTypeMenu.hidden;
         elements.btnAddTrack.setAttribute('aria-expanded', String(!elements.trackTypeMenu.hidden));
         positionTrackMenu();
     });
-    window.addEventListener('resize', positionTrackMenu);
-    document.addEventListener('scroll', positionTrackMenu, true);
+    window.addEventListener('resize', () => { positionTrackMenu(); positionSnapMenu(); });
+    document.addEventListener('scroll', () => { positionTrackMenu(); positionSnapMenu(); }, true);
     elements.trackTypeMenu.querySelectorAll('[data-add-track-type]').forEach((button) => button.addEventListener('click', () => {
         const type = button.dataset.addTrackType;
         if (!['video','audio','sticker','background'].includes(type)) return;
@@ -1345,7 +1356,62 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
             elements.trackTypeMenu.hidden = true;
             elements.btnAddTrack.setAttribute('aria-expanded','false');
         }
+        if (!elements.snapOptionsMenu.contains(event.target)
+                && event.target !== elements.btnSnapOptions && event.target !== elements.btnSnapSelected) {
+            elements.snapOptionsMenu.hidden = true;
+            elements.btnSnapOptions.setAttribute('aria-expanded','false');
+        }
     });
+    function performSelectedSnap(mode) {
+        elements.snapOptionsMenu.hidden = true;
+        elements.btnSnapOptions.setAttribute('aria-expanded','false');
+        let plan;
+        try {
+            plan = planClipSnap(state.tracks,[...state.selectedTrackIds],mode,engine.currentTime);
+        } catch(error) {
+            showToast(error.message);
+            return;
+        }
+        if (Math.abs(plan.delta) < 0.0005) {
+            showToast('Clips are already aligned at this edit point');
+            return;
+        }
+        const moved = state.tracks.filter(track => plan.movingIds.includes(track.id));
+        const target = getTrack(plan.targetId);
+        const action = mode === 'pair' ? 'Snap clip end to start'
+            : mode === 'start-playhead' ? 'Snap clip start to playhead' : 'Snap clip end to playhead';
+        recordHistory(action);
+        for (const clip of moved) {
+            clip.start = Math.max(0, Number(clip.start || 0) + plan.delta);
+        }
+        timeline.ensureViewportForTime(Math.max(0,plan.joinTime));
+        refreshAll();
+        showToast(mode === 'pair'
+            ? `Snapped A end to B start at ${formatTime(plan.joinTime)}`
+            : `Snapped ${target?.sourceName || 'clip'} to the playhead`);
+        if (mode === 'pair') void engine.seek(plan.joinTime,{resume:false})
+            .catch(error => { elements.previewState.textContent = error.message; });
+    }
+    function toggleSnapOptions() {
+        const count = state.selectedTrackIds.size;
+        for (const button of elements.snapOptionsMenu.querySelectorAll('[data-snap-mode]')) {
+            button.disabled = count !== (button.dataset.snapMode === 'pair' ? 2 : 1);
+        }
+        elements.trackTypeMenu.hidden = true;
+        elements.btnAddTrack.setAttribute('aria-expanded','false');
+        elements.snapOptionsMenu.hidden = !elements.snapOptionsMenu.hidden;
+        elements.btnSnapOptions.setAttribute('aria-expanded',String(!elements.snapOptionsMenu.hidden));
+        positionSnapMenu();
+    }
+    elements.btnSnapSelected.addEventListener('click', () => {
+        if (state.selectedTrackIds.size === 2) performSelectedSnap('pair');
+        else toggleSnapOptions();
+    });
+    elements.btnSnapOptions.addEventListener('click', toggleSnapOptions);
+    elements.snapOptionsMenu.querySelectorAll('[data-snap-mode]').forEach(button => {
+        button.addEventListener('click', () => performSelectedSnap(button.dataset.snapMode));
+    });
+
     elements.btnToggleRuler.addEventListener('click', () => {
         elements.timelineRuler.hidden = !elements.timelineRuler.hidden;
         const visible = !elements.timelineRuler.hidden;
@@ -1473,7 +1539,7 @@ import { planPairedTransition, isPairedFadeActive } from './clip-pair-transition
     elements.contextRemoveLayer.addEventListener('click', removeLayerFromContext);
     document.addEventListener('click', (event) => { if (!elements.contextMenu.contains(event.target)) hideContextMenu(); });
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') { hideContextMenu(); closeEditorModals(); elements.trackTypeMenu.hidden = true; elements.btnAddTrack.setAttribute('aria-expanded','false'); }
+        if (event.key === 'Escape') { hideContextMenu(); closeEditorModals(); elements.trackTypeMenu.hidden = true; elements.btnAddTrack.setAttribute('aria-expanded','false'); elements.snapOptionsMenu.hidden = true; elements.btnSnapOptions.setAttribute('aria-expanded','false'); }
         const modifier = event.ctrlKey || event.metaKey;
         const target = event.target;
         const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;
