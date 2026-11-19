@@ -9,6 +9,7 @@ import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=2026
 import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
+import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -36,7 +37,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
-        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), btnExtractAudio: document.getElementById('btn-extract-audio'),
+        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
         selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
@@ -246,9 +247,10 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
             blendMode: 'source-over',
             groupId: null,
             audio: { volume: 1, muted: false, fadeIn: 0, fadeOut: 0 },
+            visualTransitions: normalizeVisualTransitions(),
             transparency: { mode: 'native', keyColour: '#00ff00', tolerance: 30, feather: 8 }
         };
-        return { ...base, ...extras, audio: { ...base.audio, ...(extras.audio || {}) }, transparency: { ...base.transparency, ...(extras.transparency || {}) } };
+        return { ...base, ...extras, audio: { ...base.audio, ...(extras.audio || {}) }, transparency: { ...base.transparency, ...(extras.transparency || {}) }, visualTransitions: normalizeVisualTransitions(extras.visualTransitions) };
     }
 
     function greatestCommonDivisor(a, b) { let x = Math.abs(a), y = Math.abs(b); while (y) [x, y] = [y, x % y]; return x || 1; }
@@ -531,6 +533,18 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
             elements.videoAudioVolumeValue.textContent = `${Math.round(track.audio.volume * 100)}%`;
             elements.videoOpacity.value = String(opacity); elements.videoOpacityValue.textContent = `${opacity}%`;
             elements.videoBlendMode.value = track.blendMode || 'source-over'; elements.btnExtractAudio.disabled = !track.file;
+            const transitions=normalizeVisualTransitions(track.visualTransitions);
+            const maxFade=Math.min(30,Math.max(0,Number(track.clipDuration)||0));
+            for(const [edge,slider,label,curve] of [
+                ['enter',elements.videoTransitionEnter,elements.videoTransitionEnterValue,elements.videoTransitionEnterCurve],
+                ['exit',elements.videoTransitionExit,elements.videoTransitionExitValue,elements.videoTransitionExitCurve]
+            ]){
+                slider.max=String(maxFade);
+                slider.value=String(Math.min(maxFade,fadeDuration(track,edge)));
+                label.textContent=formatSeconds(fadeDuration(track,edge));
+                curve.value=transitions[edge].curve;
+            }
+            elements.videoTransitionSummary.textContent=`Entrance ${formatSeconds(fadeDuration(track,'enter'))} · Exit ${formatSeconds(fadeDuration(track,'exit'))}`;
         }
         if (track.type === 'background') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
@@ -716,6 +730,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
         const cutTime = engine.currentTime;
         const leftDuration = cutTime - track.start;
         const rightDuration = track.clipDuration - leftDuration;
+        const transitionParts=splitVisualTransitions(track.visualTransitions);
         const split = createTrack(track.type, {
             laneId: track.laneId,
             laneLabel: track.laneLabel,
@@ -728,6 +743,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
             opacity: track.opacity,
             blendMode: track.blendMode,
             audio: { ...track.audio },
+            visualTransitions: transitionParts.right,
             transparency: { ...track.transparency },
             groupId: track.groupId,
             extractedFrom: track.extractedFrom,
@@ -745,6 +761,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
         }
         if (record) recordHistory(`Split ${track.sourceName || track.laneLabel}`);
         track.clipDuration = leftDuration;
+        if(track.type==='video')track.visualTransitions=transitionParts.left;
         split.clipDuration = rightDuration;
         state.tracks.push(split);
         refreshAll(); selectTrack(split.id);
@@ -794,6 +811,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
                 opacity: original.opacity,
                 blendMode: original.blendMode,
                 audio: { ...original.audio },
+                visualTransitions: normalizeVisualTransitions(original.visualTransitions),
                 transparency: { ...original.transparency },
                 groupId: null,
                 extractedFrom: original.extractedFrom || null,
@@ -808,6 +826,7 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
             clone.opacity = original.opacity;
             clone.blendMode = original.blendMode;
             clone.audio = { ...original.audio };
+            clone.visualTransitions = normalizeVisualTransitions(original.visualTransitions);
             clone.transparency = { ...original.transparency };
             clone.analysis = original.analysis ? { ...original.analysis, levels: Array.isArray(original.analysis.levels) ? [...original.analysis.levels] : original.analysis.levels } : null;
             duplicates.push(clone);
@@ -1116,6 +1135,28 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
     elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; engine.syncAudioSettings(); });
     elements.videoOpacity.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.opacity = Number(elements.videoOpacity.value) / 100; elements.videoOpacityValue.textContent = `${elements.videoOpacity.value}%`; engine.renderFrame(); });
     elements.videoBlendMode.addEventListener('change', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.blendMode = elements.videoBlendMode.value; engine.renderFrame(); });
+    function updateVideoVisualFade(edge,control) {
+        const track=getTrack();
+        if(!track||track.type!=='video')return;
+        track.visualTransitions=normalizeVisualTransitions(track.visualTransitions);
+        track.visualTransitions[edge].duration=clamp(Number(control.value)||0,0,Math.min(30,Number(track.clipDuration)||0));
+        timeline.updateVisualTransitionMarkers(track);
+        syncInspector();
+        engine.renderFrame();
+    }
+    for(const [edge,slider,curve] of [
+        ['enter',elements.videoTransitionEnter,elements.videoTransitionEnterCurve],
+        ['exit',elements.videoTransitionExit,elements.videoTransitionExitCurve]
+    ]){
+        slider.addEventListener('input',()=>updateVideoVisualFade(edge,slider));
+        curve.addEventListener('change',()=>{
+            const track=getTrack();
+            if(!track||track.type!=='video')return;
+            track.visualTransitions=normalizeVisualTransitions(track.visualTransitions);
+            track.visualTransitions[edge].curve=curve.value==='smooth'?'smooth':'linear';
+            syncInspector();engine.renderFrame();
+        });
+    }
     elements.btnExtractAudio.addEventListener('click', extractAudioFromSelectedVideo);
 
     elements.backgroundVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle background visibility'); const track = getTrack(); if (!track || track.type !== 'background') return; track.visible = !track.visible; refreshAll(); });
@@ -1139,6 +1180,10 @@ import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advance
     registerInspectorHistory(elements.videoAudioVolume, 'Change video audio volume');
     registerInspectorHistory(elements.videoOpacity, 'Change video opacity');
     registerInspectorHistory(elements.videoBlendMode, 'Change video blend mode');
+    registerInspectorHistory(elements.videoTransitionEnter, 'Change video entrance fade');
+    registerInspectorHistory(elements.videoTransitionExit, 'Change video exit fade');
+    registerInspectorHistory(elements.videoTransitionEnterCurve, 'Change video entrance curve');
+    registerInspectorHistory(elements.videoTransitionExitCurve, 'Change video exit curve');
     registerInspectorHistory(elements.backgroundOpacity, 'Change background opacity');
     registerInspectorHistory(elements.backgroundBlendMode, 'Change background blend mode');
     registerInspectorHistory(elements.audioTrackVolume, 'Change audio volume');
