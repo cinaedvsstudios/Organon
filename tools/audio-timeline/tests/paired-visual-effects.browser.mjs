@@ -1,4 +1,4 @@
-/** Phase 8C–8D: verify actual Canvas 2D pixels for six selected transitions.
+/** Phase 8C–8E: verify actual Canvas 2D pixels for nine additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -81,9 +81,9 @@ try{
             return {fingerprint,red,blue,black,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -99,7 +99,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -128,9 +128,26 @@ try{
     assert.deepEqual(tv.quarter.top,[0,0,0],'Outside the shrinking A image should be black');
     assert.deepEqual(tv.threeQuarter.center,[255,0,0],'Second half should expand incoming B');
     assert.deepEqual(tv.threeQuarter.top,[0,0,0],'Outside the expanding B image should be black');
+    const spiral=result['spiral-wipe'].middle;
+    const rings=result['rings-wipe'].middle;
+    const panels=result['color-panel-wipe'].middle;
+    for(const [name,frame] of [['spiral-wipe',spiral],['rings-wipe',rings],['color-panel-wipe',panels]]){
+        assert.ok(frame.red>120&&frame.blue>120,name+' should reveal parts of B over A halfway through');
+        assert.equal(frame.fingerprint,result[name].repeat.fingerprint,name+' must rewind deterministically');
+        assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
+            name+' must look different from a plain fade');
+    }
+    assert.notEqual(spiral.fingerprint,result['aperture-wipe'].middle.fingerprint,
+        'Spiral angular sweep must differ visually from circular iris');
+    assert.notEqual(rings.fingerprint,result['aperture-wipe'].middle.fingerprint,
+        'Rings must produce multiple annuli, not a plain expanding iris');
+    assert.notEqual(spiral.fingerprint,rings.fingerprint,'Spiral and Rings wipes should be distinct');
+    assert.deepEqual(rings.center,[255,0,0],'Concentric rings must reveal the inner source at midpoint');
+    assert.ok(panels.mixed>60,'Color-panel wipe should display tinted panels during transition');
+    assert.ok(panels.red>200&&panels.blue>200,'Panel wipe must preserve clear old/new video colors');
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8D] PASS live Chrome 7-effect pixel checks (Ripple, TV turn off, Aperture wipe), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8E] PASS live Chrome 10-effect pixel checks (Spiral, Rings, Color panels), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
