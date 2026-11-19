@@ -16,7 +16,7 @@ Each must validate actual downloaded media with FFprobe/FFmpeg, covering output 
 
 Collect Chrome-process **proportional set size (PSS)** at 400 ms intervals, report baseline, peak, last sample and a post-idle/explicit-GC observation. These figures are Linux CI observations; not a universal mobile-memory benchmark, proof of zero leaks, or a release-blocking arbitrary upper threshold. Phase 6H provides the separate repeated-export/context-close memory recovery characterization.
 
-The standard Phase 6G 18-second/30-second test matrix still runs as before. Phase 6K uses the *same* test harness in a second invocation so old coverage is preserved. GitHub Actions' Chrome job includes a dedicated 18-minute step timeout, plus extra APT mirror retries and a longer FFmpeg installation allowance to reduce CI infrastructure flakes.
+The standard Phase 6G 18-second/30-second test matrix still runs as before. Phase 6K uses the *same* test harness in a second invocation so old coverage is preserved. GitHub Actions' Chrome job includes a dedicated 18-minute step timeout, and a prebuilt FFmpeg/FFprobe setup action to avoid intermittent slow Ubuntu package mirrors that blocked earlier Chrome CI runs.
 
 ## Release status and open items
 
