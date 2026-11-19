@@ -49,5 +49,5 @@ export const SELECTED_TRANSITION_NAMES = Object.freeze([
 export const transitionId = name => String(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 export const TRANSITION_CATALOG = Object.freeze(SELECTED_TRANSITION_NAMES.map((name,index)=>Object.freeze({
     id:transitionId(name),label:name,group:'User selection: first 10 gallery pages',
-    status:name==='Fade'?'available':'requested',selectedOrder:index+1
+    status:['Fade','Pixelize','Random squares','Glitch flicker'].includes(name)?'available':'requested',selectedOrder:index+1
 })));
