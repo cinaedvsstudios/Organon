@@ -201,6 +201,7 @@ export function cubeFaceWidth(progress,width,face='incoming') {
     return Math.max(0,width*(face==='outgoing'?1-unit(progress):unit(progress)));
 }
 export function cubeRowSkew(progress,row,rows,width) {
+    if(unit(progress)===0||unit(progress)===1)return 0;
     const count=Math.max(2,Math.floor(rows)||24);
     const r=Math.min(count-1,Math.max(0,Math.trunc(row)||0));
     const displacement=Math.sin(Math.PI*unit(progress))*width*.055;
