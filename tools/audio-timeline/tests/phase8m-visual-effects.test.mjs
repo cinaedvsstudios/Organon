@@ -12,11 +12,11 @@ const selected=['ascii','color-codes','prisms'];
 test('Phase 8M retains all 41 names and enables only the three new choices',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(new Set(TRANSITION_CATALOG.map(x=>x.id)).size,41);
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(-3),selected);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,34);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,7);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(31,34),selected);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,37);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,4);
     for(const id of selected)assert.equal(TRANSITION_CATALOG.find(x=>x.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='hologram')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='gallery')?.status,'requested');
 });
 
 test('ASCII glyph mapping is luminance-derived and fades only within overlap',()=>{
