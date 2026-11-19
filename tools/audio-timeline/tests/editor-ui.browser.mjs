@@ -117,6 +117,7 @@ try{
     await page.locator('#btn-add-marker').click();
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
     await page.locator('#btn-next-marker').click();
+    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     assert.equal(await page.locator('#timeline-ruler').isVisible(),true,
