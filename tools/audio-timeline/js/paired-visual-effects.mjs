@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8L: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8M: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -462,6 +462,47 @@ function traceLightRayMask(ctx,progress,width,height) {
         ctx.closePath();
     }
 }
+/** Phase 8M: incoming B appears as a fixed-width glyph portrait before
+ * resolving into unmodified footage. Only a tiny, resolution-independent
+ * 32×18 sample is read; never read full-resolution pixels per frame.
+ */
+export function asciiGlyphForLuminance(luminance){
+    const ramp='@%#*+=-:. ';
+    const value=Math.max(0,Math.min(255,Number(luminance)||0));
+    return ramp[Math.min(ramp.length-1,Math.floor(value/256*ramp.length))];
+}
+export function asciiIntensity(progress) {
+    const p=unit(progress);
+    return p===0||p===1?0:Math.sin(Math.PI*p);
+}
+/** Hex-code panels represent the actual sampled incoming source RGB,
+ * independently staggered and faded, not arbitrary decorative numbers.
+ */
+export function rgbToColorCode(red,green,blue) {
+    const hex=v=>Math.max(0,Math.min(255,Math.round(Number(v)||0)))
+        .toString(16).padStart(2,'0').toUpperCase();
+    return '#'+hex(red)+hex(green)+hex(blue);
+}
+export function colorCodeStrength(progress,index) {
+    const p=unit(progress);
+    if(p===0||p===1)return 0;
+    const delay=seededCell(index*37+67)*.24;
+    const phase=unit((p-delay)/(1-delay));
+    return Math.sin(Math.PI*phase);
+}
+/** Prisms split B into wide angular glass facets whose chromatic axes
+ * drift apart at mid-transition; unlike 24 triangular Refraction tiles.
+ */
+export function prismFacetOffset(progress,facet,width,height) {
+    const p=unit(progress);
+    if(p===0||p===1)return {x:0,y:0};
+    const angle=Math.PI*2*(Math.trunc(facet)||0)/9;
+    const amplitude=Math.sin(Math.PI*p);
+    return {
+        x:Math.round(Math.cos(angle)*amplitude*Math.min(width*.075,48)),
+        y:Math.round(Math.sin(angle)*amplitude*Math.min(height*.085,40))
+    };
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -877,6 +918,91 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
+    if(id==='ascii'||id==='color-codes'||id==='prisms'){
+        context.save();
+        if(id==='prisms'){
+            const count=9,cx=width/2,cy=height/2;
+            const radius=Math.hypot(width,height);
+            const hues=['#ff6190','#69e4ff','#fce17e'];
+            for(let i=0;i<count;i++){
+                const start=-Math.PI/2+i*Math.PI*2/count;
+                const end=start+Math.PI*2/count;
+                const shift=prismFacetOffset(progress,i,width,height);
+                context.save();
+                context.beginPath();
+                context.moveTo(cx,cy);
+                context.arc(cx,cy,radius,start,end);
+                context.closePath();
+                context.clip();
+                context.globalAlpha=alpha*progress;
+                context.drawImage(full,shift.x,shift.y,width,height);
+                context.globalCompositeOperation='screen';
+                context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.35;
+                context.fillStyle=hues[i%3];
+                context.fillRect(0,0,width,height);
+                context.restore();
+            }
+            context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.65;
+            context.lineWidth=Math.max(1,Math.min(width,height)*.014);
+            for(let i=0;i<count;i++){
+                const angle=-Math.PI/2+i*Math.PI*2/count;
+                context.strokeStyle=hues[i%3];
+                context.beginPath();
+                context.moveTo(cx,cy);
+                context.lineTo(cx+Math.cos(angle)*radius,
+                    cy+Math.sin(angle)*radius);
+                context.stroke();
+            }
+        }else{
+            // The incoming video is visible behind the code glyphs. Source
+            // sampling is capped at 576 pixels for ASCII, 28 for Color codes.
+            context.globalAlpha=alpha*(progress*.65);
+            context.drawImage(full,0,0,width,height);
+            const columns=id==='ascii'?32:7,rows=id==='ascii'?18:4;
+            const tiny=scratchCanvas(renderer,'transitionPixelScratch',columns,rows);
+            const tc=tiny.getContext('2d',{willReadFrequently:true});
+            tc.clearRect(0,0,columns,rows);
+            tc.drawImage(full,0,0,columns,rows);
+            const pixels=tc.getImageData(0,0,columns,rows).data;
+            const cw=width/columns,ch=height/rows;
+            context.textBaseline='middle';
+            context.textAlign='center';
+            if(id==='ascii'){
+                const intensity=asciiIntensity(progress);
+                context.globalAlpha=alpha*intensity*.96;
+                context.font='bold '+Math.max(5,Math.floor(ch*.88))+'px monospace';
+                context.fillStyle='#c5ffdc';
+                for(let i=0;i<columns*rows;i++){
+                    const offset=i*4;
+                    const light=pixels[offset]*.2126+pixels[offset+1]*.7152+
+                        pixels[offset+2]*.0722;
+                    const glyph=asciiGlyphForLuminance(light);
+                    if(glyph!==' ')context.fillText(glyph,
+                        (i%columns+.5)*cw,(Math.floor(i/columns)+.52)*ch);
+                }
+            }else{
+                context.font='bold '+Math.max(5,Math.floor(ch*.22))+'px monospace';
+                const inset=Math.max(.5,Math.min(cw,ch)*.065);
+                for(let i=0;i<columns*rows;i++){
+                    const strength=colorCodeStrength(progress,i);
+                    if(strength<=0)continue;
+                    const offset=i*4;
+                    const code=rgbToColorCode(pixels[offset],pixels[offset+1],pixels[offset+2]);
+                    const x=i%columns*cw,y=Math.floor(i/columns)*ch;
+                    context.globalAlpha=alpha*strength*.9;
+                    context.fillStyle='#101a35';
+                    context.fillRect(x+inset,y+inset,cw-inset*2,ch-inset*2);
+                    context.fillStyle=code;
+                    context.fillRect(x+inset*2,y+inset*2,
+                        cw-inset*4,ch*.46);
+                    context.fillStyle='#f5f3d8';
+                    context.fillText(code,x+cw/2,y+ch*.77,cw-inset*3);
+                }
+            }
+        }
+        context.restore();
+        return true;
+    }
     if(id==='cross-warp'){
         const bands=24;
         context.save();
