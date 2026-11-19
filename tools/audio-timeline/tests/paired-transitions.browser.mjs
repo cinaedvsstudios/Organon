@@ -184,6 +184,14 @@ try{
     console.log('[Phase9 still-image transition diagnostic]',JSON.stringify(stillDebug));
     assert.ok(await page.locator('.timeline-clip.sticker .visual-transition-marker.enter').count()>=1,
         'Image B must show the gold transition entry marker');
+    // Speed controls must change real video duration while retaining the source.
+    await page.locator('.timeline-clip.video').first().click();
+    assert.ok(await page.locator('#visual-speed-panel').isVisible());
+    await page.locator('#visual-speed').fill('150');
+    await page.locator('#visual-speed').dispatchEvent('input');
+    assert.match(await page.locator('#visual-speed-value').innerText(),/1\.50/);
+    assert.match(await page.locator('#visual-speed-duration').innerText(),/\ds/);
+
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
     console.log('[MotoriClip 8O] PASS 41-candidate library, 2 video imports, forty-one paired effects, gold marker, undo/redo '+JSON.stringify(positions));
 }finally{
