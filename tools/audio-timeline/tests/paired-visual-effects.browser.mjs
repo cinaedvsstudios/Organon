@@ -148,6 +148,7 @@ try{
     const block=result['block-cover'].middle;
     const hatch=result['cross-hatch'].middle;
     const film=result['film-strip'].middle;
+    console.log('[MotoriClip 8F] New-effect middle-frame counts '+JSON.stringify({block,hatch,film}));
     for(const [name,frame] of [['block-cover',block],['cross-hatch',hatch],['film-strip',film]]){
         assert.ok(frame.red>100&&frame.blue>100,name+' must visibly retain A and reveal B at its midpoint');
         assert.equal(frame.fingerprint,result[name].repeat.fingerprint,
