@@ -11,7 +11,7 @@ import { isPairedFadeActive } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
-import { connectOrgavoxAudioChain } from './orgavox-audio-chain.mjs';
+import { connectOrgavoxAudioChain, ensureOrgavoxLofiWorklet } from './orgavox-audio-chain.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -260,15 +260,17 @@ export class AdvancedMediaEngine {
         track.audioNode = this.audioContext.createMediaElementSource(mediaElement);
         track.gainNode = this.audioContext.createGain();
         track.gainNode.connect(this.previewGain);
-        this.refreshOrgavoxAudioEffects(track);
+        await this.refreshOrgavoxAudioEffects(track);
     }
 
-    refreshOrgavoxAudioEffects(track) {
+    async refreshOrgavoxAudioEffects(track) {
         if (!track?.audioNode || !track.gainNode || !this.audioContext) return;
         const signature=JSON.stringify(track.audio?.fx || {});
         if (track.orgavoxFxSignature===signature && track.orgavoxFxNodes?.length) return;
-        // Rewire only this source's effect section. The final gain stays
-        // connected to the speaker bus and any active MediaRecorder export mix.
+        // Loading a worklet is asynchronous. The selected preset may have
+        // changed while loading, so don't install stale processing nodes.
+        await ensureOrgavoxLofiWorklet(this.audioContext,track.audio?.fx);
+        if(!track.audioNode || !track.gainNode || signature!==JSON.stringify(track.audio?.fx || {}))return;
         try { track.audioNode.disconnect(); } catch (_) {}
         for (const node of track.orgavoxFxNodes || []) {
             try { node.disconnect(); } catch (_) {}
