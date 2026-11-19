@@ -4,6 +4,8 @@
  * Resizing a clip changes only sourceOut / clipDuration; playback remains 1× speed.
  */
 
+import { fadeDuration } from './visual-transitions.mjs';
+
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
 const TYPE_DEFAULTS = {
     sticker: { label: 'Sticker', subLabel: 'top visual overlay', placeholder: 'Drop a GIF / WebP / PNG here', className: 'sticker' },
@@ -409,6 +411,28 @@ export class AdvancedTimeline {
         strip.style.transform = `translateX(${-sourceOffset * this.pixelsPerSecond}px)`;
     }
 
+    updateVisualTransitionMarkers(track) {
+        const clip=[...(this.lanesElement?.querySelectorAll('.timeline-clip.video')||[])]
+            .find(node=>node.dataset.trackId===track?.id);
+        if(clip)this.renderVisualTransitionMarkers(clip,track);
+    }
+
+    renderVisualTransitionMarkers(clip,track) {
+        for(const edge of ['enter','exit']){
+            const duration=fadeDuration(track,edge);
+            let marker=clip.querySelector('.visual-transition-marker.'+edge);
+            if(duration<=0){marker?.remove();continue;}
+            if(!marker){
+                marker=document.createElement('span');
+                marker.className='visual-transition-marker '+edge;
+                clip.appendChild(marker);
+            }
+            marker.style.width=Math.min(this.getClipDuration(track)*this.pixelsPerSecond,
+                Math.max(3,duration*this.pixelsPerSecond))+'px';
+            marker.setAttribute('aria-label',(edge==='enter'?'Entrance':'Exit')+' fade '+duration.toFixed(2)+' seconds');
+        }
+    }
+
     updateClipStyle(clip, track) {
         clip.style.left = `${Math.max(0, (Number(track.start) || 0) * this.pixelsPerSecond)}px`;
         clip.style.width = `${Math.max(26, this.getClipDuration(track) * this.pixelsPerSecond)}px`;
@@ -417,6 +441,7 @@ export class AdvancedTimeline {
         // would stretch every peak when the right edge is trimmed.
         clip.style.removeProperty('background-image');
         this.updateClipAnalysisStrip(clip, track);
+        if(track.type==='video')this.renderVisualTransitionMarkers(clip,track);
     }
 
     applySelectionState() {

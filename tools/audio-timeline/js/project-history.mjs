@@ -3,6 +3,8 @@
  * media elements, Web Audio nodes or object URLs.
  * File objects stay only in the session's source registry.
  */
+import { normalizeVisualTransitions } from './visual-transitions.mjs';
+
 export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
     'start', 'sourceOffset', 'sourceDuration', 'clipDuration',
@@ -16,6 +18,7 @@ export function snapshotClip(track) {
         if (track[key] !== undefined) data[key] = track[key];
     }
     data.audio = { volume:1, muted:false, fadeIn:0, fadeOut:0, ...(track.audio || {}) };
+    data.visualTransitions = normalizeVisualTransitions(track.visualTransitions);
     data.transparency = {
         mode:'native', keyColour:'#00ff00', tolerance:30, feather:8,
         ...(track.transparency || {})
@@ -81,6 +84,7 @@ export function applyClipData(target, record) {
         if (Object.hasOwn(record, key)) target[key] = record[key];
     }
     target.audio = { ...record.audio };
+    target.visualTransitions = normalizeVisualTransitions(record.visualTransitions);
     target.transparency = { ...record.transparency };
     target.analysis = record.analysis ? {
         ...record.analysis, levels: [...(record.analysis.levels || [])]

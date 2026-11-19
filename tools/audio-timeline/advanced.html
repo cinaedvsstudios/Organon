@@ -172,6 +172,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .clip-resize-handle { position:absolute; z-index:4; top:0; right:0; bottom:0; width:13px; border-radius:0 7px 7px 0; cursor:ew-resize; touch-action:none; }
 .clip-resize-handle:hover { background:rgba(245,240,219,.22); }
 /* Every clip gets its own exact-colour end line. It fills its lane height without covering the resize grip. */
+.visual-transition-marker { position:absolute; top:1px; bottom:1px; z-index:1; pointer-events:none; border-color:#e3b75c; border-style:solid; border-width:0; background:linear-gradient(90deg,rgba(206,148,33,.50),rgba(227,183,92,.05)); }
+.visual-transition-marker.enter { left:0; border-left-width:3px; border-radius:5px 0 0 5px; }
+.visual-transition-marker.exit { right:0; border-right-width:3px; border-radius:0 5px 5px 0; background:linear-gradient(90deg,rgba(227,183,92,.05),rgba(206,148,33,.50)); }
 .clip-end-marker { position:absolute; z-index:4; top:-5px; right:-2px; bottom:-5px; width:2px; border-radius:999px; background:var(--clip-colour); box-shadow:0 0 7px var(--clip-colour); pointer-events:none; }
 .timeline-clip.is-trimming .clip-end-marker { box-shadow:0 0 10px 2px var(--clip-colour); }
 .playhead { position:absolute; top:0; bottom:0; left:0; width:2px; z-index:5; background:var(--brand-red); box-shadow:0 0 6px rgba(154,47,79,.9); pointer-events:none; }
@@ -194,6 +197,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .color-input { width:35px; height:26px; padding:1px; border:1px solid rgba(137,107,73,.85); border-radius:7px; background:var(--bg-input); }
 .inline-inputs { display:grid; grid-template-columns:auto minmax(0,1fr); gap:6px; align-items:center; }
 .blend-help { color:rgba(245,240,219,.5); font:.54rem/1.35 var(--font-mono); }
+.visual-transition-card { margin-top:10px; padding:8px; border:1px solid rgba(227,183,92,.58); border-radius:10px; background:rgba(112,79,23,.12); }
+.visual-transition-card h4 { margin:0 0 6px; color:#e3b75c; font:.62rem var(--font-mono); text-transform:uppercase; }
+.transition-schematic { display:flex; align-items:center; min-height:33px; gap:0; font:.58rem var(--font-mono); text-align:center; }
+.transition-schematic .transition-from,.transition-schematic .transition-to { display:grid; align-items:center; flex:1; min-width:0; min-height:31px; padding:4px; color:#f9f7ef; border-radius:6px; }
+.transition-schematic .transition-from { background:#286bb5; }
+.transition-schematic .transition-to { background:#ae3d4f; }
+.transition-schematic .transition-bridge { z-index:1; min-width:34px; padding:4px 1px; margin:0 -3px; color:#17140e; border:1px solid #f8d478; border-radius:6px; background:#e3b75c; font-size:.66rem; }
+.transition-summary { margin:6px 0 8px; color:rgba(245,240,219,.72); font:.55rem/1.45 var(--font-mono); text-align:center; }
+.visual-transition-card .range-control { accent-color:#e3b75c; }
+.visual-transition-card .control-row { font-size:.61rem; }
 .context-menu { position:fixed; z-index:60; min-width:190px; padding:7px; border:1px solid var(--chiseled-bronze); border-radius:12px; background:#171814; box-shadow:0 12px 28px rgba(0,0,0,.7); }
 .context-menu-title { margin:2px 4px 6px; color:var(--stone-ochre); font:.56rem var(--font-mono); }
 .context-menu button { justify-content:flex-start; width:100%; min-height:29px; margin:2px 0; border-radius:8px; }
@@ -353,6 +366,20 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <input type="range" class="range-control" id="video-opacity" min="0" max="100" value="100" aria-label="Video opacity">
                     <label class="control-row"><span>Blend mode</span><select class="compact-select" id="video-blend-mode"><option value="source-over">Normal</option><option value="multiply">Multiply</option><option value="screen">Screen</option><option value="overlay">Overlay</option><option value="darken">Darken</option><option value="lighten">Lighten</option><option value="color-dodge">Color Dodge</option><option value="color-burn">Color Burn</option></select></label>
                     <p class="blend-help">Blend changes the visual layer only. Preview app volume above never changes exported mix settings.</p>
+                    <div class="visual-transition-card" id="video-transition-card">
+                        <h4>Visual transitions · Fade</h4>
+                        <div class="transition-schematic" aria-label="Schematic preview: blue Video A, gold transition, red Video B">
+                            <span class="transition-from">Video A</span><span class="transition-bridge">✦</span><span class="transition-to">Video B</span>
+                        </div>
+                        <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
+                        <div class="control-row"><span>Fade in / entrance</span><span class="value-pill" id="video-transition-enter-value">0.0s</span></div>
+                        <input type="range" class="range-control" id="video-transition-enter" min="0" max="5" step="0.05" value="0" aria-label="Video visual entrance fade seconds">
+                        <label class="control-row"><span>Entrance curve</span><select class="compact-select" id="video-transition-enter-curve"><option value="linear">Linear</option><option value="smooth">Smooth</option></select></label>
+                        <div class="control-row"><span>Fade out / exit</span><span class="value-pill" id="video-transition-exit-value">0.0s</span></div>
+                        <input type="range" class="range-control" id="video-transition-exit" min="0" max="5" step="0.05" value="0" aria-label="Video visual exit fade seconds">
+                        <label class="control-row"><span>Exit curve</span><select class="compact-select" id="video-transition-exit-curve"><option value="linear">Linear</option><option value="smooth">Smooth</option></select></label>
+                        <p class="blend-help">Non-destructive visual alpha. Each clip keeps its own entrance/exit settings. Fades reveal any lower layer; linked audio is unchanged.</p>
+                    </div>
                     <button type="button" class="btn btn-primary" id="btn-extract-audio">🎵 Extract Audio to Timeline</button>
                 </section>
                 <section class="control-card" id="inspector-background" hidden>
