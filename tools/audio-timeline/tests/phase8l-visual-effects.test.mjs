@@ -16,7 +16,7 @@ test('Phase 8L adds three chosen effects without losing any of the 41 originals'
     assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,37);
     assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,4);
     for(const id of selected)assert.equal(TRANSITION_CATALOG.find(x=>x.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='spiralblockwipe')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='spiralblockwipe')?.status,'available');
 });
 test('Liquid surface rises through a reproducible, genuinely wavy crest',()=>{
     const width=196,height=112;
