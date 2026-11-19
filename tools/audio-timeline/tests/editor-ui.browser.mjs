@@ -73,6 +73,52 @@ try{
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     await page.locator('#btn-redo').click();
     await page.waitForFunction(()=>document.querySelector('#file-count')?.textContent?.includes('0 media'));
+    // Reimported local media should survive as metadata and can be relinked.
+    await page.locator('#file-input').setInputFiles(file);
+    await page.locator('.file-row:not(.is-unlinked)').waitFor();
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.file-row.is-unlinked').waitFor();
+    await page.locator('#file-input').setInputFiles(file);
+    await page.locator('.file-row:not(.is-unlinked)').waitFor();
+    await page.evaluate(()=>{
+        const row=document.querySelector('.file-row'),dt=new DataTransfer();
+        dt.setData('application/x-organon-project-file',row.dataset.fileId);
+        document.querySelector('#timeline-empty').dispatchEvent(
+            new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt,clientX:215,clientY:450}));
+    });
+    await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    assert.ok(await page.locator('#context-toggle-visible').isVisible());
+    await page.locator('#context-toggle-visible').click();
+    await page.locator('.timeline-clip.background.is-hidden').waitFor();
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    await page.locator('#context-toggle-visible').click();
+    assert.equal(await page.locator('.timeline-clip.background.is-hidden').count(),0);
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    const downloadPromise=page.waitForEvent('download');
+    await page.locator('#context-download-source').click();
+    const download=await downloadPromise;
+    assert.equal(download.suggestedFilename(),'ui-test.jpg');
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    await page.locator('#context-copy').click();
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    await page.locator('#context-paste').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background:not(.placeholder)').length===2);
+    const beforeNudge=await page.locator('.timeline-clip.background.selected').evaluate(el=>parseFloat(el.style.left));
+    await page.locator('#btn-nudge-right').click();
+    const afterNudge=await page.locator('.timeline-clip.background.selected').evaluate(el=>parseFloat(el.style.left));
+    assert.ok(afterNudge>beforeNudge,'Nudge must move selected clip by one frame');
+    await page.locator('#btn-undo').click();
+    await page.locator('#btn-redo').click();
+    await page.locator('.timeline-clip.background.selected').click({button:'right',position:{x:16,y:16}});
+    await page.locator('#context-slice-click').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background:not(.placeholder)').length===3);
+    await page.locator('#timeline-ruler').click({position:{x:167,y:12}});
+    await page.locator('#btn-add-marker').click();
+    assert.equal(await page.locator('.timeline-cue-marker').count(),1);
+    await page.locator('#btn-next-marker').click();
+    await page.locator('#btn-clear').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     assert.equal(await page.locator('#timeline-ruler').isVisible(),true,
         'Timeline second labels must be visible without extra clicks');
     assert.ok(await page.locator('#timeline-ruler span:not(.ruler-spacer)').count() > 0,
