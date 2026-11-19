@@ -11,7 +11,7 @@ import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
 import { TRANSITION_CATALOG } from './transition-catalog.mjs';
-import { planPairedFade, isPairedFadeActive } from './clip-pair-transitions.mjs';
+import { planPairedTransition, isPairedFadeActive } from './clip-pair-transitions.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -572,7 +572,10 @@ import { planPairedFade, isPairedFadeActive } from './clip-pair-transitions.mjs'
             const paired=Boolean(from&&isPairedFadeActive(track,state.tracks));
             elements.videoTransitionPairNote.hidden=!paired;
             elements.btnUnpairTransition.hidden=!paired;
-            if(paired) elements.videoTransitionPairNote.textContent=`✦ Paired Fade from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
+            if(paired){
+                const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
+                elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
+            }
         }
         if (track.type === 'background') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
@@ -728,6 +731,14 @@ import { planPairedFade, isPairedFadeActive } from './clip-pair-transitions.mjs'
         }
         if (state.liveRenderRequest !== null) { cancelAnimationFrame(state.liveRenderRequest); state.liveRenderRequest = null; }
         const relocated = resolveVideoOverlap(track);
+        // Drag/trim edits that break a paired overlap must not leave stale link
+        // metadata or keep a spatial effect active at the wrong timestamps.
+        for(const clip of state.tracks){
+            if(clip.transitionFromId&&!isPairedFadeActive(clip,state.tracks)){
+                clip.transitionFromId=null;
+                clip.transitionEffectId=null;
+            }
+        }
         engine.setTracks(state.tracks);
         timeline.setTracks(state.tracks);
         timeline.setDuration(engine.getTimelineDuration());
@@ -737,12 +748,14 @@ import { planPairedFade, isPairedFadeActive } from './clip-pair-transitions.mjs'
 
     function applySelectedVideoPair() {
         let plan;
+        const effectId=elements.pairTransitionEffect.value;
+        const effect=TRANSITION_CATALOG.find(item=>item.id===effectId);
         try{
-            plan=planPairedFade(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value);
-            if(elements.pairTransitionEffect.value!=='fade')throw Error('This effect is selected for later development, not implemented yet.');
+            if(effect?.status!=='available')throw Error('This effect is selected for later development, not implemented yet.');
+            plan=planPairedTransition(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value,effectId);
         }catch(error){showToast(error.message);return;}
         const a=getTrack(plan.fromId),b=getTrack(plan.toId);
-        recordHistory(`Pair ${a.sourceName} → ${b.sourceName} (${plan.duration.toFixed(2)}s fade)`);
+        recordHistory(`Pair ${a.sourceName} → ${b.sourceName} (${plan.duration.toFixed(2)}s ${effect.label})`);
         a.visualTransitions=plan.outgoingTransitions;
         b.visualTransitions=plan.incomingTransitions;
         b.start=plan.start;
@@ -759,7 +772,7 @@ import { planPairedFade, isPairedFadeActive } from './clip-pair-transitions.mjs'
         void engine.seek(plan.start+plan.duration/2,{resume:false}).catch((error)=>{
             elements.previewState.textContent=`Transition preview unavailable: ${error.message}`;
         });
-        showToast(`Paired fade ${plan.duration.toFixed(2)}s: ${a.sourceName} → ${b.sourceName}`);
+        showToast(`Paired ${effect.label} ${plan.duration.toFixed(2)}s: ${a.sourceName} → ${b.sourceName}`);
     }
 
     function unlinkSelectedVideoPair(){

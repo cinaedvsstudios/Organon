@@ -40,7 +40,7 @@ try{
     await page.locator('#transition-library-grid .transition-library-item').first().waitFor({state:'visible'});
     assert.equal(await page.locator('#transition-library-grid .transition-library-item').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option').count(),41);
-    assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),1);
+    assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),4);
     await page.locator('#file-input').setInputFiles(files);
     await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===2,{timeout:10000});
     // Native drag/drop event targets call the same real placement handler that
@@ -79,8 +79,21 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.video:not(.placeholder)').length===2);
     await page.locator('#btn-redo').click();
     await page.locator('#video-transition-pair-note').waitFor({state:'visible',timeout:15000});
+    for(const [id,label] of [['pixelize','Pixelize'],['random-squares','Random squares'],['glitch-flicker','Glitch flicker']]){
+        await page.locator('.timeline-clip.video:not(.selected)').first().click();
+        await page.locator('#pair-transition-panel').waitFor({state:'visible'});
+        await page.locator('#pair-transition-effect').selectOption(id);
+        await page.locator('#btn-apply-pair-transition').click();
+        await page.locator('#video-transition-pair-note').waitFor({state:'visible'});
+        assert.match(await page.locator('#video-transition-pair-note').innerText(),new RegExp('Paired '+label,'i'));
+        assert.ok(await page.locator('.timeline-clip.video .visual-transition-marker.enter').count()>=1);
+    }
+    await page.locator('#btn-undo').click();
+    await page.locator('#btn-redo').click();
+    await page.locator('#video-transition-pair-note').waitFor({state:'visible'});
+    assert.match(await page.locator('#video-transition-pair-note').innerText(),/Glitch flicker/);
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
-    console.log('[MotoriClip 8B] PASS 41-candidate library, 2 video imports, actual paired fade, gold marker, undo/redo '+JSON.stringify(positions));
+    console.log('[MotoriClip 8C] PASS 41-candidate library, 2 video imports, four paired effects, gold marker, undo/redo '+JSON.stringify(positions));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));

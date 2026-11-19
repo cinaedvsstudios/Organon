@@ -2,11 +2,13 @@
  * into a later video B. Never mutate media, track lists or preview runtime.
  */
 import { normalizeVisualTransitions } from './visual-transitions.mjs';
+import { isAvailablePairEffect } from './paired-visual-effects.mjs';
 
 const finite=value=>Number.isFinite(Number(value))?Number(value):0;
 const end=track=>finite(track.start)+Math.max(0,finite(track.clipDuration));
 const overlaps=(start,duration,other)=>start<end(other)-.001&&start+duration>finite(other.start)+.001;
-export function planPairedFade(tracks,selectedIds,requestedDuration=1){
+export function planPairedTransition(tracks,selectedIds,requestedDuration=1,effectId='fade'){
+    if(!isAvailablePairEffect(effectId))throw new Error('Transition effect is not implemented yet.');
     if(!Array.isArray(selectedIds)||selectedIds.length!==2||new Set(selectedIds).size!==2)
         throw new Error('Select exactly two different video clips.');
     const selected=selectedIds.map(id=>(tracks||[]).find(t=>t.id===id));
@@ -33,7 +35,7 @@ export function planPairedFade(tracks,selectedIds,requestedDuration=1){
     return {
         fromId:a.id,toId:b.id,duration,start:incomingStart,
         needsNewLane,incomingOrder:finite(a.order)-.5,
-        incomingTransitions,outgoingTransitions,effectId:'fade',
+        incomingTransitions,outgoingTransitions,effectId,
         outgoingEnd:end(a)
     };
 }
@@ -41,8 +43,10 @@ export function planPairedFade(tracks,selectedIds,requestedDuration=1){
 /** Pair metadata is valid only while both clips retain the planned overlap.
  * Dragging/trimming either clip can break the link, without erasing a fade.
  */
+export const planPairedFade=(tracks,selectedIds,requestedDuration=1)=>planPairedTransition(tracks,selectedIds,requestedDuration,'fade');
+
 export function isPairedFadeActive(track,tracks){
-    if(!track?.transitionFromId||track.transitionEffectId!=='fade'||track.type!=='video')return false;
+    if(!track?.transitionFromId||!isAvailablePairEffect(track.transitionEffectId)||track.type!=='video')return false;
     const from=(tracks||[]).find(t=>t.id===track.transitionFromId&&t.type==='video');
     if(!from||!from.sourceName||!track.sourceName||!track.file
         ||finite(track.order)>=finite(from.order))return false;
