@@ -837,13 +837,13 @@ import { planClipSnap } from './clip-snap.mjs';
         if (relocated) showToast(`${track.sourceName || 'Video'} moved to ${track.laneLabel} so video clips do not overlap`);
     }
 
-    function applySelectedVideoPair() {
+    function applySelectedVideoPair(preserveOrder = false) {
         let plan;
         const effectId=elements.pairTransitionEffect.value;
         const effect=TRANSITION_CATALOG.find(item=>item.id===effectId);
         try{
             if(effect?.status!=='available')throw Error('This effect is selected for later development, not implemented yet.');
-            plan=planPairedTransition(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value,effectId);
+            plan=planPairedTransition(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value,effectId,{preserveOrder:preserveOrder===true});
         }catch(error){
             showToast(error.message);
             if (!elements.transitionModal.hidden) elements.transitionModalStatus.textContent = error.message;
@@ -1413,7 +1413,7 @@ import { planClipSnap } from './clip-snap.mjs';
         elements.pairTransitionDuration.value=elements.transitionModalDuration.value;
         syncSelectionTools();
         syncInspector();
-        if(applySelectedVideoPair()) closeEditorModals();
+        if(applySelectedVideoPair(true)) closeEditorModals();
     }
     elements.transitionModalFrom.addEventListener('change',updateTransitionModalValidation);
     elements.transitionModalTo.addEventListener('change',updateTransitionModalValidation);
