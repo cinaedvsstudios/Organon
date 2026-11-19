@@ -40,6 +40,7 @@ try{
             page.on('pageerror',error=>errors.push(error.message));
             await page.goto(url+'index.html',{waitUntil:'domcontentloaded'});
             await page.waitForURL(/advanced\.html/,{timeout:25000});
+            await page.locator('#btn-project-settings').click();
             await page.locator('#project-fps').waitFor({state:'visible',timeout:20000});
             assert.match(await page.title(),/MotoriClip.+Advanced/i);
             await page.locator('#project-fps').selectOption('25');
@@ -49,6 +50,8 @@ try{
             await page.locator('#btn-apply-canvas').click();
             assert.equal(await page.locator('#advanced-canvas').getAttribute('width'),'640');
             assert.equal(await page.locator('#advanced-canvas').getAttribute('height'),'360');
+            await page.locator('#project-settings-modal [data-close-modal]').click();
+            await page.locator('#btn-project-export').click();
             assert.ok(await page.locator('#btn-export-video').isVisible());
             assert.ok(await page.locator('#btn-export-offline').isVisible());
             const caps=await page.evaluate(async({probeCodec})=>{
@@ -98,6 +101,8 @@ try{
                     'Unavailable real-time export must be clearly explained');
                 console.log('[MotoriClip 6J] '+name+' correctly disables unavailable MediaRecorder export');
             }
+            await page.locator('#project-export-modal [data-close-modal]').click();
+            await page.locator('#btn-toggle-header').click();
             await page.locator('#btn-basic-mode').click();
             await page.waitForURL(/mode=basic/,{timeout:20000});
             await page.locator('#btn-advanced-mode').click();
@@ -119,6 +124,7 @@ try{
             assert.match(await phone.title(),/MotoriClip.+Basic/i);
             await phone.locator('#btn-advanced-mode').click();
             await phone.waitForURL(/advanced\.html/,{timeout:20000});
+            await phone.locator('#btn-toggle-header').click();
             await phone.locator('#btn-basic-mode').click();
             await phone.waitForURL(/mode=basic/,{timeout:20000});
             assert.deepEqual(phoneErrors,[],name+' phone-style UA threw uncaught exceptions');
