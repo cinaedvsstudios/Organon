@@ -14,7 +14,7 @@ export const seededCell = index => {
     x^=x>>>16; x=Math.imul(x,0x7feb352d)>>>0;
     x^=x>>>15; x=Math.imul(x,0x846ca68b)>>>0;
     x^=x>>>16;
-    return x/4294967296;
+    return (x>>>0)/4294967296;
 };
 export function revealCell(progress,index) {
     const p=unit(progress);
@@ -26,6 +26,7 @@ export function pixelScale(progress) {
 }
 export function glitchShift(progress,band,step,width) {
     const remaining=1-unit(progress);
+    if(remaining<=0)return 0;
     const cell=Math.floor((band+1)*131+Math.max(0,step)*397);
     return Math.round((seededCell(cell)*2-1)*Math.min(42,width*.065)*remaining);
 }
