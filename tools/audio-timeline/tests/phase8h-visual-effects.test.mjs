@@ -12,8 +12,8 @@ test('8H preserves the complete 41-effect shortlist, 19 enabled and 22 remaining
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(16,19),chosen);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,41);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,0);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
 });
