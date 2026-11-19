@@ -15,7 +15,7 @@ test('8K retains 41 original names while enabling the next three effects',()=>{
     assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,37);
     assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,4);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(x=>x.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='hologram')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(x=>x.id==='hologram')?.status,'available');
 });
 test('Vortex radius expands and its separate rings rotate reproducibly',()=>{
     const farthest=Math.hypot(98,56);
