@@ -3,6 +3,7 @@
  * and media encoders so preview, fixed-frame export and tests use one envelope.
  * Phase 8A supports visual alpha fade only; other effect types come later.
  */
+const VISUAL_TYPES = new Set(['video','sticker','background']);
 const clamp=(value,min,max)=>Math.min(max,Math.max(min,Number.isFinite(Number(value))?Number(value):0));
 export const emptyVisualTransitions=()=>({
     enter:{type:'fade',duration:0,curve:'linear'},
@@ -21,7 +22,7 @@ export function normalizeVisualTransitions(value) {
     return defaults;
 }
 export function fadeDuration(track,edge) {
-    if(track?.type!=='video'||(edge!=='enter'&&edge!=='exit'))return 0;
+    if(!VISUAL_TYPES.has(track?.type)||(edge!=='enter'&&edge!=='exit'))return 0;
     return clamp(track.visualTransitions?.[edge]?.duration,0,Math.max(0,Number(track.clipDuration)||0));
 }
 function curved(progress,curve) {
@@ -29,7 +30,7 @@ function curved(progress,curve) {
     return curve==='smooth'?p*p*(3-2*p):p;
 }
 export function visualFadeOpacity(track,timelineTime,{ignoreEnter=false}={}) {
-    if(track?.type!=='video')return 1;
+    if(!VISUAL_TYPES.has(track?.type))return 1;
     const total=Math.max(0,Number(track.clipDuration)||0);
     if(!total)return 1;
     const elapsed=clamp(Number(timelineTime)-(Number(track.start)||0),0,total);
