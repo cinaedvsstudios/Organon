@@ -120,6 +120,25 @@ try{
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
+    // Functional overlay asset library: template click makes an actual PNG clip.
+    await page.locator('[data-library-tab="effects"]').click();
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),12);
+    assert.ok(await page.locator('#effects-library-panel').isVisible());
+    await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
+    await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
+    await page.locator('[data-library-tab="text"]').click();
+    await page.locator('#text-overlay-value').fill('NEW TITLE');
+    assert.equal(await page.locator('#text-library-grid .asset-preset-card').count(),12);
+    await page.locator('#text-library-grid [data-preset-id="neon-cyan"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2,null,{timeout:15000});
+    assert.ok(await page.locator('.timeline-clip.sticker .clip-label').allTextContents()
+        .then(names=>names.some(name=>/text-neon-cyan-NEW-TITLE/i.test(name))),
+        'Text preset should create a real named PNG sticker clip');
+    await page.locator('[data-library-tab="media"]').click();
+    assert.ok(await page.locator('#project-drop-zone').isVisible());
+    page.once('dialog',dialog=>dialog.accept());
+    await page.locator('#btn-clear').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     assert.equal(await page.locator('#timeline-ruler').isVisible(),true,
         'Timeline second labels must be visible without extra clicks');
     assert.ok(await page.locator('#timeline-ruler span:not(.ruler-spacer)').count() > 0,
