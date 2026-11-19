@@ -441,7 +441,7 @@ export class AdvancedTimeline {
         // would stretch every peak when the right edge is trimmed.
         clip.style.removeProperty('background-image');
         this.updateClipAnalysisStrip(clip, track);
-        if(track.type==='video')this.renderVisualTransitionMarkers(clip,track);
+        if(['video','sticker','background'].includes(track.type))this.renderVisualTransitionMarkers(clip,track);
     }
 
     applySelectionState() {
