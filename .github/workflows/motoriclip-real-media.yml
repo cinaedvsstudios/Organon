@@ -50,15 +50,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install browser automation dependency
-        run: npm install --no-save playwright-core@1.56.1
-      - name: Install FFmpeg and ffprobe from Ubuntu repositories
-        timeout-minutes: 12
+      - name: Install browser automation and pinned media binaries
+        timeout-minutes: 6
+        run: npm install --no-save playwright-core@1.56.1 @ffmpeg-installer/ffmpeg@1.1.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Put packaged FFmpeg and ffprobe on the runner PATH
         run: |
-          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-            sudo apt-get -o Acquire::Retries=3 update -qq
-            sudo DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 install -y --no-install-recommends ffmpeg
-          fi
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','@ffmpeg-installer/ffmpeg'],['ffprobe','@ffprobe-installer/ffprobe']]){const binary=require(dep).path;fs.symlinkSync(binary,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
       - name: Check Chromium and FFmpeg
         run: |
           set -euo pipefail
