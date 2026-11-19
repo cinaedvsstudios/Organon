@@ -150,7 +150,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         const flash=Math.max(0,1-Math.abs(progress-.5)/.045);
         if(flash>0){
             context.globalAlpha=alpha*flash;
-            context.fillStyle='#e8fcff';
+            context.fillStyle='#ffffff';
             context.fillRect(0,Math.floor(height/2),width,Math.max(1,Math.round(height*.012)));
         }
         context.restore();
