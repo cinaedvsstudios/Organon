@@ -1,7 +1,7 @@
 # MotoriClip Phase 8L — Liquid fill, Disintegrate and Light rays
 
 **Date:** 19 November 2026 (Berlin)
-**Status:** PR validation pending; this phase must not be treated as released before CI completes.
+**Status: MERGED AND VERIFIED.** [PR #54](https://github.com/cinaedvsstudios/Organon/pull/54) merged on 19 November 2026 at `6faa164815fb2c3e30831c35185f67e34bc59c11`.
 
 ## Original gallery shortlist
 
@@ -25,5 +25,13 @@ No automatic linked-audio crossfades, alpha-bearing exported video, parameter pr
 2. **Chrome pixel tests:** actual pixels for all 31 choices. The moving liquid surface should leave A above while B fills below; Disintegrate must retain mixed old/new video regions with independently moving shards and differ from Random squares and Block cover; Light rays should produce gold-lit radial openings distinct from Spiral and Rings. All three should visibly show both A/B halfway through, return exactly identical images on same-time seek and display clean full-frame B at completion.
 3. **Real editor UI:** import two generated MP4s, cycle all 31 available effect IDs, maintain correct inspector labels, visible gold region marker, Undo and Redo.
 4. **Full export and compatibility regression:** all prior Node suites, Firefox/cross-browser UI and media checks, 60-second 1080p and 120-second 720p near-limit exports, the 120-second 1080p/30fps H.264/AAC MP4 (3,600 frames, 16 moving clips), portrait media and repeated-export post-GC memory recovery.
+
+**QA result: PASS.** [GitHub Actions run 44515019544](https://github.com/cinaedvsstudios/Organon/actions/runs/44515019544) passed **all three jobs** (`transition-smoke`, `cross-browser-ui`, `export-browser`).
+
+- **159/159 Node tests passed**, including the five new Phase 8L effect geometry and history tests.
+- **Actual Chrome Canvas pixels passed for all 31 effects.** After balancing Disintegrate's fragment timing, sampled midpoint pixels showed Liquid fill 648 incoming red / 685 outgoing blue / 39 mixed; Disintegrate 594 incoming red / 443 outgoing blue / 335 mixed; Light rays 394 incoming red / 584 outgoing blue / 394 mixed. All three differed from earlier effects, reproduced the same rendered pixels after seeking, and returned to clean B at completion.
+- **Real editor UI:** two imported MP4 clips, all 31 effects applied, gold timeline markers, active effect labels, Undo/Redo, no browser errors. Cross-browser and Firefox checks also passed.
+- **Full export/memory regression:** The 120-second 1920×1080/30fps H.264/AAC MP4 test encoded **3,600 frames across 16 moving clips**, producing 73.06 MiB with a recorded Chrome PSS peak of 1,180.7 MiB. Near-limit 60-second 1080p/120-second 720p exports, repeated-export memory recovery and portrait/rotated-media checks passed.
+- This does not certify physical Windows/Android devices, pixel-exact third-party GLSL shader reproduction, automatic audio crossfading or alpha-bearing output videos.
 
 **Merge gate:** All three GitHub Actions jobs must finish green.
