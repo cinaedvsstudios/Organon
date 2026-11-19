@@ -245,7 +245,7 @@ try {
             const blueResponse=await fetch('./fixtures/blue-660.mp4');
             const red=new File([await redResponse.blob()],'red-440.mp4',{type:'video/mp4'});
             const blue=new File([await blueResponse.blob()],'blue-660.mp4',{type:'video/mp4'});
-            const audio={volume:1,gain:0,muted:false,fadeIn:0,fadeOut:0,fx:{eq:'voice',drive:'off',dynamics:'off',stereo:'off'}};
+            const audio={volume:1,gain:0,muted:false,fadeIn:0,fadeOut:0,fx:{eq:'voice',drive:'off',dynamics:'off',stereo:'off',lofi:'eightbit'}};
             const tracks=[
                 {id:'trimmed-red',type:'video',sourceName:red.name,file:red,media:null,
                     start:8,sourceOffset:.45,sourceDuration:2,clipDuration:.8,speed:1,
@@ -290,7 +290,7 @@ try {
             'Trimmed output must contain picture and the original linked clip audio');
         assert.ok(Math.abs(Number(info.format.duration)-.8)<.12,
             'Expected ONLY .8s trimmed section, got '+info.format.duration);
-        console.log('[MotoriClip trimmed-section] PASS real 0.8s MP4 export with audio, source offset, no project mutations');
+        console.log('[MotoriClip trimmed-section] PASS real 0.8s MP4 export with Orgavox 8-bit Lo-Fi audio, source offset, no project mutations');
     }
     assert.deepEqual(errors,[],'Browser reported script errors');
     console.log('[MotoriClip E2E] PASS complete for '+browserName);

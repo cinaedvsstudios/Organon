@@ -10,10 +10,13 @@
  * The originals wrap Orgavox globals such as connectClipNodes, so they cannot
  * safely execute inside MotoriClip. This DOM-free adapter shares their DSP
  * parameterization, not their application-specific globals or modal UI.
- * Lo-Fi bit-crushing uses processed-buffer DSP in Orgavox and is deliberately
- * NOT represented by a fake realtime effect here.
+ * Lo-Fi processing uses a shared AudioWorklet with sample-hold, bitcrushing,
+ * high-cut, hiss and wow, allowing identical real-time and offline rendering.
  */
+import { ORGAVOX_LOFI_PRESETS } from './orgavox-lofi-dsp.mjs';
+
 export const ORGAVOX_FX_PRESETS = Object.freeze({
+    lofi:ORGAVOX_LOFI_PRESETS,
     eq: Object.freeze({
         off:null,
         voice:{label:'Voice Clear',lowCut:90,lowGain:-2,midFreq:2200,midGain:3,highGain:2,highCut:12000,outputGain:100},
@@ -58,6 +61,26 @@ export function normalizeOrgavoxFx(value) {
         normalized[kind] = Object.hasOwn(presets,selected) ? selected : 'off';
     }
     return normalized;
+}
+
+const workletRegistrations=new WeakMap();
+/** Register only on contexts using an actual Lo-Fi preset. */
+export async function ensureOrgavoxLofiWorklet(context,rawSettings) {
+    const settings=normalizeOrgavoxFx(rawSettings);
+    if(settings.lofi==='off')return false;
+    if(!context?.audioWorklet?.addModule || typeof AudioWorkletNode==='undefined')
+        throw new Error('Orgavox Lo-Fi requires browser AudioWorklet support. Use a recent Chrome or Firefox.');
+    let promise=workletRegistrations.get(context);
+    if(!promise){
+        const url=new URL('./orgavox-lofi-worklet.js',import.meta.url);
+        promise=context.audioWorklet.addModule(url.href);
+        workletRegistrations.set(context,promise);
+    }
+    try { await promise; } catch(error) {
+        workletRegistrations.delete(context);
+        throw new Error('Cannot load Orgavox Lo-Fi worklet: '+(error?.message||error));
+    }
+    return true;
 }
 
 export function makeOrgavoxDriveCurve(drive,asymmetry) {
@@ -136,6 +159,15 @@ export function connectOrgavoxAudioChain(context,destination,rawSettings,source=
         tail.connect(compressor);compressor.connect(makeup);
         makeup.connect(wet);wet.connect(output);
         tail=output;
+    }
+    if(settings.lofi!=='off'){
+        if(typeof AudioWorkletNode==='undefined')
+            throw Error('AudioWorkletNode unavailable for Orgavox Lo-Fi');
+        const crusher=add(new AudioWorkletNode(context,'organon-orgavox-lofi-20261120',{
+            numberOfInputs:1,numberOfOutputs:1,outputChannelCount:[2],
+            processorOptions:{settings:{preset:settings.lofi,enabled:true}}
+        }));
+        append(crusher);
     }
     const stereo=ORGAVOX_FX_PRESETS.stereo[settings.stereo];
     if(stereo) {

@@ -5,10 +5,10 @@
  */
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
-import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261120-orgavox-eq-drive-dynamics-stereo';
+import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261120-orgavox-lofi';
 import { snapshotProject, snapshotClip, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs?build=20261120-orgavox-audio';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
-import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-trimmed-export';
+import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-orgavox-lofi';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
 import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
@@ -358,7 +358,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             state.selectedFileId = snapshot.selectedFileId || null;
             renderFiles();
             refreshAll(); // setTracks disposes discarded media objects.
-            for (const track of state.tracks) engine.refreshOrgavoxAudioEffects(track);
+            await Promise.all(state.tracks.map(track=>engine.refreshOrgavoxAudioEffects(track)));
             await engine.seek(Number(snapshot.currentTime) || 0, { resume: false });
         } finally {
             state.historyRestoring = false;
@@ -1990,10 +1990,17 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             if(!Object.hasOwn(ORGAVOX_FX_PRESETS,kind))return;
             const fx=normalizeOrgavoxFx(track.audio?.fx);
             if(fx[kind]===control.value)return;
+            const previous=fx[kind];
             recordHistory('Change Orgavox '+kind+' preset');
             fx[kind]=control.value;
             track.audio={...track.audio,fx};
-            engine.refreshOrgavoxAudioEffects(track);
+            void engine.refreshOrgavoxAudioEffects(track).catch(error=>{
+                if(getTrack(track.id)!==track)return;
+                track.audio.fx={...track.audio.fx,[kind]:previous};
+                void engine.refreshOrgavoxAudioEffects(track).catch(console.error);
+                syncOrgavoxAudioInspector(track);
+                showToast(error.message);
+            });
             syncOrgavoxAudioInspector(track);
             const label=ORGAVOX_FX_PRESETS[kind][fx[kind]]?.label || 'Off';
             showToast('Orgavox '+kind+': '+label);

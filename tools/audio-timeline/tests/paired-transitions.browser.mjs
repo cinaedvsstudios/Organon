@@ -212,6 +212,8 @@ try{
     await page.locator('#btn-redo').click();
     await page.waitForFunction(()=>document.querySelector('#video-orgavox-stereo')?.value==='wide',
         null,{timeout:15000});
+    await page.locator('#video-orgavox-lofi').selectOption('subtle');
+    assert.match(await page.locator('#video-orgavox-fx-count').innerText(),/5 active/);
 
     // The same four clip processors are available on independent audio lanes.
     await page.locator('#file-input').setInputFiles(audioFile);
@@ -231,6 +233,11 @@ try{
     await page.locator('#audio-orgavox-dynamics').selectOption('glue');
     await page.locator('#audio-orgavox-stereo').selectOption('mono');
     assert.match(await page.locator('#audio-orgavox-fx-count').innerText(),/4 active/);
+    await page.locator('#audio-orgavox-lofi').selectOption('eightbit');
+    assert.match(await page.locator('#audio-orgavox-fx-count').innerText(),/5 active/);
+    await page.waitForTimeout(550); // allow the async AudioWorklet module to register
+    assert.equal(await page.locator('#audio-orgavox-lofi').inputValue(),'eightbit',
+        'Lo-Fi preset must stay active after worklet initialization');
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors with Orgavox video and audio effects');
 
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
