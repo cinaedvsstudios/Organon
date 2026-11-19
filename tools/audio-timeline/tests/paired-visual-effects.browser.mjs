@@ -1,4 +1,4 @@
-/** Phase 8C–8E: verify actual Canvas 2D pixels for nine additional selected transitions.
+/** Phase 8C–8F: verify actual Canvas 2D pixels for twelve additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -63,12 +63,13 @@ try{
                 const i=(y*w+x)*4;
                 return [...bytes.slice(i,i+3)];
             };
-            let red=0,blue=0,black=0,white=0,mixed=0;
+            let red=0,blue=0,black=0,dark=0,white=0,mixed=0;
             for(let y=0;y<h;y+=4)for(let x=0;x<w;x+=4){
                 const [r,g,v]=p(x,y);
                 if(r>250&&g<4&&v<4)red++;
                 else if(v>250&&r<4&&g<4)blue++;
                 else if(r<4&&g<4&&v<4)black++;
+                else if(r<36&&g<36&&v<36)dark++;
                 else if(r>240&&g>240&&v>240)white++;
                 else mixed++;
             }
@@ -78,12 +79,12 @@ try{
                 fingerprint=Math.imul((fingerprint^bytes[k])>>>0,16777619)>>>0;
                 fingerprint=Math.imul((fingerprint^bytes[k+2])>>>0,16777619)>>>0;
             }
-            return {fingerprint,red,blue,black,white,mixed,top:p(6,6),center:p(98,60)};
+            return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -99,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -145,9 +146,27 @@ try{
     assert.deepEqual(rings.center,[255,0,0],'Concentric rings must reveal the inner source at midpoint');
     assert.ok(panels.mixed>60,'Color-panel wipe should display tinted panels during transition');
     assert.ok(panels.red>200&&panels.blue>200,'Panel wipe must preserve clear old/new video colors');
+    const block=result['block-cover'].middle;
+    const hatch=result['cross-hatch'].middle;
+    const film=result['film-strip'].middle;
+    console.log('[MotoriClip 8F] New-effect middle-frame counts '+JSON.stringify({block,hatch,film}));
+    for(const [name,frame] of [['block-cover',block],['cross-hatch',hatch],['film-strip',film]]){
+        assert.ok(frame.red>100&&frame.blue>100,name+' must visibly retain A and reveal B at its midpoint');
+        assert.equal(frame.fingerprint,result[name].repeat.fingerprint,
+            name+' must return identical pixels after scrubbing');
+        assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
+            name+' must not be a disguised plain fade');
+    }
+    assert.ok(block.mixed>80,'Block cover must show distinct tinted cover tiles, not only red and blue squares');
+    assert.ok(film.dark>12,'Film strip must have visible dark-gray frame bars');
+    assert.notEqual(block.fingerprint,result['random-squares'].middle.fingerprint,
+        'Block cover must differ from the existing Random squares effect');
+    assert.notEqual(hatch.fingerprint,result['spiral-wipe'].middle.fingerprint,
+        'Cross hatch must show diagonal band geometry, not a spiral');
+    assert.notEqual(film.fingerprint,block.fingerprint,'Film strip must differ from block cover');
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8E] PASS live Chrome 10-effect pixel checks (Spiral, Rings, Color panels), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8F] PASS real Chrome 13-effect pixel checks (Block cover, Cross hatch, Film strip), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
