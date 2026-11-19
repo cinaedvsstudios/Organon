@@ -16,7 +16,7 @@ test('8J preserves all 41 original names with exactly 25 enabled and 16 queued',
     assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,41);
     assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,0);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'available');
 });
 test('Cell dissolve grows stable, staggered hexagons without reversed progress',()=>{
     const midpoint=[];
