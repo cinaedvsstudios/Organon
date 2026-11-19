@@ -14,6 +14,7 @@ import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
+import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 
@@ -61,6 +62,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         btnNudgeLeft: document.getElementById('btn-nudge-left'), btnNudgeRight: document.getElementById('btn-nudge-right'),
         btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
         visualTools: document.getElementById('inspector-visual-tools'), visualInputs: [...document.querySelectorAll('[data-visual-param]')], visualKeyframes: [...document.querySelectorAll('[data-keyframe]')], visualBlendMode: document.getElementById('visual-blend-mode'), visualSpeedPanel: document.getElementById('visual-speed-panel'), visualSpeed: document.getElementById('visual-speed'), visualSpeedValue: document.getElementById('visual-speed-value'), visualSpeedDuration: document.getElementById('visual-speed-duration'),
+        orgavoxControls: [...document.querySelectorAll('.orgavox-fx-field select')],
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
@@ -356,6 +358,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             state.selectedFileId = snapshot.selectedFileId || null;
             renderFiles();
             refreshAll(); // setTracks disposes discarded media objects.
+            for (const track of state.tracks) engine.refreshOrgavoxAudioEffects(track);
             await engine.seek(Number(snapshot.currentTime) || 0, { resume: false });
         } finally {
             state.historyRestoring = false;
@@ -774,6 +777,19 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         showToast(`Clip playback speed ${requested.toFixed(2)}× · ${formatSeconds(nextDuration)}`);
     }
 
+    function syncOrgavoxAudioInspector(track) {
+        if (!track || !['video','audio'].includes(track.type)) return;
+        const prefix=track.type==='video'?'video':'audio';
+        const fx=normalizeOrgavoxFx(track.audio?.fx);
+        for(const [kind,preset] of Object.entries(fx)) {
+            const input=document.getElementById(prefix+'-orgavox-'+kind);
+            if(input)input.value=preset;
+        }
+        const active=Object.values(fx).filter(value=>value!=='off').length;
+        const count=document.getElementById(prefix+'-orgavox-fx-count');
+        if(count)count.textContent=active ? active+' active' : 'Off';
+    }
+
     function syncInspector() {
         const track = getTrack();
         const multiple = state.selectedTrackIds.size > 1;
@@ -787,6 +803,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         elements.visualTools.hidden = !track || multiple || !VISIBLE_VISUAL_TYPES.has(track.type);
         elements.visualSpeedPanel.hidden = track?.type !== 'video';
         if (!track || multiple) return;
+        syncOrgavoxAudioInspector(track);
         if (track.type === 'video') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
             elements.selectedVideoName.textContent = track.sourceName || track.laneLabel;
@@ -1935,6 +1952,26 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
     elements.videoVisibleSwitch.addEventListener('click', () => { recordHistory('Toggle video visibility'); const track = getTrack(); if (!track || track.type !== 'video') return; track.visible = !track.visible; refreshAll(); });
     elements.videoAudioSwitch.addEventListener('click', () => { recordHistory('Toggle linked video audio'); const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.muted = !track.audio.muted; engine.syncAudioSettings(); syncInspector(); });
     elements.videoAudioVolume.addEventListener('input', () => { const track = getTrack(); if (!track || track.type !== 'video') return; track.audio.volume = Number(elements.videoAudioVolume.value) / 100; elements.videoAudioVolumeValue.textContent = `${elements.videoAudioVolume.value}%`; elements.videoAudioGainValue.textContent = `+${track.audio.gain || 0}% · ${Math.round(track.audio.volume*100+(track.audio.gain||0))}% total`; engine.syncAudioSettings(); });
+    for(const control of elements.orgavoxControls){
+        control.addEventListener('change',()=>{
+            const track=getTrack();
+            if(!track || !['audio','video'].includes(track.type))return;
+            const prefix=track.type==='video'?'video':'audio';
+            if(!control.id.startsWith(prefix+'-orgavox-'))return;
+            const kind=control.id.slice((prefix+'-orgavox-').length);
+            if(!Object.hasOwn(ORGAVOX_FX_PRESETS,kind))return;
+            const fx=normalizeOrgavoxFx(track.audio?.fx);
+            if(fx[kind]===control.value)return;
+            recordHistory('Change Orgavox '+kind+' preset');
+            fx[kind]=control.value;
+            track.audio={...track.audio,fx};
+            engine.refreshOrgavoxAudioEffects(track);
+            syncOrgavoxAudioInspector(track);
+            const label=ORGAVOX_FX_PRESETS[kind][fx[kind]]?.label || 'Off';
+            showToast('Orgavox '+kind+': '+label);
+        });
+    }
+
     elements.videoAudioGain.addEventListener('input', () => {
         const track=getTrack(); if(!track || track.type!=='video') return;
         track.audio.gain=Number(elements.videoAudioGain.value);
