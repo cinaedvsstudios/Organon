@@ -12,8 +12,8 @@ test('8E preserves the original 41 wishlist slots and enables three requested ef
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(TRANSITION_CATALOG.length,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(7,10),requested);
-    assert.equal(TRANSITION_CATALOG.filter(item=>item.status==='available').length,34);
-    assert.equal(TRANSITION_CATALOG.filter(item=>item.status==='requested').length,7);
+    assert.equal(TRANSITION_CATALOG.filter(item=>item.status==='available').length,37);
+    assert.equal(TRANSITION_CATALOG.filter(item=>item.status==='requested').length,4);
     assert.equal(TRANSITION_CATALOG.find(item=>item.id==='spiralblockwipe')?.status,'requested',
         'SpiralBlockWipe and Spiral wipe are separate requested effects');
     for(const id of requested){
