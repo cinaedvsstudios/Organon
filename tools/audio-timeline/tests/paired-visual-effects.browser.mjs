@@ -1,4 +1,4 @@
-/** Phase 8C–8G: verify actual Canvas 2D pixels for fifteen additional selected transitions.
+/** Phase 8C–8H: verify actual Canvas 2D pixels for eighteen additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,9 +82,9 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -178,9 +178,28 @@ try{
     assert.ok(vhs.middle.mixed>400,'VHS tracking must show analog scanline and tracking distortion');
     assert.notEqual(vhs.middle.fingerprint,result['glitch-flicker'].middle.fingerprint,
         'VHS tracking must have distinct frame pixels from Glitch flicker');
+    const spin=result.spin.middle,cube=result.cube.middle,crossWarp=result['cross-warp'].middle;
+    console.log('[MotoriClip 8H] New-effect middle frame counts '+JSON.stringify({spin,cube,crossWarp}));
+    for(const [name,frame] of [['spin',spin],['cube',cube],['cross-warp',crossWarp]]){
+        assert.ok(frame.red>100&&frame.blue>100,name+' must show A and B simultaneously at the midpoint');
+        assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
+            name+' must not look like an ordinary alpha fade');
+        assert.equal(frame.fingerprint,result[name].repeat.fingerprint,
+            name+' must be repeatable after timeline seeking');
+    }
+    assert.deepEqual(spin.center,[255,0,0],'Spin must place the rotated incoming frame at the center');
+    assert.deepEqual(crossWarp.center,[255,0,0],'Cross warp must reveal the incoming frame at the cross center');
+    assert.deepEqual(crossWarp.top,[0,0,255],'Cross warp must leave the outside corners showing A');
+    assert.notEqual(spin.fingerprint,result['card-swipe'].middle.fingerprint,
+        'Spin must rotate and scale the picture, not simply swipe it');
+    assert.notEqual(cube.fingerprint,result['card-swipe'].middle.fingerprint,
+        'Cube must project two surfaces, not slide a flat card');
+    assert.notEqual(cube.fingerprint,spin.fingerprint,'Cube and Spin must be different effects');
+    assert.notEqual(crossWarp.fingerprint,result['cross-hatch'].middle.fingerprint,
+        'Cross warp must differ from diagonal cross hatch');
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8G] PASS real Chrome 16-effect pixel checks (Card swipe, Camera shake, VHS tracking), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8H] PASS real Chrome 19-effect pixel checks (Spin, Cube, Cross warp), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));
