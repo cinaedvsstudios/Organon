@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8G: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8H: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -187,6 +187,46 @@ export function vhsTrackingShift(progress,band,frame,width) {
     const drift=Math.sin(tick*.37+band*.83);
     return Math.round((noise*.75+drift*.25)*Math.min(34,width*.085)*(1-p));
 }
+/** Phase 8H: a rotating, growing intact incoming frame. */
+export function spinAngle(progress) {
+    return (1-unit(progress))*Math.PI*2;
+}
+export function spinScale(progress) {
+    return .12+.88*unit(progress);
+}
+/** Cube-style turn, with opposing shrinking/expanding faces projected
+ * horizontally in 24 bands; no third-party texture/shader dependency.
+ */
+export function cubeFaceWidth(progress,width,face='incoming') {
+    return Math.max(0,width*(face==='outgoing'?1-unit(progress):unit(progress)));
+}
+export function cubeRowSkew(progress,row,rows,width) {
+    if(unit(progress)===0||unit(progress)===1)return 0;
+    const count=Math.max(2,Math.floor(rows)||24);
+    const r=Math.min(count-1,Math.max(0,Math.trunc(row)||0));
+    const displacement=Math.sin(Math.PI*unit(progress))*width*.055;
+    return Math.round((r/(count-1)*2-1)*displacement);
+}
+/** Cross warp: B enters through a growing plus-sign, while the revealed
+ * horizontal slices bend laterally and settle at both boundaries.
+ */
+export function crossWarpArms(progress,width,height) {
+    const p=unit(progress);
+    return {verticalWidth:width*p,horizontalHeight:height*p};
+}
+export function crossWarpShift(progress,band,bands,width) {
+    const p=unit(progress);
+    if(p===0||p===1)return 0;
+    const count=Math.max(2,Math.trunc(bands)||24);
+    const row=Math.min(count-1,Math.max(0,Math.trunc(band)||0));
+    return Math.round(Math.sin(row*.88+12*p)*Math.sin(Math.PI*p)*Math.min(width*.06,52));
+}
+function traceCrossWarp(context,progress,width,height) {
+    const {verticalWidth,horizontalHeight}=crossWarpArms(progress,width,height);
+    context.beginPath();
+    context.rect(0,(height-horizontalHeight)/2,width,horizontalHeight);
+    context.rect((width-verticalWidth)/2,0,verticalWidth,height);
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -252,6 +292,17 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
+    if(id==='spin'){
+        context.save();
+        context.translate(width/2,height/2);
+        context.rotate(spinAngle(progress));
+        const scale=spinScale(progress);
+        context.scale(scale,scale);
+        context.translate(-width/2,-height/2);
+        renderContained(context,media,width,height);
+        context.restore();
+        return true;
+    }
     if(id==='pixelize'){
         const block=pixelScale(progress);
         const small=scratchCanvas(renderer,'transitionPixelScratch',
@@ -267,6 +318,34 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
     const sc=full.getContext('2d');
     sc.clearRect(0,0,width,height);
+    if(id==='cube'){
+        // Rotate around a shared seam: A contracts toward the left as B
+        // opens on the right. Mild row-dependent skew suggests perspective.
+        const from=renderer.tracks?.find(t=>t.id===track.transitionFromId);
+        if(!from?.media || (from.media.readyState!==undefined&&from.media.readyState<2))
+            return false;
+        const rows=24,leftWidth=cubeFaceWidth(progress,width,'outgoing');
+        const rightWidth=cubeFaceWidth(progress,width,'incoming');
+        context.save();
+        context.fillStyle='#090c14';
+        context.fillRect(0,0,width,height);
+        renderContained(sc,from.media,width,height);
+        for(let row=0;row<rows;row++){
+            const y=Math.floor(row*height/rows),next=Math.floor((row+1)*height/rows);
+            const shear=cubeRowSkew(progress,row,rows,width);
+            if(leftWidth>.5)context.drawImage(full,0,y,width,next-y,shear,y,leftWidth,next-y);
+        }
+        sc.clearRect(0,0,width,height);
+        renderContained(sc,media,width,height);
+        for(let row=0;row<rows;row++){
+            const y=Math.floor(row*height/rows),next=Math.floor((row+1)*height/rows);
+            const shear=cubeRowSkew(progress,row,rows,width);
+            if(rightWidth>.5)context.drawImage(full,0,y,width,next-y,
+                width-rightWidth-shear,y,rightWidth,next-y);
+        }
+        context.restore();
+        return true;
+    }
     if(id==='tv-turn-off'){
         // In the first half, A collapses into the centerline. In the second,
         // the clean incoming B expands from that line. The screen is black
@@ -295,6 +374,19 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
+    if(id==='cross-warp'){
+        const bands=24;
+        context.save();
+        traceCrossWarp(context,progress,width,height);
+        context.clip();
+        for(let row=0;row<bands;row++){
+            const y=Math.floor(row*height/bands),next=Math.floor((row+1)*height/bands);
+            const dx=crossWarpShift(progress,row,bands,width);
+            context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
+        }
+        context.restore();
+        return true;
+    }
     if(id==='card-swipe'){
         const dx=cardSwipeOffset(progress,width);
         context.save();

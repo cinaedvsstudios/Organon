@@ -42,17 +42,17 @@ jobs:
           echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
       - name: Verify visual alpha envelopes and undo history
         run: node --test tools/audio-timeline/tests/visual-transitions.test.mjs
-      - name: Validate fifteen extra visual effects and paired edit invariants in Node
-        run: node --test tools/audio-timeline/tests/paired-visual-effects.test.mjs tools/audio-timeline/tests/phase8d-visual-effects.test.mjs tools/audio-timeline/tests/phase8e-visual-effects.test.mjs tools/audio-timeline/tests/phase8f-visual-effects.test.mjs tools/audio-timeline/tests/phase8g-visual-effects.test.mjs
+      - name: Validate eighteen extra visual effects and paired edit invariants in Node
+        run: node --test tools/audio-timeline/tests/paired-visual-effects.test.mjs tools/audio-timeline/tests/phase8d-visual-effects.test.mjs tools/audio-timeline/tests/phase8e-visual-effects.test.mjs tools/audio-timeline/tests/phase8f-visual-effects.test.mjs tools/audio-timeline/tests/phase8g-visual-effects.test.mjs tools/audio-timeline/tests/phase8h-visual-effects.test.mjs
       - name: Verify Chrome compositor pixels and A/B inspector schematic
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/visual-transitions.browser.mjs
-      - name: Verify real Chrome pixels for fifteen selected A/B transition effects
+      - name: Verify real Chrome pixels for eighteen selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/paired-visual-effects.browser.mjs
-      - name: Verify real two-video pairing with all sixteen available effects
+      - name: Verify real two-video pairing with all nineteen available effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/paired-transitions.browser.mjs
@@ -144,21 +144,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Use preinstalled Firefox/WebKit with matching Playwright library
-        run: npm install --no-save playwright-core@1.56.1
+      - name: Use preinstalled Firefox and packaged FFmpeg binaries
+        timeout-minutes: 6
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
       - name: Test editor routing and capability handling in Firefox and WebKit
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser node tools/audio-timeline/tests/cross-browser.browser.mjs'
-      - name: Install FFmpeg and prepare synthetic media fixtures
-        timeout-minutes: 5
+      - name: Expose packaged FFmpeg and prepare synthetic media fixtures
+        timeout-minutes: 2
         run: |
-          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-            apt-get update -qq
-            apt-get install -y ffmpeg
-          fi
+          set -eu
+          node -e "const fs=require('fs');for(const [name,path] of [['ffmpeg',require('ffmpeg-static')],['ffprobe',require('@ffprobe-installer/ffprobe').path]]){const target='/usr/local/bin/'+name;fs.rmSync(target,{force:true});fs.copyFileSync(path,target);fs.chmodSync(target,0o755);}"
           mkdir -p tools/audio-timeline/tests/fixtures
           chown pwuser:pwuser tools/audio-timeline/tests/fixtures
-          command -v ffmpeg
-          command -v ffprobe
+          ffmpeg -version | head -n 1
+          ffprobe -version | head -n 1
+          su pwuser -s /bin/sh -c 'ffmpeg -version >/dev/null && ffprobe -version >/dev/null'
       - name: Decode, render and inspect an actual Firefox WebM export
         timeout-minutes: 7
         run: su pwuser -s /bin/sh -c 'HOME=/home/pwuser MOTORICLIP_BROWSER=firefox node tools/audio-timeline/tests/real-export.browser.mjs'
