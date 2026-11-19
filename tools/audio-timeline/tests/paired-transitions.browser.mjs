@@ -157,8 +157,13 @@ try{
     assert.equal(await page.locator('#transition-modal-effect option').count(),41);
     assert.equal(await page.locator('#transition-modal-from option').count(),3);
     assert.equal(await page.locator('#transition-modal-to option').count(),3);
-    await page.locator('#transition-modal-from').selectOption({index:0});
-    await page.locator('#transition-modal-to').selectOption({index:2});
+    const choices=await page.locator('#transition-modal-from option').evaluateAll(opts=>
+        opts.map(option=>({id:option.value,label:option.textContent})));
+    const fromId=choices.find(x=>x.label.includes('pair-a.mp4'))?.id;
+    const imageId=choices.find(x=>x.label.includes('pair-image.png'))?.id;
+    assert.ok(fromId && imageId,'Both outgoing video and incoming still image must be selectable');
+    await page.locator('#transition-modal-from').selectOption(fromId);
+    await page.locator('#transition-modal-to').selectOption(imageId);
     await page.locator('#transition-modal-effect').selectOption('sphere');
     await page.locator('#transition-preview-progress').fill('50');
     await page.locator('#transition-preview-progress').dispatchEvent('input');
