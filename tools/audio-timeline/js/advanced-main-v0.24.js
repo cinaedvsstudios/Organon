@@ -15,6 +15,7 @@ import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './c
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -59,6 +60,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         btnAddMarker: document.getElementById('btn-add-marker'), btnPreviousMarker: document.getElementById('btn-previous-marker'), btnNextMarker: document.getElementById('btn-next-marker'),
         btnNudgeLeft: document.getElementById('btn-nudge-left'), btnNudgeRight: document.getElementById('btn-nudge-right'),
         btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
+        visualTools: document.getElementById('inspector-visual-tools'), visualInputs: [...document.querySelectorAll('[data-visual-param]')], visualKeyframes: [...document.querySelectorAll('[data-keyframe]')], visualBlendMode: document.getElementById('visual-blend-mode'), visualSpeedPanel: document.getElementById('visual-speed-panel'), visualSpeed: document.getElementById('visual-speed'), visualSpeedValue: document.getElementById('visual-speed-value'), visualSpeedDuration: document.getElementById('visual-speed-duration'),
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
         selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoAudioGain: document.getElementById('video-audio-gain'), videoAudioGainValue: document.getElementById('video-audio-gain-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
@@ -268,13 +270,17 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
             visible: true,
             opacity: 1,
             blendMode: 'source-over',
+            transform: { ...DEFAULT_TRANSFORM },
+            adjustments: { ...DEFAULT_ADJUSTMENTS },
+            keyframes: {},
+            speed:1,
             groupId: null,
             transitionFromId: null, transitionEffectId: null,
             audio: { volume: 1, gain: 0, muted: false, fadeIn: 0, fadeOut: 0 },
             visualTransitions: normalizeVisualTransitions(),
             transparency: { mode: 'native', keyColour: '#00ff00', tolerance: 30, feather: 8 }
         };
-        return { ...base, ...extras, audio: { ...base.audio, ...(extras.audio || {}) }, transparency: { ...base.transparency, ...(extras.transparency || {}) }, visualTransitions: normalizeVisualTransitions(extras.visualTransitions) };
+        return { ...base, ...extras, audio: { ...base.audio, ...(extras.audio || {}) }, transparency: { ...base.transparency, ...(extras.transparency || {}) }, visualTransitions: normalizeVisualTransitions(extras.visualTransitions), transform:{...base.transform,...(extras.transform||{})}, adjustments:{...base.adjustments,...(extras.adjustments||{})}, keyframes:Object.fromEntries(Object.entries(extras.keyframes||{}).map(([key,frames])=>[key,Array.isArray(frames)?frames.map(frame=>({...frame})):[]])) };
     }
 
     function greatestCommonDivisor(a, b) { let x = Math.abs(a), y = Math.abs(b); while (y) [x, y] = [y, x % y]; return x || 1; }
@@ -626,6 +632,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         if (!state.isSeeking) { elements.previewSeek.max = String(safeDuration); elements.previewSeek.value = String(Math.min(safeCurrent, safeDuration)); }
         elements.previewSeek.disabled = safeDuration <= 0;
         timeline.setCurrentTime(safeCurrent);
+        syncVisualInspectorValues();
         elements.previewEmpty.hidden = state.tracks.some((track) => track.type === 'video' && track.sourceName);
     }
     function setPlayButton(isPlaying) { elements.btnPlay.textContent = isPlaying ? '⏸️' : '▶️'; elements.btnPlay.title = isPlaying ? 'Pause preview' : 'Play preview'; }
@@ -696,6 +703,8 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
         elements.inspectorAudio.hidden = multiple || track?.type !== 'audio';
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         updatePairInspector();
+        elements.visualTools.hidden = !track || multiple || !VISIBLE_VISUAL_TYPES.has(track.type);
+        elements.visualSpeedPanel.hidden = track?.type !== 'video';
         if (!track || multiple) return;
         if (track.type === 'video') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
@@ -760,6 +769,7 @@ import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile }
             elements.stickerKeyTolerance.value = String(settings.tolerance ?? 30); elements.stickerKeyToleranceValue.textContent = `${settings.tolerance ?? 30}%`;
             elements.stickerEdgeFeather.value = String(settings.feather ?? 8); elements.stickerEdgeFeatherValue.textContent = `${settings.feather ?? 8}%`;
         }
+        syncVisualInspectorValues();
     }
 
     function refreshAll() {
