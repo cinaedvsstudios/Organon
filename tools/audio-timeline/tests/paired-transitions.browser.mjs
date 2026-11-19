@@ -36,7 +36,8 @@ try{
     const errors=[];
     page.on('pageerror',err=>errors.push(String(err)));
     await page.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html');
-    await page.locator('#transition-library-grid .transition-library-item').first().waitFor();
+    await page.locator('#transition-library-details summary').click();
+    await page.locator('#transition-library-grid .transition-library-item').first().waitFor({state:'visible'});
     assert.equal(await page.locator('#transition-library-grid .transition-library-item').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),1);
