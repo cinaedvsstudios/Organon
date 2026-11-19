@@ -85,6 +85,10 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/visual-transitions.browser.mjs
+      - name: Verify 41-effect catalog and real two-video paired fade editor interactions
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/paired-transitions.browser.mjs
       - name: Verify real variable-frame-rate input and overlapping transparent layers
         env:
           CHROME_BIN: /usr/bin/google-chrome
