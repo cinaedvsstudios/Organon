@@ -10,6 +10,8 @@ import { snapshotProject, restoreFileEntries, prepareHistoryTracks, referencedFi
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
+import { TRANSITION_CATALOG } from './transition-catalog.mjs';
+import { planPairedFade, isPairedFadeActive } from './clip-pair-transitions.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -36,8 +38,8 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
         exportOfflineFormat: document.getElementById('export-offline-format'), btnExportOffline: document.getElementById('btn-export-offline'), exportOverlayNote: document.getElementById('export-overlay-note'),
         exportOverlay: document.getElementById('export-overlay'), exportOverlayStatus: document.getElementById('export-overlay-status'), exportProgress: document.getElementById('export-progress'), exportProgressText: document.getElementById('export-progress-text'), btnExportCancel: document.getElementById('btn-export-cancel'),
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'), btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
-        inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
-        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), btnExtractAudio: document.getElementById('btn-extract-audio'),
+        inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
+        selectedVideoName: document.getElementById('selected-video-name'), videoVisibleSwitch: document.getElementById('video-visible-switch'), videoAudioSwitch: document.getElementById('video-audio-switch'), videoAudioVolume: document.getElementById('video-audio-volume'), videoAudioVolumeValue: document.getElementById('video-audio-volume-value'), videoOpacity: document.getElementById('video-opacity'), videoOpacityValue: document.getElementById('video-opacity-value'), videoBlendMode: document.getElementById('video-blend-mode'), videoTransitionEnter: document.getElementById('video-transition-enter'), videoTransitionEnterValue: document.getElementById('video-transition-enter-value'), videoTransitionEnterCurve: document.getElementById('video-transition-enter-curve'), videoTransitionExit: document.getElementById('video-transition-exit'), videoTransitionExitValue: document.getElementById('video-transition-exit-value'), videoTransitionExitCurve: document.getElementById('video-transition-exit-curve'), videoTransitionSummary: document.getElementById('video-transition-summary'), videoTransitionPairNote: document.getElementById('video-transition-pair-note'), btnUnpairTransition: document.getElementById('btn-unpair-transition'), btnExtractAudio: document.getElementById('btn-extract-audio'),
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
         selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
@@ -246,6 +248,7 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
             opacity: 1,
             blendMode: 'source-over',
             groupId: null,
+            transitionFromId: null, transitionEffectId: null,
             audio: { volume: 1, muted: false, fadeIn: 0, fadeOut: 0 },
             visualTransitions: normalizeVisualTransitions(),
             transparency: { mode: 'native', keyColour: '#00ff00', tolerance: 30, feather: 8 }
@@ -514,6 +517,25 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
         elements.btnDeleteSelection.title = count < 1 ? 'Select one or more clips first' : `Delete ${count} selected clip${count === 1 ? '' : 's'}`;
     }
 
+    function getPairSelection() {
+        if (state.selectedTrackIds.size !== 2) return [];
+        const selected = state.tracks.filter((track) => state.selectedTrackIds.has(track.id));
+        return selected.length === 2 && selected.every((track) => track.type === 'video' && track.sourceName && track.file)
+            ? selected.sort((a,b) => (Number(a.start)||0)-(Number(b.start)||0) || state.tracks.indexOf(a)-state.tracks.indexOf(b))
+            : [];
+    }
+    function updatePairInspector() {
+        const selected = getPairSelection();
+        elements.pairTransitionPanel.hidden = selected.length !== 2;
+        if(selected.length !== 2)return;
+        const [a,b] = selected;
+        elements.pairTransitionDescription.textContent = `Video A: ${a.sourceName} → Video B: ${b.sourceName}`;
+        const max=Math.min(30,Number(a.clipDuration)||0,Number(b.clipDuration)||0);
+        elements.pairTransitionDuration.max=String(Math.max(.1,max));
+        const original=Number(elements.pairTransitionDuration.value)||1;
+        elements.pairTransitionDuration.value=String(Math.min(Math.max(.1,original),Math.max(.1,max)));
+        elements.btnApplyPairTransition.disabled=max<.1;
+    }
     function syncInspector() {
         const track = getTrack();
         const multiple = state.selectedTrackIds.size > 1;
@@ -523,6 +545,7 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
         elements.inspectorBackground.hidden = multiple || track?.type !== 'background';
         elements.inspectorAudio.hidden = multiple || track?.type !== 'audio';
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
+        updatePairInspector();
         if (!track || multiple) return;
         if (track.type === 'video') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
@@ -545,6 +568,11 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
                 curve.value=transitions[edge].curve;
             }
             elements.videoTransitionSummary.textContent=`Entrance ${formatSeconds(fadeDuration(track,'enter'))} · Exit ${formatSeconds(fadeDuration(track,'exit'))}`;
+            const from = state.tracks.find((other)=>other.id===track.transitionFromId);
+            const paired=Boolean(from&&isPairedFadeActive(track,state.tracks));
+            elements.videoTransitionPairNote.hidden=!paired;
+            elements.btnUnpairTransition.hidden=!paired;
+            if(paired) elements.videoTransitionPairNote.textContent=`✦ Paired Fade from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
         }
         if (track.type === 'background') {
             const opacity = Math.round((track.opacity ?? 1) * 100);
@@ -578,6 +606,14 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
     }
 
     function refreshAll() {
+        // Moving/trimming or deleting a paired clip must never leave an orphan
+        // "linked" label. Independent visual fade settings remain intact.
+        for(const track of state.tracks){
+            if(track.transitionFromId&&!isPairedFadeActive(track,state.tracks)){
+                track.transitionFromId=null;
+                track.transitionEffectId=null;
+            }
+        }
         state.selectedTrackIds = new Set([...state.selectedTrackIds].filter((id) => state.tracks.some((track) => track.id === id)));
         if (!state.selectedTrackIds.has(state.selectedTrackId)) state.selectedTrackId = [...state.selectedTrackIds][0] || null;
         engine.setTracks(state.tracks);
@@ -697,6 +733,64 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
         timeline.setDuration(engine.getTimelineDuration());
         syncInspector();
         if (relocated) showToast(`${track.sourceName || 'Video'} moved to ${track.laneLabel} so video clips do not overlap`);
+    }
+
+    function applySelectedVideoPair() {
+        let plan;
+        try{
+            plan=planPairedFade(state.tracks,[...state.selectedTrackIds],elements.pairTransitionDuration.value);
+            if(elements.pairTransitionEffect.value!=='fade')throw Error('This effect is selected for later development, not implemented yet.');
+        }catch(error){showToast(error.message);return;}
+        const a=getTrack(plan.fromId),b=getTrack(plan.toId);
+        recordHistory(`Pair ${a.sourceName} → ${b.sourceName} (${plan.duration.toFixed(2)}s fade)`);
+        a.visualTransitions=plan.outgoingTransitions;
+        b.visualTransitions=plan.incomingTransitions;
+        b.start=plan.start;
+        if(plan.needsNewLane){
+            b.laneId=`video-transition-${Date.now()}-${++state.serial}`;
+            b.laneLabel=`Video ${nextLaneOrder('video')} · Transition`;
+            b.label=b.laneLabel;
+            b.order=plan.incomingOrder;
+        }
+        b.transitionFromId=plan.fromId;
+        b.transitionEffectId=plan.effectId;
+        refreshAll();
+        selectTrack(b.id);
+        void engine.seek(plan.start+plan.duration/2,{resume:false}).catch((error)=>{
+            elements.previewState.textContent=`Transition preview unavailable: ${error.message}`;
+        });
+        showToast(`Paired fade ${plan.duration.toFixed(2)}s: ${a.sourceName} → ${b.sourceName}`);
+    }
+
+    function unlinkSelectedVideoPair(){
+        const track=getTrack();
+        if(!track||!isPairedFadeActive(track,state.tracks))return;
+        recordHistory(`Unlink transition to ${track.sourceName}`);
+        track.transitionFromId=null;
+        track.transitionEffectId=null;
+        syncInspector();
+        showToast('Transition unlinked; clip timing and visual fade retained');
+    }
+
+    function renderTransitionCatalog(){
+        elements.pairTransitionEffect.replaceChildren();
+        elements.transitionLibraryGrid.replaceChildren();
+        for(const effect of TRANSITION_CATALOG){
+            const option=document.createElement('option');
+            option.value=effect.id;
+            option.textContent=effect.status==='available'?effect.label:`${effect.label} (selected, coming later)`;
+            option.disabled=effect.status!=='available';
+            elements.pairTransitionEffect.appendChild(option);
+            const item=document.createElement('div');
+            item.className='transition-library-item'+(effect.status==='available'?' ready':'');
+            const name=document.createElement('strong');
+            name.textContent=effect.label;
+            const status=document.createElement('span');
+            status.textContent=effect.status==='available'?'Ready':'Selected';
+            item.append(name,status);
+            elements.transitionLibraryGrid.appendChild(item);
+        }
+        elements.pairTransitionEffect.value='fade';
     }
 
     async function extractAudioFromSelectedVideo() {
@@ -1104,6 +1198,8 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
     elements.btnSplitAll.addEventListener('click', splitAllAtNow);
     elements.btnSelectionMode.addEventListener('click', () => { state.selectionMode = !state.selectionMode; timeline.setSelectionMode(state.selectionMode); syncSelectionTools(); showToast(state.selectionMode ? 'Select mode on — click clips to select multiple' : 'Select mode off'); });
     elements.btnGroupSelection.addEventListener('click', groupSelectedTracks);
+    elements.btnApplyPairTransition.addEventListener('click', applySelectedVideoPair);
+    elements.btnUnpairTransition.addEventListener('click', unlinkSelectedVideoPair);
     elements.btnDuplicateSelection.addEventListener('click', () => { void duplicateSelectedTracks(); });
     elements.btnDeleteSelection.addEventListener('click', () => { void deleteSelectedTracks(); });
     elements.previewZoom.addEventListener('input', (event) => { state.previewZoom = Number(event.target.value); syncPreviewZoom(); });
@@ -1225,6 +1321,6 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
         }
     });
 
-    installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
+    renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
