@@ -14,6 +14,7 @@ import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
+import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -45,6 +46,10 @@ import { planClipSnap } from './clip-snap.mjs';
         previewSeek: document.getElementById('preview-seek'), previewVolume: document.getElementById('preview-volume'), timeReadout: document.getElementById('time-readout'),
         btnPlay: document.getElementById('btn-play'), btnPreviewMute: document.getElementById('btn-preview-mute'), btnStepBack: document.getElementById('btn-step-back'), btnStepForward: document.getElementById('btn-step-forward'), btnSnapshot: document.getElementById('btn-snapshot'),
         fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnRelink: document.getElementById('btn-relink'), mediaRememberNote: document.getElementById('media-remember-note'), btnBasicMode: document.getElementById('btn-basic-mode'),
+        libraryTabs: [...document.querySelectorAll('[data-library-tab]')],
+        effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
+        effectsLibraryGrid: document.getElementById('effects-library-grid'), textLibraryGrid: document.getElementById('text-library-grid'),
+        textOverlayValue: document.getElementById('text-overlay-value'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
@@ -538,6 +543,80 @@ import { planClipSnap } from './clip-snap.mjs';
         renderFiles();
         elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked`;
         showToast(`${usable.length} imported · ${relinked.length} relinked`);
+    }
+
+    function setLibraryView(view) {
+        if(!['media','effects','text'].includes(view))return;
+        elements.projectDropZone.hidden=view!=='media';
+        elements.effectsLibraryPanel.hidden=view!=='effects';
+        elements.textLibraryPanel.hidden=view!=='text';
+        for(const tab of elements.libraryTabs){
+            const current=tab.dataset.libraryTab===view;
+            tab.classList.toggle('active',current);
+            tab.setAttribute('aria-selected',String(current));
+            tab.tabIndex=current?0:-1;
+        }
+    }
+    function registerGeneratedOverlay(preset) {
+        const file=createOverlayFile(preset,elements.textOverlayValue.value);
+        const entry={id:`file-${Date.now()}-${++state.serial}`,file,name:file.name,
+            kind:'sticker',size:file.size,lastModified:file.lastModified};
+        state.files.push(entry);
+        state.sourceFiles.set(entry.id,file);
+        renderFiles();
+        return entry;
+    }
+    function buildLibraryPresetCard(preset) {
+        const button=document.createElement('button');
+        button.type='button';button.className='asset-preset-card';
+        button.draggable=true;
+        button.title=`${preset.label}: drag to timeline or click to add at playhead`;
+        button.dataset.presetId=preset.id;
+        const canvas=document.createElement('canvas');
+        canvas.width=288;canvas.height=162;
+        renderOverlayPreset(canvas,preset,elements.textOverlayValue.value);
+        const label=document.createElement('span');label.textContent=preset.label;
+        button.append(canvas,label);
+        let wasDragged=false;
+        button.addEventListener('click',()=>{
+            if(wasDragged)return;
+            const entry=registerGeneratedOverlay(preset);
+            void placeProjectFile({fileId:entry.id,laneId:null,laneType:'sticker',start:engine.currentTime})
+                .then(()=>showToast(`Added ${preset.label} overlay clip`))
+                .catch(error=>showToast(`Overlay unavailable: ${error.message}`));
+        });
+        button.addEventListener('dragstart',(event)=>{
+            if(!event.dataTransfer)return;
+            wasDragged=true;
+            const entry=registerGeneratedOverlay(preset);
+            timeline.beginProjectFileDrag(entry.id);
+            event.dataTransfer.setData('application/x-organon-project-file',entry.id);
+            event.dataTransfer.setData('text/x-organon-project-file',entry.id);
+            event.dataTransfer.effectAllowed='copy';
+        });
+        button.addEventListener('dragend',()=>{
+            timeline.endProjectFileDrag();
+            setTimeout(()=>{wasDragged=false;},0);
+        });
+        return button;
+    }
+    function renderLibraryPresets() {
+        elements.effectsLibraryGrid.replaceChildren(...EFFECT_OVERLAYS.map(buildLibraryPresetCard));
+        elements.textLibraryGrid.replaceChildren(...TEXT_PRESETS.map(buildLibraryPresetCard));
+    }
+    function initAssetLibrary() {
+        for(const button of elements.libraryTabs){
+            button.addEventListener('click',()=>setLibraryView(button.dataset.libraryTab));
+        }
+        elements.textOverlayValue.addEventListener('input',()=>{
+            for(const button of elements.textLibraryGrid.querySelectorAll('.asset-preset-card')){
+                const preset=TEXT_PRESETS.find(item=>item.id===button.dataset.presetId);
+                const canvas=button.querySelector('canvas');
+                if(preset&&canvas)renderOverlayPreset(canvas,preset,elements.textOverlayValue.value);
+            }
+        });
+        renderLibraryPresets();
+        setLibraryView('media');
     }
 
     function updateTimeDisplay({ currentTime, duration }) {
@@ -1859,6 +1938,7 @@ import { planClipSnap } from './clip-snap.mjs';
 
     document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
     restoreMediaIndex();
+    initAssetLibrary();
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
