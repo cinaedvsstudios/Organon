@@ -15,7 +15,7 @@ test('8I preserves the complete 41-name wishlist and enables only three more',()
     assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
     assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
-    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
+    assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'available');
 });
 test('Paper tear advances a stable jagged edge with no endpoint jitter',()=>{
     for(const i of [0,5,11,25,36]){
