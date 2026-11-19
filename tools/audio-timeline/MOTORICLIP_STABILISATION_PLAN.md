@@ -138,6 +138,19 @@ Regression checklist:
 
 **Only after this release gate:** Start the previously agreed transition work: blue Video A, red Video B, **yellow-gold** transition markers, automatic schematic inspector preview, clip-to-clip transitions, and transparent intro/outro transitions on upper layers.
 
+## Phase 8A — first editable visual fade transitions [MERGED]
+
+[PR #43](https://github.com/cinaedvsstudios/Organon/pull/43) merged on 19 November 2026 after all three jobs passed in [GitHub Actions 44448320745](https://github.com/cinaedvsstudios/Organon/actions/runs/44448320745). **101/101 Node tests** passed, including six new transition cases; Chrome real-canvas pixel comparisons confirmed the blue Video A / red Video B alpha blend across entrance and exit. All preexisting Firefox, Chrome, and 120-second export tests passed, including 1080p MP4.
+
+- Advanced Inspector: per-video **visual fade in/out** duration and linear/smooth curves, with blue **Video A**, gold transition, and red **Video B** schematic.
+- Timeline: gold markers for the selected clip's active fade extents, without blocking existing drag/trim handling.
+- Rendering: shared video alpha envelope for paused preview, live rendering, PNG snapshots, and fixed-timestamp export. Defaults are zero-length, so old clips keep their existing appearance.
+- History: transitions persist through undo/redo and duplication; splitting retains the original entrance on the left and exit on the right without adding accidental interior fades.
+- **Not yet implemented:** automatic pairing/overlap, additional wipe effects and directions, draggable transition markers, transition library, or transparent-alpha **output-file** export. Only transparency **inside the composited image** is implemented at this stage.
+- Safari/Apple certification remains out of user-requested scope. Physical Windows/Android device acceptance remains separate.
+
+[Phase 8A QA](./MOTORICLIP_PHASE8A_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
