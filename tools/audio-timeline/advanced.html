@@ -299,6 +299,21 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .timeline-clip.is-hidden { opacity:.43; filter:grayscale(1); border-style:dashed; }
  .timeline-cue-marker {position:absolute;top:0;bottom:0;width:1px;background:rgba(245,182,75,.83);pointer-events:none;z-index:41;}
 .timeline-cue-marker span {position:absolute;top:0;left:2px;background:#3d301a;color:#f7d899;border:1px solid #e0a360;border-radius:4px;padding:2px 4px;font:.48rem var(--font-mono);white-space:nowrap;}
+
+.asset-library-tabs {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;margin-top:9px;}
+.asset-tab {min-height:30px;min-width:0;padding:5px 2px;border:1px solid var(--chiseled-bronze);border-radius:9px;background:rgba(0,0,0,.58);color:var(--alabaster-paper);font:700 .53rem var(--font-mono);cursor:pointer;}
+.asset-tab:hover,.asset-tab:focus-visible {border-color:var(--water-spray);background:rgba(75,132,191,.28);}
+.asset-tab.active {background:rgba(75,132,191,.4);border-color:var(--water-spray);color:#f9fbff;}
+.asset-library-panel {min-height:260px;max-height:calc(100vh - 250px);overflow:auto;margin-top:8px;padding:7px;border:1px solid var(--chiseled-bronze);border-radius:13px;background:#080a0a;}
+.asset-library-panel[hidden],.file-list-card[hidden] {display:none!important;}
+.asset-library-help {display:block;margin:4px 3px 9px;color:rgba(245,240,219,.64);font:.55rem/1.4 var(--font-body);}
+#text-overlay-value {width:100%;height:30px;padding:5px 8px;margin:0 0 7px;}
+.asset-thumbnail-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;}
+.asset-preset-card {min-width:0;border:1px solid rgba(137,107,73,.7);border-radius:9px;background:#232528;padding:3px;color:var(--alabaster-paper);cursor:grab;text-align:center;overflow:hidden;}
+.asset-preset-card:hover,.asset-preset-card:focus-visible {border-color:var(--water-spray);box-shadow:0 0 8px rgba(117,178,222,.45);}
+.asset-preset-card:active {cursor:grabbing;}
+.asset-preset-card canvas {display:block;width:100%;aspect-ratio:16/9;background:#141719;border-radius:6px;}
+.asset-preset-card span {display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:.51rem var(--font-mono);padding:3px 0 0;}
 </style>
 </head>
 <body>
@@ -329,10 +344,25 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     </div>
                     <div class="project-action-buttons"><button type="button" class="btn" id="btn-project-settings" title="Canvas dimensions and frame rate">⚙ Project Settings</button><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button></div>
                 </section>
+                <nav class="asset-library-tabs" role="tablist" aria-label="Project asset library">
+                    <button type="button" class="asset-tab active" data-library-tab="media" role="tab" aria-selected="true" aria-controls="project-drop-zone" title="Imported project files">📁 Media</button>
+                    <button type="button" class="asset-tab" data-library-tab="effects" role="tab" aria-selected="false" aria-controls="effects-library-panel" title="Drag visual overlay effects to the timeline">✦ Effects</button>
+                    <button type="button" class="asset-tab" data-library-tab="text" role="tab" aria-selected="false" aria-controls="text-library-panel" title="Create styled text overlay clips">T Text</button>
+                </nav>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
                     <div class="file-list-footer"><span id="media-remember-note" title="Only filenames, sizes and dates are remembered. Reimport to grant access after reload.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear all remembered media and timeline clips">🗑 Clear all</button></div>
                 </div>
+                <section class="asset-library-panel" id="effects-library-panel" hidden role="tabpanel" aria-label="Visual overlay effects">
+                    <p class="asset-library-help">Drag an overlay to the timeline or click to insert at the playhead. For A/B effects, use the Transitions button.</p>
+                    <div class="asset-thumbnail-grid" id="effects-library-grid"></div>
+                </section>
+                <section class="asset-library-panel" id="text-library-panel" hidden role="tabpanel" aria-label="Text templates">
+                    <label class="asset-library-help" for="text-overlay-value">Overlay text</label>
+                    <input class="compact-input" id="text-overlay-value" value="YOUR TEXT" maxlength="100" aria-label="Text to insert into the selected template">
+                    <p class="asset-library-help">Drag a style to the timeline or click to insert an editable-by-replacement PNG text layer.</p>
+                    <div class="asset-thumbnail-grid" id="text-library-grid"></div>
+                </section>
             </div>
         </aside>
 
@@ -574,7 +604,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-phase9b-clip-actions-markers"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-phase9c-asset-library"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
