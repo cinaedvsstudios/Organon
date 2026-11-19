@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRANSITION_CATALOG, SELECTED_TRANSITION_NAMES, transitionId } from '../js/transition-catalog.mjs';
-import { planPairedFade, isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
+import { planPairedFade, planPairedTransition, isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
 const clip=(id,start,duration,order=1,laneId='lane-'+id)=>({
     id,type:'video',sourceName:id+'.mp4',file:{name:id+'.mp4'},
