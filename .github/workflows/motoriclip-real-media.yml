@@ -46,8 +46,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/visual-clip-adjustments.test.mjs
       - name: Verify edge-constrained movement and multi-track snapping
         run: node --test tools/audio-timeline/tests/lane-collision.test.mjs tools/audio-timeline/tests/clip-snap.test.mjs
-      - name: Verify shared Orgavox clip-level Web Audio processing and Undo/Redo
-        run: node --test tools/audio-timeline/tests/orgavox-audio-chain.test.mjs
+      - name: Verify shared Orgavox clip-level Web Audio and true Lo-Fi bitcrusher DSP
+        run: node --test tools/audio-timeline/tests/orgavox-audio-chain.test.mjs tools/audio-timeline/tests/orgavox-lofi-dsp.test.mjs
       - name: Verify non-destructive clip-only trimmed export planning
         run: node --test tools/audio-timeline/tests/clip-segment-export.test.mjs
       - name: Validate all forty-one selected visual effects and paired edit invariants in Node
