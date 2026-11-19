@@ -60,6 +60,10 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/editor-ui.browser.mjs
+      - name: Verify first visual fades in Chrome canvas and inspector schematic
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/visual-transitions.browser.mjs
       - name: Verify real variable-frame-rate input and overlapping transparent layers
         env:
           CHROME_BIN: /usr/bin/google-chrome
