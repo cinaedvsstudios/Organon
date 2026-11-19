@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8N: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','brokey-dissolve']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -526,6 +526,23 @@ export function crumpleFold(progress,index,width,height){
         y:(seededCell(index*19+67)*2-1)*height*.12*envelope};
 }
 
+
+/** Phase 8O: deterministic closing/opening geometry for the final four effects. */
+export function sphereRadius(progress,width,height){
+    return Math.hypot(width,height)*unit(progress)*.55;
+}
+export function snapshotFlash(progress){
+    return Math.max(0,1-Math.abs(unit(progress)-.5)/.105);
+}
+export function galleryTileProgress(progress,index,count=6){
+    const delay=index/Math.max(1,count)*.45;
+    return unit((unit(progress)-delay)/.55);
+}
+export function brokeyFragment(progress,index){
+    const threshold=seededCell(index*31+7)*.75;
+    return unit((unit(progress)-threshold)/.25);
+}
+
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
     if(!canvas)canvas=renderer[key]=document.createElement('canvas');
@@ -549,6 +566,68 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const media=track.media;
 
 
+
+    if(id==='sphere'||id==='snapshot'||id==='gallery'||id==='brokey-dissolve'){
+        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
+        const fc=full.getContext('2d');
+        fc.clearRect(0,0,width,height);
+        renderContained(fc,media,width,height);
+        context.save();
+        if(id==='sphere'){
+            const cx=width/2,cy=height/2;
+            const radius=sphereRadius(progress,width,height);
+            context.beginPath();
+            context.arc(cx,cy,radius,0,Math.PI*2);
+            context.clip();
+            context.globalAlpha=alpha;
+            context.drawImage(full,0,0,width,height);
+            const glow=context.createRadialGradient(cx,cy,Math.max(0,radius*.65),cx,cy,Math.max(1,radius));
+            glow.addColorStop(0,'rgba(255,255,255,0)');
+            glow.addColorStop(1,'rgba(125,215,255,.35)');
+            context.fillStyle=glow;
+            context.fillRect(0,0,width,height);
+        }else if(id==='snapshot'){
+            const flash=snapshotFlash(progress);
+            context.globalAlpha=alpha*unit(progress*1.7);
+            const scale=1+(1-progress)*.085;
+            context.translate(width/2,height/2);
+            context.scale(scale,scale);
+            context.drawImage(full,-width/2,-height/2,width,height);
+            context.setTransform(1,0,0,1,0,0);
+            context.globalAlpha=alpha*flash*.9;
+            context.fillStyle='#ffffff';
+            context.fillRect(0,0,width,height);
+        }else if(id==='gallery'){
+            const count=6;
+            for(let i=0;i<count;i++){
+                const p=galleryTileProgress(progress,i,count);
+                if(p<=0)continue;
+                const x=Math.floor(i*width/count),x1=Math.ceil((i+1)*width/count);
+                const w=x1-x;
+                context.save();
+                context.translate(x+w/2,height/2);
+                context.rotate((1-p)*(i%2?-.22:.22));
+                context.scale(Math.max(.01,p),Math.max(.01,p));
+                context.globalAlpha=alpha*p;
+                context.drawImage(full,x,0,w,height,-w/2,-height/2,w,height);
+                context.restore();
+            }
+        }else{
+            const cols=14,rows=9;
+            for(let i=0;i<cols*rows;i++){
+                const p=brokeyFragment(progress,i);
+                if(p<=0)continue;
+                const x=i%cols,y=Math.floor(i/cols);
+                const x0=Math.floor(x*width/cols),y0=Math.floor(y*height/rows);
+                const x1=Math.min(width,Math.ceil((x+1)*width/cols));
+                const y1=Math.min(height,Math.ceil((y+1)*height/rows));
+                context.globalAlpha=alpha*p;
+                context.drawImage(full,x0,y0,x1-x0,y1-y0,x0,y0,x1-x0,y1-y0);
+            }
+        }
+        context.restore();
+        return true;
+    }
     if(id==='spiralblockwipe'||id==='hologram'||id==='crumple'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fc=full.getContext('2d');
