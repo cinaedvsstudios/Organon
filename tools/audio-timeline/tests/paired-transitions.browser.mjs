@@ -20,6 +20,11 @@ const files=['pair-a.mp4','pair-b.mp4'].map((name,index)=>{
     assert.equal(run.status,0,run.stderr||'FFmpeg fixture generation failed');
     return file;
 });
+const audioFile=join(dir,'orgavox-test.wav');
+const wav=spawnSync('ffmpeg',['-hide_banner','-loglevel','error','-y',
+    '-f','lavfi','-i','sine=frequency=330:sample_rate=48000:duration=2',
+    '-c:a','pcm_s16le',audioFile],{encoding:'utf8',timeout:60000});
+assert.equal(wav.status,0,wav.stderr||'Audio fixture generation failed');
 const imageFile=join(dir,'pair-image.png');
 const png=spawnSync('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i',
     'color=c=green:s=128x72:d=1','-frames:v','1','-update','1',imageFile],
@@ -193,6 +198,40 @@ try{
     await page.locator('#visual-speed').dispatchEvent('input');
     assert.match(await page.locator('#visual-speed-value').innerText(),/1\.50/);
     assert.match(await page.locator('#visual-speed-duration').innerText(),/\ds/);
+
+    // Actual video Inspector applies Orgavox effects to linked video audio.
+    await page.locator('#video-orgavox-effects summary').click();
+    await page.locator('#video-orgavox-eq').selectOption('voice');
+    await page.locator('#video-orgavox-drive').selectOption('tape');
+    await page.locator('#video-orgavox-dynamics').selectOption('leveler');
+    await page.locator('#video-orgavox-stereo').selectOption('wide');
+    assert.match(await page.locator('#video-orgavox-fx-count').innerText(),/4 active/);
+    await page.locator('#btn-undo').click();
+    await page.waitForFunction(()=>document.querySelector('#video-orgavox-stereo')?.value==='off',
+        null,{timeout:15000});
+    await page.locator('#btn-redo').click();
+    await page.waitForFunction(()=>document.querySelector('#video-orgavox-stereo')?.value==='wide',
+        null,{timeout:15000});
+
+    // The same four clip processors are available on independent audio lanes.
+    await page.locator('#file-input').setInputFiles(audioFile);
+    await page.waitForFunction(()=>document.querySelectorAll('.file-row').length===4);
+    await page.evaluate(()=>{
+        const row=document.querySelectorAll('.file-row')[3],dt=new DataTransfer();
+        dt.setData('application/x-organon-project-file',row.dataset.fileId);
+        document.querySelector('.timeline-zoom-bar').dispatchEvent(
+            new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt,clientX:400,clientY:490}));
+    });
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.audio:not(.placeholder)').length>=1,
+        null,{timeout:20000});
+    await page.locator('.timeline-clip.audio:not(.placeholder)').last().click();
+    await page.locator('#audio-orgavox-effects summary').click();
+    await page.locator('#audio-orgavox-eq').selectOption('phone');
+    await page.locator('#audio-orgavox-drive').selectOption('warm');
+    await page.locator('#audio-orgavox-dynamics').selectOption('glue');
+    await page.locator('#audio-orgavox-stereo').selectOption('mono');
+    assert.match(await page.locator('#audio-orgavox-fx-count').innerText(),/4 active/);
+    assert.deepEqual(errors,[],'Chrome editor raised uncaught errors with Orgavox video and audio effects');
 
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
     console.log('[MotoriClip 8O] PASS 41-candidate library, 2 video imports, forty-one paired effects, gold marker, undo/redo '+JSON.stringify(positions));
