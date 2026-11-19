@@ -41,7 +41,7 @@ try{
     assert.equal(await page.locator('#transition-library-grid .transition-library-item').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option').count(),41);
     assert.equal(await page.locator('#pair-transition-effect option:not([disabled])').count(),41);
-    assert.match(await page.locator('#transition-library-status').innerText(),/Available now \\(41\\):/);
+    assert.ok((await page.locator('#transition-library-status').innerText()).includes('Available now (41):'));
 
 
     await page.locator('#file-input').setInputFiles(files);
