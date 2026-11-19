@@ -293,6 +293,10 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .file-row.is-unlinked { opacity:.8; border-style:dashed; cursor:pointer; }
 .file-row.is-unlinked .file-meta { color:#e6ba7e; }
  .file-toolbar { grid-template-columns:repeat(3,minmax(0,1fr)); }
+ .context-menu { z-index:2900; width:min(255px,calc(100vw - 16px)); }
+.context-action-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+.context-action-grid button { font-size:.52rem; justify-content:center; }
+.timeline-clip.is-hidden { opacity:.43; filter:grayscale(1); border-style:dashed; }
 </style>
 </head>
 <body>
@@ -489,10 +493,13 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div id="media-bin" class="media-bin" aria-hidden="true"></div>
     <div class="context-menu" id="timeline-context-menu" hidden>
         <div class="context-menu-title" id="context-menu-title">Timeline clip</div>
-        <button type="button" id="context-split-now">✂️ Split at now line</button>
-        <button type="button" id="context-add-layer">➕ Add layer of this type</button>
+        <div class="context-action-grid"><button type="button" id="context-cut">✂ Cut</button><button type="button" id="context-copy">⧉ Copy</button><button type="button" id="context-paste">📋 Paste</button><button type="button" id="context-remove-layer" class="danger">🗑 Delete</button></div>
+        <button type="button" id="context-slice-click">✂ Slice at cursor</button>
+        <button type="button" id="context-split-now">✂ Split at now line</button>
+        <button type="button" id="context-toggle-visible">◉ Hide clip</button>
+        <button type="button" id="context-download-source" title="Download original media source (not a trimmed export)">⬇ Download source</button>
+        <button type="button" id="context-add-layer">＋ Add layer of this type</button>
         <button type="button" id="context-extract-audio" hidden>🎵 Extract Audio</button>
-        <button type="button" class="danger" id="context-remove-layer">🗑 Remove layer</button>
     </div>
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
