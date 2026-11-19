@@ -1280,7 +1280,7 @@ import { planClipSnap } from './clip-snap.mjs';
 
         if (localZone) {
             localZone.addEventListener('click', (event) => {
-                if (!event.target.closest('.file-row')) elements.fileInput.click();
+                if (!event.target.closest('.file-row,.file-list-footer')) elements.fileInput.click();
             });
             localZone.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
