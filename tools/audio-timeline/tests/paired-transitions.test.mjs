@@ -56,10 +56,21 @@ test('pair planner refuses invalid selection and clamps to safe available media'
     const a=clip('A',0,2,1),b=clip('B',2,3,2);
     assert.throws(()=>planPairedFade([a,b],['A'],1),/exactly two/);
     assert.throws(()=>planPairedFade([a,b],['A','A'],1),/different/);
-    assert.throws(()=>planPairedFade([a,{...b,file:null}],['A','B'],1),/loaded video/);
+    assert.throws(()=>planPairedFade([a,{...b,file:null}],['A','B'],1),/loaded visual/);
     assert.throws(()=>planPairedFade([a,b],['A','B'],0),/greater than zero/);
     assert.equal(planPairedFade([a,b],['A','B'],5).duration,2);
     assert.throws(()=>planPairedFade([a,{...b,clipDuration:.02}],['A','B'],1),/at least 0.1/);
+});
+test('still image and video clips can form the same 41-effect A/B transition',()=>{
+    const image={...clip('IMAGE',0,4,1),type:'sticker',sourceName:'image.png'};
+    const video=clip('VIDEO',6,5,1);
+    const plan=planPairedTransition([image,video],['IMAGE','VIDEO'],1,'sphere');
+    assert.equal(plan.start,3);
+    assert.equal(plan.effectId,'sphere');
+    const stillB={...clip('STILL',6,3,2),type:'background',sourceName:'poster.jpg'};
+    const second=planPairedTransition([video,stillB],['VIDEO','STILL'],1,'gallery');
+    assert.equal(second.effectId,'gallery');
+    assert.equal(second.start,10);
 });
 test('pair link metadata is valid only while media exists and overlap is intact',()=>{
     const a=clip('A',2,4,1),b=clip('B',5,3,.5);
