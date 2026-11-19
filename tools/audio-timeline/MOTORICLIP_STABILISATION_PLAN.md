@@ -190,6 +190,19 @@ Regression checklist:
 
 [Phase 8D QA](./MOTORICLIP_PHASE8D_QA.md).
 
+## Phase 8E — Spiral wipe, Rings wipe and Color panel wipe [MERGED]
+
+[PR #47](https://github.com/cinaedvsstudios/Organon/pull/47) merged 19 November 2026 at `6cbb159e79bef92c96087df107dff1f074db86fb`. [GitHub Actions run 44462261691](https://github.com/cinaedvsstudios/Organon/actions/runs/44462261691) passed **all three jobs**, including **124/124 Node tests**, Chrome ten-effect actual-pixel and two-video editor/Undo/Redo checks, Firefox, and full real-media export/memory regressions.
+
+- **Spiral wipe:** A bounded 32-ring spiral angular sweep exposes B over A; one combined Canvas clipping path and one incoming video draw per transition frame.
+- **Rings wipe:** Ten concentric annuli reveal B in a staggered, deterministic alternating order, with visible A/B bands during the midpoint.
+- **Color panel wipe:** Six aged-gold/blue/plum/bronze vertical panels sweep across A, then reveal B. Uses an existing full-frame scratch texture and a bounded number of draws.
+- **Catalog:** Original **41 selected names / 10 available / 31 queued**, including separate entries for **SpiralBlockWipe** (still queued) and **Spiral wipe** (implemented).
+- **Stability:** Same shared preview/export renderer, existing clip-overlap planner and gold markers, undo/redo, and unchanged source media/linked audio. The unchanged 120-second full-HD MP4 export passed: 1920×1080, 30fps, 3,600 frames, 16 moving clips.
+- **Next:** Remaining 31 user-selected effects, optionally building effect parameter controls and presets; linked-audio crossfade and transparent-alpha output file remain separate. These original Canvas implementations do not claim to exactly reproduce third-party GL gallery shaders.
+
+[Phase 8E QA](./MOTORICLIP_PHASE8E_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
