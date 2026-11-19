@@ -507,19 +507,34 @@ import { planClipSnap } from './clip-snap.mjs';
     }
 
     async function addFiles(files) {
-        const usable = [];
-        for (const file of Array.from(files || [])) {
-            const kind = getKind(file);
-            if (!kind || !FILE_PATTERN.test(file.name)) continue;
-            const duplicate = state.files.some((entry) => entry.file.name === file.name && entry.file.size === file.size && entry.file.lastModified === file.lastModified);
-            if (!duplicate) usable.push({ id: `file-${Date.now()}-${++state.serial}`, file, name: file.name, kind });
+        const usable=[], relinked=[];
+        for(const file of Array.from(files||[])){
+            const kind=getKind(file);
+            if(!kind || !FILE_PATTERN.test(file.name))continue;
+            const duplicate=state.files.some(entry=>entry.file && entry.file.name===file.name
+                && entry.file.size===file.size && entry.file.lastModified===file.lastModified);
+            if(duplicate)continue;
+            const missing=state.files.find(entry=>!entry.file && entry.name===file.name
+                && entry.kind===kind && (!entry.size || entry.size===file.size));
+            if(missing) relinked.push({entry:missing,file});
+            else usable.push({id:`file-${Date.now()}-${++state.serial}`,file,
+                name:file.name,kind,size:file.size,lastModified:file.lastModified});
         }
-        if (!usable.length) { elements.previewState.textContent = 'No supported media files found.'; return; }
-        recordHistory(`Import ${usable.length} project file${usable.length === 1 ? '' : 's'}`);
-        for (const entry of usable) state.sourceFiles.set(entry.id, entry.file);
+        if(!usable.length && !relinked.length){
+            elements.previewState.textContent='No new or matching media files found.';
+            return;
+        }
+        recordHistory(`Import/relink ${usable.length+relinked.length} project media file(s)`);
+        for(const {entry,file} of relinked) {
+            entry.file=file; entry.needsRelink=false;
+            entry.size=file.size; entry.lastModified=file.lastModified;
+            state.sourceFiles.set(entry.id,file);
+        }
+        for(const entry of usable) state.sourceFiles.set(entry.id,entry.file);
         state.files.push(...usable);
         renderFiles();
-        elements.previewState.textContent = `Added ${usable.length} file${usable.length === 1 ? '' : 's'} to Project Files`;
+        elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked`;
+        showToast(`${usable.length} imported · ${relinked.length} relinked`);
     }
 
     function updateTimeDisplay({ currentTime, duration }) {
