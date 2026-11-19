@@ -9,7 +9,7 @@ export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
     'start', 'sourceOffset', 'sourceDuration', 'clipDuration',
     'sourceFileId', 'sourceName', 'fileType',
-    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom'
+    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom', 'transitionFromId', 'transitionEffectId'
 ]);
 
 export function snapshotClip(track) {
@@ -17,6 +17,8 @@ export function snapshotClip(track) {
     for (const key of CLIP_DATA_KEYS) {
         if (track[key] !== undefined) data[key] = track[key];
     }
+    data.transitionFromId = track.transitionFromId || null;
+    data.transitionEffectId = track.transitionEffectId || null;
     data.audio = { volume:1, muted:false, fadeIn:0, fadeOut:0, ...(track.audio || {}) };
     data.visualTransitions = normalizeVisualTransitions(track.visualTransitions);
     data.transparency = {
@@ -83,6 +85,8 @@ export function applyClipData(target, record) {
     for (const key of CLIP_DATA_KEYS) {
         if (Object.hasOwn(record, key)) target[key] = record[key];
     }
+    target.transitionFromId = record.transitionFromId || null;
+    target.transitionEffectId = record.transitionEffectId || null;
     target.audio = { ...record.audio };
     target.visualTransitions = normalizeVisualTransitions(record.visualTransitions);
     target.transparency = { ...record.transparency };
