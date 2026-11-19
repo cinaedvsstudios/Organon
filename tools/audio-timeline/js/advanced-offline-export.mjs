@@ -61,7 +61,7 @@ function offlineAudioTracks(tracks) {
         && track.file && track.sourceName
         && Number(track.clipDuration) > 0
         && track.audio?.muted !== true
-        && Number(track.audio?.volume ?? 1) > 0);
+        && (Number(track.audio?.volume ?? 1) + Number(track.audio?.gain ?? 0)/100) > 0);
 }
 
 /**
@@ -173,7 +173,7 @@ export class AdvancedOfflineExporter {
             if (!await audioTrack.canDecode()) throw new Error('Cannot decode audio in ' + track.sourceName);
             const gain = offline.createGain();
             gain.connect(offline.destination);
-            const volume = clamp(track.audio?.volume ?? 1, 0, 1);
+            const volume = clamp(track.audio?.volume ?? 1, 0, 1) + clamp(Number(track.audio?.gain ?? 0), 0, 200) / 100;
             const start = Math.max(0, Number(track.start) || 0);
             const end = Math.min(duration, start + (Number(track.clipDuration) || 0));
             if (end <= start) continue;
