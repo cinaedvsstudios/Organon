@@ -13,8 +13,8 @@ test('8J preserves all 41 original names with exactly 25 enabled and 16 queued',
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(new Set(TRANSITION_CATALOG.map(e=>e.id)).size,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(22,25),chosen);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,41);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,0);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'available');
 });
