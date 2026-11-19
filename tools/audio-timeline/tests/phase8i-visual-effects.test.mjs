@@ -12,8 +12,8 @@ test('8I preserves the complete 41-name wishlist and enables only three more',()
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(TRANSITION_CATALOG.length,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(19,22),chosen);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,37);
-    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,4);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,41);
+    assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,0);
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'requested');
 });
