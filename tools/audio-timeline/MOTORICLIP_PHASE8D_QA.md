@@ -1,7 +1,7 @@
 # MotoriClip Phase 8D — Ripple, TV turn off and Aperture wipe
 
 **Date:** 19 November 2026 (Berlin)
-**Status:** Pending PR validation; do not describe as released until checks pass.
+**Status: MERGED AND VERIFIED.** [PR #46](https://github.com/cinaedvsstudios/Organon/pull/46) merged 19 November 2026 at `66baa957a036a655d10180c3bc90264d17482e80`. [GitHub Actions run 44460226642](https://github.com/cinaedvsstudios/Organon/actions/runs/44460226642) passed all three jobs (`transition-smoke`, `cross-browser-ui`, `export-browser`).
 
 ## Catalog and scope
 
@@ -31,5 +31,12 @@ These are independently authored Canvas 2D implementations of the selected *effe
 2. Real Chrome pixel tests: blue A underneath red B; start is only A; Aperture/Ripple reveal B at the center while A remains outside; Ripple and Aperture produce visibly different middle frames; TV first collapses A over black, displays a white scanline at midpoint, then expands B over black. Repeating the same timestamp returns identical pixels; final output resolves to clean B.
 3. Real Chrome end-to-end editor: two imported MP4 files, selecting and applying all seven effect choices, gold timeline marker, pair inspector label and Undo/Redo.
 4. Existing Node, Firefox and real-media export regressions must remain green, including the 120-second 1080p MP4 memory stress check.
+
+**Verification result:** PASS, all three jobs green.
+- **119/119 Node tests passed**, including all prior suites and five Phase 8D mathematical/metadata tests.
+- **Actual Chrome canvas tests passed** for all seven effects: Ripple and Aperture displayed B within the radial reveal while preserving A outside; their midframe pixels differed; TV turn off collapsed A to a mostly black frame with a white scanline and expanded B back to full frame; same-time rerendering matched exactly.
+- **Chrome Advanced end-to-end UI test passed:** two real imported MP4s, all seven paired effects, gold timeline marker, dynamic 7 available / 34 queued status, Undo/Redo.
+- **Firefox and existing real-media tests passed.** The unchanged full 120-second **1920×1080/30fps H.264/AAC MP4** scenario encoded 3,600 frames with 16 moving clips, and the runner also passed the existing audio, memory-recovery and portrait-video checks.
+- No physical Windows/Android device validation or exact gallery shader reproduction is claimed.
 
 **Merge rule:** All CI jobs green before merging. Physical Windows/Android device testing remains a separate release check.
