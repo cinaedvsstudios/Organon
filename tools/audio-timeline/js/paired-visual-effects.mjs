@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C–8K: deterministic canvas-native paired effects.
+ * MotoriClip 8C–8L: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -393,6 +393,75 @@ export function refractionFacetOffset(progress,facet,width,height) {
         y:Math.round(Math.sin(angle)*amplitude*magnitude*Math.min(height*.09,20))
     };
 }
+/** Phase 8L: a rising liquid surface with time-dependent wave interference.
+ * Higher progress lowers the surface towards the top of the canvas.
+ */
+export function liquidSurfaceY(progress,x,width,height,time=0) {
+    const p=unit(progress);
+    if(p===0)return height;
+    if(p===1)return 0;
+    const w=Math.max(1,width),h=Math.max(1,height);
+    const phase=2*Math.PI*Number(x)/w*2.5+(Number.isFinite(time)?time:0)*3.6;
+    const wave=(Math.sin(phase)*.72+Math.sin(phase*.57+1.4)*.28);
+    return Math.max(0,Math.min(h,h*(1-p)+
+        wave*Math.min(h*.065,38)*Math.sin(Math.PI*p)));
+}
+function traceLiquidFill(ctx,progress,width,height,time) {
+    const samples=72;
+    ctx.beginPath();
+    ctx.moveTo(0,height);
+    ctx.lineTo(0,liquidSurfaceY(progress,0,width,height,time));
+    for(let i=1;i<=samples;i++){
+        const x=width*i/samples;
+        ctx.lineTo(x,liquidSurfaceY(progress,x,width,height,time));
+    }
+    ctx.lineTo(width,height);
+    ctx.closePath();
+}
+/** Each old-video shard is staggered and pulled sideways/up as it dissolves.
+ * Progress is monotonic for every shard and fully settles at the endpoint.
+ */
+export function disintegrateFragmentProgress(progress,index){
+    const p=unit(progress);
+    if(p===0)return 0;
+    if(p===1)return 1;
+    const delay=seededCell(index*41+107)*.67;
+    return unit((p-delay)/.40);
+}
+export function disintegrateFragmentOffset(progress,index,width,height) {
+    const released=disintegrateFragmentProgress(progress,index);
+    if(released===0||released===1)return {x:0,y:0};
+    const drift=seededCell(index*23+47)*2-1;
+    return {
+        x:Math.round(drift*Math.min(width*.13,85)*released),
+        y:Math.round((-1.4-seededCell(index*19+67))*
+            Math.min(height*.15,95)*released)
+    };
+}
+/** Rays are independent angular wedges, widening in a staggered sequence.
+ * With all wedges fully open they cover the entire source frame.
+ */
+export function lightRayFraction(progress,index,count=16){
+    const p=unit(progress),n=Math.max(1,Math.trunc(count)||16);
+    const i=Math.max(0,Math.min(n-1,Math.trunc(index)||0));
+    if(p===0||p===1)return p;
+    const delay=seededCell(i*37+13)*.36;
+    return unit((p-delay)/.58);
+}
+function traceLightRayMask(ctx,progress,width,height) {
+    const count=16,cx=width/2,cy=height/2;
+    const radius=Math.hypot(width,height);
+    ctx.beginPath();
+    for(let i=0;i<count;i++){
+        const fraction=lightRayFraction(progress,i,count);
+        if(fraction<=0)continue;
+        const from=-Math.PI/2+i*Math.PI*2/count;
+        const end=from+fraction*Math.PI*2/count;
+        ctx.moveTo(cx,cy);
+        ctx.arc(cx,cy,radius,from,end);
+        ctx.closePath();
+    }
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -511,6 +580,78 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
                 context.lineTo(x1,y1);
                 context.stroke();
             }
+        }
+        context.restore();
+        return true;
+    }
+
+    if(id==='liquid-fill'){
+        context.save();
+        traceLiquidFill(context,progress,width,height,time);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        // The white-cyan crest is only drawn while liquid is moving.
+        context.save();
+        context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.72;
+        context.strokeStyle='#87ebfb';
+        context.lineWidth=Math.max(1,Math.min(width,height)*.017);
+        context.beginPath();
+        for(let i=0;i<=72;i++){
+            const x=width*i/72,y=liquidSurfaceY(progress,x,width,height,time);
+            if(i===0)context.moveTo(x,y);else context.lineTo(x,y);
+        }
+        context.stroke();
+        context.restore();
+        return true;
+    }
+    if(id==='disintegrate'){
+        const from=renderer.tracks?.find(t=>t.id===track.transitionFromId);
+        if(!from?.media || (from.media.readyState!==undefined&&from.media.readyState<2))
+            return false;
+        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
+        const sc=full.getContext('2d');
+        sc.clearRect(0,0,width,height);
+        renderContained(sc,from.media,width,height);
+        context.save();
+        // Start from incoming B, then reassemble outgoing A as 12×8 shards.
+        // As they drift and fade away, the unmodified B is revealed.
+        renderContained(context,media,width,height);
+        const cols=12,rows=8;
+        for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
+            const i=row*cols+col,stage=disintegrateFragmentProgress(progress,i);
+            if(stage>=1)continue;
+            const sx=Math.floor(col*width/cols),sy=Math.floor(row*height/rows);
+            const ex=col===cols-1?width:Math.floor((col+1)*width/cols);
+            const ey=row===rows-1?height:Math.floor((row+1)*height/rows);
+            const move=disintegrateFragmentOffset(progress,i,width,height);
+            context.globalAlpha=alpha*(1-stage);
+            context.drawImage(full,sx,sy,ex-sx,ey-sy,
+                sx+move.x,sy+move.y,ex-sx,ey-sy);
+        }
+        context.restore();
+        return true;
+    }
+    if(id==='light-rays'){
+        context.save();
+        traceLightRayMask(context,progress,width,height);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        // Separate warm beams suggest projected light, not just a radial wipe.
+        const cx=width/2,cy=height/2,radius=Math.hypot(width,height);
+        context.save();
+        context.lineWidth=Math.max(1,Math.min(width,height)*.027);
+        context.strokeStyle='#ffe5a3';
+        context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.43;
+        for(let i=0;i<16;i++){
+            const fraction=lightRayFraction(progress,i,16);
+            if(fraction<=0)continue;
+            const angle=-Math.PI/2+(i+fraction*.45)*Math.PI*2/16;
+            context.beginPath();
+            context.moveTo(cx,cy);
+            context.lineTo(cx+Math.cos(angle)*radius,cy+Math.sin(angle)*radius);
+            context.stroke();
         }
         context.restore();
         return true;

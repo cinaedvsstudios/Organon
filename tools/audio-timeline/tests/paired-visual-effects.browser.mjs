@@ -1,4 +1,4 @@
-/** Phase 8C–8K: verify actual Canvas 2D pixels for twenty-seven additional selected transitions.
+/** Phase 8C–8L: verify actual Canvas 2D pixels for thirty additional selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -82,9 +82,9 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','liquid-fill','disintegrate','light-rays'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -277,9 +277,40 @@ try{
     assert.equal(vortex.middle.fingerprint,vortex.repeat.fingerprint);
     assert.equal(heat.middle.fingerprint,heat.repeat.fingerprint);
     assert.equal(lens.middle.fingerprint,lens.repeat.fingerprint);
+    const liquid=result['liquid-fill'],disintegrate=result.disintegrate,rays=result['light-rays'];
+    console.log('[MotoriClip 8L] New effect midpoint samples '+JSON.stringify({
+        liquid:liquid.middle,disintegrate:disintegrate.middle,rays:rays.middle
+    }));
+    for(const [name,frame] of [['liquid-fill',liquid],['disintegrate',disintegrate],['light-rays',rays]]){
+        assert.ok(frame.middle.red>200&&frame.middle.blue>200,
+            name+' must display both Video A and Video B at midpoint');
+        assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,
+            name+' must produce exactly the same pixels after scrubbing');
+        assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,
+            name+' must be distinct from the plain crossfade');
+        assert.ok(frame.finished.red>1300,
+            name+' must resolve cleanly to incoming B after completion');
+    }
+    assert.deepEqual(liquid.middle.top,[0,0,255],
+        'Liquid fill must retain outgoing blue Video A above the liquid surface');
+    assert.ok(liquid.middle.mixed>10,'Liquid fill should draw a soft cyan moving crest');
+    assert.ok(liquid.threeQuarter.red>liquid.quarter.red,
+        'Liquid fill must reveal more of incoming B as the water rises');
+    assert.ok(disintegrate.middle.mixed>40,
+        'Disintegrating fragments must move and fade across the outgoing video');
+    assert.notEqual(disintegrate.middle.fingerprint,result['random-squares'].middle.fingerprint,
+        'Disintegrate must not be another static random-square reveal');
+    assert.notEqual(disintegrate.middle.fingerprint,result['block-cover'].middle.fingerprint,
+        'Disintegrate must not just cover cells');
+    assert.ok(rays.middle.mixed>25,'Light rays must have warm highlights between sectors');
+    assert.notEqual(rays.middle.fingerprint,result['rings-wipe'].middle.fingerprint,
+        'Light rays must not be a concentric ring wipe');
+    assert.notEqual(rays.middle.fingerprint,result['spiral-wipe'].middle.fingerprint,
+        'Light rays must not be a spiral');
+    assert.notEqual(rays.middle.fingerprint,liquid.middle.fingerprint);
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8K] PASS real Chrome 28-effect pixel checks (Vortex, Heat haze, Refraction), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8L] PASS real Chrome 31-effect pixel checks (Liquid fill, Disintegrate, Light rays), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));

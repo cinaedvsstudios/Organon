@@ -14,14 +14,14 @@ const clip=(id,start,order)=>({
     audio:{volume:1,muted:false,fadeIn:0,fadeOut:0}
 });
 test('new batch enables only selected, genuinely available effects',()=>{
-    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction']);
+    assert.deepEqual(ACTIVE_PAIR_EFFECTS,['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays']);
     assert.deepEqual(TRANSITION_CATALOG.filter(x=>x.status==='available').map(x=>x.id),
-        ['cell-dissolve','vortex','heat-haze','rings-wipe','color-panel-wipe','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','block-cover','film-strip','ink-bleed','refraction','spin','paper-tear','aperture-wipe','spiral-wipe','tv-turn-off','cross-warp','cross-hatch','cube','fade','glitch-flicker','pixelize','random-squares','ripple']);
+        ['cell-dissolve','vortex','liquid-fill','heat-haze','rings-wipe','color-panel-wipe','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','light-rays','block-cover','disintegrate','film-strip','ink-bleed','refraction','spin','paper-tear','aperture-wipe','spiral-wipe','tv-turn-off','cross-warp','cross-hatch','cube','fade','glitch-flicker','pixelize','random-squares','ripple']);
     assert.equal(TRANSITION_CATALOG.length,41);
-    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,13);
+    assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,10);
     assert.equal(isAvailablePairEffect('hologram'),false);
 });
-test('all twenty-eight paired effects compute the same overlap but preserve effect ID',()=>{
+test('all thirty-one paired effects compute the same overlap but preserve effect ID',()=>{
     const a=clip('a',0,2),b=clip('b',4,1);
     for(const effectId of ACTIVE_PAIR_EFFECTS){
         const plan=planPairedTransition([a,b],['b','a'],1.5,effectId);
