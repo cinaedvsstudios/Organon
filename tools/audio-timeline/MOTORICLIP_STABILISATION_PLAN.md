@@ -177,6 +177,19 @@ Regression checklist:
 
 [Phase 8C QA](./MOTORICLIP_PHASE8C_QA.md).
 
+## Phase 8D — Ripple, TV turn off and Aperture wipe [MERGED]
+
+[PR #46](https://github.com/cinaedvsstudios/Organon/pull/46) merged on 19 November 2026 (commit `66baa957a036a655d10180c3bc90264d17482e80`) after **all three jobs passed** in [GitHub Actions 44460226642](https://github.com/cinaedvsstudios/Organon/actions/runs/44460226642). **119/119 Node tests**, the real Chrome seven-effect pixel and editor workflow, Firefox browser tests, and the unchanged 120-second 1080p MP4 export (3,600 frames, 16 moving clips) passed.
+
+- **Ripple:** Center-out wavy radial reveal of B with concentric ripple traces. Frame pixels and deterministic reverse scrubbing verified in real Chrome.
+- **TV turn off:** A squeezes to a central scanline over black, a white flash appears at midpoint, and B expands from that line to fill the frame. Black/white/blue/red source pixels were checked at the corresponding stages.
+- **Aperture wipe:** Clean circular iris reveals B from center outward to the farthest canvas corner, retaining full-opacity A outside the iris.
+- **Catalog/UI:** **41 total selected / 7 enabled / 34 queued.** The status paragraph now derives counts and names from the same authoritative selection catalog, requiring no manual count updates in future batches.
+- **Rendering:** Common Canvas engine underlies live preview, snapshots and fixed-frame export. No additional full-HD buffers for Ripple or Aperture; TV reuses existing scratch. No changes to source media or linked audio.
+- **Further selected effects:** 34 queued remain for later implementation. These Canvas interpretations are not claimed to be pixel-identical to third-party gallery shader previews. Automatic audio crossfades and alpha-capable output-file export are separate future work.
+
+[Phase 8D QA](./MOTORICLIP_PHASE8D_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
