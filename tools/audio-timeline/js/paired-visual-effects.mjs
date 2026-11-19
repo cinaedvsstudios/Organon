@@ -169,6 +169,7 @@ export function cardSwipeOffset(progress,width) {
 export function cameraShakeOffset(progress,frame,width,height) {
     const p=unit(progress);
     const envelope=Math.sin(Math.PI*p);
+    if(p===0||p===1)return {x:0,y:0};
     const tick=Math.floor(Number.isFinite(Number(frame))?Number(frame):0);
     return {
         x:Math.round((seededCell(tick*71+3)*2-1)*Math.min(30,width*.09)*envelope),
