@@ -134,6 +134,16 @@ try{
     assert.ok(await page.locator('.timeline-clip.sticker .clip-label').allTextContents()
         .then(names=>names.some(name=>/text-neon-cyan-NEW-TITLE/i.test(name))),
         'Text preset should create a real named PNG sticker clip');
+    await page.locator('#visual-transform-scale').fill('140');
+    await page.locator('#visual-transform-scale').dispatchEvent('input');
+    assert.equal(await page.locator('[data-visual-output="transform.scale"]').innerText(),'140%');
+    await page.locator('[data-keyframe="transform.scale"]').click();
+    assert.equal(await page.locator('[data-keyframe="transform.scale"]').innerText(),'◆');
+    await page.locator('#visual-adjustments-contrast').fill('35');
+    await page.locator('#visual-adjustments-contrast').dispatchEvent('input');
+    assert.equal(await page.locator('[data-visual-output="adjustments.contrast"]').innerText(),'35');
+    assert.equal(await page.locator('#visual-speed-panel').isVisible(),false,'Still images have no playback speed');
+
     await page.locator('[data-library-tab="media"]').click();
     assert.ok(await page.locator('#project-drop-zone').isVisible());
     page.once('dialog',dialog=>dialog.accept());
