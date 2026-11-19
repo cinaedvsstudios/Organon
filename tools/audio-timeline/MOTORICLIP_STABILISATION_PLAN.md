@@ -151,6 +151,18 @@ Regression checklist:
 
 [Phase 8A QA](./MOTORICLIP_PHASE8A_QA.md).
 
+## Phase 8B — paired A→B Fade and selected-effects catalog [MERGED]
+
+[PR #44](https://github.com/cinaedvsstudios/Organon/pull/44) merged 19 November 2026 (commit `4a6e55050f083f29ff4c38e3ec49298ad713ea6c`). [GitHub Actions run 44454652162](https://github.com/cinaedvsstudios/Organon/actions/runs/44454652162) passed **all three CI jobs**, including **108 Node tests**, the real Chrome two-video import/pair/Undo/Redo/gold-marker test, Firefox browser checks, and the complete full-duration 1080p export/memory matrix.
+
+- **Selected transition catalog, first batch:** The user's **41 GL Transitions gallery selections** from pages 1–10 are kept in original order and spelling in `js/transition-catalog.mjs`. Only Fade is marked available. The other 40 are visibly queued, not falsely represented as working. The list is designed to grow when the user chooses more effects later.
+- **First automatic clip-to-clip transition:** Select two loaded video clips using Select mode. Choose Fade and an overlap duration in the Project Inspector. The planner aligns the beginning of Video B with the final portion of Video A; it gives B an upper lane when required for compositing/collision safety. B fades in over A to avoid an unintended dark midpoint. Gold markers show the fade.
+- **Persistence and editing:** Pair metadata survives Undo/Redo. The Unlink control removes the relationship without destroying the chosen overlap or fade. Outdated pair metadata is invalidated when clips change. Sources and existing embedded audio remain unmodified; there is **no automatic audio crossfade** in 8B.
+- **Export:** Preview, PNG and export use the same established compositing path. Full two-minute 1080p H.264/AAC export regression passed after the change.
+- **Still to implement:** The remaining 40 selected effects (wipes, dissolves, distortions, glitches, etc.), an effect engine and optional reusable presets, stronger transition-clip editing UX and draggable markers, automatic audio crossfades where requested, and separately validated alpha-capable output if needed. No Apple/Safari certification requirement.
+
+[Phase 8B QA](./MOTORICLIP_PHASE8B_QA.md).
+
 ## Main source files
 
 - [Basic entry/launcher](https://github.com/cinaedvsstudios/Organon/blob/main/tools/audio-timeline/index.html)
