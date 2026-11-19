@@ -35,7 +35,7 @@ const build=(settings,source=null)=>{
 
 test('unknown presets fail safely to Off without turning on DSP',()=>{
     assert.deepEqual(normalizeOrgavoxFx({eq:'nonexistent',drive:'warm'}),
-        {eq:'off',drive:'warm',dynamics:'off',stereo:'off'});
+        {lofi:'off',eq:'off',drive:'warm',dynamics:'off',stereo:'off'});
     const {graph,ctx,src}=build({},true);
     assert.equal(graph.nodes.length,1);
     assert.ok(src.connections.some(c=>c.to===graph.input));
