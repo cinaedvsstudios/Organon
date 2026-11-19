@@ -71,6 +71,10 @@ test('still image and video clips can form the same 41-effect A/B transition',()
     const second=planPairedTransition([video,stillB],['VIDEO','STILL'],1,'gallery');
     assert.equal(second.effectId,'gallery');
     assert.equal(second.start,10);
+    const explicit=planPairedTransition([video,image],['VIDEO','IMAGE'],1,'sphere',{preserveOrder:true});
+    assert.equal(explicit.fromId,'VIDEO');
+    assert.equal(explicit.toId,'IMAGE');
+    assert.equal(explicit.start,10);
 });
 test('pair link metadata is valid only while media exists and overlap is intact',()=>{
     const a=clip('A',2,4,1),b=clip('B',5,3,.5);
