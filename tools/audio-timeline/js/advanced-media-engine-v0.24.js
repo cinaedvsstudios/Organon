@@ -7,6 +7,8 @@
 import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-scheduler.mjs';
 import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-seek.mjs';
 import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from './media-support.mjs';
+import { isPairedFadeActive } from './clip-pair-transitions.mjs';
+import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
@@ -549,9 +551,15 @@ export class AdvancedMediaEngine {
                     this.context.save();
                     try {
                         this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
-                        this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1) * visualFadeOpacity(track, this.currentTime);
+                        const pairedSpatial = track.type === 'video' && track.transitionEffectId !== 'fade'
+                            && isPairedFadeActive(track,this.tracks);
+                        this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1)
+                            * visualFadeOpacity(track, this.currentTime, {ignoreEnter:pairedSpatial});
                         if (track.type === 'background') drawCovered(this.context, track.media, width, height);
-                        else if (track.type === 'video' && (track.media.readyState === undefined || track.media.readyState >= 2)) drawContained(this.context, track.media, width, height);
+                        else if (track.type === 'video' && (track.media.readyState === undefined || track.media.readyState >= 2)) {
+                            if(!pairedSpatial || !paintPairedEffect(this,this.context,track,width,height,this.currentTime,drawContained))
+                                drawContained(this.context, track.media, width, height);
+                        }
                         else if (track.type === 'sticker') this.drawSticker(track, width, height);
                     } catch (error) {
                         // Do not break the entire composite because one layer
