@@ -3,6 +3,7 @@
  * The original real-time MediaRecorder exporter remains the default.
  * This beta exporter never plays the timeline or modifies existing players.
  */
+import { connectOrgavoxAudioChain } from './orgavox-audio-chain.mjs';
 const MEDIABUNNY_MODULE = 'https://cdn.jsdelivr.net/npm/mediabunny@1.66.0/+esm';
 const AAC_ENCODER_MODULE = 'https://esm.sh/@mediabunny/aac-encoder@1.66.0?external=mediabunny';
 const AUDIO_RATE = 48000;
@@ -174,6 +175,7 @@ export class AdvancedOfflineExporter {
             if (!await audioTrack.canDecode()) throw new Error('Cannot decode audio in ' + track.sourceName);
             const gain = offline.createGain();
             gain.connect(offline.destination);
+            const orgavoxChain=connectOrgavoxAudioChain(offline,gain,track.audio?.fx);
             const volume = clamp(track.audio?.volume ?? 1, 0, 1) + clamp(Number(track.audio?.gain ?? 0), 0, 200) / 100;
             const start = Math.max(0, Number(track.start) || 0);
             const end = Math.min(duration, start + (Number(track.clipDuration) || 0));
@@ -206,7 +208,7 @@ export class AdvancedOfflineExporter {
                 node.buffer = wrapped.buffer;
                 if (node.playbackRate) node.playbackRate.value = speed;
                 else if (speed !== 1) throw new Error('This browser cannot adjust audio playback rate during fixed-frame export.');
-                node.connect(gain);
+                node.connect(orgavoxChain.input);
                 node.start(position, overlapStart - chunkStart, overlapEnd - overlapStart);
                 scheduled += 1;
             }

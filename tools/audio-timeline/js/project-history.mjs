@@ -4,6 +4,7 @@
  * File objects stay only in the session's source registry.
  */
 import { normalizeVisualTransitions } from './visual-transitions.mjs';
+import { normalizeOrgavoxFx } from './orgavox-audio-chain.mjs';
 
 export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
@@ -20,6 +21,7 @@ export function snapshotClip(track) {
     data.transitionFromId = track.transitionFromId || null;
     data.transitionEffectId = track.transitionEffectId || null;
     data.audio = { volume:1, muted:false, fadeIn:0, fadeOut:0, ...(track.audio || {}) };
+    if (data.audio.fx) data.audio.fx=normalizeOrgavoxFx(data.audio.fx);
     data.transform = { ...(track.transform||{}) };
     data.adjustments = { ...(track.adjustments||{}) };
     data.keyframes = Object.fromEntries(Object.entries(track.keyframes||{}).map(([key,frames])=>[
@@ -93,6 +95,7 @@ export function applyClipData(target, record) {
     target.transitionFromId = record.transitionFromId || null;
     target.transitionEffectId = record.transitionEffectId || null;
     target.audio = { ...record.audio };
+    if (target.audio.fx) target.audio.fx=normalizeOrgavoxFx(target.audio.fx);
     target.transform = { ...(record.transform||{}) };
     target.adjustments = { ...(record.adjustments||{}) };
     target.keyframes = Object.fromEntries(Object.entries(record.keyframes||{}).map(([key,frames])=>[

@@ -11,6 +11,7 @@ import { isPairedFadeActive } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
+import { connectOrgavoxAudioChain } from './orgavox-audio-chain.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -258,8 +259,23 @@ export class AdvancedMediaEngine {
         await this.ensureAudioGraph();
         track.audioNode = this.audioContext.createMediaElementSource(mediaElement);
         track.gainNode = this.audioContext.createGain();
-        track.audioNode.connect(track.gainNode);
         track.gainNode.connect(this.previewGain);
+        this.refreshOrgavoxAudioEffects(track);
+    }
+
+    refreshOrgavoxAudioEffects(track) {
+        if (!track?.audioNode || !track.gainNode || !this.audioContext) return;
+        const signature=JSON.stringify(track.audio?.fx || {});
+        if (track.orgavoxFxSignature===signature && track.orgavoxFxNodes?.length) return;
+        // Rewire only this source's effect section. The final gain stays
+        // connected to the speaker bus and any active MediaRecorder export mix.
+        try { track.audioNode.disconnect(); } catch (_) {}
+        for (const node of track.orgavoxFxNodes || []) {
+            try { node.disconnect(); } catch (_) {}
+        }
+        const chain=connectOrgavoxAudioChain(this.audioContext,track.gainNode,track.audio?.fx,track.audioNode);
+        track.orgavoxFxNodes=chain.nodes;
+        track.orgavoxFxSignature=signature;
     }
 
     detachTrack(track, emit = true) {
@@ -275,9 +291,10 @@ export class AdvancedMediaEngine {
             track.media.removeEventListener('error', track.mediaErrorHandler);
         }
         track.mediaErrorHandler = null;
-        for (const node of [track.audioNode, track.gainNode]) {
+        for (const node of [track.audioNode,...(track.orgavoxFxNodes || []),track.gainNode]) {
             try { node?.disconnect?.(); } catch (_) { /* already disconnected */ }
         }
+        track.orgavoxFxNodes=[];
         for (const element of [track.media, track.soundMedia]) {
             if (!element) continue;
             try {
@@ -291,7 +308,7 @@ export class AdvancedMediaEngine {
         if (track.objectUrl) {
             try { URL.revokeObjectURL(track.objectUrl); } catch (_) { /* already revoked */ }
         }
-        track.media = null; track.soundMedia = null; track.audioNode = null; track.gainNode = null; track.objectUrl = null;
+        track.media = null; track.soundMedia = null; track.audioNode = null; track.gainNode = null; track.orgavoxFxNodes = []; track.orgavoxFxSignature = null; track.objectUrl = null;
         track.sourceName = ''; track.sourceDuration = 0; track.clipDuration = 0; track.file = null;
         if (emit) { this.emitDuration(); this.renderFrame(); }
     }
