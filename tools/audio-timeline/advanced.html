@@ -250,9 +250,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .project-column .column-content { padding-top:10px; }
 .project-column .file-list-card,.project-column .file-list { max-height:calc(100vh - 190px); }
 .timeline-zoom-bar { position:relative; }
-.track-type-menu { position:absolute; top:calc(100% - 1px); left:8px; z-index:80; width:min(240px,calc(100% - 16px)); display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; border:1px solid var(--water-spray); border-radius:10px; background:#14191d; box-shadow:0 10px 28px #000; }
+.track-type-menu { position:fixed; z-index:2900; width:240px; max-width:calc(100vw - 16px); max-height:calc(100vh - 16px); overflow-y:auto; display:grid; grid-template-columns:1fr 1fr; gap:6px; padding:8px; border:1px solid var(--water-spray); border-radius:10px; background:#14191d; box-shadow:0 10px 28px #000; }
 .track-type-menu[hidden],.timeline-ruler[hidden],.editor-modal[hidden] { display:none!important; }
 .track-type-menu .btn { font-size:.52rem; white-space:nowrap; }
+.snap-options-menu { width:min(256px,calc(100vw - 16px)); grid-template-columns:1fr; }
+.snap-options-menu .btn { justify-content:flex-start; }
+.snap-options-toggle { min-width:22px; padding-inline:5px; }
+#btn-snap-selection { border-color:rgba(227,183,92,.75); }
+#btn-snap-selection:disabled,#btn-snap-options:disabled { opacity:.4; cursor:not-allowed; }
+.track-type-menu button:disabled { opacity:.38; cursor:not-allowed; }
 .editor-modal { position:fixed; inset:0; z-index:3000; display:grid; place-items:center; padding:15px; background:rgba(0,0,0,.82); backdrop-filter:blur(3px); }
 .editor-modal-card { width:min(480px,100%); max-height:min(88vh,900px); overflow:auto; padding:14px; border:1px solid var(--water-spray); border-radius:15px; background:#191c1e; box-shadow:0 16px 48px #000; }
 .editor-modal-head { display:flex; align-items:center; justify-content:space-between; gap:9px; margin-bottom:9px; }
@@ -336,13 +342,20 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <button type="button" class="btn timeline-tool" id="btn-undo" title="Undo last timeline edit" aria-label="Undo last timeline edit" disabled>↶ Undo</button>
                             <button type="button" class="btn timeline-tool" id="btn-redo" title="Redo last timeline edit" aria-label="Redo last timeline edit" disabled>↷ Redo</button>
                             <button type="button" class="btn timeline-tool" id="btn-split-all" title="Split every clip crossing the now line">✂️ Split all</button>
+                            <button type="button" class="btn timeline-tool" id="btn-snap-selection" title="Select two clips to align A end → B start; one clip to see playhead snap options" disabled>⇥ Snap</button>
+                            <button type="button" class="btn timeline-tool snap-options-toggle" id="btn-snap-options" title="Snap options: clip edges or the current playhead" aria-label="Show snap options" aria-expanded="false" disabled>▾</button>
                             <button type="button" class="btn timeline-tool" id="btn-add-track" title="Add a video, audio, sticker or background track" aria-expanded="false">＋ Track</button>
                             <button type="button" class="btn timeline-tool" id="btn-open-transitions" title="Apply one of the 41 A/B video transitions">✦ Transitions</button>
-                            <button type="button" class="btn timeline-tool" id="btn-toggle-ruler" title="Show or hide timeline seconds" aria-pressed="false">⌛ Ruler</button>
+                            <button type="button" class="btn timeline-tool" id="btn-toggle-ruler" title="Hide timeline ruler (click the numbers to move the playhead)" aria-pressed="true">⌛ Ruler</button>
                             <button type="button" class="btn timeline-tool" id="btn-selection-mode" title="Select multiple clips" aria-label="Toggle select mode" aria-pressed="false">☝️ Select</button>
                             <button type="button" class="btn timeline-tool" id="btn-group-selection" title="Select two or more clips first" aria-label="Group selected clips" disabled>👏 Group</button>
                             <button type="button" class="btn timeline-tool" id="btn-duplicate-selection" title="Select one or more clips first" aria-label="Duplicate selected clips" disabled>⧉ Duplicate</button>
                             <button type="button" class="btn timeline-tool btn-danger" id="btn-delete-selection" title="Select one or more clips first" aria-label="Delete selected clips" disabled>🗑 Delete</button>
+                        </div>
+                        <div id="snap-options-menu" class="snap-options-menu track-type-menu" hidden aria-label="Snap clip options">
+                            <button type="button" class="btn" data-snap-mode="pair">↔ A end → B start</button>
+                            <button type="button" class="btn" data-snap-mode="start-playhead">▸ Start → Playhead</button>
+                            <button type="button" class="btn" data-snap-mode="end-playhead">◂ End → Playhead</button>
                         </div>
                         <div id="track-type-menu" class="track-type-menu" hidden aria-label="Choose track type"><button type="button" class="btn" data-add-track-type="video">🎬 Video</button><button type="button" class="btn" data-add-track-type="audio">🎵 Audio</button><button type="button" class="btn" data-add-track-type="sticker">✨ Sticker</button><button type="button" class="btn" data-add-track-type="background">🖼 Background</button></div>
                         <div class="timeline-zoom-controls" aria-label="Timeline zoom controls">
@@ -356,7 +369,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <div class="timeline-scroll">
                         <div class="timeline-inner">
                             <div id="timeline-lanes"></div>
-                            <div class="timeline-ruler" id="timeline-ruler" hidden></div>
+                            <div class="timeline-ruler" id="timeline-ruler" title="Click the timeline ruler to position the playhead"></div>
                         </div>
                     </div>
                 </section>
@@ -506,7 +519,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div class="editor-modal" id="transition-modal" hidden role="dialog" aria-modal="true" aria-label="Video transitions"><div class="editor-modal-card"><div class="editor-modal-head"><h2>✦ A/B Video Transitions</h2><button type="button" class="editor-modal-close" data-close-modal title="Close" aria-label="Close dialog">×</button></div><p class="modal-help">Choose two video clips. Video B overlaps Video A on a separate layer while the effect plays.</p><label class="editor-modal-field">From · Video A<select id="transition-modal-from" class="compact-select" aria-label="First video clip"></select></label><label class="editor-modal-field">To · Video B<select id="transition-modal-to" class="compact-select" aria-label="Second video clip"></select></label><label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label><label class="editor-modal-field">Overlap (seconds)<input id="transition-modal-duration" class="compact-input" type="number" min="0.1" max="30" step="0.05" value="1"></label><button class="btn btn-primary" type="button" id="btn-apply-transition-modal">✦ Apply Transition</button><p class="modal-help" id="transition-modal-status" role="status"></p></div></div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-compact-controls"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-popup-ruler-fix"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>

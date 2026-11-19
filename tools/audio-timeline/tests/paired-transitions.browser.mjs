@@ -68,6 +68,27 @@ try{
     await page.locator('.timeline-clip.video:not(.selected)').first().click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.video.selected').length===2);
     assert.equal(await page.locator('#pair-transition-panel').isVisible(),true);
+    assert.equal(await page.locator('#btn-snap-selection').isDisabled(),false);
+    await page.locator('#btn-snap-options').click();
+    assert.equal(await page.locator('#snap-options-menu').isVisible(),true);
+    const snapPopup = await page.locator('#snap-options-menu').evaluate(menu => {
+        const box=menu.getBoundingClientRect();
+        return {parent:menu.parentElement.tagName,top:box.top,bottom:box.bottom,height:innerHeight};
+    });
+    assert.equal(snapPopup.parent,'BODY','Snap popup must not be clipped by the timeline');
+    assert.ok(snapPopup.top>=0 && snapPopup.bottom<=snapPopup.height);
+    await page.locator('#btn-snap-options').click();
+    await page.locator('#btn-snap-selection').click();
+    await page.waitForFunction(()=>{
+        const left=[...document.querySelectorAll('.timeline-clip.video:not(.placeholder)')]
+          .map(el=>parseFloat(el.style.left));
+        return left.length===2 && Math.max(...left)-Math.min(...left)>=25;
+    },null,{timeout:12000});
+    assert.ok(!(await page.locator('#btn-undo').isDisabled()),
+        'Snap must be an undoable edit');
+    await page.locator('#btn-undo').click();
+    await page.locator('#btn-redo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.video.selected').length===2,null,{timeout:15000});
     await page.locator('#pair-transition-duration').fill('1');
     await page.locator('#btn-apply-pair-transition').click();
     await page.locator('#video-transition-pair-note').waitFor({state:'visible',timeout:15000});
