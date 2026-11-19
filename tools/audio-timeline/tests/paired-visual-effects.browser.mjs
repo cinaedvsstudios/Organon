@@ -1,4 +1,4 @@
-/** Phase 8C: verify actual Canvas 2D pixels for three selected transitions.
+/** Phase 8C–8D: verify actual Canvas 2D pixels for six selected transitions.
  * No mocked pixels: the real AdvancedMediaEngine composites source canvases.
  */
 import assert from 'node:assert/strict';
@@ -63,11 +63,13 @@ try{
                 const i=(y*w+x)*4;
                 return [...bytes.slice(i,i+3)];
             };
-            let red=0,blue=0,mixed=0;
+            let red=0,blue=0,black=0,white=0,mixed=0;
             for(let y=0;y<h;y+=4)for(let x=0;x<w;x+=4){
                 const [r,g,v]=p(x,y);
                 if(r>250&&g<4&&v<4)red++;
                 else if(v>250&&r<4&&g<4)blue++;
+                else if(r<4&&g<4&&v<4)black++;
+                else if(r>240&&g>240&&v>240)white++;
                 else mixed++;
             }
             // Fast stable fingerprint useful for comparing successive renders.
@@ -76,16 +78,18 @@ try{
                 fingerprint=Math.imul((fingerprint^bytes[k])>>>0,16777619)>>>0;
                 fingerprint=Math.imul((fingerprint^bytes[k+2])>>>0,16777619)>>>0;
             }
-            return {fingerprint,red,blue,mixed,top:p(6,6),center:p(98,60)};
+            return {fingerprint,red,blue,black,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']){
             b.transitionEffectId=effect;
-            b.media=effect==='random-squares'?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
+                quarter:sample(1.25),
                 middle:sample(1.5),
+                threeQuarter:sample(1.75),
                 repeat:sample(1.5),
                 finished:sample(2.05)
             };
@@ -95,7 +99,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -109,9 +113,24 @@ try{
         'Pixelize must visibly differ from an ordinary fade');
     assert.notEqual(result['glitch-flicker'].middle.fingerprint,result.fade.middle.fingerprint,
         'Glitch flicker must visibly differ from a simple fade');
+    for(const effect of ['ripple','aperture-wipe']){
+        const middle=result[effect].middle;
+        assert.ok(middle.red>150&&middle.blue>150,effect+' should reveal B inside a circular mask while retaining A outside');
+        assert.deepEqual(middle.center,[255,0,0],effect+' must reveal red B at the center');
+        assert.deepEqual(middle.top,[0,0,255],effect+' must preserve blue A outside the wavefront');
+    }
+    assert.notEqual(result.ripple.middle.fingerprint,result['aperture-wipe'].middle.fingerprint,
+        'Ripple wavefronts must visibly differ from a clean circular aperture');
+    const tv=result['tv-turn-off'];
+    assert.ok(tv.middle.black>1200,'TV shutdown midpoint should be almost entirely black');
+    assert.ok(tv.middle.white>0,'TV shutdown midpoint should show a brief white scanline');
+    assert.deepEqual(tv.quarter.center,[0,0,255],'First half of shutdown should still display collapsing A');
+    assert.deepEqual(tv.quarter.top,[0,0,0],'Outside the shrinking A image should be black');
+    assert.deepEqual(tv.threeQuarter.center,[255,0,0],'Second half should expand incoming B');
+    assert.deepEqual(tv.threeQuarter.top,[0,0,0],'Outside the expanding B image should be black');
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8C] PASS live Chrome Pixelize, Random squares and Glitch flicker pixel tests, deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8D] PASS live Chrome 7-effect pixel checks (Ripple, TV turn off, Aperture wipe), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));

@@ -42,17 +42,17 @@ jobs:
           echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
       - name: Verify visual alpha envelopes and undo history
         run: node --test tools/audio-timeline/tests/visual-transitions.test.mjs
-      - name: Validate three extra visual effects in Node
-        run: node --test tools/audio-timeline/tests/paired-visual-effects.test.mjs
+      - name: Validate the first six extra visual effects in Node
+        run: node --test tools/audio-timeline/tests/paired-visual-effects.test.mjs tools/audio-timeline/tests/phase8d-visual-effects.test.mjs
       - name: Verify Chrome compositor pixels and A/B inspector schematic
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/visual-transitions.browser.mjs
-      - name: Verify real Chrome pixels for Pixelize, Random squares and Glitch flicker
+      - name: Verify real Chrome pixels for six new A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/paired-visual-effects.browser.mjs
-      - name: Verify actual two-video paired fade UI with generated MP4 sources
+      - name: Verify real two-video pairing with all seven available effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/paired-transitions.browser.mjs

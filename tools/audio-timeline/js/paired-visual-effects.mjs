@@ -1,11 +1,11 @@
 /**
- * MotoriClip 8C: deterministic canvas-native first effects batch.
+ * MotoriClip 8C–8D: deterministic canvas-native paired effects.
  *
  * These are independent implementations named for the user's selected gallery
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -36,6 +36,38 @@ export function pairedEffectProgress(track,time) {
     return unit((Number(time)-(Number(track.start)||0))/seconds);
 }
 
+/** Full-frame radial reveals share a centered radius, but Ripple has a
+ * periodic wavefront. Both resolve exactly to the entire frame at 100%.
+ */
+export function radialMaskRadius(effectId,progress,width,height,angle=0) {
+    const p=unit(progress),diagonal=Math.hypot(width/2,height/2);
+    const base=diagonal*p;
+    if(effectId!=='ripple')return base;
+    const wave=Math.min(width,height)*.045*Math.sin(12*angle-24*p)*Math.sin(Math.PI*p);
+    return Math.max(0,base+wave);
+}
+export function tvScanHeight(progress) {
+    const p=unit(progress);
+    return p<=.5?Math.pow(1-2*p,1.6):Math.pow(2*p-1,1.6);
+}
+
+function traceIris(context,effectId,progress,width,height) {
+    const cx=width/2,cy=height/2;
+    context.beginPath();
+    if(effectId==='aperture-wipe'){
+        context.arc(cx,cy,radialMaskRadius(effectId,progress,width,height),0,2*Math.PI);
+    }else{
+        const vertices=96;
+        for(let i=0;i<=vertices;i++){
+            const angle=i/vertices*2*Math.PI;
+            const radius=radialMaskRadius(effectId,progress,width,height,angle);
+            const x=cx+Math.cos(angle)*radius,y=cy+Math.sin(angle)*radius;
+            if(!i)context.moveTo(x,y);
+            else context.lineTo(x,y);
+        }
+        context.closePath();
+    }
+}
 /** Create or resize a scratch canvas held by the renderer instance. */
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -59,6 +91,30 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const alpha=context.globalAlpha;
     const media=track.media;
 
+    if(id==='aperture-wipe'||id==='ripple'){
+        context.save();
+        traceIris(context,id,progress,width,height);
+        context.clip();
+        renderContained(context,media,width,height);
+        context.restore();
+        if(id==='ripple'){
+            // Concentric wavefront lines make a ripple visually distinct from
+            // the smooth aperture. Phase derives solely from timeline time.
+            context.save();
+            context.lineWidth=Math.max(1,Math.min(width,height)*.008);
+            context.strokeStyle='#cceaff';
+            for(let wave=1;wave<=2;wave++){
+                const ringProgress=progress-wave*.10;
+                if(ringProgress<=0)continue;
+                context.globalAlpha=alpha*(1-progress)*.26;
+                traceIris(context,'ripple',ringProgress,width,height);
+                context.stroke();
+            }
+            context.restore();
+        }
+        return true;
+    }
+
     if(id==='pixelize'){
         const block=pixelScale(progress);
         const small=scratchCanvas(renderer,'transitionPixelScratch',
@@ -74,6 +130,32 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
     const sc=full.getContext('2d');
     sc.clearRect(0,0,width,height);
+    if(id==='tv-turn-off'){
+        // In the first half, A collapses into the centerline. In the second,
+        // the clean incoming B expands from that line. The screen is black
+        // between phases, with a short brightness pulse like an old CRT.
+        const showingA=progress<.5;
+        const source=showingA
+            ?renderer.tracks.find(t=>t.id===track.transitionFromId)?.media
+            :media;
+        if(source&&(source.readyState===undefined||source.readyState>=2))
+            renderContained(sc,source,width,height);
+        context.save();
+        context.fillStyle='#000';
+        context.fillRect(0,0,width,height);
+        const heightFraction=tvScanHeight(progress);
+        const size=height*heightFraction;
+        if(size>.001&&source)
+            context.drawImage(full,0,0,width,height,0,(height-size)/2,width,size);
+        const flash=Math.max(0,1-Math.abs(progress-.5)/.045);
+        if(flash>0){
+            context.globalAlpha=alpha*flash;
+            context.fillStyle='#ffffff';
+            context.fillRect(0,Math.floor(height/2),width,Math.max(1,Math.round(height*.012)));
+        }
+        context.restore();
+        return true;
+    }
     renderContained(sc,media,width,height);
 
     if(id==='random-squares'){
