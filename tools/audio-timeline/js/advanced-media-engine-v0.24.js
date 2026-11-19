@@ -326,7 +326,7 @@ export class AdvancedMediaEngine {
         for (const track of this.tracks) {
             if (!AUDIO_TYPES.has(track.type) || !track.gainNode) continue;
             const muted = Boolean(track.audio?.muted);
-            const volume = clamp(Number(track.audio?.volume ?? 1), 0, 1);
+            const volume = clamp(Number(track.audio?.volume ?? 1), 0, 1) + clamp(Number(track.audio?.gain ?? 0), 0, 200) / 100;
             const envelope = this.isTrackActive(track, time) ? this.getAudioFadeGain(track, time) : 0;
             track.gainNode.gain.value = muted ? 0 : volume * envelope;
         }
