@@ -78,6 +78,12 @@ test('render engine multiplies clip opacity by visual fade, independently of aud
         clearRect(){},fillRect(){},
         drawImage(src){draws.push({id:src.id,alpha})}
     };
+    const oldDocument=globalThis.document;
+    globalThis.document={createElement(tag){
+        if(tag==='canvas')return {getContext:()=>ctx};
+        throw Error('Unexpected DOM element '+tag);
+    }};
+    try{
     const engine=new AdvancedMediaEngine({
         canvas:{width:320,height:180,getContext:()=>ctx},mediaBin:null,
         onTimeChange(){},onDurationChange(){},onPlaybackChange(){},
@@ -96,4 +102,5 @@ test('render engine multiplies clip opacity by visual fade, independently of aud
     engine.currentTime=4;
     engine.renderFrame();
     assert.equal(draws.at(-1).alpha,.8);
+    } finally { globalThis.document=oldDocument; }
 });
