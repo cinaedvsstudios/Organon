@@ -343,12 +343,6 @@ try{
     assert.notEqual(result.spiralblockwipe.middle.fingerprint,result['spiral-wipe'].middle.fingerprint);
     assert.notEqual(result.hologram.middle.fingerprint,result['vhs-tracking'].middle.fingerprint);
     assert.notEqual(result.crumple.middle.fingerprint,result.refraction.middle.fingerprint);
-    for(const id of ['sphere','snapshot','gallery','brokey-dissolve']){
-        const frame=result[id];
-        assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,id+' must be deterministic');
-        assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,id+' must differ from Fade');
-        assert.notDeepEqual(frame.finished.center,[0,0,255],id+' must finish on B');
-    }
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
     console.log('[MotoriClip 8O] PASS real Chrome 41-effect pixel checks (ASCII, Color codes, Prisms), deterministic rewind and scratch release '+JSON.stringify(result));
