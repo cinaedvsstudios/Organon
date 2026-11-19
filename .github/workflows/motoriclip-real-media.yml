@@ -33,13 +33,11 @@ jobs:
           node-version: '22'
       - name: Install browser automation dependency
         run: npm install --no-save playwright-core@1.56.1
-      - name: Install FFmpeg and ffprobe
-        timeout-minutes: 5
-        run: |
-          if ! command -v ffmpeg >/dev/null || ! command -v ffprobe >/dev/null; then
-            sudo apt-get update -qq
-            sudo apt-get install -y ffmpeg
-          fi
+      - name: Set up cached FFmpeg and ffprobe binaries
+        timeout-minutes: 6
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        with:
+          ffmpeg-version: release
       - name: Check Chromium and FFmpeg
         run: |
           set -euo pipefail
@@ -69,6 +67,12 @@ jobs:
       - name: Profile longer moving-footage 1080p and 25-clip 720p exports
         env:
           CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/long-export-memory.browser.mjs
+      - name: Verify near-limit 60s 1080p and 120s 720p real-media exports with memory profiling
+        timeout-minutes: 18
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+          MOTORICLIP_LONGFORM: '1'
         run: node tools/audio-timeline/tests/long-export-memory.browser.mjs
       - name: Measure repeated exports and post-GC Chrome memory recovery
         env:

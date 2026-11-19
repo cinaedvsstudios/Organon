@@ -92,14 +92,28 @@ await new Promise(done=>server.listen(0,'127.0.0.1',done));
 const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromium'].find(existsSync);
 assert.ok(chrome,'Chrome unavailable');
 const browser=await chromium.launch({executablePath:chrome,headless:true,
-    args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs']});
+    args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs',
+        ...(process.env.MOTORICLIP_LONGFORM==='1'?['--js-flags=--expose-gc']:[])]});
 try{
     const context=await browser.newContext({acceptDownloads:true});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
     await page.goto('http://127.0.0.1:'+server.address().port+
         '/tools/audio-timeline/tests/browser-harness.html');
-    const scenarios=[
+    const longform=process.env.MOTORICLIP_LONGFORM==='1';
+    const phase=longform?'6K':'6G';
+    const scenarios=longform ? [
+        {
+            name:'1080p-60s-motion-8clips',format:'mp4',width:1920,height:1080,
+            duration:60,fps:30,bitrateKbps:5000,clipCount:8,
+            clipStep:7,clipDuration:8.5
+        },
+        {
+            name:'720p-120s-motion-25clips',format:'webm',width:1280,height:720,
+            duration:120,fps:25,bitrateKbps:3500,clipCount:25,
+            clipStep:4.7,clipDuration:5.7
+        }
+    ] : [
         {
             name:'1080p-18s-motion-8clips',format:'mp4',width:1920,height:1080,
             duration:18,fps:30,bitrateKbps:5000,clipCount:8,
@@ -113,7 +127,7 @@ try{
     ];
     const records=[];
     for(const cfg of scenarios){
-        console.log('[MotoriClip 6G] START',cfg.name);
+        console.log('[MotoriClip '+phase+'] START',cfg.name);
         const base=chromeMemory(process.pid);
         const samples=[base];
         const timer=setInterval(()=>{
@@ -264,6 +278,24 @@ try{
             }
             const audioRms=Math.sqrt(squares/Math.max(1,motion.length/4));
             assert.ok(audioRms>.005,'Missing audio in a moving clip: RMS '+audioRms);
+            let lateAudioRms=null,tailAudioRms=null,afterIdleGc=null;
+            if(longform){
+                const rmsAt=time=>{
+                    const pcm=command('ffmpeg',['-v','error','-ss',String(time),'-t','0.15',
+                        '-i',file,'-vn','-ac','1','-ar','16000','-f','f32le','pipe:1'],{binary:true});
+                    let sum=0;
+                    for(let i=0;i+3<pcm.length;i+=4)sum+=pcm.readFloatLE(i)**2;
+                    return Math.sqrt(sum/Math.max(1,pcm.length/4));
+                };
+                lateAudioRms=rmsAt(cfg.duration===120?108:54);
+                tailAudioRms=rmsAt(cfg.duration-0.3);
+                assert.ok(lateAudioRms>.005,'Late-timeline audio missing: RMS '+lateAudioRms);
+                assert.ok(tailAudioRms<.002,'Unexpected sound in final background-only gap: RMS '+tailAudioRms);
+                await page.evaluate(()=>globalThis.gc?.());
+                await new Promise(resolve=>setTimeout(resolve,1200));
+                afterIdleGc=chromeMemory(process.pid);
+                assert.ok(afterIdleGc.pssKiB!==null,'Post-GC native PSS metrics unavailable');
+            }
             const measurements=samples.filter(x=>x.pssKiB!==null);
             assert.ok(measurements.length>1,'Native PSS metrics unavailable on test runner');
             const peakPssMiB=Number((Math.max(...measurements.map(x=>x.pssKiB))/1024).toFixed(1));
@@ -277,16 +309,21 @@ try{
                 wallMs:Date.now()-started,browserRenderMs:result.renderMs,
                 chromePssBaselineMiB:baselinePssMiB,chromePssPeakMiB:peakPssMiB,
                 chromePssLastMiB:endPssMiB,chromeProcessCountPeak:Math.max(...samples.map(x=>x.processCount)),
-                memorySamples:measurements.length,audioRms:Number(audioRms.toFixed(4))
+                memorySamples:measurements.length,audioRms:Number(audioRms.toFixed(4)),
+                ...(longform?{
+                    lateAudioRms:Number(lateAudioRms.toFixed(4)),
+                    tailAudioRms:Number(tailAudioRms.toFixed(4)),
+                    chromePssAfterIdleGcMiB:Number((afterIdleGc.pssKiB/1024).toFixed(1))
+                }:{})
             };
             records.push(record);
-            console.log('[MotoriClip 6G] PASS '+cfg.name+' '+JSON.stringify(record));
+            console.log('[MotoriClip '+phase+'] PASS '+cfg.name+' '+JSON.stringify(record));
         }finally{
             clearInterval(timer);
         }
     }
     assert.deepEqual(errors,[],'Browser uncaught errors');
-    console.log('[MotoriClip 6G] PASS completed long moving-video exports and native PSS samples '+JSON.stringify(records));
+    console.log('[MotoriClip '+phase+'] PASS completed long moving-video exports and native PSS samples '+JSON.stringify(records));
 }finally{
     await browser.close();
     await new Promise(resolve=>server.close(resolve));
