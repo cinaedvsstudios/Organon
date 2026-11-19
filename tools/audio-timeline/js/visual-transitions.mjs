@@ -28,14 +28,14 @@ function curved(progress,curve) {
     const p=clamp(progress,0,1);
     return curve==='smooth'?p*p*(3-2*p):p;
 }
-export function visualFadeOpacity(track,timelineTime) {
+export function visualFadeOpacity(track,timelineTime,{ignoreEnter=false}={}) {
     if(track?.type!=='video')return 1;
     const total=Math.max(0,Number(track.clipDuration)||0);
     if(!total)return 1;
     const elapsed=clamp(Number(timelineTime)-(Number(track.start)||0),0,total);
     const enter=fadeDuration(track,'enter'),exit=fadeDuration(track,'exit');
     let alpha=1;
-    if(enter>0)alpha=Math.min(alpha,curved(elapsed/enter,track.visualTransitions?.enter?.curve));
+    if(!ignoreEnter&&enter>0)alpha=Math.min(alpha,curved(elapsed/enter,track.visualTransitions?.enter?.curve));
     if(exit>0)alpha=Math.min(alpha,curved((total-elapsed)/exit,track.visualTransitions?.exit?.curve));
     return alpha;
 }
