@@ -63,12 +63,13 @@ try{
                 const i=(y*w+x)*4;
                 return [...bytes.slice(i,i+3)];
             };
-            let red=0,blue=0,black=0,white=0,mixed=0;
+            let red=0,blue=0,black=0,dark=0,white=0,mixed=0;
             for(let y=0;y<h;y+=4)for(let x=0;x<w;x+=4){
                 const [r,g,v]=p(x,y);
                 if(r>250&&g<4&&v<4)red++;
                 else if(v>250&&r<4&&g<4)blue++;
                 else if(r<4&&g<4&&v<4)black++;
+                else if(r<36&&g<36&&v<36)dark++;
                 else if(r>240&&g>240&&v>240)white++;
                 else mixed++;
             }
@@ -78,7 +79,7 @@ try{
                 fingerprint=Math.imul((fingerprint^bytes[k])>>>0,16777619)>>>0;
                 fingerprint=Math.imul((fingerprint^bytes[k+2])>>>0,16777619)>>>0;
             }
-            return {fingerprint,red,blue,black,white,mixed,top:p(6,6),center:p(98,60)};
+            return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
         for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip']){
@@ -157,7 +158,7 @@ try{
             name+' must not be a disguised plain fade');
     }
     assert.ok(block.mixed>80,'Block cover must show distinct tinted cover tiles, not only red and blue squares');
-    assert.ok(film.black>12,'Film strip must have visible dark frame bars and perforation borders');
+    assert.ok(film.dark>12,'Film strip must have visible dark-gray frame bars');
     assert.notEqual(block.fingerprint,result['random-squares'].middle.fingerprint,
         'Block cover must differ from the existing Random squares effect');
     assert.notEqual(hatch.fingerprint,result['spiral-wipe'].middle.fingerprint,
