@@ -98,7 +98,7 @@ try {
         &&file.generated?.presetId==='film-grain'));
     assert.ok(!json.includes('data:image'),'Portable JSON cannot embed base64 pictures');
     assert.ok(!json.includes('blob:http'),'Portable JSON cannot embed object URLs');
-    assert.ok(json.length<20000,'Portable metadata backup should stay compact');
+    assert.ok(json.length<250000,'Portable backup must stay compact even with history snapshots');
     console.log('[MotoriClip portable] PASS Save Project downloads compact JSON with all three clips and generated recipes');
 
     page.once('dialog',dialog=>dialog.accept());
