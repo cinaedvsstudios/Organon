@@ -24,13 +24,13 @@ const paint=(preset,t,settings={})=>{
  return JSON.stringify(ctx.log);
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
- assert.equal(TIMELINE_EFFECTS.length,6);
+ assert.equal(TIMELINE_EFFECTS.length,10);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,6);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
 });
 test('effect recipe clamps unsafe inputs and normalises colour',()=>{
  const e=normaliseTimelineEffect({presetId:'unknown',intensity:900,speed:0,density:1e8,scale:-3,direction:900,color:'url(javascript:1)'});
- assert.deepEqual(e,{presetId:'light-sweep',intensity:100,speed:.1,density:120,scale:10,direction:180,color:'#ffd98d'});
+ assert.deepEqual(e,{presetId:'light-sweep',intensity:100,speed:.1,density:120,scale:10,direction:180,originX:20,originY:12,color:'#ffd98d'});
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
@@ -58,6 +58,26 @@ test('effect parameters survive snapshots and undo/redo apply',()=>{
  assert.deepEqual(target.effectOverlay,saved.effectOverlay);
  applyClipData(target,{...saved,effectOverlay:null});
  assert.equal(target.effectOverlay,null);
+});
+test('phase 3B lighting and scanning effects use distinct pixel operations and reversible time',()=>{
+ const newIds=['god-rays','light-leaks','pixel-scan','sci-fi-scan'];
+ for(const id of newIds){
+  assert.notEqual(paint(id,.3),paint(id,1.4),id+' is time-driven');
+  assert.equal(paint(id,.3),paint(id,.3),id+' restores the same pixels after seeking');
+ }
+ assert.notEqual(paint('god-rays',.75),paint('light-leaks',.75));
+ assert.notEqual(paint('pixel-scan',.75),paint('sci-fi-scan',.75));
+});
+test('God Rays origin is validated, editable and serialized',()=>{
+ const ray=normaliseTimelineEffect({presetId:'god-rays',originX:83,originY:16});
+ assert.equal(ray.originX,83);assert.equal(ray.originY,16);
+ assert.notEqual(paint('god-rays',.8,{originX:10,originY:20}),paint('god-rays',.8,{originX:60,originY:65}));
+ const record=snapshotClip({id:'ray',type:'sticker',effectOverlay:ray});
+ assert.equal(record.effectOverlay.originX,83);
+ const target={id:'ray',type:'sticker'};applyClipData(target,record);
+ assert.deepEqual(target.effectOverlay,ray);
+ const bounded=normaliseTimelineEffect({presetId:'god-rays',originX:-500,originY:1e5});
+ assert.equal(bounded.originX,0);assert.equal(bounded.originY,100);
 });
 test('fixed frame-local time does not rely on wall clock or frame iteration order',()=>{
  const settings={presetId:'light-sweep',speed:1.25};
