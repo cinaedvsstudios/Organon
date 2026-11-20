@@ -324,7 +324,7 @@ function textValue(config,frame) {
  return config.animation==='typewriter'
    ?Array.from(value).slice(0,frame.visibleCharacters).join(''):value;
 }
-function decorate(ctx,layout,fill,outline,frame) {
+function decorate(ctx,layout,fill,outline,frame,config) {
  switch(layout){
   case 'neon':{
    ctx.strokeStyle=outline;ctx.lineWidth=3;ctx.shadowColor=fill;ctx.shadowBlur=18;
@@ -335,15 +335,24 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.beginPath();ctx.moveTo(86,118);ctx.lineTo(554,118);ctx.moveTo(86,244);ctx.lineTo(554,244);ctx.stroke();break;
   }
   case 'news':{
-   const bannerWidth=frame.boxReveal?Math.round(588*clamp(frame.raw/.46,0,1)):588;
-   if(bannerWidth>0){
-    ctx.fillStyle='#17283e';roundRect(ctx,26,245,bannerWidth,100,7);ctx.fill();
-    ctx.fillStyle=outline;ctx.fillRect(26,245,bannerWidth,8);
+   const width=640*config.bannerWidth/100,x=(640-width)/2;
+   const height=config.bannerHeight,y=345-height;
+   const progress=frame.boxReveal?clamp(frame.raw/.46,0,1):1;
+   const activeWidth=width*progress;
+   if(activeWidth>0){
+    ctx.save();ctx.globalAlpha*=config.backdropEnabled?config.backdropOpacity/100:1;
+    ctx.fillStyle=config.backdropEnabled?config.backdropColor:'#17283e';
+    roundRect(ctx,x,y,activeWidth,height,config.shapeRadius);ctx.fill();ctx.restore();
+    ctx.fillStyle=outline;ctx.fillRect(x,y,activeWidth,8);
+    if(config.shapeBorderWidth>0){
+     ctx.strokeStyle=config.shapeBorderColor;ctx.lineWidth=config.shapeBorderWidth;
+     roundRect(ctx,x,y,activeWidth,height,config.shapeRadius);ctx.stroke();
+    }
    }
    ctx.save();
    ctx.globalAlpha*=frame.boxReveal?clamp((frame.raw-.23)/.22,0,1):1;
    ctx.fillStyle='#f0eee7';ctx.font='700 18px '+fonts.mono;ctx.textAlign='left';
-   ctx.fillText('BREAKING NEWS',55,274);
+   ctx.fillText('BREAKING NEWS',x+20+config.shapePadding,y+29);
    ctx.restore();break;
   }
   case 'location':{
@@ -437,6 +446,21 @@ function decorate(ctx,layout,fill,outline,frame) {
   }
  }
 }
+/** Optional shape controlled entirely by the selected clip's Inspector. */
+function drawTitleBackdrop(ctx,config,layout){
+ if(!config.backdropEnabled||layout==='news')return;
+ const width=Math.min(640,640*config.bannerWidth/100+config.shapePadding*2);
+ const height=Math.min(360,config.bannerHeight+config.shapePadding*2);
+ const cy=layout==='location'?273:180;
+ const x=(640-width)/2,y=Math.max(0,Math.min(360-height,cy-height/2));
+ ctx.save();ctx.globalAlpha*=config.backdropOpacity/100;
+ ctx.fillStyle=config.backdropColor;
+ roundRect(ctx,x,y,width,height,config.shapeRadius);ctx.fill();ctx.restore();
+ if(config.shapeBorderWidth>0){
+  ctx.strokeStyle=config.shapeBorderColor;ctx.lineWidth=config.shapeBorderWidth;
+  roundRect(ctx,x,y,width,height,config.shapeRadius);ctx.stroke();
+ }
+}
 export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDuration=3) {
  const config=normaliseTextOverlay(input);
  const design=getTextDesign(config.presetId)||TEXT_DESIGNS[0];
@@ -447,7 +471,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
  ctx.save();
  try {
   ctx.scale(scaleX,scaleY);
-   ctx.globalAlpha*=frame.alpha;
+   ctx.globalAlpha*=frame.alpha*config.textOpacity/100;
    if(config.animation==='title-wipe'){
     const across=['left','right'].includes(config.animationDirection);
     const length=across?640:360;
@@ -472,7 +496,8 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.beginPath();ctx.rect(0,0,640,360);ctx.clip();
     ctx.translate(frame.tickerX,0);
    }
-   decorate(ctx,layout,config.fill,config.outline,frame);
+   drawTitleBackdrop(ctx,config,layout);
+   decorate(ctx,layout,config.fill,config.outline,frame,config);
    const factor=config.fontSize/100;
    const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
      shadow:config.shadow,shadowBlur:config.shadowBlur};
