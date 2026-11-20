@@ -64,6 +64,10 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/visual-transitions.browser.mjs
+      - name: Validate SpiralBlockWipe original GLSL against independent WebGL pixel oracle
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/spiralblockwipe.browser.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
