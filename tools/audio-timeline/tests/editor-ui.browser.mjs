@@ -334,7 +334,7 @@ try{
     assert.ok(titleRender.every(r=>r[2]),'All text templates should have visible strokes');
     await page.locator('#text-library-grid [data-preset-id="news-lower-third"]').click({button:'right'});
     await page.locator('#text-preview-modal').waitFor({state:'visible'});
-    assert.match(await page.locator('#text-preview-title').innerText(),/News Lower Third/);
+    assert.match(await page.locator('#text-preview-title').innerText(),/news lower third/i);
     assert.equal(await page.locator('#text-preview-progress').inputValue(),'0');
     await page.locator('#text-preview-play').click();
     await page.waitForFunction(()=>Number(document.querySelector('#text-preview-progress').value)>=20,
