@@ -500,14 +500,38 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
    decorate(ctx,layout,config.fill,config.outline,frame,config);
    const factor=config.fontSize/100;
    const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
-     shadow:config.shadow,shadowBlur:config.shadowBlur};
-
-   const write=(text,x,y,details={})=>{
-    const {revealAlpha,...style}=details;
+     shadow:config.shadow,shadowBlur:config.shadowBlur,
+     shadowX:config.shadowOffsetX,shadowY:config.shadowOffsetY,
+     glowColor:config.glowColor,glowStrength:config.glowStrength,
+     letterSpacing:config.letterSpacing,lineSpacing:config.lineSpacing};
+   const applyCase=text=>{
+    const value=String(text);
+    if(config.textCase==='uppercase')return value.toUpperCase();
+    if(config.textCase==='lowercase')return value.toLowerCase();
+    if(config.textCase==='title')return value.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    return value;
+   };
+   const write=(rawText,x,y,details={})=>{
+    const {revealAlpha,templateUppercase,...style}=details;
+    const text=config.textCase==='template'&&templateUppercase
+      ?String(rawText).toUpperCase():applyCase(rawText);
     const opts={...base,...style};
+    if(config.fontFamily!=='template')opts.font=config.fontFamily;
+    if(config.fontWeight!==0)opts.weight=config.fontWeight;
+    if(config.fontStyle!=='template')opts.italic=config.fontStyle==='italic';
+    if(config.textAlign!=='template'){
+     const align=config.textAlign;opts.align=align;
+     if(['chrome','comic','stamp'].includes(layout))
+      x=align==='left'?-230:align==='right'?230:0;
+     else{
+      const left=layout==='news'?(640-640*config.bannerWidth/100)/2+20+config.shapePadding
+        :layout==='location'?176:layout==='quote'?115:72;
+      const right=layout==='location'?560:layout==='quote'?525:568;
+      x=align==='left'?left:align==='right'?right:(left+right)/2;
+     }
+    }
     if(config.animation==='outline-fill')opts.fillAlpha=frame.progress;
-    ctx.save();
-    ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
+    ctx.save();ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
     if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80)
       drawGlyphs(ctx,text,x,y,opts,frame,config.animation);
     else drawTitle(ctx,text,x,y,opts);
@@ -535,14 +559,20 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
       241-13*(config.animation==='handwriting-reveal'?frame.progress:1));
     ctx.stroke();break;
    case 'cinematic':
-    write(value.toUpperCase(),320,183,{font:'serif',weight:500,size:59*factor,outlineWidth:0});
+    write(value,320,183,{templateUppercase:true,font:'serif',weight:500,size:59*factor,outlineWidth:0});
     break;
-   case 'news':
-    write(value.toUpperCase(),55,305,{size:38*factor,align:'left',maxWidth:522,
-      outlineWidth:0,revealAlpha:frame.headlineAlpha});
-    if(config.subtitle.trim())write(config.subtitle,55,333,{size:17*factor,align:'left',
-      maxWidth:530,outlineWidth:0,weight:500,font:'mono',revealAlpha:frame.subtitleAlpha});
+   case 'news':{
+    const width=640*config.bannerWidth/100;
+    const x=(640-width)/2+20+config.shapePadding;
+    const available=width-40-config.shapePadding*2;
+    const y=345-config.bannerHeight;
+    write(value,x,y+60,{templateUppercase:true,size:38*factor,align:'left',
+      maxWidth:available,outlineWidth:0,revealAlpha:frame.headlineAlpha});
+    if(config.subtitle.trim())write(config.subtitle,x,y+88,{size:17*factor,align:'left',
+      maxWidth:available,outlineWidth:0,weight:500,font:'mono',
+      revealAlpha:frame.subtitleAlpha});
     break;
+   }
    case 'location':
     ctx.save();ctx.beginPath();ctx.rect(176,238,395*frame.locationLabelProgress,78);ctx.clip();
     write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});
@@ -551,15 +581,15 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     write(value,319,181,{font:'serif',weight:500,italic:true,size:51*factor,outlineWidth:0,maxWidth:410});break;
    case 'comic':
     ctx.save();ctx.translate(320,173);ctx.rotate(-.045);
-    write(value.toUpperCase(),0,0,{size:70*factor,outlineWidth:6,shadowBlur:1,maxWidth:458});ctx.restore();break;
+    write(value,0,0,{templateUppercase:true,size:70*factor,outlineWidth:6,shadowBlur:1,maxWidth:458});ctx.restore();break;
    case 'social':
-    write(value.toUpperCase(),320,179,{size:52*factor,outlineWidth:0,maxWidth:284});break;
+    write(value,320,179,{templateUppercase:true,size:52*factor,outlineWidth:0,maxWidth:284});break;
    case 'chapter':
-    write(value.toUpperCase(),320,188,{font:'serif',size:53*factor,weight:600,outlineWidth:0});break;
+    write(value,320,188,{templateUppercase:true,font:'serif',size:53*factor,weight:600,outlineWidth:0});break;
    case 'hud':
-    write(value.toUpperCase(),320,184,{font:'mono',size:52*factor,weight:600,maxWidth:500});break;
+    write(value,320,184,{templateUppercase:true,font:'mono',size:52*factor,weight:600,maxWidth:500});break;
    case 'event':
-    write(value.toUpperCase(),300,181,{size:66*factor,weight:900,outlineWidth:2,maxWidth:495});break;
+    write(value,300,181,{templateUppercase:true,size:66*factor,weight:900,outlineWidth:2,maxWidth:495});break;
    case 'speech':
     write(value,320,178,{size:51*factor,weight:700,outlineWidth:0,maxWidth:452});break;
    case 'typewriter':
@@ -569,7 +599,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     }break;
    case 'stamp':
     ctx.save();ctx.translate(320,182);ctx.rotate(-.08);
-    write(value.toUpperCase(),0,0,{size:66*factor,weight:900,outlineWidth:0,maxWidth:436});ctx.restore();break;
+    write(value,0,0,{templateUppercase:true,size:66*factor,weight:900,outlineWidth:0,maxWidth:436});ctx.restore();break;
    case 'countdown':{
     const isNumber=/^\d+$/.test(value.trim());
     const initial=isNumber?Math.min(99,Math.max(1,Number(value.trim()))):3;
@@ -582,7 +612,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     write(String(number),320,166-roll*113,digitStyle);
     if(roll>0&&number>0)write(String(number-1),320,279-roll*113,digitStyle);
     ctx.restore();
-    if(!isNumber)write(value.toUpperCase(),320,313,{font:'mono',size:21*factor,weight:700,
+    if(!isNumber)write(value,320,313,{templateUppercase:true,font:'mono',size:21*factor,weight:700,
       outlineWidth:0,maxWidth:520});
     break;
    }
@@ -594,19 +624,19 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
       value.slice(Math.ceil(value.length/2));
     const offset=300*Math.pow(1-frame.splitProgress,2)*frame.intensity;
     ctx.save();ctx.translate(-offset,0);
-    write(first.toUpperCase(),320,132,{size:62*factor,weight:900,maxWidth:460});
+    write(first,320,132,{templateUppercase:true,size:62*factor,weight:900,maxWidth:460});
     ctx.restore();
     ctx.save();ctx.translate(offset,0);
-    write((second||'TITLE').toUpperCase(),320,224,{size:66*factor,weight:900,maxWidth:470});
+    write((second||'TITLE'),320,224,{templateUppercase:true,size:66*factor,weight:900,maxWidth:470});
     ctx.restore();break;
    }
    case 'stacked':{
     const words=value.split(/\s+/).filter(Boolean);
     const midpoint=Math.ceil(words.length/2);
-    const top=words.slice(0,midpoint).join(' ').toUpperCase();
-    const bottom=(words.slice(midpoint).join(' ')||'TITLE').toUpperCase();
-    write(top,326,138,{size:56*factor,weight:900,maxWidth:482,outlineWidth:0});
-    write(bottom,326,213,{size:73*factor,weight:900,maxWidth:480,outlineWidth:0});break;
+    const top=words.slice(0,midpoint).join(' ');
+    const bottom=(words.slice(midpoint).join(' ')||'TITLE');
+    write(top,326,138,{templateUppercase:true,size:56*factor,weight:900,maxWidth:482,outlineWidth:0});
+    write(bottom,326,213,{templateUppercase:true,size:73*factor,weight:900,maxWidth:480,outlineWidth:0});break;
    }
   }
  }finally{ctx.restore();}
