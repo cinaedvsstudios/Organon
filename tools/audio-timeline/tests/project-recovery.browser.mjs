@@ -112,6 +112,33 @@ try{
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
     console.log('[MotoriClip project recovery] PASS keyframes, edits, settings and media restored from IndexedDB handle');
 
+    // Draft project dimensions may be visible in the dialog before the
+    // user commits them. Closing/reloading must preserve the actual rendered
+    // canvas size rather than mistakenly turning these draft values into
+    // project settings during beforeunload autosave.
+    await page.evaluate(()=>{
+        const width=document.querySelector('#canvas-width');
+        const height=document.querySelector('#canvas-height');
+        width.value='1920';
+        height.value='1080';
+        // No change event: these values have NOT been applied to the canvas.
+    });
+    assert.equal(await page.locator('#advanced-canvas').evaluate(canvas=>canvas.width),640);
+    assert.equal(await page.locator('#advanced-canvas').evaluate(canvas=>canvas.height),360);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.timeline-clip.background:not(.needs-relink)').waitFor({timeout:20000});
+    assert.equal(await page.locator('#canvas-width').inputValue(),'640',
+        'Browser recovery must discard uncommitted canvas-width draft');
+    assert.equal(await page.locator('#canvas-height').inputValue(),'360',
+        'Browser recovery must discard uncommitted canvas-height draft');
+    const recoveredDraft=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),storageKey);
+    assert.equal(recoveredDraft.settings.canvasWidth,640);
+    assert.equal(recoveredDraft.settings.canvasHeight,360);
+    assert.equal(recoveredDraft.settings.fps,25);
+    assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId);
+    console.log('[MotoriClip project recovery] PASS refresh discards uncommitted canvas changes and keeps saved edits');
+
+
     // A remembered handle may still point to the same filename after the
     // underlying file is overwritten. Never attach changed-size content to
     // the saved edits as though it were the original source.
