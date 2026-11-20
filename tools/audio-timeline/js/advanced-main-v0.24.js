@@ -1118,13 +1118,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
     }
     function registerGeneratedOverlay(preset) {
-        const file=createOverlayFile(preset,elements.textOverlayValue.value);
+        const textValue=elements.textOverlayValue.value.trim()||'YOUR TEXT';
+        const file=createOverlayFile(preset,textValue);
         const entry={id:`file-${Date.now()}-${++state.serial}`,file,name:file.name,
             kind:'sticker',size:file.size,lastModified:file.lastModified,
             generated:{
                 group:preset.group,
                 presetId:preset.id,
-                value:preset.group==='text'?elements.textOverlayValue.value.slice(0,100):''
+                value:preset.group==='text'?textValue.slice(0,100):''
             }};
         state.files.push(entry);
         state.sourceFiles.set(entry.id,file);
@@ -1147,7 +1148,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
         const canvas=document.createElement('canvas');
         canvas.width=288;canvas.height=162;
-        renderOverlayPreset(canvas,preset,elements.textOverlayValue.value);
+        renderOverlayPreset(canvas,preset,elements.textOverlayValue.value.trim()||'MotoriClip');
         const label=document.createElement('span');label.textContent=preset.label;
         button.append(canvas,label);
         let wasDragged=false;
@@ -1271,7 +1272,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             for(const button of elements.textLibraryGrid.querySelectorAll('.asset-preset-card')){
                 const preset=TEXT_PRESETS.find(item=>item.id===button.dataset.presetId);
                 const canvas=button.querySelector('canvas');
-                if(preset&&canvas)renderOverlayPreset(canvas,preset,elements.textOverlayValue.value);
+                if(preset&&canvas)renderOverlayPreset(canvas,preset,elements.textOverlayValue.value.trim()||'MotoriClip');
             }
         });
         renderLibraryPresets();
