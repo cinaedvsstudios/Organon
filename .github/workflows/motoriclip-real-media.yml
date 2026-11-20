@@ -118,6 +118,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/real-export.browser.mjs
+      - name: Compare real encoded MP4 animated effect frames with live preview pixels and reverse seek
+        timeout-minutes: 8
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/animated-overlay-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
