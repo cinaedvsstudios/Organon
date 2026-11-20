@@ -353,7 +353,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),12);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),18,
+        'Keep twelve classic overlays plus six independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -667,6 +668,33 @@ try{
     assert.ok(await page.locator('#btn-advanced-mode').isVisible());
     await page.locator('#btn-advanced-mode').click();
     await page.waitForURL(/advanced\.html/,{timeout:15000});
+    // Phase 3A: preview an actual time-based effect, select its category,
+    // insert a procedural clip and edit its saved recipe in the Inspector.
+    await page.locator('[data-library-tab="effects"]').click();
+    await page.locator('#effect-category').selectOption('Light');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2);
+    await page.locator('[data-preset-id="light-sweep"]').click({button:'right'});
+    assert.ok(await page.locator('#text-preview-modal').isVisible());
+    const sampleEffect=async(t)=>page.evaluate(time=>{
+        const slider=document.getElementById('text-preview-progress');
+        slider.value=String(time);
+        slider.dispatchEvent(new Event('input',{bubbles:true}));
+        return document.getElementById('text-preview-canvas').toDataURL();
+    },t);
+    const lightStart=await sampleEffect(10);
+    const lightLater=await sampleEffect(180);
+    assert.notEqual(lightStart,lightLater,'An effect preview must change with the timestamp');
+    assert.equal(lightStart,await sampleEffect(10),'Reverse seek must restore the same pixels');
+    await page.locator('#text-preview-close').click();
+    await page.locator('#effect-category').selectOption('Particles/Fire');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3);
+    await page.locator('[data-preset-id="particle-sparks"]').click();
+    await page.locator('#inspector-timeline-effect').waitFor({state:'visible',timeout:15000});
+    await page.locator('#effect-intensity').evaluate(input=>{
+        input.value='32';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#effect-intensity').inputValue(),'32');
+    await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
 

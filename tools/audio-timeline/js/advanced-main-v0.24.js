@@ -16,6 +16,7 @@ import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { TIMELINE_EFFECTS, normaliseTimelineEffect, paintTimelineEffect } from './timeline-effects.mjs';
 import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
@@ -60,7 +61,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnRelink: document.getElementById('btn-relink'), mediaRememberNote: document.getElementById('media-remember-note'), btnBasicMode: document.getElementById('btn-basic-mode'),
         libraryTabs: [...document.querySelectorAll('[data-library-tab]')],
         effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
-        effectsLibraryGrid: document.getElementById('effects-library-grid'), textLibraryGrid: document.getElementById('text-library-grid'),
+        effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
+        effectInspector:document.getElementById('inspector-timeline-effect'),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','color'].map(name=>[name,document.getElementById('effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -674,7 +677,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         return data;
     }
     function recreateGeneratedProjectOverlays(files=state.files) {
-        const presets=[...TEXT_PRESETS,...LEGACY_TEXT_PRESETS,...EFFECT_OVERLAYS];
+        const presets=[...TEXT_PRESETS,...LEGACY_TEXT_PRESETS,...EFFECT_OVERLAYS,...TIMELINE_EFFECTS];
         let regenerated=0;
         for(const entry of files){
             if(entry.file||!entry.generated)continue;
@@ -1170,12 +1173,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function buildLibraryPresetCard(preset) {
         const button=document.createElement('button');
         button.type='button';button.className='asset-preset-card';
-        if(preset.group==='text'&&preset.animation!=='none')button.classList.add('is-animated');
+        if((preset.group==='text'&&preset.animation!=='none')||preset.animated)button.classList.add('is-animated');
         button.draggable=true;
         button.title=`${preset.label}: drag to timeline or click to add at playhead`;
         button.dataset.presetId=preset.id;
-        if(preset.group==='text'){
-            button.title=`${preset.label}: right-click for animated preview, click or drag to insert. Text and colours are editable in Inspector.`;
+        if(preset.group==='text'||preset.animated){
+            button.title=preset.animated
+                ? `${preset.label}: right-click for animated preview, click or drag to insert; adjust intensity, speed and appearance in Inspector.`
+                : `${preset.label}: right-click for animated preview, click or drag to insert. Text and colours are editable in Inspector.`;
             button.addEventListener('contextmenu',event=>{
                 event.preventDefault();event.stopPropagation();
                 openTextPresetPreview(preset);
@@ -1183,7 +1188,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
         const canvas=document.createElement('canvas');
         canvas.width=288;canvas.height=162;
-        renderOverlayPreset(canvas,preset,elements.textOverlayValue.value.trim()||'MotoriClip');
+        if(preset.animated)paintTimelineEffect(canvas.getContext('2d'),canvas.width,canvas.height,{presetId:preset.id},1,3);
+        else renderOverlayPreset(canvas,preset,elements.textOverlayValue.value.trim()||'MotoriClip');
         const label=document.createElement('span');label.textContent=preset.label;
         button.append(canvas,label);
         let wasDragged=false;
@@ -1227,7 +1233,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         ctx.strokeStyle='rgba(117,178,222,.08)';
         for(let x=0;x<640;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,360);ctx.stroke();}
         const input=elements.textOverlayValue.value.trim()||'MotoriClip';
-        paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input,
+        if(textPreviewPreset.animated)
+            paintTimelineEffect(ctx,640,360,{presetId:textPreviewPreset.id},textPreviewTime,3);
+        else paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input,
             phasedAnimation:true},textPreviewTime,3);
         elements.textPreviewProgress.value=String(Math.round(textPreviewTime*100));
     }
@@ -1321,11 +1329,33 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         });
     }
 
+    function filterEffectCards(){
+        const category=elements.effectCategory?.value||'all';
+        for(const card of elements.effectsLibraryGrid.children)
+            card.hidden=category!=='all'&&card.dataset.effectCategory!==category;
+    }
+    for(const [name,input] of Object.entries(elements.effectInspectorInputs)){
+        input.addEventListener('focus',()=>{
+            if(getTrack()?.effectOverlay)recordHistory('Edit timeline effect '+name);
+        });
+        input.addEventListener('input',()=>{
+            const track=getTrack();
+            if(!track?.effectOverlay||state.selectedTrackIds.size!==1)return;
+            track.effectOverlay=normaliseTimelineEffect({...track.effectOverlay,[name]:input.value});
+            engine.renderFrame();
+        });
+    }
     function renderLibraryPresets() {
-        elements.effectsLibraryGrid.replaceChildren(...EFFECT_OVERLAYS.map(buildLibraryPresetCard));
+        elements.effectsLibraryGrid.replaceChildren(...[...EFFECT_OVERLAYS,...TIMELINE_EFFECTS].map(buildLibraryPresetCard));
+        for(const card of elements.effectsLibraryGrid.children){
+            const effect=[...EFFECT_OVERLAYS,...TIMELINE_EFFECTS].find(item=>item.id===card.dataset.presetId);
+            card.dataset.effectCategory=effect?.category||'Classic';
+        }
+        filterEffectCards();
         elements.textLibraryGrid.replaceChildren(...TEXT_PRESETS.map(buildLibraryPresetCard));
     }
     function initAssetLibrary() {
+        elements.effectCategory?.addEventListener('change',filterEffectCards);
         for(const button of elements.libraryTabs){
             button.addEventListener('click',()=>setLibraryView(button.dataset.libraryTab));
         }
@@ -1508,6 +1538,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.inspectorAudio.hidden = multiple || track?.type !== 'audio';
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         elements.textInspector.hidden=multiple||!track?.textOverlay;
+        elements.effectInspector.hidden=multiple||!track?.effectOverlay;
+        if(!multiple&&track?.effectOverlay){
+            const effect=normaliseTimelineEffect(track.effectOverlay);
+            for(const [name,input] of Object.entries(elements.effectInspectorInputs))input.value=String(effect[name]);
+        }
         if(!multiple&&track?.textOverlay){
             const config=normaliseTextOverlay(track.textOverlay);
             const design=TEXT_PRESETS.find(item=>item.id===config.presetId);
@@ -1641,6 +1676,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     presetId:entry.generated.presetId,value:entry.generated.value||'MotoriClip',
                     phasedAnimation:true
                 });
+            }
+            if(entry.generated?.group==='effect' && TIMELINE_EFFECTS.some(p=>p.id===entry.generated.presetId)
+                && !track.effectOverlay){
+                track.effectOverlay=normaliseTimelineEffect({presetId:entry.generated.presetId});
             }
             if (!state.tracks.includes(track)) {
                 engine.detachTrack(track, false);
@@ -1910,6 +1949,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             keyframes:keyframeParts.right,speed:track.speed||1,
             visualTransitions: transitionParts.right,
             transparency: { ...track.transparency },
+            // Splitting must not silently turn a generated text/effect recipe into its PNG fallback.
+            textOverlay: track.textOverlay?normaliseTextOverlay(track.textOverlay):null,
+            effectOverlay: track.effectOverlay?normaliseTimelineEffect(track.effectOverlay):null,
             groupId: track.groupId,
             extractedFrom: track.extractedFrom,
             analysis: track.analysis,
