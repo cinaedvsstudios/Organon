@@ -186,7 +186,7 @@ export function paintSpiralBlockWipe(renderer,context,toTrack,width,height,time,
         const c=sourceCanvases[i].getContext('2d');
         c.save();c.setTransform(1,0,0,1,0,0);c.globalAlpha=1;c.filter='none';
         c.clearRect(0,0,width,height);
-        c.globalAlpha=Math.min(1,Math.max(0,Number(track.opacity??1)))
+        c.globalAlpha=(track.visible===false?0:Math.min(1,Math.max(0,Number(track.opacity??1))))
             *visualFadeOpacity(track,time,{ignoreEnter:i===1});
         applyVisualContext(c,track,time,width,height);
         if(track.type==='background'){
