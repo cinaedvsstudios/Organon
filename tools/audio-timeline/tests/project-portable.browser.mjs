@@ -255,6 +255,7 @@ try {
         document.querySelector('#btn-apply-canvas').click();
     },updatedWidth);
     assert.equal(await page.locator('#canvas-width').inputValue(),updatedWidth);
+    await page.locator('#project-settings-modal [data-close-modal]').click();
     await page.locator('#btn-undo').click();
     await page.waitForFunction(width=>
         document.querySelector('#canvas-width').value===width
@@ -266,16 +267,17 @@ try {
         &&document.querySelector('#advanced-canvas').width===Number(width),
         updatedWidth,{timeout:15000});
 
+    await page.locator('#btn-project-settings').click();
     const originalFps=await page.locator('#project-fps').inputValue();
     const updatedFps=originalFps==='25'?'30':'25';
     await page.locator('#project-fps').selectOption(updatedFps);
+    await page.locator('#project-settings-modal [data-close-modal]').click();
     await page.locator('#btn-undo').click();
     await page.waitForFunction(fps=>document.querySelector('#project-fps').value===fps,
         originalFps,{timeout:15000});
     await page.locator('#btn-redo').click();
     await page.waitForFunction(fps=>document.querySelector('#project-fps').value===fps,
         updatedFps,{timeout:15000});
-    await page.locator('#project-settings-modal [data-close-modal]').click();
     console.log('[MotoriClip portable] PASS marker, canvas resolution and FPS are undoable/redoable');
 
     // A private-window or full localStorage quota must be surfaced to the
