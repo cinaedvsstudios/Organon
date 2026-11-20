@@ -44,7 +44,7 @@ test('controls change rendered operations without changing old recipes',()=>{
  assert.notEqual(orig,paint('particle-dust',.8,{intensity:25,density:18}));
  assert.notEqual(paint('light-sweep',.8,{direction:0}),paint('light-sweep',.8,{direction:60}));
  assert.notEqual(paint('hazy-atmosphere',.8,{speed:1}),paint('hazy-atmosphere',.8,{speed:2}));
- assert.equal(paint('rhythmic-flicker',.8,{intensity:0}),JSON.stringify([['save'],['restore']]));
+ assert.equal(paint('rhythmic-flicker',.8,{intensity:0}),'[]');
 });
 test('effect parameters survive snapshots and undo/redo apply',()=>{
  const settings={presetId:'particle-debris',intensity:48,speed:1.7,density:93,scale:120,direction:-35,color:'#caffee'};
