@@ -226,7 +226,8 @@ try{
     await page.locator('.timeline-clip.background:not(.needs-relink)').waitFor({timeout:20000});
     assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId,
         'Undo Clear after reload must restore the original clip ID');
-    assert.equal(await page.locator('#file-count').innerText(),'1 media');
+    assert.match(await page.locator('#file-count').innerText(),/^1\s+media$/i,
+        'Undo Clear should restore exactly one media-bin entry');
     await page.locator('#btn-redo').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0,
         null,{timeout:15000});
