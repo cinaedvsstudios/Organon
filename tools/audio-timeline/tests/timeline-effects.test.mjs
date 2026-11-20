@@ -27,6 +27,10 @@ test('phase 3 effect catalog has distinct identities and categories',()=>{
  assert.equal(TIMELINE_EFFECTS.length,17);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
+ assert.deepEqual(
+  new Set(TIMELINE_EFFECTS.map(x=>x.category)),
+  new Set(['Motion','Light','Distortion','Glitch','Atmospheric','Scanning','Particles/Fire']),
+  'the category filter must not expose empty phase-3 groups');
 });
 test('effect recipe clamps unsafe inputs and normalises colour',()=>{
  const e=normaliseTimelineEffect({presetId:'unknown',intensity:900,speed:0,density:1e8,scale:-3,direction:900,color:'url(javascript:1)'});
