@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {TIMELINE_EFFECTS,normaliseTimelineEffect,effectFrameSignature,paintTimelineEffect} from '../js/timeline-effects.mjs';
+import {TIMELINE_EFFECTS,normaliseTimelineEffect,effectFrameSignature,paintTimelineEffect,requiresCompositeSource,paintEffectPreviewScene} from '../js/timeline-effects.mjs';
 import {snapshotClip,applyClipData} from '../js/project-history.mjs';
 
 const makeCanvasRecorder=()=>{
@@ -24,13 +24,17 @@ const paint=(preset,t,settings={})=>{
  return JSON.stringify(ctx.log);
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
- assert.equal(TIMELINE_EFFECTS.length,10);
+ assert.equal(TIMELINE_EFFECTS.length,17);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
+ assert.deepEqual(
+  new Set(TIMELINE_EFFECTS.map(x=>x.category)),
+  new Set(['Motion','Light','Distortion','Glitch','Atmospheric','Scanning','Particles/Fire']),
+  'the category filter must not expose empty phase-3 groups');
 });
 test('effect recipe clamps unsafe inputs and normalises colour',()=>{
  const e=normaliseTimelineEffect({presetId:'unknown',intensity:900,speed:0,density:1e8,scale:-3,direction:900,color:'url(javascript:1)'});
- assert.deepEqual(e,{presetId:'light-sweep',intensity:100,speed:.1,density:120,scale:10,direction:180,originX:20,originY:12,color:'#ffd98d'});
+ assert.deepEqual(e,{presetId:'light-sweep',intensity:100,speed:.1,density:120,scale:10,direction:180,distortion:55,originX:20,originY:12,color:'#ffd98d'});
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
@@ -78,6 +82,81 @@ test('God Rays origin is validated, editable and serialized',()=>{
  assert.deepEqual(target.effectOverlay,ray);
  const bounded=normaliseTimelineEffect({presetId:'god-rays',originX:-500,originY:1e5});
  assert.equal(bounded.originX,0);assert.equal(bounded.originY,100);
+});
+
+test('default source effect origins match physical motion',()=>{
+ const pendulum=normaliseTimelineEffect({presetId:'pendulum-swing'});
+ const rebound=normaliseTimelineEffect({presetId:'rebound-swing'});
+ const shock=normaliseTimelineEffect({presetId:'shockwave'});
+ assert.deepEqual([pendulum.originX,pendulum.originY],[50,10]);
+ assert.deepEqual([rebound.originX,rebound.originY],[50,10]);
+ assert.deepEqual([shock.originX,shock.originY],[50,50]);
+ assert.deepEqual(
+  [normaliseTimelineEffect({presetId:'god-rays'}).originX,normaliseTimelineEffect({presetId:'god-rays'}).originY],
+  [20,12],'Old God Rays origin remains backwards compatible');
+});
+test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glitch effects',()=>{
+ const ids=['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
+     'ripple-distortion','electric-ripple','shockwave'];
+ const categories=new Map(TIMELINE_EFFECTS.map(e=>[e.id,e.category]));
+ assert.deepEqual(ids.map(id=>categories.get(id)),[
+     'Motion','Motion','Motion','Glitch','Distortion','Distortion','Distortion']);
+ for(const id of ids){
+  assert.equal(requiresCompositeSource(id),true);
+  const atStart=paint(id,.24),later=paint(id,1.4);
+  assert.notEqual(atStart,later,id+' must vary as seconds change');
+  assert.equal(atStart,paint(id,.24),id+' must reproduce pixels after reverse seek');
+ }
+ assert.equal(requiresCompositeSource('light-sweep'),false);
+ assert.notEqual(paint('pendulum-swing',.6),paint('rebound-swing',.6));
+ assert.notEqual(paint('ripple-distortion',.6),paint('electric-ripple',.6));
+ assert.notEqual(paint('electric-ripple',.6),paint('shockwave',.6));
+ assert.notEqual(paint('fault-cassette',.6),paint('vibration-flash',.6));
+});
+test('source-based warp samples real composited canvas and reuses bounded scratch',()=>{
+ const prior=globalThis.document;
+ const scratch=makeCanvasRecorder();
+ const mockCanvas={width:640,height:360,getContext:()=>scratch};
+ let allocated=0;
+ globalThis.document={createElement(type){
+  assert.equal(type,'canvas');allocated++;
+  return mockCanvas;
+ }};
+ try{
+  const ctx=makeCanvasRecorder();
+  ctx.canvas={width:640,height:360};
+  const effect={presetId:'ripple-distortion',intensity:100};
+  assert.equal(paintTimelineEffect(ctx,640,360,effect,.4,3),true);
+  assert.equal(paintTimelineEffect(ctx,640,360,effect,1.4,3),true);
+  assert.equal(allocated,1,'reuse one scratch canvas per output context');
+  assert.ok(scratch.log.some(event=>event[0]==='drawImage'&&event[1]===ctx.canvas),
+   'copy the actual composed video frame before warp');
+  assert.ok(ctx.log.filter(event=>event[0]==='drawImage').length>=36,
+   'reproject sampled video pixels in multiple wave bands');
+  const before=ctx.log.length;
+  paintTimelineEffect(ctx,640,360,{presetId:'shockwave',originX:60,originY:35},1.2,3);
+  assert.ok(ctx.log.slice(before).some(event=>event[0]==='clip'),
+   'shockwave must refract a clipped annulus instead of only drawing a circle');
+ }finally{
+  if(prior===undefined)delete globalThis.document;else globalThis.document=prior;
+ }
+});
+test('swing pivot, warp severity and preview scene are real editable parameters',()=>{
+ const normal=normaliseTimelineEffect({presetId:'pendulum-swing',distortion:150,originX:120,originY:-20});
+ assert.equal(normal.distortion,100);assert.equal(normal.originX,100);assert.equal(normal.originY,0);
+ assert.notEqual(paint('pendulum-swing',.8,{originX:20,originY:10}),
+   paint('pendulum-swing',.8,{originX:80,originY:80}));
+ assert.notEqual(paint('ripple-distortion',.8,{distortion:10}),
+   paint('ripple-distortion',.8,{distortion:90}));
+ const clip={id:'source-warp',type:'sticker',effectOverlay:{
+  presetId:'shockwave',intensity:85,distortion:70,originX:33,originY:25}};
+ const save=snapshotClip(clip),restored={id:clip.id,type:'sticker'};
+ applyClipData(restored,save);
+ assert.deepEqual(restored.effectOverlay,normaliseTimelineEffect(clip.effectOverlay));
+ const preview=makeCanvasRecorder();
+ paintEffectPreviewScene(preview,640,360);
+ assert.ok(preview.log.some(row=>row[0]==='fillRect'));
+ assert.ok(preview.log.some(row=>row[0]==='arc'));
 });
 test('fixed frame-local time does not rely on wall clock or frame iteration order',()=>{
  const settings={presetId:'light-sweep',speed:1.25};

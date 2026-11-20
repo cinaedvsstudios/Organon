@@ -16,7 +16,7 @@ import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
-import { TIMELINE_EFFECTS, normaliseTimelineEffect, paintTimelineEffect } from './timeline-effects.mjs';
+import { TIMELINE_EFFECTS, normaliseTimelineEffect, paintTimelineEffect, requiresCompositeSource, paintEffectPreviewScene } from './timeline-effects.mjs';
 import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
@@ -63,7 +63,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','color'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y'})[name]||'effect-'+name)])),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','color'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -1188,7 +1188,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
         const canvas=document.createElement('canvas');
         canvas.width=288;canvas.height=162;
-        if(preset.animated)paintTimelineEffect(canvas.getContext('2d'),canvas.width,canvas.height,{presetId:preset.id},1,3);
+        if(preset.animated){
+            const ctx=canvas.getContext('2d');
+            if(requiresCompositeSource(preset.id))paintEffectPreviewScene(ctx,canvas.width,canvas.height);
+            paintTimelineEffect(ctx,canvas.width,canvas.height,{presetId:preset.id},1,3);
+        }
         else renderOverlayPreset(canvas,preset,elements.textOverlayValue.value.trim()||'MotoriClip');
         const label=document.createElement('span');label.textContent=preset.label;
         button.append(canvas,label);
@@ -1233,8 +1237,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         ctx.strokeStyle='rgba(117,178,222,.08)';
         for(let x=0;x<640;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,360);ctx.stroke();}
         const input=elements.textOverlayValue.value.trim()||'MotoriClip';
-        if(textPreviewPreset.animated)
+        if(textPreviewPreset.animated){
+            if(requiresCompositeSource(textPreviewPreset.id))
+                paintEffectPreviewScene(ctx,canvas.width,canvas.height);
             paintTimelineEffect(ctx,640,360,{presetId:textPreviewPreset.id},textPreviewTime,3);
+        }
         else paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input,
             phasedAnimation:true},textPreviewTime,3);
         elements.textPreviewProgress.value=String(Math.round(textPreviewTime*100));
@@ -1539,7 +1546,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
-        document.getElementById('effect-origin-controls').hidden=track?.effectOverlay?.presetId!=='god-rays';
+        document.getElementById('effect-origin-controls').hidden=
+            !['god-rays','pendulum-swing','rebound-swing','shockwave'].includes(track?.effectOverlay?.presetId);
+        document.getElementById('effect-distortion-control').hidden=
+            !['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
+              'ripple-distortion','electric-ripple','shockwave'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
             const effect=normaliseTimelineEffect(track.effectOverlay);
             for(const [name,input] of Object.entries(elements.effectInspectorInputs))input.value=String(effect[name]);
