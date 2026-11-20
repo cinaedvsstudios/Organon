@@ -17,6 +17,7 @@ import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
+import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle } from './media-handle-store.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -28,7 +29,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
-        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map()
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map()
     };
 
     const elements = {
@@ -434,7 +435,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         elements.fileCount.textContent = `${state.files.length} media`;
         const unlinked=state.files.filter(entry=>!entry.file).length;
         elements.mediaRememberNote.textContent = unlinked
-            ? `${unlinked} remembered · reimport to relink` : 'Media names remembered locally';
+            ? `${unlinked} remembered · reconnect or reimport` : 'Media names and permitted file handles remembered';
         persistMediaIndex();
         if (!state.files.length) {
             elements.fileList.innerHTML = '<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
@@ -448,8 +449,10 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             row.draggable = false;
             row.tabIndex = 0;
             row.dataset.fileId = entry.id;
-            row.title = entry.file ? 'Drag this file to the timeline.' : 'File remembered; click to reimport it and grant access.';
-            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file?.size ?? entry.size)} · ${entry.file ? 'drag to timeline' : 'reimport to relink'}</span></span>`;
+            row.title = entry.file ? 'Drag this file to the timeline.' : state.savedFileHandles.has(entry.id)
+                ? 'Click to reconnect this saved file handle (browser permission may be required).'
+                : 'Only the filename was saved; reimport the original media file.';
+            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file?.size ?? entry.size)} · ${entry.file ? 'drag to timeline' : state.savedFileHandles.has(entry.id) ? 'click to reconnect file access' : 'reimport to relink'}</span></span>`;
 
             let pointerDrag = null;
             let suppressClick = false;
@@ -507,19 +510,100 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             });
             row.addEventListener('click', () => {
                 if (suppressClick) return;
-                if (!entry.file) { showToast('Choose this file again to relink it'); elements.fileInput.click(); return; }
+                if (!entry.file) { void reconnectOneRememberedFile(entry); return; }
                 state.selectedFileId = entry.id;
                 renderFiles();
             });
             row.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    if (!entry.file) { elements.fileInput.click(); return; }
+                    if (!entry.file) { void reconnectOneRememberedFile(entry); return; }
                     state.selectedFileId = entry.id;
                     renderFiles();
                 }
             });
             elements.fileList.appendChild(row);
+        }
+    }
+
+
+    function restoreRememberedFileEntry(entry,file) {
+        if(!entry || !state.files.includes(entry) || !file || entry.name!==file.name || entry.kind!==getKind(file))
+            return false;
+        entry.file=file;
+        entry.needsRelink=false;
+        entry.size=file.size;
+        entry.lastModified=file.lastModified;
+        state.sourceFiles.set(entry.id,file);
+        return true;
+    }
+    async function reconnectOneRememberedFile(entry) {
+        const handle=state.savedFileHandles.get(entry.id) || await getMediaHandle(entry.id);
+        if(!handle) {
+            showToast('This file has no saved handle. Reimport it to restore access.');
+            elements.fileInput.click();
+            return false;
+        }
+        state.savedFileHandles.set(entry.id,handle);
+        const file=await getPermittedMediaFile(handle,{requestPermission:true});
+        if(!file || !restoreRememberedFileEntry(entry,file)) {
+            showToast('File permission unavailable or source moved. Reimport the original.');
+            return false;
+        }
+        renderFiles();
+        showToast(`Reconnected ${entry.name} without copying its contents`);
+        return true;
+    }
+    async function restoreRememberedMediaHandles() {
+        // No permission dialogs on page load. A browser may remember read
+        // permission from the original picker, otherwise leave it unlinked.
+        let linked=0;
+        for(const entry of [...state.files].filter(item=>!item.file)){
+            const handle=await getMediaHandle(entry.id);
+            if(!handle)continue;
+            state.savedFileHandles.set(entry.id,handle);
+            const file=await getPermittedMediaFile(handle);
+            if(file && restoreRememberedFileEntry(entry,file))linked++;
+        }
+        renderFiles();
+        if(linked)showToast(`Restored ${linked} locally permitted media file${linked===1?'':'s'}`);
+        return linked;
+    }
+    async function reconnectRememberedMedia() {
+        const entries=state.files.filter(entry=>!entry.file);
+        if(!entries.length){showToast('All imported media files are already accessible');return;}
+        let restored=0,requested=false,availableHandles=0;
+        for(const entry of entries) {
+            const handle=state.savedFileHandles.get(entry.id) || await getMediaHandle(entry.id);
+            if(!handle)continue;
+            availableHandles++;
+            state.savedFileHandles.set(entry.id,handle);
+            const permission=typeof handle.queryPermission==='function'
+                ? await handle.queryPermission({mode:'read'}).catch(()=> 'prompt') : 'granted';
+            const shouldRequest=permission!=='granted' && !requested;
+            if(shouldRequest)requested=true;
+            const file=await getPermittedMediaFile(handle,{requestPermission:shouldRequest});
+            if(file && restoreRememberedFileEntry(entry,file))restored++;
+        }
+        renderFiles();
+        if(restored)showToast(`Reconnected ${restored} media file${restored===1?'':'s'}`);
+        else showToast(availableHandles?'Permission needed: click a remembered file to reconnect, or use Import':'No saved file handles. Choose Import to relink your files.');
+    }
+    async function importWithFileHandles() {
+        if(typeof window.showOpenFilePicker!=='function'){elements.fileInput.click();return;}
+        try {
+            const handles=await window.showOpenFilePicker({multiple:true});
+            const pairs=[];
+            for(const handle of handles) {
+                if(!isPersistentFileHandle(handle))continue;
+                const file=await handle.getFile();
+                pairs.push({file,handle});
+            }
+            await addFiles(pairs.map(pair=>pair.file),pairs.map(pair=>pair.handle));
+        } catch(error) {
+            if(error?.name==='AbortError')return;
+            console.warn('Handle-aware file picker unavailable. Falling back to standard import.',error);
+            elements.fileInput.click();
         }
     }
 
