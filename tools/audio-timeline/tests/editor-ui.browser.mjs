@@ -80,6 +80,32 @@ try{
     await page.locator('.file-row.is-unlinked').waitFor();
     await page.locator('#file-input').setInputFiles(file);
     await page.locator('.file-row:not(.is-unlinked)').waitFor();
+    // A real FileSystemFileHandle (not File bytes) can be structured-cloned
+    // into IndexedDB. OPFS supplies a permission-granted handle on CI Chrome.
+    // This verifies automatic restore without a new file dialog or copied
+    // video data, while the earlier test covers unsupported-handle fallback.
+    const fileBytesBase64=readFileSync(file).toString('base64');
+    const handleStatus=await page.evaluate(async base64=>{
+        if(!navigator.storage?.getDirectory)return {supported:false};
+        const directory=await navigator.storage.getDirectory();
+        const handle=await directory.getFileHandle('ui-test.jpg',{create:true});
+        const writer=await handle.createWritable();
+        await writer.write(Uint8Array.from(atob(base64),char=>char.charCodeAt(0)));
+        await writer.close();
+        const {saveMediaHandle,getMediaHandle}=await import('./js/media-handle-store.mjs');
+        const id=document.querySelector('.file-row')?.dataset.fileId;
+        const saved=await saveMediaHandle(id,handle);
+        const restored=await getMediaHandle(id);
+        return {supported:true,saved,restored:restored?.name==='ui-test.jpg'};
+    },fileBytesBase64);
+    if(handleStatus.supported){
+        assert.equal(handleStatus.saved,true,'A real file handle must persist via IndexedDB');
+        assert.equal(handleStatus.restored,true,'IndexedDB must restore a usable file handle');
+        await page.reload({waitUntil:'domcontentloaded'});
+        await page.locator('.file-row:not(.is-unlinked)').waitFor({timeout:15000});
+        assert.match(await page.locator('#media-remember-note').innerText(),/1 local file handle/i);
+        console.log('[MotoriClip file handles] PASS persistent IndexedDB handle and silent permission-granted reattachment');
+    }
     await page.evaluate(()=>{
         const row=document.querySelector('.file-row'),dt=new DataTransfer();
         dt.setData('application/x-organon-project-file',row.dataset.fileId);

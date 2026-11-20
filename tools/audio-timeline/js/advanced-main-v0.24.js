@@ -17,6 +17,7 @@ import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
+import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle } from './media-handle-store.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -28,7 +29,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
-        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map()
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map()
     };
 
     const elements = {
@@ -434,7 +435,8 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         elements.fileCount.textContent = `${state.files.length} media`;
         const unlinked=state.files.filter(entry=>!entry.file).length;
         elements.mediaRememberNote.textContent = unlinked
-            ? `${unlinked} remembered · reimport to relink` : 'Media names remembered locally';
+            ? `${unlinked} remembered · reconnect or reimport` : state.savedFileHandles.size
+                ? `${state.savedFileHandles.size} local file handle${state.savedFileHandles.size===1?'':'s'} saved` : 'File names saved · use Import/Browse to remember access';
         persistMediaIndex();
         if (!state.files.length) {
             elements.fileList.innerHTML = '<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
@@ -448,8 +450,10 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             row.draggable = false;
             row.tabIndex = 0;
             row.dataset.fileId = entry.id;
-            row.title = entry.file ? 'Drag this file to the timeline.' : 'File remembered; click to reimport it and grant access.';
-            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file?.size ?? entry.size)} · ${entry.file ? 'drag to timeline' : 'reimport to relink'}</span></span>`;
+            row.title = entry.file ? 'Drag this file to the timeline.' : state.savedFileHandles.has(entry.id)
+                ? 'Click to reconnect this saved file handle (browser permission may be required).'
+                : 'Only the filename was saved; reimport the original media file.';
+            row.innerHTML = `<span class="file-kind">${kindLabel(entry.kind)}</span><span><span class="file-name">${escapeHtml(entry.name)}</span><span class="file-meta">${kindName(entry.kind)} · ${formatFileSize(entry.file?.size ?? entry.size)} · ${entry.file ? 'drag to timeline' : state.savedFileHandles.has(entry.id) ? 'click to reconnect file access' : 'reimport to relink'}</span></span>`;
 
             let pointerDrag = null;
             let suppressClick = false;
@@ -507,14 +511,14 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             });
             row.addEventListener('click', () => {
                 if (suppressClick) return;
-                if (!entry.file) { showToast('Choose this file again to relink it'); elements.fileInput.click(); return; }
+                if (!entry.file) { void reconnectOneRememberedFile(entry); return; }
                 state.selectedFileId = entry.id;
                 renderFiles();
             });
             row.addEventListener('keydown', (event) => {
                 if (event.key === 'Enter' || event.key === ' ') {
                     event.preventDefault();
-                    if (!entry.file) { elements.fileInput.click(); return; }
+                    if (!entry.file) { void reconnectOneRememberedFile(entry); return; }
                     state.selectedFileId = entry.id;
                     renderFiles();
                 }
@@ -523,35 +527,130 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         }
     }
 
-    async function addFiles(files) {
-        const usable=[], relinked=[];
-        for(const file of Array.from(files||[])){
+
+    function restoreRememberedFileEntry(entry,file) {
+        if(!entry || !state.files.includes(entry) || !file || entry.name!==file.name || entry.kind!==getKind(file))
+            return false;
+        entry.file=file;
+        entry.needsRelink=false;
+        entry.size=file.size;
+        entry.lastModified=file.lastModified;
+        state.sourceFiles.set(entry.id,file);
+        return true;
+    }
+    async function reconnectOneRememberedFile(entry) {
+        const handle=state.savedFileHandles.get(entry.id) || await getMediaHandle(entry.id);
+        if(!handle) {
+            showToast('This file has no saved handle. Reimport it to restore access.');
+            return false;
+        }
+        state.savedFileHandles.set(entry.id,handle);
+        const file=await getPermittedMediaFile(handle,{requestPermission:true});
+        if(!file || !restoreRememberedFileEntry(entry,file)) {
+            showToast('File permission unavailable or source moved. Reimport the original.');
+            return false;
+        }
+        renderFiles();
+        showToast(`Reconnected ${entry.name} without copying its contents`);
+        return true;
+    }
+    async function restoreRememberedMediaHandles() {
+        // No permission dialogs on page load. A browser may remember read
+        // permission from the original picker, otherwise leave it unlinked.
+        let linked=0;
+        for(const entry of [...state.files].filter(item=>!item.file)){
+            const handle=await getMediaHandle(entry.id);
+            if(!handle)continue;
+            state.savedFileHandles.set(entry.id,handle);
+            const file=await getPermittedMediaFile(handle);
+            if(file && restoreRememberedFileEntry(entry,file))linked++;
+        }
+        renderFiles();
+        if(linked)showToast(`Restored ${linked} locally permitted media file${linked===1?'':'s'}`);
+        return linked;
+    }
+    async function reconnectRememberedMedia() {
+        const entries=state.files.filter(entry=>!entry.file);
+        if(!entries.length){showToast('All imported media files are already accessible');return;}
+        let restored=0,requested=false,availableHandles=0;
+        for(const entry of entries) {
+            const handle=state.savedFileHandles.get(entry.id) || await getMediaHandle(entry.id);
+            if(!handle)continue;
+            availableHandles++;
+            state.savedFileHandles.set(entry.id,handle);
+            const permission=typeof handle.queryPermission==='function'
+                ? await handle.queryPermission({mode:'read'}).catch(()=> 'prompt') : 'granted';
+            const shouldRequest=permission!=='granted' && !requested;
+            if(shouldRequest)requested=true;
+            const file=await getPermittedMediaFile(handle,{requestPermission:shouldRequest});
+            if(file && restoreRememberedFileEntry(entry,file))restored++;
+        }
+        renderFiles();
+        if(restored)showToast(`Reconnected ${restored} media file${restored===1?'':'s'}`);
+        else showToast(availableHandles?'Permission needed: click a remembered file to reconnect, or use Import':'No saved file handles. Choose Import to relink your files.');
+    }
+    async function importWithFileHandles() {
+        if(typeof window.showOpenFilePicker!=='function'){elements.fileInput.click();return;}
+        try {
+            const handles=await window.showOpenFilePicker({multiple:true});
+            const pairs=[];
+            for(const handle of handles) {
+                if(!isPersistentFileHandle(handle))continue;
+                const file=await handle.getFile();
+                pairs.push({file,handle});
+            }
+            await addFiles(pairs.map(pair=>pair.file),pairs.map(pair=>pair.handle));
+        } catch(error) {
+            if(error?.name==='AbortError')return;
+            console.warn('Handle-aware file picker unavailable. Falling back to standard import.',error);
+            elements.fileInput.click();
+        }
+    }
+
+    async function addFiles(files,handles=[]) {
+        const usable=[],relinked=[],handleUpdates=[];
+        for(const [index,file] of Array.from(files||[]).entries()){
             const kind=getKind(file);
             if(!kind || !FILE_PATTERN.test(file.name))continue;
-            const duplicate=state.files.some(entry=>entry.file && entry.file.name===file.name
+            const fileHandle=isPersistentFileHandle(handles[index])?handles[index]:null;
+            const duplicate=state.files.find(entry=>entry.file && entry.file.name===file.name
                 && entry.file.size===file.size && entry.file.lastModified===file.lastModified);
-            if(duplicate)continue;
+            if(duplicate){
+                if(fileHandle)handleUpdates.push({entry:duplicate,handle:fileHandle});
+                continue;
+            }
             const missing=state.files.find(entry=>!entry.file && entry.name===file.name
                 && entry.kind===kind && (!entry.size || entry.size===file.size));
-            if(missing) relinked.push({entry:missing,file});
-            else usable.push({id:`file-${Date.now()}-${++state.serial}`,file,
-                name:file.name,kind,size:file.size,lastModified:file.lastModified});
+            if(missing) relinked.push({entry:missing,file,handle:fileHandle});
+            else usable.push({entry:{
+                id:`file-${Date.now()}-${++state.serial}`,file,
+                name:file.name,kind,size:file.size,lastModified:file.lastModified
+            },handle:fileHandle});
         }
-        if(!usable.length && !relinked.length){
+        if(!usable.length&&!relinked.length&&!handleUpdates.length){
             elements.previewState.textContent='No new or matching media files found.';
             return;
         }
-        recordHistory(`Import/relink ${usable.length+relinked.length} project media file(s)`);
-        for(const {entry,file} of relinked) {
-            entry.file=file; entry.needsRelink=false;
-            entry.size=file.size; entry.lastModified=file.lastModified;
-            state.sourceFiles.set(entry.id,file);
+        if(usable.length||relinked.length)recordHistory(`Import/relink ${usable.length+relinked.length} project media file(s)`);
+        for(const {entry,file,handle} of relinked){
+            restoreRememberedFileEntry(entry,file);
+            if(handle)handleUpdates.push({entry,handle});
         }
-        for(const entry of usable) state.sourceFiles.set(entry.id,entry.file);
-        state.files.push(...usable);
+        for(const {entry,handle} of usable){
+            state.files.push(entry);
+            state.sourceFiles.set(entry.id,entry.file);
+            if(handle)handleUpdates.push({entry,handle});
+        }
+        let savedHandles=0;
+        for(const {entry,handle} of handleUpdates){
+            if(await saveMediaHandle(entry.id,handle)){
+                state.savedFileHandles.set(entry.id,handle);
+                savedHandles++;
+            }
+        }
         renderFiles();
         elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked`;
-        showToast(`${usable.length} imported · ${relinked.length} relinked`);
+        showToast(`${usable.length} imported · ${relinked.length} relinked${savedHandles?' · '+savedHandles+' remembered handles':''}`);
     }
 
     function setLibraryView(view) {
@@ -1521,10 +1620,19 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
     async function browseDirectory() {
         if (!window.showDirectoryPicker) { elements.fileInput.click(); return; }
         try {
-            const handle = await window.showDirectoryPicker({ mode: 'read' }); const files = [];
-            for await (const entry of handle.values()) if (entry.kind === 'file' && FILE_PATTERN.test(entry.name)) files.push(await entry.getFile());
-            await addFiles(files);
-        } catch (error) { if (error.name !== 'AbortError') { console.warn(error); elements.previewState.textContent = 'Folder browse was unavailable. Use Import instead.'; } }
+            const directory = await window.showDirectoryPicker({ mode: 'read' });
+            const pairs=[];
+            for await (const handle of directory.values()) {
+                if(handle.kind!=='file'||!FILE_PATTERN.test(handle.name))continue;
+                pairs.push({file:await handle.getFile(),handle});
+            }
+            await addFiles(pairs.map(pair=>pair.file),pairs.map(pair=>pair.handle));
+        } catch(error) {
+            if(error.name!=='AbortError'){
+                console.warn(error);
+                elements.previewState.textContent='Folder browse unavailable; use Import instead.';
+            }
+        }
     }
     function installGlobalFileDrop() {
         const localOverlay = elements.dropOverlay;
@@ -1533,13 +1641,13 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
         let importing = false;
         let hideTimer = null;
 
-        const importExternalFiles = async (files, source = 'File Explorer') => {
+        const importExternalFiles = async (files, source = 'File Explorer', handles = []) => {
             const safeFiles = Array.from(files || []).filter(Boolean);
             if (!safeFiles.length || importing) return false;
             importing = true;
             try {
                 const before = state.files.length;
-                await addFiles(safeFiles);
+                await addFiles(safeFiles,handles);
                 const added = state.files.length - before;
                 if (added > 0) {
                     showToast(`Imported ${added} file${added === 1 ? '' : 's'} from ${source}`);
@@ -1576,7 +1684,14 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
             event.stopPropagation();
             event.stopImmediatePropagation?.();
             hideDrop();
-            if (files.length) void importExternalFiles(files, source);
+            if(files.length){
+                // Capture handle promises synchronously during the drop event:
+                // Chromium invalidates DataTransferItem after the event ends.
+                const items=Array.from(event.dataTransfer?.items||[]).filter(item=>item.kind==='file');
+                const handlePromises=items.map(item=>typeof item.getAsFileSystemHandle==='function'
+                    ? item.getAsFileSystemHandle().catch(()=>null) : Promise.resolve(null));
+                void Promise.all(handlePromises).then(handles=>importExternalFiles(files,source,handles));
+            }
         };
         const enter = (event) => {
             if (!isFileDrag(event)) return;
@@ -1983,15 +2098,15 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
     elements.previewZoom.addEventListener('input', (event) => { state.previewZoom = Number(event.target.value); syncPreviewZoom(); });
     elements.btnResetPreviewZoom.addEventListener('click', () => { state.previewZoom = 100; syncPreviewZoom(); showToast('Preview zoom reset'); });
 
-    elements.btnImport.addEventListener('click', () => elements.fileInput.click());
+    elements.btnImport.addEventListener('click', () => { void importWithFileHandles(); });
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
-    elements.btnRelink.addEventListener('click', () => elements.fileInput.click());
+    elements.btnRelink.addEventListener('click', () => { void reconnectRememberedMedia(); });
     elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
     elements.btnClear.addEventListener('click', () => {
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
         recordHistory('Clear project');
-        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
+        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); void clearMediaHandles(); state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
@@ -2168,6 +2283,7 @@ import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualPar
     document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
     restoreMediaIndex();
     initAssetLibrary();
+    void restoreRememberedMediaHandles();
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
