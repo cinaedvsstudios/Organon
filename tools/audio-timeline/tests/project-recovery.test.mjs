@@ -59,6 +59,18 @@ test('SpiralBlockWipe original GLSL uniforms survive portable Save/Open without 
     assert.equal(record.tracks[0].transitionParameters.spiralblockwipe.rows,7,
         'Imported project edits must not mutate previous recovery snapshots');
 });
+test('Hologram original GLSL uniforms survive portable Save/Open and Undo snapshots',()=>{
+    const params={tint:'#ee44b7',background:'#001122',backgroundAlpha:.65,scanlines:92,jitter:.14,flicker:.85};
+    const video=clip({transitionEffectId:'hologram',transitionParameters:{hologram:params}});
+    const record=createRecoveryRecord({files:[file()],tracks:[video]});
+    const parsed=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.deepEqual(parsed.tracks[0].transitionParameters.hologram,params);
+    video.transitionParameters.hologram.scanlines=1;
+    assert.equal(record.tracks[0].transitionParameters.hologram.scanlines,92,
+        'Inspector mutations must not modify stored Undo and project backups');
+    parsed.tracks[0].transitionParameters.hologram.backgroundAlpha=0;
+    assert.equal(record.tracks[0].transitionParameters.hologram.backgroundAlpha,.65);
+});
 test('recovery snapshot is independent of live edit objects',()=>{
     const c=clip();const entry=file();
     const saved=createRecoveryRecord({files:[entry],tracks:[c]});

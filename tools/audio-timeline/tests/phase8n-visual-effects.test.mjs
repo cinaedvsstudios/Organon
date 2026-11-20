@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ACTIVE_PAIR_EFFECTS,hologramStrength,crumpleFold} from '../js/paired-visual-effects.mjs';
+import {ACTIVE_PAIR_EFFECTS,crumpleFold} from '../js/paired-visual-effects.mjs';
+import {HOLOGRAM_SOURCE,HOLOGRAM_DEFAULTS,normaliseHologramOptions} from '../js/gl-transitions/Hologram.mjs';
 import {SPIRAL_BLOCK_SOURCE,SPIRAL_BLOCK_DEFAULTS,normaliseSpiralBlockOptions} from '../js/gl-transitions/SpiralBlockWipe.mjs';
 import {createHash} from 'node:crypto';
 import {TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES} from '../js/transition-catalog.mjs';
@@ -22,12 +23,22 @@ test('SpiralBlockWipe contains byte-for-byte upstream MIT GLSL and original defa
  assert.deepEqual(normaliseSpiralBlockOptions({columns:120,rows:-5,inward:false,clockwise:false,smoothness:7}),
      {columns:64,rows:1,inward:false,clockwise:false,smoothness:.5});
 });
-test('hologram lines fade out at both endpoints',()=>{
- for(let i=0;i<48;i++){
-  assert.ok(Math.abs(hologramStrength(0,i))<1e-12);
-  assert.ok(Math.abs(hologramStrength(1,i))<1e-12);
-  assert.ok(hologramStrength(.5,i)>.5);
- }
+test('Hologram uses byte-for-byte original GLSL source and correct five uniforms',()=>{
+ const bytes=Buffer.from(HOLOGRAM_SOURCE,'utf8');
+ const gitBlob=createHash('sha1').update('blob '+bytes.length+String.fromCharCode(0)).update(bytes).digest('hex');
+ assert.equal(gitBlob,'284e495b81dabf03070eb1c24ad41583a7ed5ee4',
+    'Do not silently replace original shader with faux Canvas stripes');
+ assert.deepEqual(HOLOGRAM_DEFAULTS,{
+    tint:'#33bfff',background:'#00050d',backgroundAlpha:1,
+    scanlines:150,jitter:.04,flicker:.6
+ });
+ assert.deepEqual(normaliseHologramOptions(),HOLOGRAM_DEFAULTS);
+ assert.deepEqual(normaliseHologramOptions({
+    tint:'#cc2299',background:'#241126',backgroundAlpha:.3,scanlines:280,jitter:.18,flicker:.9
+ }),{tint:'#cc2299',background:'#241126',backgroundAlpha:.3,scanlines:280,jitter:.18,flicker:.9});
+ assert.deepEqual(normaliseHologramOptions({
+    tint:'invalid',background:'#nope',scanlines:500,jitter:-10,flicker:2
+ }),{...HOLOGRAM_DEFAULTS,scanlines:300,jitter:0,flicker:1});
 });
 test('crumple folds remain bounded, stable, and settle at endpoints',()=>{
  for(let i=0;i<48;i++){

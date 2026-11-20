@@ -14,6 +14,7 @@ import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { normaliseSpiralBlockOptions } from './gl-transitions/SpiralBlockWipe.mjs';
+import { normaliseHologramOptions } from './gl-transitions/Hologram.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1638,6 +1639,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             spiralInspector.hidden=!(paired&&track.transitionEffectId==='spiralblockwipe');
             if(!spiralInspector.hidden)
                 displaySpiralBlockSettings(spiralInspector,track.transitionParameters?.spiralblockwipe);
+            const hologramInspector=document.getElementById('video-hologram-settings');
+            hologramInspector.hidden=!(paired&&track.transitionEffectId==='hologram');
+            if(!hologramInspector.hidden)
+                displayHologramSettings(hologramInspector,track.transitionParameters?.hologram);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1883,6 +1888,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-spiral-settings');
             b.transitionParameters={...b.transitionParameters,
                 spiralblockwipe:readSpiralBlockSettings(panel)};
+        }
+        if(effectId==='hologram'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-hologram')
+                :document.getElementById('video-hologram-settings');
+            b.transitionParameters={...b.transitionParameters,
+                hologram:readHologramSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2644,6 +2656,31 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displaySpiralBlockSettings(root,target?.transitionParameters?.spiralblockwipe);
         }
     }
+    // Native controls of the unmodified MIT Hologram GLSL, used by both
+    // transition preview and applied clip inspector.
+    function readHologramSettings(root) {
+        const value=name=>root?.querySelector('[data-hologram-param="'+name+'"]')?.value;
+        return normaliseHologramOptions({
+            tint:value('tint'),background:value('background'),
+            backgroundAlpha:value('backgroundAlpha'),
+            scanlines:value('scanlines'),jitter:value('jitter'),flicker:value('flicker')
+        });
+    }
+    function displayHologramSettings(root,options={}) {
+        const params=normaliseHologramOptions(options);
+        for(const [name,value] of Object.entries(params)){
+            const input=root?.querySelector('[data-hologram-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshHologramModalSettings({restoreValues=false}={}) {
+        const root=document.getElementById('transition-modal-hologram');
+        root.hidden=elements.transitionModalEffect.value!=='hologram';
+        if(!root.hidden&&restoreValues) {
+            const target=getTrack(elements.transitionModalTo.value);
+            displayHologramSettings(root,target?.transitionParameters?.hologram);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2680,6 +2717,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const draft={...b,start:0,transitionFromId:a.id,transitionEffectId:effectId,
                 transitionParameters:effectId==='spiralblockwipe'
                     ?{...b.transitionParameters,spiralblockwipe:readSpiralBlockSettings(document.getElementById('transition-modal-spiral'))}
+                    :effectId==='hologram'
+                    ?{...b.transitionParameters,hologram:readHologramSettings(document.getElementById('transition-modal-hologram'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2688,7 +2727,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(effectId==='spiralblockwipe'){
+                if(effectId==='spiralblockwipe'||effectId==='hologram'){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2723,6 +2762,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
         elements.transitionModalEffect.value=elements.pairTransitionEffect.value || 'fade';
         refreshSpiralModalSettings({restoreValues:true});
+        refreshHologramModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2735,6 +2775,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             : !valid ? 'Choose two different clips. A clip cannot transition into itself.'
             : `${count} available visual clips · 41 transitions. Preview the effect, then Apply.`;
         refreshSpiralModalSettings();
+        refreshHologramModalSettings();
         renderTransitionPreview();
     }
     function applyTransitionFromModal() {
@@ -2761,10 +2802,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.transitionModalFrom.addEventListener('change',updateTransitionModalValidation);
     elements.transitionModalTo.addEventListener('change',updateTransitionModalValidation);
     elements.transitionModalEffect.addEventListener('change',()=>{
-        refreshSpiralModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshSpiralModalSettings({restoreValues:true});
+        refreshHologramModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-hologram').querySelectorAll('[data-hologram-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-hologram-settings').querySelectorAll('[data-hologram-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='hologram'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readHologramSettings(document.getElementById('video-hologram-settings'));
+            const prior=normaliseHologramOptions(active.transitionParameters?.hologram);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Hologram GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,hologram:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('video-spiral-settings').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('change',()=>{
             const active=getTrack();

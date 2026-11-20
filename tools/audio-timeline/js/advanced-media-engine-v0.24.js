@@ -326,12 +326,16 @@ export class AdvancedMediaEngine {
         for (const track of loading) this.detachTrack(track, false);
         // Drop any 1080p+ offscreen transition textures when a project clears.
         for(const name of ['transitionPixelScratch','transitionFullScratch',
-            'spiralBlockFromScratch','spiralBlockToScratch']){
+            'spiralBlockFromScratch','spiralBlockToScratch','hologramFromScratch','hologramToScratch']){
             if(this[name]){ this[name].width=0; this[name].height=0; this[name]=null; }
         }
         if(this.spiralBlockWebGL){
             this.spiralBlockWebGL.dispose();
             this.spiralBlockWebGL=null;
+        }
+        if(this.hologramWebGL){
+            this.hologramWebGL.dispose();
+            this.hologramWebGL=null;
         }
         this.currentTime = 0;
         this.emitDuration(); this.emitTime(); this.renderFrame();
@@ -594,7 +598,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(incoming.transitionEffectId!=='spiralblockwipe'
+                    if(!['spiralblockwipe','hologram'].includes(incoming.transitionEffectId)
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -635,7 +639,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&track.transitionEffectId==='spiralblockwipe'))
+                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram'].includes(track.transitionEffectId)))
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {
