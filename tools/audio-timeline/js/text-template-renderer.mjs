@@ -123,7 +123,7 @@ const fonts={sans:'system-ui,Arial,sans-serif',
  mono:'"Geist Mono","Courier New",monospace'};
 function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
  fill='#fff',outline='#333',outlineWidth=3,shadow='#000',shadowBlur=8,
- maxWidth=580,italic=false,letterSpacing=0,metallic=false}={}) {
+ maxWidth=580,italic=false,letterSpacing=0,metallic=false,fillAlpha=1}={}) {
  let px=size;
  ctx.textAlign=align;ctx.textBaseline='middle';ctx.lineJoin='round';
  const family=fonts[font]||fonts.sans;
@@ -145,23 +145,71 @@ function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
   ctx.fillStyle=gradient;
  }
  if(outlineWidth>0)ctx.strokeText(text,x,y,maxWidth);
+ ctx.save();
+ ctx.globalAlpha*=clamp(fillAlpha,0,1);
  ctx.fillText(text,x,y,maxWidth);
+ ctx.restore();
  ctx.shadowBlur=0;
 }
-function drawGlyphs(ctx,text,x,y,options,frame) {
+/**
+ * Individual character motion with measured glyph widths. The output is a
+ * pure function of the clip timestamp and character index; seeking backwards
+ * and fixed-frame exports reproduce the same pixels.
+ */
+function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  const letters=Array.from(text);
+ if(!letters.length)return;
  const size=options.size||54;
- ctx.font='800 '+size+'px '+fonts.sans;
- const fullWidth=ctx.measureText(text).width;
- let cursor=x-fullWidth/2;
+ const weight=options.weight??800;
+ const family=fonts[options.font]||fonts.sans;
+ const font=(options.italic?'italic ':'')+weight+' '+size+'px '+family;
+ ctx.save();ctx.font=font;
+ const metrics=letters.map(char=>ctx.measureText(char).width);
+ const total=metrics.reduce((a,b)=>a+b,0);
+ const fit=Math.min(1,(options.maxWidth??580)/Math.max(1,total));
+ const align=options.align||'center';
+ ctx.translate(x,y);ctx.scale(fit,fit);
+ let cursor=align==='left'?0:align==='right'?-total:-total/2;
+ const intensity=frame.intensity;
  for(let i=0;i<letters.length;i++){
-  const char=letters[i],width=ctx.measureText(char).width;
-  const p=clamp((frame.progress-i/Math.max(letters.length,1)*.55)/.45,0,1);
-  const movement=(1-p)*38,scale=.65+p*.35;
-  ctx.save();ctx.translate(cursor+width/2,y-movement);ctx.scale(scale,scale);
-  drawTitle(ctx,char,0,0,{...options,size,align:'center',maxWidth:width+16});
-  ctx.restore();cursor+=width;
+  const char=letters[i],width=metrics[i];
+  const stagger=clamp((frame.progress-i/Math.max(letters.length,1)*.62)/.38,0,1);
+  let dx=0,dy=0,glyphScale=1,alpha=1;
+  if(mode==='letter-pop'){
+   dy=-Math.pow(1-stagger,2)*45*intensity;
+   glyphScale=.65+.35*stagger;
+  }else if(mode==='kinetic-stagger'){
+   dx=(i%2===0?-1:1)*Math.pow(1-stagger,2)*106*intensity;
+   dy=(1-stagger)*18*intensity;
+   alpha=stagger;
+  }else if(mode==='shake'){
+   dx=Math.sin(frame.time*46+i*2.31)*6*intensity;
+   dy=Math.cos(frame.time*38+i*1.77)*5*intensity;
+  }else if(mode==='wave'){
+   dy=Math.sin(frame.time*5.4+i*.93)*17*intensity;
+   dx=Math.sin(frame.time*2.1+i*.77)*3*intensity;
+  }else if(mode==='neon-flicker'&&frame.raw<.94){
+   alpha=.2+.8*Math.abs(Math.sin(frame.time*(23+i*.61)+i*2.4));
+  }else if(mode==='glitch-text'){
+   dx=Math.sin(frame.time*19.1+i*5.2)*4*intensity;
+   dy=Math.cos(frame.time*28.8+i*1.7)*3*intensity;
+  }
+  ctx.save();
+  ctx.translate(cursor+width/2+dx,dy);
+  ctx.scale(glyphScale,glyphScale);
+  ctx.globalAlpha*=alpha;
+  if(mode==='glitch-text' && intensity>0){
+   const skew=Math.sin(frame.time*31+i*3.7)*5*intensity;
+   drawTitle(ctx,char,-skew,0,{...options,size,align:'center',outlineWidth:0,
+       shadowBlur:0,fill:'#ff4269',maxWidth:width+12});
+   drawTitle(ctx,char,skew,0,{...options,size,align:'center',outlineWidth:0,
+       shadowBlur:0,fill:'#2be8ff',maxWidth:width+12});
+  }
+  drawTitle(ctx,char,0,0,{...options,size,align:'center',maxWidth:width+12});
+  ctx.restore();
+  cursor+=width;
  }
+ ctx.restore();
 }
 function textValue(config,frame) {
  const value=config.value||'MotoriClip';
