@@ -31,6 +31,8 @@
 
 - 20 Nov 2026: Phase 3E in [PR #101](https://github.com/cinaedvsstudios/Organon/pull/101) implements **#41**, adding nine independently animated *source-aware* Glitch styles: Glass, Storm, Negative Chaos, Warning, Misalignment, Noir, Flux, Engine Heat and Retro. Distinct drawing structures and deterministic reverse-seeking verified in Node and Chrome image previews; 33 animated effect presets + 12 classic overlays. The 41 original A/B transitions, Chrome UI/project recovery/portable Save/Open and Firefox/WebKit checks passed. Original real MP4 export checks passed; long-form export profiling and encoded-vs-preview pixel checks remain separate open gates.
 
+- 20 Nov 2026: Phase 3F in [PR #102](https://github.com/cinaedvsstudios/Organon/pull/102) implements **#99 and #101**: automated Chrome tests for Play/Pause, 0.01-second reverse scrub, Restart, Loop wrap, non-loop stop at endpoint, Escape close and existing title animation controls. The themed modal is verified on a 393px Android viewport for width, absence of horizontal overflow and appropriate touch control sizing; bronze scrollbars and mobile layout rules improved. The 41 A/B transition, desktop/mobile editor and recovery/portable Save/Open suites passed, as did Firefox/WebKit compatibility. Actual encoded overlay pixel equivalence and remaining tracker gates are explicitly open.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -152,9 +154,9 @@
 - [ ] **96.** Protect 41 transitions, image sources, additive gain, Orgavox, history, autosave, media recovery and both exporters.
 - [ ] **97.** Test rename, recolour, colour inheritance/override, lane deletion, Undo and refresh.
 - [x] **98.** Validate visual differences between text templates independently of colour.
-- [ ] **99.** Test animated effect/text preview controls and scrubbing.
+- [x] **99.** Test animated effect/text preview controls and scrubbing.
 - [ ] **100.** Verify real exported video with animated overlays.
-- [ ] **101.** Check responsiveness, scrollbar consistency, button sizing and themed popups.
+- [x] **101.** Check responsiveness, scrollbar consistency, button sizing and themed popups.
 - [ ] **102.** Merge tested increments directly into `main`; link their PRs here.
 
 ## Rules of completion
