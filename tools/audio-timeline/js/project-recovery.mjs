@@ -33,7 +33,15 @@ export function createRecoveryRecord({files=[],tracks=[],selectedTrackId=null,se
             name:file.name.slice(0,400),
             kind:file.kind,
             size:limited(file.file?.size??file.size,0,Number.MAX_SAFE_INTEGER,0),
-            lastModified:limited(file.file?.lastModified??file.lastModified,0,Number.MAX_SAFE_INTEGER,0)
+            lastModified:limited(file.file?.lastModified??file.lastModified,0,Number.MAX_SAFE_INTEGER,0),
+            ...(file.generated&&['text','effect'].includes(file.generated.group)
+                &&typeof file.generated.presetId==='string'
+                ? { generated:{
+                    group:file.generated.group,
+                    presetId:file.generated.presetId.slice(0,100),
+                    value:file.generated.group==='text'
+                        ? String(file.generated.value||'').slice(0,100) : ''
+                }}:{})
         }));
     const safeTracks=tracks.map(track=>snapshotClip(track));
     const result={
@@ -66,6 +74,13 @@ export function validateRecoveryRecord(record) {
     for(const file of record.files) {
         if(!id(file?.id)||ids.has(file.id)||typeof file.name!=='string'||!KINDS.has(file.kind))
             throw Error('Invalid or duplicate media file in saved project.');
+        if(file.generated){
+            if(!['text','effect'].includes(file.generated.group)
+                ||typeof file.generated.presetId!=='string'||!file.generated.presetId
+                ||file.generated.presetId.length>100
+                ||typeof file.generated.value!=='string'||file.generated.value.length>100)
+                throw Error('Invalid generated asset recipe in saved project.');
+        }
         ids.add(file.id);
     }
     const clipIds=new Set();
