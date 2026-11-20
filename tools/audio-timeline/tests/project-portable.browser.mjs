@@ -107,11 +107,14 @@ try {
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Opening a project requires a confirmation before replacing the timeline.
     let confirmed=0;
-    page.once('dialog',async dialog=>{confirmed++;await dialog.accept();});
     await page.locator('#project-open-input').setInputFiles({
         name:backup.suggestedFilename(),mimeType:'application/json',
         buffer:Buffer.from(json)
     });
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    assert.match(await page.locator('#timeline-action-title').innerText(),/open saved project/i);
+    confirmed++;
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===3,
         null,{timeout:20000});
     assert.equal(confirmed,1);
@@ -204,8 +207,9 @@ try {
     // Reimport its original media before clicking Undo: the stable saved ID
     // must be reconnected, not accidentally replaced by a new bin-file ID.
     await page.locator('[data-library-tab="media"]').click();
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     await page.waitForFunction(()=>{
         try{
