@@ -67,7 +67,33 @@ export function normaliseTextOverlay(input={}) {
     ?input.animationEasing:'ease-out',
   animationIntensity:safeNumber(input.animationIntensity,100,0,200),
   animationLoop:input.animationLoop===true,
-  subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100)
+  subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100),
+  fontFamily:['template','sans','serif','script','mono'].includes(input.fontFamily)
+    ?input.fontFamily:'template',
+  fontWeight:input.fontWeight==null || String(input.fontWeight)==='0'||input.fontWeight==='template'
+    ?0:Math.round(safeNumber(input.fontWeight,800,100,900)/100)*100,
+  fontStyle:['template','normal','italic'].includes(input.fontStyle)
+    ?input.fontStyle:'template',
+  textAlign:['template','left','center','right'].includes(input.textAlign)
+    ?input.textAlign:'template',
+  textCase:['template','original','uppercase','lowercase','title'].includes(input.textCase)
+    ?input.textCase:'template',
+  letterSpacing:safeNumber(input.letterSpacing,0,-6,24),
+  lineSpacing:safeNumber(input.lineSpacing,100,70,200),
+  textOpacity:safeNumber(input.textOpacity,100,0,100),
+  shadowOffsetX:safeNumber(input.shadowOffsetX,0,-30,30),
+  shadowOffsetY:safeNumber(input.shadowOffsetY,0,-30,30),
+  glowColor:colour(input.glowColor,'#ffffff'),
+  glowStrength:safeNumber(input.glowStrength,0,0,40),
+  backdropEnabled:input.backdropEnabled===true,
+  backdropColor:colour(input.backdropColor,'#17283e'),
+  backdropOpacity:safeNumber(input.backdropOpacity,70,0,100),
+  shapePadding:safeNumber(input.shapePadding,10,0,50),
+  shapeRadius:safeNumber(input.shapeRadius,12,0,60),
+  shapeBorderWidth:safeNumber(input.shapeBorderWidth,0,0,10),
+  shapeBorderColor:colour(input.shapeBorderColor,'#d0b07a'),
+  bannerWidth:safeNumber(input.bannerWidth,92,40,100),
+  bannerHeight:safeNumber(input.bannerHeight,100,50,180)
  };
 }
 function easeProgress(value,easing){
