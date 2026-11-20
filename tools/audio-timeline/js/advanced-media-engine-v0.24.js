@@ -13,6 +13,7 @@ import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
 import { connectOrgavoxAudioChain, ensureOrgavoxLofiWorklet } from './orgavox-audio-chain.mjs';
 import { paintTimelineText } from './text-template-renderer.mjs';
+import { paintTimelineEffect } from './timeline-effects.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -600,7 +601,11 @@ export class AdvancedMediaEngine {
                                 if (track.type === 'background') drawCovered(this.context, track.media, width, height);
                                 else if (track.type === 'video') drawContained(this.context, track.media, width, height);
                                 else if (track.type === 'sticker') {
-                                    if(track.textOverlay){
+                                    if(track.effectOverlay){
+                                        // Identical absolute clip time for preview and video export.
+                                        paintTimelineEffect(this.context,width,height,track.effectOverlay,
+                                            Math.max(0,this.currentTime-(Number(track.start)||0)),track.clipDuration);
+                                    } else if(track.textOverlay){
                                         // Live and fixed-frame exporters both use renderFrame().
                                         // Text is drawn at the exact clip-relative timestamp,
                                         // never frozen into its thumbnail PNG.
