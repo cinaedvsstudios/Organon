@@ -49,7 +49,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         canvas: document.getElementById('advanced-canvas'), mediaBin: document.getElementById('media-bin'),
         previewStage: document.getElementById('preview-stage'), previewResizeHandle: document.getElementById('preview-resize-handle'), previewZoom: document.getElementById('preview-zoom'), previewZoomValue: document.getElementById('preview-zoom-value'), btnResetPreviewZoom: document.getElementById('btn-reset-preview-zoom'), previewEmpty: document.getElementById('preview-empty'), previewState: document.getElementById('preview-state'),
         previewSeek: document.getElementById('preview-seek'), previewVolume: document.getElementById('preview-volume'), timeReadout: document.getElementById('time-readout'),
-        btnPlay: document.getElementById('btn-play'), btnPreviewMute: document.getElementById('btn-preview-mute'), btnStepBack: document.getElementById('btn-step-back'), btnStepForward: document.getElementById('btn-step-forward'), btnSnapshot: document.getElementById('btn-snapshot'),
+        btnPlay: document.getElementById('btn-play'), btnPreviewMute: document.getElementById('btn-preview-mute'), btnStepBack: document.getElementById('btn-step-back'), btnStepForward: document.getElementById('btn-step-forward'), btnSnapshot: document.getElementById('btn-snapshot'), btnSnapshotJpeg: document.getElementById('btn-snapshot-jpeg'),
         fileInput: document.getElementById('file-input'), btnImport: document.getElementById('btn-import'), btnBrowse: document.getElementById('btn-browse'), btnHeaderBrowse: document.getElementById('btn-header-browse'), btnClear: document.getElementById('btn-clear'), btnRelink: document.getElementById('btn-relink'), mediaRememberNote: document.getElementById('media-remember-note'), btnBasicMode: document.getElementById('btn-basic-mode'),
         libraryTabs: [...document.querySelectorAll('[data-library-tab]')],
         effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
@@ -2494,7 +2494,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.btnPlay.addEventListener('click', async () => { try { await engine.togglePlay(); } catch (error) { elements.previewState.textContent = error.message; } });
     elements.btnStepBack.addEventListener('click', () => { void engine.stepFrame(-1).catch((error) => { elements.previewState.textContent = error.message; }); });
     elements.btnStepForward.addEventListener('click', () => { void engine.stepFrame(1).catch((error) => { elements.previewState.textContent = error.message; }); });
-    elements.btnSnapshot.addEventListener('click', async () => { try { await engine.snapshot(); } catch (error) { elements.previewState.textContent = error.message; } });
+    const saveFrameSnapshot=async(format)=>{
+        try { await engine.snapshot(format); }
+        catch(error) {
+            elements.previewState.textContent=error.message;
+            showToast(`Frame snapshot failed: ${error.message}`);
+        }
+    };
+    elements.btnSnapshot.addEventListener('click',()=>{void saveFrameSnapshot('png');});
+    elements.btnSnapshotJpeg.addEventListener('click',()=>{void saveFrameSnapshot('jpeg');});
     elements.btnPreviewMute.addEventListener('click', () => { engine.togglePreviewMute(); syncPreviewMuteButton(); });
     elements.previewVolume.addEventListener('input', (event) => { engine.setPreviewVolume(Number(event.target.value) / 100); syncPreviewMuteButton(); });
     elements.previewSeek.addEventListener('pointerdown', () => { state.isSeeking = true; });
