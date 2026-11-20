@@ -785,6 +785,33 @@ try{
        input.value='73';input.dispatchEvent(new Event('input',{bubbles:true}));
     });
     assert.equal(await page.locator('#effect-distortion').inputValue(),'73');
+    // Verify actual Play/Pause/Restart/Loop behavior on EFFECTS as well as the
+    // existing text title preview checks above. Loop must wrap through 0;
+    // non-looping playback must stop on the final time and revert to Play.
+    await page.locator('#effects-library-grid [data-preset-id="glitch-storm"]').click({button:'right'});
+    await page.locator('#text-preview-loop').check();
+    await page.locator('#text-preview-progress').fill('298');
+    await page.locator('#text-preview-play').click();
+    await page.waitForFunction(()=>Number(document.querySelector('#text-preview-progress').value)<60,
+      null,{timeout:4000});
+    assert.match(await page.locator('#text-preview-play').innerText(),/Pause/);
+    await page.locator('#text-preview-play').click();
+    const afterPause=await page.locator('#text-preview-progress').inputValue();
+    await page.waitForTimeout(140);
+    assert.equal(await page.locator('#text-preview-progress').inputValue(),afterPause,
+      'Pausing animated effect preview must freeze the playhead');
+    await page.locator('#text-preview-restart').click();
+    assert.equal(await page.locator('#text-preview-progress').inputValue(),'0',
+      'Restart always resets the animation time');
+    await page.locator('#text-preview-loop').uncheck();
+    await page.locator('#text-preview-progress').fill('298');
+    await page.locator('#text-preview-play').click();
+    await page.waitForFunction(()=>document.querySelector('#text-preview-progress').value==='300',
+      null,{timeout:4000});
+    assert.match(await page.locator('#text-preview-play').innerText(),/Play/,
+      'Non-looping effect playback stops and restores Play label');
+    await page.keyboard.press('Escape');
+    assert.ok(await page.locator('#text-preview-modal').isHidden(),'Escape closes themed preview');
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
@@ -799,6 +826,32 @@ try{
     assert.match(await phone.title(),/MotoriClip.+Basic/i);
     await phone.locator('#btn-advanced-mode').click();
     await phone.waitForURL(/advanced\.html/,{timeout:15000});
+    // The effect preview must remain usable on a 393px Android viewport:
+    // geometry, controls and themed scrollbars must not cause horizontal
+    // viewport overflow or clip the Play/Pause/Loop buttons.
+    await phone.locator('[data-library-tab="effects"]').dispatchEvent('click');
+    await phone.locator('#effects-library-grid [data-preset-id="light-sweep"]').dispatchEvent('contextmenu');
+    await phone.locator('#text-preview-modal').waitFor({state:'visible',timeout:10000});
+    const mobilePreview=await phone.evaluate(()=>{
+       const modal=document.getElementById('text-preview-modal');
+       const card=modal.querySelector('.text-preview-dialog');
+       const canvas=document.getElementById('text-preview-canvas');
+       const controls=['text-preview-play','text-preview-restart','text-preview-close']
+         .map(id=>document.getElementById(id).getBoundingClientRect());
+       const viewport=document.documentElement.clientWidth,rect=card.getBoundingClientRect(),
+             canvasRect=canvas.getBoundingClientRect();
+       return {viewport,left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,
+         canvasWidth:canvasRect.width,cardWidth:rect.width,
+         controlWidths:controls.map(x=>x.width),controlHeights:controls.map(x=>x.height),
+         scrollbarColor:getComputedStyle(card).scrollbarColor,
+         overflowX:document.documentElement.scrollWidth-viewport};
+    });
+    assert.ok(mobilePreview.left>=0 && mobilePreview.right<=mobilePreview.viewport+1,
+        'Preview card must fit within phone viewport: '+JSON.stringify(mobilePreview));
+    assert.ok(mobilePreview.canvasWidth<=mobilePreview.cardWidth);
+    assert.ok(mobilePreview.overflowX<=1,'Mobile preview must not create page-wide horizontal scrolling');
+    assert.ok(mobilePreview.controlHeights.every(x=>x>=36),'Preview controls require accessible touch targets');
+    await phone.locator('#text-preview-close').click();
     await phone.locator('#btn-toggle-header').click();
     assert.ok(await phone.locator('#btn-basic-mode').isVisible());
     await phone.locator('#btn-basic-mode').click();
