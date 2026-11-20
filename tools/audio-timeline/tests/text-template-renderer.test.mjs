@@ -272,7 +272,9 @@ test('phased title settings persist in Undo and reject incompatible animation ch
  const clip={id:'title-2',type:'sticker',sourceFileId:'source',clipDuration:4,
    start:0,sourceOffset:0,sourceName:'title.png',textOverlay:opts};
  const saved=snapshotClip(clip);clip.textOverlay.inAnimation='slide';
- applyClipData(clip,saved);assert.deepEqual(clip.textOverlay,opts);
+ applyClipData(clip,saved);
+ assert.equal(clip.textOverlay.inAnimation,'typewriter');
+ assert.deepEqual(clip.textOverlay,saved.textOverlay);
  const invalid=normaliseTextOverlay({phasedAnimation:'yes',inAnimation:'hacked',
    outAnimation:'wave',outDuration:900,loopAnimation:'title-wipe',loopDuration:-20});
  assert.equal(invalid.phasedAnimation,false);
