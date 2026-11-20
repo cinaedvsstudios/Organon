@@ -237,6 +237,18 @@ try{
     await page.locator('#timeline-action-input').fill('#9933ee');
     await page.locator('#timeline-action-apply').click();
     assert.equal(await clipColour(),'#9933ee');
+    // Verify persistent round-trip as well as immediate DOM changes:
+    // lane name/colour and a clip-specific override must survive a browser
+    // refresh, including the existing media-handle recovery path.
+    await page.waitForTimeout(850);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.timeline-clip.background:not(.placeholder)').first().waitFor({timeout:20000});
+    await page.waitForFunction(()=>document.querySelector('.timeline-clip.background')
+        ?.style.getPropertyValue('--clip-colour')==='#9933ee',null,{timeout:20000});
+    assert.match(await lane().innerText(),/My Backgrounds/,
+        'Lane rename must persist after refreshing the editor');
+    assert.equal(await clipColour(),'#9933ee',
+        'Clip override must still beat lane colour after reloading the project');
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     await page.locator('#context-reset-colour').click();
     assert.equal(await clipColour(),'#22aa77');
