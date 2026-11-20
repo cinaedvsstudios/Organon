@@ -7,20 +7,22 @@
 export const TEXT_DESIGNS=Object.freeze([
  {id:'neon-cyan',label:'Neon Sign',layout:'neon',animation:'neon-flicker',fill:'#64eeff',stroke:'#216aca',font:'sans'},
  {id:'chrome-title',label:'Chrome Title',layout:'chrome',animation:'fade',fill:'#eaf0f8',stroke:'#527494',font:'sans'},
- {id:'handwritten-script',label:'Handwritten',layout:'handwriting',animation:'letter-pop',fill:'#fff5d4',stroke:'#815d8c',font:'script'},
+ {id:'handwritten-script',label:'Handwritten',layout:'handwriting',animation:'handwriting-reveal',fill:'#fff5d4',stroke:'#815d8c',font:'script'},
  {id:'cinematic-title',label:'Cinematic',layout:'cinematic',animation:'fade',fill:'#fff8ec',stroke:'#d2ad63',font:'serif'},
  {id:'news-lower-third',label:'News Lower Third',layout:'news',animation:'box-reveal',fill:'#ffffff',stroke:'#e0a360',font:'sans'},
- {id:'location-card',label:'Location Card',layout:'location',animation:'slide',fill:'#ffffff',stroke:'#54d5ff',font:'sans'},
+ {id:'location-card',label:'Location Card',layout:'location',animation:'location-drop',fill:'#ffffff',stroke:'#54d5ff',font:'sans'},
  {id:'editorial-quote',label:'Editorial Quote',layout:'quote',animation:'fade',fill:'#f6ecdc',stroke:'#d3b47c',font:'serif'},
  {id:'comic-sticker',label:'Comic Sticker',layout:'comic',animation:'letter-pop',fill:'#fff968',stroke:'#191429',font:'sans'},
- {id:'social-callout',label:'Social Callout',layout:'social',animation:'letter-pop',fill:'#ffffff',stroke:'#ff447b',font:'sans'},
+ {id:'social-callout',label:'Social Callout',layout:'social',animation:'social-pulse',fill:'#ffffff',stroke:'#ff447b',font:'sans'},
  {id:'chapter-ending',label:'Chapter / Ending',layout:'chapter',animation:'fade',fill:'#f5e6c8',stroke:'#ab8652',font:'serif'},
  {id:'tech-hud',label:'Technology HUD',layout:'hud',animation:'typewriter',fill:'#8cffee',stroke:'#168882',font:'mono'},
  {id:'event-announcement',label:'Event Announcement',layout:'event',animation:'slide',fill:'#ffffff',stroke:'#ff8651',font:'sans'},
  {id:'speech-bubble',label:'Speech Bubble',layout:'speech',animation:'letter-pop',fill:'#18232b',stroke:'#faf5e9',font:'sans'},
  {id:'typewriter-document',label:'Typewriter',layout:'typewriter',animation:'typewriter',fill:'#f7efdb',stroke:'#c3a888',font:'mono'},
  {id:'retro-stamp',label:'Retro Stamp',layout:'stamp',animation:'shake',fill:'#f1dbac',stroke:'#b84936',font:'sans'},
- {id:'stacked-headline',label:'Stacked Headline',layout:'stacked',animation:'box-reveal',fill:'#fff7ec',stroke:'#e08343',font:'sans'}
+ {id:'stacked-headline',label:'Stacked Headline',layout:'stacked',animation:'box-reveal',fill:'#fff7ec',stroke:'#e08343',font:'sans'},
+ {id:'countdown-title',label:'Countdown / Number Roll',layout:'countdown',animation:'countdown-roll',fill:'#effaf8',stroke:'#55a9cd',font:'mono'},
+ {id:'split-title',label:'Split Title',layout:'split',animation:'split-enter',fill:'#fff1dc',stroke:'#c98b55',font:'sans'}
 ].map(item=>Object.freeze({...item,group:'text'})));
 export const TEXT_ANIMATIONS=Object.freeze([
  ['none','Static'],['typewriter','Typewriter'],['letter-pop','Letter Pop'],
@@ -30,7 +32,9 @@ export const TEXT_ANIMATIONS=Object.freeze([
  ['wave','Floating / Waving Letters'],['kinetic-stagger','Kinetic Stagger'],
  ['bounce','Rubber Bounce'],['outline-fill','Outline to Solid'],
  ['glitch-text','Glitch Letters'],['title-wipe','Title Wipe'],
- ['dissolve-out','Dissolve Out']
+ ['dissolve-out','Dissolve Out'],['handwriting-reveal','Handwriting Reveal'],
+ ['social-pulse','Social Button Pulse'],['location-drop','Location Pin Drop'],
+ ['countdown-roll','Rolling Countdown'],['split-enter','Split Title Entrance']
 ]);
 const animationNames=new Set(TEXT_ANIMATIONS.map(pair=>pair[0]));
 const defaultPalette={fill:'#ffffff',stroke:'#333333',shadow:'#000000'};
@@ -109,7 +113,16 @@ export function textAnimationState(config={},localTime=0,clipDuration=3) {
     ?(direction==='right'?-640+time/clip*1280:640-time/clip*1280):0,
   jitter:opts.animation==='shake'?Math.sin(time*46)*4*intensity:0,
   flicker:opts.animation==='neon-flicker'
-    ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1
+    ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1,
+  socialScale:opts.animation==='social-pulse'
+    ?(.45+.55*(1-Math.pow(1-progress,3))+Math.sin(time*11)*.035*intensity*clamp((raw-.6)/.4,0,1)):1,
+  pinProgress:opts.animation==='location-drop'?clamp(raw/.45,0,1):1,
+  locationLabelProgress:opts.animation==='location-drop'?easeProgress(clamp((raw-.3)/.7,0,1),'ease-out'):1,
+  countdownDigit:opts.animation==='countdown-roll'
+    ?Math.max(0,Math.ceil((1-progress)*( /^\\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3))):null,
+  countdownPhase:opts.animation==='countdown-roll'
+    ?(1-progress)*( /^\\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3):0,
+  splitProgress:opts.animation==='split-enter'?progress:1
  };
 }
 function roundRect(ctx,x,y,w,h,r) {
