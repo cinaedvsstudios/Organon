@@ -160,6 +160,45 @@ try {
     assert.equal(await page.locator('.timeline-clip').count(),3);
     assert.deepEqual(errors,[],'No uncaught Chrome errors during portable project round trip');
     console.log('[MotoriClip portable] PASS rejected invalid backup and manually relinked media without losing imported edits');
+
+    // Phase 9N also promises automatic local recovery after a browser refresh,
+    // not only saving and reopening a manually downloaded project file.
+    await page.locator('[data-library-tab="effects"]').click();
+    await page.locator('#effects-library-grid [data-preset-id="film-grain"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===4,
+        null,{timeout:20000});
+    await page.waitForFunction(()=>{
+        const raw=localStorage.getItem('motori-advanced-project-recovery-v1');
+        if(!raw)return false;
+        try {
+            const saved=JSON.parse(raw);
+            return saved.tracks?.length===4 && saved.history?.undo?.length>0;
+        }catch{return false;}
+    },null,{timeout:15000});
+    const beforeRefresh=await page.locator('.timeline-clip').evaluateAll(nodes=>nodes
+        .map(node=>node.dataset.trackId).filter(Boolean).sort());
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===4
+        &&document.querySelector('#btn-undo')?.disabled===false,
+        null,{timeout:20000});
+    const afterRefresh=await page.locator('.timeline-clip').evaluateAll(nodes=>nodes
+        .map(node=>node.dataset.trackId).filter(Boolean).sort());
+    assert.deepEqual(afterRefresh,beforeRefresh,'Refresh must recover the same four clip IDs');
+    await page.locator('#btn-undo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===3,
+        null,{timeout:20000});
+    assert.equal(await page.locator('#btn-redo').isDisabled(),false);
+    await page.locator('#btn-redo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===4,
+        null,{timeout:20000});
+    const afterRedo=await page.locator('.timeline-clip').evaluateAll(nodes=>nodes
+        .map(node=>node.dataset.trackId).filter(Boolean).sort());
+    assert.deepEqual(afterRedo,beforeRefresh,'Redo after refresh must restore original clip IDs');
+    await page.locator('.timeline-clip.background.needs-relink').waitFor({timeout:15000});
+    assert.equal(await page.locator('#btn-export-offline').isDisabled(),true,
+        'Automatic history recovery must not enable exports with offline media');
+    assert.deepEqual(errors,[],'No uncaught Chrome errors after browser-refresh recovery');
+    console.log('[MotoriClip portable] PASS local recovery retains Undo/Redo and generated overlays after browser refresh with media offline');
     await context.close();
 } finally {
     await browser.close();
