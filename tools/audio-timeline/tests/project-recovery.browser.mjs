@@ -214,8 +214,9 @@ try{
     assert.equal(clearHandle.sameName,true);
     assert.equal(clearHandle.size,saved.files[0].size);
 
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background').length===0);
     await page.reload({waitUntil:'domcontentloaded'});
     assert.equal(await page.locator('.timeline-clip.background').count(),0);

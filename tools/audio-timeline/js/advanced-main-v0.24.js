@@ -16,6 +16,7 @@ import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
 import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord, writeRecoveryRecordWithQuota } from './project-recovery.mjs';
@@ -38,6 +39,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
         btnSaveProject: document.getElementById('btn-save-project'), btnOpenProject: document.getElementById('btn-open-project'), projectOpenInput: document.getElementById('project-open-input'),
         projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
+        btnResetExport:document.getElementById('btn-reset-export'),
+        laneMenu:document.getElementById('timeline-lane-context-menu'),laneMenuTitle:document.getElementById('lane-menu-title'),
+        laneRename:document.getElementById('lane-rename'),laneChangeColour:document.getElementById('lane-change-colour'),laneResetColour:document.getElementById('lane-reset-colour'),laneDelete:document.getElementById('lane-delete'),
+        clipChangeColour:document.getElementById('context-change-colour'),clipResetColour:document.getElementById('context-reset-colour'),
+        actionModal:document.getElementById('timeline-action-modal'),actionTitle:document.getElementById('timeline-action-title'),actionDescription:document.getElementById('timeline-action-description'),actionField:document.getElementById('timeline-action-field'),actionFieldLabel:document.getElementById('timeline-action-field-label'),actionInput:document.getElementById('timeline-action-input'),actionColours:document.getElementById('timeline-colour-presets'),actionError:document.getElementById('timeline-action-error'),actionApply:document.getElementById('timeline-action-apply'),actionCancel:document.getElementById('timeline-action-cancel'),actionClose:document.getElementById('timeline-action-close'),
         btnAddTrack: document.getElementById('btn-add-track'), trackTypeMenu: document.getElementById('track-type-menu'),
         btnSnapSelected: document.getElementById('btn-snap-selection'), btnSnapOptions: document.getElementById('btn-snap-options'), snapOptionsMenu: document.getElementById('snap-options-menu'),
         btnOpenTransitions: document.getElementById('btn-open-transitions'), transitionModal: document.getElementById('transition-modal'),
@@ -89,6 +95,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         emptyElement: document.getElementById('timeline-empty'),
         onSelect: selectTrack,
         onContextMenu: openContextMenu,
+        onLaneContextMenu: openLaneContextMenu,
         onDropProjectFile: placeProjectFile,
         onTrackChange: onTimelineTrackChanged,
         onTrackInteractionStart: (track, detail) => recordHistory(`${detail.mode === 'resize' ? 'Trim' : 'Move'} ${track.sourceName || track.laneLabel}`),
@@ -267,6 +274,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             laneId,
             laneLabel: extras.laneLabel || laneName(type, order),
             label: extras.label || laneName(type, order),
+            laneColor:normaliseTimelineColour(extras.laneColor),
+            clipColor:normaliseTimelineColour(extras.clipColor),
             start: 0,
             sourceOffset: 0,
             sourceDuration: 0,
@@ -309,6 +318,70 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         state.toastTimer = setTimeout(() => elements.toast.classList.remove('visible'), duration);
     }
 
+
+    // One branded, accessible action dialog replaces native browser prompt,
+    // confirm and alert UI. Resolve only on a direct user interaction.
+    let actionDialogResolve=null;
+    function closeEditorAction(value=null) {
+        elements.actionModal.hidden=true;
+        if(actionDialogResolve){
+            const resolve=actionDialogResolve;
+            actionDialogResolve=null;
+            resolve(value);
+        }
+    }
+    function requestEditorAction({kind='confirm',title='Confirm',description='',value='',apply='Apply',danger=false}={}) {
+        if(actionDialogResolve)closeEditorAction(null);
+        hideContextMenu();
+        hideLaneContextMenu();
+        elements.actionTitle.textContent=title;
+        elements.actionDescription.textContent=description;
+        elements.actionField.hidden=!['rename','colour'].includes(kind);
+        elements.actionColours.hidden=kind!=='colour';
+        elements.actionFieldLabel.textContent=kind==='colour'?'Hex colour':'Track name';
+        elements.actionInput.value=String(value);
+        elements.actionInput.maxLength=kind==='rename'?80:7;
+        elements.actionInput.placeholder=kind==='colour'?'#4b84bf':'Track name';
+        elements.actionError.hidden=true;
+        elements.actionApply.textContent=apply;
+        elements.actionCancel.hidden=kind==='info';
+        elements.actionApply.classList.toggle('btn-danger',danger);
+        elements.actionApply.classList.toggle('btn-primary',!danger);
+        for(const button of elements.actionColours.querySelectorAll('[data-timeline-colour]')){
+            button.style.setProperty('--swatch',button.dataset.timelineColour);
+            button.setAttribute('aria-pressed',String(button.dataset.timelineColour===value));
+        }
+        elements.actionModal.hidden=false;
+        (elements.actionField.hidden?elements.actionApply:elements.actionInput).focus();
+        return new Promise(resolve=>{actionDialogResolve=resolve;});
+    }
+    function submitEditorAction() {
+        const kind=!elements.actionField.hidden
+            ? elements.actionColours.hidden?'rename':'colour' : 'confirm';
+        const value=elements.actionInput.value.trim();
+        if(kind==='rename' && (!value || value.length>80)){
+            elements.actionError.textContent='Enter a track name of 1–80 characters.';
+            elements.actionError.hidden=false;return;
+        }
+        if(kind==='colour' && !normaliseTimelineColour(value)){
+            elements.actionError.textContent='Use a valid six-digit hex colour, such as #4b84bf.';
+            elements.actionError.hidden=false;return;
+        }
+        closeEditorAction(kind==='rename'?value:kind==='colour'?normaliseTimelineColour(value):true);
+    }
+    elements.actionCancel.addEventListener('click',()=>closeEditorAction(null));
+    elements.actionClose.addEventListener('click',()=>closeEditorAction(null));
+    elements.actionApply.addEventListener('click',submitEditorAction);
+    elements.actionModal.addEventListener('pointerdown',e=>{if(e.target===elements.actionModal)closeEditorAction(null);});
+    elements.actionInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitEditorAction();}});
+    for(const button of elements.actionColours.querySelectorAll('[data-timeline-colour]')){
+        button.addEventListener('click',()=>{
+            elements.actionInput.value=button.dataset.timelineColour;
+            for(const other of elements.actionColours.querySelectorAll('[data-timeline-colour]'))
+                other.setAttribute('aria-pressed',String(other===button));
+            elements.actionError.hidden=true;
+        });
+    }
 
     function captureHistorySnapshot() {
         return snapshotProject({
@@ -435,8 +508,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             showToast('Cannot open project: '+error.message);
             return;
         }
-        if(!window.confirm(`Open ${file.name}? This replaces the current timeline and its Undo/Redo history with the saved project history (when available). Save the current project first if needed. Original media may need relinking.`))
-            return;
+        if(!await requestEditorAction({kind:'confirm',title:'Open saved project?',
+            description:`Open ${file.name}? This replaces the current timeline and Undo/Redo history. Save a backup first if you need it; original source media may need relinking.`,
+            apply:'Open project'}))return;
         state.recoveryLoading=true;
         try {
             // A current-session File can be reused only when its stable
@@ -1377,7 +1451,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if (!state.tracks.includes(track) && /cancelled/i.test(error.message)) return false;
             elements.previewState.textContent = `Could not load ${entry.name}: ${error.message}`;
             showToast(`Could not import ${entry.name}`);
-            alert(`Could not load ${entry.name}. ${error.message}`);
+            void requestEditorAction({kind:'info',title:'Could not load media',
+                description:`Could not load ${entry.name}: ${error.message}`,apply:'Close'});
             return false;
         }
     }
@@ -1405,6 +1480,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         track.laneLabel = laneName('video', order);
         track.label = laneName('video', order);
         track.order = order;
+        track.laneColor=null;
         return track;
     }
 
@@ -1418,6 +1494,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             track.laneLabel = freeLane.laneLabel;
             track.label = freeLane.laneLabel;
             track.order = freeLane.order;
+            track.laneColor = state.tracks.find(t=>t.laneId===freeLane.laneId)?.laneColor || null;
         } else {
             setTrackToNewVideoLane(track);
         }
@@ -1454,7 +1531,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             // silently multiplying tracks. The new clip is placed after any
             // occupied region when necessary.
             const lane = laneTracks[0];
-            track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, order: lane.order });
+            track = createTrack(entry.kind, { laneId: lane.laneId, laneLabel: lane.laneLabel, label:lane.label, order: lane.order, laneColor:lane.laneColor });
             state.tracks.push(track);
             created = true;
         }
@@ -1675,6 +1752,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 // Videos cannot overlap in a lane, so a duplicate gets a fresh video lane.
                 laneId: isVideo ? undefined : original.laneId,
                 laneLabel: isVideo ? undefined : original.laneLabel,
+                label:isVideo ? undefined : original.label,
+                laneColor:original.laneColor,
+                clipColor:original.clipColor,
                 order: isVideo ? undefined : original.order,
                 start: Math.max(0, (Number(original.start) || 0) + originalDuration),
                 sourceOffset: Number(original.sourceOffset) || 0,
@@ -1736,6 +1816,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
     function openContextMenu(trackId, x, y) {
+        hideLaneContextMenu();
         selectTrack(trackId);
         state.contextTrackId = trackId;
         const track = getTrack(trackId);
@@ -1759,12 +1840,96 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.contextDownloadWav.disabled=!track.file || !['audio','video'].includes(track.type) || typeof OfflineAudioContext === 'undefined' || offlineExporter.busy || exporter.busy || !(track.clipDuration>0) || track.clipDuration>OFFLINE_EXPORT_LIMIT_SECONDS;
         elements.contextDownloadWav.title=track.clipDuration>OFFLINE_EXPORT_LIMIT_SECONDS ? 'Split into sections shorter than 120 seconds first' : 'Export only the trimmed clip audio as uncompressed 16-bit 48 kHz WAV with Orgavox effects';
         elements.ContextClipActions['toggle-visible'].textContent=track.visible===false?'◉ Show clip':'◉ Hide clip';
+        elements.clipResetColour.disabled=!normaliseTimelineColour(track.clipColor);
         elements.contextMenu.hidden = false;
         const maxX = window.innerWidth - elements.contextMenu.offsetWidth - 8;
         const maxY = window.innerHeight - elements.contextMenu.offsetHeight - 8;
         elements.contextMenu.style.left = `${clamp(x, 8, maxX)}px`; elements.contextMenu.style.top = `${clamp(y, 8, maxY)}px`;
     }
-    function hideContextMenu() { elements.contextMenu.hidden = true; state.contextTrackId = null; }
+    function hideLaneContextMenu() {
+        elements.laneMenu.hidden=true;
+        state.laneContextId=null;
+    }
+    function laneClips(laneId) {
+        return state.tracks.filter(track=>(track.laneId||track.id)===laneId);
+    }
+    function openLaneContextMenu(laneId,x,y) {
+        hideContextMenu();
+        const clips=laneClips(laneId);
+        if(!clips.length)return;
+        state.laneContextId=laneId;
+        elements.laneMenuTitle.textContent=clips[0].laneLabel||'Track';
+        elements.laneResetColour.disabled=!normaliseTimelineColour(clips[0].laneColor);
+        elements.laneMenu.hidden=false;
+        elements.laneMenu.style.left=`${clamp(x,8,Math.max(8,window.innerWidth-elements.laneMenu.offsetWidth-8))}px`;
+        elements.laneMenu.style.top=`${clamp(y,8,Math.max(8,window.innerHeight-elements.laneMenu.offsetHeight-8))}px`;
+    }
+    async function renameLane() {
+        const id=state.laneContextId,clips=laneClips(id);
+        hideLaneContextMenu();
+        if(!clips.length)return;
+        const next=await requestEditorAction({kind:'rename',title:'Rename track',
+            description:'Change the lane label. Source filenames remain unchanged.',value:clips[0].laneLabel||'Track',apply:'Rename'});
+        if(next===null || next===clips[0].laneLabel || !laneClips(id).length)return;
+        recordHistory('Rename track');
+        for(const clip of laneClips(id)){clip.laneLabel=next;clip.label=next;}
+        refreshAll();
+        showToast('Renamed track to '+next);
+    }
+    async function recolourLane() {
+        const id=state.laneContextId,clips=laneClips(id);
+        hideLaneContextMenu();
+        if(!clips.length)return;
+        const colour=await requestEditorAction({kind:'colour',title:'Change track colour',
+            description:'Changes the timeline lane and its clips, except clips with their own colour override.',value:resolvedLaneColour(clips[0]),apply:'Set colour'});
+        if(!colour || !laneClips(id).length)return;
+        recordHistory('Change track colour');
+        for(const clip of laneClips(id))clip.laneColor=colour;
+        refreshAll();
+    }
+    function resetLaneColour() {
+        const id=state.laneContextId,clips=laneClips(id);
+        hideLaneContextMenu();
+        if(!clips.length || !clips.some(c=>c.laneColor))return;
+        recordHistory('Reset track colour');
+        for(const clip of clips)clip.laneColor=null;
+        refreshAll();
+    }
+    async function deleteLane() {
+        const id=state.laneContextId,clips=laneClips(id);
+        hideLaneContextMenu();
+        if(!clips.length)return;
+        const agreed=await requestEditorAction({kind:'confirm',title:'Delete entire track?',
+            description:`Delete "${clips[0].laneLabel||'Track'}" and all ${clips.length} clip(s) on it? The media bin is untouched. Undo can restore the track.`,apply:'Delete track',danger:true});
+        if(!agreed || !laneClips(id).length)return;
+        recordHistory('Delete entire track');
+        const removed=new Set(laneClips(id).map(t=>t.id));
+        state.tracks=state.tracks.filter(t=>!removed.has(t.id));
+        for(const rid of removed)state.selectedTrackIds.delete(rid);
+        if(removed.has(state.selectedTrackId))state.selectedTrackId=[...state.selectedTrackIds][0]||null;
+        refreshAll();
+        showToast('Track removed · Undo to restore');
+    }
+    async function recolourClip() {
+        const id=state.contextTrackId,track=getTrack(id);
+        hideContextMenu();
+        if(!track)return;
+        const colour=await requestEditorAction({kind:'colour',title:'Change clip colour',
+            description:'Only the timeline clip changes colour. Your source media and rendered video remain unchanged.',value:resolvedClipColour(track),apply:'Set colour'});
+        if(!colour || !getTrack(id))return;
+        recordHistory('Change clip colour');
+        getTrack(id).clipColor=colour;
+        refreshAll();
+    }
+    function resetClipColour() {
+        const id=state.contextTrackId,track=getTrack(id);
+        hideContextMenu();
+        if(!track?.clipColor)return;
+        recordHistory('Reset clip colour');
+        track.clipColor=null;
+        refreshAll();
+    }
+        function hideContextMenu() { elements.contextMenu.hidden = true; state.contextTrackId = null; }
     function addLayerFromContext() {
         const track = getTrack(state.contextTrackId); if (!track) return;
         recordHistory(`Add ${track.type} layer`);
@@ -1806,6 +1971,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             laneId:sameLane?target.laneId:undefined,
             laneLabel:sameLane?target.laneLabel:undefined,
             label:sameLane?target.label:undefined,
+            laneColor:sameLane?target.laneColor:clipData.laneColor,
             order:sameLane?target.order:undefined,
             start:Math.max(0,suggestedTime),
             transitionFromId:null,transitionEffectId:null,groupId:null,
@@ -2282,6 +2448,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     });
     elements.btnProjectSettings.addEventListener('click', () => openEditorModal(elements.projectSettingsModal));
     elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
+    elements.btnResetExport.addEventListener('click',()=>{
+        // Reset output preferences only; never alter project FPS, dimensions,
+        // media or editing history. Select first supported live format.
+        elements.exportBitrate.value='6000';
+        elements.exportOfflineFormat.value='mp4';
+        const live=[...elements.exportFormat.options].find(o=>o.value&&!o.disabled);
+        if(live)elements.exportFormat.value=live.value;
+        showToast('Export settings reset · Standard 6 Mbps · Fixed-frame MP4');
+    });
     elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
     elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);
     // Portal all small menus to <body> so panels cannot clip them.
@@ -2479,9 +2654,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
     elements.btnRelink.addEventListener('click', () => { void reconnectRememberedMedia(); });
     elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
-    elements.btnClear.addEventListener('click', () => {
+    elements.btnClear.addEventListener('click', async () => {
         if (!state.files.length && !state.tracks.length) return;
-        if (!confirm('Clear all Project Files and all timeline clips? Undo history can still restore them until that history is discarded.')) return;
+        const confirmed=await requestEditorAction({kind:'confirm',title:'Clear all project media?',
+            description:'Remove all media from the active bin and every timeline clip? Undo can still restore the project while its history remains.',apply:'Clear all',danger:true});
+        if(!confirmed)return;
         recordHistory('Clear project');
         // Keep IndexedDB file handles needed by the persisted Clear-project
         // Undo snapshot. Erasing them here makes Undo after reload recover only
@@ -2648,9 +2825,18 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         void duplicateSelectedTracks();
     });
     elements.contextRemoveLayer.addEventListener('click', removeLayerFromContext);
-    document.addEventListener('click', (event) => { if (!elements.contextMenu.contains(event.target)) hideContextMenu(); });
+    elements.clipChangeColour.addEventListener('click',()=>{void recolourClip();});
+    elements.clipResetColour.addEventListener('click',resetClipColour);
+    elements.laneRename.addEventListener('click',()=>{void renameLane();});
+    elements.laneChangeColour.addEventListener('click',()=>{void recolourLane();});
+    elements.laneResetColour.addEventListener('click',resetLaneColour);
+    elements.laneDelete.addEventListener('click',()=>{void deleteLane();});
+    document.addEventListener('click', (event) => {
+        if (!elements.contextMenu.contains(event.target)) hideContextMenu();
+        if (!elements.laneMenu.contains(event.target)) hideLaneContextMenu();
+    });
     document.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') { hideContextMenu(); closeEditorModals(); elements.trackTypeMenu.hidden = true; elements.btnAddTrack.setAttribute('aria-expanded','false'); elements.snapOptionsMenu.hidden = true; elements.btnSnapOptions.setAttribute('aria-expanded','false'); }
+        if (event.key === 'Escape') { hideContextMenu(); hideLaneContextMenu(); closeEditorAction(null); closeEditorModals(); elements.trackTypeMenu.hidden = true; elements.btnAddTrack.setAttribute('aria-expanded','false'); elements.snapOptionsMenu.hidden = true; elements.btnSnapOptions.setAttribute('aria-expanded','false'); }
         const modifier = event.ctrlKey || event.metaKey;
         const target = event.target;
         const isTyping = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable;

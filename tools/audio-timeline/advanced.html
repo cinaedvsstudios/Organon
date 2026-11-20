@@ -396,6 +396,42 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     .timeline-toolbar-row > .timeline-tool { flex-basis:90px; width:90px; min-width:90px; }
     .timeline-toolbar-row > .snap-options-toggle { flex-basis:30px; min-width:30px; }
 }
+
+/* Stage 1: equal-size project actions, native-consistent scrolling, themed action dialogs. */
+.project-controls-title { min-height:25px; margin-bottom:7px; justify-content:flex-end; }
+.project-backup-actions { width:100%; justify-content:flex-end; }
+.project-backup-actions #file-count { margin-left:auto; }
+.file-toolbar { grid-template-columns:repeat(3,minmax(0,1fr)) 33px; gap:5px; }
+.file-toolbar .btn,.project-action-buttons .btn { height:32px; min-height:32px; padding:5px 3px; text-align:center; }
+.file-toolbar .project-cog-btn { min-width:33px; width:33px; padding:0; font-size:1rem; border-radius:10px; }
+.project-action-buttons { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin-top:7px; }
+.project-action-buttons .btn { width:100%; }
+.file-list,.asset-library-panel,.inspector-scroll,.timeline-scroll,.editor-modal-card,.context-menu {
+    scrollbar-width:thin; scrollbar-color:var(--chiseled-bronze) rgba(0,0,0,.24);
+}
+.file-list::-webkit-scrollbar,.asset-library-panel::-webkit-scrollbar,.inspector-scroll::-webkit-scrollbar,
+.timeline-scroll::-webkit-scrollbar,.editor-modal-card::-webkit-scrollbar,.context-menu::-webkit-scrollbar { width:9px; height:9px; }
+.file-list::-webkit-scrollbar-thumb,.asset-library-panel::-webkit-scrollbar-thumb,.inspector-scroll::-webkit-scrollbar-thumb,
+.timeline-scroll::-webkit-scrollbar-thumb,.editor-modal-card::-webkit-scrollbar-thumb,.context-menu::-webkit-scrollbar-thumb { background:var(--chiseled-bronze); border-radius:999px; }
+.file-list::-webkit-scrollbar-thumb:hover,.asset-library-panel::-webkit-scrollbar-thumb:hover,.inspector-scroll::-webkit-scrollbar-thumb:hover,
+.timeline-scroll::-webkit-scrollbar-thumb:hover,.editor-modal-card::-webkit-scrollbar-thumb:hover,.context-menu::-webkit-scrollbar-thumb:hover { background:var(--water-blue); }
+.file-list::-webkit-scrollbar-track,.asset-library-panel::-webkit-scrollbar-track,.inspector-scroll::-webkit-scrollbar-track,
+.timeline-scroll::-webkit-scrollbar-track,.editor-modal-card::-webkit-scrollbar-track,.context-menu::-webkit-scrollbar-track { background:rgba(0,0,0,.24); border-radius:999px; }
+.timeline-action-card { width:min(385px,100%); }
+.timeline-action-buttons { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px; }
+.timeline-action-buttons .btn { width:100%; height:34px; }
+.timeline-colour-presets { display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:7px; margin:7px 0; }
+.timeline-colour-presets button { height:34px; min-width:0; border:2px solid rgba(245,240,219,.35); border-radius:9px; background:var(--swatch); cursor:pointer; }
+.timeline-colour-presets button:hover,.timeline-colour-presets button[aria-pressed=true] { border-color:white; box-shadow:0 0 0 2px var(--water-blue); }
+.timeline-action-card #timeline-action-error { color:#ff8da3; }
+#timeline-lane-context-menu { z-index:2910; width:min(236px,calc(100vw - 16px)); }
+#timeline-lane-context-menu button { width:100%; margin:2px 0; }
+.timeline-lane .lane-name { cursor:context-menu; }
+.timeline-lane .lane-name:hover { background:rgba(75,132,191,.18); }
+.timeline-clip:not(.placeholder):not(.needs-relink) {
+    border-color:var(--clip-colour);
+    background:linear-gradient(90deg,color-mix(in srgb,var(--clip-colour) 40%,transparent),color-mix(in srgb,var(--clip-colour) 12%,transparent));
+}
 </style>
 </head>
 <body>
@@ -418,7 +454,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         <aside class="column-card project-column">
             <div class="column-content">
                 <section class="project-controls">
-                    <div class="project-controls-title"><span>Project controls</span><div class="project-backup-actions" aria-label="Portable project backup controls">
+                    <div class="project-controls-title"><div class="project-backup-actions" aria-label="Portable project backup controls">
                         <button type="button" class="btn" id="btn-save-project" aria-label="Save project file" title="Save a portable MotoriClip project JSON backup. Includes edits and settings, but not original media.">💾</button>
                         <button type="button" class="btn" id="btn-open-project" aria-label="Open project file" title="Open a saved MotoriClip project JSON. Replaces the current timeline; media can be relinked.">📂</button>
                         <small id="file-count">0 media</small></div></div>
@@ -426,8 +462,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <button type="button" class="btn" id="btn-import" title="Import media; supported browsers can remember file handles for reopening">➕ Import</button>
                         <button type="button" class="btn" id="btn-browse" title="Choose a folder of media files to import into the project">📁 Browse</button>
                         <button type="button" class="btn" id="btn-relink" title="Reconnect previously permitted files without reimporting; you may need to grant access again">↻ Relink</button>
+                        <button type="button" class="btn project-cog-btn" id="btn-project-settings" title="Project Settings: canvas dimensions and frame rate" aria-label="Project Settings">⚙</button>
                     </div>
-                    <div class="project-action-buttons"><button type="button" class="btn" id="btn-project-settings" title="Canvas dimensions and frame rate">⚙ Project Settings</button><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button></div>
+                    <div class="project-action-buttons"><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button><button type="button" class="btn" id="btn-reset-export" title="Restore export format and quality defaults; keep clips and project settings">↺ Reset</button></div>
                 </section>
                 <nav class="asset-library-tabs" role="tablist" aria-label="Project asset library">
                     <button type="button" class="asset-tab active" data-library-tab="media" role="tab" aria-selected="true" aria-controls="project-drop-zone" title="Imported project files">📁 Media</button>
@@ -746,6 +783,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         <div class="context-menu-title" id="context-menu-title">Timeline clip</div>
         <div class="context-action-grid"><button type="button" id="context-cut" title="Cut this clip for pasting at another timeline position">✂ Cut</button><button type="button" id="context-copy" title="Copy this clip to the clipboard">⧉ Copy</button><button type="button" id="context-duplicate" title="Duplicate this clip immediately after the original">⧉ Duplicate</button><button type="button" id="context-remove-layer" class="danger" title="Delete this clip from the timeline; Undo restores it">🗑 Delete clip</button></div>
         <button type="button" id="context-paste" title="Paste a previously copied clip at this position">📋 Paste at cursor</button>
+        <button type="button" id="context-change-colour" title="Override this clip's timeline colour without changing the video itself">🎨 Change clip colour</button>
+        <button type="button" id="context-reset-colour" title="Use this lane's colour, or the media-type default">↺ Reset clip colour</button>
         <button type="button" id="context-slice-click">✂ Slice at cursor</button>
         <button type="button" id="context-split-now">✂ Split at now line</button>
         <button type="button" id="context-toggle-visible">◉ Hide clip</button>
@@ -754,6 +793,30 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         <button type="button" id="context-download-wav" title="Download only this audio or video clip's trimmed sound as a real, uncompressed WAV file">🎵 Download audio as WAV</button>
         <button type="button" id="context-add-layer">＋ Add layer of this type</button>
         <button type="button" id="context-extract-audio" hidden>🎵 Extract Audio</button>
+    </div>
+    <div class="context-menu" id="timeline-lane-context-menu" hidden aria-label="Track actions">
+        <div class="context-menu-title" id="lane-menu-title">Track</div>
+        <button type="button" id="lane-rename" title="Rename this entire timeline lane without renaming the media files">✎ Rename track</button>
+        <button type="button" id="lane-change-colour" title="Change the timeline colour of all clips in this lane except manually recoloured clips">🎨 Track colour</button>
+        <button type="button" id="lane-reset-colour" title="Restore the default media-type colour for this lane">↺ Reset track colour</button>
+        <button type="button" class="danger" id="lane-delete" title="Delete this track and every clip on it; can be undone">🗑 Delete entire track</button>
+    </div>
+    <div class="editor-modal" id="timeline-action-modal" hidden role="dialog" aria-modal="true" aria-labelledby="timeline-action-title">
+        <div class="editor-modal-card timeline-action-card">
+            <div class="editor-modal-head"><h2 id="timeline-action-title">Track action</h2><button type="button" class="editor-modal-close" id="timeline-action-close" aria-label="Close dialog" title="Cancel">×</button></div>
+            <p id="timeline-action-description" class="modal-help"></p>
+            <label class="editor-modal-field" id="timeline-action-field" for="timeline-action-input"><span id="timeline-action-field-label">Value</span><input id="timeline-action-input" class="compact-input" type="text" maxlength="100"></label>
+            <div id="timeline-colour-presets" class="timeline-colour-presets" hidden aria-label="Suggested timeline colours">
+                <button type="button" data-timeline-colour="#4b84bf" title="Ocean blue" aria-label="Ocean blue"></button>
+                <button type="button" data-timeline-colour="#9a2f4f" title="Burgundy" aria-label="Burgundy"></button>
+                <button type="button" data-timeline-colour="#e0a360" title="Sandstone gold" aria-label="Sandstone gold"></button>
+                <button type="button" data-timeline-colour="#66b9a8" title="Teal" aria-label="Teal"></button>
+                <button type="button" data-timeline-colour="#a58de4" title="Purple" aria-label="Purple"></button>
+                <button type="button" data-timeline-colour="#dfe7ed" title="Silver" aria-label="Silver"></button>
+            </div>
+            <p class="modal-help" id="timeline-action-error" role="alert" hidden></p>
+            <div class="timeline-action-buttons"><button type="button" class="btn" id="timeline-action-cancel">Cancel</button><button type="button" class="btn btn-primary" id="timeline-action-apply">Apply</button></div>
+        </div>
     </div>
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
@@ -821,7 +884,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-jpeg-snapshot-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-stage1-controls-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>

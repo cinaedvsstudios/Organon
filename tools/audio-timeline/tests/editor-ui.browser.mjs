@@ -107,6 +107,14 @@ try{
         }
     }
     await page.setViewportSize({width:1450,height:900});
+    assert.equal((await page.locator('#btn-project-settings').innerText()).trim(),'⚙');
+    assert.equal(await page.locator('.project-controls-title').innerText().then(v=>/project controls/i.test(v)),false);
+    await page.evaluate(()=>{document.querySelector('#export-bitrate').value='10000';});
+    await page.locator('#btn-reset-export').click();
+    assert.equal(await page.locator('#export-bitrate').inputValue(),'6000');
+    assert.deepEqual(await page.evaluate(()=>['.file-list','.asset-library-panel','.inspector-scroll']
+        .map(selector=>getComputedStyle(document.querySelector(selector)).scrollbarWidth)),
+        ['thin','thin','thin']);
     await page.locator('#btn-project-settings').click();
     await page.locator('#project-fps').waitFor({state:'visible'});
     assert.match(await page.title(),/MotoriClip.+Advanced/i);
@@ -132,8 +140,9 @@ try{
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     assert.ok(!(await page.locator('#btn-undo').isDisabled()),'Import should create undo history');
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     assert.match(await page.locator('#file-count').innerText(),/0 media/i);
     await page.locator('#btn-undo').click();
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
@@ -208,6 +217,46 @@ try{
         assert.equal(decoded?.height,360,'Snapshot should use the actual project canvas height');
     }
     console.log('[MotoriClip UI] PASS genuine PNG and JPEG frame downloads at applied canvas dimensions');
+    // Stage 1: new lane menu, distinct type/track/clip colours and Undo.
+    const lane=()=>page.locator('.timeline-lane.background .lane-name').first();
+    await lane().click({button:'right'});
+    await page.locator('#lane-rename').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-input').fill('My Backgrounds');
+    await page.locator('#timeline-action-apply').click();
+    assert.match(await lane().innerText(),/My Backgrounds/);
+    await lane().click({button:'right'});
+    await page.locator('#lane-change-colour').click();
+    await page.locator('#timeline-action-input').fill('#22aa77');
+    await page.locator('#timeline-action-apply').click();
+    const clipColour=()=>page.locator('.timeline-clip.background').first().evaluate(
+        el=>el.style.getPropertyValue('--clip-colour'));
+    assert.equal(await clipColour(),'#22aa77');
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    await page.locator('#context-change-colour').click();
+    await page.locator('#timeline-action-input').fill('#9933ee');
+    await page.locator('#timeline-action-apply').click();
+    assert.equal(await clipColour(),'#9933ee');
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    await page.locator('#context-reset-colour').click();
+    assert.equal(await clipColour(),'#22aa77');
+    await lane().click({button:'right'});
+    await page.locator('#lane-reset-colour').click();
+    assert.equal(await clipColour(),'#e0a360');
+    await lane().click({button:'right'});
+    await page.locator('#lane-delete').click();
+    assert.match(await page.locator('#timeline-action-title').innerText(),/delete entire track/i);
+    await page.locator('#timeline-action-cancel').click();
+    assert.equal(await page.locator('.timeline-clip.background').count(),1);
+    await lane().click({button:'right'});
+    await page.locator('#lane-delete').click();
+    await page.locator('#timeline-action-apply').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-lane.background').length===0);
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i);
+    await page.locator('#btn-undo').click();
+    await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
+    assert.match(await lane().innerText(),/My Backgrounds/);
+    console.log('[Stage1] PASS lane rename/recolour/reset/delete and Undo; clip overrides');
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     assert.equal(await page.locator('#context-duplicate').isVisible(),true,
         'Duplicate should be available from a clip right-click, not the toolbar');
@@ -248,8 +297,9 @@ try{
     await page.locator('#btn-add-marker').click();
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
     await page.locator('#btn-next-marker').click();
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
@@ -277,8 +327,9 @@ try{
 
     await page.locator('[data-library-tab="media"]').click();
     assert.ok(await page.locator('#project-drop-zone').isVisible());
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     assert.equal(await page.locator('#timeline-ruler').isVisible(),true,
         'Timeline second labels must be visible without extra clicks');
