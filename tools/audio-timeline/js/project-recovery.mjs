@@ -78,7 +78,9 @@ export function createRecoveryRecord({files=[],tracks=[],selectedTrackId=null,se
                 selectedTrackIds:source.selectedTrackIds,
                 selectedTrackId:source.selectedTrackId,
                 selectedFileId:source.selectedFileId,
-                currentTime:source.currentTime
+                currentTime:source.currentTime,
+                markers:source.markers,
+                settings:source.settings
             })};
         };
         result.history={undo:history.undo.map(compact),redo:history.redo.map(compact)};
@@ -145,7 +147,8 @@ export function validateRecoveryRecord(record) {
             // Use exactly the same clip/file ID and size validation as the
             // live project, without recursively validating its parent history.
             validateRecoveryRecord({...record,files:saved.files,tracks:saved.tracks,
-                history:undefined,markers:[]});
+                history:undefined,settings:saved.settings??record.settings,
+                markers:saved.markers??[]});
         }
     }
     return record;
