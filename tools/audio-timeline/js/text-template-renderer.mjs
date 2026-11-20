@@ -490,9 +490,13 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     const isNumber=/^\d+$/.test(value.trim());
     const initial=isNumber?Math.min(99,Math.max(1,Number(value.trim()))):3;
     const number=frame.countdownDigit===null?initial:frame.countdownDigit;
+    const roll=frame.countdownDigit===null?0:
+      Math.max(0,Math.ceil(frame.countdownPhase)-frame.countdownPhase);
     ctx.save();ctx.beginPath();ctx.rect(240,113,160,116);ctx.clip();
-    write(String(number),320,166,{font:'mono',size:109*factor,weight:800,
-      outlineWidth:1,maxWidth:158});
+    const digitStyle={font:'mono',size:109*factor,weight:800,
+      outlineWidth:1,maxWidth:158};
+    write(String(number),320,166-roll*113,digitStyle);
+    if(roll>0&&number>0)write(String(number-1),320,279-roll*113,digitStyle);
     ctx.restore();
     if(!isNumber)write(value.toUpperCase(),320,313,{font:'mono',size:21*factor,weight:700,
       outlineWidth:0,maxWidth:520});
