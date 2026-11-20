@@ -184,23 +184,23 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
    dy=(1-stagger)*18*intensity;
    alpha=stagger;
   }else if(mode==='shake'){
-   dx=Math.sin(frame.time*46+i*2.31)*6*intensity;
-   dy=Math.cos(frame.time*38+i*1.77)*5*intensity;
+   dx=Math.sin(frame.elapsed*46+i*2.31)*6*intensity;
+   dy=Math.cos(frame.elapsed*38+i*1.77)*5*intensity;
   }else if(mode==='wave'){
-   dy=Math.sin(frame.time*5.4+i*.93)*17*intensity;
-   dx=Math.sin(frame.time*2.1+i*.77)*3*intensity;
+   dy=Math.sin(frame.elapsed*5.4+i*.93)*17*intensity;
+   dx=Math.sin(frame.elapsed*2.1+i*.77)*3*intensity;
   }else if(mode==='neon-flicker'&&frame.raw<.94){
-   alpha=.2+.8*Math.abs(Math.sin(frame.time*(23+i*.61)+i*2.4));
+   alpha=.2+.8*Math.abs(Math.sin(frame.elapsed*(23+i*.61)+i*2.4));
   }else if(mode==='glitch-text'){
-   dx=Math.sin(frame.time*19.1+i*5.2)*4*intensity;
-   dy=Math.cos(frame.time*28.8+i*1.7)*3*intensity;
+   dx=Math.sin(frame.elapsed*19.1+i*5.2)*4*intensity;
+   dy=Math.cos(frame.elapsed*28.8+i*1.7)*3*intensity;
   }
   ctx.save();
   ctx.translate(cursor+width/2+dx,dy);
   ctx.scale(glyphScale,glyphScale);
   ctx.globalAlpha*=alpha;
   if(mode==='glitch-text' && intensity>0){
-   const skew=Math.sin(frame.time*31+i*3.7)*5*intensity;
+   const skew=Math.sin(frame.elapsed*31+i*3.7)*5*intensity;
    drawTitle(ctx,char,-skew,0,{...options,size,align:'center',outlineWidth:0,
        shadowBlur:0,fill:'#ff4269',maxWidth:width+12});
    drawTitle(ctx,char,skew,0,{...options,size,align:'center',outlineWidth:0,
@@ -212,6 +212,7 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  }
  ctx.restore();
 }
+const GLYPH_ANIMATIONS=new Set(['letter-pop','shake','wave','kinetic-stagger','glitch-text','neon-flicker']);
 function textValue(config,frame) {
  const value=config.value||'MotoriClip';
  return config.animation==='typewriter'
@@ -333,14 +334,14 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
    const factor=config.fontSize/100;
    const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
      shadow:config.shadow,shadowBlur:config.shadowBlur};
-   const glyphAnimations=new Set(['letter-pop','shake','wave','kinetic-stagger','glitch-text','neon-flicker']);
+
    const write=(text,x,y,details={})=>{
     const {revealAlpha,...style}=details;
     const opts={...base,...style};
     if(config.animation==='outline-fill')opts.fillAlpha=frame.progress;
     ctx.save();
     ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
-    if(glyphAnimations.has(config.animation)&&text.length<80)
+    if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80)
       drawGlyphs(ctx,text,x,y,opts,frame,config.animation);
     else drawTitle(ctx,text,x,y,opts);
     ctx.restore();
