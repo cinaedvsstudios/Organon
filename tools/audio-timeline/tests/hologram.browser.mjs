@@ -50,9 +50,9 @@ try{
   const engine=new AdvancedMediaEngine({canvas:output,mediaBin:document.createElement('div'),
     onRenderError:e=>renderErrors.push(String(e))});
   engine.outputWidth=w;engine.outputHeight=h;
-  const a={id:'a',type:'video',sourceName:'from',start:0,clipDuration:2,order:2,
+  const a={id:'a',type:'video',sourceName:'from',file:{name:'from.png'},start:0,clipDuration:2,order:2,
     visible:true,opacity:1,blendMode:'source-over',media:image('A')};
-  const b={id:'b',type:'video',sourceName:'to',start:1,clipDuration:2,order:1,
+  const b={id:'b',type:'video',sourceName:'to',file:{name:'to.png'},start:1,clipDuration:2,order:1,
     visible:true,opacity:1,blendMode:'source-over',media:image('B'),
     transitionFromId:'a',transitionEffectId:'hologram',
     visualTransitions:{enter:{duration:1,curve:'linear'},exit:{duration:0,curve:'linear'}}};
@@ -92,14 +92,16 @@ try{
   const alpha=render(.5);
   a.visible=false;
   const hidden=render(.5);
+  const shaderUsed=Boolean(engine.hologramWebGL);
   engine.clearAll();
-  return {samples,controls,baseline,screenshot,deterministic:exact.hash===repeat.hash
+  return {shaderUsed,samples,controls,baseline,screenshot,deterministic:exact.hash===repeat.hash
     &&repeat.hash===again.hash,
     earlyHash:earlier.hash,alpha,hidden,
     released:engine.hologramWebGL===null&&engine.hologramFromScratch===null
        &&engine.hologramToScratch===null,errors:renderErrors};
  });
  const values=result.samples,mid=values.find(x=>x.progress===.5);
+ assert.equal(result.shaderUsed,true,'Paired Hologram test must exercise actual original WebGL shader');
  console.log('[Hologram #02 QA diagnostic]',JSON.stringify({
    samples:values.map(v=>({progress:v.progress,red:v.red,green:v.green,blue:v.blue,hash:v.hash})),
    controls:Object.fromEntries(Object.entries(result.controls)
