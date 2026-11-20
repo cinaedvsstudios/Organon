@@ -18,6 +18,18 @@ export function isPersistentFileHandle(handle) {
     return Boolean(handle && handle.kind==='file' && typeof handle.getFile==='function');
 }
 
+/**
+ * Reconnect only the recorded source, not a file overwritten at the same path.
+ * OPFS/copy workflows can change lastModified without changing the bytes, so
+ * enforce the saved positive file size, filename and media kind. Legacy entries
+ * without a recorded size still use the historical name/kind fallback.
+ */
+export function matchesSavedMediaReference(entry,file,kind) {
+    if(!entry || !file || entry.name!==file.name || entry.kind!==kind) return false;
+    const savedSize=Number(entry.size);
+    return !(Number.isFinite(savedSize)&&savedSize>0&&file.size!==savedSize);
+}
+
 function openHandleDatabase() {
     if(typeof indexedDB==='undefined') return Promise.resolve(null);
     return new Promise((resolve,reject)=>{
