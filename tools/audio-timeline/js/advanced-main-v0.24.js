@@ -63,7 +63,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','color'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y'})[name]||'effect-'+name)])),
+        effectDuration:document.getElementById('effect-duration'),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -1341,6 +1342,17 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         for(const card of elements.effectsLibraryGrid.children)
             card.hidden=category!=='all'&&card.dataset.effectCategory!==category;
     }
+    elements.effectDuration.addEventListener('focus',()=>{
+        if(getTrack()?.effectOverlay)recordHistory('Change effect clip duration');
+    });
+    elements.effectDuration.addEventListener('change',()=>{
+        const track=getTrack();
+        if(!track?.effectOverlay||state.selectedTrackIds.size!==1)return;
+        const value=Number(elements.effectDuration.value);
+        if(!Number.isFinite(value)||value<.1){syncInspector();return;}
+        track.clipDuration=Math.min(120,Math.max(.1,value));
+        refreshAll();
+    });
     for(const [name,input] of Object.entries(elements.effectInspectorInputs)){
         input.addEventListener('focus',()=>{
             if(getTrack()?.effectOverlay)recordHistory('Edit timeline effect '+name);
@@ -1547,11 +1559,16 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
         document.getElementById('effect-origin-controls').hidden=
-            !['god-rays','pendulum-swing','rebound-swing','shockwave'].includes(track?.effectOverlay?.presetId);
+            !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=
             !['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
-              'ripple-distortion','electric-ripple','shockwave'].includes(track?.effectOverlay?.presetId);
+              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk'].includes(track?.effectOverlay?.presetId);
+        document.getElementById('effect-glow-control').hidden=
+            !['glow','edge-glow','halo-blur'].includes(track?.effectOverlay?.presetId);
+        document.getElementById('effect-blur-control').hidden=
+            !['glow','edge-glow','halo-blur'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
+            elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
             for(const [name,input] of Object.entries(elements.effectInspectorInputs))input.value=String(effect[name]);
         }
