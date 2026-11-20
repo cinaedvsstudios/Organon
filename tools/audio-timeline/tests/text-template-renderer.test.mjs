@@ -60,3 +60,54 @@ test('Undo/Redo snapshots carry editable text, design and motion and clear previ
  applyClipData(clip,{...snapshot,textOverlay:null});
  assert.equal(clip.textOverlay,null);
 });
+
+test('motion controls are editable, bounded and purely timeline-time dependent',()=>{
+ const conf=normaliseTextOverlay({presetId:'news-lower-third',value:'BREAKING',
+   subtitle:'Edited secondary line',animation:'box-reveal',animationDuration:1,
+   animationDelay:.5,animationSpeed:2,animationDirection:'right',
+   animationEasing:'linear',animationIntensity:150,animationLoop:false});
+ assert.equal(conf.subtitle,'Edited secondary line');
+ assert.equal(conf.animationDelay,.5);
+ assert.equal(conf.animationSpeed,2);
+ assert.equal(conf.animationDirection,'right');
+ assert.equal(conf.animationEasing,'linear');
+ assert.equal(conf.animationIntensity,150);
+ assert.equal(conf.animationLoop,false);
+ assert.equal(textAnimationState(conf,.2,3).alpha,0,
+   'Animation delay hides title until the requested start');
+ assert.equal(textAnimationState(conf,.5,3).boxWidth,0);
+ assert.equal(textAnimationState(conf,.75,3).boxWidth,320);
+ assert.equal(textAnimationState(conf,1,3).boxWidth,640);
+ assert.equal(textAnimationState(conf,.6,3).headlineAlpha,0,
+   'Broadcast banner must arrive before the headline');
+ assert.equal(textAnimationState(conf,.6,3).subtitleAlpha,0);
+ assert.ok(textAnimationState(conf,.95,3).headlineAlpha>0);
+ assert.ok(textAnimationState(conf,1,3).subtitleAlpha>0);
+ assert.deepEqual(textAnimationState(conf,.75,3),textAnimationState(conf,.75,3));
+ const right=normaliseTextOverlay({animation:'slide',animationDirection:'right'});
+ const down=normaliseTextOverlay({animation:'slide',animationDirection:'down'});
+ assert.ok(textAnimationState(right,0,3).slideX>0);
+ assert.ok(textAnimationState(down,0,3).slideY>0);
+ assert.equal(textAnimationState(down,3,3).slideY,0);
+ const repeat=normaliseTextOverlay({animation:'fade',animationDuration:.5,
+   animationLoop:true,animationEasing:'linear'});
+ assert.equal(textAnimationState(repeat,0,3).alpha,0);
+ assert.equal(textAnimationState(repeat,.5,3).alpha,0);
+ assert.ok(textAnimationState(repeat,.75,3).alpha>.45);
+ const broken=normaliseTextOverlay({animationSpeed:99,animationDelay:-2,
+   animationIntensity:700,animationDirection:'backwards',
+   animationEasing:'implausible',subtitle:'x'.repeat(200)});
+ assert.equal(broken.animationSpeed,4);
+ assert.equal(broken.animationDelay,0);
+ assert.equal(broken.animationIntensity,200);
+ assert.equal(broken.animationDirection,'left');
+ assert.equal(broken.animationEasing,'ease-out');
+ assert.equal(broken.subtitle.length,100);
+});
+test('stage-two motions are separate catalog choices, not colour duplicates',()=>{
+ const newOptions=['shake','wave','kinetic-stagger','glitch-text','bounce',
+    'outline-fill','title-wipe','dissolve-out'];
+ for(const name of newOptions){
+   assert.ok(TEXT_ANIMATIONS.some(([id])=>id===name),name+' is a real animation choice');
+ }
+});
