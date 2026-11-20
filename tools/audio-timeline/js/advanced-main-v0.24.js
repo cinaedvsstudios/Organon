@@ -62,6 +62,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
         effectsLibraryGrid: document.getElementById('effects-library-grid'), textLibraryGrid: document.getElementById('text-library-grid'),
         textOverlayValue: document.getElementById('text-overlay-value'),
+        textInspector:document.getElementById('inspector-text-template'),
+        textSelectedDesign:document.getElementById('text-selected-design'),
+        textInspectorInputs:{
+            value:document.getElementById('text-inspector-value'),
+            fontSize:document.getElementById('text-font-size'),
+            fill:document.getElementById('text-fill'),
+            outline:document.getElementById('text-outline'),
+            shadow:document.getElementById('text-shadow'),
+            outlineWidth:document.getElementById('text-outline-width'),
+            shadowBlur:document.getElementById('text-shadow-blur'),
+            animation:document.getElementById('text-animation'),
+            animationDuration:document.getElementById('text-animation-duration')
+        },
+        textPreviewModal:document.getElementById('text-preview-modal'),
+        textPreviewTitle:document.getElementById('text-preview-title'),
+        textPreviewCanvas:document.getElementById('text-preview-canvas'),
+        textPreviewClose:document.getElementById('text-preview-close'),
+        textPreviewPlay:document.getElementById('text-preview-play'),
+        textPreviewRestart:document.getElementById('text-preview-restart'),
+        textPreviewLoop:document.getElementById('text-preview-loop'),
+        textPreviewProgress:document.getElementById('text-preview-progress'),
         fileList: document.getElementById('file-list'), fileCount: document.getElementById('file-count'), projectDropZone: document.getElementById('project-drop-zone'), dropOverlay: document.getElementById('project-drop-overlay'),
         canvasWidth: document.getElementById('canvas-width'), canvasHeight: document.getElementById('canvas-height'), canvasAspectLabel: document.getElementById('canvas-aspect-label'), btnApplyCanvas: document.getElementById('btn-apply-canvas'), projectFps: document.getElementById('project-fps'),
         exportFormat: document.getElementById('export-format'), exportBitrate: document.getElementById('export-bitrate'), btnExportVideo: document.getElementById('btn-export-video'), exportStatus: document.getElementById('export-status'),
@@ -1113,9 +1134,17 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function buildLibraryPresetCard(preset) {
         const button=document.createElement('button');
         button.type='button';button.className='asset-preset-card';
+        if(preset.group==='text'&&preset.animation!=='none')button.classList.add('is-animated');
         button.draggable=true;
         button.title=`${preset.label}: drag to timeline or click to add at playhead`;
         button.dataset.presetId=preset.id;
+        if(preset.group==='text'){
+            button.title=`${preset.label}: right-click for animated preview, click or drag to insert. Text and colours are editable in Inspector.`;
+            button.addEventListener('contextmenu',event=>{
+                event.preventDefault();event.stopPropagation();
+                openTextPresetPreview(preset);
+            });
+        }
         const canvas=document.createElement('canvas');
         canvas.width=288;canvas.height=162;
         renderOverlayPreset(canvas,preset,elements.textOverlayValue.value);
@@ -1144,6 +1173,92 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         });
         return button;
     }
+    // The preview is independent of the active editor playhead. Use exact
+    // seconds to draw the same title renderer as preview and exported video.
+    let textPreviewPreset=null,textPreviewTime=0,textPreviewPlaying=false;
+    let textPreviewFrame=0,textPreviewTimestamp=0;
+    function stopTextPreview(){
+        textPreviewPlaying=false;
+        if(textPreviewFrame)cancelAnimationFrame(textPreviewFrame);
+        textPreviewFrame=0;
+        elements.textPreviewPlay.textContent='▶ Play';
+    }
+    function drawTextPresetPreview(){
+        if(!textPreviewPreset)return;
+        const canvas=elements.textPreviewCanvas,ctx=canvas.getContext('2d');
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle='#0c1722';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.strokeStyle='rgba(117,178,222,.08)';
+        for(let x=0;x<640;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,360);ctx.stroke();}
+        const input=elements.textOverlayValue.value.trim()||'MotoriClip';
+        paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input},textPreviewTime,3);
+        elements.textPreviewProgress.value=String(Math.round(textPreviewTime*100));
+    }
+    function advanceTextPreview(now){
+        if(!textPreviewPlaying)return;
+        const delta=Math.min(.1,Math.max(0,(now-textPreviewTimestamp)/1000));
+        textPreviewTimestamp=now;textPreviewTime+=delta;
+        if(textPreviewTime>=3){
+            if(elements.textPreviewLoop.checked)textPreviewTime=textPreviewTime%3;
+            else {textPreviewTime=3;stopTextPreview();}
+        }
+        drawTextPresetPreview();
+        if(textPreviewPlaying)textPreviewFrame=requestAnimationFrame(advanceTextPreview);
+    }
+    function openTextPresetPreview(preset){
+        stopTextPreview();
+        textPreviewPreset=preset;textPreviewTime=0;textPreviewTimestamp=0;
+        elements.textPreviewTitle.textContent='Preview · '+preset.label;
+        elements.textPreviewModal.hidden=false;
+        drawTextPresetPreview();
+        elements.textPreviewPlay.focus();
+    }
+    function closeTextPresetPreview(){
+        stopTextPreview();elements.textPreviewModal.hidden=true;
+        textPreviewPreset=null;
+    }
+    elements.textPreviewPlay.addEventListener('click',()=>{
+        if(!textPreviewPreset)return;
+        if(textPreviewPlaying){stopTextPreview();return;}
+        if(textPreviewTime>=3)textPreviewTime=0;
+        textPreviewPlaying=true;textPreviewTimestamp=performance.now();
+        elements.textPreviewPlay.textContent='⏸ Pause';
+        textPreviewFrame=requestAnimationFrame(advanceTextPreview);
+    });
+    elements.textPreviewRestart.addEventListener('click',()=>{
+        textPreviewTime=0;textPreviewTimestamp=performance.now();drawTextPresetPreview();
+    });
+    elements.textPreviewProgress.addEventListener('input',()=>{
+        textPreviewTime=Math.max(0,Math.min(3,Number(elements.textPreviewProgress.value)/100));
+        textPreviewTimestamp=performance.now();drawTextPresetPreview();
+    });
+    elements.textPreviewClose.addEventListener('click',closeTextPresetPreview);
+    elements.textPreviewModal.addEventListener('pointerdown',event=>{
+        if(event.target===elements.textPreviewModal)closeTextPresetPreview();
+    });
+    document.addEventListener('keydown',event=>{
+        if(event.key==='Escape'&&!elements.textPreviewModal.hidden)closeTextPresetPreview();
+    });
+
+    for(const [id,label] of TEXT_ANIMATIONS){
+        const option=document.createElement('option');option.value=id;option.textContent=label;
+        elements.textInspectorInputs.animation.appendChild(option);
+    }
+    for(const [name,input] of Object.entries(elements.textInspectorInputs)){
+        const label='Edit title '+name.replace(/([A-Z])/g,' $1');
+        registerInspectorHistory(input,label);
+        if(name==='value')input.addEventListener('focus',()=>recordHistory('Edit title text'));
+        input.addEventListener('input',()=>{
+            const track=getTrack();
+            if(!track?.textOverlay || state.selectedTrackIds.size!==1)return;
+            const updated={...track.textOverlay,[name]:input.value};
+            track.textOverlay=normaliseTextOverlay(updated);
+            const output=document.getElementById('text-'+name.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+'-value');
+            if(output)output.textContent=input.value+(name==='fontSize'?'%':name==='animationDuration'?'s':'');
+            engine.renderFrame();
+        });
+    }
+
     function renderLibraryPresets() {
         elements.effectsLibraryGrid.replaceChildren(...EFFECT_OVERLAYS.map(buildLibraryPresetCard));
         elements.textLibraryGrid.replaceChildren(...TEXT_PRESETS.map(buildLibraryPresetCard));
@@ -1330,6 +1445,19 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.inspectorBackground.hidden = multiple || track?.type !== 'background';
         elements.inspectorAudio.hidden = multiple || track?.type !== 'audio';
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
+        elements.textInspector.hidden=multiple||!track?.textOverlay;
+        if(!multiple&&track?.textOverlay){
+            const config=normaliseTextOverlay(track.textOverlay);
+            const design=TEXT_PRESETS.find(item=>item.id===config.presetId);
+            elements.textSelectedDesign.textContent=(design?.label||'Title')+' · edit this clip without replacing its template';
+            for(const [name,input] of Object.entries(elements.textInspectorInputs))
+                input.value=String(config[name]);
+            for(const [name,suffix] of [['font-size','%'],['outline-width',''],['shadow-blur',''],['animation-duration','s']]){
+                const key={'font-size':'fontSize','outline-width':'outlineWidth','shadow-blur':'shadowBlur',
+                    'animation-duration':'animationDuration'}[name];
+                document.getElementById('text-'+name+'-value').textContent=config[key]+suffix;
+            }
+        }
         updatePairInspector();
         elements.visualTools.hidden = !track || multiple || !VISIBLE_VISUAL_TYPES.has(track.type);
         elements.visualSpeedPanel.hidden = track?.type !== 'video';
