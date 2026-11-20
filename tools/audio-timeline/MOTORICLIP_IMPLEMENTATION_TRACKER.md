@@ -35,6 +35,8 @@
 
 - 20 Nov 2026: Phase 3G in [PR #103](https://github.com/cinaedvsstudios/Organon/pull/103) implements **#94 and #100** with a new real encoded-video parity gate in GitHub Actions. Chromium imports a 2s patterned H.264/AAC source, composites a genuinely animated Light Sweep or source-warping Glitch Flux clip, compares preview RGB pixels at 0.4s/1.4s to FFmpeg-decoded frames 10/35 of the actual exported MP4 using bounded lossy-codec error, and asserts byte-exact preview pixels after reverse seeking to 0.4s. Both effect cases passed the automated codec check. Existing 41-transition/editor/project recovery tests and Firefox/WebKit jobs passed. This verifies representative effect classes and the shared time-based compositor; it is not an assertion that every effect/codec/resolution/long-form stress scenario is certified.
 
+- 20 Nov 2026: Final Phase 3H in [PR #104](https://github.com/cinaedvsstudios/Organon/pull/104) completes **#96, #97 and #102**. The existing 41 paired transitions, image/video source import/relink, additive Web Audio gain, Orgavox chain/Lo-Fi, snapshots and Undo/Redo, autosave/project recovery, and both real-time and offline exporters are covered by the executable regression matrix in `MOTORICLIP_PHASE3H_FINAL_QA.md`. The new real Chrome appearance round-trip verifies lane rename, lane/clip colour inheritance and override, full browser refresh, deletion cancellation/commit and Undo, with source media preserved. GitHub's Chrome 41-transition/editor/project Save/Open job and Firefox/WebKit job passed; Node suites and basic actual MP4 export/pixel-parity check passed on this PR. All incremental PRs #97–#104 were opened for review/CI and merged directly into `main`. Extended long-form browser memory profiling and Windows-specific device testing remain explicitly outside the automated acceptance claim, even though the scoped 102 requirements are checked.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -153,13 +155,13 @@
 
 ## 8. Testing and implementation gates
 
-- [ ] **96.** Protect 41 transitions, image sources, additive gain, Orgavox, history, autosave, media recovery and both exporters.
-- [ ] **97.** Test rename, recolour, colour inheritance/override, lane deletion, Undo and refresh.
+- [x] **96.** Protect 41 transitions, image sources, additive gain, Orgavox, history, autosave, media recovery and both exporters.
+- [x] **97.** Test rename, recolour, colour inheritance/override, lane deletion, Undo and refresh.
 - [x] **98.** Validate visual differences between text templates independently of colour.
 - [x] **99.** Test animated effect/text preview controls and scrubbing.
 - [x] **100.** Verify real exported video with animated overlays.
 - [x] **101.** Check responsiveness, scrollbar consistency, button sizing and themed popups.
-- [ ] **102.** Merge tested increments directly into `main`; link their PRs here.
+- [x] **102.** Merge tested increments directly into `main`; link their PRs here.
 
 ## Rules of completion
 
