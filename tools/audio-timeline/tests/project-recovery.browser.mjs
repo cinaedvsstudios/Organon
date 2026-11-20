@@ -251,6 +251,20 @@ try{
     await page.locator('#text-animation-intensity').fill('125');
     await page.locator('#text-animation-loop').check();
     await page.locator('#text-fill').fill('#ffee99');
+    await page.locator('#text-font-family').selectOption('mono');
+    await page.locator('#text-font-weight').selectOption('700');
+    await page.locator('#text-text-case').selectOption('title');
+    await page.locator('#text-letter-spacing').fill('11');
+    await page.locator('#text-line-spacing').fill('135');
+    await page.locator('#text-glow-color').fill('#ff9933');
+    await page.locator('#text-glow-strength').fill('18');
+    await page.locator('#text-shadow-offset-x').fill('8');
+    await page.locator('#text-shape-details summary').click();
+    await page.locator('#text-backdrop-enabled').check();
+    await page.locator('#text-backdrop-color').fill('#123456');
+    await page.locator('#text-shape-border-width').fill('4');
+    await page.locator('#text-banner-width').fill('70');
+    await page.locator('#text-banner-height').fill('140');
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effects-library-grid [data-preset-id="film-grain"]').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2,
@@ -281,7 +295,20 @@ try{
     assert.equal(restoredText?.animationIntensity,125);
     assert.equal(restoredText?.animationLoop,true);
     assert.equal(restoredText?.fill,'#ffee99');
-    console.log('[MotoriClip project recovery] PASS editable animated title and effects recover from compact recipes and clip metadata');
+    assert.equal(restoredText?.fontFamily,'mono');
+    assert.equal(restoredText?.fontWeight,700);
+    assert.equal(restoredText?.textCase,'title');
+    assert.equal(restoredText?.letterSpacing,11);
+    assert.equal(restoredText?.lineSpacing,135);
+    assert.equal(restoredText?.glowColor,'#ff9933');
+    assert.equal(restoredText?.glowStrength,18);
+    assert.equal(restoredText?.shadowOffsetX,8);
+    assert.equal(restoredText?.backdropEnabled,true);
+    assert.equal(restoredText?.backdropColor,'#123456');
+    assert.equal(restoredText?.shapeBorderWidth,4);
+    assert.equal(restoredText?.bannerWidth,70);
+    assert.equal(restoredText?.bannerHeight,140);
+    console.log('[MotoriClip project recovery] PASS editable title typography, shape and animations recover exactly');
     assert.deepEqual(errors,[],'Chrome script errors during recovery');
     await context.close();
 } finally{
