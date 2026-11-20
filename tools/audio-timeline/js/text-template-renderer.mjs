@@ -67,7 +67,33 @@ export function normaliseTextOverlay(input={}) {
     ?input.animationEasing:'ease-out',
   animationIntensity:safeNumber(input.animationIntensity,100,0,200),
   animationLoop:input.animationLoop===true,
-  subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100)
+  subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100),
+  fontFamily:['template','sans','serif','script','mono'].includes(input.fontFamily)
+    ?input.fontFamily:'template',
+  fontWeight:input.fontWeight==null || String(input.fontWeight)==='0'||input.fontWeight==='template'
+    ?0:Math.round(safeNumber(input.fontWeight,800,100,900)/100)*100,
+  fontStyle:['template','normal','italic'].includes(input.fontStyle)
+    ?input.fontStyle:'template',
+  textAlign:['template','left','center','right'].includes(input.textAlign)
+    ?input.textAlign:'template',
+  textCase:['template','original','uppercase','lowercase','title'].includes(input.textCase)
+    ?input.textCase:'template',
+  letterSpacing:safeNumber(input.letterSpacing,0,-6,24),
+  lineSpacing:safeNumber(input.lineSpacing,100,70,200),
+  textOpacity:safeNumber(input.textOpacity,100,0,100),
+  shadowOffsetX:safeNumber(input.shadowOffsetX,0,-30,30),
+  shadowOffsetY:safeNumber(input.shadowOffsetY,0,-30,30),
+  glowColor:colour(input.glowColor,'#ffffff'),
+  glowStrength:safeNumber(input.glowStrength,0,0,40),
+  backdropEnabled:input.backdropEnabled===true,
+  backdropColor:colour(input.backdropColor,'#17283e'),
+  backdropOpacity:safeNumber(input.backdropOpacity,70,0,100),
+  shapePadding:safeNumber(input.shapePadding,10,0,50),
+  shapeRadius:safeNumber(input.shapeRadius,12,0,60),
+  shapeBorderWidth:safeNumber(input.shapeBorderWidth,0,0,10),
+  shapeBorderColor:colour(input.shapeBorderColor,'#d0b07a'),
+  bannerWidth:safeNumber(input.bannerWidth,92,40,100),
+  bannerHeight:safeNumber(input.bannerHeight,100,50,180)
  };
 }
 function easeProgress(value,easing){
@@ -137,33 +163,66 @@ const fonts={sans:'system-ui,Arial,sans-serif',
  mono:'"Geist Mono","Courier New",monospace'};
 function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
  fill='#fff',outline='#333',outlineWidth=3,shadow='#000',shadowBlur=8,
- maxWidth=580,italic=false,letterSpacing=0,metallic=false,fillAlpha=1}={}) {
- let px=size;
- ctx.textAlign=align;ctx.textBaseline='middle';ctx.lineJoin='round';
- const family=fonts[font]||fonts.sans;
- const setFont=()=>{ctx.font=(italic?'italic ':'')+weight+' '+px+'px '+family;};
- setFont();
- // Word-wrap with a shared safe width; template composition controls layout.
- while(px>14 && ctx.measureText(text).width>maxWidth){px-=2;setFont();}
- ctx.shadowColor=shadow;ctx.shadowBlur=shadowBlur;
- ctx.strokeStyle=outline;ctx.lineWidth=outlineWidth;ctx.fillStyle=fill;
- if(metallic){
-  // Contrasting dark and bright bands create a real reflective title,
-  // not just a silver palette swap. Fill remains user-configurable.
-  const gradient=ctx.createLinearGradient(0,y-px*.6,0,y+px*.6);
-  gradient.addColorStop(0,'#ffffff');
-  gradient.addColorStop(.27,fill);
-  gradient.addColorStop(.48,'#324658');
-  gradient.addColorStop(.58,'#ffffff');
-  gradient.addColorStop(1,fill);
-  ctx.fillStyle=gradient;
- }
- if(outlineWidth>0)ctx.strokeText(text,x,y,maxWidth);
+ shadowX=0,shadowY=0,glowColor='#ffffff',glowStrength=0,
+ maxWidth=580,italic=false,letterSpacing=0,lineSpacing=100,
+ metallic=false,fillAlpha=1}={}) {
+ const lines=String(text??'').split('\n').slice(0,5);
  ctx.save();
- ctx.globalAlpha*=clamp(fillAlpha,0,1);
- ctx.fillText(text,x,y,maxWidth);
- ctx.restore();
- ctx.shadowBlur=0;
+ try {
+  let px=size;
+  ctx.textBaseline='middle';ctx.lineJoin='round';ctx.textAlign=align;
+  const family=fonts[font]||fonts.sans;
+  const makeFont=()=>{ctx.font=(italic?'italic ':'')+weight+' '+px+'px '+family;};
+  const spacedWidth=line=>{
+   const letters=Array.from(line);
+   return ctx.measureText(line).width+Math.max(0,letters.length-1)*letterSpacing;
+  };
+  makeFont();
+  while(px>14&&lines.some(line=>spacedWidth(line)>maxWidth)){px-=2;makeFont();}
+  ctx.strokeStyle=outline;ctx.lineWidth=outlineWidth;
+  let fillStyle=fill;
+  if(metallic){
+   // This title uses reflective light/dark bands, not another colour preset.
+   const gradient=ctx.createLinearGradient(0,y-px*.6,0,y+px*.6);
+   gradient.addColorStop(0,'#ffffff');gradient.addColorStop(.27,fill);
+   gradient.addColorStop(.48,'#324658');gradient.addColorStop(.58,'#ffffff');
+   gradient.addColorStop(1,fill);fillStyle=gradient;
+  }
+  ctx.fillStyle=fillStyle;
+  const lineStep=px*lineSpacing/100;
+  const y0=y-(lines.length-1)*lineStep/2;
+  const renderGlyph=(glyph,gx,gy)=>{
+   if(outlineWidth>0)ctx.strokeText(glyph,gx,gy);
+   ctx.save();ctx.globalAlpha*=clamp(fillAlpha,0,1);
+   ctx.fillText(glyph,gx,gy);ctx.restore();
+  };
+  const renderLines=()=>{
+   for(let i=0;i<lines.length;i++){
+    const line=lines[i],lineY=y0+i*lineStep;
+    if(letterSpacing===0 || Array.from(line).length<=1){
+     renderGlyph(line,x,lineY);
+     continue;
+    }
+    const letters=Array.from(line),widths=letters.map(ch=>ctx.measureText(ch).width);
+    const total=widths.reduce((a,b)=>a+b,0)+(letters.length-1)*letterSpacing;
+    let cursor=align==='left'?x:align==='right'?x-total:x-total/2;
+    ctx.textAlign='left';
+    for(let j=0;j<letters.length;j++){
+     renderGlyph(letters[j],cursor,lineY);
+     cursor+=widths[j]+letterSpacing;
+    }
+    ctx.textAlign=align;
+   }
+  };
+  if(glowStrength>0){
+   ctx.save();ctx.shadowColor=glowColor;ctx.shadowBlur=glowStrength;
+   ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+   renderLines();ctx.restore();
+  }
+  ctx.shadowColor=shadow;ctx.shadowBlur=shadowBlur;
+  ctx.shadowOffsetX=shadowX;ctx.shadowOffsetY=shadowY;
+  renderLines();
+ }finally{ctx.restore();}
 }
 /**
  * Individual character motion with measured glyph widths. The output is a
@@ -179,7 +238,7 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  const font=(options.italic?'italic ':'')+weight+' '+size+'px '+family;
  ctx.save();ctx.font=font;
  const metrics=letters.map(char=>ctx.measureText(char).width);
- const total=metrics.reduce((a,b)=>a+b,0);
+ const total=metrics.reduce((a,b)=>a+b,0)+Math.max(0,letters.length-1)*(options.letterSpacing||0);
  const fit=Math.min(1,(options.maxWidth??580)/Math.max(1,total));
  const align=options.align||'center';
  ctx.translate(x,y);ctx.scale(fit,fit);
@@ -221,7 +280,7 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
   }
   drawTitle(ctx,char,0,0,{...options,size,align:'center',maxWidth:width+12});
   ctx.restore();
-  cursor+=width;
+  cursor+=width+(options.letterSpacing||0);
  }
  ctx.restore();
 }
@@ -234,9 +293,9 @@ function drawWritingTitle(ctx,text,x,y,opts,frame){
  if(!letters.length)return;
  const size=opts.size||84;
  ctx.save();
- ctx.font='italic 500 '+size+'px '+fonts.script;
+ ctx.font=(opts.italic?'italic ':'')+(opts.weight||500)+' '+size+'px '+(fonts[opts.font]||fonts.script);
  const widths=letters.map(letter=>ctx.measureText(letter).width);
- const total=widths.reduce((sum,w)=>sum+w,0);
+ const total=widths.reduce((sum,w)=>sum+w,0)+Math.max(0,letters.length-1)*(opts.letterSpacing||0);
  const fit=Math.min(1,(opts.maxWidth||550)/Math.max(total,1));
  ctx.translate(x,y);ctx.scale(fit,fit);
  let cursor=-total/2,penX=cursor;
@@ -245,12 +304,11 @@ function drawWritingTitle(ctx,text,x,y,opts,frame){
   const w=widths[i],fraction=clamp(overall-i,0,1);
   if(fraction>0){
    ctx.save();ctx.beginPath();ctx.rect(cursor-2,-size,Math.max(1,w*fraction+4),size*2.1);ctx.clip();
-   drawTitle(ctx,letters[i],cursor+w/2,0,{...opts,size,font:'script',
-     italic:true,weight:500,maxWidth:w+15,align:'center'});
+   drawTitle(ctx,letters[i],cursor+w/2,0,{...opts,size,maxWidth:w+15,align:'center'});
    ctx.restore();
   }
   if(fraction>0)penX=cursor+w*fraction;
-  cursor+=w;
+  cursor+=w+(opts.letterSpacing||0);
  }
  if(frame.progress>0&&frame.progress<1){
   ctx.fillStyle=opts.outline;ctx.beginPath();ctx.arc(penX+2,12,4,0,Math.PI*2);ctx.fill();
@@ -265,7 +323,7 @@ function textValue(config,frame) {
  return config.animation==='typewriter'
    ?Array.from(value).slice(0,frame.visibleCharacters).join(''):value;
 }
-function decorate(ctx,layout,fill,outline,frame) {
+function decorate(ctx,layout,fill,outline,frame,config) {
  switch(layout){
   case 'neon':{
    ctx.strokeStyle=outline;ctx.lineWidth=3;ctx.shadowColor=fill;ctx.shadowBlur=18;
@@ -276,15 +334,24 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.beginPath();ctx.moveTo(86,118);ctx.lineTo(554,118);ctx.moveTo(86,244);ctx.lineTo(554,244);ctx.stroke();break;
   }
   case 'news':{
-   const bannerWidth=frame.boxReveal?Math.round(588*clamp(frame.raw/.46,0,1)):588;
-   if(bannerWidth>0){
-    ctx.fillStyle='#17283e';roundRect(ctx,26,245,bannerWidth,100,7);ctx.fill();
-    ctx.fillStyle=outline;ctx.fillRect(26,245,bannerWidth,8);
+   const width=640*config.bannerWidth/100,x=(640-width)/2;
+   const height=config.bannerHeight,y=345-height;
+   const progress=frame.boxReveal?clamp(frame.raw/.46,0,1):1;
+   const activeWidth=width*progress;
+   if(activeWidth>0){
+    ctx.save();ctx.globalAlpha*=config.backdropEnabled?config.backdropOpacity/100:1;
+    ctx.fillStyle=config.backdropEnabled?config.backdropColor:'#17283e';
+    roundRect(ctx,x,y,activeWidth,height,config.shapeRadius);ctx.fill();ctx.restore();
+    ctx.fillStyle=outline;ctx.fillRect(x,y,activeWidth,8);
+    if(config.shapeBorderWidth>0){
+     ctx.strokeStyle=config.shapeBorderColor;ctx.lineWidth=config.shapeBorderWidth;
+     roundRect(ctx,x,y,activeWidth,height,config.shapeRadius);ctx.stroke();
+    }
    }
    ctx.save();
    ctx.globalAlpha*=frame.boxReveal?clamp((frame.raw-.23)/.22,0,1):1;
    ctx.fillStyle='#f0eee7';ctx.font='700 18px '+fonts.mono;ctx.textAlign='left';
-   ctx.fillText('BREAKING NEWS',55,274);
+   ctx.fillText('BREAKING NEWS',x+20+config.shapePadding,y+29);
    ctx.restore();break;
   }
   case 'location':{
@@ -378,6 +445,21 @@ function decorate(ctx,layout,fill,outline,frame) {
   }
  }
 }
+/** Optional shape controlled entirely by the selected clip's Inspector. */
+function drawTitleBackdrop(ctx,config,layout){
+ if(!config.backdropEnabled||layout==='news')return;
+ const width=Math.min(640,640*config.bannerWidth/100+config.shapePadding*2);
+ const height=Math.min(360,config.bannerHeight+config.shapePadding*2);
+ const cy=layout==='location'?273:180;
+ const x=(640-width)/2,y=Math.max(0,Math.min(360-height,cy-height/2));
+ ctx.save();ctx.globalAlpha*=config.backdropOpacity/100;
+ ctx.fillStyle=config.backdropColor;
+ roundRect(ctx,x,y,width,height,config.shapeRadius);ctx.fill();ctx.restore();
+ if(config.shapeBorderWidth>0){
+  ctx.strokeStyle=config.shapeBorderColor;ctx.lineWidth=config.shapeBorderWidth;
+  roundRect(ctx,x,y,width,height,config.shapeRadius);ctx.stroke();
+ }
+}
 export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDuration=3) {
  const config=normaliseTextOverlay(input);
  const design=getTextDesign(config.presetId)||TEXT_DESIGNS[0];
@@ -388,7 +470,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
  ctx.save();
  try {
   ctx.scale(scaleX,scaleY);
-   ctx.globalAlpha*=frame.alpha;
+   ctx.globalAlpha*=frame.alpha*config.textOpacity/100;
    if(config.animation==='title-wipe'){
     const across=['left','right'].includes(config.animationDirection);
     const length=across?640:360;
@@ -413,18 +495,43 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.beginPath();ctx.rect(0,0,640,360);ctx.clip();
     ctx.translate(frame.tickerX,0);
    }
-   decorate(ctx,layout,config.fill,config.outline,frame);
+   drawTitleBackdrop(ctx,config,layout);
+   decorate(ctx,layout,config.fill,config.outline,frame,config);
    const factor=config.fontSize/100;
    const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
-     shadow:config.shadow,shadowBlur:config.shadowBlur};
-
-   const write=(text,x,y,details={})=>{
-    const {revealAlpha,...style}=details;
+     shadow:config.shadow,shadowBlur:config.shadowBlur,
+     shadowX:config.shadowOffsetX,shadowY:config.shadowOffsetY,
+     glowColor:config.glowColor,glowStrength:config.glowStrength,
+     letterSpacing:config.letterSpacing,lineSpacing:config.lineSpacing};
+   const applyCase=text=>{
+    const value=String(text);
+    if(config.textCase==='uppercase')return value.toUpperCase();
+    if(config.textCase==='lowercase')return value.toLowerCase();
+    if(config.textCase==='title')return value.toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+    return value;
+   };
+   const write=(rawText,x,y,details={})=>{
+    const {revealAlpha,templateUppercase,...style}=details;
+    const text=config.textCase==='template'&&templateUppercase
+      ?String(rawText).toUpperCase():applyCase(rawText);
     const opts={...base,...style};
+    if(config.fontFamily!=='template')opts.font=config.fontFamily;
+    if(config.fontWeight!==0)opts.weight=config.fontWeight;
+    if(config.fontStyle!=='template')opts.italic=config.fontStyle==='italic';
+    if(config.textAlign!=='template'){
+     const align=config.textAlign;opts.align=align;
+     if(['chrome','comic','stamp'].includes(layout))
+      x=align==='left'?-230:align==='right'?230:0;
+     else{
+      const left=layout==='news'?(640-640*config.bannerWidth/100)/2+20+config.shapePadding
+        :layout==='location'?176:layout==='quote'?115:72;
+      const right=layout==='location'?560:layout==='quote'?525:568;
+      x=align==='left'?left:align==='right'?right:(left+right)/2;
+     }
+    }
     if(config.animation==='outline-fill')opts.fillAlpha=frame.progress;
-    ctx.save();
-    ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
-    if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80)
+    ctx.save();ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
+    if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80&&!text.includes('\n'))
       drawGlyphs(ctx,text,x,y,opts,frame,config.animation);
     else drawTitle(ctx,text,x,y,opts);
     ctx.restore();
@@ -439,11 +546,14 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.restore();ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillRect(63,231,510,2);break;
    }
    case 'handwriting':
-    if(config.animation==='handwriting-reveal')
-      drawWritingTitle(ctx,value,320,175,{...base,font:'script',weight:500,italic:true,
-        size:92*factor,outlineWidth:1,maxWidth:520},frame);
-    else write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
-    ctx.strokeStyle=config.outline;ctx.lineWidth=3;ctx.beginPath();
+    if(config.animation==='handwriting-reveal'&&!value.includes('\n')){
+      const scriptStyle={...base,font:config.fontFamily==='template'?'script':config.fontFamily,
+        weight:config.fontWeight||500,
+        italic:config.fontStyle==='template'?true:config.fontStyle==='italic',
+        size:92*factor,outlineWidth:1,maxWidth:520};
+      drawWritingTitle(ctx,applyCase(value),320,175,scriptStyle,frame);
+     }else write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
+     ctx.strokeStyle=config.outline;ctx.lineWidth=3;ctx.beginPath();
     ctx.moveTo(128,241);
     ctx.quadraticCurveTo(128+174*(config.animation==='handwriting-reveal'?frame.progress:1),
       241+28*(config.animation==='handwriting-reveal'?frame.progress:1),
@@ -451,14 +561,20 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
       241-13*(config.animation==='handwriting-reveal'?frame.progress:1));
     ctx.stroke();break;
    case 'cinematic':
-    write(value.toUpperCase(),320,183,{font:'serif',weight:500,size:59*factor,outlineWidth:0});
+    write(value,320,183,{templateUppercase:true,font:'serif',weight:500,size:59*factor,outlineWidth:0});
     break;
-   case 'news':
-    write(value.toUpperCase(),55,305,{size:38*factor,align:'left',maxWidth:522,
-      outlineWidth:0,revealAlpha:frame.headlineAlpha});
-    if(config.subtitle.trim())write(config.subtitle,55,333,{size:17*factor,align:'left',
-      maxWidth:530,outlineWidth:0,weight:500,font:'mono',revealAlpha:frame.subtitleAlpha});
+   case 'news':{
+    const width=640*config.bannerWidth/100;
+    const x=(640-width)/2+20+config.shapePadding;
+    const available=width-40-config.shapePadding*2;
+    const y=345-config.bannerHeight;
+    write(value,x,y+60,{templateUppercase:true,size:38*factor,align:'left',
+      maxWidth:available,outlineWidth:0,revealAlpha:frame.headlineAlpha});
+    if(config.subtitle.trim())write(config.subtitle,x,y+88,{size:17*factor,align:'left',
+      maxWidth:available,outlineWidth:0,weight:500,font:'mono',
+      revealAlpha:frame.subtitleAlpha});
     break;
+   }
    case 'location':
     ctx.save();ctx.beginPath();ctx.rect(176,238,395*frame.locationLabelProgress,78);ctx.clip();
     write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});
@@ -467,15 +583,15 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     write(value,319,181,{font:'serif',weight:500,italic:true,size:51*factor,outlineWidth:0,maxWidth:410});break;
    case 'comic':
     ctx.save();ctx.translate(320,173);ctx.rotate(-.045);
-    write(value.toUpperCase(),0,0,{size:70*factor,outlineWidth:6,shadowBlur:1,maxWidth:458});ctx.restore();break;
+    write(value,0,0,{templateUppercase:true,size:70*factor,outlineWidth:6,shadowBlur:1,maxWidth:458});ctx.restore();break;
    case 'social':
-    write(value.toUpperCase(),320,179,{size:52*factor,outlineWidth:0,maxWidth:284});break;
+    write(value,320,179,{templateUppercase:true,size:52*factor,outlineWidth:0,maxWidth:284});break;
    case 'chapter':
-    write(value.toUpperCase(),320,188,{font:'serif',size:53*factor,weight:600,outlineWidth:0});break;
+    write(value,320,188,{templateUppercase:true,font:'serif',size:53*factor,weight:600,outlineWidth:0});break;
    case 'hud':
-    write(value.toUpperCase(),320,184,{font:'mono',size:52*factor,weight:600,maxWidth:500});break;
+    write(value,320,184,{templateUppercase:true,font:'mono',size:52*factor,weight:600,maxWidth:500});break;
    case 'event':
-    write(value.toUpperCase(),300,181,{size:66*factor,weight:900,outlineWidth:2,maxWidth:495});break;
+    write(value,300,181,{templateUppercase:true,size:66*factor,weight:900,outlineWidth:2,maxWidth:495});break;
    case 'speech':
     write(value,320,178,{size:51*factor,weight:700,outlineWidth:0,maxWidth:452});break;
    case 'typewriter':
@@ -485,7 +601,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     }break;
    case 'stamp':
     ctx.save();ctx.translate(320,182);ctx.rotate(-.08);
-    write(value.toUpperCase(),0,0,{size:66*factor,weight:900,outlineWidth:0,maxWidth:436});ctx.restore();break;
+    write(value,0,0,{templateUppercase:true,size:66*factor,weight:900,outlineWidth:0,maxWidth:436});ctx.restore();break;
    case 'countdown':{
     const isNumber=/^\d+$/.test(value.trim());
     const initial=isNumber?Math.min(99,Math.max(1,Number(value.trim()))):3;
@@ -498,7 +614,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     write(String(number),320,166-roll*113,digitStyle);
     if(roll>0&&number>0)write(String(number-1),320,279-roll*113,digitStyle);
     ctx.restore();
-    if(!isNumber)write(value.toUpperCase(),320,313,{font:'mono',size:21*factor,weight:700,
+    if(!isNumber)write(value,320,313,{templateUppercase:true,font:'mono',size:21*factor,weight:700,
       outlineWidth:0,maxWidth:520});
     break;
    }
@@ -510,19 +626,19 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
       value.slice(Math.ceil(value.length/2));
     const offset=300*Math.pow(1-frame.splitProgress,2)*frame.intensity;
     ctx.save();ctx.translate(-offset,0);
-    write(first.toUpperCase(),320,132,{size:62*factor,weight:900,maxWidth:460});
+    write(first,320,132,{templateUppercase:true,size:62*factor,weight:900,maxWidth:460});
     ctx.restore();
     ctx.save();ctx.translate(offset,0);
-    write((second||'TITLE').toUpperCase(),320,224,{size:66*factor,weight:900,maxWidth:470});
+    write((second||'TITLE'),320,224,{templateUppercase:true,size:66*factor,weight:900,maxWidth:470});
     ctx.restore();break;
    }
    case 'stacked':{
     const words=value.split(/\s+/).filter(Boolean);
     const midpoint=Math.ceil(words.length/2);
-    const top=words.slice(0,midpoint).join(' ').toUpperCase();
-    const bottom=(words.slice(midpoint).join(' ')||'TITLE').toUpperCase();
-    write(top,326,138,{size:56*factor,weight:900,maxWidth:482,outlineWidth:0});
-    write(bottom,326,213,{size:73*factor,weight:900,maxWidth:480,outlineWidth:0});break;
+    const top=words.slice(0,midpoint).join(' ');
+    const bottom=(words.slice(midpoint).join(' ')||'TITLE');
+    write(top,326,138,{templateUppercase:true,size:56*factor,weight:900,maxWidth:482,outlineWidth:0});
+    write(bottom,326,213,{templateUppercase:true,size:73*factor,weight:900,maxWidth:480,outlineWidth:0});break;
    }
   }
  }finally{ctx.restore();}

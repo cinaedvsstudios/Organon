@@ -21,7 +21,13 @@ test('title Inspector settings are small, validated and preserved',()=>{
    fill:'#aabbcc',outline:'#223344',shadow:'#334455',
    fontSize:125,outlineWidth:7,shadowBlur:16,animation:'box-reveal',animationDuration:1.6,
    animationDelay:0,animationSpeed:1,animationDirection:'left',animationEasing:'ease-out',
-   animationIntensity:100,animationLoop:false,subtitle:'LIVE UPDATE'});
+   animationIntensity:100,animationLoop:false,subtitle:'LIVE UPDATE',
+  fontFamily:'template',fontWeight:0,fontStyle:'template',textAlign:'template',
+  textCase:'template',letterSpacing:0,lineSpacing:100,textOpacity:100,
+  shadowOffsetX:0,shadowOffsetY:0,glowColor:'#ffffff',glowStrength:0,
+  backdropEnabled:false,backdropColor:'#17283e',backdropOpacity:70,
+  shapePadding:10,shapeRadius:12,shapeBorderWidth:0,shapeBorderColor:'#d0b07a',
+  bannerWidth:92,bannerHeight:100});
  const broken=normaliseTextOverlay({presetId:'missing',value:'A'.repeat(180),fill:'url(javascript:alert(1))',
    animation:'bad',fontSize:1e10,animationDuration:-20});
  assert.equal(broken.value.length,100);
@@ -167,4 +173,46 @@ test('location pin, social pulse and split title have distinct motion phases',()
  assert.equal(textAnimationState(split,1.2,3).splitProgress,1);
  const writing=normaliseTextOverlay({presetId:'handwritten-script'});
  assert.equal(writing.animation,'handwriting-reveal');
+});
+
+test('typography is user-editable with validated font, weight, case, alignment and spacing',()=>{
+ const c=normaliseTextOverlay({presetId:'cinematic-title',value:'Mixed Case\\nSecond Line',
+   fontFamily:'mono',fontWeight:600,fontStyle:'italic',textAlign:'right',
+   textCase:'lowercase',letterSpacing:9,lineSpacing:145});
+ assert.equal(c.fontFamily,'mono');assert.equal(c.fontWeight,600);
+ assert.equal(c.fontStyle,'italic');assert.equal(c.textAlign,'right');
+ assert.equal(c.textCase,'lowercase');assert.equal(c.letterSpacing,9);
+ assert.equal(c.lineSpacing,145);
+ const bad=normaliseTextOverlay({fontFamily:'javascript:alert(1)',fontWeight:99999,
+    fontStyle:'oblique',textAlign:'justify',textCase:'random',
+    letterSpacing:-1000,lineSpacing:0});
+ assert.equal(bad.fontFamily,'template');assert.equal(bad.fontWeight,900);
+ assert.equal(bad.fontStyle,'template');assert.equal(bad.textAlign,'template');
+ assert.equal(bad.textCase,'template');assert.equal(bad.letterSpacing,-6);
+ assert.equal(bad.lineSpacing,70);
+});
+test('appearance and shape settings normalize safely, persist in Undo and can be cleared',()=>{
+ const fields={textOpacity:65,outlineWidth:6,shadowOffsetX:7,shadowOffsetY:-4,
+   glowColor:'#FFAA33',glowStrength:16,backdropEnabled:true,
+   backdropColor:'#123456',backdropOpacity:82,
+   shapePadding:22,shapeRadius:32,shapeBorderColor:'#CCDDEE',
+   shapeBorderWidth:5,bannerWidth:75,bannerHeight:130};
+ const c=normaliseTextOverlay({presetId:'news-lower-third',value:'BREAKING',...fields});
+ assert.equal(c.textOpacity,65);assert.equal(c.shadowOffsetX,7);
+ assert.equal(c.shadowOffsetY,-4);assert.equal(c.glowColor,'#ffaa33');
+ assert.equal(c.backdropColor,'#123456');assert.equal(c.shapeBorderColor,'#ccddee');
+ assert.equal(c.bannerWidth,75);assert.equal(c.bannerHeight,130);
+ const clip={id:'t',type:'sticker',sourceName:'text-title.png',sourceFileId:'st',
+  start:0,sourceOffset:0,clipDuration:3,laneId:'titles',textOverlay:c};
+ const history=snapshotClip(clip);clip.textOverlay=null;
+ applyClipData(clip,history);assert.deepEqual(clip.textOverlay,c);
+ const bad=normaliseTextOverlay({textOpacity:-50,glowStrength:900,
+   glowColor:'not-a-colour',backdropColor:'url(fake)',
+   backdropOpacity:150,shapeRadius:999,shapeBorderWidth:-20,
+   bannerWidth:5,bannerHeight:900});
+ assert.equal(bad.textOpacity,0);assert.equal(bad.glowStrength,40);
+ assert.equal(bad.glowColor,'#ffffff');assert.equal(bad.backdropColor,'#17283e');
+ assert.equal(bad.backdropOpacity,100);assert.equal(bad.shapeRadius,60);
+ assert.equal(bad.shapeBorderWidth,0);assert.equal(bad.bannerWidth,40);
+ assert.equal(bad.bannerHeight,180);
 });
