@@ -453,6 +453,13 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 #text-preview-progress { display:block; width:100%; accent-color:var(--water-spray); }
 .asset-preset-card.is-animated::before { content:'▶'; position:absolute; top:7px; right:7px; border-radius:7px; padding:3px 5px; background:#0b1b24; color:var(--water-spray); font:.62rem var(--font-mono); }
 .asset-preset-card { position:relative; }
+
+.text-inspector-group { padding:3px 0; border-top:1px solid rgba(182,141,80,.4); }
+.text-inspector-group summary { cursor:pointer; padding:9px 2px; color:var(--water-spray); font-weight:700; font-size:.68rem; user-select:none; }
+.text-inspector-group summary:hover { color:var(--alabaster-paper); }
+.text-inspector-group .text-setting-row:first-of-type { border-top:0; }
+.text-inspector-group .compact-select { min-width:0; width:100%; }
+.text-inspector-group .text-setting-colours { grid-template-columns:repeat(auto-fit,minmax(53px,1fr)); }
 </style>
 </head>
 <body>
@@ -650,26 +657,90 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 
                 <section class="control-card" id="inspector-text-template" hidden>
                     <h3>Text design &amp; animation</h3>
-                    <p class="control-copy" id="text-selected-design">Edit the selected title on the timeline.</p>
-                    <label class="text-setting-row"><span>Text</span><textarea class="compact-input" id="text-inspector-value" maxlength="100" rows="2" title="Change this clip's words without replacing the template"></textarea></label>
-                    <label class="text-setting-row"><span>Font size <output id="text-font-size-value">100%</output></span><input type="range" id="text-font-size" min="30" max="250" step="5" value="100" title="Scale the typography inside this template"></label>
-                    <div class="text-setting-colours">
-                        <label>Fill<input type="color" id="text-fill" value="#ffffff" title="Main lettering colour"></label>
-                        <label>Outline<input type="color" id="text-outline" value="#333333" title="Letter outline colour"></label>
-                        <label>Shadow<input type="color" id="text-shadow" value="#000000" title="Letter shadow colour"></label>
-                    </div>
-                    <label class="text-setting-row"><span>Outline strength <output id="text-outline-width-value">3</output></span><input type="range" id="text-outline-width" min="0" max="18" step="1" value="3" title="Letter outline thickness; 0 disables it"></label>
-                    <label class="text-setting-row"><span>Shadow blur <output id="text-shadow-blur-value">8</output></span><input type="range" id="text-shadow-blur" min="0" max="40" step="1" value="8" title="Softness of the text shadow"></label>
-                    <label class="text-setting-row"><span>Animation</span><select class="compact-select" id="text-animation" title="Choose distinct time-based text motion"></select></label>
-                    <label class="text-setting-row" id="text-subtitle-row" hidden><span>News subtitle</span><input class="compact-input" type="text" id="text-subtitle" maxlength="100" value="LIVE UPDATE" title="Secondary line for the news broadcast design"></label>
-                    <label class="text-setting-row"><span>Animation duration <output id="text-animation-duration-value">1.2s</output></span><input type="range" id="text-animation-duration" min=".1" max="10" step=".1" value="1.2" title="Length of the text entrance or effect motion"></label>
-                    <label class="text-setting-row"><span>Start delay <output id="text-animation-delay-value">0s</output></span><input type="range" id="text-animation-delay" min="0" max="5" step=".1" value="0" title="Wait before the animation begins"></label>
-                    <label class="text-setting-row"><span>Motion speed <output id="text-animation-speed-value">1×</output></span><input type="range" id="text-animation-speed" min=".25" max="4" step=".05" value="1" title="Play the selected motion between a quarter and four times speed"></label>
-                    <label class="text-setting-row"><span>Direction</span><select class="compact-select" id="text-animation-direction" title="Motion direction for slide, wipe and ticker"><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option><option value="down">Down</option></select></label>
-                    <label class="text-setting-row"><span>Easing</span><select class="compact-select" id="text-animation-easing" title="How the motion accelerates or slows"><option value="linear">Linear</option><option value="ease-in">Accelerate</option><option value="ease-out">Decelerate</option><option value="ease-in-out">Smooth in and out</option></select></label>
-                    <label class="text-setting-row"><span>Intensity <output id="text-animation-intensity-value">100%</output></span><input type="range" id="text-animation-intensity" min="0" max="200" step="5" value="100" title="How strongly characters shake, bounce or move"></label>
-                    <label class="text-setting-row text-setting-toggle"><span>Loop selected motion</span><input type="checkbox" id="text-animation-loop" title="Repeat the animation while this clip is visible"></label>
-                    <p class="visual-note">Timeline text is rendered at the playhead, including during fixed-frame video export. Use the existing Transform controls for position, scale and rotation.</p>
+                    <p class="control-copy" id="text-selected-design">Edit this title in the Inspector without creating duplicate presets.</p>
+                    <label class="text-setting-row"><span>Text</span><textarea class="compact-input" id="text-inspector-value" maxlength="100" rows="2" title="Edit words or add line breaks"></textarea></label>
+                    <details open class="text-inspector-group">
+                        <summary>Typography</summary>
+                        <label class="text-setting-row"><span>Font family</span><select class="compact-select" id="text-font-family" title="Use the template font or override it">
+                            <option value="template">Template default</option><option value="sans">Sans serif</option>
+                            <option value="serif">Serif</option><option value="script">Handwriting script</option>
+                            <option value="mono">Monospaced</option></select></label>
+                        <label class="text-setting-row"><span>Weight</span><select class="compact-select" id="text-font-weight" title="Use the template weight or choose a new letter weight">
+                            <option value="0">Template default</option><option value="300">Light</option>
+                            <option value="400">Regular</option><option value="500">Medium</option>
+                            <option value="600">Semibold</option><option value="700">Bold</option>
+                            <option value="800">Extra bold</option><option value="900">Black</option></select></label>
+                        <label class="text-setting-row"><span>Italic</span><select class="compact-select" id="text-font-style" title="Use template italic style or override it">
+                            <option value="template">Template default</option><option value="normal">Regular</option><option value="italic">Italic</option></select></label>
+                        <label class="text-setting-row"><span>Alignment</span><select class="compact-select" id="text-text-align" title="Horizontal text alignment inside the design">
+                            <option value="template">Template default</option><option value="left">Left</option>
+                            <option value="center">Centre</option><option value="right">Right</option></select></label>
+                        <label class="text-setting-row"><span>Capitalisation</span><select class="compact-select" id="text-text-case" title="Change case without rewriting the original text">
+                            <option value="template">Template default</option><option value="original">As typed</option>
+                            <option value="uppercase">UPPERCASE</option><option value="lowercase">lowercase</option>
+                            <option value="title">Title Case</option></select></label>
+                        <label class="text-setting-row"><span>Font size <output id="text-font-size-value">100%</output></span>
+                            <input type="range" id="text-font-size" min="30" max="250" step="5" value="100" title="Scale typography"></label>
+                        <label class="text-setting-row"><span>Letter spacing <output id="text-letter-spacing-value">0px</output></span>
+                            <input type="range" id="text-letter-spacing" min="-6" max="24" step="1" value="0" title="Adjust distance between individual letters, including animated text"></label>
+                        <label class="text-setting-row"><span>Line spacing <output id="text-line-spacing-value">100%</output></span>
+                            <input type="range" id="text-line-spacing" min="70" max="200" step="5" value="100" title="Adjust spacing between lines of a multiline title"></label>
+                    </details>
+                    <details open class="text-inspector-group">
+                        <summary>Appearance</summary>
+                        <div class="text-setting-colours">
+                            <label>Fill<input type="color" id="text-fill" value="#ffffff" title="Letter fill colour"></label>
+                            <label>Outline<input type="color" id="text-outline" value="#333333" title="Letter outline colour"></label>
+                            <label>Shadow<input type="color" id="text-shadow" value="#000000" title="Letter shadow colour"></label>
+                            <label>Glow<input type="color" id="text-glow-color" value="#ffffff" title="Glow colour around lettering"></label>
+                        </div>
+                        <label class="text-setting-row"><span>Text opacity <output id="text-text-opacity-value">100%</output></span>
+                            <input type="range" id="text-text-opacity" min="0" max="100" step="5" value="100" title="Make text and its design more transparent, without deleting it"></label>
+                        <label class="text-setting-row"><span>Outline width <output id="text-outline-width-value">3px</output></span>
+                            <input type="range" id="text-outline-width" min="0" max="18" step="1" value="3" title="Outline thickness; zero disables it"></label>
+                        <label class="text-setting-row"><span>Shadow blur <output id="text-shadow-blur-value">8px</output></span>
+                            <input type="range" id="text-shadow-blur" min="0" max="40" step="1" value="8" title="Shadow softness"></label>
+                        <label class="text-setting-row"><span>Shadow X <output id="text-shadow-offset-x-value">0px</output></span>
+                            <input type="range" id="text-shadow-offset-x" min="-30" max="30" step="1" value="0" title="Shadow horizontal offset"></label>
+                        <label class="text-setting-row"><span>Shadow Y <output id="text-shadow-offset-y-value">0px</output></span>
+                            <input type="range" id="text-shadow-offset-y" min="-30" max="30" step="1" value="0" title="Shadow vertical offset"></label>
+                        <label class="text-setting-row"><span>Glow strength <output id="text-glow-strength-value">0px</output></span>
+                            <input type="range" id="text-glow-strength" min="0" max="40" step="1" value="0" title="Amount of coloured glow around the lettering"></label>
+                    </details>
+                    <details class="text-inspector-group">
+                        <summary>Background &amp; shape</summary>
+                        <label class="text-setting-row text-setting-toggle"><span>Use backing rectangle</span>
+                            <input type="checkbox" id="text-backdrop-enabled" title="Show an editable rectangle behind the title, or recolour the News banner"></label>
+                        <div class="text-setting-colours">
+                            <label>Background<input type="color" id="text-backdrop-color" value="#17283e" title="Backing rectangle fill"></label>
+                            <label>Border<input type="color" id="text-shape-border-color" value="#d0b07a" title="Backing rectangle border colour"></label>
+                        </div>
+                        <label class="text-setting-row"><span>Background opacity <output id="text-backdrop-opacity-value">70%</output></span>
+                            <input type="range" id="text-backdrop-opacity" min="0" max="100" step="5" value="70" title="Transparency of the backing rectangle"></label>
+                        <label class="text-setting-row"><span>Banner/box width <output id="text-banner-width-value">92%</output></span>
+                            <input type="range" id="text-banner-width" min="40" max="100" step="1" value="92" title="Width of backing rectangle or News lower-third banner"></label>
+                        <label class="text-setting-row"><span>Banner/box height <output id="text-banner-height-value">100px</output></span>
+                            <input type="range" id="text-banner-height" min="50" max="180" step="5" value="100" title="Height of backing rectangle or News lower-third banner"></label>
+                        <label class="text-setting-row"><span>Padding <output id="text-shape-padding-value">10px</output></span>
+                            <input type="range" id="text-shape-padding" min="0" max="50" step="1" value="10" title="Space around the text inside the backing rectangle"></label>
+                        <label class="text-setting-row"><span>Corner radius <output id="text-shape-radius-value">12px</output></span>
+                            <input type="range" id="text-shape-radius" min="0" max="60" step="1" value="12" title="Round or square corners of backing shapes"></label>
+                        <label class="text-setting-row"><span>Border width <output id="text-shape-border-width-value">0px</output></span>
+                            <input type="range" id="text-shape-border-width" min="0" max="10" step="1" value="0" title="Backing rectangle outline thickness"></label>
+                    </details>
+                    <details open class="text-inspector-group">
+                        <summary>Animation</summary>
+                        <label class="text-setting-row"><span>Animation</span><select class="compact-select" id="text-animation" title="Select title animation"></select></label>
+                        <label class="text-setting-row" id="text-subtitle-row" hidden><span>News subtitle</span><input class="compact-input" type="text" id="text-subtitle" maxlength="100" value="LIVE UPDATE" title="Secondary line for the News Lower Third"></label>
+                        <label class="text-setting-row"><span>Animation duration <output id="text-animation-duration-value">1.2s</output></span><input type="range" id="text-animation-duration" min=".1" max="10" step=".1" value="1.2" title="Length of motion"></label>
+                        <label class="text-setting-row"><span>Start delay <output id="text-animation-delay-value">0s</output></span><input type="range" id="text-animation-delay" min="0" max="5" step=".1" value="0" title="Delay before motion begins"></label>
+                        <label class="text-setting-row"><span>Motion speed <output id="text-animation-speed-value">1×</output></span><input type="range" id="text-animation-speed" min=".25" max="4" step=".05" value="1" title="How quickly motion runs"></label>
+                        <label class="text-setting-row"><span>Direction</span><select class="compact-select" id="text-animation-direction" title="Direction of sliding and wipes"><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option><option value="down">Down</option></select></label>
+                        <label class="text-setting-row"><span>Easing</span><select class="compact-select" id="text-animation-easing" title="Acceleration curve"><option value="linear">Linear</option><option value="ease-in">Accelerate</option><option value="ease-out">Decelerate</option><option value="ease-in-out">Smooth</option></select></label>
+                        <label class="text-setting-row"><span>Intensity <output id="text-animation-intensity-value">100%</output></span><input type="range" id="text-animation-intensity" min="0" max="200" step="5" value="100" title="How strongly characters move"></label>
+                        <label class="text-setting-row text-setting-toggle"><span>Loop selected motion</span><input type="checkbox" id="text-animation-loop" title="Repeat the animation while clip is visible"></label>
+                    </details>
+                    <p class="visual-note">Customisations apply to this title clip, not duplicate presets. Changes persist with Undo/Redo and Save Project.</p>
                 </section>
                 <section class="control-card advanced-visual-panel" id="inspector-visual-tools" hidden>
                     <h3>Visual clip adjustments</h3>
@@ -941,7 +1012,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-timeline-reset-motion-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-title-typography-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
