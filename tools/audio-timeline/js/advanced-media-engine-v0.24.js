@@ -12,6 +12,7 @@ import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
 import { connectOrgavoxAudioChain, ensureOrgavoxLofiWorklet } from './orgavox-audio-chain.mjs';
+import { paintTimelineText } from './text-template-renderer.mjs';
 
 const VISUAL_TYPES = new Set(['background', 'video', 'sticker']);
 const AUDIO_TYPES = new Set(['video', 'audio']);
@@ -598,7 +599,15 @@ export class AdvancedMediaEngine {
                             if (!painted) {
                                 if (track.type === 'background') drawCovered(this.context, track.media, width, height);
                                 else if (track.type === 'video') drawContained(this.context, track.media, width, height);
-                                else if (track.type === 'sticker') this.drawSticker(track, width, height);
+                                else if (track.type === 'sticker') {
+                                    if(track.textOverlay){
+                                        // Live and fixed-frame exporters both use renderFrame().
+                                        // Text is drawn at the exact clip-relative timestamp,
+                                        // never frozen into its thumbnail PNG.
+                                        paintTimelineText(this.context,width,height,track.textOverlay,
+                                            Math.max(0,this.currentTime-(Number(track.start)||0)),track.clipDuration);
+                                    } else this.drawSticker(track, width, height);
+                                }
                             }
                             if(track.type!=='sticker')drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
