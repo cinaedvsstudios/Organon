@@ -464,7 +464,11 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .text-phase-section h4 {margin:0 0 4px;color:var(--water-spray);font-size:.66rem;letter-spacing:.025em;}
 .text-phase-section h4 icon {font-style:normal;font-size:.82rem;}
 
-</style>
+#effects-library-grid .asset-preset-card[hidden]{display:none!important}
+        #effect-category{max-width:100%;margin:.4rem 0 .6rem}
+        #inspector-timeline-effect .text-setting-row{display:flex;align-items:center;gap:.5rem;justify-content:space-between;margin-bottom:.6rem}
+        #inspector-timeline-effect input[type="range"]{width:55%}
+    </style>
 </head>
 <body>
 <div class="advanced-app" id="advanced-app">
@@ -508,7 +512,20 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <div class="file-list-footer"><span id="media-remember-note" title="File names, sizes and dates are kept in localStorage. File handles (when supported) are kept in IndexedDB, not file contents; access may need permission again.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear the active project; Undo can restore it while its history remains">🗑 Clear all</button></div>
                 </div>
                 <section class="asset-library-panel" id="effects-library-panel" hidden role="tabpanel" aria-label="Visual overlay effects">
-                    <p class="asset-library-help">Drag an overlay to the timeline or click to insert at the playhead. For A/B effects, use the Transitions button.</p>
+                    <p class="asset-library-help">Animated effects respond to the clip's own timeline time, including seeking and export. Existing still overlays remain available. For A/B transitions, use Transitions.</p>
+                    <label class="asset-library-help" for="effect-category">Effect category
+                        <select class="compact-select" id="effect-category" title="Filter still overlays and procedural effects">
+                            <option value="all">All effects</option>
+                            <option value="Classic">Classic still overlays</option>
+                            <option value="Motion">Motion</option>
+                            <option value="Light">Light</option>
+                            <option value="Distortion">Distortion</option>
+                            <option value="Glitch">Glitch</option>
+                            <option value="Atmospheric">Atmospheric</option>
+                            <option value="Scanning">Scanning</option>
+                            <option value="Particles/Fire">Particles / Fire</option>
+                        </select>
+                    </label>
                     <div class="asset-thumbnail-grid" id="effects-library-grid"></div>
                 </section>
                 <section class="asset-library-panel" id="text-library-panel" hidden role="tabpanel" aria-label="Text templates">
@@ -657,6 +674,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <input type="range" class="range-control" id="sticker-key-tolerance" min="0" max="100" value="30" aria-label="Sticker key colour tolerance">
                     <div class="control-row"><span>Edge feather</span><span class="value-pill" id="sticker-edge-feather-value">8%</span></div>
                     <input type="range" class="range-control" id="sticker-edge-feather" min="0" max="100" value="8" aria-label="Sticker chroma key edge feather">
+                </section>
+
+                <section class="control-card" id="inspector-timeline-effect" hidden>
+                    <h3>Procedural effect</h3>
+                    <p class="control-copy">Animated at clip-relative timestamps in preview and video export. Changes update the selected effect without replacing the clip.</p>
+                    <label class="text-setting-row"><span>Intensity (%)</span><input id="effect-intensity" class="range-control" type="range" min="0" max="100" step="1" value="70" title="Strength of the effect"></label>
+                    <label class="text-setting-row"><span>Speed (×)</span><input id="effect-speed" class="range-control" type="range" min="0.1" max="8" step="0.1" value="1" title="Timeline animation speed"></label>
+                    <label class="text-setting-row"><span>Density</span><input id="effect-density" class="range-control" type="range" min="1" max="120" step="1" value="48" title="Number of particles; used for particle effects"></label>
+                    <label class="text-setting-row"><span>Scale (%)</span><input id="effect-scale" class="range-control" type="range" min="10" max="300" step="5" value="100" title="Beam/fog/particle scale"></label>
+                    <label class="text-setting-row"><span>Direction (°)</span><input id="effect-direction" class="range-control" type="range" min="-180" max="180" step="5" value="0" title="Angle of motion or light sweep"></label>
+                    <label class="text-setting-row"><span>Colour</span><input id="effect-color" type="color" value="#ffd98d" title="Effect tint"></label>
                 </section>
 
                 <section class="control-card" id="inspector-text-template" hidden>
@@ -971,15 +999,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
     <div class="editor-modal" id="text-preview-modal" hidden role="dialog" aria-modal="true" aria-labelledby="text-preview-title">
         <div class="editor-modal-card text-preview-dialog">
-            <div class="editor-modal-head"><h2 id="text-preview-title">Text animation preview</h2><button type="button" class="editor-modal-close" id="text-preview-close" title="Close text animation preview" aria-label="Close text preview">×</button></div>
-            <canvas id="text-preview-canvas" width="640" height="360" aria-label="Animated text preview on a neutral background"></canvas>
+            <div class="editor-modal-head"><h2 id="text-preview-title">Animated preview</h2><button type="button" class="editor-modal-close" id="text-preview-close" title="Close text animation preview" aria-label="Close text preview">×</button></div>
+            <canvas id="text-preview-canvas" width="640" height="360" aria-label="Animated title or visual effect preview"></canvas>
             <div class="text-preview-controls">
                 <button type="button" class="btn" id="text-preview-play" title="Play or pause the current animation">▶ Play</button>
                 <button type="button" class="btn" id="text-preview-restart" title="Restart the title animation">↺ Restart</button>
                 <label class="text-preview-loop"><input type="checkbox" id="text-preview-loop" checked title="Repeat the animation">Loop</label>
             </div>
             <input type="range" id="text-preview-progress" min="0" max="300" step="1" value="0" title="Scrub text animation preview in tenths of a second" aria-label="Text preview progress">
-            <p class="modal-help">Preview text defaults to MotoriClip. These are real animated title designs; you can change colours and wording after inserting one.</p>
+            <p class="modal-help">Animated titles and procedural effects use the same timeline timestamps as video export. Edit title wording or effect parameters after inserting a clip.</p>
         </div>
     </div>
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
@@ -1048,7 +1076,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-title-phases-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-procedural-fx-a"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
