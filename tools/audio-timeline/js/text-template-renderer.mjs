@@ -238,7 +238,7 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  const font=(options.italic?'italic ':'')+weight+' '+size+'px '+family;
  ctx.save();ctx.font=font;
  const metrics=letters.map(char=>ctx.measureText(char).width);
- const total=metrics.reduce((a,b)=>a+b,0);
+ const total=metrics.reduce((a,b)=>a+b,0)+Math.max(0,letters.length-1)*(options.letterSpacing||0);
  const fit=Math.min(1,(options.maxWidth??580)/Math.max(1,total));
  const align=options.align||'center';
  ctx.translate(x,y);ctx.scale(fit,fit);
@@ -280,7 +280,7 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
   }
   drawTitle(ctx,char,0,0,{...options,size,align:'center',maxWidth:width+12});
   ctx.restore();
-  cursor+=width;
+  cursor+=width+(options.letterSpacing||0);
  }
  ctx.restore();
 }
@@ -295,7 +295,7 @@ function drawWritingTitle(ctx,text,x,y,opts,frame){
  ctx.save();
  ctx.font='italic 500 '+size+'px '+fonts.script;
  const widths=letters.map(letter=>ctx.measureText(letter).width);
- const total=widths.reduce((sum,w)=>sum+w,0);
+ const total=widths.reduce((sum,w)=>sum+w,0)+Math.max(0,letters.length-1)*(opts.letterSpacing||0);
  const fit=Math.min(1,(opts.maxWidth||550)/Math.max(total,1));
  ctx.translate(x,y);ctx.scale(fit,fit);
  let cursor=-total/2,penX=cursor;
@@ -309,7 +309,7 @@ function drawWritingTitle(ctx,text,x,y,opts,frame){
    ctx.restore();
   }
   if(fraction>0)penX=cursor+w*fraction;
-  cursor+=w;
+  cursor+=w+(opts.letterSpacing||0);
  }
  if(frame.progress>0&&frame.progress<1){
   ctx.fillStyle=opts.outline;ctx.beginPath();ctx.arc(penX+2,12,4,0,Math.PI*2);ctx.fill();
