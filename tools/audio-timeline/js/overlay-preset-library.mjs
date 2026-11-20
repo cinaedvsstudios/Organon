@@ -5,7 +5,11 @@
  *
  * These are STATIC overlay clips, not aliases for the 41 paired transitions.
  */
-export const TEXT_PRESETS = Object.freeze([
+import { TEXT_DESIGNS, paintTimelineText } from './text-template-renderer.mjs';
+// The library exposes real typography/layout differences. Earlier saved
+// colour-only preset IDs remain available for reconstructing legacy projects.
+export const TEXT_PRESETS = TEXT_DESIGNS;
+export const LEGACY_TEXT_PRESETS = Object.freeze([
     {id:'neon-cyan',label:'Neon cyan',group:'text',color:'#4fe8ff',accent:'#0033bd'},
     {id:'neon-purple',label:'Ultraviolet',group:'text',color:'#dc7aff',accent:'#5b10a4'},
     {id:'ruby-red',label:'Ruby',group:'text',color:'#ff6b86',accent:'#bc1e39'},
@@ -123,8 +127,11 @@ export function renderOverlayPreset(canvas,preset,value='YOUR TEXT'){
     ctx.clearRect(0,0,canvas.width,canvas.height);
     ctx.save();
     try {
-        if(preset.group==='text')renderText(ctx,canvas,preset,value);
-        else drawEffect(ctx,canvas,preset);
+        if(preset.group==='text'){
+            if(preset.layout) paintTimelineText(ctx,canvas.width,canvas.height,
+                {presetId:preset.id,value,animation:'none'},1,1);
+            else renderText(ctx,canvas,preset,value); // old projects' recipe
+        }else drawEffect(ctx,canvas,preset);
     } finally {ctx.restore();}
 }
 export function createOverlayFile(preset,value='YOUR TEXT'){
