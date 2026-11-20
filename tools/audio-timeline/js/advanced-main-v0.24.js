@@ -73,7 +73,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             outlineWidth:document.getElementById('text-outline-width'),
             shadowBlur:document.getElementById('text-shadow-blur'),
             animation:document.getElementById('text-animation'),
-            animationDuration:document.getElementById('text-animation-duration')
+            animationDuration:document.getElementById('text-animation-duration'),
+            animationDelay:document.getElementById('text-animation-delay'),
+            animationSpeed:document.getElementById('text-animation-speed'),
+            animationDirection:document.getElementById('text-animation-direction'),
+            animationEasing:document.getElementById('text-animation-easing'),
+            animationIntensity:document.getElementById('text-animation-intensity'),
+            animationLoop:document.getElementById('text-animation-loop'),
+            subtitle:document.getElementById('text-subtitle')
         },
         textPreviewModal:document.getElementById('text-preview-modal'),
         textPreviewTitle:document.getElementById('text-preview-title'),
@@ -1252,10 +1259,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         input.addEventListener('input',()=>{
             const track=getTrack();
             if(!track?.textOverlay || state.selectedTrackIds.size!==1)return;
-            const updated={...track.textOverlay,[name]:input.value};
+            const updated={...track.textOverlay,[name]:input.type==='checkbox'?input.checked:input.value};
             track.textOverlay=normaliseTextOverlay(updated);
             const output=document.getElementById('text-'+name.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+'-value');
-            if(output)output.textContent=input.value+(name==='fontSize'?'%':name==='animationDuration'?'s':'');
+            if(output){
+                const suffix=name==='fontSize'||name==='animationIntensity'?'%'
+                    :name==='animationDuration'||name==='animationDelay'?'s'
+                    :name==='animationSpeed'?'×':'';
+                output.textContent=String(track.textOverlay[name])+suffix;
+            }
             engine.renderFrame();
         });
     }
@@ -1451,11 +1463,16 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const config=normaliseTextOverlay(track.textOverlay);
             const design=TEXT_PRESETS.find(item=>item.id===config.presetId);
             elements.textSelectedDesign.textContent=(design?.label||'Title')+' · edit this clip without replacing its template';
-            for(const [name,input] of Object.entries(elements.textInspectorInputs))
-                input.value=String(config[name]);
-            for(const [name,suffix] of [['font-size','%'],['outline-width',''],['shadow-blur',''],['animation-duration','s']]){
+            for(const [name,input] of Object.entries(elements.textInspectorInputs)){
+                if(input.type==='checkbox')input.checked=Boolean(config[name]);
+                else input.value=String(config[name]);
+            }
+            document.getElementById('text-subtitle-row').hidden=config.presetId!=='news-lower-third';
+            for(const [name,suffix] of [['font-size','%'],['outline-width',''],['shadow-blur',''],
+                ['animation-duration','s'],['animation-delay','s'],['animation-speed','×'],['animation-intensity','%']]){
                 const key={'font-size':'fontSize','outline-width':'outlineWidth','shadow-blur':'shadowBlur',
-                    'animation-duration':'animationDuration'}[name];
+                    'animation-duration':'animationDuration','animation-delay':'animationDelay',
+                    'animation-speed':'animationSpeed','animation-intensity':'animationIntensity'}[name];
                 document.getElementById('text-'+name+'-value').textContent=config[key]+suffix;
             }
         }
