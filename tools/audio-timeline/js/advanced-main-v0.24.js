@@ -508,16 +508,19 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             return null;
         }
         if(!data)return null;
-        const existingIds=new Set(state.files.map(entry=>entry.id));
-        for(const file of data.files){
-            if(existingIds.has(file.id)) {
-                const entry=state.files.find(existing=>existing.id===file.id);
-                if(file.generated)entry.generated={...file.generated};
-                continue;
-            }
-            state.files.push({...file,file:null,needsRelink:true});
-            existingIds.add(file.id);
-        }
+        // A valid project recovery record is the authoritative media-bin list.
+        // The older filename index is only a fallback when recovery is missing
+        // or corrupt; merging it here resurrects files from previous projects.
+        const indexedById=new Map(state.files.map(entry=>[entry.id,entry]));
+        state.files=data.files.map(file=>{
+            const indexed=indexedById.get(file.id);
+            const compatible=indexed && indexed.name===file.name
+                && indexed.kind===file.kind
+                && (!file.size || indexed.size===file.size);
+            return {...file,file:null,needsRelink:true,
+                ...(compatible && indexed.relativePath
+                    ? {relativePath:indexed.relativePath}:{})};
+        });
         state.tracks=data.tracks.map(record=>snapshotClip(record));
         state.history.undo=data.history?.undo || [];
         state.history.redo=data.history?.redo || [];
