@@ -342,3 +342,18 @@ test('redo-only media references can be recovered without modifying timeline dat
     assert.equal(restored[0].file,original);
     assert.equal(restored[0].needsRelink,false);
 });
+
+test('project history snapshots include immutable cue markers and applied canvas/FPS metadata',()=>{
+    const markers=[0.5,3.75];
+    const settings={canvasWidth:1280,canvasHeight:720,fps:30,previewZoom:125};
+    const snapshot=snapshotProject({files:[],tracks:[],selectedTrackIds:new Set(),
+        currentTime:0,markers,settings});
+    markers.push(9);
+    settings.canvasWidth=1920;
+    assert.deepEqual(snapshot.markers,[0.5,3.75]);
+    assert.equal(snapshot.settings.canvasWidth,1280);
+    assert.equal(snapshot.settings.fps,30);
+    const legacy=snapshotProject({files:[],tracks:[],selectedTrackIds:new Set(),currentTime:0});
+    assert.equal(legacy.markers,undefined,'Older snapshots must remain compatible');
+    assert.equal(legacy.settings,undefined);
+});
