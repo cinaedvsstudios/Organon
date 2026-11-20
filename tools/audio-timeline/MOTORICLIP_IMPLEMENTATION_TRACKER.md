@@ -23,6 +23,8 @@
 
 - 20 Nov 2026: Phase 3A in [PR #97](https://github.com/cinaedvsstudios/Organon/pull/97) implements **#25, #27, #30, #39, #43, #44**: Light Sweep, animated Hazy Atmosphere, Rhythmic Flicker, and independently animated dust/sparks/debris, plus category filtering, themed animated preview with scrub, timeline clip recipes, and effect Inspector settings. All 264 Node tests passed after correcting a zero-intensity test expectation; Chrome transition/UI, portable Save/Open and Firefox/WebKit acceptance jobs passed. Procedural effects use deterministic clip-relative canvas rendering shared with exporters. The additional effect families (#21–24, #26, #28–29, #31–38, #40–41), full category coverage (#42), broader Inspector parameter coverage (#45), actual exported-pixel and long-form export certification remain unchecked. The GitHub long-export profile is independent and may still be in progress during merge.
 
+- 20 Nov 2026: Phase 3B in [PR #98](https://github.com/cinaedvsstudios/Organon/pull/98) implements **#26, #28, #35, #36**: editable-origin God Rays; organic animated Light Leaks; Pixel Scan; and Sci-Fi Scan. Tests expanded to 266 Node cases; all Node tests, short Chrome A/B+UI+project Save/Open job, Firefox/WebKit job and basic Chrome real-export/resolution stress stages passed. The 12 classic overlays and 41 paired transitions remain intact. The extended long-form video export/memory certification is tracked separately and is not marked complete.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -56,17 +58,17 @@
 - [ ] **23.** Glow — bloom bright image regions.
 - [ ] **24.** Edge Glow — illuminate detected edges only.
 - [x] **25.** Light Sweep — moving directional highlight.
-- [ ] **26.** God Rays — directional beams with adjustable origin.
+- [x] **26.** God Rays — directional beams with adjustable origin.
 - [x] **27.** Hazy Atmosphere — drifting diffuse fog.
-- [ ] **28.** Light Leaks — animated organic edge illumination.
+- [x] **28.** Light Leaks — animated organic edge illumination.
 - [ ] **29.** Fault Cassette — analogue tape distortions.
 - [x] **30.** Flicker — editable rhythmic brightness variance.
 - [ ] **31.** Ripple Distortion — animated refractive waves.
 - [ ] **32.** Electric Ripple — waves with electrical pulses.
 - [ ] **33.** Shockwave — expanding refractive ring.
 - [ ] **34.** Vibration Flash — shake with brief flashes.
-- [ ] **35.** Pixel Scan — moving scan band with pixel detail.
-- [ ] **36.** Sci-Fi Scan — scan beam and technical HUD marks.
+- [x] **35.** Pixel Scan — moving scan band with pixel detail.
+- [x] **36.** Sci-Fi Scan — scan beam and technical HUD marks.
 - [ ] **37.** Chromatic Quirk — independently displaced RGB channels.
 - [ ] **38.** Halo Blur — radial soft focus.
 - [x] **39.** Particle Effects — independent sparks/dust/debris.
