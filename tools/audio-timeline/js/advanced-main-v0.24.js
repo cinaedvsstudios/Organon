@@ -357,7 +357,11 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
         if(!data)return null;
         const existingIds=new Set(state.files.map(entry=>entry.id));
         for(const file of data.files){
-            if(existingIds.has(file.id))continue;
+            if(existingIds.has(file.id)) {
+                const entry=state.files.find(existing=>existing.id===file.id);
+                if(file.generated)entry.generated={...file.generated};
+                continue;
+            }
             state.files.push({...file,file:null,needsRelink:true});
             existingIds.add(file.id);
         }
@@ -379,6 +383,35 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
         timeline.setMarkers(state.timelineMarkers);
         // Preserve the timestamp until media and player restoration finish.
         return data;
+    }
+    function recreateGeneratedProjectOverlays() {
+        const presets=[...TEXT_PRESETS,...EFFECT_OVERLAYS];
+        let regenerated=0;
+        for(const entry of state.files){
+            if(entry.file||!entry.generated)continue;
+            const recipe=entry.generated;
+            const preset=presets.find(item=>item.group===recipe.group&&item.id===recipe.presetId);
+            if(!preset) {
+                console.warn('Unknown saved overlay template:',recipe.presetId);
+                continue;
+            }
+            try {
+                // Regenerate local artwork from a tiny recipe, not stored PNG
+                // bytes. Keep the original filename/source ID so saved clips,
+                // transitions and keyframes still reference the same media.
+                const generated=createOverlayFile(preset,recipe.value);
+                const file=new File([generated],entry.name,{type:'image/png',
+                    lastModified:entry.lastModified||Date.now()});
+                entry.file=file;
+                entry.needsRelink=false;
+                entry.size=file.size;
+                state.sourceFiles.set(entry.id,file);
+                regenerated++;
+            } catch(error) {
+                console.warn('Saved overlay could not be recreated:',entry.name,error);
+            }
+        }
+        return regenerated;
     }
     async function loadRecoveredMediaTracks() {
         if(state.historyRestoring)return 0;
@@ -774,7 +807,12 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
     function registerGeneratedOverlay(preset) {
         const file=createOverlayFile(preset,elements.textOverlayValue.value);
         const entry={id:`file-${Date.now()}-${++state.serial}`,file,name:file.name,
-            kind:'sticker',size:file.size,lastModified:file.lastModified};
+            kind:'sticker',size:file.size,lastModified:file.lastModified,
+            generated:{
+                group:preset.group,
+                presetId:preset.id,
+                value:preset.group==='text'?elements.textOverlayValue.value.slice(0,100):''
+            }};
         state.files.push(entry);
         state.sourceFiles.set(entry.id,file);
         renderFiles();
@@ -2397,6 +2435,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
     restoreMediaIndex();
     const recovered=restoreSavedProjectMetadata();
     initAssetLibrary();
+    const generatedRestored=recreateGeneratedProjectOverlays();
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
     // Autosave on change only, plus pagehide/visibilitychange for immediate
     // closes. Unlike a video cache this stores at most a few MB of JSON.
@@ -2413,8 +2452,8 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
                 await engine.seek(Math.min(recovered.currentTime,engine.getTimelineDuration()),{resume:false});
                 const offline=state.tracks.filter(track=>track.sourceName&&!track.media).length;
                 showToast(offline
-                    ? `Recovered project with ${state.tracks.length} clips; ${offline} need media relinking`
-                    : `Recovered ${state.tracks.length} clips and project settings`);
+                    ? `Recovered ${state.tracks.length} clips, regenerated ${generatedRestored} overlays; ${offline} need relinking`
+                    : `Recovered ${state.tracks.length} clips and ${generatedRestored} generated overlays`);
             }
         } catch(error) {
             console.warn('Project media recovery incomplete:',error);
