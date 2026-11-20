@@ -282,3 +282,12 @@ test('phased title settings persist in Undo and reject incompatible animation ch
  assert.equal(invalid.loopAnimation,'none');
  assert.equal(invalid.outDuration,10);assert.equal(invalid.loopDuration,.1);
 });
+
+test('looping ticker restarts each cycle instead of disappearing off-screen',()=>{
+ const cfg={presetId:'tech-hud',phasedAnimation:true,inAnimation:'none',
+   loopAnimation:'ticker',loopDuration:1,outAnimation:'none',animationEasing:'linear'};
+ const one=textAnimationState(cfg,.3,5),two=textAnimationState(cfg,1.3,5);
+ assert.equal(one.phase,'loop');assert.equal(two.phase,'loop');
+ assert.ok(Math.abs(one.tickerX-two.tickerX)<.00001,
+   'Each one-second ticker cycle must return to the same position');
+});
