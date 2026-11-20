@@ -15,6 +15,7 @@ import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './c
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { normaliseSpiralBlockOptions } from './gl-transitions/SpiralBlockWipe.mjs';
 import { normaliseHologramOptions } from './gl-transitions/Hologram.mjs';
+import { normaliseCellDissolveOptions } from './gl-transitions/CellDissolve.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1643,6 +1644,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             hologramInspector.hidden=!(paired&&track.transitionEffectId==='hologram');
             if(!hologramInspector.hidden)
                 displayHologramSettings(hologramInspector,track.transitionParameters?.hologram);
+            const cellInspector=document.getElementById('video-cell-dissolve-settings');
+            cellInspector.hidden=!(paired&&track.transitionEffectId==='cell-dissolve');
+            if(!cellInspector.hidden)
+                displayCellDissolveSettings(cellInspector,track.transitionParameters?.['cell-dissolve']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1895,6 +1900,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-hologram-settings');
             b.transitionParameters={...b.transitionParameters,
                 hologram:readHologramSettings(panel)};
+        }
+        if(effectId==='cell-dissolve'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-cell-dissolve')
+                :document.getElementById('video-cell-dissolve-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'cell-dissolve':readCellDissolveSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2681,6 +2693,29 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayHologramSettings(root,target?.transitionParameters?.hologram);
         }
     }
+    function readCellDissolveSettings(root){
+        const value=name=>root?.querySelector('[data-cell-dissolve-param="'+name+'"]')?.value;
+        return normaliseCellDissolveOptions({
+            cells:value('cells'),smoothness:value('smoothness'),
+            border:value('border'),borderColor:value('borderColor'),
+            borderAlpha:value('borderAlpha'),seed:value('seed')
+        });
+    }
+    function displayCellDissolveSettings(root,options={}){
+        const params=normaliseCellDissolveOptions(options);
+        for(const [name,value] of Object.entries(params)){
+            const input=root?.querySelector('[data-cell-dissolve-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshCellDissolveModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-cell-dissolve');
+        root.hidden=elements.transitionModalEffect.value!=='cell-dissolve';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayCellDissolveSettings(root,target?.transitionParameters?.['cell-dissolve']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2719,6 +2754,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,spiralblockwipe:readSpiralBlockSettings(document.getElementById('transition-modal-spiral'))}
                     :effectId==='hologram'
                     ?{...b.transitionParameters,hologram:readHologramSettings(document.getElementById('transition-modal-hologram'))}
+                    :effectId==='cell-dissolve'
+                    ?{...b.transitionParameters,'cell-dissolve':readCellDissolveSettings(document.getElementById('transition-modal-cell-dissolve'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2727,7 +2764,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(effectId==='spiralblockwipe'||effectId==='hologram'){
+                if(['spiralblockwipe','hologram','cell-dissolve'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2763,6 +2800,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.transitionModalEffect.value=elements.pairTransitionEffect.value || 'fade';
         refreshSpiralModalSettings({restoreValues:true});
         refreshHologramModalSettings({restoreValues:true});
+        refreshCellDissolveModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2776,6 +2814,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             : `${count} available visual clips · 41 transitions. Preview the effect, then Apply.`;
         refreshSpiralModalSettings();
         refreshHologramModalSettings();
+        refreshCellDissolveModalSettings();
         renderTransitionPreview();
     }
     function applyTransitionFromModal() {
@@ -2803,10 +2842,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.transitionModalTo.addEventListener('change',updateTransitionModalValidation);
     elements.transitionModalEffect.addEventListener('change',()=>{
         refreshSpiralModalSettings({restoreValues:true});
-        refreshHologramModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshHologramModalSettings({restoreValues:true});
+        refreshCellDissolveModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-cell-dissolve').querySelectorAll('[data-cell-dissolve-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-cell-dissolve-settings').querySelectorAll('[data-cell-dissolve-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='cell-dissolve'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readCellDissolveSettings(document.getElementById('video-cell-dissolve-settings'));
+            const prior=normaliseCellDissolveOptions(active.transitionParameters?.['cell-dissolve']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit CellDissolve original shader settings');
+            active.transitionParameters={...active.transitionParameters,'cell-dissolve':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-hologram').querySelectorAll('[data-hologram-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-hologram-settings').querySelectorAll('[data-hologram-param]')
