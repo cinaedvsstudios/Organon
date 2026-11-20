@@ -16,7 +16,7 @@ const root=process.cwd(),fixtures=join(root,'tools/audio-timeline/tests/fixtures
 mkdirSync(fixtures,{recursive:true});
 const temp=await mkdtemp(join(tmpdir(),'motoriclip-vortex-mp4-'));
 const mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.mp4':'video/mp4'};
-const W=96,H=54,FPS=25,DURATION=2;
+const W=96,H=64,FPS=25,DURATION=2;
 function run(bin,args){
  const p=spawnSync(bin,args,{timeout:120000,maxBuffer:16*1024*1024});
  if(p.error||p.signal||p.status!==0)throw Error(bin+' failed: '+String(p.stderr||p.error||p.signal).slice(-1200));
