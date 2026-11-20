@@ -101,7 +101,7 @@ try{
    frames[key]=snapshot();
    if(key==='0.8')screenshots[key]=output.toDataURL('image/png');
   }
-  const usingShader=Boolean(engine.spiralBlockWebGL);
+  const usingShader=Boolean(engine.hologramWebGL);
   let downloaded=false;
   const exporter=new AdvancedOfflineExporter({engine,onProgress(){},onState(){},
    onDownload({blob,extension}){
