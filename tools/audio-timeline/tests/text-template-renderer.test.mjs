@@ -19,7 +19,9 @@ test('title Inspector settings are small, validated and preserved',()=>{
    fontSize:125,outlineWidth:7,shadowBlur:16,animation:'box-reveal',animationDuration:1.6});
  assert.deepEqual({...record},{presetId:'news-lower-third',value:'The news tonight',
    fill:'#aabbcc',outline:'#223344',shadow:'#334455',
-   fontSize:125,outlineWidth:7,shadowBlur:16,animation:'box-reveal',animationDuration:1.6});
+   fontSize:125,outlineWidth:7,shadowBlur:16,animation:'box-reveal',animationDuration:1.6,
+   animationDelay:0,animationSpeed:1,animationDirection:'left',animationEasing:'ease-out',
+   animationIntensity:100,animationLoop:false,subtitle:'LIVE UPDATE'});
  const broken=normaliseTextOverlay({presetId:'missing',value:'A'.repeat(180),fill:'url(javascript:alert(1))',
    animation:'bad',fontSize:1e10,animationDuration:-20});
  assert.equal(broken.value.length,100);
