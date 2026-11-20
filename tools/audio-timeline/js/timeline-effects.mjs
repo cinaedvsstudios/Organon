@@ -93,6 +93,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
   }else if(e.presetId.startsWith('particle-')){
    const sparks=e.presetId==='particle-sparks',debris=e.presetId==='particle-debris';
    const count=Math.min(120,Math.max(1,Math.round(e.density)));
+   const clipAlpha=ctx.globalAlpha;
    const dx=Math.cos(rad),dy=Math.sin(rad);
    for(let i=0;i<count;i++){
     const life=wrap(random(i*13+2)+t/(sparks?1.4:debris?3.1:7.5));
@@ -102,7 +103,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     const y=wrap((baseY+dy*travel*life-(sparks?0:life*h*.15))/h)*h;
     const fade=Math.min(1,life*6,(1-life)*6)*strength;
     const r=(sparks?1.4:debris?3.2:1.7)*size*(.6+random(i*13+8));
-    ctx.globalAlpha=fade;
+    ctx.globalAlpha=clipAlpha*fade;
     ctx.fillStyle=sparks?'#ffffff':e.color;
     ctx.strokeStyle=sparks?e.color:ctx.fillStyle;
     if(sparks){
@@ -115,7 +116,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
     }
    }
-   ctx.globalAlpha=1;
+   ctx.globalAlpha=clipAlpha;
   }
  }finally{ctx.restore();}
  return true;
