@@ -508,8 +508,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             showToast('Cannot open project: '+error.message);
             return;
         }
-        if(!window.confirm(`Open ${file.name}? This replaces the current timeline and its Undo/Redo history with the saved project history (when available). Save the current project first if needed. Original media may need relinking.`))
-            return;
+        if(!await requestEditorAction({kind:'confirm',title:'Open saved project?',
+            description:`Open ${file.name}? This replaces the current timeline and Undo/Redo history. Save a backup first if you need it; original source media may need relinking.`,
+            apply:'Open project'}))return;
         state.recoveryLoading=true;
         try {
             // A current-session File can be reused only when its stable
@@ -1450,7 +1451,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if (!state.tracks.includes(track) && /cancelled/i.test(error.message)) return false;
             elements.previewState.textContent = `Could not load ${entry.name}: ${error.message}`;
             showToast(`Could not import ${entry.name}`);
-            alert(`Could not load ${entry.name}. ${error.message}`);
+            void requestEditorAction({kind:'info',title:'Could not load media',
+                description:`Could not load ${entry.name}: ${error.message}`,apply:'Close'});
             return false;
         }
     }
@@ -2648,9 +2650,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
     elements.btnRelink.addEventListener('click', () => { void reconnectRememberedMedia(); });
     elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
-    elements.btnClear.addEventListener('click', () => {
+    elements.btnClear.addEventListener('click', async () => {
         if (!state.files.length && !state.tracks.length) return;
-        if (!confirm('Clear all Project Files and all timeline clips? Undo history can still restore them until that history is discarded.')) return;
+        const confirmed=await requestEditorAction({kind:'confirm',title:'Clear all project media?',
+            description:'Remove all media from the active bin and every timeline clip? Undo can still restore the project while its history remains.',apply:'Clear all',danger:true});
+        if(!confirmed)return;
         recordHistory('Clear project');
         // Keep IndexedDB file handles needed by the persisted Clear-project
         // Undo snapshot. Erasing them here makes Undo after reload recover only
