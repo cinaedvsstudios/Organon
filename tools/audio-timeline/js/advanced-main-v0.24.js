@@ -18,6 +18,7 @@ import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mj
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle } from './media-handle-store.mjs';
+import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord } from './project-recovery.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -29,7 +30,7 @@ import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFi
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
-        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map()
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map(), recoveryLoading:true, lastRecoveryText:''
     };
 
     const elements = {
@@ -160,11 +161,12 @@ import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFi
         const supported = exporter.getFormats();
         const duration = engine.getTimelineDuration();
         const busy = exporter.busy || offlineExporter.busy;
+        const mediaMissing=state.tracks.some(track=>track.sourceName&&!track.file);
         const captureReady = typeof elements.canvas.captureStream === 'function' && typeof window.MediaStream === 'function';
-        elements.btnExportVideo.disabled = busy || !captureReady || supported.length === 0 || duration <= 0;
-        elements.btnExportOffline.disabled = busy || !offlineExporter.getAvailable()
+        elements.btnExportVideo.disabled = busy || mediaMissing || !captureReady || supported.length === 0 || duration <= 0;
+        elements.btnExportOffline.disabled = busy || mediaMissing || !offlineExporter.getAvailable()
             || duration <= 0 || duration > OFFLINE_EXPORT_LIMIT_SECONDS;
-        elements.btnExportOffline.title = duration > OFFLINE_EXPORT_LIMIT_SECONDS
+        elements.btnExportOffline.title = mediaMissing ? 'Reconnect offline clips before exporting this project' : duration > OFFLINE_EXPORT_LIMIT_SECONDS
             ? 'Fixed-frame beta currently supports projects up to 2 minutes'
             : (offlineExporter.getAvailable() ? 'Render with fixed timestamps (experimental)' : 'Requires WebCodecs and OfflineAudioContext');
     }
@@ -311,6 +313,101 @@ import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFi
             selectedTrackId: state.selectedTrackId, selectedFileId: state.selectedFileId,
             currentTime: engine.currentTime
         });
+    }
+
+    function saveProjectRecovery() {
+        if(state.recoveryLoading || state.historyRestoring) return false;
+        try {
+            const record=createRecoveryRecord({
+                files:state.files,tracks:state.tracks,
+                selectedTrackId:state.selectedTrackId,
+                selectedTrackIds:state.selectedTrackIds,
+                selectedFileId:state.selectedFileId,
+                currentTime:engine.currentTime,
+                canvasWidth:Number(elements.canvasWidth.value),
+                canvasHeight:Number(elements.canvasHeight.value),
+                fps:Number(elements.projectFps.value),
+                previewZoom:state.previewZoom,
+                markers:state.timelineMarkers
+            });
+            // savedAt is deliberately excluded from change detection, so an
+            // unchanged project cannot cause continuous localStorage writes.
+            const content=serializeRecoveryRecord(record);
+            const compare=JSON.parse(content);
+            compare.savedAt=0;
+            const signature=JSON.stringify(compare);
+            if(signature===state.lastRecoveryText)return false;
+            localStorage.setItem(PROJECT_RECOVERY_KEY,content);
+            state.lastRecoveryText=signature;
+            return true;
+        } catch(error) {
+            console.warn('MotoriClip recovery could not be saved:',error);
+            return false;
+        }
+    }
+    function restoreSavedProjectMetadata() {
+        let data;
+        try {
+            data=parseRecoveryRecord(localStorage.getItem(PROJECT_RECOVERY_KEY));
+        } catch(error) {
+            console.warn('Saved MotoriClip project metadata was invalid; old file index is preserved.',error);
+            showToast('Project recovery data invalid; original media list was kept');
+            return null;
+        }
+        if(!data)return null;
+        const existingIds=new Set(state.files.map(entry=>entry.id));
+        for(const file of data.files){
+            if(existingIds.has(file.id))continue;
+            state.files.push({...file,file:null,needsRelink:true});
+            existingIds.add(file.id);
+        }
+        state.tracks=data.tracks.map(record=>snapshotClip(record));
+        state.selectedTrackIds=new Set(data.selectedTrackIds.filter(clipId=>
+            state.tracks.some(track=>track.id===clipId)));
+        state.selectedTrackId=state.tracks.some(track=>track.id===data.selectedTrackId)
+            ? data.selectedTrackId : [...state.selectedTrackIds][0]||null;
+        state.selectedFileId=state.files.some(file=>file.id===data.selectedFileId)
+            ? data.selectedFileId : null;
+        state.timelineMarkers=[...data.markers];
+        const {canvasWidth,canvasHeight,fps,previewZoom}=data.settings;
+        elements.canvasWidth.value=String(canvasWidth);
+        elements.canvasHeight.value=String(canvasHeight);
+        elements.projectFps.value=String(fps);
+        engine.setProjectFrameRate(fps);
+        state.previewZoom=previewZoom;
+        elements.previewZoom.value=String(previewZoom);
+        timeline.setMarkers(state.timelineMarkers);
+        // Preserve the timestamp until media and player restoration finish.
+        return data;
+    }
+    async function loadRecoveredMediaTracks() {
+        if(state.historyRestoring)return 0;
+        let linked=0;
+        const missing=state.tracks.filter(track=>track.sourceName&&!track.media
+            && track.sourceFileId&&state.files.some(file=>file.id===track.sourceFileId&&file.file));
+        for(const track of missing){
+            if(!state.tracks.includes(track)||track.media)continue;
+            const file=getFile(track.sourceFileId)?.file;
+            if(!file)continue;
+            try {
+                // loadTrack creates fresh browser decoders but retains the
+                // timeline's source in-point, duration, transforms/keyframes,
+                // fades, speed, blend and Orgavox preset settings.
+                await engine.loadTrack(track,file);
+                if(!state.tracks.includes(track)){engine.detachTrack(track,false);continue;}
+                state.sourceFiles.set(track.sourceFileId,file);
+                linked++;
+            } catch(error) {
+                console.warn('Saved clip could not reopen:',track.sourceName,error);
+                elements.previewState.textContent=`Could not reopen ${track.sourceName}: ${error.message}`;
+            }
+        }
+        if(linked) {
+            refreshAll();
+            void engine.seek(Math.min(engine.currentTime,engine.getTimelineDuration()),{resume:false})
+                .catch(console.warn);
+        }
+        return linked;
     }
 
     function pruneSourceRegistry() {
@@ -973,6 +1070,8 @@ import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFi
         // Moving/trimming or deleting a paired clip must never leave an orphan
         // "linked" label. Independent visual fade settings remain intact.
         for(const track of state.tracks){
+            if(track.transitionFromId && state.tracks.some(other=>
+                    (other.id===track.transitionFromId||other.id===track.id)&&other.sourceName&&!other.file)) continue;
             if(track.transitionFromId&&!isPairedFadeActive(track,state.tracks)){
                 track.transitionFromId=null;
                 track.transitionEffectId=null;
