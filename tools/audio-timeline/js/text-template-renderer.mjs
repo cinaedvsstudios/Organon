@@ -84,7 +84,7 @@ export function normaliseTextOverlay(input={}) {
   inDuration:safeNumber(input.inDuration,input.animationDuration==null?1.2:
     safeNumber(input.animationDuration,1.2,.1,10),.1,10),
   outAnimation:outNames.has(input.outAnimation)?input.outAnimation:'none',
-  outDuration:safeNumber(input.outDuration,.65,.1,10),
+  outDuration:safeNumber(input.outDuration,.6,.1,10),
   loopAnimation:loopNames.has(input.loopAnimation)?input.loopAnimation:'none',
   loopDuration:safeNumber(input.loopDuration,1.5,.1,10),
   subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100),
@@ -156,7 +156,8 @@ function singleTextAnimationState(config={},localTime=0,clipDuration=3) {
   headlineAlpha:opts.animation==='box-reveal'?clamp((raw-.44)/.35,0,1):1,
   subtitleAlpha:opts.animation==='box-reveal'?clamp((raw-.73)/.27,0,1):1,
   tickerX:opts.animation==='ticker'
-    ?(direction==='right'?-640+time/clip*1280:640-time/clip*1280):0,
+    ?(direction==='right'?-640+(opts.animationLoop?running:time)/clip*1280
+      :640-(opts.animationLoop?running:time)/clip*1280):0,
   jitter:opts.animation==='shake'?Math.sin(time*46)*4*intensity:0,
   flicker:opts.animation==='neon-flicker'
     ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1,
