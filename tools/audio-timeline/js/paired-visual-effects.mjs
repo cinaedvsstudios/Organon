@@ -344,18 +344,6 @@ export function smokeDensity(progress) {
     if(p===0||p===1)return 0;
     return Math.sin(Math.PI*p);
 }
-/** Phase 8K: twelve annular video slices rotate independently into a
- * growing circular reveal, producing a vortex rather than a flat rotation.
- */
-export function vortexRadius(progress,width,height) {
-    return Math.hypot(width/2,height/2)*unit(progress);
-}
-export function vortexTurn(progress,ring,count=12) {
-    const p=unit(progress),n=Math.max(1,Math.trunc(count)||12);
-    const i=Math.min(n-1,Math.max(0,Math.trunc(ring)||0));
-    if(p===0||p===1)return 0;
-    return (1-p)*Math.PI*1.9*(1-i/n*.85);
-}
 /** Thermal shimmer is smoothly wave-shaped, not the discrete random
  * horizontal jitter or dropout used by VHS and Glitch flicker.
  */
