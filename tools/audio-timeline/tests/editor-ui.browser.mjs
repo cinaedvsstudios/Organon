@@ -309,12 +309,64 @@ try{
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
     await page.locator('[data-library-tab="text"]').click();
     await page.locator('#text-overlay-value').fill('NEW TITLE');
-    assert.equal(await page.locator('#text-library-grid .asset-preset-card').count(),12);
+    assert.equal(await page.locator('#text-library-grid .asset-preset-card').count(),16,
+        'The text library should have sixteen typography/layout designs, not palette duplicates');
+    // Distinct designs should differ in geometry even if rendered in grayscale.
+    const titleRender=await page.evaluate(async()=>{
+        const {TEXT_DESIGNS,paintTimelineText}=await import('./js/text-template-renderer.mjs');
+        const output=[];
+        for(const preset of TEXT_DESIGNS){
+            const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
+            const ctx=canvas.getContext('2d',{willReadFrequently:true});
+            paintTimelineText(ctx,640,360,{presetId:preset.id,value:'MotoriClip',
+                fill:'#ffffff',outline:'#ffffff',shadow:'#ffffff',animation:'none'},2,3);
+            const pixels=ctx.getImageData(0,0,640,360).data;
+            let hash=2166136261;
+            for(let i=3;i<pixels.length;i+=32){
+                hash=Math.imul((hash^pixels[i])>>>0,16777619)>>>0;
+            }
+            output.push([preset.id,hash,ctx.getImageData(0,0,640,360).data.some((v,i)=>i%4===3&&v>0)]);
+        }
+        return output;
+    });
+    assert.equal(new Set(titleRender.map(r=>r[1])).size,16,
+        'Sixteen text templates must differ by shapes/layout, not only by colours');
+    assert.ok(titleRender.every(r=>r[2]),'All text templates should have visible strokes');
+    await page.locator('#text-library-grid [data-preset-id="news-lower-third"]').click({button:'right'});
+    await page.locator('#text-preview-modal').waitFor({state:'visible'});
+    assert.match(await page.locator('#text-preview-title').innerText(),/News Lower Third/);
+    assert.equal(await page.locator('#text-preview-progress').inputValue(),'0');
+    await page.locator('#text-preview-play').click();
+    await page.waitForFunction(()=>Number(document.querySelector('#text-preview-progress').value)>=20,
+        null,{timeout:5000});
+    await page.locator('#text-preview-play').click();
+    const pausedAt=Number(await page.locator('#text-preview-progress').inputValue());
+    assert.ok(pausedAt>=20,'The popup should play actual time-based frames');
+    await page.locator('#text-preview-progress').fill('0');
+    assert.equal(await page.locator('#text-preview-progress').inputValue(),'0',
+        'Preview progress can be scrubbed backwards');
+    await page.locator('#text-preview-close').click();
     await page.locator('#text-library-grid [data-preset-id="neon-cyan"]').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2,null,{timeout:15000});
     assert.ok(await page.locator('.timeline-clip.sticker .clip-label').allTextContents()
         .then(names=>names.some(name=>/text-neon-cyan-NEW-TITLE/i.test(name))),
-        'Text preset should create a real named PNG sticker clip');
+        'Text preset should create a named backing PNG plus a live editable title clip');
+    await page.locator('#inspector-text-template').waitFor({state:'visible'});
+    assert.equal(await page.locator('#text-inspector-value').inputValue(),'NEW TITLE');
+    await page.locator('#text-inspector-value').fill('LIVE EDITED TITLE');
+    await page.locator('#text-animation').selectOption('typewriter');
+    await page.locator('#text-animation-duration').fill('2');
+    assert.equal(await page.locator('#text-inspector-value').inputValue(),'LIVE EDITED TITLE');
+    const savedTitle=await page.evaluate(()=>{
+        const item=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
+        return item?.tracks?.find(t=>t.textOverlay);
+    });
+    // Autosave is change-detected and may run after an interval.
+    await page.waitForFunction(()=>{
+        const item=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
+        return item?.tracks?.some(t=>t.textOverlay?.value==='LIVE EDITED TITLE'&&
+            t.textOverlay.animation==='typewriter');
+    },null,{timeout:12000});
     await page.locator('#visual-transform-scale').fill('140');
     await page.locator('#visual-transform-scale').dispatchEvent('input');
     assert.equal(await page.locator('[data-visual-output="transform.scale"]').innerText(),'140%');
