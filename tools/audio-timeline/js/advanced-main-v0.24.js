@@ -17,7 +17,7 @@ import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
-import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle } from './media-handle-store.mjs';
+import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
 import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord, writeRecoveryRecordWithQuota } from './project-recovery.mjs';
 
 (() => {
@@ -853,7 +853,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
 
 
     function restoreRememberedFileEntry(entry,file) {
-        if(!entry || !state.files.includes(entry) || !file || entry.name!==file.name || entry.kind!==getKind(file))
+        if(!entry || !state.files.includes(entry) || !matchesSavedMediaReference(entry,file,getKind(file)))
             return false;
         entry.file=file;
         entry.needsRelink=false;
