@@ -67,6 +67,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         textInspectorInputs:{
             value:document.getElementById('text-inspector-value'),
             fontSize:document.getElementById('text-font-size'),
+            fontFamily:document.getElementById('text-font-family'),
+            fontWeight:document.getElementById('text-font-weight'),
+            fontStyle:document.getElementById('text-font-style'),
+            textAlign:document.getElementById('text-text-align'),
+            textCase:document.getElementById('text-text-case'),
+            letterSpacing:document.getElementById('text-letter-spacing'),
+            lineSpacing:document.getElementById('text-line-spacing'),
+            textOpacity:document.getElementById('text-text-opacity'),
+            glowColor:document.getElementById('text-glow-color'),
+            glowStrength:document.getElementById('text-glow-strength'),
+            shadowOffsetX:document.getElementById('text-shadow-offset-x'),
+            shadowOffsetY:document.getElementById('text-shadow-offset-y'),
+            backdropEnabled:document.getElementById('text-backdrop-enabled'),
+            backdropColor:document.getElementById('text-backdrop-color'),
+            backdropOpacity:document.getElementById('text-backdrop-opacity'),
+            shapePadding:document.getElementById('text-shape-padding'),
+            shapeRadius:document.getElementById('text-shape-radius'),
+            shapeBorderColor:document.getElementById('text-shape-border-color'),
+            shapeBorderWidth:document.getElementById('text-shape-border-width'),
+            bannerWidth:document.getElementById('text-banner-width'),
+            bannerHeight:document.getElementById('text-banner-height'),
             fill:document.getElementById('text-fill'),
             outline:document.getElementById('text-outline'),
             shadow:document.getElementById('text-shadow'),
@@ -1252,6 +1273,20 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         const option=document.createElement('option');option.value=id;option.textContent=label;
         elements.textInspectorInputs.animation.appendChild(option);
     }
+    const textNumericUnits={
+        fontSize:'%',letterSpacing:'px',lineSpacing:'%',textOpacity:'%',outlineWidth:'px',
+        shadowBlur:'px',shadowOffsetX:'px',shadowOffsetY:'px',glowStrength:'px',
+        backdropOpacity:'%',shapePadding:'px',shapeRadius:'px',shapeBorderWidth:'px',
+        bannerWidth:'%',bannerHeight:'px',animationDuration:'s',animationDelay:'s',
+        animationSpeed:'×',animationIntensity:'%'
+    };
+    function refreshTitleNumericLabels(config){
+        for(const [key,unit] of Object.entries(textNumericUnits)){
+            const kebab=key.replace(/[A-Z]/g,m=>'-'+m.toLowerCase());
+            const label=document.getElementById('text-'+kebab+'-value');
+            if(label)label.textContent=String(config[key])+unit;
+        }
+    }
     for(const [name,input] of Object.entries(elements.textInspectorInputs)){
         const label='Edit title '+name.replace(/([A-Z])/g,' $1');
         registerInspectorHistory(input,label);
@@ -1261,13 +1296,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(!track?.textOverlay || state.selectedTrackIds.size!==1)return;
             const updated={...track.textOverlay,[name]:input.type==='checkbox'?input.checked:input.value};
             track.textOverlay=normaliseTextOverlay(updated);
-            const output=document.getElementById('text-'+name.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+'-value');
-            if(output){
-                const suffix=name==='fontSize'||name==='animationIntensity'?'%'
-                    :name==='animationDuration'||name==='animationDelay'?'s'
-                    :name==='animationSpeed'?'×':'';
-                output.textContent=String(track.textOverlay[name])+suffix;
-            }
+            refreshTitleNumericLabels(track.textOverlay);
             engine.renderFrame();
         });
     }
@@ -1482,13 +1511,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 else input.value=String(config[name]);
             }
             document.getElementById('text-subtitle-row').hidden=config.presetId!=='news-lower-third';
-            for(const [name,suffix] of [['font-size','%'],['outline-width',''],['shadow-blur',''],
-                ['animation-duration','s'],['animation-delay','s'],['animation-speed','×'],['animation-intensity','%']]){
-                const key={'font-size':'fontSize','outline-width':'outlineWidth','shadow-blur':'shadowBlur',
-                    'animation-duration':'animationDuration','animation-delay':'animationDelay',
-                    'animation-speed':'animationSpeed','animation-intensity':'animationIntensity'}[name];
-                document.getElementById('text-'+name+'-value').textContent=config[key]+suffix;
-            }
+            refreshTitleNumericLabels(config);
         }
         updatePairInspector();
         elements.visualTools.hidden = !track || multiple || !VISIBLE_VISUAL_TYPES.has(track.type);
