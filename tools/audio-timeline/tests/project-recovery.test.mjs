@@ -68,3 +68,32 @@ test('invalid data is rejected, limiting corrupt and oversized local recovery',(
     assert.throws(()=>createRecoveryRecord({tracks:[clip({start:-3})]}),/Invalid start/);
     assert.throws(()=>createRecoveryRecord({tracks:Array.from({length:MAX_RECOVERY_TRACKS+1},(_,i)=>clip({id:'c'+i}))}),/limits/);
 });
+
+test('generated text and effect presets round-trip with no PNG data',()=>{
+    const records=createRecoveryRecord({files:[
+        {id:'text1',name:'text-neon-cyan-title.png',kind:'sticker',size:900,
+            generated:{group:'text',presetId:'neon-cyan',value:'WE ARE BACK'}},
+        {id:'fx1',name:'effect-vignette.png',kind:'sticker',size:700,
+            generated:{group:'effect',presetId:'vignette',value:''}}
+    ],tracks:[]});
+    const encoded=serializeRecoveryRecord(records);
+    assert.ok(encoded.length<3000);
+    const decoded=parseRecoveryRecord(encoded);
+    assert.deepEqual(decoded.files.map(item=>item.generated),[
+        {group:'text',presetId:'neon-cyan',value:'WE ARE BACK'},
+        {group:'effect',presetId:'vignette',value:''}
+    ]);
+    assert.equal(decoded.files[0].file,undefined);
+});
+test('reject corrupt generated overlay recipes',()=>{
+    const safe=createRecoveryRecord({files:[{
+        id:'text1',name:'title.png',kind:'sticker',generated:{
+            group:'text',presetId:'neon-cyan',value:'Valid Title'
+        }
+    }]});
+    safe.files[0].generated.group='unknown';
+    assert.throws(()=>serializeRecoveryRecord(safe),/generated asset recipe/);
+    safe.files[0].generated.group='text';
+    safe.files[0].generated.value='x'.repeat(101);
+    assert.throws(()=>serializeRecoveryRecord(safe),/generated asset recipe/);
+});
