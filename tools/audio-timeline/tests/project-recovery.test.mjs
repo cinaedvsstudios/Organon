@@ -97,3 +97,50 @@ test('reject corrupt generated overlay recipes',()=>{
     safe.files[0].generated.value='x'.repeat(101);
     assert.throws(()=>serializeRecoveryRecord(safe),/generated asset recipe/);
 });
+
+test('Undo and Redo metadata survives a portable project round trip without source bytes',()=>{
+    const before={files:[file()],tracks:[clip({start:2})],selectedTrackId:'clip-1',
+        selectedTrackIds:['clip-1'],selectedFileId:'f1',currentTime:3};
+    const after={...before,tracks:[clip({start:7})],currentTime:8};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip({start:12})],
+        history:{undo:[{label:'Move clip',snapshot:before}],
+            redo:[{label:'Trim clip',snapshot:after}]}});
+    const json=serializeRecoveryRecord(record);
+    const loaded=parseRecoveryRecord(json);
+    assert.equal(loaded.history.undo[0].snapshot.tracks[0].start,2);
+    assert.equal(loaded.history.redo[0].snapshot.tracks[0].start,7);
+    assert.equal(loaded.history.undo[0].snapshot.files[0].size,2789711);
+    assert.ok(!json.includes('neverStoreMe'));
+    assert.ok(!json.includes('fakeLargeBytes'));
+    assert.equal(loaded.history.undo[0].snapshot.tracks[0].file,undefined);
+});
+test('old Phase 9M project backups without history still open unchanged',()=>{
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()]});
+    const loaded=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.equal(loaded.history,undefined);
+    assert.equal(loaded.tracks.length,1);
+});
+test('corrupt historical clip IDs and invalid snapshots reject the entire backup',()=>{
+    const snap={files:[file()],tracks:[clip()],selectedTrackIds:['clip-1'],currentTime:1};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],
+        history:{undo:[{label:'Edit',snapshot:snap}],redo:[]}});
+    record.history.undo[0].snapshot.tracks[0].start=-1;
+    assert.throws(()=>parseRecoveryRecord(JSON.stringify(record)),/Invalid start/);
+    record.history.undo[0].snapshot.tracks[0].start=1;
+    record.history.undo[0].snapshot.tracks.push({...clip(),start:3});
+    assert.throws(()=>parseRecoveryRecord(JSON.stringify(record)),/duplicate clip/);
+    record.history.undo[0].snapshot.tracks.pop();
+    record.history.undo[0].snapshot.selectedTrackIds='incorrect';
+    assert.throws(()=>parseRecoveryRecord(JSON.stringify(record)),/Undo\/Redo/);
+});
+test('oversized editing history trims oldest snapshots instead of losing the active timeline',()=>{
+    const huge=clip({sourceName:'media'.repeat(22000)});
+    const snapshot={files:[file()],tracks:[huge],selectedTrackIds:[],currentTime:0};
+    const edits=Array.from({length:60},(_,n)=>({label:'edit '+n,snapshot}));
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],
+        history:{undo:edits,redo:[]}});
+    const result=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.equal(result.tracks.length,1);
+    assert.ok(result.history.undo.length>0 && result.history.undo.length<60);
+    assert.equal(result.history.undo.at(-1).label,'edit 59');
+});
