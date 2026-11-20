@@ -137,6 +137,33 @@ try{
     assert.match(await page.locator('#file-count').innerText(),/0 media/i);
     assert.deepEqual(errors,[],'Chrome script errors during project recovery');
     console.log('[MotoriClip project recovery] PASS Clear All remains cleared after reload');
+
+    // Text and effects are generated PNGs, not original disk files. Their
+    // small saved preset/text recipes must reproduce them after reopening.
+    await page.locator('[data-library-tab="text"]').click();
+    await page.locator('#text-overlay-value').fill('RECOVER THIS TITLE');
+    await page.locator('#text-library-grid [data-preset-id="neon-cyan"]').click();
+    await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
+    await page.locator('[data-library-tab="effects"]').click();
+    await page.locator('#effects-library-grid [data-preset-id="film-grain"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2,
+        null,{timeout:15000});
+    const overlayNames=await page.locator('.timeline-clip.sticker .clip-label').allTextContents();
+    await page.waitForFunction(key=>{
+        const saved=JSON.parse(localStorage.getItem(key)||'{}');
+        return saved.files?.some(f=>f.generated?.group==='text'&&f.generated?.value==='RECOVER THIS TITLE')
+            &&saved.files?.some(f=>f.generated?.group==='effect'&&f.generated?.presetId==='film-grain')
+            &&saved.tracks?.length===2;
+    },storageKey,{timeout:10000});
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.needs-relink)').length===2,
+        null,{timeout:20000});
+    assert.deepEqual((await page.locator('.timeline-clip.sticker .clip-label').allTextContents()).sort(),
+        overlayNames.sort(),'Generated overlays must retain their original clip sources and names');
+    assert.equal(await page.locator('.file-row.is-unlinked').count(),0,
+        'Generated overlays should re-create on reopen without a filesystem picker');
+    console.log('[MotoriClip project recovery] PASS generated title and film-grain PNG regeneration from small saved recipes');
+    assert.deepEqual(errors,[],'Chrome script errors during recovery');
     await context.close();
 } finally{
     await browser.close();
