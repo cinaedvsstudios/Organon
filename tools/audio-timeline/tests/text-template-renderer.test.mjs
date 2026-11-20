@@ -23,7 +23,7 @@ test('title Inspector settings are small, validated and preserved',()=>{
    animationDelay:0,animationSpeed:1,animationDirection:'left',animationEasing:'ease-out',
    animationIntensity:100,animationLoop:false,subtitle:'LIVE UPDATE',
    phasedAnimation:false,inAnimation:'box-reveal',inDuration:1.6,
-   outAnimation:'none',outDuration:.65,loopAnimation:'none',loopDuration:1.5,
+   outAnimation:'none',outDuration:.6,loopAnimation:'none',loopDuration:1.5,
   fontFamily:'template',fontWeight:0,fontStyle:'template',textAlign:'template',
   textCase:'template',letterSpacing:0,lineSpacing:100,textOpacity:100,
   shadowOffsetX:0,shadowOffsetY:0,glowColor:'#ffffff',glowStrength:0,
