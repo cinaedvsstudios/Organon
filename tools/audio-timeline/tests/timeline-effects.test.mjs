@@ -84,6 +84,17 @@ test('God Rays origin is validated, editable and serialized',()=>{
  assert.equal(bounded.originX,0);assert.equal(bounded.originY,100);
 });
 
+test('default source effect origins match physical motion',()=>{
+ const pendulum=normaliseTimelineEffect({presetId:'pendulum-swing'});
+ const rebound=normaliseTimelineEffect({presetId:'rebound-swing'});
+ const shock=normaliseTimelineEffect({presetId:'shockwave'});
+ assert.deepEqual([pendulum.originX,pendulum.originY],[50,10]);
+ assert.deepEqual([rebound.originX,rebound.originY],[50,10]);
+ assert.deepEqual([shock.originX,shock.originY],[50,50]);
+ assert.deepEqual(
+  [normaliseTimelineEffect({presetId:'god-rays'}).originX,normaliseTimelineEffect({presetId:'god-rays'}).originY],
+  [20,12],'Old God Rays origin remains backwards compatible');
+});
 test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glitch effects',()=>{
  const ids=['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
      'ripple-distortion','electric-ripple','shockwave'];
