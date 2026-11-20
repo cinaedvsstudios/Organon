@@ -359,8 +359,8 @@ try{
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
     await page.locator('[data-library-tab="text"]').click();
     await page.locator('#text-overlay-value').fill('NEW TITLE');
-    assert.equal(await page.locator('#text-library-grid .asset-preset-card').count(),16,
-        'The text library should have sixteen typography/layout designs, not palette duplicates');
+    assert.equal(await page.locator('#text-library-grid .asset-preset-card').count(),18,
+        'The gallery should contain eighteen visually different typography/layout designs');
     // Distinct designs should differ in geometry even if rendered in grayscale.
     const titleRender=await page.evaluate(async()=>{
         const {TEXT_DESIGNS,paintTimelineText}=await import('./js/text-template-renderer.mjs');
@@ -379,9 +379,48 @@ try{
         }
         return output;
     });
-    assert.equal(new Set(titleRender.map(r=>r[1])).size,16,
-        'Sixteen text templates must differ by shapes/layout, not only by colours');
+    assert.equal(new Set(titleRender.map(r=>r[1])).size,18,
+        'Eighteen text templates must differ in shapes/layout, not merely colour');
     assert.ok(titleRender.every(r=>r[2]),'All text templates should have visible strokes');
+    // New title animations must alter actual pixels, including animated
+    // handwriting, location pin first/label second, social pulse, numeric
+    // rolling countdown and the two halves of a split title.
+    const storyFrames=await page.evaluate(async()=>{
+        const {paintTimelineText}=await import('./js/text-template-renderer.mjs');
+        function capture(presetId,value,t){
+            const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
+            const ctx=canvas.getContext('2d',{willReadFrequently:true});
+            paintTimelineText(ctx,640,360,{presetId,value,animationDuration:1.2,
+                animationEasing:'linear'},t,3);
+            const rgba=ctx.getImageData(0,0,640,360).data;
+            let hash=2166136261,coverage=0;
+            for(let i=0;i<rgba.length;i+=4){
+                if(rgba[i+3])coverage++;
+                if(i%68===0)hash=Math.imul((hash^rgba[i]^rgba[i+1]^rgba[i+2]^rgba[i+3])>>>0,16777619)>>>0;
+            }
+            return {hash,coverage};
+        }
+        return [
+            ['handwritten-script','MotoriClip'],
+            ['social-callout','Follow'],
+            ['location-card','Berlin'],
+            ['countdown-title','5'],
+            ['split-title','THE NEXT CHAPTER']
+        ].map(([id,value])=>({id,early:capture(id,value,.15),
+            midway:capture(id,value,.62),done:capture(id,value,1.4),
+            repeat:capture(id,value,.15)}));
+    });
+    for(const frame of storyFrames){
+        assert.notEqual(frame.early.hash,frame.done.hash,
+            frame.id+' must actually animate on the shared export renderer');
+        assert.deepEqual(frame.early,frame.repeat,
+            frame.id+' must render exactly the same pixels after a backwards seek');
+        assert.ok(frame.done.coverage>0,frame.id+' must become visible');
+    }
+    assert.ok(storyFrames.find(x=>x.id==='handwritten-script').early.coverage<
+        storyFrames.find(x=>x.id==='handwritten-script').done.coverage,
+        'Handwriting should reveal characters in sequence');
+    console.log('[Stage2 storytelling] PASS five real timeline animations, distinct layouts and reverse seeking');
     // Distinct motion must change the actual composited pixels at precise
     // timestamps; seeking back to an earlier time reproduces identical pixels.
     const motionPixels=await page.evaluate(async()=>{
