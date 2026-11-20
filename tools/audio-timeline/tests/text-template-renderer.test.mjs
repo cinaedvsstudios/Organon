@@ -5,10 +5,10 @@ import {
 } from '../js/text-template-renderer.mjs';
 import {snapshotClip,applyClipData} from '../js/project-history.mjs';
 
-test('sixteen structurally different text designs, not color-swapped duplicate catalog entries',()=>{
- assert.equal(TEXT_DESIGNS.length,16);
+test('eighteen structurally different text designs, not color-swapped duplicate catalog entries',()=>{
+ assert.equal(TEXT_DESIGNS.length,18);
  assert.equal(new Set(TEXT_DESIGNS.map(item=>item.id)).size,16);
- assert.equal(new Set(TEXT_DESIGNS.map(item=>item.layout)).size,16);
+ assert.equal(new Set(TEXT_DESIGNS.map(item=>item.layout)).size,18);
  assert.ok(TEXT_DESIGNS.every(item=>item.group==='text'&&item.label&&item.animation));
  assert.equal(getTextDesign('news-lower-third').layout,'news');
  assert.equal(getTextDesign('neon-purple'),null);
@@ -112,4 +112,59 @@ test('stage-two motions are separate catalog choices, not colour duplicates',()=
  for(const name of newOptions){
    assert.ok(TEXT_ANIMATIONS.some(([id])=>id===name),name+' is a real animation choice');
  }
+});
+
+test('storytelling title motion has five distinct default animations, not palette variations',()=>{
+ const variants=[
+  ['handwritten-script','handwriting-reveal'],
+  ['social-callout','social-pulse'],
+  ['location-card','location-drop'],
+  ['countdown-title','countdown-roll'],
+  ['split-title','split-enter']
+ ];
+ for(const [presetId,animation] of variants){
+  const design=getTextDesign(presetId);
+  assert.equal(design?.animation,animation);
+  const config=normaliseTextOverlay({presetId,value:'MotoriClip'});
+  assert.equal(config.animation,animation);
+  const atStart=textAnimationState(config,0,3);
+  const atEnd=textAnimationState(config,1.2,3);
+  assert.equal(atStart.progress,0);
+  assert.equal(atEnd.progress,1);
+  assert.deepEqual(textAnimationState(config,.7,3),textAnimationState(config,.7,3),
+    animation+' must be reproducible after backward seeking');
+  assert.ok(TEXT_ANIMATIONS.some(([id])=>id===animation));
+ }
+});
+test('countdown numerals roll from an editable starting number to zero',()=>{
+ const numeric=normaliseTextOverlay({presetId:'countdown-title',value:'5',
+   animation:'countdown-roll',animationEasing:'linear',animationDuration:3});
+ assert.equal(textAnimationState(numeric,0,3).countdownDigit,5);
+ assert.equal(textAnimationState(numeric,1,3).countdownDigit,4);
+ assert.equal(textAnimationState(numeric,2.5,3).countdownDigit,1);
+ assert.equal(textAnimationState(numeric,3,3).countdownDigit,0);
+ const sample=normaliseTextOverlay({presetId:'countdown-title',value:'MotoriClip',
+   animation:'countdown-roll',animationEasing:'linear',animationDuration:3});
+ assert.equal(textAnimationState(sample,0,3).countdownDigit,3,
+   'Preview uses the app name as a label and defaults to a three-count');
+ const bounded=normaliseTextOverlay({presetId:'countdown-title',value:'999999'});
+ assert.equal(textAnimationState(bounded,0,3).countdownDigit,99);
+});
+test('location pin, social pulse and split title have distinct motion phases',()=>{
+ const loc=normaliseTextOverlay({presetId:'location-card',animationEasing:'linear'});
+ assert.equal(textAnimationState(loc,0,3).pinProgress,0);
+ assert.equal(textAnimationState(loc,0,3).locationLabelProgress,0);
+ assert.equal(textAnimationState(loc,1.2,3).pinProgress,1);
+ assert.equal(textAnimationState(loc,1.2,3).locationLabelProgress,1);
+ assert.ok(textAnimationState(loc,.4,3).pinProgress>
+   textAnimationState(loc,.4,3).locationLabelProgress,
+   'Pin should fall into position before the location label opens');
+ const social=normaliseTextOverlay({presetId:'social-callout'});
+ assert.ok(textAnimationState(social,0,3).socialScale<.7);
+ assert.ok(textAnimationState(social,1,3).socialScale>.85);
+ const split=normaliseTextOverlay({presetId:'split-title'});
+ assert.equal(textAnimationState(split,0,3).splitProgress,0);
+ assert.equal(textAnimationState(split,1.2,3).splitProgress,1);
+ const writing=normaliseTextOverlay({presetId:'handwritten-script'});
+ assert.equal(writing.animation,'handwriting-reveal');
 });
