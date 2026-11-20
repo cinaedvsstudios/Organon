@@ -71,6 +71,19 @@ test('Hologram original GLSL uniforms survive portable Save/Open and Undo snapsh
     parsed.tracks[0].transitionParameters.hologram.backgroundAlpha=0;
     assert.equal(record.tracks[0].transitionParameters.hologram.backgroundAlpha,.65);
 });
+test('CellDissolve Voronoi settings persist in Save/Open and snapshots are isolated',()=>{
+    const params={cells:13,smoothness:.24,border:.018,borderColor:'#55aaff',
+        borderAlpha:.6,seed:31};
+    const video=clip({transitionEffectId:'cell-dissolve',
+        transitionParameters:{'cell-dissolve':params}});
+    const record=createRecoveryRecord({files:[file()],tracks:[video]});
+    const parsed=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.deepEqual(parsed.tracks[0].transitionParameters['cell-dissolve'],params);
+    video.transitionParameters['cell-dissolve'].cells=2;
+    assert.equal(record.tracks[0].transitionParameters['cell-dissolve'].cells,13);
+    parsed.tracks[0].transitionParameters['cell-dissolve'].seed=99;
+    assert.equal(record.tracks[0].transitionParameters['cell-dissolve'].seed,31);
+});
 test('recovery snapshot is independent of live edit objects',()=>{
     const c=clip();const entry=file();
     const saved=createRecoveryRecord({files:[entry],tracks:[c]});

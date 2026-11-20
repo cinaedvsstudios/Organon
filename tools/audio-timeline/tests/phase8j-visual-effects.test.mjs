@@ -1,4 +1,7 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
+import {CELL_DISSOLVE_SOURCE,CELL_DISSOLVE_DEFAULTS,normaliseCellDissolveOptions}
+    from '../js/gl-transitions/CellDissolve.mjs';
 import assert from 'node:assert/strict';
 import {
     ACTIVE_PAIR_EFFECTS,cellDissolveGrowth,bloomPulse,smokeCloud,smokeDensity,
@@ -9,6 +12,24 @@ import { planPairedTransition,isPairedFadeActive } from '../js/clip-pair-transit
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
 const chosen=['cell-dissolve','bloom-dissolve','smoke-dissolve'];
 
+test('CellDissolve uses byte-identical gre/MIT upstream Voronoi GLSL and native default uniforms',()=>{
+    const bytes=Buffer.from(CELL_DISSOLVE_SOURCE,'utf8');
+    const gitBlob=createHash('sha1')
+        .update('blob '+bytes.length+String.fromCharCode(0))
+        .update(bytes).digest('hex');
+    assert.equal(gitBlob,'f0f086ae5f62985c3003a340f8e547345e34572f');
+    assert.deepEqual(CELL_DISSOLVE_DEFAULTS,{
+        cells:8,smoothness:.1,border:.006,borderColor:'#fff2cc',
+        borderAlpha:1,seed:0
+    });
+    assert.deepEqual(normaliseCellDissolveOptions(),CELL_DISSOLVE_DEFAULTS);
+    assert.deepEqual(normaliseCellDissolveOptions({
+        cells:70,smoothness:-1,border:.3,borderAlpha:-5,
+        borderColor:'#1BAA44',seed:100000
+    }),{cells:40,smoothness:0,border:.05,borderColor:'#1baa44',borderAlpha:0,seed:10000});
+    assert.match(CELL_DISSOLVE_SOURCE,/vec2 p = uv \* vec2\(ratio, 1\.0\) \* n/);
+    assert.match(CELL_DISSOLVE_SOURCE,/for \(int y = -2; y <= 2; y\+\+\)/);
+});
 test('8J preserves all 41 original names with exactly 25 enabled and 16 queued',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.equal(new Set(TRANSITION_CATALOG.map(e=>e.id)).size,41);
