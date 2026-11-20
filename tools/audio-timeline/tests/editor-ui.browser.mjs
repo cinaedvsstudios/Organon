@@ -40,6 +40,36 @@ try{
     await page.waitForURL(/advanced\.html/,{timeout:20000});
     assert.equal(await page.locator('#motori-header').getAttribute('class'),'top-panel is-collapsed');
     assert.equal(await page.locator('#project-export-modal').isVisible(),false);
+    const layout=await page.evaluate(()=>{
+        const box=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};};
+        const tops=selector=>[...document.querySelectorAll(selector)].map(el=>Math.round(el.getBoundingClientRect().top));
+        const widths=selector=>[...document.querySelectorAll(selector)].map(el=>Math.round(el.getBoundingClientRect().width));
+        return {preview:box('.master-column'),inspector:box('.right-column'),timeline:box('#timeline-panel'),
+            primaryTops:tops('.timeline-primary-row > .timeline-tool'),
+            editTops:tops('.timeline-edit-row > .timeline-tool'),
+            primaryWidths:widths('.timeline-primary-row > .timeline-tool'),
+            editWidths:widths('.timeline-edit-row > .timeline-tool:not(.snap-options-toggle)'),
+            parent:document.querySelector('#timeline-panel')?.parentElement?.className,
+            inspectorOverflow:getComputedStyle(document.querySelector('.inspector-scroll')).overflowY,
+            timelineViewport:document.querySelector('.timeline-scroll').clientWidth,
+            timelineInner:document.querySelector('.timeline-inner').getBoundingClientRect().width,
+            allControls:[...document.querySelectorAll('button:not([hidden]), input:not([type="hidden"]), select, summary')]
+                .filter(control=>control.getClientRects().length && !control.title).map(control=>control.id||control.outerHTML.slice(0,50))
+        };
+    });
+    assert.equal(layout.parent,'advanced-grid','Timeline must be outside the boxed preview area');
+    assert.ok(Math.abs(layout.timeline.left-layout.preview.left)<=2,'Timeline should start under the preview');
+    assert.ok(Math.abs(layout.timeline.right-layout.inspector.right)<=2,'Timeline should reach the inspector right edge');
+    assert.ok(layout.timeline.top>=layout.preview.bottom-2,'The preview card must end before the timeline');
+    assert.equal(new Set(layout.primaryTops).size,1,'Undo, Redo, Zoom-adjacent controls, Track and Group should share one row');
+    assert.equal(new Set(layout.editTops).size,1,'Secondary editing controls should share one row');
+    assert.equal(new Set(layout.primaryWidths).size,1,'All primary toolbar action buttons should have the same width');
+    assert.equal(new Set(layout.editWidths).size,1,'All secondary action buttons should have the same width');
+    assert.ok(layout.timelineInner>=layout.timelineViewport-2,'Ruler and lanes should span the full timeline viewport');
+    assert.equal(layout.inspectorOverflow,'auto','Inspector must scroll vertically instead of expanding the editor');
+    assert.deepEqual(layout.allControls,[],'Interactive editor controls should have native mouseover titles');
+    assert.equal(await page.locator('#btn-duplicate-selection').count(),0);
+    assert.equal(await page.locator('#btn-delete-selection').count(),0);
     await page.locator('#btn-project-settings').click();
     await page.locator('#project-fps').waitFor({state:'visible'});
     assert.match(await page.title(),/MotoriClip.+Advanced/i);
@@ -113,6 +143,16 @@ try{
             new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt,clientX:215,clientY:450}));
     });
     await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
+    await page.locator('.timeline-clip.background').first().click({button:'right'});
+    assert.equal(await page.locator('#context-duplicate').isVisible(),true,
+        'Duplicate should be available from a clip right-click, not the toolbar');
+    await page.locator('#context-duplicate').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background:not(.placeholder)').length===2,
+        null,{timeout:15000});
+    await page.locator('.timeline-clip.background').last().click({button:'right'});
+    await page.locator('#context-remove-layer').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background:not(.placeholder)').length===1,
+        null,{timeout:15000});
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     assert.ok(await page.locator('#context-toggle-visible').isVisible());
     await page.locator('#context-toggle-visible').click();
