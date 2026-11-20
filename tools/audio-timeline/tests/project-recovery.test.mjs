@@ -215,3 +215,28 @@ test('reject invalid project settings inside Undo even when current project is v
     record.history.undo[0].snapshot.settings.fps=123;
     assert.throws(()=>parseRecoveryRecord(JSON.stringify(record)),/settings/);
 });
+
+test('cue markers and canvas/FPS history survive a portable project backup',()=>{
+    const before={files:[file()],tracks:[clip()],selectedTrackIds:['clip-1'],
+        selectedTrackId:'clip-1',selectedFileId:'f1',currentTime:1,
+        markers:[1,3.5],settings:{canvasWidth:1280,canvasHeight:720,fps:30,previewZoom:100}};
+    const after={...before,markers:[1,3.5,5],
+        settings:{canvasWidth:640,canvasHeight:360,fps:25,previewZoom:100}};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],history:{
+        undo:[{label:'Change canvas resolution',snapshot:before}],
+        redo:[{label:'Add cue marker',snapshot:after}]
+    }});
+    const recovered=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.deepEqual(recovered.history.undo[0].snapshot.markers,[1,3.5]);
+    assert.deepEqual(recovered.history.undo[0].snapshot.settings,before.settings);
+    assert.equal(recovered.history.redo[0].snapshot.settings.fps,25);
+    recovered.history.undo[0].snapshot.markers.push(9);
+    assert.deepEqual(before.markers,[1,3.5],'History copy must not mutate source markers');
+});
+test('invalid project settings inside history reject backup before replacing active timeline',()=>{
+    const history={undo:[{label:'Change FPS',snapshot:{
+        files:[],tracks:[],selectedTrackIds:[],currentTime:0,
+        markers:[],settings:{canvasWidth:1280,canvasHeight:720,fps:45,previewZoom:100}
+    }}],redo:[]};
+    assert.throws(()=>createRecoveryRecord({history}),/project settings/);
+});
