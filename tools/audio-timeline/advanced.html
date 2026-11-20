@@ -439,6 +439,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .text-setting-row output { color:var(--water-spray); }
 .text-setting-row input[type=range] { width:100%; accent-color:var(--water-spray); }
 .text-setting-row textarea { min-height:56px; resize:vertical; font:.72rem var(--font-body); }
+.text-setting-row input[type=text] { width:100%; min-width:0; }
+.text-setting-toggle { display:flex; justify-content:space-between; align-items:center; }
+.text-setting-toggle input { width:18px; height:18px; accent-color:var(--water-spray); }
 .text-setting-colours { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:9px 0; }
 .text-setting-colours label { display:grid; justify-items:center; gap:4px; color:var(--alabaster-paper); font:.55rem var(--font-mono); }
 .text-setting-colours input { width:100%; max-width:70px; height:32px; border:1px solid var(--chiseled-bronze); border-radius:7px; background:#101214; }
@@ -658,7 +661,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <label class="text-setting-row"><span>Outline strength <output id="text-outline-width-value">3</output></span><input type="range" id="text-outline-width" min="0" max="18" step="1" value="3" title="Letter outline thickness; 0 disables it"></label>
                     <label class="text-setting-row"><span>Shadow blur <output id="text-shadow-blur-value">8</output></span><input type="range" id="text-shadow-blur" min="0" max="40" step="1" value="8" title="Softness of the text shadow"></label>
                     <label class="text-setting-row"><span>Animation</span><select class="compact-select" id="text-animation" title="Choose distinct time-based text motion"></select></label>
+                    <label class="text-setting-row" id="text-subtitle-row" hidden><span>News subtitle</span><input class="compact-input" type="text" id="text-subtitle" maxlength="100" value="LIVE UPDATE" title="Secondary line for the news broadcast design"></label>
                     <label class="text-setting-row"><span>Animation duration <output id="text-animation-duration-value">1.2s</output></span><input type="range" id="text-animation-duration" min=".1" max="10" step=".1" value="1.2" title="Length of the text entrance or effect motion"></label>
+                    <label class="text-setting-row"><span>Start delay <output id="text-animation-delay-value">0s</output></span><input type="range" id="text-animation-delay" min="0" max="5" step=".1" value="0" title="Wait before the animation begins"></label>
+                    <label class="text-setting-row"><span>Motion speed <output id="text-animation-speed-value">1×</output></span><input type="range" id="text-animation-speed" min=".25" max="4" step=".05" value="1" title="Play the selected motion between a quarter and four times speed"></label>
+                    <label class="text-setting-row"><span>Direction</span><select class="compact-select" id="text-animation-direction" title="Motion direction for slide, wipe and ticker"><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option><option value="down">Down</option></select></label>
+                    <label class="text-setting-row"><span>Easing</span><select class="compact-select" id="text-animation-easing" title="How the motion accelerates or slows"><option value="linear">Linear</option><option value="ease-in">Accelerate</option><option value="ease-out">Decelerate</option><option value="ease-in-out">Smooth in and out</option></select></label>
+                    <label class="text-setting-row"><span>Intensity <output id="text-animation-intensity-value">100%</output></span><input type="range" id="text-animation-intensity" min="0" max="200" step="5" value="100" title="How strongly characters shake, bounce or move"></label>
+                    <label class="text-setting-row text-setting-toggle"><span>Loop selected motion</span><input type="checkbox" id="text-animation-loop" title="Repeat the animation while this clip is visible"></label>
                     <p class="visual-note">Timeline text is rendered at the playhead, including during fixed-frame video export. Use the existing Transform controls for position, scale and rotation.</p>
                 </section>
                 <section class="control-card advanced-visual-panel" id="inspector-visual-tools" hidden>
