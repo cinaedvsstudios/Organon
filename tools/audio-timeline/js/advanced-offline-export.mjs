@@ -5,6 +5,7 @@
  */
 import { connectOrgavoxAudioChain, ensureOrgavoxLofiWorklet } from './orgavox-audio-chain.mjs';
 import { planClipSegmentExport } from './clip-segment-export.mjs';
+import { encodePcm16Wav } from './wav-audio-export.mjs';
 const MEDIABUNNY_MODULE = 'https://cdn.jsdelivr.net/npm/mediabunny@1.66.0/+esm';
 const AAC_ENCODER_MODULE = 'https://esm.sh/@mediabunny/aac-encoder@1.66.0?external=mediabunny';
 const AUDIO_RATE = 48000;
@@ -274,6 +275,56 @@ export class AdvancedOfflineExporter {
         extension.registerAacEncoder();
         if (!await MB.canEncodeAudio('aac', encoding)) {
             throw new Error('This browser cannot encode AAC for MP4, even with the fallback. Choose WebM/Opus or the real-time exporter.');
+        }
+    }
+
+    /**
+     * Export one clip as true audio-only WAV; never creates a black video track.
+     * Uses exactly the same decoded trim/speed/fade/Orgavox offline mix as MP4.
+     */
+    async startWavSection({ segmentTrackId } = {}) {
+        if (this.busy) throw new Error('An export is already running.');
+        if (this.engine.isPlaying) throw new Error('Pause the preview before exporting WAV.');
+        if (typeof OfflineAudioContext === 'undefined')
+            throw new Error('WAV export requires OfflineAudioContext support in your browser.');
+        const segment=planClipSegmentExport(this.engine.tracks,segmentTrackId,OFFLINE_EXPORT_LIMIT_SECONDS);
+        if (!['audio','video'].includes(segment.tracks[0].type))
+            throw new Error('Select an audio or video clip with an audio track to download WAV.');
+        this.busy=true;
+        this.controller=new AbortController();
+        try {
+            this.status('preparing','Decoding trimmed audio and applying clip effects…');
+            const MB=await this.libraryLoader();
+            this.assertActive();
+            const mixed=await this.mixAudio(MB,segment.tracks,segment.duration);
+            this.assertActive();
+            if(!mixed)throw new Error('This clip has no audible audio to export. Check its source, mute and volume settings.');
+            this.status('finalizing','Encoding uncompressed 16-bit PCM WAV…');
+            const pcm=encodePcm16Wav(mixed);
+            this.assertActive();
+            const stem=segment.sourceName.replace(/\.[^.]+$/,'').replace(/[^a-z0-9._-]+/gi,'-').slice(0,90)||'motoriclip';
+            const filename=`${stem}-trimmed-${segment.duration.toFixed(2)}s.wav`;
+            this.onDownload?.({
+                blob:new Blob([pcm],{type:'audio/wav'}),
+                extension:'wav',filename,segmentTrackId
+            });
+            this.progress(segment.duration,segment.duration);
+            this.status('complete','Trimmed audio WAV exported successfully');
+            return true;
+        } catch(error) {
+            if(this.controller?.signal.aborted||/cancelled/i.test(String(error))){
+                this.status('cancelled','WAV export cancelled');
+                return false;
+            }
+            this.status('error',error?.message||'WAV export failed');
+            throw error;
+        } finally {
+            for(const input of this.inputs.values()){
+                try{input.dispose();}catch(_){/* best effort */}
+            }
+            this.inputs.clear();
+            this.controller=null;
+            this.busy=false;
         }
     }
 
