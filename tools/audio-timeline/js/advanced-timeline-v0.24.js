@@ -74,6 +74,19 @@ export class AdvancedTimeline {
         this.installEmptyDropTarget();
         this.installTimelinePanelDropTarget();
         this.ensureMarkerLayer();
+        // The timeline can span the preview and inspector columns. Recompute
+        // its ruler and lane widths whenever that shared viewport resizes.
+        this.lastViewportWidth=this.scrollElement?.clientWidth || 0;
+        if(this.scrollElement && typeof ResizeObserver!=='undefined'){
+            this.viewportObserver=new ResizeObserver(()=>{
+                const width=this.scrollElement.clientWidth;
+                if(width>0 && width!==this.lastViewportWidth){
+                    this.lastViewportWidth=width;
+                    this.render();
+                }
+            });
+            this.viewportObserver.observe(this.scrollElement);
+        }
     }
 
     beginProjectFileDrag(fileId) { this.activeProjectFileId = String(fileId || ''); }
@@ -173,7 +186,9 @@ export class AdvancedTimeline {
     }
 
     getViewDuration() {
-        return Math.max(6, this.viewDuration, this.duration + 2, this.getTrackEndTime() + 2);
+        const viewportPixels=Math.max(0,(this.scrollElement?.clientWidth||0)-this.labelWidth);
+        const viewportSeconds=viewportPixels/Math.max(1,this.pixelsPerSecond);
+        return Math.max(6,this.viewDuration,this.duration+2,this.getTrackEndTime()+2,viewportSeconds);
     }
 
     ensureViewportForTime(time, allowShrink = false) {
@@ -184,7 +199,9 @@ export class AdvancedTimeline {
     }
 
     getWorkspaceWidth() {
-        return Math.max(this.minimumWorkspaceWidth, Math.ceil(this.getViewDuration() * this.pixelsPerSecond));
+        const viewportWidth=Math.max(0,(this.scrollElement?.clientWidth||0)-this.labelWidth);
+        return Math.max(this.minimumWorkspaceWidth,viewportWidth,
+            Math.ceil(this.getViewDuration()*this.pixelsPerSecond));
     }
 
     updateLayoutMetrics() {
