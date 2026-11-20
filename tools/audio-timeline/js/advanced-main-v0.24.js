@@ -40,7 +40,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
         btnSaveProject: document.getElementById('btn-save-project'), btnOpenProject: document.getElementById('btn-open-project'), projectOpenInput: document.getElementById('project-open-input'),
         projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
-        btnResetExport:document.getElementById('btn-reset-export'),
+        btnResetTimeline:document.getElementById('btn-reset-timeline'),
         laneMenu:document.getElementById('timeline-lane-context-menu'),laneMenuTitle:document.getElementById('lane-menu-title'),
         laneRename:document.getElementById('lane-rename'),laneChangeColour:document.getElementById('lane-change-colour'),laneResetColour:document.getElementById('lane-reset-colour'),laneDelete:document.getElementById('lane-delete'),
         clipChangeColour:document.getElementById('context-change-colour'),clipResetColour:document.getElementById('context-reset-colour'),
@@ -2586,14 +2586,35 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     });
     elements.btnProjectSettings.addEventListener('click', () => openEditorModal(elements.projectSettingsModal));
     elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
-    elements.btnResetExport.addEventListener('click',()=>{
-        // Reset output preferences only; never alter project FPS, dimensions,
-        // media or editing history. Select first supported live format.
-        elements.exportBitrate.value='6000';
-        elements.exportOfflineFormat.value='mp4';
-        const live=[...elements.exportFormat.options].find(o=>o.value&&!o.disabled);
-        if(live)elements.exportFormat.value=live.value;
-        showToast('Export settings reset · Standard 6 Mbps · Fixed-frame MP4');
+    elements.btnResetTimeline.addEventListener('click',async()=>{
+        const count=state.tracks.length,markers=state.timelineMarkers.length;
+        if(!count&&!markers){
+            showToast('The timeline is already empty');
+            return;
+        }
+        const accepted=await requestEditorAction({
+            kind:'confirm',title:'Reset timeline?',
+            description:`Remove all ${count} clip${count===1?'':'s'} and ${markers} timeline marker${markers===1?'':'s'}? Imported media stays in the Media panel. Undo restores the entire timeline.`,
+            apply:'Reset timeline',danger:true
+        });
+        if(!accepted || (!state.tracks.length&&!state.timelineMarkers.length))return;
+        recordHistory('Reset timeline');
+        engine.clearAll(); // Stop playback and release discarded decoders.
+        state.tracks=[];
+        state.timelineMarkers=[];
+        timeline.setMarkers([]);
+        state.selectedTrackIds.clear();
+        state.selectedTrackId=null;
+        state.contextTrackId=null;
+        state.laneContextId=null;
+        state.contextClipboard=null;
+        refreshAll();
+        await engine.seek(0,{resume:false});
+        // Source files and permitted file handles deliberately remain usable.
+        // Undo records their IDs and will reconstruct previous clip decoders.
+        pruneSourceRegistry();
+        saveProjectRecovery();
+        showToast('Timeline reset · '+count+' clip'+(count===1?'':'s')+' removed · Undo available');
     });
     elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
     elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);
