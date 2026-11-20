@@ -500,7 +500,7 @@ export class AdvancedTimeline {
             for (const track of laneModel.tracks) {
                 const clip = document.createElement('div');
                 const hasSource = Boolean(track.sourceName);
-                clip.className = `timeline-clip ${defaults.className}${hasSource ? '' : ' placeholder'}${this.selectedTrackIds.has(track.id) ? ' selected' : ''}${track.groupId ? ' grouped' : ''}${track.visible === false ? ' is-hidden' : ''}`;
+                clip.className = `timeline-clip ${defaults.className}${hasSource ? '' : ' placeholder'}${this.selectedTrackIds.has(track.id) ? ' selected' : ''}${track.groupId ? ' grouped' : ''}${track.visible === false ? ' is-hidden' : ''}${track.sourceName && !track.file ? ' needs-relink' : ''}`;
                 clip.dataset.trackId = track.id;
                 this.updateClipStyle(clip, track);
 
