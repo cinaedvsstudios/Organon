@@ -33,6 +33,8 @@
 
 - 20 Nov 2026: Phase 3F in [PR #102](https://github.com/cinaedvsstudios/Organon/pull/102) implements **#99 and #101**: automated Chrome tests for Play/Pause, 0.01-second reverse scrub, Restart, Loop wrap, non-loop stop at endpoint, Escape close and existing title animation controls. The themed modal is verified on a 393px Android viewport for width, absence of horizontal overflow and appropriate touch control sizing; bronze scrollbars and mobile layout rules improved. The 41 A/B transition, desktop/mobile editor and recovery/portable Save/Open suites passed, as did Firefox/WebKit compatibility. Actual encoded overlay pixel equivalence and remaining tracker gates are explicitly open.
 
+- 20 Nov 2026: Phase 3G in [PR #103](https://github.com/cinaedvsstudios/Organon/pull/103) implements **#94 and #100** with a new real encoded-video parity gate in GitHub Actions. Chromium imports a 2s patterned H.264/AAC source, composites a genuinely animated Light Sweep or source-warping Glitch Flux clip, compares preview RGB pixels at 0.4s/1.4s to FFmpeg-decoded frames 10/35 of the actual exported MP4 using bounded lossy-codec error, and asserts byte-exact preview pixels after reverse seeking to 0.4s. Both effect cases passed the automated codec check. Existing 41-transition/editor/project recovery tests and Firefox/WebKit jobs passed. This verifies representative effect classes and the shared time-based compositor; it is not an assertion that every effect/codec/resolution/long-form stress scenario is certified.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -146,7 +148,7 @@
 - [x] **91.** Preview offers Play, Pause, Restart, Loop and scrub.
 - [x] **92.** Representative thumbnails: visual look plus motion indicator.
 - [x] **93.** Click or drag template to timeline.
-- [ ] **94.** Playback and exported pixels match at identical timestamps (including reverse seeking).
+- [x] **94.** Playback and exported pixels match at identical timestamps (including reverse seeking).
 - [x] **95.** Save editable recipes, values, motion and Inspector changes in recovery and history; do not rely solely on rendered PNGs.
 
 ## 8. Testing and implementation gates
@@ -155,7 +157,7 @@
 - [ ] **97.** Test rename, recolour, colour inheritance/override, lane deletion, Undo and refresh.
 - [x] **98.** Validate visual differences between text templates independently of colour.
 - [x] **99.** Test animated effect/text preview controls and scrubbing.
-- [ ] **100.** Verify real exported video with animated overlays.
+- [x] **100.** Verify real exported video with animated overlays.
 - [x] **101.** Check responsiveness, scrollbar consistency, button sizing and themed popups.
 - [ ] **102.** Merge tested increments directly into `main`; link their PRs here.
 
