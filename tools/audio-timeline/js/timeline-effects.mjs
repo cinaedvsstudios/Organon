@@ -174,6 +174,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
      }
     }
    }else if(e.presetId==='shockwave'){
+    // Only the annulus is refracted; the rest of the composed frame remains intact.
+    if(source){ctx.globalAlpha=1;ctx.drawImage(source,0,0,w,h);ctx.globalAlpha=amount;}
     const cx=w*e.originX/100,cy=h*e.originY/100;
     const radius=wrap(t*.35)*Math.hypot(w,h)*.95;
     const thickness=Math.max(6,Math.min(w,h)*(.035+e.distortion*.0005)*size);
