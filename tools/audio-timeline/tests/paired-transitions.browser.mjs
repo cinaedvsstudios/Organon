@@ -238,6 +238,15 @@ try{
     await page.waitForTimeout(550); // allow the async AudioWorklet module to register
     assert.equal(await page.locator('#audio-orgavox-lofi').inputValue(),'eightbit',
         'Lo-Fi preset must stay active after worklet initialization');
+    // Test the actual right-click WAV action in the editor, not just
+    // a direct call to the underlying exporter.
+    await page.locator('.timeline-clip.audio:not(.placeholder)').last().click({button:'right'});
+    assert.equal(await page.locator('#context-download-wav').isDisabled(),false);
+    const wavDownload=page.waitForEvent('download',{timeout:60000});
+    await page.locator('#context-download-wav').click();
+    const wavFile=await wavDownload;
+    assert.match(wavFile.suggestedFilename(),/-trimmed-\d+\.\d+s\.wav$/,
+        'The audio-only context action must download a trimmed WAV file');
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors with Orgavox video and audio effects');
 
     assert.deepEqual(errors,[],'Chrome editor raised uncaught errors while creating/replaying a pair');
