@@ -56,6 +56,34 @@ export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrack
     };
 }
 
+/**
+ * Strictly reconnect source media held only in Undo/Redo history.
+ * A historical file needs a recorded nonzero size; an old filename-only
+ * snapshot is too ambiguous to safely bind to an unrelated local file.
+ */
+export function matchesHistoricalSource(record, file, kind) {
+    if(!record || record.generated || !file || record.name!==file.name || record.kind!==kind)
+        return false;
+    const size=Number(record.size);
+    if(!Number.isSafeInteger(size) || size<=0 || size!==file.size)
+        return false;
+    const modified=Number(record.lastModified);
+    return !(Number.isFinite(modified) && modified>0 && modified!==file.lastModified);
+}
+
+export function historicalMediaIdsForFile(file, kind, history={}, currentFiles=[], sourceFiles=new Map()) {
+    const activeIds=new Set(currentFiles.map(item=>item.id));
+    const matches=new Set();
+    for(const entry of [...(history?.undo||[]),...(history?.redo||[])]) {
+        for(const record of (entry?.snapshot?.files||[])) {
+            if(!record?.id || activeIds.has(record.id) || sourceFiles.has(record.id))
+                continue;
+            if(matchesHistoricalSource(record,file,kind))matches.add(record.id);
+        }
+    }
+    return [...matches];
+}
+
 export function restoreFileEntries(fileRecords, sourceFiles, {includeMissing=false}={}) {
     const entries=fileRecords.map((entry) => {
         const file=sourceFiles.get(entry.id)||null;
