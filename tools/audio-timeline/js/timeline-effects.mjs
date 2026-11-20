@@ -1,11 +1,12 @@
 /**
- * MotoriClip procedural effect clips — Phase 3A–D.
+ * MotoriClip procedural effect clips — Phase 3A–E.
  * Effects are recipes (not PNG animations). Preview and both exporters render
  * from identical clip-relative seconds, including reverse seeking.
  * Artifex FX's procedural/seeded approach informed this independent Canvas2D
  * implementation; no runtime or nonportable asset dependency is introduced.
  */
 import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel-effects.mjs';
+import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
  {id:'hazy-atmosphere',label:'Hazy Atmosphere',group:'effect',category:'Atmospheric',animated:true},
@@ -30,7 +31,8 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'halo-blur',label:'Halo Blur',group:'effect',category:'Atmospheric',animated:true},
  {id:'fire-flames',label:'Fire Flames',group:'effect',category:'Particles/Fire',animated:true},
  {id:'fire-embers',label:'Fire Embers',group:'effect',category:'Particles/Fire',animated:true},
- {id:'fire-explosion',label:'Fire Explosion',group:'effect',category:'Particles/Fire',animated:true}
+ {id:'fire-explosion',label:'Fire Explosion',group:'effect',category:'Particles/Fire',animated:true},
+ ...GLITCH_PRESETS
 ]);
 const ids=new Set(TIMELINE_EFFECTS.map(item=>item.id));
 const clamp=(value,min,max,fallback)=> {
@@ -89,7 +91,7 @@ function captureCompositeFrame(ctx,w,h){
  return canvas;
 }
 const SOURCE_EFFECTS=new Set(['pendulum-swing','rebound-swing','vibration-flash',
- 'fault-cassette','ripple-distortion','electric-ripple','shockwave',...PIXEL_EFFECT_IDS]);
+ 'fault-cassette','ripple-distortion','electric-ripple','shockwave',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
  * Live clips operate on their real previously composited media instead.
@@ -148,6 +150,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    }
    if(isPixelEffect(e.presetId)){
     renderPixelEffect(ctx,source,w,h,e,t,amount);
+   }else if(isGlitchEffect(e.presetId)){
+    renderGlitchEffect(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
     const angle=e.presetId==='pendulum-swing'
      ? Math.sin(t*4+rad)*(.03+e.distortion*.0038)*size

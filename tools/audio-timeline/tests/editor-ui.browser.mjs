@@ -353,8 +353,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),36,
-        'Keep twelve classic overlays plus twenty-four independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),45,
+        'Keep twelve classic overlays plus thirty-three independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -723,7 +723,7 @@ try{
     assert.equal(rippleStart,await sampleEffect(15));
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Glitch');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),1);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),10);
     await page.locator('[data-preset-id="fault-cassette"]').click();
     await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-distortion').evaluate(input=>{
@@ -762,6 +762,29 @@ try{
     assert.notEqual(fireFirst,fireMoved,'Fire explosion must move over time');
     assert.equal(fireFirst,await sampleEffect(25));
     await page.locator('#text-preview-close').click();
+    // Phase 3E: all nine source-aware glitches have distinct names and working
+    // animation controls, and maintain pixel identity after backwards seeking.
+    await page.locator('#effect-category').selectOption('Glitch');
+    const glitchIds=['glass-glitch','glitch-storm','negative-chaos','warning-glitch',
+      'misalignment','noir-glitch','glitch-flux','engine-heat','retro-glitch'];
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),10);
+    const variants=new Set();
+    for(const id of glitchIds){
+      await page.locator(`#effects-library-grid [data-preset-id="${id}"]`).click({button:'right'});
+      assert.ok(await page.locator('#text-preview-modal').isVisible(),id+' preview opens');
+      const first=await sampleEffect(20),later=await sampleEffect(190);
+      assert.notEqual(first,later,id+' is a real animated preview');
+      assert.equal(first,await sampleEffect(20),id+' reverse seek restores exact image');
+      variants.add(first);
+      await page.locator('#text-preview-close').click();
+    }
+    assert.equal(variants.size,9,'Glitch styles must be visually different');
+    await page.locator('#effects-library-grid [data-preset-id="glass-glitch"]').click();
+    await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
+    await page.locator('#effect-distortion').evaluate(input=>{
+       input.value='73';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#effect-distortion').inputValue(),'73');
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');

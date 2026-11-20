@@ -29,6 +29,8 @@
 
 - 20 Nov 2026: Phase 3D in [PR #100](https://github.com/cinaedvsstudios/Organon/pull/100) implements **#23, #24, #37, #38, #40, #45**: actual luminance-derived source Glow, detected-edge-only Edge Glow, independent RGB channel Chromatic Quirk, radial source Halo Blur, distinct deterministic Fire Flames/Embers/Explosion, and Inspector support for intensity, speed, effect clip duration, direction, scale, glow, blur, distortion, density/particles and colour. Pure pixel analysis and fire regressions passed, as did Chrome 41-transition/editor/project Save/Open acceptance and Firefox/WebKit jobs. Basic real-MP4 export and HD stress stages passed; full long-form memory and pixel-perfect decoded-effect export equivalence are tracked separately and **not** certified by this item.
 
+- 20 Nov 2026: Phase 3E in [PR #101](https://github.com/cinaedvsstudios/Organon/pull/101) implements **#41**, adding nine independently animated *source-aware* Glitch styles: Glass, Storm, Negative Chaos, Warning, Misalignment, Noir, Flux, Engine Heat and Retro. Distinct drawing structures and deterministic reverse-seeking verified in Node and Chrome image previews; 33 animated effect presets + 12 classic overlays. The 41 original A/B transitions, Chrome UI/project recovery/portable Save/Open and Firefox/WebKit checks passed. Original real MP4 export checks passed; long-form export profiling and encoded-vs-preview pixel checks remain separate open gates.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -77,7 +79,7 @@
 - [x] **38.** Halo Blur — radial soft focus.
 - [x] **39.** Particle Effects — independent sparks/dust/debris.
 - [x] **40.** Fire Effects — distinct flames/embers/explosions.
-- [ ] **41.** Additional *distinct* glitch styles: Glass Glitch, Glitch Storm, Negative Chaos, Warning Glitch, Misalignment, Noir Glitch, Glitch Flux, Engine Heat and Retro Glitch.
+- [x] **41.** Additional *distinct* glitch styles: Glass Glitch, Glitch Storm, Negative Chaos, Warning Glitch, Misalignment, Noir Glitch, Glitch Flux, Engine Heat and Retro Glitch.
 - [x] **42.** Categorise effects as Motion, Light, Distortion, Glitch, Atmospheric, Scanning, Particles/Fire.
 - [x] **43.** Right-click effect → themed animated Preview popup with Play/Pause/Loop/scrub.
 - [x] **44.** Insert effect as a genuinely time-based editable timeline clip, not a static PNG impostor.
