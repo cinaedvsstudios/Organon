@@ -63,7 +63,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         toast: document.getElementById('app-toast'), timelineZoom: document.getElementById('timeline-zoom'), timelineZoomValue: document.getElementById('timeline-zoom-value'), btnResetTimelineZoom: document.getElementById('btn-reset-timeline-zoom'), btnUndo: document.getElementById('btn-undo'), btnRedo: document.getElementById('btn-redo'), btnSplitAll: document.getElementById('btn-split-all'),
         btnAddMarker: document.getElementById('btn-add-marker'), btnPreviousMarker: document.getElementById('btn-previous-marker'), btnNextMarker: document.getElementById('btn-next-marker'),
         btnNudgeLeft: document.getElementById('btn-nudge-left'), btnNudgeRight: document.getElementById('btn-nudge-right'),
-        btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'), btnDuplicateSelection: document.getElementById('btn-duplicate-selection'), btnDeleteSelection: document.getElementById('btn-delete-selection'),
+        btnSelectionMode: document.getElementById('btn-selection-mode'), btnGroupSelection: document.getElementById('btn-group-selection'),
         visualTools: document.getElementById('inspector-visual-tools'), visualInputs: [...document.querySelectorAll('[data-visual-param]')], visualKeyframes: [...document.querySelectorAll('[data-keyframe]')], visualBlendMode: document.getElementById('visual-blend-mode'), visualSpeedPanel: document.getElementById('visual-speed-panel'), visualSpeed: document.getElementById('visual-speed'), visualSpeedValue: document.getElementById('visual-speed-value'), visualSpeedDuration: document.getElementById('visual-speed-duration'),
         orgavoxControls: [...document.querySelectorAll('.orgavox-fx-field select')],
         inspectorKind: document.getElementById('inspector-kind'), inspectorProject: document.getElementById('inspector-project'), pairTransitionPanel: document.getElementById('pair-transition-panel'), pairTransitionDescription: document.getElementById('pair-transition-description'), pairTransitionEffect: document.getElementById('pair-transition-effect'), pairTransitionDuration: document.getElementById('pair-transition-duration'), btnApplyPairTransition: document.getElementById('btn-apply-pair-transition'), transitionLibraryGrid: document.getElementById('transition-library-grid'), transitionLibraryStatus: document.getElementById('transition-library-status'), inspectorVideo: document.getElementById('inspector-video'), inspectorBackground: document.getElementById('inspector-background'), inspectorAudio: document.getElementById('inspector-audio'), inspectorSticker: document.getElementById('inspector-sticker'),
@@ -71,7 +71,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         selectedBackgroundName: document.getElementById('selected-background-name'), backgroundVisibleSwitch: document.getElementById('background-visible-switch'), backgroundOpacity: document.getElementById('background-opacity'), backgroundOpacityValue: document.getElementById('background-opacity-value'), backgroundBlendMode: document.getElementById('background-blend-mode'),
         selectedAudioName: document.getElementById('selected-audio-name'), audioAuditionSwitch: document.getElementById('audio-audition-switch'), audioTrackVolume: document.getElementById('audio-track-volume'), audioTrackVolumeValue: document.getElementById('audio-track-volume-value'), audioTrackGain: document.getElementById('audio-track-gain'), audioTrackGainValue: document.getElementById('audio-track-gain-value'), audioFadeIn: document.getElementById('audio-fade-in'), audioFadeInValue: document.getElementById('audio-fade-in-value'), audioFadeOut: document.getElementById('audio-fade-out'), audioFadeOutValue: document.getElementById('audio-fade-out-value'),
         selectedStickerName: document.getElementById('selected-sticker-name'), stickerVisibleSwitch: document.getElementById('sticker-visible-switch'), stickerOpacity: document.getElementById('sticker-opacity'), stickerOpacityValue: document.getElementById('sticker-opacity-value'), stickerBlendMode: document.getElementById('sticker-blend-mode'), stickerTransparencyMode: document.getElementById('sticker-transparency-mode'), stickerKeyColour: document.getElementById('sticker-key-colour'), stickerKeyColourText: document.getElementById('sticker-key-colour-text'), stickerKeyTolerance: document.getElementById('sticker-key-tolerance'), stickerKeyToleranceValue: document.getElementById('sticker-key-tolerance-value'), stickerEdgeFeather: document.getElementById('sticker-edge-feather'), stickerEdgeFeatherValue: document.getElementById('sticker-edge-feather-value'),
-        contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), ContextClipActions: ['cut','copy','paste','slice-click','toggle-visible','download-source'].reduce((acc,action)=>{acc[action]=document.getElementById('context-'+action);return acc;},{}), contextDownloadSection: document.getElementById('context-download-section'), contextDownloadWav: document.getElementById('context-download-wav'), contextExtractAudio: document.getElementById('context-extract-audio'), contextRemoveLayer: document.getElementById('context-remove-layer')
+        contextMenu: document.getElementById('timeline-context-menu'), contextMenuTitle: document.getElementById('context-menu-title'), contextSplitNow: document.getElementById('context-split-now'), contextAddLayer: document.getElementById('context-add-layer'), ContextClipActions: ['cut','copy','paste','slice-click','toggle-visible','download-source'].reduce((acc,action)=>{acc[action]=document.getElementById('context-'+action);return acc;},{}), contextDownloadSection: document.getElementById('context-download-section'), contextDownloadWav: document.getElementById('context-download-wav'), contextExtractAudio: document.getElementById('context-extract-audio'), contextDuplicate: document.getElementById('context-duplicate'), contextRemoveLayer: document.getElementById('context-remove-layer')
     };
 
     const engine = new AdvancedMediaEngine({
@@ -1122,10 +1122,6 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.btnSelectionMode.setAttribute('aria-pressed', String(state.selectionMode));
         elements.btnGroupSelection.disabled = count < 2;
         elements.btnGroupSelection.title = count < 2 ? 'Select two or more clips first' : `Group ${count} selected clips`;
-        elements.btnDuplicateSelection.disabled = count < 1;
-        elements.btnDuplicateSelection.title = count < 1 ? 'Select one or more clips first' : `Duplicate ${count} selected clip${count === 1 ? '' : 's'}`;
-        elements.btnDeleteSelection.disabled = count < 1;
-        elements.btnDeleteSelection.title = count < 1 ? 'Select one or more clips first' : `Delete ${count} selected clip${count === 1 ? '' : 's'}`;
         const snapEligible = count >= 1 && count <= 2 && [...state.selectedTrackIds].every(id => {
             const track = getTrack(id);
             return Boolean(track?.sourceName && Number(track.clipDuration) > 0);
@@ -1747,6 +1743,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.contextMenuTitle.textContent = track.sourceName || track.laneLabel;
         elements.contextAddLayer.textContent = `➕ Add ${track.type === 'sticker' ? 'Sticker' : track.type === 'video' ? 'Video' : track.type === 'background' ? 'Background' : 'Audio'} layer`;
         elements.contextExtractAudio.hidden = track.type !== 'video' || !track.file;
+        elements.contextDuplicate.disabled = !track.file;
+        elements.contextDuplicate.title = track.file ? 'Duplicate this clip immediately after the original' : 'Reconnect this clip’s source before duplicating it';
         const clipNode=[...document.querySelectorAll('.timeline-clip')].find(node=>node.dataset.trackId===trackId);
         const workspace=clipNode?.closest('.lane-workspace');
         state.contextClickTime=workspace
@@ -2467,8 +2465,6 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.btnGroupSelection.addEventListener('click', groupSelectedTracks);
     elements.btnApplyPairTransition.addEventListener('click', applySelectedVideoPair);
     elements.btnUnpairTransition.addEventListener('click', unlinkSelectedVideoPair);
-    elements.btnDuplicateSelection.addEventListener('click', () => { void duplicateSelectedTracks(); });
-    elements.btnDeleteSelection.addEventListener('click', () => { void deleteSelectedTracks(); });
     elements.previewZoom.addEventListener('input', (event) => { state.previewZoom = Number(event.target.value); syncPreviewZoom(); });
     elements.btnResetPreviewZoom.addEventListener('click', () => { state.previewZoom = 100; syncPreviewZoom(); showToast('Preview zoom reset'); });
 
@@ -2637,6 +2633,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.contextSplitNow.addEventListener('click', async () => { await splitTrackAtNow(state.contextTrackId); hideContextMenu(); });
     elements.contextAddLayer.addEventListener('click', addLayerFromContext);
     elements.contextExtractAudio.addEventListener('click', async () => { await extractAudioFromSelectedVideo(); hideContextMenu(); });
+    elements.contextDuplicate.addEventListener('click', () => {
+        // Right-click selection already targets this clip. Keep the existing
+        // duplicate routine and Undo history; only its entry point has moved.
+        hideContextMenu();
+        void duplicateSelectedTracks();
+    });
     elements.contextRemoveLayer.addEventListener('click', removeLayerFromContext);
     document.addEventListener('click', (event) => { if (!elements.contextMenu.contains(event.target)) hideContextMenu(); });
     document.addEventListener('keydown', (event) => {
@@ -2670,7 +2672,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
     });
 
-    document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
+    // Native mouseover hints for every visible interactive control, including
+    // ranges, selects, menus and dynamically created timeline items. Preserve
+    // hand-authored contextual titles (Undo, missing media, export limits).
+    function ensureControlTooltip(control) {
+        if (!control || control.title?.trim() || control.hasAttribute('hidden')) return;
+        const labelledBy=control.getAttribute('aria-labelledby');
+        const labelled=labelledBy ? document.getElementById(labelledBy)?.textContent?.trim() : '';
+        const label=control.labels?.[0]?.textContent?.trim()
+            || control.closest('label')?.textContent?.trim()
+            || labelled
+            || control.getAttribute('aria-label')
+            || control.getAttribute('data-tooltip')
+            || control.textContent?.trim()
+            || control.id?.replace(/^(btn-|context-)/,'').replace(/[-_]/g,' ');
+        if(label)control.title=String(label).replace(/\s+/g,' ').slice(0,180);
+    }
+    document.querySelectorAll('button,input:not([type="hidden"]),select,summary,[role="tab"]').forEach(ensureControlTooltip);
+    document.addEventListener('pointerover',event=>{
+        const control=event.target?.closest?.('button,input,select,summary,[role="tab"],.timeline-clip,.file-row,.lane-name');
+        if(control)ensureControlTooltip(control);
+    });
     restoreMediaIndex();
     const recovered=restoreSavedProjectMetadata();
     initAssetLibrary();
