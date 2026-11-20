@@ -46,6 +46,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .project-controls { padding:9px; border:1px solid rgba(137,107,73,.72); border-radius:14px; background:rgba(0,0,0,.22); }
 .project-controls-title { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; color:var(--stone-ochre); font:700 .57rem var(--font-headers); letter-spacing:.05em; text-transform:uppercase; }
 .project-controls-title small { color:rgba(245,240,219,.52); font:.5rem var(--font-mono); }
+.project-backup-actions { display:flex; align-items:center; justify-content:flex-end; gap:4px; }
+.project-backup-actions .btn { min-width:25px; min-height:25px; padding:3px 4px; font-size:.69rem; line-height:1; }
+.project-backup-actions .btn:focus-visible { outline:2px solid var(--water-spray); outline-offset:2px; }
 .file-toolbar { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; }
 .canvas-settings { margin-top:10px; padding:9px; border:1px solid rgba(137,107,73,.72); border-radius:14px; background:rgba(0,0,0,.22); }
 .canvas-settings-title { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; color:var(--stone-ochre); font:700 .57rem var(--font-headers); letter-spacing:.05em; text-transform:uppercase; }
@@ -368,7 +371,10 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         <aside class="column-card project-column">
             <div class="column-content">
                 <section class="project-controls">
-                    <div class="project-controls-title"><span>Project controls</span><small id="file-count">0 media</small></div>
+                    <div class="project-controls-title"><span>Project controls</span><div class="project-backup-actions" aria-label="Portable project backup controls">
+                        <button type="button" class="btn" id="btn-save-project" aria-label="Save project file" title="Save a portable MotoriClip project JSON backup. Includes edits and settings, but not original media.">💾</button>
+                        <button type="button" class="btn" id="btn-open-project" aria-label="Open project file" title="Open a saved MotoriClip project JSON. Replaces the current timeline; media can be relinked.">📂</button>
+                        <small id="file-count">0 media</small></div></div>
                     <div class="file-toolbar">
                         <button type="button" class="btn" id="btn-import" title="Import media; supported browsers can remember file handles for reopening">➕ Import</button>
                         <button type="button" class="btn" id="btn-browse">📁 Browse</button>
@@ -685,6 +691,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </main>
 
     <input type="file" id="file-input" accept="video/*,audio/*,image/gif,image/webp,image/png,image/jpeg" multiple hidden>
+    <input type="file" id="project-open-input" accept=".json,.motoriclip.json,application/json" hidden aria-label="Choose a saved MotoriClip project file">
     <div id="media-bin" class="media-bin" aria-hidden="true"></div>
     <div class="context-menu" id="timeline-context-menu" hidden>
         <div class="context-menu-title" id="context-menu-title">Timeline clip</div>
@@ -764,7 +771,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-project-recovery"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-portable-project-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>

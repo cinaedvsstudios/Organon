@@ -18,7 +18,7 @@ import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mj
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle } from './media-handle-store.mjs';
-import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord } from './project-recovery.mjs';
+import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord } from './project-recovery.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -36,6 +36,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
     const elements = {
         editorHeader: document.getElementById('motori-header'), btnToggleHeader: document.getElementById('btn-toggle-header'),
         btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
+        btnSaveProject: document.getElementById('btn-save-project'), btnOpenProject: document.getElementById('btn-open-project'), projectOpenInput: document.getElementById('project-open-input'),
         projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
         btnAddTrack: document.getElementById('btn-add-track'), trackTypeMenu: document.getElementById('track-type-menu'),
         btnSnapSelected: document.getElementById('btn-snap-selection'), btnSnapOptions: document.getElementById('btn-snap-options'), snapOptionsMenu: document.getElementById('snap-options-menu'),
@@ -315,21 +316,24 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
         });
     }
 
+    function makeCurrentProjectRecord() {
+        return createRecoveryRecord({
+            files:state.files, tracks:state.tracks,
+            selectedTrackId:state.selectedTrackId,
+            selectedTrackIds:state.selectedTrackIds,
+            selectedFileId:state.selectedFileId,
+            currentTime:engine.currentTime,
+            canvasWidth:Number(elements.canvasWidth.value),
+            canvasHeight:Number(elements.canvasHeight.value),
+            fps:Number(elements.projectFps.value),
+            previewZoom:state.previewZoom,
+            markers:state.timelineMarkers
+        });
+    }
     function saveProjectRecovery() {
         if(state.recoveryLoading || state.historyRestoring || state.editorDisposing) return false;
         try {
-            const record=createRecoveryRecord({
-                files:state.files,tracks:state.tracks,
-                selectedTrackId:state.selectedTrackId,
-                selectedTrackIds:state.selectedTrackIds,
-                selectedFileId:state.selectedFileId,
-                currentTime:engine.currentTime,
-                canvasWidth:Number(elements.canvasWidth.value),
-                canvasHeight:Number(elements.canvasHeight.value),
-                fps:Number(elements.projectFps.value),
-                previewZoom:state.previewZoom,
-                markers:state.timelineMarkers
-            });
+            const record=makeCurrentProjectRecord();
             // savedAt is deliberately excluded from change detection, so an
             // unchanged project cannot cause continuous localStorage writes.
             const content=serializeRecoveryRecord(record);
@@ -345,6 +349,127 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
             return false;
         }
     }
+    /**
+     * A portable project is JSON metadata only. It intentionally never
+     * includes File/Blob data or device-specific file paths; generated
+     * Text/Effects clips carry small preset recipes instead.
+     */
+    function downloadPortableProject() {
+        if(state.recoveryLoading || state.historyRestoring || state.editorDisposing){
+            showToast('Finish restoring the current project before saving');return;
+        }
+        try {
+            const json=serializeRecoveryRecord(makeCurrentProjectRecord());
+            const now=new Date();
+            const stamp=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),
+                String(now.getDate()).padStart(2,'0')].join('')
+                +'-'+String(now.getHours()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0');
+            const url=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+            const anchor=document.createElement('a');
+            anchor.download=`motoriclip-project-${stamp}.motoriclip.json`;
+            anchor.href=url;
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+            showToast(`Saved project backup: ${state.tracks.length} clips, ${state.files.length} media references (no source files)`);
+        }catch(error){
+            console.warn('Could not save MotoriClip project backup:',error);
+            showToast('Project backup failed: '+error.message);
+        }
+    }
+    async function loadPortableProjectFile(file) {
+        if(!file)return;
+        if(state.recoveryLoading||state.historyRestoring||state.editorDisposing||exporter.busy||offlineExporter.busy){
+            showToast('Finish the current project restore/export before opening another');return;
+        }
+        let record;
+        try {
+            if(file.size>MAX_RECOVERY_JSON_BYTES)
+                throw Error('Project JSON is larger than the 3 MB safety limit.');
+            const parsed=parseRecoveryRecord(await file.text());
+            if(!parsed)throw Error('The selected file is empty.');
+            // Rebuild the record using explicitly whitelisted fields, never
+            // trusting incidental objects or unknown properties from JSON.
+            record=createRecoveryRecord({
+                files:parsed.files,tracks:parsed.tracks,
+                selectedTrackId:parsed.selectedTrackId,
+                selectedTrackIds:parsed.selectedTrackIds,
+                selectedFileId:parsed.selectedFileId,
+                currentTime:parsed.currentTime,
+                canvasWidth:parsed.settings.canvasWidth,
+                canvasHeight:parsed.settings.canvasHeight,
+                fps:parsed.settings.fps,
+                previewZoom:parsed.settings.previewZoom,
+                markers:parsed.markers
+            });
+        }catch(error){
+            console.warn('Invalid portable MotoriClip project:',error);
+            showToast('Cannot open project: '+error.message);
+            return;
+        }
+        if(!window.confirm(`Open ${file.name}? This replaces the current timeline and clears its Undo/Redo history. Save the current project first if you need a backup. Original media may need relinking.`))
+            return;
+        state.recoveryLoading=true;
+        try {
+            // A current-session File can be reused only when its stable
+            // reference ID and identifying metadata agree. Never match only
+            // by filename or borrow the contents of an unrelated project.
+            const previousFiles=new Map(state.files.filter(entry=>entry.file)
+                .map(entry=>[entry.id,entry]));
+            const files=record.files.map(item=>{
+                const old=previousFiles.get(item.id);
+                const compatible=old?.file && old.name===item.name && old.kind===item.kind
+                    && (!item.size||old.file.size===item.size);
+                return {...item,file:compatible?old.file:null,
+                    needsRelink:!compatible};
+            });
+            engine.pause();
+            engine.clearAll();
+            state.files=files;
+            state.tracks=record.tracks.map(snapshotClip);
+            state.sourceFiles=new Map(files.filter(item=>item.file).map(item=>[item.id,item.file]));
+            state.savedFileHandles.clear();
+            state.history.undo=[];
+            state.history.redo=[];
+            state.selectedTrackIds=new Set(record.selectedTrackIds.filter(id=>
+                state.tracks.some(track=>track.id===id)));
+            state.selectedTrackId=state.tracks.some(track=>track.id===record.selectedTrackId)
+                ? record.selectedTrackId : [...state.selectedTrackIds][0] || null;
+            state.selectedFileId=files.some(item=>item.id===record.selectedFileId)
+                ? record.selectedFileId : null;
+            state.contextClipboard=null;
+            state.timelineMarkers=[...record.markers];
+            elements.canvasWidth.value=String(record.settings.canvasWidth);
+            elements.canvasHeight.value=String(record.settings.canvasHeight);
+            elements.projectFps.value=String(record.settings.fps);
+            engine.setProjectFrameRate(record.settings.fps);
+            state.previewZoom=record.settings.previewZoom;
+            elements.previewZoom.value=String(record.settings.previewZoom);
+            timeline.setMarkers(state.timelineMarkers);
+            const regenerated=recreateGeneratedProjectOverlays();
+            applyCanvasResolution();
+            renderFiles();
+            refreshAll();
+            syncPreviewZoom();
+            updateHistoryButtons();
+            await restoreRememberedMediaHandles();
+            await loadRecoveredMediaTracks();
+            await engine.seek(Math.min(record.currentTime,engine.getTimelineDuration()),{resume:false});
+            updateExportAvailability();
+            const missing=state.tracks.filter(track=>track.sourceName&&!track.media).length;
+            showToast(`Opened ${state.tracks.length} clips, ${regenerated} generated overlays`
+                +(missing?`; ${missing} clip${missing===1?'':'s'} need media relinking`:'; all sources ready'));
+        }catch(error){
+            console.error('Cannot finish opening project:',error);
+            showToast('Project opened partially; relink media if needed: '+error.message);
+        }finally{
+            state.recoveryLoading=false;
+            state.lastRecoveryText='';
+            saveProjectRecovery();
+        }
+    }
+
     function restoreSavedProjectMetadata() {
         let data;
         try {
@@ -2244,6 +2369,13 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
     elements.previewZoom.addEventListener('input', (event) => { state.previewZoom = Number(event.target.value); syncPreviewZoom(); });
     elements.btnResetPreviewZoom.addEventListener('click', () => { state.previewZoom = 100; syncPreviewZoom(); showToast('Preview zoom reset'); });
 
+    elements.btnSaveProject.addEventListener('click',downloadPortableProject);
+    elements.btnOpenProject.addEventListener('click',()=>elements.projectOpenInput.click());
+    elements.projectOpenInput.addEventListener('change',(event)=>{
+        const file=event.target.files?.[0]||null;
+        event.target.value='';
+        if(file)void loadPortableProjectFile(file);
+    });
     elements.btnImport.addEventListener('click', () => { void importWithFileHandles(); });
     elements.btnBrowse.addEventListener('click', browseDirectory); elements.btnHeaderBrowse.addEventListener('click', browseDirectory);
     elements.btnRelink.addEventListener('click', () => { void reconnectRememberedMedia(); });
