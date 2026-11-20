@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { File } from 'node:buffer';
-import { isPersistentFileHandle, getPermittedMediaFile, saveMediaHandle, getMediaHandle } from '../js/media-handle-store.mjs';
+import { isPersistentFileHandle, getPermittedMediaFile, saveMediaHandle, getMediaHandle, matchesSavedMediaReference } from '../js/media-handle-store.mjs';
 
 const fakeFile=()=>new File([Uint8Array.of(1,2,3)],'source.mov',{type:'video/quicktime'});
 test('only actual file-like handles are eligible; never save a raw File or Blob',()=>{
@@ -44,4 +44,16 @@ test('without IndexedDB, persistence is optional and raw file data is never stor
     // Browser acceptance exercises real IndexedDB/OPFS structured cloning.
     assert.equal(await saveMediaHandle('a',{kind:'file',getFile:fakeFile}),false);
     assert.equal(await getMediaHandle('a'),null);
+});
+
+test('remembered file handle rejects an overwritten file with the same name and type but different size',()=>{
+    const entry={id:'saved',name:'source.mov',kind:'video',size:42,lastModified:1};
+    const original={name:'source.mov',size:42,lastModified:9999};
+    assert.equal(matchesSavedMediaReference(entry,original,'video'),true,
+        'Same-sized copy is valid despite a changed timestamp');
+    assert.equal(matchesSavedMediaReference(entry,{...original,size:43},'video'),false);
+    assert.equal(matchesSavedMediaReference(entry,{...original,name:'other.mov'},'video'),false);
+    assert.equal(matchesSavedMediaReference(entry,original,'audio'),false);
+    assert.equal(matchesSavedMediaReference({...entry,size:0},original,'video'),true,
+        'Filename-only legacy index remains compatible');
 });
