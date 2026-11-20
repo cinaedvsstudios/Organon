@@ -5,6 +5,7 @@
  */
 import { normalizeVisualTransitions } from './visual-transitions.mjs';
 import { normalizeOrgavoxFx } from './orgavox-audio-chain.mjs';
+import { normaliseTextOverlay } from './text-template-renderer.mjs';
 
 export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
@@ -29,6 +30,7 @@ export function snapshotClip(track) {
         key,Array.isArray(frames)?frames.map(frame=>({...frame})):[]
     ]));
     data.visualTransitions = normalizeVisualTransitions(track.visualTransitions);
+    if(track.textOverlay)data.textOverlay=normaliseTextOverlay(track.textOverlay);
     data.transparency = {
         mode:'native', keyColour:'#00ff00', tolerance:30, feather:8,
         ...(track.transparency || {})
@@ -143,6 +145,7 @@ export function applyClipData(target, record) {
         key,Array.isArray(frames)?frames.map(frame=>({...frame})):[]
     ]));
     target.visualTransitions = normalizeVisualTransitions(record.visualTransitions);
+    target.textOverlay=record.textOverlay?normaliseTextOverlay(record.textOverlay):null;
     target.transparency = { ...record.transparency };
     target.analysis = record.analysis ? {
         ...record.analysis, levels: [...(record.analysis.levels || [])]

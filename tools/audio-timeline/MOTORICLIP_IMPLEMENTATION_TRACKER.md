@@ -14,6 +14,7 @@
 
 - 20 Nov 2026: Initial 102-item tracker created. Pre-existing two-row toolbar/full-width timeline (PRs [#87](https://github.com/cinaedvsstudios/Organon/pull/87), [#88](https://github.com/cinaedvsstudios/Organon/pull/88)) verified in prior Chrome/Firefox/WebKit browser suites.
 - 20 Nov 2026: Stage 1 items **1–20** reviewed/completed in [PR #91](https://github.com/cinaedvsstudios/Organon/pull/91): project controls, consistent scrollbars and dialogs, lane rename/colour/delete, clip-colour inheritance and Undo/Redo persistence. Previously completed toolbar/ruler/marker items retained; Chrome UI, recovery and portable-project regressions passed. Full-duration export stress tests continue separately.
+- 20 Nov 2026: Stage 2 first batch in [PR #92](https://github.com/cinaedvsstudios/Organon/pull/92): **16 structurally distinct text templates** (46–61), typewriter/letter-pop/ticker (62, 63, 72), editable text (81), existing transform keyframes (87), no colour duplicates (88), right-click titled animation preview and controls (89–93), portable editable metadata (95), grayscale-distinct browser rendering tests (98). See the PR's Node, Chrome, portable/recovery and cross-browser checks. Remaining motion variants, exhaustive typography/appearance controls and actual exported-pixel verification remain unchecked.
 
 
 ## 1. Project controls and interface
@@ -72,27 +73,27 @@
 
 ## 4. Text templates — distinct designs
 
-- [ ] **46.** Neon Sign (light-tube design).
-- [ ] **47.** Chrome/Metallic (reflective typography).
-- [ ] **48.** Handwritten Script.
-- [ ] **49.** Cinematic Title (elegant spacious layout).
-- [ ] **50.** News Lower Third (headline, subordinate line and banner).
-- [ ] **51.** Location Card (place name plus marker).
-- [ ] **52.** Quote/Editorial (deliberate serif layout).
-- [ ] **53.** Comic/Sticker Text.
-- [ ] **54.** Social Media Callout (Subscribe/Like/Follow/Share).
-- [ ] **55.** Chapter/Ending Card.
-- [ ] **56.** Technology/HUD.
-- [ ] **57.** Event Announcement.
-- [ ] **58.** Speech Bubble/Caption Box.
-- [ ] **59.** Typewriter/Document.
-- [ ] **60.** Retro Poster/Stamp.
-- [ ] **61.** Stacked Headline (contrasting hierarchy).
+- [x] **46.** Neon Sign (light-tube design).
+- [x] **47.** Chrome/Metallic (reflective typography).
+- [x] **48.** Handwritten Script.
+- [x] **49.** Cinematic Title (elegant spacious layout).
+- [x] **50.** News Lower Third (headline, subordinate line and banner).
+- [x] **51.** Location Card (place name plus marker).
+- [x] **52.** Quote/Editorial (deliberate serif layout).
+- [x] **53.** Comic/Sticker Text.
+- [x] **54.** Social Media Callout (Subscribe/Like/Follow/Share).
+- [x] **55.** Chapter/Ending Card.
+- [x] **56.** Technology/HUD.
+- [x] **57.** Event Announcement.
+- [x] **58.** Speech Bubble/Caption Box.
+- [x] **59.** Typewriter/Document.
+- [x] **60.** Retro Poster/Stamp.
+- [x] **61.** Stacked Headline (contrasting hierarchy).
 
 ## 5. Animated text templates
 
-- [ ] **62.** Typewriter Reveal (letter-by-letter + cursor).
-- [ ] **63.** Letter Pop (staggered bouncing letters).
+- [x] **62.** Typewriter Reveal (letter-by-letter + cursor).
+- [x] **63.** Letter Pop (staggered bouncing letters).
 - [ ] **64.** Shaking Letters (independent per-character motion).
 - [ ] **65.** Broadcast Box Reveal (rectangle draws/wipes then text dissolves).
 - [ ] **66.** News Lower-Third Animation (banner, headline and subtitle sequenced).
@@ -101,7 +102,7 @@
 - [ ] **69.** Kinetic Stagger (words/letters from independent directions).
 - [ ] **70.** Glitch Text (fragmentation/channel shifts).
 - [ ] **71.** Bounce/Rubber Text.
-- [ ] **72.** Ticker/Marquee.
+- [x] **72.** Ticker/Marquee.
 - [ ] **73.** Floating/Waving Letters.
 - [ ] **74.** Neon Switch-On.
 - [ ] **75.** Title Wipe.
@@ -113,30 +114,30 @@
 
 ## 6. Text and animation Inspector
 
-- [ ] **81.** Editable text after insertion without recreating clip.
+- [x] **81.** Editable text after insertion without recreating clip.
 - [ ] **82.** Typography: font, weight, size, italics, spacing, alignment and case.
 - [ ] **83.** Appearance: fill, stroke, shadow, glow, opacity and backdrop.
 - [ ] **84.** Shape: padding, corner radius, borders and banner geometry.
 - [ ] **85.** Motion: animation variant, duration, delay, speed, easing, direction, intensity and loop.
 - [ ] **86.** Independent In/Out/Loop settings.
-- [ ] **87.** Retain keyframed Scale, Position, Rotation and Opacity.
-- [ ] **88.** Colour/style variants belong in Inspector, NOT duplicated as library templates.
+- [x] **87.** Retain keyframed Scale, Position, Rotation and Opacity.
+- [x] **88.** Colour/style variants belong in Inspector, NOT duplicated as library templates.
 
 ## 7. Preview and template workflow
 
-- [ ] **89.** Right-click animated text → Play Preview in themed window.
-- [ ] **90.** Use **MotoriClip** as demo text when no text supplied, not saved as permanent user content.
-- [ ] **91.** Preview offers Play, Pause, Restart, Loop and scrub.
-- [ ] **92.** Representative thumbnails: visual look plus motion indicator.
-- [ ] **93.** Click or drag template to timeline.
+- [x] **89.** Right-click animated text → Play Preview in themed window.
+- [x] **90.** Use **MotoriClip** as demo text when no text supplied, not saved as permanent user content.
+- [x] **91.** Preview offers Play, Pause, Restart, Loop and scrub.
+- [x] **92.** Representative thumbnails: visual look plus motion indicator.
+- [x] **93.** Click or drag template to timeline.
 - [ ] **94.** Playback and exported pixels match at identical timestamps (including reverse seeking).
-- [ ] **95.** Save editable recipes, values, motion and Inspector changes in recovery and history; do not rely solely on rendered PNGs.
+- [x] **95.** Save editable recipes, values, motion and Inspector changes in recovery and history; do not rely solely on rendered PNGs.
 
 ## 8. Testing and implementation gates
 
 - [ ] **96.** Protect 41 transitions, image sources, additive gain, Orgavox, history, autosave, media recovery and both exporters.
 - [ ] **97.** Test rename, recolour, colour inheritance/override, lane deletion, Undo and refresh.
-- [ ] **98.** Validate visual differences between text templates independently of colour.
+- [x] **98.** Validate visual differences between text templates independently of colour.
 - [ ] **99.** Test animated effect/text preview controls and scrubbing.
 - [ ] **100.** Verify real exported video with animated overlays.
 - [ ] **101.** Check responsiveness, scrollbar consistency, button sizing and themed popups.

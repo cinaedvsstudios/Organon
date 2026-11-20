@@ -242,6 +242,10 @@ try{
     await page.locator('#text-overlay-value').fill('RECOVER THIS TITLE');
     await page.locator('#text-library-grid [data-preset-id="neon-cyan"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
+    await page.locator('#inspector-text-template').waitFor({state:'visible'});
+    await page.locator('#text-inspector-value').fill('UPDATED RECOVERY TITLE');
+    await page.locator('#text-animation').selectOption('typewriter');
+    await page.locator('#text-fill').fill('#ffee99');
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effects-library-grid [data-preset-id="film-grain"]').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2,
@@ -260,7 +264,14 @@ try{
         overlayNames.sort(),'Generated overlays must retain their original clip sources and names');
     assert.equal(await page.locator('.file-row.is-unlinked').count(),0,
         'Generated overlays should re-create on reopen without a filesystem picker');
-    console.log('[MotoriClip project recovery] PASS generated title and film-grain PNG regeneration from small saved recipes');
+    const restoredText=await page.evaluate(()=>{
+        const stored=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
+        return stored.tracks.find(t=>t.textOverlay)?.textOverlay;
+    });
+    assert.equal(restoredText?.value,'UPDATED RECOVERY TITLE');
+    assert.equal(restoredText?.animation,'typewriter');
+    assert.equal(restoredText?.fill,'#ffee99');
+    console.log('[MotoriClip project recovery] PASS editable animated title and effects recover from compact recipes and clip metadata');
     assert.deepEqual(errors,[],'Chrome script errors during recovery');
     await context.close();
 } finally{
