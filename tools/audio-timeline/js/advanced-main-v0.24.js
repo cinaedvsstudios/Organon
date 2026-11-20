@@ -17,7 +17,7 @@ import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
-import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
+import { getMediaHandle, saveMediaHandle, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
 import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord, writeRecoveryRecordWithQuota } from './project-recovery.mjs';
 
 (() => {
@@ -2481,9 +2481,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.btnBasicMode.addEventListener('click', () => { window.location.href = './index.html?mode=basic'; });
     elements.btnClear.addEventListener('click', () => {
         if (!state.files.length && !state.tracks.length) return;
-        if (!confirm('Clear all Project Files and all timeline clips?')) return;
+        if (!confirm('Clear all Project Files and all timeline clips? Undo history can still restore them until that history is discarded.')) return;
         recordHistory('Clear project');
-        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); void clearMediaHandles(); localStorage.removeItem(PROJECT_RECOVERY_KEY); state.lastRecoveryText=''; state.lastRecoveryFailedText=''; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
+        // Keep IndexedDB file handles needed by the persisted Clear-project
+        // Undo snapshot. Erasing them here makes Undo after reload recover only
+        // blank/offline clips, even when the browser still has file permission.
+        // The active project and its visible file bin are still cleared below.
+        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); localStorage.removeItem(PROJECT_RECOVERY_KEY); state.lastRecoveryText=''; state.lastRecoveryFailedText=''; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
