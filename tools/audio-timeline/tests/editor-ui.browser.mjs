@@ -346,6 +346,7 @@ try{
         'Undo Reset restores the exact timeline marker');
     assert.equal(await page.locator('#file-count').innerText(),sourceCountBefore);
     console.log('[Stage2 reset] PASS multi-lane Reset, markers, preserved bin and exact Undo');
+    await page.locator('[data-library-tab="media"]').click();
     await page.locator('#btn-clear').click();
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
