@@ -40,7 +40,8 @@ export function snapshotClip(track) {
     return data;
 }
 
-export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrackId, selectedFileId, currentTime }) {
+export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrackId, selectedFileId,
+    currentTime, markers, settings }) {
     return {
         files: files.map(({ id, name, kind, file, size, lastModified, generated }) => ({
             id, name, kind, size: file?.size ?? size ?? 0,
@@ -52,7 +53,9 @@ export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrack
         selectedTrackIds: [...selectedTrackIds],
         selectedTrackId: selectedTrackId || null,
         selectedFileId: selectedFileId || null,
-        currentTime: Math.max(0, Number(currentTime) || 0)
+        currentTime: Math.max(0, Number(currentTime) || 0),
+        ...(Array.isArray(markers)?{markers:[...markers]}:{}),
+        ...(settings?{settings:{...settings}}:{})
     };
 }
 
