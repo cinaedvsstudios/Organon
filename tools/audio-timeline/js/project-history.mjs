@@ -23,6 +23,8 @@ export function snapshotClip(track) {
     }
     data.transitionFromId = track.transitionFromId || null;
     data.transitionEffectId = track.transitionEffectId || null;
+    data.transitionParameters = track.transitionParameters
+        ? JSON.parse(JSON.stringify(track.transitionParameters)) : {};
     data.audio = { volume:1, muted:false, fadeIn:0, fadeOut:0, ...(track.audio || {}) };
     if (data.audio.fx) data.audio.fx=normalizeOrgavoxFx(data.audio.fx);
     data.transform = { ...(track.transform||{}) };
@@ -136,6 +138,8 @@ export function applyClipData(target, record) {
     }
     target.transitionFromId = record.transitionFromId || null;
     target.transitionEffectId = record.transitionEffectId || null;
+    target.transitionParameters = record.transitionParameters
+        ? JSON.parse(JSON.stringify(record.transitionParameters)) : {};
     // Undoing a colour change must clear overrides absent in old snapshots.
     target.laneColor=record.laneColor || null;
     target.clipColor=record.clipColor || null;
