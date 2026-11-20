@@ -15,7 +15,8 @@ import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './c
 import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
-import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { TEXT_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
@@ -617,7 +618,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         return data;
     }
     function recreateGeneratedProjectOverlays(files=state.files) {
-        const presets=[...TEXT_PRESETS,...EFFECT_OVERLAYS];
+        const presets=[...TEXT_PRESETS,...LEGACY_TEXT_PRESETS,...EFFECT_OVERLAYS];
         let regenerated=0;
         for(const entry of files){
             if(entry.file||!entry.generated)continue;
@@ -1426,6 +1427,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         if (track.sourceFileId && entry.file) state.sourceFiles.set(track.sourceFileId, entry.file);
         try {
             await engine.loadTrack(track, entry.file);
+            if(entry.generated?.group==='text' && TEXT_PRESETS.some(p=>p.id===entry.generated.presetId)
+                && !track.textOverlay){
+                // Generated PNG is a portable fallback; actual text stays
+                // editable and animates at playhead time in renderFrame().
+                track.textOverlay=normaliseTextOverlay({
+                    presetId:entry.generated.presetId,value:entry.generated.value||'MotoriClip'
+                });
+            }
             if (!state.tracks.includes(track)) {
                 engine.detachTrack(track, false);
                 return;
