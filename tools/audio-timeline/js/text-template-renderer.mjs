@@ -194,10 +194,13 @@ export function textAnimationState(input={},localTime=0,clipDuration=3){
   const specific={...opts,animation,animationDelay:0,animationLoop:false,
     animationDuration:Math.max(.0001,duration)};
   const effective=singleTextAnimationState(specific,elapsed,Math.max(.0001,duration));
-  return {...effective,phase,activeAnimation:animation,
-    phaseTime:elapsed,inEnd,outStart};
+  return {...effective,
+    // Effects such as Letter Pop or Bounce do not themselves reach alpha 0
+    // when reversed. Fade the final instant so every Out mode fully exits.
+    alpha:phase==='out'?effective.alpha*effective.progress:effective.alpha,
+    phase,activeAnimation:animation,phaseTime:elapsed,inEnd,outStart};
  };
- if(time<start)return {...state('none',0,1,'waiting'),alpha:0};
+ if(time<start||start>=clip)return {...state('none',0,1,'waiting'),alpha:0};
  if(wantsIn&&time<inEnd&&inLength>0)
   return state(opts.inAnimation,time-start,inLength,'in');
  if(wantsOut&&time>=outStart&&outLength>0){
