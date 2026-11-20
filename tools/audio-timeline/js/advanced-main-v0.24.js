@@ -18,7 +18,7 @@ import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mj
 import { TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, clearMediaHandles, getPermittedMediaFile, isPersistentFileHandle } from './media-handle-store.mjs';
-import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord } from './project-recovery.mjs';
+import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord, writeRecoveryRecordWithQuota } from './project-recovery.mjs';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
@@ -30,7 +30,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
-        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map(), recoveryLoading:true, editorDisposing:false, lastRecoveryText:''
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map(), recoveryLoading:true, editorDisposing:false, lastRecoveryText:'', lastRecoveryFailedText:'', recoveryQuotaWarningShown:false
     };
 
     const elements = {
@@ -333,6 +333,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
     function saveProjectRecovery() {
         if(state.recoveryLoading || state.historyRestoring || state.editorDisposing) return false;
+        let signature='';
         try {
             const record=makeCurrentProjectRecord();
             // savedAt is deliberately excluded from change detection, so an
@@ -340,13 +341,25 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const content=serializeRecoveryRecord(record);
             const compare=JSON.parse(content);
             compare.savedAt=0;
-            const signature=JSON.stringify(compare);
-            if(signature===state.lastRecoveryText)return false;
-            localStorage.setItem(PROJECT_RECOVERY_KEY,content);
+            signature=JSON.stringify(compare);
+            if(signature===state.lastRecoveryText
+                ||signature===state.lastRecoveryFailedText)return false;
+            const saved=writeRecoveryRecordWithQuota(localStorage,PROJECT_RECOVERY_KEY,record);
             state.lastRecoveryText=signature;
+            state.lastRecoveryFailedText='';
+            if(saved.truncated&&!state.recoveryQuotaWarningShown){
+                state.recoveryQuotaWarningShown=true;
+                showToast('Browser storage is low: older Undo steps were excluded from auto-recovery. Use Save Project for a portable backup.',6500);
+            }
             return true;
         } catch(error) {
             console.warn('MotoriClip recovery could not be saved:',error);
+            // Avoid quota-error/recovery loops when the project is unchanged.
+            state.lastRecoveryFailedText=signature;
+            if(!state.recoveryQuotaWarningShown){
+                state.recoveryQuotaWarningShown=true;
+                showToast('Automatic project recovery is unavailable. Use Save Project to download a backup.',6500);
+            }
             return false;
         }
     }
@@ -2430,7 +2443,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
         recordHistory('Clear project');
-        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); void clearMediaHandles(); localStorage.removeItem(PROJECT_RECOVERY_KEY); state.lastRecoveryText=''; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
+        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); void clearMediaHandles(); localStorage.removeItem(PROJECT_RECOVERY_KEY); state.lastRecoveryText=''; state.lastRecoveryFailedText=''; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
