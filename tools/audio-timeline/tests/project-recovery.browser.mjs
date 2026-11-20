@@ -98,8 +98,25 @@ try{
     const serialized=JSON.stringify(saved);
     assert.ok(!serialized.includes('data:image'),'Do not store base64 pictures');
     assert.ok(!serialized.includes('blob:http'),'Never serialize media object URLs');
+
+    // The separate legacy filename index can be stale after a storage write
+    // failure or opening another project. A valid project recovery must take
+    // precedence; otherwise old media-bin entries are silently resurrected.
+    await page.evaluate(()=>{
+        const key='motori-advanced-media-index-v1';
+        const indexed=JSON.parse(localStorage.getItem(key)||'[]');
+        indexed.push({id:'stale-other-project',name:'unrelated-old-source.jpg',
+            kind:'background',size:8123,lastModified:1,relativePath:'old/'});
+        localStorage.setItem(key,JSON.stringify(indexed));
+    });
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('.timeline-clip.background:not(.needs-relink)').waitFor({timeout:20000});
+    assert.equal(await page.locator('.file-row').count(),1,
+        'Valid recovery must replace stale media index entries, not merge them');
+    assert.equal(await page.locator('[data-file-id="stale-other-project"]').count(),0);
+    assert.equal((await page.evaluate(()=>JSON.parse(
+        localStorage.getItem('motori-advanced-media-index-v1')||'[]'))).length,1,
+        'The corrected media index should not re-persist unrelated old project files');
     assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId);
     assert.equal(await page.locator('#canvas-width').inputValue(),'640');
     assert.equal(await page.locator('#canvas-height').inputValue(),'360');
