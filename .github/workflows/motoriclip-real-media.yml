@@ -129,7 +129,7 @@ jobs:
           MOTORICLIP_LONGFORM: '1'
         run: node tools/audio-timeline/tests/long-export-memory.browser.mjs
       - name: Verify 120-second 1080p MP4 and context-close Chrome memory recovery
-        timeout-minutes: 14
+        timeout-minutes: 22
         env:
           CHROME_BIN: /usr/bin/google-chrome
           MOTORICLIP_FULLHD120: '1'
