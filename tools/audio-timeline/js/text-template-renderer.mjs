@@ -26,7 +26,11 @@ export const TEXT_ANIMATIONS=Object.freeze([
  ['none','Static'],['typewriter','Typewriter'],['letter-pop','Letter Pop'],
  ['shake','Shaking Letters'],['box-reveal','Broadcast Box Reveal'],
  ['neon-flicker','Neon Flicker'],['ticker','Scrolling Ticker'],
- ['slide','Slide In'],['fade','Fade In']
+ ['slide','Slide In'],['fade','Fade In'],
+ ['wave','Floating / Waving Letters'],['kinetic-stagger','Kinetic Stagger'],
+ ['bounce','Rubber Bounce'],['outline-fill','Outline to Solid'],
+ ['glitch-text','Glitch Letters'],['title-wipe','Title Wipe'],
+ ['dissolve-out','Dissolve Out']
 ]);
 const animationNames=new Set(TEXT_ANIMATIONS.map(pair=>pair[0]));
 const defaultPalette={fill:'#ffffff',stroke:'#333333',shadow:'#000000'};
@@ -50,27 +54,61 @@ export function normaliseTextOverlay(input={}) {
   outlineWidth:safeNumber(input.outlineWidth,3,0,18),
   shadowBlur:safeNumber(input.shadowBlur,8,0,40),
   animation:animationNames.has(input.animation)?input.animation:design.animation,
-  animationDuration:safeNumber(input.animationDuration,1.2,.1,10)
+  animationDuration:safeNumber(input.animationDuration,1.2,.1,10),
+  animationDelay:safeNumber(input.animationDelay,0,0,10),
+  animationSpeed:safeNumber(input.animationSpeed,1,.25,4),
+  animationDirection:['left','right','up','down'].includes(input.animationDirection)
+    ?input.animationDirection:'left',
+  animationEasing:['linear','ease-in','ease-out','ease-in-out'].includes(input.animationEasing)
+    ?input.animationEasing:'ease-out',
+  animationIntensity:safeNumber(input.animationIntensity,100,0,200),
+  animationLoop:input.animationLoop===true,
+  subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100)
  };
+}
+function easeProgress(value,easing){
+ const p=clamp(value,0,1);
+ if(easing==='ease-in')return p*p;
+ if(easing==='ease-out')return 1-(1-p)*(1-p);
+ if(easing==='ease-in-out')return p*p*(3-2*p);
+ return p;
 }
 export function textAnimationState(config={},localTime=0,clipDuration=3) {
  const opts=normaliseTextOverlay(config);
  const time=Math.max(0,Number(localTime)||0);
  const clip=Math.max(.1,Number(clipDuration)||3);
  const duration=Math.min(opts.animationDuration,clip);
- const progress=clamp(time/duration,0,1);
- const text=opts.value||'MotoriClip';
+ const elapsed=Math.max(0,time-opts.animationDelay)*opts.animationSpeed;
+ const running=opts.animationLoop&&elapsed>=duration?elapsed%duration:elapsed;
+ const raw=clamp(running/duration,0,1);
+ const progress=easeProgress(raw,opts.animationEasing);
+ const started=time>=opts.animationDelay;
+ const text=opts.value||'YOUR TEXT';
+ const intensity=opts.animationIntensity/100;
+ const direction=opts.animationDirection;
+ const horizontal=direction==='left'||direction==='right';
+ const sign=direction==='right'||direction==='down'?1:-1;
+ const distance=(1-progress)**2*220*intensity;
+ const slideX=opts.animation==='slide'&&horizontal?(progress>=1?0:Math.round(distance*sign)):0;
+ const slideY=opts.animation==='slide'&&!horizontal?(progress>=1?0:Math.round(distance*sign)):0;
+ const fadeOut=opts.animation==='dissolve-out'
+    ?clamp((clip-time)/Math.min(1.2,clip*.35),0,1):1;
  return {
-  progress,
+  progress,raw,time,elapsed:running,started,intensity,
   visibleCharacters:opts.animation==='typewriter'
-    ?Math.min(text.length,Math.floor(progress*text.length)+Number(progress===1)) :text.length,
-  alpha:opts.animation==='fade'?progress:1,
-  slideX:opts.animation==='slide'?(progress>=1?0:Math.round((1-progress)**2*-220)):0,
-  boxWidth:opts.animation==='box-reveal'?Math.round(640*progress):640,
-  tickerX:opts.animation==='ticker'?640-(time/clip)*1280:0,
-  jitter:opts.animation==='shake'?Math.sin(time*46)*4:0,
+    ?Math.min(text.length,Math.floor(progress*text.length)):text.length,
+  alpha:!started?0:(opts.animation==='fade'?progress:1)*fadeOut,
+  slideX,slideY,
+  boxWidth:opts.animation==='box-reveal'||opts.animation==='title-wipe'
+    ?Math.round(640*progress):640,
+  textAlpha:opts.animation==='box-reveal'?clamp((raw-.52)/.48,0,1):1,
+  headlineAlpha:opts.animation==='box-reveal'?clamp((raw-.44)/.35,0,1):1,
+  subtitleAlpha:opts.animation==='box-reveal'?clamp((raw-.73)/.27,0,1):1,
+  tickerX:opts.animation==='ticker'
+    ?(direction==='right'?-640+time/clip*1280:640-time/clip*1280):0,
+  jitter:opts.animation==='shake'?Math.sin(time*46)*4*intensity:0,
   flicker:opts.animation==='neon-flicker'
-    ?(progress<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1
+    ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1
  };
 }
 function roundRect(ctx,x,y,w,h,r) {
