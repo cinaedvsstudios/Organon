@@ -70,6 +70,43 @@ try{
     assert.deepEqual(layout.allControls,[],'Interactive editor controls should have native mouseover titles');
     assert.equal(await page.locator('#btn-duplicate-selection').count(),0);
     assert.equal(await page.locator('#btn-delete-selection').count(),0);
+
+    // Keep the shared timeline usable at compact desktop and single-column
+    // widths. Only the timeline's own scroll area may overflow horizontally;
+    // the page and toolbar must not force a horizontal browser scrollbar.
+    for(const width of [900,700]){
+        await page.setViewportSize({width,height:850});
+        const responsive=await page.evaluate(()=>{
+            const bounds=selector=>{
+                const rect=document.querySelector(selector).getBoundingClientRect();
+                return {left:rect.left,right:rect.right,top:rect.top,bottom:rect.bottom,width:rect.width};
+            };
+            return {
+                viewport:window.innerWidth,
+                pageWidth:document.documentElement.scrollWidth,
+                timeline:bounds('#timeline-panel'),
+                inspector:bounds('.right-column'),
+                primary:[...document.querySelectorAll('.timeline-primary-row > .timeline-tool')]
+                    .map(el=>Math.round(el.getBoundingClientRect().top)),
+                secondary:[...document.querySelectorAll('.timeline-edit-row > .timeline-tool')]
+                    .map(el=>Math.round(el.getBoundingClientRect().top))
+            };
+        });
+        assert.ok(responsive.pageWidth<=responsive.viewport+2,
+            'No horizontal page overflow at '+width+'px: '+JSON.stringify(responsive));
+        assert.ok(responsive.timeline.right<=responsive.viewport+2
+            && responsive.timeline.left>=-1,
+            'Timeline panel must fit within viewport at '+width+'px');
+        assert.ok(Math.abs(responsive.timeline.right-responsive.inspector.right)<=2,
+            'Timeline should reach the inspector right edge at '+width+'px');
+        if(width===900){
+            assert.equal(new Set(responsive.primary).size,1,
+                'Primary toolbar should stay on one line at compact desktop widths');
+            assert.equal(new Set(responsive.secondary).size,1,
+                'Secondary toolbar should stay on one line at compact desktop widths');
+        }
+    }
+    await page.setViewportSize({width:1450,height:900});
     await page.locator('#btn-project-settings').click();
     await page.locator('#project-fps').waitFor({state:'visible'});
     assert.match(await page.title(),/MotoriClip.+Advanced/i);
