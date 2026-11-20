@@ -4,7 +4,7 @@ import { encodePcm16Wav } from '../js/wav-audio-export.mjs';
 
 function fakeAudio(channels,rate=48000) {
     return {
-        numberOfChannels:channels.length,length:channels[0].length,
+        numberOfChannels:channels.length,length:channels[0]?.length ?? 0,
         sampleRate:rate,getChannelData(index){return channels[index];}
     };
 }
