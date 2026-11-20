@@ -319,6 +319,70 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
 
+    // One branded, accessible action dialog replaces native browser prompt,
+    // confirm and alert UI. Resolve only on a direct user interaction.
+    let actionDialogResolve=null;
+    function closeEditorAction(value=null) {
+        elements.actionModal.hidden=true;
+        if(actionDialogResolve){
+            const resolve=actionDialogResolve;
+            actionDialogResolve=null;
+            resolve(value);
+        }
+    }
+    function requestEditorAction({kind='confirm',title='Confirm',description='',value='',apply='Apply',danger=false}={}) {
+        if(actionDialogResolve)closeEditorAction(null);
+        hideContextMenu();
+        hideLaneContextMenu();
+        elements.actionTitle.textContent=title;
+        elements.actionDescription.textContent=description;
+        elements.actionField.hidden=!['rename','colour'].includes(kind);
+        elements.actionColours.hidden=kind!=='colour';
+        elements.actionFieldLabel.textContent=kind==='colour'?'Hex colour':'Track name';
+        elements.actionInput.value=String(value);
+        elements.actionInput.maxLength=kind==='rename'?80:7;
+        elements.actionInput.placeholder=kind==='colour'?'#4b84bf':'Track name';
+        elements.actionError.hidden=true;
+        elements.actionApply.textContent=apply;
+        elements.actionCancel.hidden=kind==='info';
+        elements.actionApply.classList.toggle('btn-danger',danger);
+        elements.actionApply.classList.toggle('btn-primary',!danger);
+        for(const button of elements.actionColours.querySelectorAll('[data-timeline-colour]')){
+            button.style.setProperty('--swatch',button.dataset.timelineColour);
+            button.setAttribute('aria-pressed',String(button.dataset.timelineColour===value));
+        }
+        elements.actionModal.hidden=false;
+        (elements.actionField.hidden?elements.actionApply:elements.actionInput).focus();
+        return new Promise(resolve=>{actionDialogResolve=resolve;});
+    }
+    function submitEditorAction() {
+        const kind=!elements.actionField.hidden
+            ? elements.actionColours.hidden?'rename':'colour' : 'confirm';
+        const value=elements.actionInput.value.trim();
+        if(kind==='rename' && (!value || value.length>80)){
+            elements.actionError.textContent='Enter a track name of 1–80 characters.';
+            elements.actionError.hidden=false;return;
+        }
+        if(kind==='colour' && !normaliseTimelineColour(value)){
+            elements.actionError.textContent='Use a valid six-digit hex colour, such as #4b84bf.';
+            elements.actionError.hidden=false;return;
+        }
+        closeEditorAction(kind==='rename'?value:kind==='colour'?normaliseTimelineColour(value):true);
+    }
+    elements.actionCancel.addEventListener('click',()=>closeEditorAction(null));
+    elements.actionClose.addEventListener('click',()=>closeEditorAction(null));
+    elements.actionApply.addEventListener('click',submitEditorAction);
+    elements.actionModal.addEventListener('pointerdown',e=>{if(e.target===elements.actionModal)closeEditorAction(null);});
+    elements.actionInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitEditorAction();}});
+    for(const button of elements.actionColours.querySelectorAll('[data-timeline-colour]')){
+        button.addEventListener('click',()=>{
+            elements.actionInput.value=button.dataset.timelineColour;
+            for(const other of elements.actionColours.querySelectorAll('[data-timeline-colour]'))
+                other.setAttribute('aria-pressed',String(other===button));
+            elements.actionError.hidden=true;
+        });
+    }
+
     function captureHistorySnapshot() {
         return snapshotProject({
             files: state.files, tracks: state.tracks, selectedTrackIds: state.selectedTrackIds,
