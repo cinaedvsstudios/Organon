@@ -640,6 +640,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-hologram-settings" class="spiral-glsl-settings hologram-glsl-settings" hidden>
+                            <legend>Hologram · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Hologram tint<input type="color" value="#33bfff" data-hologram-param="tint"></label>
+                                <label>Dark background<input type="color" value="#00050d" data-hologram-param="background"></label>
+                                <label>Background opacity<input type="number" min="0" max="1" step="0.05" value="1" data-hologram-param="backgroundAlpha"></label>
+                                <label>Scanlines<input type="number" min="20" max="300" step="1" value="150" data-hologram-param="scanlines"></label>
+                                <label>Jitter (fraction of frame)<input type="number" min="0" max="0.2" step="0.01" value="0.04" data-hologram-param="jitter"></label>
+                                <label>Flicker<input type="range" min="0" max="1" step=".05" value=".6" data-hologram-param="flicker"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-spiral-settings" class="spiral-glsl-settings" hidden>
                             <legend>SpiralBlockWipe · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1103,6 +1114,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-hologram" class="spiral-glsl-settings hologram-glsl-settings" hidden>
+                            <legend>Hologram · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Hologram tint<input type="color" value="#33bfff" data-hologram-param="tint"></label>
+                                <label>Dark background<input type="color" value="#00050d" data-hologram-param="background"></label>
+                                <label>Background opacity<input type="number" min="0" max="1" step="0.05" value="1" data-hologram-param="backgroundAlpha"></label>
+                                <label>Scanlines<input type="number" min="20" max="300" step="1" value="150" data-hologram-param="scanlines"></label>
+                                <label>Jitter (fraction of frame)<input type="number" min="0" max="0.2" step="0.01" value="0.04" data-hologram-param="jitter"></label>
+                                <label>Flicker<input type="range" min="0" max="1" step=".05" value=".6" data-hologram-param="flicker"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-spiral" class="spiral-glsl-settings" hidden>
                             <legend>SpiralBlockWipe · Original GL shader</legend>
                             <div class="spiral-settings-grid">
