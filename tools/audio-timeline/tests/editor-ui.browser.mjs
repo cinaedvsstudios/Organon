@@ -445,7 +445,7 @@ try{
     await page.locator('#text-inspector-value').fill('LIVE EDITED TITLE');
     await page.locator('#text-animation').selectOption('typewriter');
     await page.locator('#text-animation-duration').fill('2');
-    await page.locator('#text-animation-delay').fill('.3');
+    await page.locator('#text-animation-delay').fill('0.3');
     await page.locator('#text-animation-speed').fill('1.5');
     await page.locator('#text-animation-direction').selectOption('right');
     await page.locator('#text-animation-easing').selectOption('ease-in-out');
