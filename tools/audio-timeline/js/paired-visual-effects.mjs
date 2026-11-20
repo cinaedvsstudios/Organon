@@ -1,4 +1,5 @@
 import { paintSpiralBlockWipe } from './gl-transitions/SpiralBlockWipe.mjs';
+import { paintHologram } from './gl-transitions/Hologram.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -506,11 +507,6 @@ export function prismFacetOffset(progress,facet,width,height) {
 }
 /** Create or resize a scratch canvas held by the renderer instance. */
 
-/** A hologram scans in without ever modifying the original video pixels. */
-export function hologramStrength(progress,row=0){
-    const p=unit(progress);
-    return Math.sin(Math.PI*p)*(.6+.4*Math.sin(row*1.71+11*p)**2);
-}
 /** Deterministic paper fold displacement that closes at both endpoints. */
 export function crumpleFold(progress,index,width,height){
     const p=unit(progress);
@@ -558,6 +554,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     if(progress>=1)return false; // Let normal renderer draw a pristine B.
     if(id==='spiralblockwipe')
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='hologram')
+        return paintHologram(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -624,28 +622,13 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='hologram'||id==='crumple'){
+    if(id==='crumple'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fc=full.getContext('2d');
         fc.clearRect(0,0,width,height);
         renderContained(fc,media,width,height);
         context.save();
-        if(id==='hologram'){
-            context.globalAlpha=alpha*progress;
-            context.drawImage(full,0,0,width,height);
-            const rows=48;
-            for(let i=0;i<rows;i++){
-                const y=Math.floor(i*height/rows);
-                const h=Math.max(1,Math.ceil(height/rows*.26));
-                context.globalAlpha=alpha*hologramStrength(progress,i)*.34;
-                context.fillStyle=i%3===0?'#65f4ff':'#ad77ff';
-                context.fillRect(0,y,width,h);
-            }
-            context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.2;
-            context.fillStyle='#8cefff';
-            const scanY=Math.floor(progress*height);
-            context.fillRect(0,scanY,width,Math.max(1,Math.floor(height*.022)));
-        }else{
+        {
             const cols=8,rows=6;
             context.globalAlpha=alpha*progress;
             context.drawImage(full,0,0,width,height);
