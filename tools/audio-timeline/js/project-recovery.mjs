@@ -182,6 +182,51 @@ export function serializeRecoveryRecord(record) {
     return data;
 }
 
+/**
+ * Write metadata-only recovery to browser storage, preserving the current
+ * timeline even if the storage quota is nearly exhausted.
+ *
+ * When quota is reached, progressively discard *oldest* history snapshots.
+ * The live in-memory Undo/Redo stacks are never modified. Existing storage
+ * is replaced only by a successful atomic setItem.
+ */
+export function writeRecoveryRecordWithQuota(storage, key, record) {
+    const originalUndo=record.history?.undo?.length||0;
+    const originalRedo=record.history?.redo?.length||0;
+    const full=serializeRecoveryRecord(record);
+    const candidate=JSON.parse(full);
+    let lastError;
+    // 60 steps on each side fit within 8 halvings. Leave a few extra
+    // attempts for very small storage quotas.
+    for(let attempt=0;attempt<12;attempt++) {
+        const json=JSON.stringify(candidate);
+        try {
+            storage.setItem(key,json);
+            return {
+                json,
+                undoCount:candidate.history?.undo?.length||0,
+                redoCount:candidate.history?.redo?.length||0,
+                truncated:(candidate.history?.undo?.length||0)<originalUndo
+                    ||(candidate.history?.redo?.length||0)<originalRedo
+            };
+        } catch(error) {
+            const quota=error?.name==='QuotaExceededError'
+                ||error?.name==='NS_ERROR_DOM_QUOTA_REACHED'
+                ||error?.code===22 ||error?.code===1014;
+            if(!quota)throw error;
+            lastError=error;
+        }
+        const history=candidate.history;
+        if(!history || (!history.undo.length&&!history.redo.length))break;
+        const count=history.undo.length+history.redo.length;
+        for(let i=0;i<Math.ceil(count/2);i++){
+            const side=history.undo.length>=history.redo.length?'undo':'redo';
+            (history[side].length?history[side]:history[side==='undo'?'redo':'undo']).shift();
+        }
+    }
+    throw lastError||Error('Local project recovery could not be saved.');
+}
+
 export function parseRecoveryRecord(text) {
     if(typeof text!=='string'||!text) return null;
     if(text.length>MAX_RECOVERY_JSON_BYTES)throw Error('Project recovery record exceeds the safety limit.');
