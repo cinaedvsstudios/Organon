@@ -7,20 +7,22 @@
 export const TEXT_DESIGNS=Object.freeze([
  {id:'neon-cyan',label:'Neon Sign',layout:'neon',animation:'neon-flicker',fill:'#64eeff',stroke:'#216aca',font:'sans'},
  {id:'chrome-title',label:'Chrome Title',layout:'chrome',animation:'fade',fill:'#eaf0f8',stroke:'#527494',font:'sans'},
- {id:'handwritten-script',label:'Handwritten',layout:'handwriting',animation:'letter-pop',fill:'#fff5d4',stroke:'#815d8c',font:'script'},
+ {id:'handwritten-script',label:'Handwritten',layout:'handwriting',animation:'handwriting-reveal',fill:'#fff5d4',stroke:'#815d8c',font:'script'},
  {id:'cinematic-title',label:'Cinematic',layout:'cinematic',animation:'fade',fill:'#fff8ec',stroke:'#d2ad63',font:'serif'},
  {id:'news-lower-third',label:'News Lower Third',layout:'news',animation:'box-reveal',fill:'#ffffff',stroke:'#e0a360',font:'sans'},
- {id:'location-card',label:'Location Card',layout:'location',animation:'slide',fill:'#ffffff',stroke:'#54d5ff',font:'sans'},
+ {id:'location-card',label:'Location Card',layout:'location',animation:'location-drop',fill:'#ffffff',stroke:'#54d5ff',font:'sans'},
  {id:'editorial-quote',label:'Editorial Quote',layout:'quote',animation:'fade',fill:'#f6ecdc',stroke:'#d3b47c',font:'serif'},
  {id:'comic-sticker',label:'Comic Sticker',layout:'comic',animation:'letter-pop',fill:'#fff968',stroke:'#191429',font:'sans'},
- {id:'social-callout',label:'Social Callout',layout:'social',animation:'letter-pop',fill:'#ffffff',stroke:'#ff447b',font:'sans'},
+ {id:'social-callout',label:'Social Callout',layout:'social',animation:'social-pulse',fill:'#ffffff',stroke:'#ff447b',font:'sans'},
  {id:'chapter-ending',label:'Chapter / Ending',layout:'chapter',animation:'fade',fill:'#f5e6c8',stroke:'#ab8652',font:'serif'},
  {id:'tech-hud',label:'Technology HUD',layout:'hud',animation:'typewriter',fill:'#8cffee',stroke:'#168882',font:'mono'},
  {id:'event-announcement',label:'Event Announcement',layout:'event',animation:'slide',fill:'#ffffff',stroke:'#ff8651',font:'sans'},
  {id:'speech-bubble',label:'Speech Bubble',layout:'speech',animation:'letter-pop',fill:'#18232b',stroke:'#faf5e9',font:'sans'},
  {id:'typewriter-document',label:'Typewriter',layout:'typewriter',animation:'typewriter',fill:'#f7efdb',stroke:'#c3a888',font:'mono'},
  {id:'retro-stamp',label:'Retro Stamp',layout:'stamp',animation:'shake',fill:'#f1dbac',stroke:'#b84936',font:'sans'},
- {id:'stacked-headline',label:'Stacked Headline',layout:'stacked',animation:'box-reveal',fill:'#fff7ec',stroke:'#e08343',font:'sans'}
+ {id:'stacked-headline',label:'Stacked Headline',layout:'stacked',animation:'box-reveal',fill:'#fff7ec',stroke:'#e08343',font:'sans'},
+ {id:'countdown-title',label:'Countdown / Number Roll',layout:'countdown',animation:'countdown-roll',fill:'#effaf8',stroke:'#55a9cd',font:'mono'},
+ {id:'split-title',label:'Split Title',layout:'split',animation:'split-enter',fill:'#fff1dc',stroke:'#c98b55',font:'sans'}
 ].map(item=>Object.freeze({...item,group:'text'})));
 export const TEXT_ANIMATIONS=Object.freeze([
  ['none','Static'],['typewriter','Typewriter'],['letter-pop','Letter Pop'],
@@ -30,7 +32,9 @@ export const TEXT_ANIMATIONS=Object.freeze([
  ['wave','Floating / Waving Letters'],['kinetic-stagger','Kinetic Stagger'],
  ['bounce','Rubber Bounce'],['outline-fill','Outline to Solid'],
  ['glitch-text','Glitch Letters'],['title-wipe','Title Wipe'],
- ['dissolve-out','Dissolve Out']
+ ['dissolve-out','Dissolve Out'],['handwriting-reveal','Handwriting Reveal'],
+ ['social-pulse','Social Button Pulse'],['location-drop','Location Pin Drop'],
+ ['countdown-roll','Rolling Countdown'],['split-enter','Split Title Entrance']
 ]);
 const animationNames=new Set(TEXT_ANIMATIONS.map(pair=>pair[0]));
 const defaultPalette={fill:'#ffffff',stroke:'#333333',shadow:'#000000'};
@@ -109,7 +113,16 @@ export function textAnimationState(config={},localTime=0,clipDuration=3) {
     ?(direction==='right'?-640+time/clip*1280:640-time/clip*1280):0,
   jitter:opts.animation==='shake'?Math.sin(time*46)*4*intensity:0,
   flicker:opts.animation==='neon-flicker'
-    ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1
+    ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1,
+  socialScale:opts.animation==='social-pulse'
+    ?(.45+.55*(1-Math.pow(1-progress,3))+Math.sin(time*11)*.035*intensity*clamp((raw-.6)/.4,0,1)):1,
+  pinProgress:opts.animation==='location-drop'?clamp(raw/.45,0,1):1,
+  locationLabelProgress:opts.animation==='location-drop'?easeProgress(clamp((raw-.3)/.7,0,1),'ease-out'):1,
+  countdownDigit:opts.animation==='countdown-roll'
+    ?Math.max(0,Math.ceil((1-progress)*( /^\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3))):null,
+  countdownPhase:opts.animation==='countdown-roll'
+    ?(1-progress)*( /^\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3):0,
+  splitProgress:opts.animation==='split-enter'?progress:1
  };
 }
 function roundRect(ctx,x,y,w,h,r) {
@@ -212,6 +225,40 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  }
  ctx.restore();
 }
+/**
+ * Reveal a scripted title character by character, with a pen tip travelling
+ * along the revealed writing. Progress is derived only from timeline time.
+ */
+function drawWritingTitle(ctx,text,x,y,opts,frame){
+ const letters=Array.from(text);
+ if(!letters.length)return;
+ const size=opts.size||84;
+ ctx.save();
+ ctx.font='italic 500 '+size+'px '+fonts.script;
+ const widths=letters.map(letter=>ctx.measureText(letter).width);
+ const total=widths.reduce((sum,w)=>sum+w,0);
+ const fit=Math.min(1,(opts.maxWidth||550)/Math.max(total,1));
+ ctx.translate(x,y);ctx.scale(fit,fit);
+ let cursor=-total/2,penX=cursor;
+ const overall=frame.progress*letters.length;
+ for(let i=0;i<letters.length;i++){
+  const w=widths[i],fraction=clamp(overall-i,0,1);
+  if(fraction>0){
+   ctx.save();ctx.beginPath();ctx.rect(cursor-2,-size,Math.max(1,w*fraction+4),size*2.1);ctx.clip();
+   drawTitle(ctx,letters[i],cursor+w/2,0,{...opts,size,font:'script',
+     italic:true,weight:500,maxWidth:w+15,align:'center'});
+   ctx.restore();
+  }
+  if(fraction>0)penX=cursor+w*fraction;
+  cursor+=w;
+ }
+ if(frame.progress>0&&frame.progress<1){
+  ctx.fillStyle=opts.outline;ctx.beginPath();ctx.arc(penX+2,12,4,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=opts.fill;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(penX+4,7);ctx.lineTo(penX+16,-18);ctx.stroke();
+ }
+ ctx.restore();
+}
 const GLYPH_ANIMATIONS=new Set(['letter-pop','shake','wave','kinetic-stagger','glitch-text','neon-flicker']);
 function textValue(config,frame) {
  const value=config.value||'MotoriClip';
@@ -241,10 +288,20 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.restore();break;
   }
   case 'location':{
+   ctx.save();
+   if(frame.locationLabelProgress<1){
+    ctx.beginPath();ctx.rect(50,222,535*frame.locationLabelProgress,107);ctx.clip();
+   }
    ctx.fillStyle='rgba(9,25,30,.88)';roundRect(ctx,55,223,530,104,18);ctx.fill();
+   ctx.restore();
+   const p=frame.pinProgress;
+   const drop=-142*Math.pow(1-p,2)+Math.sin(p*Math.PI*3)*(1-p)*15;
+   ctx.save();ctx.globalAlpha*=clamp(p*3,0,1);
+   ctx.translate(0,drop);
    ctx.fillStyle=outline;ctx.beginPath();ctx.arc(109,273,26,0,Math.PI*2);ctx.fill();
    ctx.fillStyle='#0a2029';ctx.font='700 24px '+fonts.sans;ctx.textAlign='center';
-   ctx.fillText('⌖',109,274);break;
+   ctx.fillText('⌖',109,274);
+   ctx.restore();break;
   }
   case 'quote':{
    ctx.save();ctx.fillStyle=outline;ctx.font='italic 150px '+fonts.serif;ctx.textAlign='left';
@@ -297,6 +354,28 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.fillStyle=outline;ctx.fillRect(38,72,26,220);
    ctx.fillStyle=outline;ctx.fillRect(68,293,515,5);break;
   }
+  case 'countdown':{
+   ctx.save();ctx.fillStyle='rgba(8,27,40,.86)';
+   ctx.beginPath();ctx.arc(320,171,120,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle=outline;ctx.lineWidth=7;ctx.beginPath();
+   ctx.arc(320,171,115,0,Math.PI*2);ctx.stroke();
+   ctx.strokeStyle=fill;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();
+   ctx.arc(320,171,115,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.0001,1-frame.progress));
+   ctx.stroke();
+   for(let i=0;i<12;i++){
+    const angle=i*Math.PI/6-Math.PI/2;
+    ctx.strokeStyle='rgba(248,242,220,.45)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(320+Math.cos(angle)*92,171+Math.sin(angle)*92);
+    ctx.lineTo(320+Math.cos(angle)*102,171+Math.sin(angle)*102);ctx.stroke();
+   }
+   ctx.restore();break;
+  }
+  case 'split':{
+   ctx.strokeStyle=outline;ctx.lineWidth=2;
+   ctx.beginPath();ctx.moveTo(96,177);ctx.lineTo(544,177);ctx.stroke();
+   ctx.fillStyle=outline;ctx.fillRect(295,167,50,20);
+   break;
+  }
  }
 }
 export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDuration=3) {
@@ -321,6 +400,10 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.clip();
    }
    if(config.animation==='slide')ctx.translate(frame.slideX,frame.slideY);
+   if(config.animation==='social-pulse'){
+    const pulse=Math.max(.01,frame.socialScale);
+    ctx.translate(320,180);ctx.scale(pulse,pulse);ctx.translate(-320,-180);
+   }
    if(config.animation==='bounce'){
     const p=frame.progress,drop=(1-p)*(1-p)*105*frame.intensity;
     const rebound=Math.sin(p*Math.PI*3.2)*(1-p)*30*frame.intensity;
@@ -356,9 +439,17 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.restore();ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillRect(63,231,510,2);break;
    }
    case 'handwriting':
-    write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
+    if(config.animation==='handwriting-reveal')
+      drawWritingTitle(ctx,value,320,175,{...base,font:'script',weight:500,italic:true,
+        size:92*factor,outlineWidth:1,maxWidth:520},frame);
+    else write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
     ctx.strokeStyle=config.outline;ctx.lineWidth=3;ctx.beginPath();
-    ctx.moveTo(128,241);ctx.quadraticCurveTo(302,262,518,228);ctx.stroke();break;
+    ctx.moveTo(128,241);
+    ctx.quadraticCurveTo(128+174*(config.animation==='handwriting-reveal'?frame.progress:1),
+      241+28*(config.animation==='handwriting-reveal'?frame.progress:1),
+      128+390*(config.animation==='handwriting-reveal'?frame.progress:1),
+      241-13*(config.animation==='handwriting-reveal'?frame.progress:1));
+    ctx.stroke();break;
    case 'cinematic':
     write(value.toUpperCase(),320,183,{font:'serif',weight:500,size:59*factor,outlineWidth:0});
     break;
@@ -369,7 +460,9 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
       maxWidth:530,outlineWidth:0,weight:500,font:'mono',revealAlpha:frame.subtitleAlpha});
     break;
    case 'location':
-    write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});break;
+    ctx.save();ctx.beginPath();ctx.rect(176,238,395*frame.locationLabelProgress,78);ctx.clip();
+    write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});
+    ctx.restore();break;
    case 'quote':
     write(value,319,181,{font:'serif',weight:500,italic:true,size:51*factor,outlineWidth:0,maxWidth:410});break;
    case 'comic':
@@ -393,6 +486,36 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
    case 'stamp':
     ctx.save();ctx.translate(320,182);ctx.rotate(-.08);
     write(value.toUpperCase(),0,0,{size:66*factor,weight:900,outlineWidth:0,maxWidth:436});ctx.restore();break;
+   case 'countdown':{
+    const isNumber=/^\d+$/.test(value.trim());
+    const initial=isNumber?Math.min(99,Math.max(1,Number(value.trim()))):3;
+    const number=frame.countdownDigit===null?initial:frame.countdownDigit;
+    const roll=frame.countdownDigit===null?0:
+      Math.max(0,Math.ceil(frame.countdownPhase)-frame.countdownPhase);
+    ctx.save();ctx.beginPath();ctx.rect(240,113,160,116);ctx.clip();
+    const digitStyle={font:'mono',size:109*factor,weight:800,
+      outlineWidth:1,maxWidth:158};
+    write(String(number),320,166-roll*113,digitStyle);
+    if(roll>0&&number>0)write(String(number-1),320,279-roll*113,digitStyle);
+    ctx.restore();
+    if(!isNumber)write(value.toUpperCase(),320,313,{font:'mono',size:21*factor,weight:700,
+      outlineWidth:0,maxWidth:520});
+    break;
+   }
+   case 'split':{
+    const words=value.trim().split(/\s+/).filter(Boolean);
+    const first=words.length>=2?words.slice(0,Math.ceil(words.length/2)).join(' '):
+      value.slice(0,Math.ceil(value.length/2));
+    const second=words.length>=2?words.slice(Math.ceil(words.length/2)).join(' '):
+      value.slice(Math.ceil(value.length/2));
+    const offset=300*Math.pow(1-frame.splitProgress,2)*frame.intensity;
+    ctx.save();ctx.translate(-offset,0);
+    write(first.toUpperCase(),320,132,{size:62*factor,weight:900,maxWidth:460});
+    ctx.restore();
+    ctx.save();ctx.translate(offset,0);
+    write((second||'TITLE').toUpperCase(),320,224,{size:66*factor,weight:900,maxWidth:470});
+    ctx.restore();break;
+   }
    case 'stacked':{
     const words=value.split(/\s+/).filter(Boolean);
     const midpoint=Math.ceil(words.length/2);
