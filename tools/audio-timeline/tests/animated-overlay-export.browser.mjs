@@ -133,7 +133,8 @@ try{
    });
    await exporter.start({format:'mp4',fps:25,bitrateKbps:5000});
    return {frames,downloaded,trackCount:engine.tracks.length,
-    restoredTime:engine.currentTime};
+    restoredTime:engine.currentTime,timelineDuration:engine.getTimelineDuration(),
+    clipLengths:engine.tracks.map(track=>({id:track.id,start:track.start,duration:track.clipDuration}))};
   },{preset,W,H});
   assert.equal(preview.downloaded,true,preset+' did not emit an encoded MP4 download');
   assert.equal(preview.trackCount,2);
@@ -152,7 +153,8 @@ try{
   const stream=info.streams.find(x=>x.codec_type==='video');
   assert.equal(Number(stream?.width),W);
   assert.equal(Number(stream?.height),H);
-  assert.ok(Math.abs(Number(info.format.duration)-DURATION)<.16);
+  console.log('[MotoriClip parity duration]',preset,JSON.stringify({encoded:info.format.duration,expected:DURATION,previewTimeline:preview.timelineDuration,clips:preview.clipLengths}));
+  assert.ok(Math.abs(Number(info.format.duration)-DURATION)<.16,preset+' encoded duration '+info.format.duration+' differs from '+DURATION+'s timeline');
   for(const [time,index] of [[.4,10],[1.4,35]]){
    const expected=Buffer.from(preview.frames[String(time)],'base64');
    const actual=decodeRgb(output,index);
