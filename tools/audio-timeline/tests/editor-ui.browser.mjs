@@ -353,8 +353,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),29,
-        'Keep twelve classic overlays plus seventeen independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),36,
+        'Keep twelve classic overlays plus twenty-four independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -672,7 +672,7 @@ try{
     // insert a procedural clip and edit its saved recipe in the Inspector.
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effect-category').selectOption('Light');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),4);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),6);
     await page.locator('[data-preset-id="light-sweep"]').click({button:'right'});
     assert.ok(await page.locator('#text-preview-modal').isVisible());
     const sampleEffect=async(t)=>page.evaluate(time=>{
@@ -687,7 +687,7 @@ try{
     assert.equal(lightStart,await sampleEffect(10),'Reverse seek must restore the same pixels');
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Particles/Fire');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),6);
     await page.locator('[data-preset-id="particle-sparks"]').click();
     await page.locator('#inspector-timeline-effect').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-intensity').evaluate(input=>{
@@ -716,7 +716,7 @@ try{
     assert.equal(swingStart,await sampleEffect(20),'Swing reverse seeking is deterministic');
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Distortion');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),4);
     await page.locator('[data-preset-id="ripple-distortion"]').click({button:'right'});
     const rippleStart=await sampleEffect(15),rippleLater=await sampleEffect(200);
     assert.notEqual(rippleStart,rippleLater,'Ripple must refract source pixels at timeline time');
@@ -730,6 +730,38 @@ try{
         input.value='88';input.dispatchEvent(new Event('input',{bubbles:true}));
     });
     assert.equal(await page.locator('#effect-distortion').inputValue(),'88');
+    // Phase 3D: pixel analysis and fire must be animated independently, with
+    // editable blur/glow and the selected timeline clip's own duration.
+    await page.locator('#effect-category').selectOption('Light');
+    await page.locator('[data-preset-id="glow"]').click({button:'right'});
+    const glowFirst=await sampleEffect(10),glowNext=await sampleEffect(180);
+    assert.notEqual(glowFirst,glowNext,'Source brightness glow must animate, not use a static PNG');
+    assert.equal(glowFirst,await sampleEffect(10),'Glow is deterministic when rewinding');
+    await page.locator('#text-preview-close').click();
+    await page.locator('[data-preset-id="edge-glow"]').click();
+    await page.locator('#effect-glow-control').waitFor({state:'visible',timeout:15000});
+    await page.locator('#effect-blur-control').waitFor({state:'visible',timeout:15000});
+    await page.locator('#effect-glow').evaluate(el=>{el.value='87';el.dispatchEvent(new Event('input',{bubbles:true}));});
+    await page.locator('#effect-blur').evaluate(el=>{el.value='15';el.dispatchEvent(new Event('input',{bubbles:true}));});
+    assert.equal(await page.locator('#effect-glow').inputValue(),'87');
+    assert.equal(await page.locator('#effect-blur').inputValue(),'15');
+    await page.locator('#effect-duration').fill('5.5');
+    await page.locator('#effect-duration').dispatchEvent('change');
+    assert.equal(await page.locator('#effect-duration').inputValue(),'5.5');
+    await page.locator('#effect-category').selectOption('Atmospheric');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2);
+    await page.locator('#effect-category').selectOption('Distortion');
+    await page.locator('[data-preset-id="chromatic-quirk"]').click({button:'right'});
+    const chromaFirst=await sampleEffect(20),chromaMoved=await sampleEffect(200);
+    assert.notEqual(chromaFirst,chromaMoved,'Independent RGB-channel shifts must animate');
+    assert.equal(chromaFirst,await sampleEffect(20));
+    await page.locator('#text-preview-close').click();
+    await page.locator('#effect-category').selectOption('Particles/Fire');
+    await page.locator('[data-preset-id="fire-explosion"]').click({button:'right'});
+    const fireFirst=await sampleEffect(25),fireMoved=await sampleEffect(175);
+    assert.notEqual(fireFirst,fireMoved,'Fire explosion must move over time');
+    assert.equal(fireFirst,await sampleEffect(25));
+    await page.locator('#text-preview-close').click();
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
