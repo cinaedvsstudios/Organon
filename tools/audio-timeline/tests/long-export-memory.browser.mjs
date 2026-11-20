@@ -98,6 +98,10 @@ try{
     const context=await browser.newContext({acceptDownloads:true});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
+    page.on('console',message=>{
+        const value=message.text();
+        if(value.startsWith('[MotoriClip 6L progress]'))console.log(value);
+    });
     await page.goto('http://127.0.0.1:'+server.address().port+
         '/tools/audio-timeline/tests/browser-harness.html');
     const fullHd120=process.env.MOTORICLIP_FULLHD120==='1';
@@ -146,7 +150,13 @@ try{
         },400);
         const started=Date.now();
         try{
-            const downloadPromise=page.waitForEvent('download',{timeout:420000});
+            // A 60s 1080p WebCodecs render takes ~5 minutes in hosted CI.
+            // Twice as many 1080p frames can exceed the old 7-minute
+            // download timeout without a decoder crash or memory exhaustion.
+            // Allow up to 17 minutes for the 120s stress scenario only.
+            const downloadPromise=page.waitForEvent('download',{
+                timeout:fullHd120 ? 1020000 : 420000
+            });
             const renderPromise=page.evaluate(async scenario=>{
                 const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
                     import('../js/advanced-offline-export.mjs'),
@@ -220,10 +230,21 @@ try{
                 });
                 engine.tracks=tracks;
                 const phases=[],percentages=[];
+                let milestone=-1;
                 let downloaded=0;
                 const exporter=new AdvancedOfflineExporter({
                     engine,onState:s=>phases.push(s.phase),
-                    onProgress:s=>percentages.push(s.percent),
+                    onProgress:s=>{
+                        percentages.push(s.percent);
+                        if(scenario.duration===120&&scenario.width===1920){
+                            const next=Math.floor(s.percent/10);
+                            if(next>milestone){
+                                milestone=next;
+                                console.info('[MotoriClip 6L progress] '
+                                    +scenario.name+' '+Math.round(s.percent)+'%');
+                            }
+                        }
+                    },
                     onDownload({blob,extension}){
                         downloaded++;
                         const link=document.createElement('a'),url=URL.createObjectURL(blob);
