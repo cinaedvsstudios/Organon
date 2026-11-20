@@ -480,6 +480,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         #effect-category{max-width:100%;margin:.4rem 0 .6rem}
         #inspector-timeline-effect .text-setting-row{display:flex;align-items:center;gap:.5rem;justify-content:space-between;margin-bottom:.6rem}
         #inspector-timeline-effect input[type="range"]{width:55%}
+        /* Original GL transition controls: compact and independently editable. */
+        .spiral-glsl-settings { min-width:0; margin:7px 0; padding:7px 8px 9px; border:1px solid rgba(227,183,92,.6); border-radius:9px; }
+        .spiral-glsl-settings[hidden] { display:none!important; }
+        .spiral-glsl-settings legend { color:#e3b75c; font:.59rem var(--font-mono); padding:0 5px; }
+        .spiral-settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+        .spiral-settings-grid label { display:flex; flex-direction:column; gap:3px; min-width:0; color:rgba(245,240,219,.84); font:.57rem var(--font-mono); }
+        .spiral-settings-grid input,.spiral-settings-grid select { width:100%; min-width:0; color:var(--alabaster-paper); background:#0c1012; border:1px solid var(--chiseled-bronze); border-radius:6px; padding:4px; }
+        .spiral-settings-grid .spiral-smoothness { grid-column:1/-1; }
+        .spiral-settings-grid input[type=range] { padding:0; accent-color:#e3b75c; }
     </style>
 </head>
 <body>
@@ -631,6 +640,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-spiral-settings" class="spiral-glsl-settings" hidden>
+                            <legend>SpiralBlockWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Columns<input type="number" min="1" max="64" step="1" value="8" data-spiral-param="columns"></label>
+                                <label>Rows<input type="number" min="1" max="64" step="1" value="6" data-spiral-param="rows"></label>
+                                <label>Direction<select data-spiral-param="inward"><option value="true">Outside → centre</option><option value="false">Centre → outside</option></select></label>
+                                <label>Rotation<select data-spiral-param="clockwise"><option value="true">Clockwise</option><option value="false">Counterclockwise</option></select></label>
+                                <label class="spiral-smoothness">Block fade / smoothness<input type="range" min="0" max=".5" step=".01" value=".05" data-spiral-param="smoothness"></label>
+                            </div>
+                        </fieldset>
                         <div class="control-row"><span>Fade in / entrance</span><span class="value-pill" id="video-transition-enter-value">0.0s</span></div>
                         <input type="range" class="range-control" id="video-transition-enter" min="0" max="5" step="0.05" value="0" aria-label="Video visual entrance fade seconds">
                         <label class="control-row"><span>Entrance curve</span><select class="compact-select" id="video-transition-enter-curve"><option value="linear">Linear</option><option value="smooth">Smooth</option></select></label>
@@ -1084,6 +1103,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-spiral" class="spiral-glsl-settings" hidden>
+                            <legend>SpiralBlockWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Columns<input type="number" min="1" max="64" step="1" value="8" data-spiral-param="columns"></label>
+                                <label>Rows<input type="number" min="1" max="64" step="1" value="6" data-spiral-param="rows"></label>
+                                <label>Direction<select data-spiral-param="inward"><option value="true">Outside → centre</option><option value="false">Centre → outside</option></select></label>
+                                <label>Rotation<select data-spiral-param="clockwise"><option value="true">Clockwise</option><option value="false">Counterclockwise</option></select></label>
+                                <label class="spiral-smoothness">Block fade / smoothness<input type="range" min="0" max=".5" step=".01" value=".05" data-spiral-param="smoothness"></label>
+                            </div>
+                        </fieldset>
          <div class="transition-compact-row">
            <label class="editor-modal-field">Overlap (seconds)<input id="transition-modal-duration" class="compact-input" type="number" min="0.1" max="30" step="0.05" value="1"></label>
            <button class="btn" type="button" id="btn-transition-play-preview" title="Play transition preview using the selected clips">▶ Preview</button>
