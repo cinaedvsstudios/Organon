@@ -191,3 +191,27 @@ test('non-quota storage failures are not masked by trimming history',()=>{
     assert.throws(()=>writeRecoveryRecordWithQuota(storage,'recovery',record),/Blocked/);
     assert.equal(calls,1);
 });
+
+test('saved Undo/Redo keeps the historical cue markers, canvas size and FPS',()=>{
+    const snapshot={files:[file()],tracks:[clip()],selectedTrackIds:['clip-1'],currentTime:0,
+        markers:[0.25,4.5],settings:{canvasWidth:640,canvasHeight:360,fps:25,previewZoom:115}};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],
+        canvasWidth:1920,canvasHeight:1080,fps:30,markers:[2],
+        history:{undo:[{label:'Change canvas resolution',snapshot}],
+            redo:[{label:'Add cue marker',snapshot:{...snapshot,markers:[0.25,4.5,7]}}]}});
+    const loaded=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.deepEqual(loaded.history.undo[0].snapshot.markers,[0.25,4.5]);
+    assert.deepEqual(loaded.history.undo[0].snapshot.settings,
+        {canvasWidth:640,canvasHeight:360,fps:25,previewZoom:115});
+    assert.deepEqual(loaded.history.redo[0].snapshot.markers,[0.25,4.5,7]);
+    assert.equal(loaded.settings.canvasWidth,1920);
+    assert.deepEqual(loaded.markers,[2]);
+});
+test('reject invalid project settings inside Undo even when current project is valid',()=>{
+    const snapshot={files:[file()],tracks:[clip()],selectedTrackIds:[],currentTime:0,
+        settings:{canvasWidth:100,canvasHeight:100,fps:30,previewZoom:100},markers:[]};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],
+        history:{undo:[{label:'Settings edit',snapshot}],redo:[]}});
+    record.history.undo[0].snapshot.settings.fps=123;
+    assert.throws(()=>parseRecoveryRecord(JSON.stringify(record)),/settings/);
+});
