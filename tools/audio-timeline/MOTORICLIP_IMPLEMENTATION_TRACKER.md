@@ -18,6 +18,7 @@
 
 - 20 Nov 2026: Stage 2 next batch in [PR #93](https://github.com/cinaedvsstudios/Organon/pull/93): **Reset corrected** to clear every track/clip/marker (not export settings), while retaining the Media bin, Undo and applied project settings. Added real per-letter shake, kinetic stagger, RGB glitch, waving and neon switch-on, distinct bounce/outline-fill/title-wipe/dissolve-out, and broadcast banner → headline → editable subtitle. New Inspector motion controls for delay, speed, direction, easing, intensity and loop. Checked items 64–66, 68–71, 73–76 and 85 after passing Node, Chrome multi-lane Reset and deterministic pixel checks, project recovery and Firefox/WebKit. Longer actual video-export stress job remains a separate verification.
 - 20 Nov 2026: Stage 2 storytelling batch in [PR #94](https://github.com/cinaedvsstudios/Organon/pull/94): checked **67, 77–80** after Node and real-Chrome title-rendering tests plus Firefox/WebKit. Implemented handwriting writing-on with moving pen, animated social button pulse, falling location pin then revealing label, editable rolling numeric countdown (3 by default for nonnumeric sample text), and split-title entrance. Added genuinely new Countdown and Split Title layouts (18 total, no recolour clones). Inapplicable layout-only animation menu options are disabled, not silently inert. Confirmed browser time-scrubbing reversibility, all 41 existing transitions, portable project/recovery tests. Extended 1080p/720p video-export stress remains unverified.
+- 20 Nov 2026: Stage 2 appearance and type customisation [PR #95](https://github.com/cinaedvsstudios/Organon/pull/95): checked items **82–84** following Node state/Undo tests and Chrome/Firefox/WebKit acceptance. Inspector now provides family, weight, italics, alignment, case, letter/multiline spacing, fill, stroke, shadow offsets, glow, text opacity and optional backing rectangle with colour, opacity, padding, radius, border and banner dimensions. Values alter the real timestamp-driven canvas renderer and survive project recovery, with no additional colour-duplicate presets. **Independent In/Out/Loop (#86) and real exported-pixel verification (#94/#100) remain open.**
 
 ## 1. Project controls and interface
 
@@ -117,9 +118,9 @@
 ## 6. Text and animation Inspector
 
 - [x] **81.** Editable text after insertion without recreating clip.
-- [ ] **82.** Typography: font, weight, size, italics, spacing, alignment and case.
-- [ ] **83.** Appearance: fill, stroke, shadow, glow, opacity and backdrop.
-- [ ] **84.** Shape: padding, corner radius, borders and banner geometry.
+- [x] **82.** Typography: font, weight, size, italics, spacing, alignment and case.
+- [x] **83.** Appearance: fill, stroke, shadow, glow, opacity and backdrop.
+- [x] **84.** Shape: padding, corner radius, borders and banner geometry.
 - [x] **85.** Motion: animation variant, duration, delay, speed, easing, direction, intensity and loop.
 - [ ] **86.** Independent In/Out/Loop settings.
 - [x] **87.** Retain keyframed Scale, Position, Rotation and Opacity.
