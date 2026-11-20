@@ -63,8 +63,8 @@ export function normaliseTimelineEffect(effect={}){
   distortion:clamp(raw.distortion,0,100,55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,24),
-  originX:clamp(raw.originX,0,100,(swing||shockwave||presetId==='halo-blur')?50:20),
-  originY:clamp(raw.originY,0,100,(shockwave||presetId==='halo-blur')?50:swing?10:12),
+  originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
+  originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():'#ffd98d'
  };
 }
