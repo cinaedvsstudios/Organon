@@ -362,9 +362,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 <section class="project-controls">
                     <div class="project-controls-title"><span>Project controls</span><small id="file-count">0 media</small></div>
                     <div class="file-toolbar">
-                        <button type="button" class="btn" id="btn-import">➕ Import</button>
+                        <button type="button" class="btn" id="btn-import" title="Import media; supported browsers can remember file handles for reopening">➕ Import</button>
                         <button type="button" class="btn" id="btn-browse">📁 Browse</button>
-                        <button type="button" class="btn" id="btn-relink" title="Relink files remembered from your last visit">↻ Relink</button>
+                        <button type="button" class="btn" id="btn-relink" title="Reconnect previously permitted files without reimporting; you may need to grant access again">↻ Relink</button>
                     </div>
                     <div class="project-action-buttons"><button type="button" class="btn" id="btn-project-settings" title="Canvas dimensions and frame rate">⚙ Project Settings</button><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button></div>
                 </section>
@@ -375,7 +375,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 </nav>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
-                    <div class="file-list-footer"><span id="media-remember-note" title="Only filenames, sizes and dates are remembered. Reimport to grant access after reload.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear all remembered media and timeline clips">🗑 Clear all</button></div>
+                    <div class="file-list-footer"><span id="media-remember-note" title="File names, sizes and dates are kept in localStorage. File handles (when supported) are kept in IndexedDB, not file contents; access may need permission again.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear all remembered media and timeline clips">🗑 Clear all</button></div>
                 </div>
                 <section class="asset-library-panel" id="effects-library-panel" hidden role="tabpanel" aria-label="Visual overlay effects">
                     <p class="asset-library-help">Drag an overlay to the timeline or click to insert at the playhead. For A/B effects, use the Transitions button.</p>
@@ -756,7 +756,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-wav-clip-export"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-persistent-media-handles"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
