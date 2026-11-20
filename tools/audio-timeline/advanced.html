@@ -377,6 +377,12 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     .right-column .inspector-scroll { display:flex; flex-direction:column; max-height:none; }
     .advanced-grid > .timeline-panel { grid-column:1 / -1; grid-row:3; }
 }
+/* A compact but still single-line layout in narrower desktop windows. */
+@media (min-width:881px) and (max-width:1020px) {
+    .timeline-toolbar-row > .timeline-tool:not(.snap-options-toggle) {
+        flex-basis:90px; width:90px; min-width:90px; font-size:.51rem;
+    }
+}
 @media (max-width:880px) {
     .timeline-toolbar-row { flex-wrap:wrap; }
 }
