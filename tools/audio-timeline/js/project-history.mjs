@@ -10,7 +10,8 @@ export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
     'start', 'sourceOffset', 'sourceDuration', 'clipDuration',
     'sourceFileId', 'sourceName', 'fileType',
-    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom', 'transitionFromId', 'transitionEffectId', 'speed'
+    'visible', 'opacity', 'blendMode', 'groupId', 'extractedFrom', 'transitionFromId', 'transitionEffectId', 'speed',
+    'laneColor', 'clipColor'
 ]);
 
 export function snapshotClip(track) {
@@ -131,6 +132,9 @@ export function applyClipData(target, record) {
     }
     target.transitionFromId = record.transitionFromId || null;
     target.transitionEffectId = record.transitionEffectId || null;
+    // Undoing a colour change must clear overrides absent in old snapshots.
+    target.laneColor=record.laneColor || null;
+    target.clipColor=record.clipColor || null;
     target.audio = { ...record.audio };
     if (target.audio.fx) target.audio.fx=normalizeOrgavoxFx(target.audio.fx);
     target.transform = { ...(record.transform||{}) };
