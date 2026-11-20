@@ -78,6 +78,10 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/project-recovery.browser.mjs
+      - name: Verify portable project Save/Open, generated overlays and missing media
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/project-portable.browser.mjs
 
   export-browser:
     runs-on: ubuntu-24.04
