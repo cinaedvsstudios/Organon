@@ -22,6 +22,8 @@ test('title Inspector settings are small, validated and preserved',()=>{
    fontSize:125,outlineWidth:7,shadowBlur:16,animation:'box-reveal',animationDuration:1.6,
    animationDelay:0,animationSpeed:1,animationDirection:'left',animationEasing:'ease-out',
    animationIntensity:100,animationLoop:false,subtitle:'LIVE UPDATE',
+   phasedAnimation:false,inAnimation:'box-reveal',inDuration:1.6,
+   outAnimation:'none',outDuration:.65,loopAnimation:'none',loopDuration:1.5,
   fontFamily:'template',fontWeight:0,fontStyle:'template',textAlign:'template',
   textCase:'template',letterSpacing:0,lineSpacing:100,textOpacity:100,
   shadowOffsetX:0,shadowOffsetY:0,glowColor:'#ffffff',glowStrength:0,
@@ -215,4 +217,66 @@ test('appearance and shape settings normalize safely, persist in Undo and can be
  assert.equal(bad.backdropOpacity,100);assert.equal(bad.shapeRadius,60);
  assert.equal(bad.shapeBorderWidth,0);assert.equal(bad.bannerWidth,40);
  assert.equal(bad.bannerHeight,180);
+});
+
+test('independent In, Loop and Out are separate deterministic clip phases',()=>{
+ const opts={presetId:'neon-cyan',value:'OPENAI',phasedAnimation:true,
+   inAnimation:'fade',inDuration:.8,loopAnimation:'wave',loopDuration:.5,
+   outAnimation:'slide',outDuration:.5,animationSpeed:1,animationDelay:0,
+   animationEasing:'linear'};
+ const at=time=>textAnimationState(opts,time,3);
+ assert.equal(at(0).phase,'in');assert.equal(at(0).activeAnimation,'fade');
+ assert.equal(at(0).alpha,0);assert.equal(at(.4).alpha,.5);
+ assert.equal(at(.8).phase,'loop');assert.equal(at(.8).activeAnimation,'wave');
+ assert.equal(at(1.3).phase,'loop');assert.equal(at(1.3).activeAnimation,'wave');
+ assert.equal(at(2.49).phase,'loop');assert.equal(at(2.5).phase,'out');
+ assert.equal(at(2.5).activeAnimation,'slide');assert.equal(at(2.5).alpha,1);
+ assert.ok(at(2.75).alpha<1&&at(2.75).alpha>0);
+ assert.equal(at(3).alpha,0,'Every Out must fully vanish by clip end');
+ assert.deepEqual(at(.4),at(.4),'Reverse seeking reproduces entrance frame');
+ assert.deepEqual(at(2.75),at(2.75),'Reverse seeking reproduces exit frame');
+});
+test('In and Out compress to avoid overlap on short clips and never appear after a long delay',()=>{
+ const cfg={presetId:'neon-cyan',value:'Short',phasedAnimation:true,
+   inAnimation:'fade',inDuration:2,outAnimation:'fade',outDuration:2,
+   loopAnimation:'shake',loopDuration:.5,animationEasing:'linear'};
+ const at=t=>textAnimationState(cfg,t,.8);
+ assert.equal(at(.2).phase,'in');assert.equal(at(.4).phase,'out');
+ assert.equal(at(.6).phase,'out');assert.equal(at(0).alpha,0);
+ assert.equal(at(.8).alpha,0);
+ assert.ok(at(.2).inEnd<=at(.2).outStart+.000001);
+ const delayed={...cfg,animationDelay:4};
+ assert.equal(textAnimationState(delayed,.8,.8).phase,'waiting');
+ assert.equal(textAnimationState(delayed,.8,.8).alpha,0);
+});
+test('legacy saved titles retain their original animation and repeated timing',()=>{
+ const old={presetId:'neon-cyan',value:'Legacy',animation:'fade',
+   animationDuration:1,animationEasing:'linear',animationLoop:true};
+ const opts=normaliseTextOverlay(old);
+ assert.equal(opts.phasedAnimation,false);
+ assert.equal(opts.inAnimation,'fade');assert.equal(opts.outAnimation,'none');
+ assert.equal(opts.loopAnimation,'none');
+ const before=textAnimationState(old,.5,3),after=textAnimationState(opts,.5,3);
+ assert.equal(before.phase,'legacy');assert.equal(before.activeAnimation,'fade');
+ assert.equal(before.alpha,.5);
+ assert.deepEqual(before,after);
+});
+test('phased title settings persist in Undo and reject incompatible animation choices',()=>{
+ const opts=normaliseTextOverlay({presetId:'news-lower-third',value:'Title',
+   phasedAnimation:true,inAnimation:'typewriter',inDuration:1.6,
+   outAnimation:'title-wipe',outDuration:.8,loopAnimation:'glitch-text',
+   loopDuration:1.1});
+ assert.equal(opts.phasedAnimation,true);
+ assert.equal(opts.inAnimation,'typewriter');
+ assert.equal(opts.outAnimation,'title-wipe');assert.equal(opts.loopAnimation,'glitch-text');
+ const clip={id:'title-2',type:'sticker',sourceFileId:'source',clipDuration:4,
+   start:0,sourceOffset:0,sourceName:'title.png',textOverlay:opts};
+ const saved=snapshotClip(clip);clip.textOverlay.inAnimation='slide';
+ applyClipData(clip,saved);assert.deepEqual(clip.textOverlay,opts);
+ const invalid=normaliseTextOverlay({phasedAnimation:'yes',inAnimation:'hacked',
+   outAnimation:'wave',outDuration:900,loopAnimation:'title-wipe',loopDuration:-20});
+ assert.equal(invalid.phasedAnimation,false);
+ assert.equal(invalid.outAnimation,'none');
+ assert.equal(invalid.loopAnimation,'none');
+ assert.equal(invalid.outDuration,10);assert.equal(invalid.loopDuration,.1);
 });
