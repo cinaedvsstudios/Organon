@@ -648,6 +648,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
             return false;
         }
         renderFiles();
+        await loadRecoveredMediaTracks();
         showToast(`Reconnected ${entry.name} without copying its contents`);
         return true;
     }
@@ -663,6 +664,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
             if(file && restoreRememberedFileEntry(entry,file))linked++;
         }
         renderFiles();
+        if(linked)await loadRecoveredMediaTracks();
         if(linked)showToast(`Restored ${linked} locally permitted media file${linked===1?'':'s'}`);
         return linked;
     }
@@ -683,6 +685,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
             if(file && restoreRememberedFileEntry(entry,file))restored++;
         }
         renderFiles();
+        if(restored)await loadRecoveredMediaTracks();
         if(restored)showToast(`Reconnected ${restored} media file${restored===1?'':'s'}`);
         else showToast(availableHandles?'Permission needed: click a remembered file to reconnect, or use Import':'No saved file handles. Choose Import to relink your files.');
     }
@@ -746,6 +749,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
             }
         }
         renderFiles();
+        await loadRecoveredMediaTracks();
         elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked`;
         showToast(`${usable.length} imported · ${relinked.length} relinked${savedHandles?' · '+savedHandles+' remembered handles':''}`);
     }
@@ -2205,7 +2209,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
         if (!state.files.length && !state.tracks.length) return;
         if (!confirm('Clear all Project Files and all timeline clips?')) return;
         recordHistory('Clear project');
-        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); void clearMediaHandles(); state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
+        engine.clearAll(); state.timelineMarkers=[];timeline.setMarkers([]); state.files = []; state.tracks = []; state.savedFileHandles.clear(); void clearMediaHandles(); localStorage.removeItem(PROJECT_RECOVERY_KEY); state.lastRecoveryText=''; state.selectedTrackIds.clear(); state.selectedTrackId = null; state.selectedFileId = null; renderFiles(); refreshAll(); pruneSourceRegistry();
     });
     elements.fileInput.addEventListener('change', async (event) => { await addFiles(event.target.files); event.target.value = ''; });
 
@@ -2371,6 +2375,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
         if ((event.key.toLowerCase() === 'z' && event.shiftKey) || event.key.toLowerCase() === 'y') { event.preventDefault(); redoTimelineEdit(); }
     });
     window.addEventListener('beforeunload', (event) => {
+        saveProjectRecovery();
         if (exporter.busy || offlineExporter.busy) {
             event.preventDefault();
             event.returnValue = '';
@@ -2381,8 +2386,34 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
 
     document.querySelectorAll('button:not([title])').forEach((button) => { button.title = button.getAttribute('aria-label') || button.textContent.trim().replace(/\s+/g,' ').slice(0,90); });
     restoreMediaIndex();
+    const recovered=restoreSavedProjectMetadata();
     initAssetLibrary();
-    void restoreRememberedMediaHandles();
     renderTransitionCatalog(); installPreviewResize(); installGlobalFileDrop(); applyCanvasResolution(); renderFiles(); refreshAll(); syncPreviewMuteButton(); syncPreviewZoom(); syncTimelineZoom(); syncSelectionTools(); updateHistoryButtons(); initVideoExportUi();
+    // Autosave on change only, plus pagehide/visibilitychange for immediate
+    // closes. Unlike a video cache this stores at most a few MB of JSON.
+    window.setInterval(saveProjectRecovery,1500);
+    window.addEventListener('pagehide',saveProjectRecovery);
+    document.addEventListener('visibilitychange',()=>{
+        if(document.visibilityState==='hidden')saveProjectRecovery();
+    });
+    void (async()=>{
+        try {
+            await restoreRememberedMediaHandles();
+            await loadRecoveredMediaTracks();
+            if(recovered) {
+                await engine.seek(Math.min(recovered.currentTime,engine.getTimelineDuration()),{resume:false});
+                const offline=state.tracks.filter(track=>track.sourceName&&!track.media).length;
+                showToast(offline
+                    ? `Recovered project with ${state.tracks.length} clips; ${offline} need media relinking`
+                    : `Recovered ${state.tracks.length} clips and project settings`);
+            }
+        } catch(error) {
+            console.warn('Project media recovery incomplete:',error);
+            showToast('Project layout recovered; some media may need relinking');
+        } finally {
+            state.recoveryLoading=false;
+            saveProjectRecovery();
+        }
+    })();
     requestAnimationFrame(() => showToast('MotoriClip Advanced v0.24 loaded — File Explorer drops, preview resize/zoom, delete and duplicate are active'));
 })();
