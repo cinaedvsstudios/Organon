@@ -42,16 +42,19 @@ const rgba=(hex,alpha)=>{
 };
 export function normaliseTimelineEffect(effect={}){
  const raw=effect&&typeof effect==='object'?effect:{};
+ const presetId=ids.has(raw.presetId)?raw.presetId:'light-sweep';
+ const swing=['pendulum-swing','rebound-swing'].includes(presetId);
+ const shockwave=presetId==='shockwave';
  return {
-  presetId:ids.has(raw.presetId)?raw.presetId:'light-sweep',
+  presetId,
   intensity:clamp(raw.intensity,0,100,70),
   speed:clamp(raw.speed,.1,8,1),
   density:clamp(raw.density,1,120,48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
   distortion:clamp(raw.distortion,0,100,55),
-  originX:clamp(raw.originX,0,100,20),
-  originY:clamp(raw.originY,0,100,12),
+  originX:clamp(raw.originX,0,100,(swing||shockwave)?50:20),
+  originY:clamp(raw.originY,0,100,shockwave?50:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():'#ffd98d'
  };
 }
