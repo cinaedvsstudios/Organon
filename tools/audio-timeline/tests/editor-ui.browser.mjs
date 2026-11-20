@@ -401,7 +401,8 @@ try{
         }
         const options=['shake','wave','kinetic-stagger','glitch-text','bounce',
             'outline-fill','title-wipe','dissolve-out','neon-flicker','box-reveal'];
-        return {options:options.map(id=>({id,early:render(id,.18),later:render(id,1.35)})),
+        return {options:options.map(id=>({id,early:render(id,.18),
+            later:render(id,id==='dissolve-out'?2.85:1.35)})),
             first:render('shake',.37),second:render('shake',.92),
             repeat:render('shake',.37),
             stableEarly:render('none',.2),stableLater:render('none',1.2),
