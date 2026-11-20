@@ -70,14 +70,87 @@ try{
             return {hash,selected:positions.map(([x,y])=>({x,y,pixel:pixel(data,x,y)})),
                 png:withAll?canvas.canvas.toDataURL('image/png'):null};
         };
+        // Independent WebGL reference: compile only the exact pinned upstream
+        // GLSL, feed raw 1x1 A/B textures, and readPixels without using the
+        // MotoriClip compositor, adjustment pipeline or shader renderer.
+        const {CELL_DISSOLVE_SOURCE}=await import('../js/gl-transitions/CellDissolve.mjs');
+        const referenceCanvas=document.createElement('canvas');
+        referenceCanvas.width=w;referenceCanvas.height=h;
+        const gl=referenceCanvas.getContext('webgl',{alpha:true,antialias:false,
+            preserveDrawingBuffer:true,premultipliedAlpha:false});
+        if(!gl)throw Error('Independent WebGL shader context unavailable');
+        const makeShader=(type,code)=>{
+            const sh=gl.createShader(type);
+            gl.shaderSource(sh,code);gl.compileShader(sh);
+            if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS))
+                throw Error('Reference shader compilation failed: '+gl.getShaderInfoLog(sh));
+            return sh;
+        };
+        const vs=makeShader(gl.VERTEX_SHADER,`attribute vec2 xy; varying vec2 uv;
+void main(){uv=(xy+1.0)*.5;gl_Position=vec4(xy,0.,1.);}`);
+        const fs=makeShader(gl.FRAGMENT_SHADER,`precision highp float;
+varying vec2 uv; uniform float progress; uniform float ratio;
+uniform sampler2D incoming; uniform sampler2D outgoing;
+vec4 getFromColor(vec2 p){return texture2D(outgoing,p);}
+vec4 getToColor(vec2 p){return texture2D(incoming,p);}
+${CELL_DISSOLVE_SOURCE}
+void main(){gl_FragColor=transition(uv);}`);
+        const prog=gl.createProgram();gl.attachShader(prog,vs);gl.attachShader(prog,fs);
+        gl.linkProgram(prog);
+        if(!gl.getProgramParameter(prog,gl.LINK_STATUS))
+            throw Error('Reference GL linking failed: '+gl.getProgramInfoLog(prog));
+        gl.useProgram(prog);
+        const buffer=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buffer);
+        gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
+        const attr=gl.getAttribLocation(prog,'xy');gl.enableVertexAttribArray(attr);
+        gl.vertexAttribPointer(attr,2,gl.FLOAT,false,0,0);
+        const bindTexture=(unit,name,rgba)=>{
+            const tex=gl.createTexture();
+            gl.activeTexture(gl.TEXTURE0+unit);gl.bindTexture(gl.TEXTURE_2D,tex);
+            gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+            gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+            gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+            gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,
+                new Uint8Array(rgba));
+            gl.uniform1i(gl.getUniformLocation(prog,name),unit);
+        };
+        bindTexture(0,'outgoing',[0,32,255,255]);
+        bindTexture(1,'incoming',[255,32,0,255]);
+        const uniform=name=>gl.getUniformLocation(prog,name);
+        gl.uniform1f(uniform('ratio'),w/h);
+        const referenceFrame=(progress,settings)=>{
+            gl.viewport(0,0,w,h);
+            gl.uniform1f(uniform('progress'),progress);
+            gl.uniform1f(uniform('cells'),settings.cells);
+            gl.uniform1f(uniform('smoothness'),settings.smoothness);
+            gl.uniform1f(uniform('border'),0);
+            gl.uniform4fv(uniform('borderColor'),new Float32Array([1,.95,.8,0]));
+            gl.uniform1f(uniform('seed'),settings.seed);
+            gl.disable(gl.BLEND);gl.drawArrays(gl.TRIANGLE_STRIP,0,4);
+            const raw=new Uint8Array(w*h*4);
+            gl.readPixels(0,0,w,h,gl.RGBA,gl.UNSIGNED_BYTE,raw);
+            if(gl.getError()!==gl.NO_ERROR)throw Error('Reference shader readPixels failed');
+            return raw;
+        };
+        const comparison=(frame,progress,settings)=>{
+            const reference=referenceFrame(progress,settings);
+            const points=frame.selected.map(({x,y,pixel})=>{
+                const i=((h-1-y)*w+x)*4;
+                const expected=Array.from(reference.slice(i,i+4));
+                return {x,y,actual:pixel,expected};
+            });
+            return {points};
+        };
         const options=[
             {cells:8,smoothness:.1,border:0,seed:0,borderAlpha:0},
             {cells:12,smoothness:.5,border:0,seed:17,borderAlpha:0},
             {cells:4,smoothness:.33,border:0,seed:-6,borderAlpha:0}
         ];
-        const frames=options.flatMap(settings=>[0,.25,.5,.75,1].map(progress=>({
-            settings,progress,...frame(progress,settings)
-        })));
+        const frames=options.flatMap(settings=>[0,.25,.5,.75,1].map(progress=>{
+            const actual=frame(progress,settings);
+            return {settings,progress,...actual,reference:comparison(actual,progress,settings)};
+        }));
         const baseline={cells:8,smoothness:.1,border:.006,borderColor:'#fff2cc',
             borderAlpha:1,seed:0};
         const before=frame(.5,baseline,true),same=frame(.5,baseline);
@@ -105,46 +178,24 @@ try{
                 &&engine.cellDissolveFromScratch===null
                 &&engine.cellDissolveToScratch===null,errors};
     });
-    // Independent JS translation of shader hash22 and exact Voronoi timing.
-    const fract=n=>n-Math.floor(n),smoothstep=(a,b,x)=>{
-        const t=Math.max(0,Math.min(1,(x-a)/(b-a)));
-        return t*t*(3-2*t);
-    };
-    function hash22(x,y){
-        let a=fract(x*.1031),b=fract(y*.103),c=fract(x*.0973);
-        const dot=a*(b+33.33)+b*(c+33.33)+c*(a+33.33);
-        a+=dot;b+=dot;c+=dot;
-        return [fract((a+b)*c),fract((a+c)*b)];
-    }
-    function cellMask(x,y,progress,settings){
-        if(progress===0)return 0;if(progress===1)return 1;
-        const n=settings.cells,seed=settings.seed;
-        const px=((x+.5)/W)*(W/H)*n,py=(1-(y+.5)/H)*n;
-        const ix=Math.floor(px),iy=Math.floor(py),fx=fract(px),fy=fract(py);
-        const ox=17.31*seed,oy=41.97*seed;
-        let best=8,gx=0,gy=0;
-        for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
-            const r=hash22(ix+dx+ox,iy+dy+oy);
-            const sx=dx+r[0]-fx,sy=dy+r[1]-fy;
-            const d=sx*sx+sy*sy;
-            if(d<best){best=d;gx=dx;gy=dy;}
-        }
-        const h=hash22(ix+gx+ox+97.13,iy+gy+oy+97.13)[0];
-        const width=Math.max(0,Math.min(1,settings.smoothness));
-        const start=h*(1-width);
-        return width>0?smoothstep(start,start+width,progress)
-            :(progress>=start?1:0);
-    }
     assert.equal(result.shaderRan,true,'CellDissolve test must execute original WebGL shader');
     for(const frame of result.frames){
-        for(const {x,y,pixel} of frame.selected){
-            const m=cellMask(x,y,frame.progress,frame.settings);
-            const expected=[255*m,32,255*(1-m),255];
-            for(let c=0;c<4;c++)
-                assert.ok(Math.abs(pixel[c]-expected[c])<11,
-                    'Original Voronoi timing mismatch '+JSON.stringify({
-                        progress:frame.progress,settings:frame.settings,x,y,pixel,expected,channel:c
+        for(const {x,y,actual,expected} of frame.reference.points){
+            for(let channel=0;channel<4;channel++){
+                assert.ok(Math.abs(actual[channel]-expected[channel])<=3,
+                    'Isolated original GLSL reference mismatch '+JSON.stringify({
+                        progress:frame.progress,settings:frame.settings,x,y,
+                        actual,expected,channel
                     }));
+            }
+        }
+        if(frame.progress===0||frame.progress===1){
+            for(const {pixel} of frame.selected){
+                const endColor=frame.progress===0?[0,32,255,255]:[255,32,0,255];
+                for(let channel=0;channel<4;channel++)
+                    assert.ok(Math.abs(pixel[channel]-endColor[channel])<=1,
+                        'Incorrect untouched GLSL endpoint '+JSON.stringify({frame:frame.progress,pixel}));
+            }
         }
     }
     for(const [name,fingerprint] of Object.entries(result.controls))
@@ -156,7 +207,7 @@ try{
     assert.equal(result.cleanup,true,'Releasing project must free GPU and source textures');
     assert.deepEqual(result.errors,[],'No CellDissolve render errors');
     assert.deepEqual(pageErrors,[],'No uncaught browser errors');
-    console.log('[CellDissolve #03] PASS original GLSL Voronoi mask reference at 5 timestamps x 3 independent option sets, all native controls, alpha, GPU cleanup, stable seek');
+    console.log('[CellDissolve #03] PASS original Voronoi GLSL full-colour isolation oracle at 5 timestamps x 3 option sets, all native controls, alpha, GPU cleanup, stable seek');
     console.log('[CellDissolve #03 visual PNG] '+result.screenshot);
 } finally {
     await browser.close();
