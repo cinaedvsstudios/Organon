@@ -426,7 +426,7 @@ try{
     // light and shape behaviours, never more colour-only templates.
     const customTitlePixels=await page.evaluate(async()=>{
         const {paintTimelineText}=await import('./js/text-template-renderer.mjs');
-        const base={presetId:'news-lower-third',value:'Mixed Case\\nSecond Line',
+        const base={presetId:'news-lower-third',value:['Mixed Case','Second Line'].join(String.fromCharCode(10)),
             subtitle:'Live report',animation:'none'};
         const render=overrides=>{
             const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
