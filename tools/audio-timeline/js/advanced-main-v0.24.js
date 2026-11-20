@@ -2647,6 +2647,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 ctx.globalAlpha=progress;
                 previewDrawContained(ctx,b.media,width,height);
             } else {
+                // Original GL shader composes A and B together; clear the
+                // already drawn A to avoid doubling transparent source pixels.
+                if(effectId==='spiralblockwipe'){
+                    ctx.clearRect(0,0,width,height);
+                    ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
+                }
                 ctx.globalAlpha=1;
                 transitionPreviewScratch.tracks=[a,draft];
                 if (!paintPairedEffect(transitionPreviewScratch,ctx,draft,width,height,duration*progress,previewDrawContained))
