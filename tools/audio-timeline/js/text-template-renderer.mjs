@@ -95,6 +95,7 @@ export function textAnimationState(config={},localTime=0,clipDuration=3) {
     ?clamp((clip-time)/Math.min(1.2,clip*.35),0,1):1;
  return {
   progress,raw,time,elapsed:running,started,intensity,
+  boxReveal:opts.animation==='box-reveal',
   visibleCharacters:opts.animation==='typewriter'
     ?Math.min(text.length,Math.floor(progress*text.length)):text.length,
   alpha:!started?0:(opts.animation==='fade'?progress:1)*fadeOut,
@@ -227,10 +228,16 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.beginPath();ctx.moveTo(86,118);ctx.lineTo(554,118);ctx.moveTo(86,244);ctx.lineTo(554,244);ctx.stroke();break;
   }
   case 'news':{
-   ctx.fillStyle='#17283e';roundRect(ctx,26,245,588,100,7);ctx.fill();
-   ctx.fillStyle=outline;ctx.fillRect(26,245,Math.max(0,frame.boxWidth*.92),11);
+   const bannerWidth=frame.boxReveal?Math.round(588*clamp(frame.raw/.46,0,1)):588;
+   if(bannerWidth>0){
+    ctx.fillStyle='#17283e';roundRect(ctx,26,245,bannerWidth,100,7);ctx.fill();
+    ctx.fillStyle=outline;ctx.fillRect(26,245,bannerWidth,8);
+   }
+   ctx.save();
+   ctx.globalAlpha*=frame.boxReveal?clamp((frame.raw-.23)/.22,0,1):1;
    ctx.fillStyle='#f0eee7';ctx.font='700 18px '+fonts.mono;ctx.textAlign='left';
-   ctx.fillText('MOTORICLIP  •  LATEST',55,275);break;
+   ctx.fillText('BREAKING NEWS',55,274);
+   ctx.restore();break;
   }
   case 'location':{
    ctx.fillStyle='rgba(9,25,30,.88)';roundRect(ctx,55,223,530,104,18);ctx.fill();
@@ -301,25 +308,43 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
  ctx.save();
  try {
   ctx.scale(scaleX,scaleY);
-  ctx.globalAlpha*=frame.alpha*frame.flicker;
-  if(config.animation==='box-reveal'){
-    ctx.beginPath();ctx.rect(0,0,frame.boxWidth,360);ctx.clip();
-  }
-  if(config.animation==='slide')ctx.translate(frame.slideX,0);
-  if(config.animation==='shake')ctx.translate(frame.jitter,Math.cos(localTime*51)*3);
-  if(config.animation==='ticker'){
+   ctx.globalAlpha*=frame.alpha;
+   if(config.animation==='title-wipe'){
+    const across=['left','right'].includes(config.animationDirection);
+    const length=across?640:360;
+    const visible=length*frame.progress;
+    const reverse=['right','down'].includes(config.animationDirection);
+    ctx.beginPath();
+    if(across)ctx.rect(reverse?length-visible:0,0,visible,360);
+    else ctx.rect(0,reverse?length-visible:0,640,visible);
+    ctx.clip();
+   }
+   if(config.animation==='slide')ctx.translate(frame.slideX,frame.slideY);
+   if(config.animation==='bounce'){
+    const p=frame.progress,drop=(1-p)*(1-p)*105*frame.intensity;
+    const rebound=Math.sin(p*Math.PI*3.2)*(1-p)*30*frame.intensity;
+    ctx.translate(0,drop+rebound);
+   }
+   if(config.animation==='ticker'){
     ctx.beginPath();ctx.rect(0,0,640,360);ctx.clip();
     ctx.translate(frame.tickerX,0);
-  }
-  decorate(ctx,layout,config.fill,config.outline,frame);
-  const factor=config.fontSize/100;
-  const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
-    shadow:config.shadow,shadowBlur:config.shadowBlur};
-  const write=(text,x,y,details={})=>{
-   const opts={...base,...details};
-   if(config.animation==='letter-pop' && text.length<55)drawGlyphs(ctx,text,x,y,opts,frame);
-   else drawTitle(ctx,text,x,y,opts);
-  };
+   }
+   decorate(ctx,layout,config.fill,config.outline,frame);
+   const factor=config.fontSize/100;
+   const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
+     shadow:config.shadow,shadowBlur:config.shadowBlur};
+   const glyphAnimations=new Set(['letter-pop','shake','wave','kinetic-stagger','glitch-text','neon-flicker']);
+   const write=(text,x,y,details={})=>{
+    const {revealAlpha,...style}=details;
+    const opts={...base,...style};
+    if(config.animation==='outline-fill')opts.fillAlpha=frame.progress;
+    ctx.save();
+    ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
+    if(glyphAnimations.has(config.animation)&&text.length<80)
+      drawGlyphs(ctx,text,x,y,opts,frame,config.animation);
+    else drawTitle(ctx,text,x,y,opts);
+    ctx.restore();
+   };
   switch(layout){
    case 'neon':
     write(value,320,182,{size:70*factor,outlineWidth:Math.max(2,config.outlineWidth),
@@ -337,8 +362,11 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     write(value.toUpperCase(),320,183,{font:'serif',weight:500,size:59*factor,outlineWidth:0});
     break;
    case 'news':
-    write(value.toUpperCase(),324,318,{size:41*factor,align:'left',maxWidth:530,
-      outlineWidth:0});break;
+    write(value.toUpperCase(),55,305,{size:38*factor,align:'left',maxWidth:522,
+      outlineWidth:0,revealAlpha:frame.headlineAlpha});
+    if(config.subtitle.trim())write(config.subtitle,55,333,{size:17*factor,align:'left',
+      maxWidth:530,outlineWidth:0,weight:500,font:'mono',revealAlpha:frame.subtitleAlpha});
+    break;
    case 'location':
     write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});break;
    case 'quote':
