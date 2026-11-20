@@ -42,7 +42,12 @@ export function snapshotClip(track) {
 
 export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrackId, selectedFileId, currentTime }) {
     return {
-        files: files.map(({ id, name, kind }) => ({ id, name, kind })),
+        files: files.map(({ id, name, kind, file, size, lastModified, generated }) => ({
+            id, name, kind, size: file?.size ?? size ?? 0,
+            lastModified: file?.lastModified ?? lastModified ?? 0,
+            ...(generated && ['text','effect'].includes(generated.group)
+                ? {generated:{group:generated.group,presetId:generated.presetId,value:generated.value || ''}} : {})
+        })),
         tracks: tracks.map(snapshotClip),
         selectedTrackIds: [...selectedTrackIds],
         selectedTrackId: selectedTrackId || null,
@@ -51,14 +56,15 @@ export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrack
     };
 }
 
-export function restoreFileEntries(fileRecords, sourceFiles) {
-    return fileRecords.map((entry) => ({
-        ...entry,
-        file: sourceFiles.get(entry.id) || null
-    })).filter((entry) => entry.file);
+export function restoreFileEntries(fileRecords, sourceFiles, {includeMissing=false}={}) {
+    const entries=fileRecords.map((entry) => {
+        const file=sourceFiles.get(entry.id)||null;
+        return {...entry,file,needsRelink:!file};
+    });
+    return includeMissing ? entries : entries.filter((entry)=>entry.file);
 }
 
-export function validateTrackRecords(records, sourceFiles) {
+export function validateTrackRecords(records, sourceFiles, {allowMissingSources=false}={}) {
     const ids = new Set();
     for (const track of records) {
         if (!track || typeof track.id !== 'string' || !track.id) throw new Error('A timeline clip has no valid ID.');
@@ -68,7 +74,7 @@ export function validateTrackRecords(records, sourceFiles) {
             const number = Number(track[key] ?? 0);
             if (!Number.isFinite(number) || number < 0) throw new Error('Invalid ' + key + ' for ' + track.id);
         }
-        if (track.sourceName && (!track.sourceFileId || !sourceFiles.has(track.sourceFileId))) {
+        if (!allowMissingSources && track.sourceName && (!track.sourceFileId || !sourceFiles.has(track.sourceFileId))) {
             throw new Error('Missing source media for ' + track.id);
         }
     }
@@ -118,9 +124,9 @@ export function applyClipData(target, record) {
  * old tracks only once the preparation has succeeded.
  */
 export async function prepareHistoryTracks({
-    records, existingTracks, sourceFiles, loadTrack, disposeTrack
+    records, existingTracks, sourceFiles, loadTrack, disposeTrack, allowMissingSources=false
 }) {
-    validateTrackRecords(records, sourceFiles);
+    validateTrackRecords(records, sourceFiles, {allowMissingSources});
     const existingById = new Map((existingTracks || []).map(track => [track.id, track]));
     const created = [];
     const prepared = [];
@@ -133,7 +139,7 @@ export async function prepareHistoryTracks({
                 continue;
             }
             const track = snapshotClip(record);
-            if (record.sourceFileId) {
+            if (record.sourceFileId && sourceFiles.has(record.sourceFileId)) {
                 const file = sourceFiles.get(record.sourceFileId);
                 await loadTrack(track, file);
             }
