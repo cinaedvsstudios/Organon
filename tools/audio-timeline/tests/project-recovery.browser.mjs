@@ -120,18 +120,6 @@ try{
     });
     await page.reload({waitUntil:'domcontentloaded'});
     await page.locator('#file-count').waitFor();
-    await page.waitForTimeout(600);
-    console.log('[MotoriClip offline recovery diagnostic]',JSON.stringify(await page.evaluate(()=>{
-        const rec=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'{}');
-        return {files:document.querySelector('#file-count')?.textContent,
-            savedTracks:rec.tracks?.map(t=>({id:t.id,type:t.type,source:t.sourceName,fileId:t.sourceFileId})),
-            clipNodes:[...document.querySelectorAll('.timeline-clip')].map(el=>({
-                id:el.dataset.trackId,className:el.className,display:getComputedStyle(el).display,
-                visible:getComputedStyle(el).visibility,text:el.textContent
-            })),
-            errors:document.querySelector('#preview-state')?.textContent
-        };
-    })));
     await page.locator('.timeline-clip.background.needs-relink').waitFor({timeout:15000});
     assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId);
     assert.equal(await page.locator('#btn-export-offline').isDisabled(),true,
@@ -146,7 +134,7 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background').length===0);
     await page.reload({waitUntil:'domcontentloaded'});
     assert.equal(await page.locator('.timeline-clip.background').count(),0);
-    assert.match(await page.locator('#file-count').innerText(),/0 media/);
+    assert.match(await page.locator('#file-count').innerText(),/0 media/i);
     assert.deepEqual(errors,[],'Chrome script errors during project recovery');
     console.log('[MotoriClip project recovery] PASS Clear All remains cleared after reload');
     await context.close();
