@@ -332,9 +332,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             selectedTrackIds:state.selectedTrackIds,
             selectedFileId:state.selectedFileId,
             currentTime:engine.currentTime,
-            canvasWidth:Number(elements.canvasWidth.value),
-            canvasHeight:Number(elements.canvasHeight.value),
-            fps:Number(elements.projectFps.value),
+            // Persist the settings actually applied to the render engine.
+            // A user may still be typing a new width/height into the dialog:
+            // saving those uncommitted inputs corrupts recovery on refresh.
+            canvasWidth:elements.canvas.width,
+            canvasHeight:elements.canvas.height,
+            fps:engine.projectFps,
             previewZoom:state.previewZoom,
             markers:state.timelineMarkers,
             history:state.history
