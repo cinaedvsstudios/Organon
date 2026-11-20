@@ -686,6 +686,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         <button type="button" id="context-toggle-visible">◉ Hide clip</button>
         <button type="button" id="context-download-source" title="Download original media source (not a trimmed export)">⬇ Download source</button>
         <button type="button" id="context-download-section" title="Render only the selected trimmed section as MP4 or WebM; up to 120 seconds">🎬 Download trimmed section</button>
+        <button type="button" id="context-download-wav" title="Download only this audio or video clip's trimmed sound as a real, uncompressed WAV file">🎵 Download audio as WAV</button>
         <button type="button" id="context-add-layer">＋ Add layer of this type</button>
         <button type="button" id="context-extract-audio" hidden>🎵 Extract Audio</button>
     </div>
@@ -755,7 +756,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261119-phase9d-keyframes"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-wav-clip-export"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
