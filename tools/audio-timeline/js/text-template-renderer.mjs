@@ -36,7 +36,17 @@ export const TEXT_ANIMATIONS=Object.freeze([
  ['social-pulse','Social Button Pulse'],['location-drop','Location Pin Drop'],
  ['countdown-roll','Rolling Countdown'],['split-enter','Split Title Entrance']
 ]);
+export const TEXT_OUT_ANIMATIONS=Object.freeze(
+ TEXT_ANIMATIONS.filter(([name])=>['none','fade','slide','title-wipe',
+   'letter-pop','kinetic-stagger','typewriter','bounce','outline-fill','split-enter'].includes(name))
+);
+export const TEXT_LOOP_ANIMATIONS=Object.freeze(
+ TEXT_ANIMATIONS.filter(([name])=>['none','shake','wave','glitch-text',
+   'neon-flicker','social-pulse','ticker'].includes(name))
+);
 const animationNames=new Set(TEXT_ANIMATIONS.map(pair=>pair[0]));
+const outNames=new Set(TEXT_OUT_ANIMATIONS.map(([name])=>name));
+const loopNames=new Set(TEXT_LOOP_ANIMATIONS.map(([name])=>name));
 const defaultPalette={fill:'#ffffff',stroke:'#333333',shadow:'#000000'};
 const colour=(value,fallback)=>typeof value==='string'&&/^#[0-9a-f]{6}$/i.test(value)?value.toLowerCase():fallback;
 const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
@@ -67,6 +77,16 @@ export function normaliseTextOverlay(input={}) {
     ?input.animationEasing:'ease-out',
   animationIntensity:safeNumber(input.animationIntensity,100,0,200),
   animationLoop:input.animationLoop===true,
+  // Opt in for new titles: old saved projects keep single-animation timing.
+  phasedAnimation:input.phasedAnimation===true,
+  inAnimation:animationNames.has(input.inAnimation)?input.inAnimation
+    :(animationNames.has(input.animation)?input.animation:design.animation),
+  inDuration:safeNumber(input.inDuration,input.animationDuration==null?1.2:
+    safeNumber(input.animationDuration,1.2,.1,10),.1,10),
+  outAnimation:outNames.has(input.outAnimation)?input.outAnimation:'none',
+  outDuration:safeNumber(input.outDuration,.65,.1,10),
+  loopAnimation:loopNames.has(input.loopAnimation)?input.loopAnimation:'none',
+  loopDuration:safeNumber(input.loopDuration,1.5,.1,10),
   subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100),
   fontFamily:['template','sans','serif','script','mono'].includes(input.fontFamily)
     ?input.fontFamily:'template',
@@ -103,7 +123,7 @@ function easeProgress(value,easing){
  if(easing==='ease-in-out')return p*p*(3-2*p);
  return p;
 }
-export function textAnimationState(config={},localTime=0,clipDuration=3) {
+function singleTextAnimationState(config={},localTime=0,clipDuration=3) {
  const opts=normaliseTextOverlay(config);
  const time=Math.max(0,Number(localTime)||0);
  const clip=Math.max(.1,Number(clipDuration)||3);
@@ -150,6 +170,50 @@ export function textAnimationState(config={},localTime=0,clipDuration=3) {
     ?(1-progress)*( /^\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3):0,
   splitProgress:opts.animation==='split-enter'?progress:1
  };
+}
+/**
+ * Independent In / Hold-or-Loop / Out phases use exact clip time, not wall
+ * clock state. On short clips entrance/exit compress without overlapping.
+ */
+export function textAnimationState(input={},localTime=0,clipDuration=3){
+ const opts=normaliseTextOverlay(input);
+ if(!opts.phasedAnimation)
+  return {...singleTextAnimationState(opts,localTime,clipDuration),
+    phase:'legacy',activeAnimation:opts.animation};
+ const clip=Math.max(.1,Number(clipDuration)||3);
+ const time=clamp(Number(localTime)||0,0,clip);
+ const start=opts.animationDelay;
+ const available=Math.max(0,clip-start);
+ const wantsIn=opts.inAnimation!=='none',wantsOut=opts.outAnimation!=='none';
+ const nominalIn=wantsIn?opts.inDuration:0,nominalOut=wantsOut?opts.outDuration:0;
+ const factor=nominalIn+nominalOut>available
+  ?available/Math.max(.0001,nominalIn+nominalOut):1;
+ const inLength=nominalIn*factor,outLength=nominalOut*factor;
+ const inEnd=start+inLength,outStart=clip-outLength;
+ const state=(animation,elapsed,duration,phase)=>{
+  const specific={...opts,animation,animationDelay:0,animationLoop:false,
+    animationDuration:Math.max(.0001,duration)};
+  const effective=singleTextAnimationState(specific,elapsed,Math.max(.0001,duration));
+  return {...effective,phase,activeAnimation:animation,
+    phaseTime:elapsed,inEnd,outStart};
+ };
+ if(time<start)return {...state('none',0,1,'waiting'),alpha:0};
+ if(wantsIn&&time<inEnd&&inLength>0)
+  return state(opts.inAnimation,time-start,inLength,'in');
+ if(wantsOut&&time>=outStart&&outLength>0){
+  // A reversing entrance effect starts fully rendered and ends hidden.
+  const remaining=Math.max(0,clip-time);
+  return state(opts.outAnimation,remaining,outLength,'out');
+ }
+ if(opts.loopAnimation!=='none'){
+  const elapsed=Math.max(0,time-inEnd);
+  const effective=singleTextAnimationState({...opts,animation:opts.loopAnimation,
+    animationDelay:0,animationLoop:true,animationDuration:opts.loopDuration},
+    elapsed,opts.loopDuration);
+  return {...effective,phase:'loop',activeAnimation:opts.loopAnimation,
+    phaseTime:elapsed,inEnd,outStart};
+ }
+ return state('none',1,1,'hold');
 }
 function roundRect(ctx,x,y,w,h,r) {
  const radius=Math.min(r,Math.abs(w)/2,Math.abs(h)/2);
@@ -461,9 +525,11 @@ function drawTitleBackdrop(ctx,config,layout){
  }
 }
 export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDuration=3) {
- const config=normaliseTextOverlay(input);
+ const baseConfig=normaliseTextOverlay(input);
+ const frame=textAnimationState(baseConfig,localTime,clipDuration);
+ // Use the same painter for the currently active In, Loop or Out effect.
+ const config={...baseConfig,animation:frame.activeAnimation};
  const design=getTextDesign(config.presetId)||TEXT_DESIGNS[0];
- const frame=textAnimationState(config,localTime,clipDuration);
  const layout=design.layout;
  const value=textValue(config,frame);
  const scaleX=width/640,scaleY=height/360;
