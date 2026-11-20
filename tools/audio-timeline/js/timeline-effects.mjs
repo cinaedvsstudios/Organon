@@ -1,5 +1,5 @@
 /**
- * MotoriClip procedural effect clips — Phase 3A.
+ * MotoriClip procedural effect clips — Phase 3A–B.
  * Effects are recipes (not PNG animations). Preview and both exporters render
  * from identical clip-relative seconds, including reverse seeking.
  * Artifex FX's procedural/seeded approach informed this independent Canvas2D
@@ -11,7 +11,11 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'rhythmic-flicker',label:'Rhythmic Flicker',group:'effect',category:'Light',animated:true},
  {id:'particle-dust',label:'Floating Dust',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
- {id:'particle-debris',label:'Flying Debris',group:'effect',category:'Particles/Fire',animated:true}
+ {id:'particle-debris',label:'Flying Debris',group:'effect',category:'Particles/Fire',animated:true},
+ {id:'god-rays',label:'God Rays',group:'effect',category:'Light',animated:true},
+ {id:'light-leaks',label:'Organic Light Leaks',group:'effect',category:'Light',animated:true},
+ {id:'pixel-scan',label:'Pixel Scan',group:'effect',category:'Scanning',animated:true},
+ {id:'sci-fi-scan',label:'Sci-Fi Scan',group:'effect',category:'Scanning',animated:true}
 ]);
 const ids=new Set(TIMELINE_EFFECTS.map(item=>item.id));
 const clamp=(value,min,max,fallback)=> {
@@ -38,6 +42,8 @@ export function normaliseTimelineEffect(effect={}){
   density:clamp(raw.density,1,120,48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
+  originX:clamp(raw.originX,0,100,20),
+  originY:clamp(raw.originY,0,100,12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():'#ffd98d'
  };
 }
@@ -81,6 +87,67 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     g.addColorStop(1,rgba(e.color,0));
     ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
    }
+  }else if(e.presetId==='god-rays'){
+   const ox=w*e.originX/100,oy=h*e.originY/100;
+   const length=Math.hypot(w,h)*1.25*size;
+   const gradient=ctx.createRadialGradient(ox,oy,0,ox,oy,length);
+   gradient.addColorStop(0,rgba(e.color,.22*strength));
+   gradient.addColorStop(.45,rgba(e.color,.12*strength));
+   gradient.addColorStop(1,rgba(e.color,0));
+   ctx.fillStyle=gradient;
+   for(let i=0;i<9;i++){
+    const angle=rad+(i-4)*.165+Math.sin(t*.7+i*1.6)*.055;
+    const spread=.045+random(i+150)*.06;
+    ctx.beginPath();ctx.moveTo(ox,oy);
+    ctx.lineTo(ox+Math.cos(angle-spread)*length,oy+Math.sin(angle-spread)*length);
+    ctx.lineTo(ox+Math.cos(angle+spread)*length,oy+Math.sin(angle+spread)*length);
+    ctx.closePath();ctx.fill();
+   }
+  }else if(e.presetId==='light-leaks'){
+   for(let i=0;i<3;i++){
+    const isRight=i===1;
+    const x=isRight?w*1.12:-w*.12;
+    const y=h*(.18+.23*i+.18*Math.sin(t*(.65+i*.24)+i));
+    const radius=w*(.65+i*.08)*size;
+    const gradient=ctx.createRadialGradient(x,y,0,x,y,radius);
+    const color=i===1?'#ff7b78':e.color;
+    gradient.addColorStop(0,rgba(color,.56*strength));
+    gradient.addColorStop(.34,rgba(color,.24*strength));
+    gradient.addColorStop(1,rgba(color,0));
+    ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
+   }
+  }else if(e.presetId==='pixel-scan'){
+   const phase=wrap(t*.28),y=phase*h,band=Math.max(6,18*size);
+   const grad=ctx.createLinearGradient(0,y-band*3,0,y+band*3);
+   grad.addColorStop(0,rgba(e.color,0));grad.addColorStop(.5,rgba(e.color,.50*strength));grad.addColorStop(1,rgba(e.color,0));
+   ctx.fillStyle=grad;ctx.fillRect(0,y-band*3,w,band*6);
+   const grid=Math.max(5,Math.round(13*size));
+   const n=Math.round(e.density);
+   for(let i=0;i<n;i++){
+    const x=Math.floor(random(i+98)*w/grid)*grid;
+    const offset=Math.floor((random(i+201)-.5)*5)*grid;
+    ctx.fillStyle=rgba(e.color,(.13+.34*random(i+331))*strength);
+    ctx.fillRect(x,y+offset,grid*(1+Math.floor(random(i+411)*3)),grid);
+   }
+  }else if(e.presetId==='sci-fi-scan'){
+   const phase=wrap(t*.23),x=(rad>=0?phase:1-phase)*w;
+   const beam=Math.max(3,9*size);
+   const g=ctx.createLinearGradient(x-beam*7,0,x+beam,0);
+   g.addColorStop(0,rgba(e.color,0));g.addColorStop(.8,rgba(e.color,.21*strength));
+   g.addColorStop(1,rgba(e.color,.85*strength));
+   ctx.fillStyle=g;ctx.fillRect(x-beam*7,0,beam*8,h);
+   ctx.strokeStyle=rgba(e.color,.86*strength);ctx.lineWidth=Math.max(1,1.5*size);
+   ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
+   // HUD tick marks, crosshair and bracket corners, rather than pixel blocks.
+   const unit=Math.max(16,Math.round(30*size));
+   for(let y=0;y<h;y+=unit){
+    ctx.beginPath();ctx.moveTo(x-8*size,y);ctx.lineTo(x+(y/unit%5===0?29:12)*size,y);ctx.stroke();
+   }
+   const cy=h*(.52+.22*Math.sin(t*.4));
+   ctx.beginPath();ctx.arc(x,cy,Math.max(12,28*size),0,Math.PI*2);ctx.stroke();
+   ctx.beginPath();ctx.moveTo(x-42*size,cy);ctx.lineTo(x-11*size,cy);
+   ctx.moveTo(x+11*size,cy);ctx.lineTo(x+42*size,cy);
+   ctx.moveTo(x,cy-42*size);ctx.lineTo(x,cy-11*size);ctx.stroke();
   }else if(e.presetId==='rhythmic-flicker'){
    // Rhythm and seeded discontinuities are absolute-time calculations.
    const beat=Math.max(0,Math.sin(t*Math.PI*5));
