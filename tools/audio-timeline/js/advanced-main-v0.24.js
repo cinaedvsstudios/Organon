@@ -63,7 +63,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryPanel: document.getElementById('effects-library-panel'), textLibraryPanel: document.getElementById('text-library-panel'),
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','color'].map(name=>[name,document.getElementById('effect-'+name)])),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','color'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
