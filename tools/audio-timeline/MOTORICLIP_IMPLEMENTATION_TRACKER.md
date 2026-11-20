@@ -21,6 +21,8 @@
 - 20 Nov 2026: Stage 2 appearance and type customisation [PR #95](https://github.com/cinaedvsstudios/Organon/pull/95): checked items **82–84** following Node state/Undo tests and Chrome/Firefox/WebKit acceptance. Inspector now provides family, weight, italics, alignment, case, letter/multiline spacing, fill, stroke, shadow offsets, glow, text opacity and optional backing rectangle with colour, opacity, padding, radius, border and banner dimensions. Values alter the real timestamp-driven canvas renderer and survive project recovery, with no additional colour-duplicate presets. **Independent In/Out/Loop (#86) and real exported-pixel verification (#94/#100) remain open.**
 - 20 Nov 2026: [PR #96](https://github.com/cinaedvsstudios/Organon/pull/96) completes **#86**: independent In, continuous Loop, and Out animation selectors with independent durations, optional legacy single-animation mode, deterministic seek/export-frame state and proportional timing on short clips. Also fixes repeated ticker cycles and hides every exit endpoint. Pre-final revision passed Node animation regression, Chrome UI/recovery and Firefox/WebKit; portable Save/Open was interrupted by a subsequent commit, and latest full rerun was queued when tracker was updated. **Do not count extended export stress as verified.**
 
+- 20 Nov 2026: Phase 3A in [PR #97](https://github.com/cinaedvsstudios/Organon/pull/97) implements **#25, #27, #30, #39, #43, #44**: Light Sweep, animated Hazy Atmosphere, Rhythmic Flicker, and independently animated dust/sparks/debris, plus category filtering, themed animated preview with scrub, timeline clip recipes, and effect Inspector settings. All 264 Node tests passed after correcting a zero-intensity test expectation; Chrome transition/UI, portable Save/Open and Firefox/WebKit acceptance jobs passed. Procedural effects use deterministic clip-relative canvas rendering shared with exporters. The additional effect families (#21–24, #26, #28–29, #31–38, #40–41), full category coverage (#42), broader Inspector parameter coverage (#45), actual exported-pixel and long-form export certification remain unchecked. The GitHub long-export profile is independent and may still be in progress during merge.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -53,12 +55,12 @@
 - [ ] **22.** Rebound Swing — spring overshoot and decay.
 - [ ] **23.** Glow — bloom bright image regions.
 - [ ] **24.** Edge Glow — illuminate detected edges only.
-- [ ] **25.** Light Sweep — moving directional highlight.
+- [x] **25.** Light Sweep — moving directional highlight.
 - [ ] **26.** God Rays — directional beams with adjustable origin.
-- [ ] **27.** Hazy Atmosphere — drifting diffuse fog.
+- [x] **27.** Hazy Atmosphere — drifting diffuse fog.
 - [ ] **28.** Light Leaks — animated organic edge illumination.
 - [ ] **29.** Fault Cassette — analogue tape distortions.
-- [ ] **30.** Flicker — editable rhythmic brightness variance.
+- [x] **30.** Flicker — editable rhythmic brightness variance.
 - [ ] **31.** Ripple Distortion — animated refractive waves.
 - [ ] **32.** Electric Ripple — waves with electrical pulses.
 - [ ] **33.** Shockwave — expanding refractive ring.
@@ -67,12 +69,12 @@
 - [ ] **36.** Sci-Fi Scan — scan beam and technical HUD marks.
 - [ ] **37.** Chromatic Quirk — independently displaced RGB channels.
 - [ ] **38.** Halo Blur — radial soft focus.
-- [ ] **39.** Particle Effects — independent sparks/dust/debris.
+- [x] **39.** Particle Effects — independent sparks/dust/debris.
 - [ ] **40.** Fire Effects — distinct flames/embers/explosions.
 - [ ] **41.** Additional *distinct* glitch styles: Glass Glitch, Glitch Storm, Negative Chaos, Warning Glitch, Misalignment, Noir Glitch, Glitch Flux, Engine Heat and Retro Glitch.
 - [ ] **42.** Categorise effects as Motion, Light, Distortion, Glitch, Atmospheric, Scanning, Particles/Fire.
-- [ ] **43.** Right-click effect → themed animated Preview popup with Play/Pause/Loop/scrub.
-- [ ] **44.** Insert effect as a genuinely time-based editable timeline clip, not a static PNG impostor.
+- [x] **43.** Right-click effect → themed animated Preview popup with Play/Pause/Loop/scrub.
+- [x] **44.** Insert effect as a genuinely time-based editable timeline clip, not a static PNG impostor.
 - [ ] **45.** Effect Inspector for suitable parameters (intensity, speed, duration, direction, scale, glow, blur, distortion, particles and colour).
 
 ## 4. Text templates — distinct designs
