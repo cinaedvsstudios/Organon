@@ -421,6 +421,45 @@ try{
         storyFrames.find(x=>x.id==='handwritten-script').done.coverage,
         'Handwriting should reveal characters in sequence');
     console.log('[Stage2 storytelling] PASS five real timeline animations, distinct layouts and reverse seeking');
+    // Inspector customisations must change pixels, not only UI settings.
+    // Hold every preset colour constant: these changes are distinct type,
+    // light and shape behaviours, never more colour-only templates.
+    const customTitlePixels=await page.evaluate(async()=>{
+        const {paintTimelineText}=await import('./js/text-template-renderer.mjs');
+        const base={presetId:'news-lower-third',value:'Mixed Case\\nSecond Line',
+            subtitle:'Live report',animation:'none'};
+        const render=overrides=>{
+            const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
+            const ctx=canvas.getContext('2d',{willReadFrequently:true});
+            paintTimelineText(ctx,640,360,{...base,...overrides},2,3);
+            const arr=ctx.getImageData(0,0,640,360).data;
+            let hash=2166136261,shown=0;
+            for(let i=0;i<arr.length;i+=4){
+                if(arr[i+3]>0)shown++;
+                if(i%56===0)hash=Math.imul((hash^arr[i]^arr[i+1]^arr[i+2]^arr[i+3])>>>0,16777619)>>>0;
+            }
+            return {hash,shown};
+        };
+        const options=[
+            ['font family',{fontFamily:'mono'}],['weight',{fontWeight:300}],
+            ['italic',{fontStyle:'italic'}],['alignment',{textAlign:'right'}],
+            ['letter case',{textCase:'lowercase'}],['letter spacing',{letterSpacing:14}],
+            ['line spacing',{lineSpacing:170}],['glow',{glowStrength:22,glowColor:'#ff8844'}],
+            ['shadow direction',{shadowOffsetX:14,shadowOffsetY:12}],
+            ['opacity',{textOpacity:48}],['backdrop',{backdropEnabled:true,backdropColor:'#3174a8'}],
+            ['shape border',{shapeBorderWidth:5,shapeBorderColor:'#eebbee'}],
+            ['banner width',{bannerWidth:54}],['banner height',{bannerHeight:155}],
+            ['shape padding',{shapePadding:35}],['corner radius',{shapeRadius:44}]
+        ];
+        return {baseline:render({}),changed:options.map(([label,config])=>
+            ({label,result:render(config)})),again:render({})};
+    });
+    assert.deepEqual(customTitlePixels.baseline,customTitlePixels.again,
+        'Typography and shape rendering must be deterministic when seeking backwards');
+    for(const item of customTitlePixels.changed)
+        assert.notEqual(item.result.hash,customTitlePixels.baseline.hash,
+            item.label+' should visibly change live/encoded title pixels');
+    console.log('[MotoriClip typography] PASS font, spacing, casing, glow, opacity and banner shape alter real composited frames');
     // Distinct motion must change the actual composited pixels at precise
     // timestamps; seeking back to an earlier time reproduces identical pixels.
     const motionPixels=await page.evaluate(async()=>{
@@ -482,6 +521,29 @@ try{
     await page.locator('#inspector-text-template').waitFor({state:'visible'});
     assert.equal(await page.locator('#text-inspector-value').inputValue(),'NEW TITLE');
     await page.locator('#text-inspector-value').fill('LIVE EDITED TITLE');
+    await page.locator('#text-font-family').selectOption('serif');
+    await page.locator('#text-font-weight').selectOption('600');
+    await page.locator('#text-font-style').selectOption('italic');
+    await page.locator('#text-text-align').selectOption('right');
+    await page.locator('#text-text-case').selectOption('lowercase');
+    await page.locator('#text-letter-spacing').fill('9');
+    await page.locator('#text-line-spacing').fill('145');
+    await page.locator('#text-text-opacity').fill('80');
+    await page.locator('#text-glow-color').fill('#ff9944');
+    await page.locator('#text-glow-strength').fill('14');
+    await page.locator('#text-shadow-offset-x').fill('7');
+    await page.locator('#text-shadow-offset-y').fill('-5');
+    await page.locator('#text-shape-details summary').click();
+    await page.locator('#text-backdrop-enabled').check();
+    await page.locator('#text-backdrop-color').fill('#123456');
+    await page.locator('#text-shape-border-color').fill('#ccddee');
+    await page.locator('#text-shape-border-width').fill('4');
+    await page.locator('#text-shape-radius').fill('23');
+    await page.locator('#text-shape-padding').fill('17');
+    await page.locator('#text-banner-width').fill('77');
+    await page.locator('#text-banner-height').fill('135');
+    assert.equal(await page.locator('#text-letter-spacing-value').innerText(),'9px');
+    assert.equal(await page.locator('#text-banner-width-value').innerText(),'77%');
     await page.locator('#text-animation').selectOption('typewriter');
     await page.locator('#text-animation-duration').fill('2');
     await page.locator('#text-animation-delay').fill('0.3');
@@ -501,7 +563,16 @@ try{
         return item?.tracks?.some(t=>t.textOverlay?.value==='LIVE EDITED TITLE'&&
             t.textOverlay.animation==='typewriter'&&
             t.textOverlay.animationDelay===.3&&t.textOverlay.animationSpeed===1.5&&
-            t.textOverlay.animationLoop===true&&t.textOverlay.animationIntensity===140);
+            t.textOverlay.animationLoop===true&&t.textOverlay.animationIntensity===140&&
+            t.textOverlay.fontFamily==='serif'&&t.textOverlay.fontWeight===600&&
+            t.textOverlay.fontStyle==='italic'&&t.textOverlay.textAlign==='right'&&
+            t.textOverlay.textCase==='lowercase'&&t.textOverlay.letterSpacing===9&&
+            t.textOverlay.lineSpacing===145&&t.textOverlay.textOpacity===80&&
+            t.textOverlay.glowStrength===14&&t.textOverlay.shadowOffsetX===7&&
+            t.textOverlay.shadowOffsetY===-5&&t.textOverlay.backdropEnabled===true&&
+            t.textOverlay.backdropColor==='#123456'&&
+            t.textOverlay.shapeBorderWidth===4&&t.textOverlay.bannerWidth===77&&
+            t.textOverlay.bannerHeight===135);
     },null,{timeout:12000});
     await page.locator('#visual-transform-scale').fill('140');
     await page.locator('#visual-transform-scale').dispatchEvent('input');
