@@ -684,9 +684,10 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <label class="text-setting-row"><span>Density</span><input id="effect-density" class="range-control" type="range" min="1" max="120" step="1" value="48" title="Number of particles; used for particle effects"></label>
                     <label class="text-setting-row"><span>Scale (%)</span><input id="effect-scale" class="range-control" type="range" min="10" max="300" step="5" value="100" title="Beam/fog/particle scale"></label>
                     <label class="text-setting-row"><span>Direction (°)</span><input id="effect-direction" class="range-control" type="range" min="-180" max="180" step="5" value="0" title="Angle of motion or light sweep"></label>
+                    <label class="text-setting-row" id="effect-distortion-control" hidden><span>Distortion (%)</span><input id="effect-distortion" class="range-control" type="range" min="0" max="100" step="1" value="55" title="Strength of swinging, shake, tape displacement or wave refraction"></label>
                     <div id="effect-origin-controls" hidden>
-                        <label class="text-setting-row"><span>Ray origin X (%)</span><input id="effect-origin-x" class="range-control" type="range" min="0" max="100" step="1" value="20" title="Horizontal origin of directional God Rays"></label>
-                        <label class="text-setting-row"><span>Ray origin Y (%)</span><input id="effect-origin-y" class="range-control" type="range" min="0" max="100" step="1" value="12" title="Vertical origin of directional God Rays"></label>
+                        <label class="text-setting-row"><span>Origin / pivot X (%)</span><input id="effect-origin-x" class="range-control" type="range" min="0" max="100" step="1" value="20" title="Horizontal origin of God Rays or pivot point for Swing/Shockwave"></label>
+                        <label class="text-setting-row"><span>Origin / pivot Y (%)</span><input id="effect-origin-y" class="range-control" type="range" min="0" max="100" step="1" value="12" title="Vertical origin of God Rays or pivot point for Swing/Shockwave"></label>
                     </div>
                     <label class="text-setting-row"><span>Colour</span><input id="effect-color" type="color" value="#ffd98d" title="Effect tint"></label>
                 </section>
@@ -1080,7 +1081,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-procedural-fx-b"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-procedural-fx-c"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
