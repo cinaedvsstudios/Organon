@@ -1,8 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
+import { VORTEX_SOURCE,VORTEX_DEFAULTS,normaliseVortexOptions }
+    from '../js/gl-transitions/Vortex.mjs';
 import {
-    ACTIVE_PAIR_EFFECTS,vortexRadius,vortexTurn,heatHazeShift,
-    refractionFacetOffset,pairedEffectProgress
+    ACTIVE_PAIR_EFFECTS,heatHazeShift,refractionFacetOffset,pairedEffectProgress
 } from '../js/paired-visual-effects.mjs';
 import { TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES } from '../js/transition-catalog.mjs';
 import { planPairedTransition,isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
@@ -17,22 +19,20 @@ test('8K retains 41 original names while enabling the next three effects',()=>{
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(x=>x.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(x=>x.id==='hologram')?.status,'available');
 });
-test('Vortex radius expands and its separate rings rotate reproducibly',()=>{
-    const farthest=Math.hypot(98,56);
-    assert.equal(vortexRadius(0,196,112),0);
-    assert.equal(vortexRadius(.5,196,112),farthest/2);
-    assert.equal(vortexRadius(1,196,112),farthest);
-    for(const p of [.1,.25,.5,.75,.9]){
-        const angles=Array.from({length:12},(_,i)=>vortexTurn(p,i,12));
-        assert.ok(angles.every(a=>a>=0&&a<Math.PI*2));
-        assert.ok(angles[0]>angles[11],'Inner part must spin farther than outer rings');
-        assert.deepEqual(angles,Array.from({length:12},(_,i)=>vortexTurn(p,i,12)));
-    }
-    for(let i=0;i<12;i++){
-        assert.equal(vortexTurn(0,i,12),0);
-        assert.equal(vortexTurn(1,i,12),0);
-        assert.ok(vortexTurn(.25,i,12)>vortexTurn(.75,i,12));
-    }
+test('Original Vortex GLSL is byte-identical to gre MIT upstream and native uniforms are bounded',()=>{
+    const bytes=Buffer.from(VORTEX_SOURCE,'utf8');
+    const hash=createHash('sha1').update('blob '+bytes.length+String.fromCharCode(0)).update(bytes).digest('hex');
+    assert.equal(hash,'dd0b3f76a8ec3e941e9db79d4f6282a75c3282bd');
+    assert.deepEqual(VORTEX_DEFAULTS,{grid:24,centerX:.5,centerY:.5,spin:1,randomness:.2});
+    assert.deepEqual(normaliseVortexOptions(),VORTEX_DEFAULTS);
+    assert.deepEqual(normaliseVortexOptions({
+        grid:400,centerX:-2,centerY:9,spin:-8,randomness:2
+    }),{grid:40,centerX:0,centerY:1,spin:-4,randomness:1});
+    assert.deepEqual(normaliseVortexOptions({
+        grid:12,centerX:.3,centerY:.77,spin:-1.5,randomness:.85
+    }),{grid:12,centerX:.3,centerY:.77,spin:-1.5,randomness:.85});
+    assert.match(VORTEX_SOURCE,/const int GROUPS = 24;/);
+    assert.match(VORTEX_SOURCE,/vec4 piece = premultiplied\(getFromColor\(src \/ aspect\)\) \* cov/);
 });
 test('Heat haze waves vary across bands and frames but vanish at both ends',()=>{
     for(const frame of [0,10,23,101]){
