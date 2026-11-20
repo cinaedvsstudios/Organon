@@ -132,8 +132,9 @@ try{
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     assert.ok(!(await page.locator('#btn-undo').isDisabled()),'Import should create undo history');
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     assert.match(await page.locator('#file-count').innerText(),/0 media/i);
     await page.locator('#btn-undo').click();
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
@@ -248,8 +249,9 @@ try{
     await page.locator('#btn-add-marker').click();
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
     await page.locator('#btn-next-marker').click();
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
@@ -277,8 +279,9 @@ try{
 
     await page.locator('[data-library-tab="media"]').click();
     assert.ok(await page.locator('#project-drop-zone').isVisible());
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     assert.equal(await page.locator('#timeline-ruler').isVisible(),true,
         'Timeline second labels must be visible without extra clicks');
