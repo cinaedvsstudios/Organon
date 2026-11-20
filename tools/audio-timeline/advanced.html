@@ -432,6 +432,24 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     border-color:var(--clip-colour);
     background:linear-gradient(90deg,color-mix(in srgb,var(--clip-colour) 40%,transparent),color-mix(in srgb,var(--clip-colour) 12%,transparent));
 }
+
+/* Stage 2: title design controls and time-based template preview. */
+.text-setting-row { display:grid; gap:5px; padding:7px 0; border-top:1px solid rgba(137,107,73,.3); color:var(--alabaster-paper); font:.59rem var(--font-mono); }
+.text-setting-row > span { display:flex; justify-content:space-between; gap:8px; }
+.text-setting-row output { color:var(--water-spray); }
+.text-setting-row input[type=range] { width:100%; accent-color:var(--water-spray); }
+.text-setting-row textarea { min-height:56px; resize:vertical; font:.72rem var(--font-body); }
+.text-setting-colours { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:9px 0; }
+.text-setting-colours label { display:grid; justify-items:center; gap:4px; color:var(--alabaster-paper); font:.55rem var(--font-mono); }
+.text-setting-colours input { width:100%; max-width:70px; height:32px; border:1px solid var(--chiseled-bronze); border-radius:7px; background:#101214; }
+#text-preview-canvas { display:block; width:100%; height:auto; aspect-ratio:16/9; border:1px solid var(--chiseled-bronze); border-radius:9px; background:#0a0c10; }
+.text-preview-dialog { width:min(700px,100%); }
+.text-preview-controls { display:grid; grid-template-columns:1fr 1fr auto; gap:7px; align-items:center; margin:10px 0 6px; }
+.text-preview-controls .btn { width:100%; height:33px; }
+.text-preview-loop { display:flex; gap:5px; align-items:center; font:.58rem var(--font-mono); }
+#text-preview-progress { display:block; width:100%; accent-color:var(--water-spray); }
+.asset-preset-card.is-animated::before { content:'▶'; position:absolute; top:7px; right:7px; border-radius:7px; padding:3px 5px; background:#0b1b24; color:var(--water-spray); font:.62rem var(--font-mono); }
+.asset-preset-card { position:relative; }
 </style>
 </head>
 <body>
@@ -481,8 +499,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 </section>
                 <section class="asset-library-panel" id="text-library-panel" hidden role="tabpanel" aria-label="Text templates">
                     <label class="asset-library-help" for="text-overlay-value">Overlay text</label>
-                    <input class="compact-input" id="text-overlay-value" value="YOUR TEXT" maxlength="100" aria-label="Text to insert into the selected template">
-                    <p class="asset-library-help">Drag a style to the timeline or click to insert an editable-by-replacement PNG text layer.</p>
+                    <input class="compact-input" id="text-overlay-value" value="MotoriClip" maxlength="100" aria-label="Sample text for choosing a design; editable after insertion">
+                    <p class="asset-library-help">Choose a distinctive title design, then edit its text, colours and animation in the Inspector. Right-click a design to preview its motion.</p>
                     <div class="asset-thumbnail-grid" id="text-library-grid"></div>
                 </section>
             </div>
@@ -627,6 +645,22 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <input type="range" class="range-control" id="sticker-edge-feather" min="0" max="100" value="8" aria-label="Sticker chroma key edge feather">
                 </section>
 
+                <section class="control-card" id="inspector-text-template" hidden>
+                    <h3>Text design &amp; animation</h3>
+                    <p class="control-copy" id="text-selected-design">Edit the selected title on the timeline.</p>
+                    <label class="text-setting-row"><span>Text</span><textarea class="compact-input" id="text-inspector-value" maxlength="100" rows="2" title="Change this clip's words without replacing the template"></textarea></label>
+                    <label class="text-setting-row"><span>Font size <output id="text-font-size-value">100%</output></span><input type="range" id="text-font-size" min="30" max="250" step="5" value="100" title="Scale the typography inside this template"></label>
+                    <div class="text-setting-colours">
+                        <label>Fill<input type="color" id="text-fill" value="#ffffff" title="Main lettering colour"></label>
+                        <label>Outline<input type="color" id="text-outline" value="#333333" title="Letter outline colour"></label>
+                        <label>Shadow<input type="color" id="text-shadow" value="#000000" title="Letter shadow colour"></label>
+                    </div>
+                    <label class="text-setting-row"><span>Outline strength <output id="text-outline-width-value">3</output></span><input type="range" id="text-outline-width" min="0" max="18" step="1" value="3" title="Letter outline thickness; 0 disables it"></label>
+                    <label class="text-setting-row"><span>Shadow blur <output id="text-shadow-blur-value">8</output></span><input type="range" id="text-shadow-blur" min="0" max="40" step="1" value="8" title="Softness of the text shadow"></label>
+                    <label class="text-setting-row"><span>Animation</span><select class="compact-select" id="text-animation" title="Choose distinct time-based text motion"></select></label>
+                    <label class="text-setting-row"><span>Animation duration <output id="text-animation-duration-value">1.2s</output></span><input type="range" id="text-animation-duration" min=".1" max="10" step=".1" value="1.2" title="Length of the text entrance or effect motion"></label>
+                    <p class="visual-note">Timeline text is rendered at the playhead, including during fixed-frame video export. Use the existing Transform controls for position, scale and rotation.</p>
+                </section>
                 <section class="control-card advanced-visual-panel" id="inspector-visual-tools" hidden>
                     <h3>Visual clip adjustments</h3>
                     <details open>
@@ -818,6 +852,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
             <div class="timeline-action-buttons"><button type="button" class="btn" id="timeline-action-cancel">Cancel</button><button type="button" class="btn btn-primary" id="timeline-action-apply">Apply</button></div>
         </div>
     </div>
+    <div class="editor-modal" id="text-preview-modal" hidden role="dialog" aria-modal="true" aria-labelledby="text-preview-title">
+        <div class="editor-modal-card text-preview-dialog">
+            <div class="editor-modal-head"><h2 id="text-preview-title">Text animation preview</h2><button type="button" class="editor-modal-close" id="text-preview-close" title="Close text animation preview" aria-label="Close text preview">×</button></div>
+            <canvas id="text-preview-canvas" width="640" height="360" aria-label="Animated text preview on a neutral background"></canvas>
+            <div class="text-preview-controls">
+                <button type="button" class="btn" id="text-preview-play" title="Play or pause the current animation">▶ Play</button>
+                <button type="button" class="btn" id="text-preview-restart" title="Restart the title animation">↺ Restart</button>
+                <label class="text-preview-loop"><input type="checkbox" id="text-preview-loop" checked title="Repeat the animation">Loop</label>
+            </div>
+            <input type="range" id="text-preview-progress" min="0" max="300" step="1" value="0" title="Scrub text animation preview in tenths of a second" aria-label="Text preview progress">
+            <p class="modal-help">Preview text defaults to MotoriClip. These are real animated title designs; you can change colours and wording after inserting one.</p>
+        </div>
+    </div>
     <div class="project-drop-overlay" id="project-drop-overlay"><div>Drop files to add them to Project Files<br><small>They will not enter the timeline until you drag them there.</small></div></div>
     <div class="app-toast" id="app-toast" role="status" aria-live="polite"></div>
     <div class="editor-modal" id="project-settings-modal" hidden role="dialog" aria-modal="true" aria-label="⚙ Project Settings"><div class="editor-modal-card"><div class="editor-modal-head"><h2>⚙ Project Settings</h2><button type="button" class="editor-modal-close" data-close-modal title="Close" aria-label="Close dialog">×</button></div>
@@ -884,7 +931,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-stage1-controls-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-text-motion-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
