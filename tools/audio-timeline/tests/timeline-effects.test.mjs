@@ -8,11 +8,13 @@ const makeCanvasRecorder=()=>{
  const gradient=()=>({addColorStop:(...args)=>log.push(['stop',...args])});
  const context=new Proxy({},{
   get(target,key){if(key==='log')return log;
+   if(Object.hasOwn(target,key))return target[key];
+   if(key==='globalAlpha')return 1;
    if(key==='createLinearGradient'||key==='createRadialGradient')
     return (...args)=>{log.push([key,...args]);return gradient();};
    return (...args)=>log.push([key,...args]);
   },
-  set(target,key,value){log.push(['set',String(key),typeof value==='number'?Math.round(value*1e5)/1e5:String(value)]);return true;}
+  set(target,key,value){target[key]=value;log.push(['set',String(key),typeof value==='number'?Math.round(value*1e5)/1e5:String(value)]);return true;}
  });
  return context;
 };
