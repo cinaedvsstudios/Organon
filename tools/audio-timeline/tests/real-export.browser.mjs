@@ -16,7 +16,7 @@ const root = process.cwd();
 const fixtures = join(root, 'tools/audio-timeline/tests/fixtures');
 mkdirSync(fixtures, { recursive:true });
 const temp = await mkdtemp(join(tmpdir(), 'motoriclip-qa-'));
-const mime = {'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.mp4':'video/mp4','.jpg':'image/jpeg'};
+const mime = {'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.mp4':'video/mp4','.jpg':'image/jpeg','.wav':'audio/wav'};
 function run(bin, args, options={}) {
     const child = spawnSync(bin, args, {
         encoding:options.binary?undefined:'utf8', maxBuffer:32*1024*1024,
@@ -38,6 +38,8 @@ function makeVideo(label, colour, tone) {
 }
 makeVideo('red-440','red',440);
 makeVideo('blue-660','blue',660);
+run('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i','sine=f=440:sample_rate=48000:d=2',
+    '-c:a','pcm_s16le',join(fixtures,'audio-440.wav')]);
 run('ffmpeg',['-hide_banner','-loglevel','error','-y','-f','lavfi','-i','color=c=yellow:s=320x180:d=1',
     '-frames:v','1','-update','1',join(fixtures,'background.jpg')]);
 
@@ -291,6 +293,67 @@ try {
         assert.ok(Math.abs(Number(info.format.duration)-.8)<.12,
             'Expected ONLY .8s trimmed section, got '+info.format.duration);
         console.log('[MotoriClip trimmed-section] PASS real 0.8s MP4 export with Orgavox 8-bit Lo-Fi audio, source offset, no project mutations');
+        // A standalone audio lane must download an actual WAV audio file,
+        // not an MP4 containing a black video stream.
+        const wavDownload=page.waitForEvent('download',{timeout:60000});
+        const wavResult=await page.evaluate(async()=>{
+            const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
+                import('../js/advanced-offline-export.mjs'),
+                import('../js/advanced-media-engine-v0.24.js')
+            ]);
+            const response=await fetch('./fixtures/audio-440.wav');
+            const file=new File([await response.blob()],'audio-440.wav',{type:'audio/wav'});
+            const clip={id:'audio-only',type:'audio',sourceName:file.name,file,media:null,
+                start:12,sourceOffset:.35,sourceDuration:2,clipDuration:.75,speed:1,
+                visible:true,opacity:1,order:1,blendMode:'source-over',
+                audio:{volume:.8,gain:20,muted:false,fadeIn:.02,fadeOut:.03,
+                    fx:{eq:'voice',drive:'off',dynamics:'off',stereo:'off',lofi:'eightbit'}}};
+            const canvas=document.createElement('canvas');canvas.width=320;canvas.height=180;
+            const engine=new AdvancedMediaEngine({canvas,mediaBin:document.createElement('div'),
+                onTimeChange(){},onDurationChange(){},onPlaybackChange(){},
+                onRenderError(error){throw error}});
+            engine.tracks=[clip];
+            const downloads=[],states=[];
+            const exporter=new AdvancedOfflineExporter({engine,
+                onState:state=>states.push(state.phase),
+                onDownload({blob,extension,filename}){
+                    downloads.push({size:blob.size,extension,filename,type:blob.type});
+                    const url=URL.createObjectURL(blob),link=document.createElement('a');
+                    link.href=url;link.download=filename;document.body.appendChild(link);
+                    link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),15000);
+                }
+            });
+            const result=await exporter.startWavSection({segmentTrackId:clip.id});
+            return {result,downloads,states,unchanged:{
+                start:clip.start,sourceOffset:clip.sourceOffset,clipDuration:clip.clipDuration,
+                speed:clip.speed
+            },busy:exporter.busy};
+        });
+        const wav=await wavDownload;
+        assert.equal(wav.suggestedFilename(),'audio-440-trimmed-0.75s.wav');
+        assert.equal(wavResult.result,true);
+        assert.equal(wavResult.busy,false);
+        assert.equal(wavResult.downloads.length,1);
+        assert.equal(wavResult.downloads[0].type,'audio/wav');
+        assert.ok(wavResult.states.includes('complete'));
+        assert.deepEqual(wavResult.unchanged,{start:12,sourceOffset:.35,clipDuration:.75,speed:1});
+        const wavPath=join(temp,'trimmed-audio-only.wav');
+        await wav.saveAs(wavPath);
+        const wavInfo=JSON.parse(run('ffprobe',['-v','error',
+            '-show_entries','stream=codec_name,codec_type,sample_rate,channels',
+            '-show_entries','format=duration','-of','json',wavPath]));
+        assert.equal(wavInfo.streams.length,1,'WAV must contain only audio, not black video');
+        assert.equal(wavInfo.streams[0].codec_name,'pcm_s16le');
+        assert.equal(wavInfo.streams[0].codec_type,'audio');
+        assert.equal(Number(wavInfo.streams[0].sample_rate),48000);
+        assert.equal(Number(wavInfo.streams[0].channels),2);
+        assert.ok(Math.abs(Number(wavInfo.format.duration)-.75)<.002,
+            'WAV must contain only 0.75s trimmed audio, not the full original file');
+        const raw=run('ffmpeg',['-v','error','-i',wavPath,'-ac','1','-f','f32le','pipe:1'],{binary:true});
+        let squares=0;
+        for(let i=0;i+3<raw.length;i+=4)squares+=raw.readFloatLE(i)**2;
+        assert.ok(Math.sqrt(squares/(raw.length/4))>.005,'WAV has no audible Orgavox-processed signal');
+        console.log('[MotoriClip WAV] PASS 0.75s audio-only 48kHz PCM16 with Lo-Fi effects, no video stream or project mutations');
     }
     assert.deepEqual(errors,[],'Browser reported script errors');
     console.log('[MotoriClip E2E] PASS complete for '+browserName);
