@@ -706,7 +706,7 @@ export class AdvancedMediaEngine {
         link.click();
         link.remove();
         // Some browsers begin an anchor download asynchronously.
-        window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+        setTimeout(()=>URL.revokeObjectURL(url),30000);
         return {type:blob.type,size:blob.size,width:this.canvas.width,height:this.canvas.height};
     }
     emitTime() { this.onTimeChange?.({ currentTime:this.currentTime, duration:this.getTimelineDuration() }); }
