@@ -103,7 +103,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     const fade=Math.min(1,life*6,(1-life)*6)*strength;
     const r=(sparks?1.4:debris?3.2:1.7)*size*(.6+random(i*13+8));
     ctx.globalAlpha=fade;
-    ctx.fillStyle=sparks?'#ffffff':debris?'#d3a27c':e.color;
+    ctx.fillStyle=sparks?'#ffffff':e.color;
     ctx.strokeStyle=sparks?e.color:ctx.fillStyle;
     if(sparks){
      ctx.lineWidth=Math.max(1,r*.8);ctx.beginPath();ctx.moveTo(x,y);
