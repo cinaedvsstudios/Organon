@@ -94,6 +94,10 @@ try {
     assert.deepEqual(record.history.redo,[]);
     assert.ok(record.files.some(file=>file.generated?.group==='text'
         &&file.generated?.value==='PORTABLE PROJECT'));
+    assert.ok(record.tracks.some(track=>track.textOverlay?.presetId==='neon-cyan'
+        &&track.textOverlay.value==='PORTABLE PROJECT'
+        &&track.textOverlay.animation==='neon-flicker'),
+        'Portable project must carry editable text and deterministic animation settings');
     assert.ok(record.files.some(file=>file.generated?.group==='effect'
         &&file.generated?.presetId==='film-grain'));
     assert.ok(!json.includes('data:image'),'Portable JSON cannot embed base64 pictures');
