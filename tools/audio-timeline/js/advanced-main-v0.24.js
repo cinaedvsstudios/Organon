@@ -13,6 +13,7 @@ import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from
 import { TRANSITION_CATALOG } from './transition-catalog.mjs';
 import { planPairedTransition, isPairedFadeActive, PAIR_VISUAL_TYPES } from './clip-pair-transitions.mjs';
 import { paintPairedEffect } from './paired-visual-effects.mjs';
+import { normaliseSpiralBlockOptions } from './gl-transitions/SpiralBlockWipe.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1633,6 +1634,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const paired=Boolean(from&&isPairedFadeActive(track,state.tracks));
             elements.videoTransitionPairNote.hidden=!paired;
             elements.btnUnpairTransition.hidden=!paired;
+            const spiralInspector=document.getElementById('video-spiral-settings');
+            spiralInspector.hidden=!(paired&&track.transitionEffectId==='spiralblockwipe');
+            if(!spiralInspector.hidden)
+                displaySpiralBlockSettings(spiralInspector,track.transitionParameters?.spiralblockwipe);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1872,6 +1877,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
         b.transitionFromId=plan.fromId;
         b.transitionEffectId=plan.effectId;
+        if(effectId==='spiralblockwipe'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-spiral')
+                :document.getElementById('video-spiral-settings');
+            b.transitionParameters={...b.transitionParameters,
+                spiralblockwipe:readSpiralBlockSettings(panel)};
+        }
         refreshAll();
         selectTrack(b.id);
         void engine.seek(plan.start+plan.duration/2,{resume:false}).catch((error)=>{
@@ -2608,6 +2620,30 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         for (const item of [elements.projectSettingsModal, elements.projectExportModal, elements.transitionModal]) item.hidden = true;
     }
 
+    // Shared options for the exact original SpiralBlockWipe GLSL shader.
+    function readSpiralBlockSettings(root) {
+        const field=name=>root?.querySelector('[data-spiral-param="'+name+'"]')?.value;
+        return normaliseSpiralBlockOptions({
+            columns:field('columns'),rows:field('rows'),
+            inward:field('inward')!=='false',clockwise:field('clockwise')!=='false',
+            smoothness:field('smoothness')
+        });
+    }
+    function displaySpiralBlockSettings(root,options={}) {
+        const params=normaliseSpiralBlockOptions(options);
+        for(const [name,value] of Object.entries(params)) {
+            const input=root?.querySelector('[data-spiral-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshSpiralModalSettings({restoreValues=false}={}) {
+        const root=document.getElementById('transition-modal-spiral');
+        root.hidden=elements.transitionModalEffect.value!=='spiralblockwipe';
+        if(!root.hidden&&restoreValues) {
+            const target=getTrack(elements.transitionModalTo.value);
+            displaySpiralBlockSettings(root,target?.transitionParameters?.spiralblockwipe);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2642,11 +2678,20 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             previewDrawContained(ctx,a.media,width,height);
             if (progress <= 0) return;
             const draft={...b,start:0,transitionFromId:a.id,transitionEffectId:effectId,
+                transitionParameters:effectId==='spiralblockwipe'
+                    ?{...b.transitionParameters,spiralblockwipe:readSpiralBlockSettings(document.getElementById('transition-modal-spiral'))}
+                    :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
                 ctx.globalAlpha=progress;
                 previewDrawContained(ctx,b.media,width,height);
             } else {
+                // Original GL shader composes A and B together; clear the
+                // already drawn A to avoid doubling transparent source pixels.
+                if(effectId==='spiralblockwipe'){
+                    ctx.clearRect(0,0,width,height);
+                    ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
+                }
                 ctx.globalAlpha=1;
                 transitionPreviewScratch.tracks=[a,draft];
                 if (!paintPairedEffect(transitionPreviewScratch,ctx,draft,width,height,duration*progress,previewDrawContained))
@@ -2677,6 +2722,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             elements.transitionModalEffect.appendChild(option);
         }
         elements.transitionModalEffect.value=elements.pairTransitionEffect.value || 'fade';
+        refreshSpiralModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2688,6 +2734,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             ? 'Place at least two visual clips (video, PNG, JPEG, GIF or WebP) on the timeline.'
             : !valid ? 'Choose two different clips. A clip cannot transition into itself.'
             : `${count} available visual clips · 41 transitions. Preview the effect, then Apply.`;
+        refreshSpiralModalSettings();
         renderTransitionPreview();
     }
     function applyTransitionFromModal() {
@@ -2713,7 +2760,24 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
     elements.transitionModalFrom.addEventListener('change',updateTransitionModalValidation);
     elements.transitionModalTo.addEventListener('change',updateTransitionModalValidation);
-    elements.transitionModalEffect.addEventListener('change',()=>{renderTransitionPreview();});
+    elements.transitionModalEffect.addEventListener('change',()=>{
+        refreshSpiralModalSettings({restoreValues:true});renderTransitionPreview();
+    });
+    document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-spiral-settings').querySelectorAll('[data-spiral-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='spiralblockwipe'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readSpiralBlockSettings(document.getElementById('video-spiral-settings'));
+            const prior=normaliseSpiralBlockOptions(active.transitionParameters?.spiralblockwipe);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit SpiralBlockWipe shader settings');
+            active.transitionParameters={...active.transitionParameters,spiralblockwipe:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     elements.transitionModalDuration.addEventListener('input',renderTransitionPreview);
     elements.transitionPreviewProgress.addEventListener('input',renderTransitionPreview);
     elements.btnTransitionPlayPreview.addEventListener('click',()=>{

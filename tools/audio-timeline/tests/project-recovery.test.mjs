@@ -46,6 +46,19 @@ test('project recovery preserves timeline arrangement and complex clip effects w
     assert.equal(parsed.files[0].size,2789711);
     assert.equal(parsed.tracks[0].file,undefined);
 });
+test('SpiralBlockWipe original GLSL uniforms survive portable Save/Open without live-object aliasing',()=>{
+    const params={columns:11,rows:7,inward:false,clockwise:false,smoothness:.19};
+    const video=clip({transitionEffectId:'spiralblockwipe',transitionParameters:{spiralblockwipe:params}});
+    const record=createRecoveryRecord({files:[file()],tracks:[video]});
+    const parsed=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.deepEqual(parsed.tracks[0].transitionParameters.spiralblockwipe,params);
+    video.transitionParameters.spiralblockwipe.columns=3;
+    assert.equal(record.tracks[0].transitionParameters.spiralblockwipe.columns,11,
+        'Later Inspector changes must not corrupt saved Undo/project data');
+    parsed.tracks[0].transitionParameters.spiralblockwipe.rows=4;
+    assert.equal(record.tracks[0].transitionParameters.spiralblockwipe.rows,7,
+        'Imported project edits must not mutate previous recovery snapshots');
+});
 test('recovery snapshot is independent of live edit objects',()=>{
     const c=clip();const entry=file();
     const saved=createRecoveryRecord({files:[entry],tracks:[c]});

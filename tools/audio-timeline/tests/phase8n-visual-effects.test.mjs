@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ACTIVE_PAIR_EFFECTS,spiralBlockProgress,hologramStrength,crumpleFold} from '../js/paired-visual-effects.mjs';
+import {ACTIVE_PAIR_EFFECTS,hologramStrength,crumpleFold} from '../js/paired-visual-effects.mjs';
+import {SPIRAL_BLOCK_SOURCE,SPIRAL_BLOCK_DEFAULTS,normaliseSpiralBlockOptions} from '../js/gl-transitions/SpiralBlockWipe.mjs';
+import {createHash} from 'node:crypto';
 import {TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES} from '../js/transition-catalog.mjs';
 const selected=['spiralblockwipe','hologram','crumple'];
 test('8N catalog retains 41 stable choices, 37 enabled',()=>{
@@ -10,11 +12,15 @@ test('8N catalog retains 41 stable choices, 37 enabled',()=>{
  assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='available').length,41);
  assert.equal(TRANSITION_CATALOG.filter(e=>e.status==='requested').length,0);
 });
-test('spiral blocks progress deterministically and resolve at endpoints',()=>{
- const a=Array.from({length:96},(_,i)=>spiralBlockProgress(.55,i));
- assert.deepEqual(a,Array.from({length:96},(_,i)=>spiralBlockProgress(.55,i)));
- assert.ok(new Set(a.map(x=>x.toFixed(2))).size>10);
- for(let i=0;i<96;i++){assert.equal(spiralBlockProgress(0,i),0);assert.equal(spiralBlockProgress(1,i),1);}
+test('SpiralBlockWipe contains byte-for-byte upstream MIT GLSL and original defaults',()=>{
+ const bytes=Buffer.from(SPIRAL_BLOCK_SOURCE,'utf8');
+ const gitBlob=createHash('sha1').update('blob '+bytes.length+String.fromCharCode(0)).update(bytes).digest('hex');
+ assert.equal(gitBlob,'e98d9e749d398d84ec927da9286af13843da722e',
+     'Original shader body must not be silently rewritten or approximated');
+ assert.deepEqual(SPIRAL_BLOCK_DEFAULTS,{columns:8,rows:6,inward:true,clockwise:true,smoothness:.05});
+ assert.deepEqual(normaliseSpiralBlockOptions(),SPIRAL_BLOCK_DEFAULTS);
+ assert.deepEqual(normaliseSpiralBlockOptions({columns:120,rows:-5,inward:false,clockwise:false,smoothness:7}),
+     {columns:64,rows:1,inward:false,clockwise:false,smoothness:.5});
 });
 test('hologram lines fade out at both endpoints',()=>{
  for(let i=0;i<48;i++){

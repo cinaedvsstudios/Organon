@@ -8,7 +8,7 @@ import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-schedule
 import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-seek.mjs';
 import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from './media-support.mjs';
 import { isPairedFadeActive } from './clip-pair-transitions.mjs';
-import { paintPairedEffect } from './paired-visual-effects.mjs';
+import { paintPairedEffect, pairedEffectProgress } from './paired-visual-effects.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
 import { connectOrgavoxAudioChain, ensureOrgavoxLofiWorklet } from './orgavox-audio-chain.mjs';
@@ -325,8 +325,13 @@ export class AdvancedMediaEngine {
         this.setTracks([]);
         for (const track of loading) this.detachTrack(track, false);
         // Drop any 1080p+ offscreen transition textures when a project clears.
-        for(const name of ['transitionPixelScratch','transitionFullScratch']){
+        for(const name of ['transitionPixelScratch','transitionFullScratch',
+            'spiralBlockFromScratch','spiralBlockToScratch']){
             if(this[name]){ this[name].width=0; this[name].height=0; this[name]=null; }
+        }
+        if(this.spiralBlockWebGL){
+            this.spiralBlockWebGL.dispose();
+            this.spiralBlockWebGL=null;
         }
         this.currentTime = 0;
         this.emitDuration(); this.emitTime(); this.renderFrame();
@@ -584,7 +589,23 @@ export class AdvancedMediaEngine {
                 this.context.clearRect(0, 0, width, height);
                 this.context.fillStyle = '#000';
                 this.context.fillRect(0, 0, width, height);
+                // A true two-texture shader replaces A and B together. Do not
+                // draw A beforehand or semi-transparent pixels get composited
+                // twice over the underlying layers.
+                const shaderReplacedSources=new Set();
+                for(const incoming of this.tracks){
+                    if(incoming.transitionEffectId!=='spiralblockwipe'
+                        ||!incoming.media||incoming.visible===false
+                        ||!this.isTrackActive(incoming)
+                        ||!isPairedFadeActive(incoming,this.tracks))continue;
+                    const amount=pairedEffectProgress(incoming,this.currentTime);
+                    const outgoing=this.tracks.find(t=>t.id===incoming.transitionFromId);
+                    if(amount>0&&amount<1&&outgoing?.media
+                        &&(outgoing.media.readyState===undefined||outgoing.media.readyState>=2))
+                        shaderReplacedSources.add(outgoing.id);
+                }
                 for (const track of [...this.getVisualTracksTopToBottom()].reverse()) {
+                    if(shaderReplacedSources.has(track.id))continue;
                     if (!track.media || !this.isTrackActive(track) || track.visible === false
                         || Number(track.opacity ?? 1) <= 0) continue;
                     this.context.save();
@@ -614,7 +635,8 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker')drawVisualVignette(this.context,track,this.currentTime,width,height);
+                            if(track.type!=='sticker'&&!(pairedSpatial&&track.transitionEffectId==='spiralblockwipe'))
+                                drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {
                         // Do not break the entire composite because one layer

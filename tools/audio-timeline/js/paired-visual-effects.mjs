@@ -1,3 +1,4 @@
+import { paintSpiralBlockWipe } from './gl-transitions/SpiralBlockWipe.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -505,15 +506,6 @@ export function prismFacetOffset(progress,facet,width,height) {
 }
 /** Create or resize a scratch canvas held by the renderer instance. */
 
-/** Phase 8N: stable per-cell spiral order, no frame-to-frame randomness. */
-export function spiralBlockProgress(progress,index,cols=12,rows=8){
-    if(unit(progress)===0)return 0;
-    if(unit(progress)===1)return 1;
-    const x=index%cols,y=Math.floor(index/cols);
-    const angle=(Math.atan2(y-(rows-1)/2,x-(cols-1)/2)+Math.PI)/(2*Math.PI);
-    const distance=Math.hypot((x-(cols-1)/2)/cols,(y-(rows-1)/2)/rows);
-    return unit((unit(progress)-(.57*angle+.18*distance))/.34);
-}
 /** A hologram scans in without ever modifying the original video pixels. */
 export function hologramStrength(progress,row=0){
     const p=unit(progress);
@@ -564,6 +556,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const progress=pairedEffectProgress(track,time);
     if(progress<=0)return true; // Keep A entirely visible at the boundary.
     if(progress>=1)return false; // Let normal renderer draw a pristine B.
+    if(id==='spiralblockwipe')
+        return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -630,30 +624,13 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='spiralblockwipe'||id==='hologram'||id==='crumple'){
+    if(id==='hologram'||id==='crumple'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fc=full.getContext('2d');
         fc.clearRect(0,0,width,height);
         renderContained(fc,media,width,height);
         context.save();
-        if(id==='spiralblockwipe'){
-            const cols=12,rows=8;
-            for(let i=0;i<cols*rows;i++){
-                const x=i%cols,y=Math.floor(i/cols);
-                const x0=Math.floor(x*width/cols),y0=Math.floor(y*height/rows);
-                const x1=Math.ceil((x+1)*width/cols),y1=Math.ceil((y+1)*height/rows);
-                const p=spiralBlockProgress(progress,i,cols,rows);
-                if(p<=0)continue;
-                const w=x1-x0,h=y1-y0;
-                context.save();
-                context.translate(x0+w/2,y0+h/2);
-                context.rotate((1-p)*.45);
-                context.scale(Math.max(.01,p),Math.max(.01,p));
-                context.globalAlpha=alpha*p;
-                context.drawImage(full,x0,y0,w,h,-w/2,-h/2,w,h);
-                context.restore();
-            }
-        }else if(id==='hologram'){
+        if(id==='hologram'){
             context.globalAlpha=alpha*progress;
             context.drawImage(full,0,0,width,height);
             const rows=48;
