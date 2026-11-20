@@ -6,7 +6,7 @@
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
 import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261120-orgavox-lofi';
-import { snapshotProject, snapshotClip, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs?build=20261120-orgavox-audio';
+import { snapshotProject, snapshotClip, applyClipData, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs?build=20261120-orgavox-audio';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-wav-only';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
@@ -30,7 +30,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
         files: [], tracks: [], selectedTrackId: null, selectedTrackIds: new Set(), selectedFileId: null,
         contextTrackId: null, contextClickTime: 0, contextClipboard: null, timelineMarkers: [], dragDepth: 0, isSeeking: false, serial: 0, liveRenderRequest: null,
         toastTimer: null, selectionMode: false, previewZoom: 100,
-        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map(), recoveryLoading:true, lastRecoveryText:''
+        history: { undo: [], redo: [], limit: 60 }, historyRestoring: false, sourceFiles: new Map(), savedFileHandles: new Map(), recoveryLoading:true, editorDisposing:false, lastRecoveryText:''
     };
 
     const elements = {
@@ -316,7 +316,7 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
     }
 
     function saveProjectRecovery() {
-        if(state.recoveryLoading || state.historyRestoring) return false;
+        if(state.recoveryLoading || state.historyRestoring || state.editorDisposing) return false;
         try {
             const record=createRecoveryRecord({
                 files:state.files,tracks:state.tracks,
@@ -393,8 +393,13 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
                 // loadTrack creates fresh browser decoders but retains the
                 // timeline's source in-point, duration, transforms/keyframes,
                 // fades, speed, blend and Orgavox preset settings.
+                const preserved=snapshotClip(track);
                 await engine.loadTrack(track,file);
                 if(!state.tracks.includes(track)){engine.detachTrack(track,false);continue;}
+                // The engine discards old media metadata while creating new
+                // decoders. Reapply the saved edit after the source is loaded,
+                // otherwise trims/clip lengths/speed can silently reset.
+                applyClipData(track,preserved);
                 state.sourceFiles.set(track.sourceFileId,file);
                 linked++;
             } catch(error) {
@@ -2380,6 +2385,10 @@ import { PROJECT_RECOVERY_KEY, createRecoveryRecord, parseRecoveryRecord, serial
             event.preventDefault();
             event.returnValue = '';
         } else {
+            // destroy() detaches media elements and mutates clip metadata.
+            // pagehide fires after beforeunload, so suppress autosave after
+            // teardown or a valid project could be replaced by empty clips.
+            state.editorDisposing=true;
             engine.destroy();
         }
     });
