@@ -99,6 +99,10 @@ try{
    });
    await engine.loadTrack(video,input);
    await engine.loadTrack(overlay,overlayFile);
+   // loadTrack resets clipDuration while reloading its backing media; apply
+   // the user's timeline duration AFTER the media-ready handshake.
+   video.clipDuration=2;
+   overlay.clipDuration=2;
    engine.setTracks([video,overlay]);
    const copyRgb=()=>{
     const rgba=canvas.getContext('2d').getImageData(0,0,W,H).data;
