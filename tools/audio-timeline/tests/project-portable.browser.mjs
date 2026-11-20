@@ -101,7 +101,6 @@ try {
     assert.ok(json.length<250000,'Portable backup must stay compact even with history snapshots');
     console.log('[MotoriClip portable] PASS Save Project downloads compact JSON with all three clips and generated recipes');
 
-    page.once('dialog',dialog=>dialog.accept());
     await page.locator('[data-library-tab="media"]').click();
     await page.locator('#btn-clear').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
