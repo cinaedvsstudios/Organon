@@ -245,7 +245,7 @@ try{
     await page.locator('#inspector-text-template').waitFor({state:'visible'});
     await page.locator('#text-inspector-value').fill('UPDATED RECOVERY TITLE');
     await page.locator('#text-animation').selectOption('typewriter');
-    await page.locator('#text-animation-delay').fill('.4');
+    await page.locator('#text-animation-delay').fill('0.4');
     await page.locator('#text-animation-speed').fill('2');
     await page.locator('#text-animation-easing').selectOption('linear');
     await page.locator('#text-animation-intensity').fill('125');
