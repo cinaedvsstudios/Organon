@@ -119,9 +119,9 @@ export function textAnimationState(config={},localTime=0,clipDuration=3) {
   pinProgress:opts.animation==='location-drop'?clamp(raw/.45,0,1):1,
   locationLabelProgress:opts.animation==='location-drop'?easeProgress(clamp((raw-.3)/.7,0,1),'ease-out'):1,
   countdownDigit:opts.animation==='countdown-roll'
-    ?Math.max(0,Math.ceil((1-progress)*( /^\\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3))):null,
+    ?Math.max(0,Math.ceil((1-progress)*( /^\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3))):null,
   countdownPhase:opts.animation==='countdown-roll'
-    ?(1-progress)*( /^\\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3):0,
+    ?(1-progress)*( /^\d+$/.test(text.trim())?clamp(Number(text.trim()),1,99):3):0,
   splitProgress:opts.animation==='split-enter'?progress:1
  };
 }
@@ -225,6 +225,40 @@ function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  }
  ctx.restore();
 }
+/**
+ * Reveal a scripted title character by character, with a pen tip travelling
+ * along the revealed writing. Progress is derived only from timeline time.
+ */
+function drawWritingTitle(ctx,text,x,y,opts,frame){
+ const letters=Array.from(text);
+ if(!letters.length)return;
+ const size=opts.size||84;
+ ctx.save();
+ ctx.font='italic 500 '+size+'px '+fonts.script;
+ const widths=letters.map(letter=>ctx.measureText(letter).width);
+ const total=widths.reduce((sum,w)=>sum+w,0);
+ const fit=Math.min(1,(opts.maxWidth||550)/Math.max(total,1));
+ ctx.translate(x,y);ctx.scale(fit,fit);
+ let cursor=-total/2,penX=cursor;
+ const overall=frame.progress*letters.length;
+ for(let i=0;i<letters.length;i++){
+  const w=widths[i],fraction=clamp(overall-i,0,1);
+  if(fraction>0){
+   ctx.save();ctx.beginPath();ctx.rect(cursor-2,-size,Math.max(1,w*fraction+4),size*2.1);ctx.clip();
+   drawTitle(ctx,letters[i],cursor+w/2,0,{...opts,size,font:'script',
+     italic:true,weight:500,maxWidth:w+15,align:'center'});
+   ctx.restore();
+  }
+  if(fraction>0)penX=cursor+w*fraction;
+  cursor+=w;
+ }
+ if(frame.progress>0&&frame.progress<1){
+  ctx.fillStyle=opts.outline;ctx.beginPath();ctx.arc(penX+2,12,4,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle=opts.fill;ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(penX+4,7);ctx.lineTo(penX+16,-18);ctx.stroke();
+ }
+ ctx.restore();
+}
 const GLYPH_ANIMATIONS=new Set(['letter-pop','shake','wave','kinetic-stagger','glitch-text','neon-flicker']);
 function textValue(config,frame) {
  const value=config.value||'MotoriClip';
@@ -254,10 +288,20 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.restore();break;
   }
   case 'location':{
+   ctx.save();
+   if(frame.locationLabelProgress<1){
+    ctx.beginPath();ctx.rect(50,222,535*frame.locationLabelProgress,107);ctx.clip();
+   }
    ctx.fillStyle='rgba(9,25,30,.88)';roundRect(ctx,55,223,530,104,18);ctx.fill();
+   ctx.restore();
+   const p=frame.pinProgress;
+   const drop=-142*Math.pow(1-p,2)+Math.sin(p*Math.PI*3)*(1-p)*15;
+   ctx.save();ctx.globalAlpha*=clamp(p*3,0,1);
+   ctx.translate(0,drop);
    ctx.fillStyle=outline;ctx.beginPath();ctx.arc(109,273,26,0,Math.PI*2);ctx.fill();
    ctx.fillStyle='#0a2029';ctx.font='700 24px '+fonts.sans;ctx.textAlign='center';
-   ctx.fillText('⌖',109,274);break;
+   ctx.fillText('⌖',109,274);
+   ctx.restore();break;
   }
   case 'quote':{
    ctx.save();ctx.fillStyle=outline;ctx.font='italic 150px '+fonts.serif;ctx.textAlign='left';
@@ -309,6 +353,28 @@ function decorate(ctx,layout,fill,outline,frame) {
   case 'stacked':{
    ctx.fillStyle=outline;ctx.fillRect(38,72,26,220);
    ctx.fillStyle=outline;ctx.fillRect(68,293,515,5);break;
+  case 'countdown':{
+   ctx.save();ctx.fillStyle='rgba(8,27,40,.86)';
+   ctx.beginPath();ctx.arc(320,171,120,0,Math.PI*2);ctx.fill();
+   ctx.strokeStyle=outline;ctx.lineWidth=7;ctx.beginPath();
+   ctx.arc(320,171,115,0,Math.PI*2);ctx.stroke();
+   ctx.strokeStyle=fill;ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();
+   ctx.arc(320,171,115,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(.0001,1-frame.progress));
+   ctx.stroke();
+   for(let i=0;i<12;i++){
+    const angle=i*Math.PI/6-Math.PI/2;
+    ctx.strokeStyle='rgba(248,242,220,.45)';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(320+Math.cos(angle)*92,171+Math.sin(angle)*92);
+    ctx.lineTo(320+Math.cos(angle)*102,171+Math.sin(angle)*102);ctx.stroke();
+   }
+   ctx.restore();break;
+  }
+  case 'split':{
+   ctx.strokeStyle=outline;ctx.lineWidth=2;
+   ctx.beginPath();ctx.moveTo(96,177);ctx.lineTo(544,177);ctx.stroke();
+   ctx.fillStyle=outline;ctx.fillRect(295,167,50,20);
+   break;
+  }
   }
  }
 }
