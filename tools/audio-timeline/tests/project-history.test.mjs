@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     snapshotProject, snapshotClip, restoreFileEntries, validateTrackRecords,
-    referencedFileIds, applyClipData, prepareHistoryTracks
+    referencedFileIds, applyClipData, prepareHistoryTracks, matchesHistoricalSource, historicalMediaIdsForFile
 } from '../js/project-history.mjs';
 import { AdvancedMediaEngine } from '../js/advanced-media-engine-v0.24.js';
 
@@ -309,4 +309,36 @@ test('history snapshots retain generated overlay recipes but not File objects',(
     assert.equal(saved.files[0].generated.value,'Hello');
     assert.equal(saved.files[0].size,42);
     assert.equal(saved.files[0].file,undefined);
+});
+
+test('reimported media binds to an Undo-only historical source without borrowing the wrong file',()=>{
+    const jpg={name:'retired.jpg',size:2048,lastModified:1712345678901};
+    const old={id:'stable-old',name:jpg.name,kind:'background',
+        size:jpg.size,lastModified:jpg.lastModified};
+    const history={undo:[{label:'Delete media',snapshot:{
+        files:[old],tracks:[],selectedTrackIds:[],currentTime:0
+    }}],redo:[]};
+    assert.deepEqual(historicalMediaIdsForFile(jpg,'background',history,[],new Map()),
+        ['stable-old']);
+    assert.deepEqual(historicalMediaIdsForFile({...jpg,size:2049},'background',history,[],new Map()),[]);
+    assert.deepEqual(historicalMediaIdsForFile({...jpg,lastModified:1234},'background',history,[],new Map()),[]);
+    assert.deepEqual(historicalMediaIdsForFile(jpg,'sticker',history,[],new Map()),[]);
+    assert.deepEqual(historicalMediaIdsForFile(jpg,'background',history,[old],new Map()),[]);
+    assert.deepEqual(historicalMediaIdsForFile(jpg,'background',history,[],new Map([['stable-old',jpg]])),[]);
+    assert.equal(matchesHistoricalSource({name:jpg.name,kind:'background'},jpg,'background'),false,
+        'Legacy filename-only history must never auto-bind an unrelated source');
+});
+test('redo-only media references can be recovered without modifying timeline data',()=>{
+    const original={name:'sound.wav',size:9216,lastModified:1720000000000};
+    const record={id:'future-audio',name:original.name,kind:'audio',
+        size:original.size,lastModified:original.lastModified};
+    const history={undo:[],redo:[{label:'Insert audio',snapshot:{
+        files:[record],tracks:[],selectedTrackIds:[],currentTime:0
+    }}]};
+    const ids=historicalMediaIdsForFile(original,'audio',history,[],new Map());
+    assert.deepEqual(ids,['future-audio']);
+    const sources=new Map(ids.map(id=>[id,original]));
+    const restored=restoreFileEntries([record],sources,{includeMissing:true});
+    assert.equal(restored[0].file,original);
+    assert.equal(restored[0].needsRelink,false);
 });
