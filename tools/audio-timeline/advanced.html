@@ -482,7 +482,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <button type="button" class="btn" id="btn-relink" title="Reconnect previously permitted files without reimporting; you may need to grant access again">↻ Relink</button>
                         <button type="button" class="btn project-cog-btn" id="btn-project-settings" title="Project Settings: canvas dimensions and frame rate" aria-label="Project Settings">⚙</button>
                     </div>
-                    <div class="project-action-buttons"><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button><button type="button" class="btn" id="btn-reset-export" title="Restore export format and quality defaults; keep clips and project settings">↺ Reset</button></div>
+                    <div class="project-action-buttons"><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button><button type="button" class="btn btn-danger" id="btn-reset-timeline" title="Empty the entire timeline: remove every track, clip and cue marker. Imported media remains in the bin; Undo can restore the timeline.">↺ Reset</button></div>
                 </section>
                 <nav class="asset-library-tabs" role="tablist" aria-label="Project asset library">
                     <button type="button" class="asset-tab active" data-library-tab="media" role="tab" aria-selected="true" aria-controls="project-drop-zone" title="Imported project files">📁 Media</button>
@@ -931,7 +931,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-text-motion-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-timeline-reset-motion-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
