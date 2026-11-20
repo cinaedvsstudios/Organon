@@ -1561,8 +1561,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-origin-controls').hidden=
             !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=
-            !['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
-              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk'].includes(track?.effectOverlay?.presetId);
+            !(['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
+              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk'].includes(track?.effectOverlay?.presetId)
+              || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
         document.getElementById('effect-glow-control').hidden=
             !['glow','edge-glow','halo-blur'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-blur-control').hidden=
