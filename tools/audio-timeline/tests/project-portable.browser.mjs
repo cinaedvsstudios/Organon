@@ -295,23 +295,59 @@ try {
 
     // A private-window or full localStorage quota must be surfaced to the
     // editor user instead of silently pretending that recovery succeeded.
+    const previousRecovery=await page.evaluate(()=>
+        localStorage.getItem('motori-advanced-project-recovery-v1'));
     await page.evaluate(()=>{
         const original=Storage.prototype.setItem;
         window.__motoriOriginalStorageSet=original;
+        window.__motoriQuotaAttempts=0;
+        window.__motoriQuotaWarningSeen=false;
+        // The toast is intentionally temporary. Capture its appearance rather
+        // than polling text that another asynchronous UI toast can replace.
+        const toast=document.querySelector('#app-toast');
+        const captureWarning=()=>{
+            if(toast?.textContent?.includes('Automatic project recovery is unavailable'))
+                window.__motoriQuotaWarningSeen=true;
+        };
+        window.__motoriQuotaObserver=new MutationObserver(captureWarning);
+        window.__motoriQuotaObserver.observe(toast,
+            {childList:true,subtree:true,characterData:true});
         Storage.prototype.setItem=function(key,value){
-            if(key==='motori-advanced-project-recovery-v1')
+            if(key==='motori-advanced-project-recovery-v1'){
+                window.__motoriQuotaAttempts++;
                 throw new DOMException('Simulated storage quota reached','QuotaExceededError');
+            }
             return original.call(this,key,value);
         };
     });
     await page.locator('#btn-add-marker').click();
-    await page.waitForFunction(()=>document.querySelector('#app-toast')?.textContent
-        ?.includes('Automatic project recovery is unavailable'),
-        null,{timeout:10000});
-    await page.evaluate(()=>{
+    // Autosave normally runs every 1.5 s. Trigger the *existing* synchronous
+    // pagehide save hook too, avoiding runner scheduling races in a high-load
+    // parallel Chrome/Firefox/WebKit CI job.
+    await page.evaluate(()=>window.dispatchEvent(new Event('pagehide')));
+    await page.waitForFunction(()=>window.__motoriQuotaAttempts>0,
+        null,{timeout:20000});
+    await page.waitForFunction(()=>window.__motoriQuotaWarningSeen===true,
+        null,{timeout:20000});
+    const quotaResult=await page.evaluate(()=>{
+        const result={
+            attempts:window.__motoriQuotaAttempts,
+            warningSeen:window.__motoriQuotaWarningSeen,
+            currentRecovery:localStorage.getItem('motori-advanced-project-recovery-v1')
+        };
         Storage.prototype.setItem=window.__motoriOriginalStorageSet;
-        delete window.__motoriOriginalStorageSet;
+        window.__motoriQuotaObserver.disconnect();
+        for(const name of ['__motoriOriginalStorageSet','__motoriQuotaObserver',
+            '__motoriQuotaAttempts','__motoriQuotaWarningSeen'])
+            delete window[name];
+        return result;
     });
+    assert.ok(quotaResult.attempts>0,
+        'Quota injection must exercise an actual localStorage save');
+    assert.equal(quotaResult.warningSeen,true,
+        'The user must see a Save Project backup warning on quota failure');
+    assert.equal(quotaResult.currentRecovery,previousRecovery,
+        'A failed autosave must not corrupt or overwrite the last good project');
     assert.deepEqual(errors,[],'Storage quota errors must be handled without uncaught browser errors');
     console.log('[MotoriClip portable] PASS exhausted browser storage shows a backup warning');
     await context.close();
