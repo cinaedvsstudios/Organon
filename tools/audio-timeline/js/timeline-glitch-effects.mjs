@@ -165,8 +165,9 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
      if(context){pair={canvas,context};cache.set(ctx,pair);}
     }
     if(pair){
-     const sw=Math.max(1,Math.round(w/Math.max(3,4*size)));
-     const sh=Math.max(1,Math.round(h/Math.max(3,4*size)));
+     const downscale=Math.min(1/Math.max(3,4*size),640/Math.max(w,h));
+     const sw=Math.max(1,Math.round(w*downscale));
+     const sh=Math.max(1,Math.round(h*downscale));
      if(pair.canvas.width!==sw||pair.canvas.height!==sh){pair.canvas.width=sw;pair.canvas.height=sh;}
      pair.context.setTransform(1,0,0,1,0,0);
      pair.context.globalAlpha=1;pair.context.globalCompositeOperation='source-over';
