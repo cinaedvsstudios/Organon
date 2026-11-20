@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    createRecoveryRecord,serializeRecoveryRecord,parseRecoveryRecord,
+    createRecoveryRecord,serializeRecoveryRecord,parseRecoveryRecord,writeRecoveryRecordWithQuota,
     MAX_RECOVERY_TRACKS,PROJECT_RECOVERY_VERSION
 } from '../js/project-recovery.mjs';
 
@@ -143,4 +143,51 @@ test('oversized editing history trims oldest snapshots instead of losing the act
     assert.equal(result.tracks.length,1);
     assert.ok(result.history.undo.length>0 && result.history.undo.length<60);
     assert.equal(result.history.undo.at(-1).label,'edit 59');
+});
+
+test('quota-aware recovery keeps active timeline and newest history without altering memory',()=>{
+    const source={files:[file()],tracks:[clip({sourceName:'source.mp4'})],
+        selectedTrackIds:['clip-1'],selectedTrackId:'clip-1',currentTime:0};
+    const edits=Array.from({length:60},(_,i)=>({
+        label:'Drag clip '+i,
+        snapshot:{...source,tracks:[clip({start:i,sourceName:'long-name-'.repeat(90)+'.mp4'})]}
+    }));
+    const record=createRecoveryRecord({files:[file()],tracks:[clip({start:14})],
+        history:{undo:edits,redo:[]}});
+    const original=record.history.undo.length;
+    const stored=new Map();
+    const storage={
+        setItem(key,json){
+            if(json.length>12000)throw Object.assign(new Error('Storage full'),{name:'QuotaExceededError'});
+            stored.set(key,json);
+        }
+    };
+    const result=writeRecoveryRecordWithQuota(storage,'recovery',record);
+    const restored=parseRecoveryRecord(stored.get('recovery'));
+    assert.equal(result.truncated,true);
+    assert.ok(result.undoCount>0 && result.undoCount<original);
+    assert.equal(result.redoCount,0);
+    assert.equal(restored.tracks[0].start,14,'Active timeline must never be trimmed');
+    assert.equal(restored.history.undo.at(-1).label,'Drag clip 59','Newest history must survive');
+    assert.equal(record.history.undo.length,original,'Live history must remain complete');
+});
+test('quota-aware recovery fails atomically if even active project metadata will not fit',()=>{
+    let previous='good-existing-recovery';
+    const storage={setItem(){
+        throw Object.assign(new Error('Storage full'),{name:'QuotaExceededError'});
+    },getItem(){return previous;}};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],
+        history:{undo:[],redo:[]}});
+    assert.throws(()=>writeRecoveryRecordWithQuota(storage,'recovery',record),/Storage full/);
+    assert.equal(storage.getItem('recovery'),previous);
+});
+test('non-quota storage failures are not masked by trimming history',()=>{
+    let calls=0;
+    const storage={setItem(){calls++;throw Object.assign(new Error('Blocked'),{name:'SecurityError'});}};
+    const record=createRecoveryRecord({files:[file()],tracks:[clip()],
+        history:{undo:[{label:'A',snapshot:{
+            files:[file()],tracks:[clip()],selectedTrackIds:[],currentTime:0
+        }}],redo:[]}});
+    assert.throws(()=>writeRecoveryRecordWithQuota(storage,'recovery',record),/Blocked/);
+    assert.equal(calls,1);
 });
