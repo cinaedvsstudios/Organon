@@ -7,7 +7,7 @@ import {snapshotClip,applyClipData} from '../js/project-history.mjs';
 
 test('eighteen structurally different text designs, not color-swapped duplicate catalog entries',()=>{
  assert.equal(TEXT_DESIGNS.length,18);
- assert.equal(new Set(TEXT_DESIGNS.map(item=>item.id)).size,16);
+ assert.equal(new Set(TEXT_DESIGNS.map(item=>item.id)).size,18);
  assert.equal(new Set(TEXT_DESIGNS.map(item=>item.layout)).size,18);
  assert.ok(TEXT_DESIGNS.every(item=>item.group==='text'&&item.label&&item.animation));
  assert.equal(getTextDesign('news-lower-third').layout,'news');
