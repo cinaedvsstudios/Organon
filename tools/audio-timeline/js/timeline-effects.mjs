@@ -78,6 +78,27 @@ function captureCompositeFrame(ctx,w,h){
 const SOURCE_EFFECTS=new Set(['pendulum-swing','rebound-swing','vibration-flash',
  'fault-cassette','ripple-distortion','electric-ripple','shockwave']);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
+/** A neutral illustrated scene supplies geometry for moving/distorting previews.
+ * Live clips operate on their real previously composited media instead.
+ */
+export function paintEffectPreviewScene(ctx,w,h){
+ const sky=ctx.createLinearGradient(0,0,0,h);
+ sky.addColorStop(0,'#1b3b60');sky.addColorStop(1,'#0d182b');
+ ctx.fillStyle=sky;ctx.fillRect(0,0,w,h);
+ ctx.fillStyle='#adbed0';
+ ctx.fillRect(w*.1,h*.25,w*.26,h*.45);
+ ctx.fillStyle='#f4bd70';
+ ctx.fillRect(w*.14,h*.32,w*.07,h*.1);
+ ctx.fillRect(w*.26,h*.32,w*.07,h*.1);
+ ctx.fillStyle='#4ea7cf';
+ ctx.beginPath();ctx.arc(w*.72,h*.36,h*.12,0,Math.PI*2);ctx.fill();
+ ctx.fillStyle='#c9e1e9';
+ ctx.fillRect(w*.58,h*.68,w*.29,h*.035);
+ ctx.fillRect(w*.58,h*.75,w*.22,h*.018);
+ ctx.strokeStyle='#95e1ec';ctx.lineWidth=Math.max(1,w*.005);
+ ctx.beginPath();ctx.moveTo(w*.08,h*.84);ctx.lineTo(w*.93,h*.84);ctx.stroke();
+}
+
 export function effectFrameSignature(effect,seconds,duration=3){
  const e=normaliseTimelineEffect(effect);
  const local=clamp(seconds,0,Math.max(0,Number(duration)||3),0);
