@@ -199,6 +199,38 @@ try {
         'Automatic history recovery must not enable exports with offline media');
     assert.deepEqual(errors,[],'No uncaught Chrome errors after browser-refresh recovery');
     console.log('[MotoriClip portable] PASS local recovery retains Undo/Redo and generated overlays after browser refresh with media offline');
+
+    // A deleted/cleared clip can exist only inside a historical snapshot.
+    // Reimport its original media before clicking Undo: the stable saved ID
+    // must be reconnected, not accidentally replaced by a new bin-file ID.
+    await page.locator('[data-library-tab="media"]').click();
+    page.once('dialog',dialog=>dialog.accept());
+    await page.locator('#btn-clear').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
+    await page.waitForFunction(()=>{
+        try{
+            const saved=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
+            return saved?.tracks?.length===0 && saved.history?.undo?.some(step=>
+                step.snapshot.files?.some(file=>file.name==='portable-source.jpg'));
+        }catch{return false;}
+    },null,{timeout:15000});
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0
+        &&document.querySelector('#btn-undo')?.disabled===false,
+        null,{timeout:20000});
+    await page.locator('#file-input').setInputFiles(original);
+    await page.waitForFunction(()=>document.querySelector('#app-toast')?.textContent?.includes('history references'),
+        null,{timeout:12000});
+    assert.equal(await page.locator('.file-row').count(),0,
+        'Reimporting a history-only source must not add a duplicate file to the current bin');
+    await page.locator('#btn-undo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===4,
+        null,{timeout:25000});
+    await page.locator('.timeline-clip.background:not(.needs-relink)').waitFor({timeout:15000});
+    assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),
+        backgroundId,'The original background clip ID must survive historical relinking');
+    assert.deepEqual(errors,[],'No uncaught Chrome errors after history-only media relinking');
+    console.log('[MotoriClip portable] PASS media imported before Undo reconnects original history-only clip without a new bin ID');
     await context.close();
 } finally {
     await browser.close();
