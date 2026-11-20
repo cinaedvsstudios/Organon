@@ -291,9 +291,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
 
     function greatestCommonDivisor(a, b) { let x = Math.abs(a), y = Math.abs(b); while (y) [x, y] = [y, x % y]; return x || 1; }
     function updateCanvasAspectLabel(width, height) { const divisor = greatestCommonDivisor(width, height); elements.canvasAspectLabel.textContent = `${Math.round(width / divisor)}:${Math.round(height / divisor)}`; }
-    function applyCanvasResolution({ announce = false } = {}) {
+    function applyCanvasResolution({ announce = false, remember = false } = {}) {
         const width = clamp(Math.round(Number(elements.canvasWidth.value) || 1280), 64, 7680);
         const height = clamp(Math.round(Number(elements.canvasHeight.value) || 720), 64, 7680);
+        if(remember && (elements.canvas.width!==width || elements.canvas.height!==height))
+            recordHistory('Change canvas resolution');
         elements.canvasWidth.value = String(width); elements.canvasHeight.value = String(height);
         engine.setCanvasResolution(width, height);
         elements.previewStage.style.aspectRatio = `${width} / ${height}`;
@@ -312,7 +314,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         return snapshotProject({
             files: state.files, tracks: state.tracks, selectedTrackIds: state.selectedTrackIds,
             selectedTrackId: state.selectedTrackId, selectedFileId: state.selectedFileId,
-            currentTime: engine.currentTime
+            currentTime: engine.currentTime,
+            markers:state.timelineMarkers,
+            // Source of truth is the applied canvas, not an input the user has
+            // typed into but has not yet applied.
+            settings:{
+                canvasWidth:elements.canvas.width,canvasHeight:elements.canvas.height,
+                fps:engine.projectFps,previewZoom:state.previewZoom
+            }
         });
     }
 
@@ -658,6 +667,20 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             state.selectedTrackIds = new Set(snapshot.selectedTrackIds || []);
             state.selectedTrackId = snapshot.selectedTrackId || [...state.selectedTrackIds][0] || null;
             state.selectedFileId = snapshot.selectedFileId || null;
+            if(Array.isArray(snapshot.markers)){
+                state.timelineMarkers=[...snapshot.markers];
+                timeline.setMarkers(state.timelineMarkers);
+            }
+            if(snapshot.settings){
+                const settings=snapshot.settings;
+                elements.canvasWidth.value=String(settings.canvasWidth);
+                elements.canvasHeight.value=String(settings.canvasHeight);
+                elements.projectFps.value=String(settings.fps);
+                engine.setProjectFrameRate(settings.fps);
+                state.previewZoom=settings.previewZoom??state.previewZoom;
+                applyCanvasResolution();
+                syncPreviewZoom();
+            }
             renderFiles();
             refreshAll(); // setTracks disposes discarded media objects.
             await Promise.all(state.tracks.map(track=>engine.refreshOrgavoxAudioEffects(track)));
@@ -2353,11 +2376,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         modal.addEventListener('pointerdown', (event) => { if (event.target === modal) closeEditorModals(); });
     }
 
-    elements.projectFps.addEventListener('change', () => { const fps = engine.setProjectFrameRate(elements.projectFps.value); showToast(`Project frame rate: ${fps} fps`); });
-    elements.btnApplyCanvas.addEventListener('click', () => applyCanvasResolution({ announce: true }));
+    elements.projectFps.addEventListener('change', () => {
+        if(Number(elements.projectFps.value)!==engine.projectFps)
+            recordHistory('Change project frame rate');
+        const fps=engine.setProjectFrameRate(elements.projectFps.value);
+        showToast(`Project frame rate: ${fps} fps`);
+    });
+    elements.btnApplyCanvas.addEventListener('click', () => applyCanvasResolution({announce:true,remember:true}));
     for (const input of [elements.canvasWidth, elements.canvasHeight]) {
-        input.addEventListener('change', () => applyCanvasResolution({ announce: true }));
-        input.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); applyCanvasResolution({ announce: true }); } });
+        input.addEventListener('change', () => applyCanvasResolution({announce:true,remember:true}));
+        input.addEventListener('keydown', (event) => {
+            if(event.key==='Enter'){
+                event.preventDefault();
+                applyCanvasResolution({announce:true,remember:true});
+            }
+        });
     }
     elements.btnUndo.addEventListener('click', () => { undoTimelineEdit(); });
     elements.btnRedo.addEventListener('click', () => { redoTimelineEdit(); });
@@ -2366,6 +2399,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function addOrRemoveCueMarker() {
         const time=Math.max(0,Number(engine.currentTime)||0);
         const existing=state.timelineMarkers.findIndex(t=>Math.abs(t-time)<.05);
+        recordHistory(existing>=0?'Remove cue marker':'Add cue marker');
         if(existing>=0) {
             state.timelineMarkers.splice(existing,1);
             showToast(`Removed marker at ${formatTime(time)}`);
