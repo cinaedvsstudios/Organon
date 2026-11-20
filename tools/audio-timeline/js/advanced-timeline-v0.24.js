@@ -5,6 +5,7 @@
  */
 
 import { fadeDuration } from './visual-transitions.mjs';
+import { resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 
 const GROUP_ORDER = ['sticker', 'video', 'audio', 'background'];
 const TYPE_DEFAULTS = {
@@ -43,7 +44,7 @@ function cssEscape(value) {
 }
 
 export class AdvancedTimeline {
-    constructor({ lanesElement, rulerElement, emptyElement, onSelect, onContextMenu, onDropProjectFile, onTrackChange, onTrackInteractionStart, onSeek, onSplitAtPlayhead }) {
+    constructor({ lanesElement, rulerElement, emptyElement, onSelect, onContextMenu, onLaneContextMenu, onDropProjectFile, onTrackChange, onTrackInteractionStart, onSeek, onSplitAtPlayhead }) {
         this.lanesElement = lanesElement;
         this.rulerElement = rulerElement;
         this.emptyElement = emptyElement;
@@ -52,6 +53,7 @@ export class AdvancedTimeline {
         this.panelElement = this.lanesElement?.closest('.timeline-panel') || null;
         this.onSelect = onSelect;
         this.onContextMenu = onContextMenu;
+        this.onLaneContextMenu = onLaneContextMenu;
         this.onDropProjectFile = onDropProjectFile;
         this.onTrackChange = onTrackChange;
         this.onTrackInteractionStart = onTrackInteractionStart;
@@ -224,6 +226,7 @@ export class AdvancedTimeline {
                     type: track.type,
                     order: Number(track.order) || 0,
                     label: track.laneLabel || track.label,
+                    colour: resolvedLaneColour(track),
                     tracks: []
                 });
             }
@@ -470,7 +473,7 @@ export class AdvancedTimeline {
     updateClipStyle(clip, track) {
         clip.style.left = `${Math.max(0, (Number(track.start) || 0) * this.pixelsPerSecond)}px`;
         clip.style.width = `${Math.max(26, this.getClipDuration(track) * this.pixelsPerSecond)}px`;
-        clip.style.setProperty('--clip-colour', TYPE_CSS_COLOUR[track.type] || TYPE_CSS_COLOUR.sticker);
+        clip.style.setProperty('--clip-colour', resolvedClipColour(track));
         // Never set a percentage-based analysis gradient on the clip itself. That
         // would stretch every peak when the right edge is trimmed.
         clip.style.removeProperty('background-image');
@@ -500,6 +503,7 @@ export class AdvancedTimeline {
             const lane = document.createElement('div');
             lane.className = `timeline-lane ${defaults.className}`;
             lane.dataset.laneId = laneModel.id;
+            lane.style.setProperty('--lane-colour',laneModel.colour);
 
             const label = document.createElement('div');
             label.className = 'lane-name';
@@ -507,6 +511,13 @@ export class AdvancedTimeline {
                 ? (laneModel.order === 1 ? 'top visual layer' : `below Sticker ${laneModel.order - 1}`)
                 : (laneModel.type === 'video' ? 'visual clip + linked sound' : (laneModel.type === 'background' ? 'JPEG image — beneath audio' : defaults.subLabel));
             label.innerHTML = `<span>${escapeHtml(laneModel.label || `${defaults.label} ${laneModel.order}`)}</span><small>${escapeHtml(subLabel)}</small>`;
+            label.style.borderLeftColor=laneModel.colour;
+            label.style.color=laneModel.colour;
+            label.title='Right-click to rename, recolour or delete this entire track';
+            label.addEventListener('contextmenu',event=>{
+                event.preventDefault();event.stopPropagation();
+                this.onLaneContextMenu?.(laneModel.id,event.clientX,event.clientY);
+            });
 
             const workspace = document.createElement('div');
             workspace.className = 'lane-workspace';
