@@ -103,6 +103,8 @@ try {
 
     await page.locator('[data-library-tab="media"]').click();
     await page.locator('#btn-clear').click();
+    await page.locator('#timeline-action-modal').waitFor({state:'visible'});
+    await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Opening a project requires a confirmation before replacing the timeline.
     let confirmed=0;
