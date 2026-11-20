@@ -40,7 +40,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
         btnSaveProject: document.getElementById('btn-save-project'), btnOpenProject: document.getElementById('btn-open-project'), projectOpenInput: document.getElementById('project-open-input'),
         projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
-        btnResetExport:document.getElementById('btn-reset-export'),
+        btnResetTimeline:document.getElementById('btn-reset-timeline'),
         laneMenu:document.getElementById('timeline-lane-context-menu'),laneMenuTitle:document.getElementById('lane-menu-title'),
         laneRename:document.getElementById('lane-rename'),laneChangeColour:document.getElementById('lane-change-colour'),laneResetColour:document.getElementById('lane-reset-colour'),laneDelete:document.getElementById('lane-delete'),
         clipChangeColour:document.getElementById('context-change-colour'),clipResetColour:document.getElementById('context-reset-colour'),
@@ -73,7 +73,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             outlineWidth:document.getElementById('text-outline-width'),
             shadowBlur:document.getElementById('text-shadow-blur'),
             animation:document.getElementById('text-animation'),
-            animationDuration:document.getElementById('text-animation-duration')
+            animationDuration:document.getElementById('text-animation-duration'),
+            animationDelay:document.getElementById('text-animation-delay'),
+            animationSpeed:document.getElementById('text-animation-speed'),
+            animationDirection:document.getElementById('text-animation-direction'),
+            animationEasing:document.getElementById('text-animation-easing'),
+            animationIntensity:document.getElementById('text-animation-intensity'),
+            animationLoop:document.getElementById('text-animation-loop'),
+            subtitle:document.getElementById('text-subtitle')
         },
         textPreviewModal:document.getElementById('text-preview-modal'),
         textPreviewTitle:document.getElementById('text-preview-title'),
@@ -1252,10 +1259,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         input.addEventListener('input',()=>{
             const track=getTrack();
             if(!track?.textOverlay || state.selectedTrackIds.size!==1)return;
-            const updated={...track.textOverlay,[name]:input.value};
+            const updated={...track.textOverlay,[name]:input.type==='checkbox'?input.checked:input.value};
             track.textOverlay=normaliseTextOverlay(updated);
             const output=document.getElementById('text-'+name.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+'-value');
-            if(output)output.textContent=input.value+(name==='fontSize'?'%':name==='animationDuration'?'s':'');
+            if(output){
+                const suffix=name==='fontSize'||name==='animationIntensity'?'%'
+                    :name==='animationDuration'||name==='animationDelay'?'s'
+                    :name==='animationSpeed'?'×':'';
+                output.textContent=String(track.textOverlay[name])+suffix;
+            }
             engine.renderFrame();
         });
     }
@@ -1451,11 +1463,16 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const config=normaliseTextOverlay(track.textOverlay);
             const design=TEXT_PRESETS.find(item=>item.id===config.presetId);
             elements.textSelectedDesign.textContent=(design?.label||'Title')+' · edit this clip without replacing its template';
-            for(const [name,input] of Object.entries(elements.textInspectorInputs))
-                input.value=String(config[name]);
-            for(const [name,suffix] of [['font-size','%'],['outline-width',''],['shadow-blur',''],['animation-duration','s']]){
+            for(const [name,input] of Object.entries(elements.textInspectorInputs)){
+                if(input.type==='checkbox')input.checked=Boolean(config[name]);
+                else input.value=String(config[name]);
+            }
+            document.getElementById('text-subtitle-row').hidden=config.presetId!=='news-lower-third';
+            for(const [name,suffix] of [['font-size','%'],['outline-width',''],['shadow-blur',''],
+                ['animation-duration','s'],['animation-delay','s'],['animation-speed','×'],['animation-intensity','%']]){
                 const key={'font-size':'fontSize','outline-width':'outlineWidth','shadow-blur':'shadowBlur',
-                    'animation-duration':'animationDuration'}[name];
+                    'animation-duration':'animationDuration','animation-delay':'animationDelay',
+                    'animation-speed':'animationSpeed','animation-intensity':'animationIntensity'}[name];
                 document.getElementById('text-'+name+'-value').textContent=config[key]+suffix;
             }
         }
@@ -2586,14 +2603,35 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     });
     elements.btnProjectSettings.addEventListener('click', () => openEditorModal(elements.projectSettingsModal));
     elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
-    elements.btnResetExport.addEventListener('click',()=>{
-        // Reset output preferences only; never alter project FPS, dimensions,
-        // media or editing history. Select first supported live format.
-        elements.exportBitrate.value='6000';
-        elements.exportOfflineFormat.value='mp4';
-        const live=[...elements.exportFormat.options].find(o=>o.value&&!o.disabled);
-        if(live)elements.exportFormat.value=live.value;
-        showToast('Export settings reset · Standard 6 Mbps · Fixed-frame MP4');
+    elements.btnResetTimeline.addEventListener('click',async()=>{
+        const count=state.tracks.length,markers=state.timelineMarkers.length;
+        if(!count&&!markers){
+            showToast('The timeline is already empty');
+            return;
+        }
+        const accepted=await requestEditorAction({
+            kind:'confirm',title:'Reset timeline?',
+            description:`Remove all ${count} clip${count===1?'':'s'} and ${markers} timeline marker${markers===1?'':'s'}? Imported media stays in the Media panel. Undo restores the entire timeline.`,
+            apply:'Reset timeline',danger:true
+        });
+        if(!accepted || (!state.tracks.length&&!state.timelineMarkers.length))return;
+        recordHistory('Reset timeline');
+        engine.clearAll(); // Stop playback and release discarded decoders.
+        state.tracks=[];
+        state.timelineMarkers=[];
+        timeline.setMarkers([]);
+        state.selectedTrackIds.clear();
+        state.selectedTrackId=null;
+        state.contextTrackId=null;
+        state.laneContextId=null;
+        state.contextClipboard=null;
+        refreshAll();
+        await engine.seek(0,{resume:false});
+        // Source files and permitted file handles deliberately remain usable.
+        // Undo records their IDs and will reconstruct previous clip decoders.
+        pruneSourceRegistry();
+        saveProjectRecovery();
+        showToast('Timeline reset · '+count+' clip'+(count===1?'':'s')+' removed · Undo available');
     });
     elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
     elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);

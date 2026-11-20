@@ -16,12 +16,13 @@
 - 20 Nov 2026: Stage 1 items **1–20** reviewed/completed in [PR #91](https://github.com/cinaedvsstudios/Organon/pull/91): project controls, consistent scrollbars and dialogs, lane rename/colour/delete, clip-colour inheritance and Undo/Redo persistence. Previously completed toolbar/ruler/marker items retained; Chrome UI, recovery and portable-project regressions passed. Full-duration export stress tests continue separately.
 - 20 Nov 2026: Stage 2 first batch in [PR #92](https://github.com/cinaedvsstudios/Organon/pull/92): **16 structurally distinct text templates** (46–61), typewriter/letter-pop/ticker (62, 63, 72), editable text (81), existing transform keyframes (87), no colour duplicates (88), right-click titled animation preview and controls (89–93), portable editable metadata (95), grayscale-distinct browser rendering tests (98). See the PR's Node, Chrome, portable/recovery and cross-browser checks. Remaining motion variants, exhaustive typography/appearance controls and actual exported-pixel verification remain unchecked.
 
+- 20 Nov 2026: Stage 2 next batch in [PR #93](https://github.com/cinaedvsstudios/Organon/pull/93): **Reset corrected** to clear every track/clip/marker (not export settings), while retaining the Media bin, Undo and applied project settings. Added real per-letter shake, kinetic stagger, RGB glitch, waving and neon switch-on, distinct bounce/outline-fill/title-wipe/dissolve-out, and broadcast banner → headline → editable subtitle. New Inspector motion controls for delay, speed, direction, easing, intensity and loop. Checked items 64–66, 68–71, 73–76 and 85 after passing Node, Chrome multi-lane Reset and deterministic pixel checks, project recovery and Firefox/WebKit. Longer actual video-export stress job remains a separate verification.
 
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
 - [x] **2.** Replace wide Project Settings control with a **cog beside Open Folder**.
-- [x] **3.** Add **Reset beside Export** to reset export configuration only, never timeline.
+- [x] **3.** Add **Reset beside Export** to **completely empty all timeline tracks, clips and cue markers** (not export settings). Retain imported media and project settings; use an app-themed confirmation and support Undo. _Corrected per user in PR [#93](https://github.com/cinaedvsstudios/Organon/pull/93)._
 - [x] **4.** Standardise comparable action buttons: width, height, padding and alignment.
 - [x] **5.** Keep toolbar functions logically grouped across two rows. _(pre-existing; verified in PR #87/#88 and/or prior browser tests)_
 - [x] **6.** Match Media, Effects, Text and Inspector scrollbars (width, thumb, track and hover).
@@ -94,19 +95,19 @@
 
 - [x] **62.** Typewriter Reveal (letter-by-letter + cursor).
 - [x] **63.** Letter Pop (staggered bouncing letters).
-- [ ] **64.** Shaking Letters (independent per-character motion).
-- [ ] **65.** Broadcast Box Reveal (rectangle draws/wipes then text dissolves).
-- [ ] **66.** News Lower-Third Animation (banner, headline and subtitle sequenced).
+- [x] **64.** Shaking Letters (independent per-character motion).
+- [x] **65.** Broadcast Box Reveal (rectangle draws/wipes then text dissolves).
+- [x] **66.** News Lower-Third Animation (banner, headline and subtitle sequenced).
 - [ ] **67.** Handwriting Reveal (stroke-writing look).
-- [ ] **68.** Outline to Solid.
-- [ ] **69.** Kinetic Stagger (words/letters from independent directions).
-- [ ] **70.** Glitch Text (fragmentation/channel shifts).
-- [ ] **71.** Bounce/Rubber Text.
+- [x] **68.** Outline to Solid.
+- [x] **69.** Kinetic Stagger (words/letters from independent directions).
+- [x] **70.** Glitch Text (fragmentation/channel shifts).
+- [x] **71.** Bounce/Rubber Text.
 - [x] **72.** Ticker/Marquee.
-- [ ] **73.** Floating/Waving Letters.
-- [ ] **74.** Neon Switch-On.
-- [ ] **75.** Title Wipe.
-- [ ] **76.** Dissolve Out.
+- [x] **73.** Floating/Waving Letters.
+- [x] **74.** Neon Switch-On.
+- [x] **75.** Title Wipe.
+- [x] **76.** Dissolve Out.
 - [ ] **77.** Animated Social Prompt.
 - [ ] **78.** Animated Location Pin.
 - [ ] **79.** Countdown/Numeric Reveal.
@@ -118,7 +119,7 @@
 - [ ] **82.** Typography: font, weight, size, italics, spacing, alignment and case.
 - [ ] **83.** Appearance: fill, stroke, shadow, glow, opacity and backdrop.
 - [ ] **84.** Shape: padding, corner radius, borders and banner geometry.
-- [ ] **85.** Motion: animation variant, duration, delay, speed, easing, direction, intensity and loop.
+- [x] **85.** Motion: animation variant, duration, delay, speed, easing, direction, intensity and loop.
 - [ ] **86.** Independent In/Out/Loop settings.
 - [x] **87.** Retain keyframed Scale, Position, Rotation and Opacity.
 - [x] **88.** Colour/style variants belong in Inspector, NOT duplicated as library templates.

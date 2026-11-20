@@ -26,7 +26,11 @@ export const TEXT_ANIMATIONS=Object.freeze([
  ['none','Static'],['typewriter','Typewriter'],['letter-pop','Letter Pop'],
  ['shake','Shaking Letters'],['box-reveal','Broadcast Box Reveal'],
  ['neon-flicker','Neon Flicker'],['ticker','Scrolling Ticker'],
- ['slide','Slide In'],['fade','Fade In']
+ ['slide','Slide In'],['fade','Fade In'],
+ ['wave','Floating / Waving Letters'],['kinetic-stagger','Kinetic Stagger'],
+ ['bounce','Rubber Bounce'],['outline-fill','Outline to Solid'],
+ ['glitch-text','Glitch Letters'],['title-wipe','Title Wipe'],
+ ['dissolve-out','Dissolve Out']
 ]);
 const animationNames=new Set(TEXT_ANIMATIONS.map(pair=>pair[0]));
 const defaultPalette={fill:'#ffffff',stroke:'#333333',shadow:'#000000'};
@@ -50,27 +54,62 @@ export function normaliseTextOverlay(input={}) {
   outlineWidth:safeNumber(input.outlineWidth,3,0,18),
   shadowBlur:safeNumber(input.shadowBlur,8,0,40),
   animation:animationNames.has(input.animation)?input.animation:design.animation,
-  animationDuration:safeNumber(input.animationDuration,1.2,.1,10)
+  animationDuration:safeNumber(input.animationDuration,1.2,.1,10),
+  animationDelay:safeNumber(input.animationDelay,0,0,10),
+  animationSpeed:safeNumber(input.animationSpeed,1,.25,4),
+  animationDirection:['left','right','up','down'].includes(input.animationDirection)
+    ?input.animationDirection:'left',
+  animationEasing:['linear','ease-in','ease-out','ease-in-out'].includes(input.animationEasing)
+    ?input.animationEasing:'ease-out',
+  animationIntensity:safeNumber(input.animationIntensity,100,0,200),
+  animationLoop:input.animationLoop===true,
+  subtitle:String(input.subtitle??'LIVE UPDATE').slice(0,100)
  };
+}
+function easeProgress(value,easing){
+ const p=clamp(value,0,1);
+ if(easing==='ease-in')return p*p;
+ if(easing==='ease-out')return 1-(1-p)*(1-p);
+ if(easing==='ease-in-out')return p*p*(3-2*p);
+ return p;
 }
 export function textAnimationState(config={},localTime=0,clipDuration=3) {
  const opts=normaliseTextOverlay(config);
  const time=Math.max(0,Number(localTime)||0);
  const clip=Math.max(.1,Number(clipDuration)||3);
  const duration=Math.min(opts.animationDuration,clip);
- const progress=clamp(time/duration,0,1);
- const text=opts.value||'MotoriClip';
+ const elapsed=Math.max(0,time-opts.animationDelay)*opts.animationSpeed;
+ const running=opts.animationLoop&&elapsed>=duration?elapsed%duration:elapsed;
+ const raw=clamp(running/duration,0,1);
+ const progress=easeProgress(raw,opts.animationEasing);
+ const started=time>=opts.animationDelay;
+ const text=opts.value||'YOUR TEXT';
+ const intensity=opts.animationIntensity/100;
+ const direction=opts.animationDirection;
+ const horizontal=direction==='left'||direction==='right';
+ const sign=direction==='right'||direction==='down'?1:-1;
+ const distance=(1-progress)**2*220*intensity;
+ const slideX=opts.animation==='slide'&&horizontal?(progress>=1?0:Math.round(distance*sign)):0;
+ const slideY=opts.animation==='slide'&&!horizontal?(progress>=1?0:Math.round(distance*sign)):0;
+ const fadeOut=opts.animation==='dissolve-out'
+    ?clamp((clip-time)/Math.min(1.2,clip*.35),0,1):1;
  return {
-  progress,
+  progress,raw,time,elapsed:running,started,intensity,
+  boxReveal:opts.animation==='box-reveal',
   visibleCharacters:opts.animation==='typewriter'
-    ?Math.min(text.length,Math.floor(progress*text.length)+Number(progress===1)) :text.length,
-  alpha:opts.animation==='fade'?progress:1,
-  slideX:opts.animation==='slide'?(progress>=1?0:Math.round((1-progress)**2*-220)):0,
-  boxWidth:opts.animation==='box-reveal'?Math.round(640*progress):640,
-  tickerX:opts.animation==='ticker'?640-(time/clip)*1280:0,
-  jitter:opts.animation==='shake'?Math.sin(time*46)*4:0,
+    ?Math.min(text.length,Math.floor(progress*text.length)):text.length,
+  alpha:!started?0:(opts.animation==='fade'?progress:1)*fadeOut,
+  slideX,slideY,
+  boxWidth:opts.animation==='box-reveal'||opts.animation==='title-wipe'
+    ?Math.round(640*progress):640,
+  textAlpha:opts.animation==='box-reveal'?clamp((raw-.52)/.48,0,1):1,
+  headlineAlpha:opts.animation==='box-reveal'?clamp((raw-.44)/.35,0,1):1,
+  subtitleAlpha:opts.animation==='box-reveal'?clamp((raw-.73)/.27,0,1):1,
+  tickerX:opts.animation==='ticker'
+    ?(direction==='right'?-640+time/clip*1280:640-time/clip*1280):0,
+  jitter:opts.animation==='shake'?Math.sin(time*46)*4*intensity:0,
   flicker:opts.animation==='neon-flicker'
-    ?(progress<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1
+    ?(raw<.85 ? (.46+.44*Math.abs(Math.sin(time*36))) :1) :1
  };
 }
 function roundRect(ctx,x,y,w,h,r) {
@@ -85,7 +124,7 @@ const fonts={sans:'system-ui,Arial,sans-serif',
  mono:'"Geist Mono","Courier New",monospace'};
 function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
  fill='#fff',outline='#333',outlineWidth=3,shadow='#000',shadowBlur=8,
- maxWidth=580,italic=false,letterSpacing=0,metallic=false}={}) {
+ maxWidth=580,italic=false,letterSpacing=0,metallic=false,fillAlpha=1}={}) {
  let px=size;
  ctx.textAlign=align;ctx.textBaseline='middle';ctx.lineJoin='round';
  const family=fonts[font]||fonts.sans;
@@ -107,24 +146,73 @@ function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
   ctx.fillStyle=gradient;
  }
  if(outlineWidth>0)ctx.strokeText(text,x,y,maxWidth);
+ ctx.save();
+ ctx.globalAlpha*=clamp(fillAlpha,0,1);
  ctx.fillText(text,x,y,maxWidth);
+ ctx.restore();
  ctx.shadowBlur=0;
 }
-function drawGlyphs(ctx,text,x,y,options,frame) {
+/**
+ * Individual character motion with measured glyph widths. The output is a
+ * pure function of the clip timestamp and character index; seeking backwards
+ * and fixed-frame exports reproduce the same pixels.
+ */
+function drawGlyphs(ctx,text,x,y,options,frame,mode) {
  const letters=Array.from(text);
+ if(!letters.length)return;
  const size=options.size||54;
- ctx.font='800 '+size+'px '+fonts.sans;
- const fullWidth=ctx.measureText(text).width;
- let cursor=x-fullWidth/2;
+ const weight=options.weight??800;
+ const family=fonts[options.font]||fonts.sans;
+ const font=(options.italic?'italic ':'')+weight+' '+size+'px '+family;
+ ctx.save();ctx.font=font;
+ const metrics=letters.map(char=>ctx.measureText(char).width);
+ const total=metrics.reduce((a,b)=>a+b,0);
+ const fit=Math.min(1,(options.maxWidth??580)/Math.max(1,total));
+ const align=options.align||'center';
+ ctx.translate(x,y);ctx.scale(fit,fit);
+ let cursor=align==='left'?0:align==='right'?-total:-total/2;
+ const intensity=frame.intensity;
  for(let i=0;i<letters.length;i++){
-  const char=letters[i],width=ctx.measureText(char).width;
-  const p=clamp((frame.progress-i/Math.max(letters.length,1)*.55)/.45,0,1);
-  const movement=(1-p)*38,scale=.65+p*.35;
-  ctx.save();ctx.translate(cursor+width/2,y-movement);ctx.scale(scale,scale);
-  drawTitle(ctx,char,0,0,{...options,size,align:'center',maxWidth:width+16});
-  ctx.restore();cursor+=width;
+  const char=letters[i],width=metrics[i];
+  const stagger=clamp((frame.progress-i/Math.max(letters.length,1)*.62)/.38,0,1);
+  let dx=0,dy=0,glyphScale=1,alpha=1;
+  if(mode==='letter-pop'){
+   dy=-Math.pow(1-stagger,2)*45*intensity;
+   glyphScale=.65+.35*stagger;
+  }else if(mode==='kinetic-stagger'){
+   dx=(i%2===0?-1:1)*Math.pow(1-stagger,2)*106*intensity;
+   dy=(1-stagger)*18*intensity;
+   alpha=stagger;
+  }else if(mode==='shake'){
+   dx=Math.sin(frame.elapsed*46+i*2.31)*6*intensity;
+   dy=Math.cos(frame.elapsed*38+i*1.77)*5*intensity;
+  }else if(mode==='wave'){
+   dy=Math.sin(frame.elapsed*5.4+i*.93)*17*intensity;
+   dx=Math.sin(frame.elapsed*2.1+i*.77)*3*intensity;
+  }else if(mode==='neon-flicker'&&frame.raw<.94){
+   alpha=.2+.8*Math.abs(Math.sin(frame.elapsed*(23+i*.61)+i*2.4));
+  }else if(mode==='glitch-text'){
+   dx=Math.sin(frame.elapsed*19.1+i*5.2)*4*intensity;
+   dy=Math.cos(frame.elapsed*28.8+i*1.7)*3*intensity;
+  }
+  ctx.save();
+  ctx.translate(cursor+width/2+dx,dy);
+  ctx.scale(glyphScale,glyphScale);
+  ctx.globalAlpha*=alpha;
+  if(mode==='glitch-text' && intensity>0){
+   const skew=Math.sin(frame.elapsed*31+i*3.7)*5*intensity;
+   drawTitle(ctx,char,-skew,0,{...options,size,align:'center',outlineWidth:0,
+       shadowBlur:0,fill:'#ff4269',maxWidth:width+12});
+   drawTitle(ctx,char,skew,0,{...options,size,align:'center',outlineWidth:0,
+       shadowBlur:0,fill:'#2be8ff',maxWidth:width+12});
+  }
+  drawTitle(ctx,char,0,0,{...options,size,align:'center',maxWidth:width+12});
+  ctx.restore();
+  cursor+=width;
  }
+ ctx.restore();
 }
+const GLYPH_ANIMATIONS=new Set(['letter-pop','shake','wave','kinetic-stagger','glitch-text','neon-flicker']);
 function textValue(config,frame) {
  const value=config.value||'MotoriClip';
  return config.animation==='typewriter'
@@ -141,10 +229,16 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.beginPath();ctx.moveTo(86,118);ctx.lineTo(554,118);ctx.moveTo(86,244);ctx.lineTo(554,244);ctx.stroke();break;
   }
   case 'news':{
-   ctx.fillStyle='#17283e';roundRect(ctx,26,245,588,100,7);ctx.fill();
-   ctx.fillStyle=outline;ctx.fillRect(26,245,Math.max(0,frame.boxWidth*.92),11);
+   const bannerWidth=frame.boxReveal?Math.round(588*clamp(frame.raw/.46,0,1)):588;
+   if(bannerWidth>0){
+    ctx.fillStyle='#17283e';roundRect(ctx,26,245,bannerWidth,100,7);ctx.fill();
+    ctx.fillStyle=outline;ctx.fillRect(26,245,bannerWidth,8);
+   }
+   ctx.save();
+   ctx.globalAlpha*=frame.boxReveal?clamp((frame.raw-.23)/.22,0,1):1;
    ctx.fillStyle='#f0eee7';ctx.font='700 18px '+fonts.mono;ctx.textAlign='left';
-   ctx.fillText('MOTORICLIP  •  LATEST',55,275);break;
+   ctx.fillText('BREAKING NEWS',55,274);
+   ctx.restore();break;
   }
   case 'location':{
    ctx.fillStyle='rgba(9,25,30,.88)';roundRect(ctx,55,223,530,104,18);ctx.fill();
@@ -215,25 +309,43 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
  ctx.save();
  try {
   ctx.scale(scaleX,scaleY);
-  ctx.globalAlpha*=frame.alpha*frame.flicker;
-  if(config.animation==='box-reveal'){
-    ctx.beginPath();ctx.rect(0,0,frame.boxWidth,360);ctx.clip();
-  }
-  if(config.animation==='slide')ctx.translate(frame.slideX,0);
-  if(config.animation==='shake')ctx.translate(frame.jitter,Math.cos(localTime*51)*3);
-  if(config.animation==='ticker'){
+   ctx.globalAlpha*=frame.alpha;
+   if(config.animation==='title-wipe'){
+    const across=['left','right'].includes(config.animationDirection);
+    const length=across?640:360;
+    const visible=length*frame.progress;
+    const reverse=['right','down'].includes(config.animationDirection);
+    ctx.beginPath();
+    if(across)ctx.rect(reverse?length-visible:0,0,visible,360);
+    else ctx.rect(0,reverse?length-visible:0,640,visible);
+    ctx.clip();
+   }
+   if(config.animation==='slide')ctx.translate(frame.slideX,frame.slideY);
+   if(config.animation==='bounce'){
+    const p=frame.progress,drop=(1-p)*(1-p)*105*frame.intensity;
+    const rebound=Math.sin(p*Math.PI*3.2)*(1-p)*30*frame.intensity;
+    ctx.translate(0,drop+rebound);
+   }
+   if(config.animation==='ticker'){
     ctx.beginPath();ctx.rect(0,0,640,360);ctx.clip();
     ctx.translate(frame.tickerX,0);
-  }
-  decorate(ctx,layout,config.fill,config.outline,frame);
-  const factor=config.fontSize/100;
-  const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
-    shadow:config.shadow,shadowBlur:config.shadowBlur};
-  const write=(text,x,y,details={})=>{
-   const opts={...base,...details};
-   if(config.animation==='letter-pop' && text.length<55)drawGlyphs(ctx,text,x,y,opts,frame);
-   else drawTitle(ctx,text,x,y,opts);
-  };
+   }
+   decorate(ctx,layout,config.fill,config.outline,frame);
+   const factor=config.fontSize/100;
+   const base={fill:config.fill,outline:config.outline,outlineWidth:config.outlineWidth,
+     shadow:config.shadow,shadowBlur:config.shadowBlur};
+
+   const write=(text,x,y,details={})=>{
+    const {revealAlpha,...style}=details;
+    const opts={...base,...style};
+    if(config.animation==='outline-fill')opts.fillAlpha=frame.progress;
+    ctx.save();
+    ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
+    if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80)
+      drawGlyphs(ctx,text,x,y,opts,frame,config.animation);
+    else drawTitle(ctx,text,x,y,opts);
+    ctx.restore();
+   };
   switch(layout){
    case 'neon':
     write(value,320,182,{size:70*factor,outlineWidth:Math.max(2,config.outlineWidth),
@@ -251,8 +363,11 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     write(value.toUpperCase(),320,183,{font:'serif',weight:500,size:59*factor,outlineWidth:0});
     break;
    case 'news':
-    write(value.toUpperCase(),324,318,{size:41*factor,align:'left',maxWidth:530,
-      outlineWidth:0});break;
+    write(value.toUpperCase(),55,305,{size:38*factor,align:'left',maxWidth:522,
+      outlineWidth:0,revealAlpha:frame.headlineAlpha});
+    if(config.subtitle.trim())write(config.subtitle,55,333,{size:17*factor,align:'left',
+      maxWidth:530,outlineWidth:0,weight:500,font:'mono',revealAlpha:frame.subtitleAlpha});
+    break;
    case 'location':
     write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});break;
    case 'quote':

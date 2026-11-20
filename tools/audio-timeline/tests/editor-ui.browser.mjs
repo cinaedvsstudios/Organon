@@ -109,9 +109,9 @@ try{
     await page.setViewportSize({width:1450,height:900});
     assert.equal((await page.locator('#btn-project-settings').innerText()).trim(),'⚙');
     assert.equal(await page.locator('.project-controls-title').innerText().then(v=>/project controls/i.test(v)),false);
-    await page.evaluate(()=>{document.querySelector('#export-bitrate').value='10000';});
-    await page.locator('#btn-reset-export').click();
-    assert.equal(await page.locator('#export-bitrate').inputValue(),'6000');
+    assert.match(await page.locator('#btn-reset-timeline').getAttribute('title'),/timeline/i);
+    assert.equal(await page.locator('#btn-reset-export').count(),0,
+        'Reset must not modify export preferences');
     assert.deepEqual(await page.evaluate(()=>['.file-list','.asset-library-panel','.inspector-scroll']
         .map(selector=>getComputedStyle(document.querySelector(selector)).scrollbarWidth)),
         ['thin','thin','thin']);
@@ -257,6 +257,30 @@ try{
     await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
     assert.match(await lane().innerText(),/My Backgrounds/);
     console.log('[Stage1] PASS lane rename/recolour/reset/delete and Undo; clip overrides');
+    // Reset must empty the whole timeline (all clips/lanes), not export options.
+    // Clearing the source media belongs to a *different* Clear All button.
+    const oldCount=await page.locator('.timeline-clip:not(.placeholder)').count();
+    await page.locator('#btn-reset-timeline').click();
+    assert.match(await page.locator('#timeline-action-title').innerText(),/reset timeline/i);
+    assert.match(await page.locator('#timeline-action-description').innerText(),/Imported media stays/i);
+    await page.locator('#timeline-action-cancel').click();
+    assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
+        'Cancelled Reset must not alter the timeline');
+    await page.locator('#btn-reset-timeline').click();
+    await page.locator('#timeline-action-apply').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip:not(.placeholder)').length===0);
+    assert.equal(await page.locator('.timeline-lane').count(),0,
+        'Reset removes the entire lane structure, not only the selected clip');
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i,
+        'Reset must preserve media bin imports and saved handles');
+    assert.equal(await page.locator('#canvas-width').inputValue(),'640',
+        'Reset must not change the project resolution');
+    await page.locator('#btn-undo').click();
+    await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
+    assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
+        'Undo must fully restore the previous timeline');
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i);
+    console.log('[Stage2 reset] PASS confirmation/cancel, full timeline deletion, media preservation and Undo');
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     assert.equal(await page.locator('#context-duplicate').isVisible(),true,
         'Duplicate should be available from a clip right-click, not the toolbar');
@@ -297,6 +321,32 @@ try{
     await page.locator('#btn-add-marker').click();
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
     await page.locator('#btn-next-marker').click();
+    // A multi-lane project with a cue marker must reset to an *empty*
+    // timeline, retaining sources in the bin and restoring all edits via Undo.
+    await page.locator('[data-library-tab="effects"]').click();
+    await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===1,
+        null,{timeout:15000});
+    const beforeReset=await page.locator('.timeline-clip:not(.placeholder)').count();
+    assert.ok(beforeReset>=4,'Fixture should contain multiple clips across two media-type lanes');
+    const sourceCountBefore=await page.locator('#file-count').innerText();
+    await page.locator('#btn-reset-timeline').click();
+    assert.match(await page.locator('#timeline-action-description').innerText(),/Undo restores/i);
+    await page.locator('#timeline-action-apply').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip:not(.placeholder)').length===0);
+    assert.equal(await page.locator('.timeline-lane').count(),0,'Reset must remove all lane types');
+    assert.equal(await page.locator('.timeline-cue-marker').count(),0,'Reset clears timeline markers');
+    assert.equal(await page.locator('#file-count').innerText(),sourceCountBefore,
+        'Reset does not clear imported videos, images, effects or their source handles');
+    await page.locator('#btn-undo').click();
+    await page.waitForFunction(expected=>
+        document.querySelectorAll('.timeline-clip:not(.placeholder)').length===expected,
+        beforeReset,{timeout:15000});
+    assert.equal(await page.locator('.timeline-cue-marker').count(),1,
+        'Undo Reset restores the exact timeline marker');
+    assert.equal(await page.locator('#file-count').innerText(),sourceCountBefore);
+    console.log('[Stage2 reset] PASS multi-lane Reset, markers, preserved bin and exact Undo');
+    await page.locator('[data-library-tab="media"]').click();
     await page.locator('#btn-clear').click();
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
@@ -332,6 +382,45 @@ try{
     assert.equal(new Set(titleRender.map(r=>r[1])).size,16,
         'Sixteen text templates must differ by shapes/layout, not only by colours');
     assert.ok(titleRender.every(r=>r[2]),'All text templates should have visible strokes');
+    // Distinct motion must change the actual composited pixels at precise
+    // timestamps; seeking back to an earlier time reproduces identical pixels.
+    const motionPixels=await page.evaluate(async()=>{
+        const {paintTimelineText}=await import('./js/text-template-renderer.mjs');
+        function render(animation,time){
+            const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
+            const context=canvas.getContext('2d',{willReadFrequently:true});
+            paintTimelineText(context,640,360,{presetId:'news-lower-third',value:'LIVE MOTION',
+                subtitle:'TEST SUBTITLE',animation,animationEasing:'linear',
+                animationDuration:1.2},time,3);
+            const pixels=context.getImageData(0,0,640,360).data;
+            let hash=2166136261,visible=0;
+            for(let i=0;i<pixels.length;i+=4){
+                if(pixels[i+3]>0)visible++;
+                if(i%92===0)hash=Math.imul((hash^pixels[i]^pixels[i+1]^pixels[i+3])>>>0,16777619)>>>0;
+            }
+            return {hash,visible};
+        }
+        const options=['shake','wave','kinetic-stagger','glitch-text','bounce',
+            'outline-fill','title-wipe','dissolve-out','neon-flicker','box-reveal'];
+        return {options:options.map(id=>({id,early:render(id,.18),
+            later:render(id,id==='dissolve-out'?2.85:1.35)})),
+            first:render('shake',.37),second:render('shake',.92),
+            repeat:render('shake',.37),
+            stableEarly:render('none',.2),stableLater:render('none',1.2),
+            newsZero:render('box-reveal',0),newsMid:render('box-reveal',.35),
+            newsEnd:render('box-reveal',1.3)};
+    });
+    for(const entry of motionPixels.options)
+        assert.notEqual(entry.early.hash,entry.later.hash,
+            entry.id+' must render different pixels as timeline time moves');
+    assert.deepEqual(motionPixels.first,motionPixels.repeat,
+        'Returning to an earlier timestamp must reproduce the same pixels');
+    assert.deepEqual(motionPixels.stableEarly,motionPixels.stableLater,
+        'Static text should not accidentally animate');
+    assert.ok(motionPixels.newsZero.visible<motionPixels.newsMid.visible
+        &&motionPixels.newsMid.visible<motionPixels.newsEnd.visible,
+        'News broadcast banner should draw first, then the headline/subtitle');
+    console.log('[Stage2 motion] PASS timed title pixels, independent motion, broadcast stages and seek repeatability');
     await page.locator('#text-library-grid [data-preset-id="news-lower-third"]').click({button:'right'});
     await page.locator('#text-preview-modal').waitFor({state:'visible'});
     assert.match(await page.locator('#text-preview-title').innerText(),/news lower third/i);
@@ -356,6 +445,12 @@ try{
     await page.locator('#text-inspector-value').fill('LIVE EDITED TITLE');
     await page.locator('#text-animation').selectOption('typewriter');
     await page.locator('#text-animation-duration').fill('2');
+    await page.locator('#text-animation-delay').fill('0.3');
+    await page.locator('#text-animation-speed').fill('1.5');
+    await page.locator('#text-animation-direction').selectOption('right');
+    await page.locator('#text-animation-easing').selectOption('ease-in-out');
+    await page.locator('#text-animation-intensity').fill('140');
+    await page.locator('#text-animation-loop').check();
     assert.equal(await page.locator('#text-inspector-value').inputValue(),'LIVE EDITED TITLE');
     const savedTitle=await page.evaluate(()=>{
         const item=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
@@ -365,7 +460,9 @@ try{
     await page.waitForFunction(()=>{
         const item=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
         return item?.tracks?.some(t=>t.textOverlay?.value==='LIVE EDITED TITLE'&&
-            t.textOverlay.animation==='typewriter');
+            t.textOverlay.animation==='typewriter'&&
+            t.textOverlay.animationDelay===.3&&t.textOverlay.animationSpeed===1.5&&
+            t.textOverlay.animationLoop===true&&t.textOverlay.animationIntensity===140);
     },null,{timeout:12000});
     await page.locator('#visual-transform-scale').fill('140');
     await page.locator('#visual-transform-scale').dispatchEvent('input');
