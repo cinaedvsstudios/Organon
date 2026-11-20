@@ -90,13 +90,15 @@ try {
     assert.equal(record.settings.canvasHeight,360);
     assert.equal(record.settings.fps,25);
     assert.equal(record.markers.length,1);
+    assert.ok(record.history.undo.length>=3,'Portable backup preserves editing history');
+    assert.deepEqual(record.history.redo,[]);
     assert.ok(record.files.some(file=>file.generated?.group==='text'
         &&file.generated?.value==='PORTABLE PROJECT'));
     assert.ok(record.files.some(file=>file.generated?.group==='effect'
         &&file.generated?.presetId==='film-grain'));
     assert.ok(!json.includes('data:image'),'Portable JSON cannot embed base64 pictures');
     assert.ok(!json.includes('blob:http'),'Portable JSON cannot embed object URLs');
-    assert.ok(json.length<20000,'Portable metadata backup should stay compact');
+    assert.ok(json.length<250000,'Portable backup must stay compact even with history snapshots');
     console.log('[MotoriClip portable] PASS Save Project downloads compact JSON with all three clips and generated recipes');
 
     page.once('dialog',dialog=>dialog.accept());
@@ -129,9 +131,19 @@ try {
     assert.equal(await page.locator('#project-fps').inputValue(),'25');
     await page.locator('#project-settings-modal [data-close-modal]').click();
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
-    assert.equal(await page.locator('#btn-undo').isDisabled(),true,
-        'Portable project import intentionally starts fresh Undo history');
-    console.log('[MotoriClip portable] PASS Open Project restores offline source, generated overlays, markers, dimensions and FPS');
+    assert.equal(await page.locator('#btn-undo').isDisabled(),false,
+        'Portable project import must restore Undo history');
+    await page.locator('#btn-undo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===2,
+        null,{timeout:20000});
+    assert.equal(await page.locator('#btn-redo').isDisabled(),false);
+    await page.locator('#btn-redo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===3,
+        null,{timeout:20000});
+    await page.locator('.timeline-clip.background.needs-relink').waitFor({timeout:15000});
+    assert.equal(await page.locator('#btn-export-offline').isDisabled(),true,
+        'Undo/Redo with offline media must still prohibit export');
+    console.log('[MotoriClip portable] PASS reopened project restores Undo/Redo with offline media, generated overlays, markers, dimensions and FPS');
 
     const beforeFailure=await page.locator('.timeline-clip').count();
     await page.locator('#project-open-input').setInputFiles({

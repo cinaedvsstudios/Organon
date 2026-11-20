@@ -269,3 +269,44 @@ test('removing a pending clip from setTracks cancels its decoder load', async ()
         app.cleanup();
     }
 });
+
+test('restored Undo history preserves offline clips until their media is relinked',async()=>{
+    const sources=new Map(),record=clip('offline-id','offline-clip');
+    assert.doesNotThrow(()=>validateTrackRecords([record],sources,{allowMissingSources:true}));
+    const entries=restoreFileEntries([{id:'offline-id',name:'a.mp4',kind:'video'}],
+        sources,{includeMissing:true});
+    assert.equal(entries.length,1);
+    assert.equal(entries[0].file,null);
+    assert.equal(entries[0].needsRelink,true);
+    const pending=await prepareHistoryTracks({
+        records:[record],existingTracks:[],sourceFiles:sources,allowMissingSources:true,
+        async loadTrack(){throw Error('Offline media must not be decoded')},
+        disposeTrack(){throw Error('Offline clip was unexpectedly disposed')}
+    });
+    pending.commit();
+    assert.equal(pending.tracks.length,1);
+    assert.equal(pending.tracks[0].sourceFileId,'offline-id');
+    assert.equal(pending.tracks[0].media,undefined);
+    assert.equal(pending.tracks[0].sourceName,'a.mp4');
+    const available=rawFile();
+    sources.set('offline-id',available);
+    let loads=0;
+    const relinked=await prepareHistoryTracks({
+        records:[record],existingTracks:pending.tracks,sourceFiles:sources,
+        allowMissingSources:true,
+        async loadTrack(track,file){loads++;track.file=file;track.media={tag:'relinked'}},
+        disposeTrack(){throw Error('Unexpected disposal')}
+    });
+    relinked.commit();
+    assert.equal(loads,1);
+    assert.equal(relinked.tracks[0].media.tag,'relinked');
+});
+test('history snapshots retain generated overlay recipes but not File objects',()=>{
+    const media={name:'text.png',size:42,lastModified:1};
+    const saved=snapshotProject({files:[{id:'text',name:'text.png',kind:'sticker',
+        generated:{group:'text',presetId:'neon-cyan',value:'Hello'},
+        file:media}],tracks:[],selectedTrackIds:new Set(),currentTime:0});
+    assert.equal(saved.files[0].generated.value,'Hello');
+    assert.equal(saved.files[0].size,42);
+    assert.equal(saved.files[0].file,undefined);
+});

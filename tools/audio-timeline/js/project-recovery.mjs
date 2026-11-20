@@ -8,12 +8,13 @@
  * IndexedDB FileSystemFileHandle store. Missing files stay offline until
  * the user explicitly relinks them.
  */
-import { snapshotClip } from './project-history.mjs';
+import { snapshotClip, snapshotProject } from './project-history.mjs';
 
 export const PROJECT_RECOVERY_KEY='motori-advanced-project-recovery-v1';
 export const PROJECT_RECOVERY_VERSION=1;
 export const MAX_RECOVERY_TRACKS=400;
 export const MAX_RECOVERY_FILES=400;
+export const MAX_RECOVERY_HISTORY_STEPS=60;
 export const MAX_RECOVERY_JSON_BYTES=3*1024*1024;
 const KINDS=new Set(['video','audio','sticker','background']);
 const limited=(n,min,max,fallback)=>Number.isFinite(Number(n))?Math.max(min,Math.min(max,Number(n))):fallback;
@@ -24,7 +25,7 @@ const id=value=>typeof value==='string' && value.length>0 && value.length<256;
  * never live engine/media node objects.
  */
 export function createRecoveryRecord({files=[],tracks=[],selectedTrackId=null,selectedTrackIds=[],selectedFileId=null,currentTime=0,
-    canvasWidth=1280,canvasHeight=720,fps=30,markers=[],previewZoom=100}={}) {
+    canvasWidth=1280,canvasHeight=720,fps=30,markers=[],previewZoom=100,history=null}={}) {
     if(!Array.isArray(files)||!Array.isArray(tracks)||files.length>MAX_RECOVERY_FILES||tracks.length>MAX_RECOVERY_TRACKS)
         throw new Error('This project exceeds the local recovery size limits.');
     const safeFiles=files.filter(file=>id(file?.id)&&typeof file.name==='string'&&KINDS.has(file.kind))
@@ -61,6 +62,27 @@ export function createRecoveryRecord({files=[],tracks=[],selectedTrackId=null,se
         },
         markers:Array.isArray(markers)?markers.map(value=>limited(value,0,36000,NaN)).filter(Number.isFinite).slice(0,1000):[]
     };
+    if(history!==null && history!==undefined){
+        if(!history || !Array.isArray(history.undo) || !Array.isArray(history.redo)
+            ||history.undo.length>MAX_RECOVERY_HISTORY_STEPS
+            ||history.redo.length>MAX_RECOVERY_HISTORY_STEPS)
+            throw Error('Invalid saved project history size.');
+        const compact=(entry)=>{
+            const source=entry?.snapshot;
+            if(typeof entry?.label!=='string'||!entry.label||entry.label.length>200
+                ||!source||!Array.isArray(source.files)||!Array.isArray(source.tracks)
+                ||!Array.isArray(source.selectedTrackIds))
+                throw Error('Invalid saved Undo/Redo entry.');
+            return {label:entry.label,snapshot:snapshotProject({
+                files:source.files,tracks:source.tracks,
+                selectedTrackIds:source.selectedTrackIds,
+                selectedTrackId:source.selectedTrackId,
+                selectedFileId:source.selectedFileId,
+                currentTime:source.currentTime
+            })};
+        };
+        result.history={undo:history.undo.map(compact),redo:history.redo.map(compact)};
+    }
     validateRecoveryRecord(result);
     return result;
 }
@@ -105,12 +127,56 @@ export function validateRecoveryRecord(record) {
         throw Error('Invalid saved project settings.');
     if(!Array.isArray(record.markers)||record.markers.some(n=>!Number.isFinite(n)||n<0))
         throw Error('Invalid saved timeline markers.');
+    // History is optional for backward compatibility with Phase 9M backups.
+    if(record.history!==undefined){
+        const {undo,redo}=record.history||{};
+        if(!Array.isArray(undo)||!Array.isArray(redo)
+            ||undo.length>MAX_RECOVERY_HISTORY_STEPS||redo.length>MAX_RECOVERY_HISTORY_STEPS)
+            throw Error('Invalid saved project history size.');
+        for(const entry of [...undo,...redo]){
+            const saved=entry?.snapshot;
+            if(typeof entry?.label!=='string'||!entry.label||entry.label.length>200
+                ||!saved||!Array.isArray(saved.files)||!Array.isArray(saved.tracks)
+                ||!Array.isArray(saved.selectedTrackIds)
+                ||saved.selectedTrackIds.length>MAX_RECOVERY_TRACKS
+                ||saved.selectedTrackIds.some(value=>!id(value))
+                ||!Number.isFinite(saved.currentTime)||saved.currentTime<0||saved.currentTime>36000)
+                throw Error('Invalid saved Undo/Redo entry.');
+            // Use exactly the same clip/file ID and size validation as the
+            // live project, without recursively validating its parent history.
+            validateRecoveryRecord({...record,files:saved.files,tracks:saved.tracks,
+                history:undefined,markers:[]});
+        }
+    }
     return record;
 }
 
 export function serializeRecoveryRecord(record) {
     validateRecoveryRecord(record);
-    const data=JSON.stringify(record);
+    let data=JSON.stringify(record);
+    if(data.length>MAX_RECOVERY_JSON_BYTES && record.history){
+        // Keep the newest undo/redo steps first when metadata approaches the
+        // 3 MB safety budget. Never sacrifice the active timeline to save history.
+        const compact={...record,history:{
+            undo:[...record.history.undo],redo:[...record.history.redo]
+        }};
+        const dropOldest=()=>{
+            const side=compact.history.undo.length>=compact.history.redo.length?'undo':'redo';
+            const target=compact.history[side].length?side:side==='undo'?'redo':'undo';
+            return compact.history[target].shift();
+        };
+        let excess=data.length-MAX_RECOVERY_JSON_BYTES;
+        while(excess>0&&(compact.history.undo.length||compact.history.redo.length)){
+            const removed=dropOldest();
+            excess-=JSON.stringify(removed).length+1;
+        }
+        data=JSON.stringify(compact);
+        while(data.length>MAX_RECOVERY_JSON_BYTES
+            &&(compact.history.undo.length||compact.history.redo.length)){
+            dropOldest();
+            data=JSON.stringify(compact);
+        }
+    }
     if(data.length>MAX_RECOVERY_JSON_BYTES)
         throw Error('This project is too large for local recovery. Reduce clip count or metadata.');
     return data;
