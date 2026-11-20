@@ -25,7 +25,7 @@ const paint=(preset,t,settings={})=>{
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
  assert.equal(TIMELINE_EFFECTS.length,10);
- assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,6);
+ assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
 });
 test('effect recipe clamps unsafe inputs and normalises colour',()=>{
