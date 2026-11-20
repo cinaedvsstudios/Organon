@@ -85,7 +85,7 @@ const fonts={sans:'system-ui,Arial,sans-serif',
  mono:'"Geist Mono","Courier New",monospace'};
 function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
  fill='#fff',outline='#333',outlineWidth=3,shadow='#000',shadowBlur=8,
- maxWidth=580,italic=false,letterSpacing=0}={}) {
+ maxWidth=580,italic=false,letterSpacing=0,metallic=false}={}) {
  let px=size;
  ctx.textAlign=align;ctx.textBaseline='middle';ctx.lineJoin='round';
  const family=fonts[font]||fonts.sans;
@@ -95,6 +95,17 @@ function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
  while(px>14 && ctx.measureText(text).width>maxWidth){px-=2;setFont();}
  ctx.shadowColor=shadow;ctx.shadowBlur=shadowBlur;
  ctx.strokeStyle=outline;ctx.lineWidth=outlineWidth;ctx.fillStyle=fill;
+ if(metallic){
+  // Contrasting dark and bright bands create a real reflective title,
+  // not just a silver palette swap. Fill remains user-configurable.
+  const gradient=ctx.createLinearGradient(0,y-px*.6,0,y+px*.6);
+  gradient.addColorStop(0,'#ffffff');
+  gradient.addColorStop(.27,fill);
+  gradient.addColorStop(.48,'#324658');
+  gradient.addColorStop(.58,'#ffffff');
+  gradient.addColorStop(1,fill);
+  ctx.fillStyle=gradient;
+ }
  if(outlineWidth>0)ctx.strokeText(text,x,y,maxWidth);
  ctx.fillText(text,x,y,maxWidth);
  ctx.shadowBlur=0;
@@ -229,7 +240,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
      shadow:config.fill,shadowBlur:Math.max(18,config.shadowBlur),font:'sans',weight:600});break;
    case 'chrome':{
     ctx.save();ctx.translate(320,180);ctx.transform(1,0,-.13,1,0,0);
-    write(value,0,0,{size:83*factor,shadowBlur:22,outlineWidth:7});
+    write(value,0,0,{size:83*factor,shadowBlur:22,outlineWidth:7,metallic:true});
     ctx.restore();ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillRect(63,231,510,2);break;
    }
    case 'handwriting':
