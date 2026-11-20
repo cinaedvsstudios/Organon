@@ -651,7 +651,11 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 if(!handle)continue;
                 state.savedFileHandles.set(record.id,handle);
                 const file=await getPermittedMediaFile(handle);
-                if(file && matchesHistoricalSource(record,file,getKind(file)))
+                // A persisted handle is associated with this exact stable
+                // file ID. Accept matching name/kind/size even if a copied
+                // file has a different timestamp (e.g. OPFS restoration).
+                // Cross-ID guesses from the current bin remain stricter.
+                if(file && matchesSavedMediaReference(record,file,getKind(file)))
                     state.sourceFiles.set(record.id,file);
             }
             // Keep offline placeholders when source media remains unavailable.
