@@ -124,6 +124,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .transport-icon:active { transform:translateY(1px); }
 .transport-icon.png-icon { color:var(--stone-ochre); }
 .transport-icon.png-icon:hover { color:var(--white-accent); background:rgba(154,47,79,.42); }
+.transport-icon.snapshot-format-btn { flex:0 0 34px; width:34px; font:700 .53rem var(--font-mono); letter-spacing:.02em; }
 .preview-volume-wrap { display:flex; align-items:center; min-width:88px; margin-left:1px; }
 .preview-volume { width:min(106px,14vw); min-width:58px; height:14px; margin:0; cursor:pointer; accent-color:var(--water-spray); }
 .time-readout { flex:0 0 auto; margin-left:auto; color:var(--water-spray); font:.64rem var(--font-mono); white-space:nowrap; }
@@ -473,7 +474,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <button type="button" class="transport-icon" id="btn-preview-mute" title="Mute preview" aria-label="Mute preview">🔊</button>
                         <div class="preview-volume-wrap"><input class="preview-volume" id="preview-volume" type="range" min="0" max="100" value="100" aria-label="Preview app volume only"></div>
                         <span class="time-readout" id="time-readout">0:00 / 0:00</span>
-                        <button type="button" class="transport-icon png-icon" id="btn-snapshot" title="Save PNG snapshot" aria-label="Save PNG snapshot">🖼️</button>
+                        <button type="button" class="transport-icon png-icon snapshot-format-btn" id="btn-snapshot" title="Save the current composited frame as a lossless PNG image" aria-label="Save PNG snapshot">PNG</button>
+                        <button type="button" class="transport-icon png-icon snapshot-format-btn" id="btn-snapshot-jpeg" title="Save the current composited frame as a JPEG image (92% quality)" aria-label="Save JPEG snapshot">JPG</button>
                     </div>
                 </div>
             </div>
@@ -819,7 +821,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-toolbar-layout-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-jpeg-snapshot-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>
