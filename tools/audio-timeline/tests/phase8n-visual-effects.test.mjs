@@ -14,7 +14,7 @@ test('8N catalog retains 41 stable choices, 37 enabled',()=>{
 });
 test('SpiralBlockWipe contains byte-for-byte upstream MIT GLSL and original defaults',()=>{
  const bytes=Buffer.from(SPIRAL_BLOCK_SOURCE,'utf8');
- const gitBlob=createHash('sha1').update('blob '+bytes.length+'\\0'.replace('\\0','\\x00')).update(bytes).digest('hex');
+ const gitBlob=createHash('sha1').update('blob '+bytes.length+String.fromCharCode(0)).update(bytes).digest('hex');
  assert.equal(gitBlob,'e98d9e749d398d84ec927da9286af13843da722e',
      'Original shader body must not be silently rewritten or approximated');
  assert.deepEqual(SPIRAL_BLOCK_DEFAULTS,{columns:8,rows:6,inward:true,clockwise:true,smoothness:.05});
