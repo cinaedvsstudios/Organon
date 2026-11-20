@@ -353,6 +353,7 @@ function decorate(ctx,layout,fill,outline,frame) {
   case 'stacked':{
    ctx.fillStyle=outline;ctx.fillRect(38,72,26,220);
    ctx.fillStyle=outline;ctx.fillRect(68,293,515,5);break;
+  }
   case 'countdown':{
    ctx.save();ctx.fillStyle='rgba(8,27,40,.86)';
    ctx.beginPath();ctx.arc(320,171,120,0,Math.PI*2);ctx.fill();
@@ -374,7 +375,6 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.beginPath();ctx.moveTo(96,177);ctx.lineTo(544,177);ctx.stroke();
    ctx.fillStyle=outline;ctx.fillRect(295,167,50,20);
    break;
-  }
   }
  }
 }
@@ -400,6 +400,10 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.clip();
    }
    if(config.animation==='slide')ctx.translate(frame.slideX,frame.slideY);
+   if(config.animation==='social-pulse'){
+    const pulse=Math.max(.01,frame.socialScale);
+    ctx.translate(320,180);ctx.scale(pulse,pulse);ctx.translate(-320,-180);
+   }
    if(config.animation==='bounce'){
     const p=frame.progress,drop=(1-p)*(1-p)*105*frame.intensity;
     const rebound=Math.sin(p*Math.PI*3.2)*(1-p)*30*frame.intensity;
@@ -435,9 +439,17 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.restore();ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillRect(63,231,510,2);break;
    }
    case 'handwriting':
-    write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
+    if(config.animation==='handwriting-reveal')
+      drawWritingTitle(ctx,value,320,175,{...base,font:'script',weight:500,italic:true,
+        size:92*factor,outlineWidth:1,maxWidth:520},frame);
+    else write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
     ctx.strokeStyle=config.outline;ctx.lineWidth=3;ctx.beginPath();
-    ctx.moveTo(128,241);ctx.quadraticCurveTo(302,262,518,228);ctx.stroke();break;
+    ctx.moveTo(128,241);
+    ctx.quadraticCurveTo(128+174*(config.animation==='handwriting-reveal'?frame.progress:1),
+      241+28*(config.animation==='handwriting-reveal'?frame.progress:1),
+      128+390*(config.animation==='handwriting-reveal'?frame.progress:1),
+      241-13*(config.animation==='handwriting-reveal'?frame.progress:1));
+    ctx.stroke();break;
    case 'cinematic':
     write(value.toUpperCase(),320,183,{font:'serif',weight:500,size:59*factor,outlineWidth:0});
     break;
@@ -448,7 +460,9 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
       maxWidth:530,outlineWidth:0,weight:500,font:'mono',revealAlpha:frame.subtitleAlpha});
     break;
    case 'location':
-    write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});break;
+    ctx.save();ctx.beginPath();ctx.rect(176,238,395*frame.locationLabelProgress,78);ctx.clip();
+    write(value,176,277,{size:38*factor,align:'left',maxWidth:385,outlineWidth:0});
+    ctx.restore();break;
    case 'quote':
     write(value,319,181,{font:'serif',weight:500,italic:true,size:51*factor,outlineWidth:0,maxWidth:410});break;
    case 'comic':
@@ -472,6 +486,32 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
    case 'stamp':
     ctx.save();ctx.translate(320,182);ctx.rotate(-.08);
     write(value.toUpperCase(),0,0,{size:66*factor,weight:900,outlineWidth:0,maxWidth:436});ctx.restore();break;
+   case 'countdown':{
+    const isNumber=/^\d+$/.test(value.trim());
+    const initial=isNumber?Math.min(99,Math.max(1,Number(value.trim()))):3;
+    const number=frame.countdownDigit===null?initial:frame.countdownDigit;
+    ctx.save();ctx.beginPath();ctx.rect(240,113,160,116);ctx.clip();
+    write(String(number),320,166,{font:'mono',size:109*factor,weight:800,
+      outlineWidth:1,maxWidth:158});
+    ctx.restore();
+    if(!isNumber)write(value.toUpperCase(),320,313,{font:'mono',size:21*factor,weight:700,
+      outlineWidth:0,maxWidth:520});
+    break;
+   }
+   case 'split':{
+    const words=value.trim().split(/\s+/).filter(Boolean);
+    const first=words.length>=2?words.slice(0,Math.ceil(words.length/2)).join(' '):
+      value.slice(0,Math.ceil(value.length/2));
+    const second=words.length>=2?words.slice(Math.ceil(words.length/2)).join(' '):
+      value.slice(Math.ceil(value.length/2));
+    const offset=300*Math.pow(1-frame.splitProgress,2)*frame.intensity;
+    ctx.save();ctx.translate(-offset,0);
+    write(first.toUpperCase(),320,132,{size:62*factor,weight:900,maxWidth:460});
+    ctx.restore();
+    ctx.save();ctx.translate(offset,0);
+    write((second||'TITLE').toUpperCase(),320,224,{size:66*factor,weight:900,maxWidth:470});
+    ctx.restore();break;
+   }
    case 'stacked':{
     const words=value.split(/\s+/).filter(Boolean);
     const midpoint=Math.ceil(words.length/2);
