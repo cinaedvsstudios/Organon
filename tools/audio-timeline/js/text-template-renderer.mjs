@@ -293,7 +293,7 @@ function drawWritingTitle(ctx,text,x,y,opts,frame){
  if(!letters.length)return;
  const size=opts.size||84;
  ctx.save();
- ctx.font='italic 500 '+size+'px '+fonts.script;
+ ctx.font=(opts.italic?'italic ':'')+(opts.weight||500)+' '+size+'px '+(fonts[opts.font]||fonts.script);
  const widths=letters.map(letter=>ctx.measureText(letter).width);
  const total=widths.reduce((sum,w)=>sum+w,0)+Math.max(0,letters.length-1)*(opts.letterSpacing||0);
  const fit=Math.min(1,(opts.maxWidth||550)/Math.max(total,1));
@@ -304,8 +304,7 @@ function drawWritingTitle(ctx,text,x,y,opts,frame){
   const w=widths[i],fraction=clamp(overall-i,0,1);
   if(fraction>0){
    ctx.save();ctx.beginPath();ctx.rect(cursor-2,-size,Math.max(1,w*fraction+4),size*2.1);ctx.clip();
-   drawTitle(ctx,letters[i],cursor+w/2,0,{...opts,size,font:'script',
-     italic:true,weight:500,maxWidth:w+15,align:'center'});
+   drawTitle(ctx,letters[i],cursor+w/2,0,{...opts,size,maxWidth:w+15,align:'center'});
    ctx.restore();
   }
   if(fraction>0)penX=cursor+w*fraction;
@@ -532,7 +531,7 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     }
     if(config.animation==='outline-fill')opts.fillAlpha=frame.progress;
     ctx.save();ctx.globalAlpha*=Number.isFinite(revealAlpha)?revealAlpha:frame.textAlpha;
-    if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80)
+    if(GLYPH_ANIMATIONS.has(config.animation)&&text.length<80&&!text.includes('\n'))
       drawGlyphs(ctx,text,x,y,opts,frame,config.animation);
     else drawTitle(ctx,text,x,y,opts);
     ctx.restore();
@@ -547,11 +546,14 @@ export function paintTimelineText(ctx,width,height,input={},localTime=0,clipDura
     ctx.restore();ctx.fillStyle='rgba(255,255,255,.38)';ctx.fillRect(63,231,510,2);break;
    }
    case 'handwriting':
-    if(config.animation==='handwriting-reveal')
-      drawWritingTitle(ctx,value,320,175,{...base,font:'script',weight:500,italic:true,
-        size:92*factor,outlineWidth:1,maxWidth:520},frame);
-    else write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
-    ctx.strokeStyle=config.outline;ctx.lineWidth=3;ctx.beginPath();
+    if(config.animation==='handwriting-reveal'&&!value.includes('\n')){
+      const scriptStyle={...base,font:config.fontFamily==='template'?'script':config.fontFamily,
+        weight:config.fontWeight||500,
+        italic:config.fontStyle==='template'?true:config.fontStyle==='italic',
+        size:92*factor,outlineWidth:1,maxWidth:520};
+      drawWritingTitle(ctx,applyCase(value),320,175,scriptStyle,frame);
+     }else write(value,320,175,{font:'script',weight:500,italic:true,size:92*factor,outlineWidth:1});
+     ctx.strokeStyle=config.outline;ctx.lineWidth=3;ctx.beginPath();
     ctx.moveTo(128,241);
     ctx.quadraticCurveTo(128+174*(config.animation==='handwriting-reveal'?frame.progress:1),
       241+28*(config.animation==='handwriting-reveal'?frame.progress:1),
