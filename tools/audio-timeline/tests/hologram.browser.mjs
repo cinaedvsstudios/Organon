@@ -100,6 +100,14 @@ try{
        &&engine.hologramToScratch===null,errors:renderErrors};
  });
  const values=result.samples,mid=values.find(x=>x.progress===.5);
+ console.log('[Hologram #02 QA diagnostic]',JSON.stringify({
+   samples:values.map(v=>({progress:v.progress,red:v.red,green:v.green,blue:v.blue,hash:v.hash})),
+   controls:Object.fromEntries(Object.entries(result.controls)
+     .map(([key,frame])=>[key,{hash:frame.hash,red:frame.red,green:frame.green,blue:frame.blue}])),
+   errors:result.errors,released:result.released,
+   alpha:result.alpha.hash,hidden:result.hidden.hash
+ }));
+ console.log('[Hologram #02 visual PNG] '+result.screenshot);
  assert.notEqual(values[0].hash,values.at(-1).hash,'A/B endpoints should have distinct images');
  assert.notEqual(mid.hash,values[0].hash,'Midtransition must not be static outgoing footage');
  assert.notEqual(mid.hash,values.at(-1).hash,'Midtransition must not be static incoming footage');
