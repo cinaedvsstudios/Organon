@@ -1949,6 +1949,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             keyframes:keyframeParts.right,speed:track.speed||1,
             visualTransitions: transitionParts.right,
             transparency: { ...track.transparency },
+            // Splitting must not silently turn a generated text/effect recipe into its PNG fallback.
+            textOverlay: track.textOverlay?normaliseTextOverlay(track.textOverlay):null,
+            effectOverlay: track.effectOverlay?normaliseTimelineEffect(track.effectOverlay):null,
             groupId: track.groupId,
             extractedFrom: track.extractedFrom,
             analysis: track.analysis,
