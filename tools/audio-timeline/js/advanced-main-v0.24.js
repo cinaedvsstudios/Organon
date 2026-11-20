@@ -6,7 +6,7 @@
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
 import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261120-orgavox-lofi';
-import { snapshotProject, snapshotClip, applyClipData, restoreFileEntries, prepareHistoryTracks, referencedFileIds } from './project-history.mjs?build=20261120-orgavox-audio';
+import { snapshotProject, snapshotClip, applyClipData, restoreFileEntries, prepareHistoryTracks, referencedFileIds, matchesHistoricalSource, historicalMediaIdsForFile } from './project-history.mjs?build=20261120-orgavox-audio';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-wav-only';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
@@ -607,9 +607,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         state.historyRestoring = true;
         updateHistoryButtons();
         try {
-            // Historical sources may no longer be available after reopening.
-            // Retain offline placeholders so edits can still be undone/redone
-            // and exports remain disabled until the user relinks media.
+            // Media can be present in the current bin under a newer ID, or
+            // remembered by a history-only file handle. Recover only when
+            // identifying metadata agree; never borrow similarly named media.
+            for(const record of snapshot.files||[]){
+                if(record.generated || state.sourceFiles.has(record.id))continue;
+                const current=state.files.find(entry=>entry.file
+                    && matchesHistoricalSource(record,entry.file,entry.kind));
+                if(current){
+                    state.sourceFiles.set(record.id,current.file);
+                    continue;
+                }
+                const handle=state.savedFileHandles.get(record.id)
+                    || await getMediaHandle(record.id);
+                if(!handle)continue;
+                state.savedFileHandles.set(record.id,handle);
+                const file=await getPermittedMediaFile(handle);
+                if(file && matchesHistoricalSource(record,file,getKind(file)))
+                    state.sourceFiles.set(record.id,file);
+            }
+            // Keep offline placeholders when source media remains unavailable.
+            // Export stays disabled until matching media is relinked.
             const files = restoreFileEntries(snapshot.files, state.sourceFiles, {includeMissing:true});
             recreateGeneratedProjectOverlays(files);
             engine.pause();
@@ -881,11 +899,19 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
     async function addFiles(files,handles=[]) {
-        const usable=[],relinked=[],handleUpdates=[];
+        const usable=[],relinked=[],handleUpdates=[],historicalLinks=[];
+        const claimedHistoricalIds=new Set();
         for(const [index,file] of Array.from(files||[]).entries()){
             const kind=getKind(file);
             if(!kind || !FILE_PATTERN.test(file.name))continue;
             const fileHandle=isPersistentFileHandle(handles[index])?handles[index]:null;
+            const historicalIds=historicalMediaIdsForFile(
+                file,kind,state.history,state.files,state.sourceFiles
+            ).filter(id=>!claimedHistoricalIds.has(id));
+            if(historicalIds.length){
+                historicalIds.forEach(id=>claimedHistoricalIds.add(id));
+                historicalLinks.push({file,ids:historicalIds,handle:fileHandle});
+            }
             const duplicate=state.files.find(entry=>entry.file && entry.file.name===file.name
                 && entry.file.size===file.size && entry.file.lastModified===file.lastModified);
             if(duplicate){
@@ -895,12 +921,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const missing=state.files.find(entry=>!entry.file && entry.name===file.name
                 && entry.kind===kind && (!entry.size || entry.size===file.size));
             if(missing) relinked.push({entry:missing,file,handle:fileHandle});
-            else usable.push({entry:{
+            else if(!historicalIds.length) usable.push({entry:{
                 id:`file-${Date.now()}-${++state.serial}`,file,
                 name:file.name,kind,size:file.size,lastModified:file.lastModified
             },handle:fileHandle});
+            // A history-only media import is not a new project-bin edit:
+            // retain existing Undo and Redo stacks and their stable IDs.
         }
-        if(!usable.length&&!relinked.length&&!handleUpdates.length){
+        if(!usable.length&&!relinked.length&&!handleUpdates.length&&!historicalLinks.length){
             elements.previewState.textContent='No new or matching media files found.';
             return;
         }
@@ -914,6 +942,14 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             state.sourceFiles.set(entry.id,entry.file);
             if(handle)handleUpdates.push({entry,handle});
         }
+        let historicalCount=0;
+        for(const {file,ids,handle} of historicalLinks){
+            for(const id of ids){
+                state.sourceFiles.set(id,file);
+                historicalCount++;
+                if(handle)handleUpdates.push({entry:{id},handle});
+            }
+        }
         let savedHandles=0;
         for(const {entry,handle} of handleUpdates){
             if(await saveMediaHandle(entry.id,handle)){
@@ -923,8 +959,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }
         renderFiles();
         await loadRecoveredMediaTracks();
-        elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked`;
-        showToast(`${usable.length} imported · ${relinked.length} relinked${savedHandles?' · '+savedHandles+' remembered handles':''}`);
+        elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked, ${historicalCount} history references reconnected`;
+        showToast(`${usable.length} imported · ${relinked.length} relinked · ${historicalCount} history references${savedHandles?' · '+savedHandles+' remembered handles':''}`);
     }
 
     function setLibraryView(view) {
