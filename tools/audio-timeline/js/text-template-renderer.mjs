@@ -65,7 +65,7 @@ export function textAnimationState(config={},localTime=0,clipDuration=3) {
   visibleCharacters:opts.animation==='typewriter'
     ?Math.min(text.length,Math.floor(progress*text.length)+Number(progress===1)) :text.length,
   alpha:opts.animation==='fade'?progress:1,
-  slideX:opts.animation==='slide'?Math.round((1-progress)**2*-220):0,
+  slideX:opts.animation==='slide'?(progress>=1?0:Math.round((1-progress)**2*-220)):0,
   boxWidth:opts.animation==='box-reveal'?Math.round(640*progress):640,
   tickerX:opts.animation==='ticker'?640-(time/clip)*1280:0,
   jitter:opts.animation==='shake'?Math.sin(time*46)*4:0,
