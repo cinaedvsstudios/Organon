@@ -1,6 +1,7 @@
 import { paintSpiralBlockWipe } from './gl-transitions/SpiralBlockWipe.mjs';
 import { paintHologram } from './gl-transitions/Hologram.mjs';
 import { paintCellDissolve } from './gl-transitions/CellDissolve.mjs';
+import { paintVortex } from './gl-transitions/Vortex.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -343,18 +344,6 @@ export function smokeDensity(progress) {
     if(p===0||p===1)return 0;
     return Math.sin(Math.PI*p);
 }
-/** Phase 8K: twelve annular video slices rotate independently into a
- * growing circular reveal, producing a vortex rather than a flat rotation.
- */
-export function vortexRadius(progress,width,height) {
-    return Math.hypot(width/2,height/2)*unit(progress);
-}
-export function vortexTurn(progress,ring,count=12) {
-    const p=unit(progress),n=Math.max(1,Math.trunc(count)||12);
-    const i=Math.min(n-1,Math.max(0,Math.trunc(ring)||0));
-    if(p===0||p===1)return 0;
-    return (1-p)*Math.PI*1.9*(1-i/n*.85);
-}
 /** Thermal shimmer is smoothly wave-shaped, not the discrete random
  * horizontal jitter or dropout used by VHS and Glitch flicker.
  */
@@ -543,6 +532,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintHologram(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='cell-dissolve')
         return paintCellDissolve(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='vortex')
+        return paintVortex(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -636,45 +627,14 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='vortex'||id==='heat-haze'||id==='refraction'){
+    if(id==='heat-haze'||id==='refraction'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fullCtx=full.getContext('2d');
         fullCtx.clearRect(0,0,width,height);
         renderContained(fullCtx,media,width,height);
         const cx=width/2,cy=height/2;
         context.save();
-        if(id==='vortex'){
-            // Annular slices rotate the same incoming frame by different
-            // angles. The center grows outward while A remains visible
-            // outside the vortex. Twelve clipped draws, no pixel loops.
-            const radius=vortexRadius(progress,width,height),count=12;
-            for(let ring=0;ring<count;ring++){
-                const inner=radius*ring/count,outer=radius*(ring+1)/count;
-                context.save();
-                context.beginPath();
-                context.arc(cx,cy,outer,0,Math.PI*2);
-                if(inner>0)context.arc(cx,cy,inner,0,Math.PI*2);
-                context.clip('evenodd');
-                context.translate(cx,cy);
-                context.rotate(vortexTurn(progress,ring,count));
-                context.translate(-cx,-cy);
-                context.drawImage(full,0,0,width,height);
-                context.restore();
-            }
-            // Faint curved energy traces make the swirling edges visible
-            // even on uniform-color footage, without altering the sources.
-            const glow=(1-progress)*.23;
-            context.strokeStyle='#9fd9ef';
-            context.lineWidth=Math.max(1,Math.min(width,height)*.012);
-            context.globalAlpha=alpha*glow;
-            for(let arm=0;arm<3;arm++){
-                context.beginPath();
-                context.arc(cx,cy,radius*(.3+arm*.24),
-                    arm*Math.PI*.66+progress*4,
-                    arm*Math.PI*.66+progress*4+Math.PI*.72);
-                context.stroke();
-            }
-        }else if(id==='heat-haze'){
+        if(id==='heat-haze'){
             const bands=28,frame=Math.floor(time*30);
             context.globalAlpha=alpha*progress;
             for(let band=0;band<bands;band++){

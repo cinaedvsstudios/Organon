@@ -256,8 +256,8 @@ try{
     console.log('[MotoriClip 8K] New distorted-frame pixel counts '+JSON.stringify({
         vortex:vortex.middle,heat:heat.middle,refraction:lens.middle
     }));
-    assert.ok(vortex.middle.blue>150&&vortex.middle.mixed>90,
-        'Vortex must rotate strips of B into a growing region over visible A');
+    assert.ok(vortex.middle.blue>150&&vortex.middle.red>150&&vortex.middle.black===0,
+        'Original Vortex must retain visible flying A tiles while revealing B without uncovered holes');
     assert.notEqual(vortex.middle.fingerprint,result.fade.middle.fingerprint,
         'Vortex must not look like a plain fade on the same incoming stripes');
     assert.ok(heat.middle.mixed>900,
@@ -273,7 +273,7 @@ try{
     assert.notEqual(lens.middle.fingerprint,heat.middle.fingerprint,
         'Refraction lenses must differ from thermal heat waves');
     assert.notEqual(lens.middle.fingerprint,vortex.middle.fingerprint,
-        'Refraction must differ from annular vortex rotation');
+        'Refraction must differ from original flying-square Vortex');
     assert.equal(vortex.middle.fingerprint,vortex.repeat.fingerprint);
     assert.equal(heat.middle.fingerprint,heat.repeat.fingerprint);
     assert.equal(lens.middle.fingerprint,lens.repeat.fingerprint);

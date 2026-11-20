@@ -640,7 +640,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
-                        <fieldset id="video-cell-dissolve-settings" class="spiral-glsl-settings cell-dissolve-glsl-settings" hidden>
+                        <fieldset id="video-vortex-settings" class="spiral-glsl-settings vortex-glsl-settings" hidden>
+                            <legend>Vortex · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Square rows<input type="number" min="4" max="40" step="1" value="24" data-vortex-param="grid"></label>
+                                <label>Spiral turns<input type="number" min="-4" max="4" step=".1" value="1" data-vortex-param="spin"></label>
+                                <label>Vortex centre X<input type="range" min="0" max="1" step=".01" value=".5" data-vortex-param="centerX"></label>
+                                <label>Vortex centre Y<input type="range" min="0" max="1" step=".01" value=".5" data-vortex-param="centerY"></label>
+                                <label>Departure randomness<input type="range" min="0" max="1" step=".01" value=".2" data-vortex-param="randomness"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="video-cell-dissolve-settings" class="spiral-glsl-settings cell-dissolve-glsl-settings" hidden>
                             <legend>CellDissolve · Original GL shader</legend>
                             <div class="spiral-settings-grid">
                                 <label>Cell density<input type="number" min="1" max="40" step="0.5" value="8" data-cell-dissolve-param="cells"></label>
@@ -1125,6 +1135,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-vortex" class="spiral-glsl-settings vortex-glsl-settings" hidden>
+                            <legend>Vortex · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Square rows<input type="number" min="4" max="40" step="1" value="24" data-vortex-param="grid"></label>
+                                <label>Spiral turns<input type="number" min="-4" max="4" step=".1" value="1" data-vortex-param="spin"></label>
+                                <label>Vortex centre X<input type="range" min="0" max="1" step=".01" value=".5" data-vortex-param="centerX"></label>
+                                <label>Vortex centre Y<input type="range" min="0" max="1" step=".01" value=".5" data-vortex-param="centerY"></label>
+                                <label>Departure randomness<input type="range" min="0" max="1" step=".01" value=".2" data-vortex-param="randomness"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-cell-dissolve" class="spiral-glsl-settings cell-dissolve-glsl-settings" hidden>
                             <legend>CellDissolve · Original GL shader</legend>
                             <div class="spiral-settings-grid">

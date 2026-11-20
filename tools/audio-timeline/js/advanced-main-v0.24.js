@@ -16,6 +16,7 @@ import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { normaliseSpiralBlockOptions } from './gl-transitions/SpiralBlockWipe.mjs';
 import { normaliseHologramOptions } from './gl-transitions/Hologram.mjs';
 import { normaliseCellDissolveOptions } from './gl-transitions/CellDissolve.mjs';
+import { normaliseVortexOptions } from './gl-transitions/Vortex.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1648,6 +1649,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             cellInspector.hidden=!(paired&&track.transitionEffectId==='cell-dissolve');
             if(!cellInspector.hidden)
                 displayCellDissolveSettings(cellInspector,track.transitionParameters?.['cell-dissolve']);
+            const vortexInspector=document.getElementById('video-vortex-settings');
+            vortexInspector.hidden=!(paired&&track.transitionEffectId==='vortex');
+            if(!vortexInspector.hidden)
+                displayVortexSettings(vortexInspector,track.transitionParameters?.vortex);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1907,6 +1912,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-cell-dissolve-settings');
             b.transitionParameters={...b.transitionParameters,
                 'cell-dissolve':readCellDissolveSettings(panel)};
+        }
+        if(effectId==='vortex'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-vortex')
+                :document.getElementById('video-vortex-settings');
+            b.transitionParameters={...b.transitionParameters,
+                vortex:readVortexSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2716,6 +2728,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayCellDissolveSettings(root,target?.transitionParameters?.['cell-dissolve']);
         }
     }
+    function readVortexSettings(root){
+        const value=name=>root?.querySelector('[data-vortex-param="'+name+'"]')?.value;
+        return normaliseVortexOptions({
+            grid:value('grid'),centerX:value('centerX'),centerY:value('centerY'),
+            spin:value('spin'),randomness:value('randomness')
+        });
+    }
+    function displayVortexSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseVortexOptions(options))){
+            const input=root?.querySelector('[data-vortex-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshVortexModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-vortex');
+        root.hidden=elements.transitionModalEffect.value!=='vortex';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayVortexSettings(root,target?.transitionParameters?.vortex);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2756,6 +2789,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,hologram:readHologramSettings(document.getElementById('transition-modal-hologram'))}
                     :effectId==='cell-dissolve'
                     ?{...b.transitionParameters,'cell-dissolve':readCellDissolveSettings(document.getElementById('transition-modal-cell-dissolve'))}
+                    :effectId==='vortex'
+                    ?{...b.transitionParameters,vortex:readVortexSettings(document.getElementById('transition-modal-vortex'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2764,7 +2799,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2801,6 +2836,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSpiralModalSettings({restoreValues:true});
         refreshHologramModalSettings({restoreValues:true});
         refreshCellDissolveModalSettings({restoreValues:true});
+        refreshVortexModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2815,6 +2851,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSpiralModalSettings();
         refreshHologramModalSettings();
         refreshCellDissolveModalSettings();
+        refreshVortexModalSettings();
         renderTransitionPreview();
     }
     function applyTransitionFromModal() {
@@ -2843,10 +2880,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.transitionModalEffect.addEventListener('change',()=>{
         refreshSpiralModalSettings({restoreValues:true});
         refreshHologramModalSettings({restoreValues:true});
-        refreshCellDissolveModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshCellDissolveModalSettings({restoreValues:true});
+        refreshVortexModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-vortex').querySelectorAll('[data-vortex-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-vortex-settings').querySelectorAll('[data-vortex-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='vortex'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readVortexSettings(document.getElementById('video-vortex-settings'));
+            const prior=normaliseVortexOptions(active.transitionParameters?.vortex);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Vortex GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,vortex:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-cell-dissolve').querySelectorAll('[data-cell-dissolve-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-cell-dissolve-settings').querySelectorAll('[data-cell-dissolve-param]')

@@ -84,6 +84,18 @@ test('CellDissolve Voronoi settings persist in Save/Open and snapshots are isola
     parsed.tracks[0].transitionParameters['cell-dissolve'].seed=99;
     assert.equal(record.tracks[0].transitionParameters['cell-dissolve'].seed,31);
 });
+test('Original Vortex shader controls survive project Save/Open with deep Undo copy',()=>{
+    const params={grid:16,centerX:.27,centerY:.76,spin:-1.5,randomness:.68};
+    const video=clip({transitionEffectId:'vortex',transitionParameters:{vortex:params}});
+    const snapshot=createRecoveryRecord({files:[file()],tracks:[video]});
+    const parsed=parseRecoveryRecord(serializeRecoveryRecord(snapshot));
+    assert.deepEqual(parsed.tracks[0].transitionParameters.vortex,params);
+    video.transitionParameters.vortex.grid=4;
+    assert.equal(snapshot.tracks[0].transitionParameters.vortex.grid,16,
+        'Later inspector edits cannot mutate the snapshot');
+    parsed.tracks[0].transitionParameters.vortex.spin=0;
+    assert.equal(snapshot.tracks[0].transitionParameters.vortex.spin,-1.5);
+});
 test('recovery snapshot is independent of live edit objects',()=>{
     const c=clip();const entry=file();
     const saved=createRecoveryRecord({files:[entry],tracks:[c]});
