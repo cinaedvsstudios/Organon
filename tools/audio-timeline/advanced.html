@@ -679,11 +679,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 <section class="control-card" id="inspector-timeline-effect" hidden>
                     <h3>Procedural effect</h3>
                     <p class="control-copy">Animated at clip-relative timestamps in preview and video export. Changes update the selected effect without replacing the clip.</p>
+                    <label class="text-setting-row"><span>Duration (seconds)</span><input id="effect-duration" class="compact-input" type="number" min="0.1" max="120" step="0.1" value="3" title="Length of this generated effect clip on the timeline"></label>
                     <label class="text-setting-row"><span>Intensity (%)</span><input id="effect-intensity" class="range-control" type="range" min="0" max="100" step="1" value="70" title="Strength of the effect"></label>
                     <label class="text-setting-row"><span>Speed (×)</span><input id="effect-speed" class="range-control" type="range" min="0.1" max="8" step="0.1" value="1" title="Timeline animation speed"></label>
                     <label class="text-setting-row"><span>Density</span><input id="effect-density" class="range-control" type="range" min="1" max="120" step="1" value="48" title="Number of particles; used for particle effects"></label>
                     <label class="text-setting-row"><span>Scale (%)</span><input id="effect-scale" class="range-control" type="range" min="10" max="300" step="5" value="100" title="Beam/fog/particle scale"></label>
                     <label class="text-setting-row"><span>Direction (°)</span><input id="effect-direction" class="range-control" type="range" min="-180" max="180" step="5" value="0" title="Angle of motion or light sweep"></label>
+                    <label class="text-setting-row" id="effect-glow-control" hidden><span>Glow (%)</span><input id="effect-glow" class="range-control" type="range" min="0" max="100" step="1" value="64" title="Glow brightness or halo size"></label>
+                    <label class="text-setting-row" id="effect-blur-control" hidden><span>Blur (px)</span><input id="effect-blur" class="range-control" type="range" min="0" max="60" step="1" value="24" title="Radius of bloom and soft-focus blur"></label>
                     <label class="text-setting-row" id="effect-distortion-control" hidden><span>Distortion (%)</span><input id="effect-distortion" class="range-control" type="range" min="0" max="100" step="1" value="55" title="Strength of swinging, shake, tape displacement or wave refraction"></label>
                     <div id="effect-origin-controls" hidden>
                         <label class="text-setting-row"><span>Origin / pivot X (%)</span><input id="effect-origin-x" class="range-control" type="range" min="0" max="100" step="1" value="20" title="Horizontal origin of God Rays or pivot point for Swing/Shockwave"></label>
@@ -1081,7 +1084,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-procedural-fx-c"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-procedural-fx-d"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>

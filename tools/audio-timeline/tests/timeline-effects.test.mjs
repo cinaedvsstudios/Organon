@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {TIMELINE_EFFECTS,normaliseTimelineEffect,effectFrameSignature,paintTimelineEffect,requiresCompositeSource,paintEffectPreviewScene} from '../js/timeline-effects.mjs';
 import {snapshotClip,applyClipData} from '../js/project-history.mjs';
+import {PIXEL_EFFECT_IDS,deriveLightMask,separateRgb,isPixelEffect} from '../js/timeline-pixel-effects.mjs';
 
 const makeCanvasRecorder=()=>{
  const log=[];
@@ -24,7 +25,7 @@ const paint=(preset,t,settings={})=>{
  return JSON.stringify(ctx.log);
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
- assert.equal(TIMELINE_EFFECTS.length,17);
+ assert.equal(TIMELINE_EFFECTS.length,24);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
  assert.deepEqual(
@@ -34,7 +35,7 @@ test('phase 3 effect catalog has distinct identities and categories',()=>{
 });
 test('effect recipe clamps unsafe inputs and normalises colour',()=>{
  const e=normaliseTimelineEffect({presetId:'unknown',intensity:900,speed:0,density:1e8,scale:-3,direction:900,color:'url(javascript:1)'});
- assert.deepEqual(e,{presetId:'light-sweep',intensity:100,speed:.1,density:120,scale:10,direction:180,distortion:55,originX:20,originY:12,color:'#ffd98d'});
+ assert.deepEqual(e,{presetId:'light-sweep',intensity:100,speed:.1,density:120,scale:10,direction:180,distortion:55,glow:64,blur:24,originX:20,originY:12,color:'#ffd98d'});
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
@@ -157,6 +158,57 @@ test('swing pivot, warp severity and preview scene are real editable parameters'
  paintEffectPreviewScene(preview,640,360);
  assert.ok(preview.log.some(row=>row[0]==='fillRect'));
  assert.ok(preview.log.some(row=>row[0]==='arc'));
+});
+test('phase 3D source pixel effects include independent RGB and bright/edge algorithms',()=>{
+ assert.deepEqual(PIXEL_EFFECT_IDS,['glow','edge-glow','chromatic-quirk','halo-blur']);
+ for(const id of PIXEL_EFFECT_IDS){
+  assert.equal(requiresCompositeSource(id),true);
+  assert.equal(isPixelEffect(id),true);
+  assert.notEqual(paint(id,.25),paint(id,1.44),id+' changes over local time');
+  assert.equal(paint(id,.25),paint(id,.25),id+' works with reverse scrubbing');
+ }
+ assert.equal(isPixelEffect('fire-embers'),false);
+ const w=5,h=5,data=new Uint8ClampedArray(w*h*4);
+ for(let i=0;i<w*h;i++){
+  const k=i*4;
+  data[k]=15;data[k+1]=15;data[k+2]=15;data[k+3]=255;
+ }
+ const center=(2*w+2)*4;data[center]=255;data[center+1]=254;data[center+2]=253;
+ const bright=deriveLightMask(data,w,h,'glow','#ffdb99',.75);
+ const edges=deriveLightMask(data,w,h,'edge-glow','#ffdb99',.75);
+ assert.ok(bright[center+3]>100,'bright regions have strong glow');
+ assert.equal(bright[0+3],0,'dark regions do not glow');
+ assert.equal(edges[center+3],0,'flat central area has no edge response');
+ assert.ok(edges[((2*w+1)*4)+3]>0,'edge detects image boundary, not brightness');
+ assert.notDeepEqual(bright,edges);
+ const channels=separateRgb(new Uint8ClampedArray([21,94,182,255]));
+ assert.deepEqual([...channels[0]],[21,0,0,255]);
+ assert.deepEqual([...channels[1]],[0,94,0,255]);
+ assert.deepEqual([...channels[2]],[0,0,182,255]);
+});
+test('Phase 3D fire types render as different procedures at each timestamp',()=>{
+ const flames=paint('fire-flames',.68);
+ const embers=paint('fire-embers',.68);
+ const burst=paint('fire-explosion',.68);
+ assert.notEqual(flames,embers);assert.notEqual(embers,burst);
+ assert.ok(flames.includes('quadraticCurveTo'),'flames use curved flame tongues');
+ assert.ok(embers.includes('arc'),'embers are independent particles');
+ assert.ok(burst.includes('stroke'),'explosion throws radial streaks');
+ for(const id of ['fire-flames','fire-embers','fire-explosion']){
+  assert.notEqual(paint(id,.21),paint(id,1.12));
+  assert.equal(paint(id,.21),paint(id,.21));
+ }
+});
+test('Glow and blur settings survive clip snapshots with safe bounds',()=>{
+ const effect=normaliseTimelineEffect({presetId:'halo-blur',glow:30,blur:18,originX:62,originY:35});
+ assert.equal(effect.glow,30);assert.equal(effect.blur,18);
+ assert.deepEqual([effect.originX,effect.originY],[62,35]);
+ assert.deepEqual([normaliseTimelineEffect({presetId:'halo-blur'}).originX,normaliseTimelineEffect({presetId:'halo-blur'}).originY],[50,50]);
+ assert.equal(normaliseTimelineEffect({blur:-44,glow:200}).blur,0);
+ assert.equal(normaliseTimelineEffect({blur:-44,glow:200}).glow,100);
+ const saved=snapshotClip({id:'soft',type:'sticker',effectOverlay:effect});
+ const target={id:'soft',type:'sticker'};
+ applyClipData(target,saved);assert.deepEqual(target.effectOverlay,effect);
 });
 test('fixed frame-local time does not rely on wall clock or frame iteration order',()=>{
  const settings={presetId:'light-sweep',speed:1.25};

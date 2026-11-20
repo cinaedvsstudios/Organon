@@ -27,6 +27,8 @@
 
 - 20 Nov 2026: Phase 3C in [PR #99](https://github.com/cinaedvsstudios/Organon/pull/99) implements **#21, #22, #29, #31, #32, #33, #34, #42**: real composed-frame Pendulum/Rebound swings, analogue cassette tracking, Ripple/Electric Ripple refractive bands, masked Shockwave and seeded Vibration Flash. Populates all seven requested categories with nonstatic animated recipes. Added reusable per-context source-frame sampling, editable pivots and distortion controls, and representative animated library previews. Node source-warp/scratch/reverse-seek tests, Chrome 41-transition/editor/recovery/portable suites and Firefox/WebKit export/UI jobs passed. Initial real-media MP4 export and 720p/1080p stress stages passed; longer real-export profiling and explicit effect-pixel-to-encoded-video comparisons remain separate unverified gates. 
 
+- 20 Nov 2026: Phase 3D in [PR #100](https://github.com/cinaedvsstudios/Organon/pull/100) implements **#23, #24, #37, #38, #40, #45**: actual luminance-derived source Glow, detected-edge-only Edge Glow, independent RGB channel Chromatic Quirk, radial source Halo Blur, distinct deterministic Fire Flames/Embers/Explosion, and Inspector support for intensity, speed, effect clip duration, direction, scale, glow, blur, distortion, density/particles and colour. Pure pixel analysis and fire regressions passed, as did Chrome 41-transition/editor/project Save/Open acceptance and Firefox/WebKit jobs. Basic real-MP4 export and HD stress stages passed; full long-form memory and pixel-perfect decoded-effect export equivalence are tracked separately and **not** certified by this item.
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -57,8 +59,8 @@
 
 - [x] **21.** Pendulum Swing — oscillate around editable pivot.
 - [x] **22.** Rebound Swing — spring overshoot and decay.
-- [ ] **23.** Glow — bloom bright image regions.
-- [ ] **24.** Edge Glow — illuminate detected edges only.
+- [x] **23.** Glow — bloom bright image regions.
+- [x] **24.** Edge Glow — illuminate detected edges only.
 - [x] **25.** Light Sweep — moving directional highlight.
 - [x] **26.** God Rays — directional beams with adjustable origin.
 - [x] **27.** Hazy Atmosphere — drifting diffuse fog.
@@ -71,15 +73,15 @@
 - [x] **34.** Vibration Flash — shake with brief flashes.
 - [x] **35.** Pixel Scan — moving scan band with pixel detail.
 - [x] **36.** Sci-Fi Scan — scan beam and technical HUD marks.
-- [ ] **37.** Chromatic Quirk — independently displaced RGB channels.
-- [ ] **38.** Halo Blur — radial soft focus.
+- [x] **37.** Chromatic Quirk — independently displaced RGB channels.
+- [x] **38.** Halo Blur — radial soft focus.
 - [x] **39.** Particle Effects — independent sparks/dust/debris.
-- [ ] **40.** Fire Effects — distinct flames/embers/explosions.
+- [x] **40.** Fire Effects — distinct flames/embers/explosions.
 - [ ] **41.** Additional *distinct* glitch styles: Glass Glitch, Glitch Storm, Negative Chaos, Warning Glitch, Misalignment, Noir Glitch, Glitch Flux, Engine Heat and Retro Glitch.
 - [x] **42.** Categorise effects as Motion, Light, Distortion, Glitch, Atmospheric, Scanning, Particles/Fire.
 - [x] **43.** Right-click effect → themed animated Preview popup with Play/Pause/Loop/scrub.
 - [x] **44.** Insert effect as a genuinely time-based editable timeline clip, not a static PNG impostor.
-- [ ] **45.** Effect Inspector for suitable parameters (intensity, speed, duration, direction, scale, glow, blur, distortion, particles and colour).
+- [x] **45.** Effect Inspector for suitable parameters (intensity, speed, duration, direction, scale, glow, blur, distortion, particles and colour).
 
 ## 4. Text templates — distinct designs
 

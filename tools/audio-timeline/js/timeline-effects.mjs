@@ -1,10 +1,11 @@
 /**
- * MotoriClip procedural effect clips — Phase 3A–C.
+ * MotoriClip procedural effect clips — Phase 3A–D.
  * Effects are recipes (not PNG animations). Preview and both exporters render
  * from identical clip-relative seconds, including reverse seeking.
  * Artifex FX's procedural/seeded approach informed this independent Canvas2D
  * implementation; no runtime or nonportable asset dependency is introduced.
  */
+import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
  {id:'hazy-atmosphere',label:'Hazy Atmosphere',group:'effect',category:'Atmospheric',animated:true},
@@ -22,7 +23,14 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'fault-cassette',label:'Fault Cassette',group:'effect',category:'Glitch',animated:true},
  {id:'ripple-distortion',label:'Ripple Distortion',group:'effect',category:'Distortion',animated:true},
  {id:'electric-ripple',label:'Electric Ripple',group:'effect',category:'Distortion',animated:true},
- {id:'shockwave',label:'Shockwave',group:'effect',category:'Distortion',animated:true}
+ {id:'shockwave',label:'Shockwave',group:'effect',category:'Distortion',animated:true},
+ {id:'glow',label:'Glow',group:'effect',category:'Light',animated:true},
+ {id:'edge-glow',label:'Edge Glow',group:'effect',category:'Light',animated:true},
+ {id:'chromatic-quirk',label:'Chromatic Quirk',group:'effect',category:'Distortion',animated:true},
+ {id:'halo-blur',label:'Halo Blur',group:'effect',category:'Atmospheric',animated:true},
+ {id:'fire-flames',label:'Fire Flames',group:'effect',category:'Particles/Fire',animated:true},
+ {id:'fire-embers',label:'Fire Embers',group:'effect',category:'Particles/Fire',animated:true},
+ {id:'fire-explosion',label:'Fire Explosion',group:'effect',category:'Particles/Fire',animated:true}
 ]);
 const ids=new Set(TIMELINE_EFFECTS.map(item=>item.id));
 const clamp=(value,min,max,fallback)=> {
@@ -53,8 +61,10 @@ export function normaliseTimelineEffect(effect={}){
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
   distortion:clamp(raw.distortion,0,100,55),
-  originX:clamp(raw.originX,0,100,(swing||shockwave)?50:20),
-  originY:clamp(raw.originY,0,100,shockwave?50:swing?10:12),
+  glow:clamp(raw.glow,0,100,64),
+  blur:clamp(raw.blur,0,60,24),
+  originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
+  originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():'#ffd98d'
  };
 }
@@ -79,7 +89,7 @@ function captureCompositeFrame(ctx,w,h){
  return canvas;
 }
 const SOURCE_EFFECTS=new Set(['pendulum-swing','rebound-swing','vibration-flash',
- 'fault-cassette','ripple-distortion','electric-ripple','shockwave']);
+ 'fault-cassette','ripple-distortion','electric-ripple','shockwave',...PIXEL_EFFECT_IDS]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
  * Live clips operate on their real previously composited media instead.
@@ -132,11 +142,13 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    if(source){
     ctx.globalAlpha=1;
     ctx.clearRect(0,0,w,h);
-    ctx.globalAlpha=1-amount;
+    ctx.globalAlpha=isPixelEffect(e.presetId)&&e.presetId!=='chromatic-quirk'?1:1-amount;
     ctx.drawImage(source,0,0,w,h);
     ctx.globalAlpha=amount;
    }
-   if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
+   if(isPixelEffect(e.presetId)){
+    renderPixelEffect(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
     const angle=e.presetId==='pendulum-swing'
      ? Math.sin(t*4+rad)*(.03+e.distortion*.0038)*size
      : Math.sin(t*13+rad)*Math.exp(-t*1.7)*(.12+e.distortion*.0047)*size;
@@ -307,6 +319,72 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    ctx.beginPath();ctx.moveTo(x-42*size,cy);ctx.lineTo(x-11*size,cy);
    ctx.moveTo(x+11*size,cy);ctx.lineTo(x+42*size,cy);
    ctx.moveTo(x,cy-42*size);ctx.lineTo(x,cy-11*size);ctx.stroke();
+
+  }else if(e.presetId==='fire-flames'){
+   // Procedural tongues of fire — layered curves that fold upward with time.
+   const count=Math.max(6,Math.min(54,Math.round(e.density*.36)));
+   const y0=h*(.96-.1*Math.sin(t*.3)),height=h*.48*size;
+   const clip=ctx.globalAlpha;
+   for(let i=0;i<count;i++){
+    const u=(i+.5)/count;
+    const baseX=w*u;
+    const phase=t*(2.8+random(i+79)*2)+random(i+17)*7;
+    const rise=(.35+.65*random(i+53))*height*(.7+.3*Math.cos(phase*.35));
+    const drift=Math.sin(phase)*w*.025*size;
+    const wide=Math.max(3,w/count*.7);
+    ctx.globalAlpha=clip*strength*(.37+.5*random(i+11));
+    const gradient=ctx.createLinearGradient(baseX,y0,baseX,y0-rise);
+    gradient.addColorStop(0,'#bd1f13');
+    gradient.addColorStop(.42,'#ff771c');
+    gradient.addColorStop(.75,e.color);
+    gradient.addColorStop(1,'rgba(255,238,169,0)');
+    ctx.fillStyle=gradient;
+    ctx.beginPath();ctx.moveTo(baseX-wide,y0);
+    ctx.quadraticCurveTo(baseX+drift-wide*.3,y0-rise*.65,baseX+drift,y0-rise);
+    ctx.quadraticCurveTo(baseX+drift+wide*.55,y0-rise*.5,baseX+wide,y0);
+    ctx.closePath();ctx.fill();
+   }
+   ctx.globalAlpha=clip;
+  }else if(e.presetId==='fire-embers'){
+   // Independently rising, fading motes rather than a flame-sheet impostor.
+   const count=Math.min(120,Math.max(10,Math.round(e.density)));
+   const clip=ctx.globalAlpha;
+   for(let i=0;i<count;i++){
+    const life=wrap(random(i*13+7)+t*(.1+.13*random(i+3)));
+    const drift=Math.sin(t*.45+i*1.7)*w*.065*size;
+    const x=wrap(random(i*29+5)+drift/w)*w;
+    const y=(1-life)*h;
+    const radius=(.6+random(i*43+15)*2.2)*size;
+    ctx.globalAlpha=clip*strength*Math.max(0,1-life)*(.3+.7*random(i+8));
+    ctx.fillStyle=i%4===0?'#fff6bc':i%3===0?e.color:'#ff7d34';
+    ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
+   }
+   ctx.globalAlpha=clip;
+  }else if(e.presetId==='fire-explosion'){
+   // Radial burst with a decaying shock crown and distributed fiery projectiles.
+   const p=wrap(t*.33),cx=w*e.originX/100,cy=h*e.originY/100;
+   const radius=Math.min(w,h)*(.06+p*.57)*size;
+   const count=Math.min(120,Math.max(14,Math.round(e.density)));
+   const clip=ctx.globalAlpha;
+   const pulse=Math.pow(1-p,1.7)*strength;
+   const g=ctx.createRadialGradient(cx,cy,0,cx,cy,radius);
+   g.addColorStop(0,'rgba(255,248,180,'+(.8*pulse)+')');
+   g.addColorStop(.3,'rgba(255,112,27,'+(.6*pulse)+')');
+   g.addColorStop(1,'rgba(170,20,9,0)');
+   ctx.fillStyle=g;ctx.fillRect(cx-radius,cy-radius,radius*2,radius*2);
+   for(let i=0;i<count;i++){
+    const angle=i*Math.PI*2/count+random(i+34)*.25+rad;
+    const distance=radius*(.36+.7*random(i+60));
+    const x=cx+Math.cos(angle)*distance;
+    const y=cy+Math.sin(angle)*distance;
+    const span=Math.max(1,(1-p)*Math.min(w,h)*.065*size);
+    ctx.globalAlpha=clip*pulse*(.35+.65*random(i+91));
+    ctx.strokeStyle=i%3===0?e.color:i%2===0?'#ff581e':'#ffd477';
+    ctx.lineWidth=Math.max(1,2.6*size);
+    ctx.beginPath();ctx.moveTo(x,y);
+    ctx.lineTo(x-Math.cos(angle)*span,y-Math.sin(angle)*span);ctx.stroke();
+   }
+   ctx.globalAlpha=clip;
   }else if(e.presetId==='rhythmic-flicker'){
    // Rhythm and seeded discontinuities are absolute-time calculations.
    const beat=Math.max(0,Math.sin(t*Math.PI*5));
