@@ -349,6 +349,46 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     background-image:repeating-linear-gradient(120deg,rgba(230,172,88,.09) 0 9px,transparent 9px 18px);
 }
 .timeline-clip.needs-relink .clip-label::before { content:'⚠ Reconnect · '; color:#ffcf8b; }
+
+/* Full-width two-row timeline workspace and compact preview/scrolling inspector.
+   The timeline deliberately sits outside the preview card and spans the centre
+   and right grid columns; unrelated Project Files stay in the left column. */
+.advanced-grid { grid-template-rows:auto auto; }
+.project-column { grid-column:1; grid-row:1 / span 2; }
+.master-column { grid-column:2; grid-row:1; }
+.right-column { grid-column:3; grid-row:1; display:flex; flex-direction:column; max-height:min(74vh,740px); min-height:0; }
+.right-column .inspector-scroll { display:flex; flex:1 1 auto; flex-direction:column; min-height:0; max-height:none; overflow-y:auto; overflow-x:hidden; }
+.advanced-grid > .timeline-panel { grid-column:2 / -1; grid-row:2; align-self:start; width:100%; min-width:0; margin-top:0; }
+.timeline-scroll { width:100%; min-width:0; }
+.timeline-inner { min-width:100%; }
+.timeline-zoom-bar { display:flex; flex-direction:column; align-items:stretch; justify-content:center; gap:5px; padding:8px 10px; }
+.timeline-toolbar-row { display:flex; flex-wrap:nowrap; align-items:center; justify-content:center; gap:6px; min-width:0; width:100%; }
+.timeline-toolbar-row > .timeline-tool { flex:0 0 96px; width:96px; height:30px; min-width:96px; min-height:30px; padding:4px 5px; font-size:.54rem; line-height:1.15; }
+.timeline-toolbar-row > .snap-options-toggle { flex:0 0 30px; width:30px; min-width:30px; padding-inline:4px; margin-left:-6px; border-radius:0 12px 12px 0; }
+.timeline-toolbar-row > #btn-snap-selection { border-radius:12px 0 0 12px; }
+.timeline-primary-row .timeline-zoom-controls { flex:0 0 auto; display:flex; align-items:center; justify-content:center; gap:4px; min-height:30px; margin:0 2px; }
+.timeline-primary-row .timeline-zoom { width:clamp(90px,10vw,148px); }
+.timeline-primary-row .timeline-zoom-reset { display:inline-flex; flex:0 0 30px; align-items:center; justify-content:center; width:30px; height:30px; min-height:30px; padding:0; }
+@media (max-width:1120px) {
+    .advanced-grid { grid-template-rows:auto auto auto; }
+    .project-column { grid-column:1; grid-row:1; }
+    .master-column { grid-column:2; grid-row:1; }
+    .right-column { grid-column:1 / -1; grid-row:2; max-height:min(48vh,440px); }
+    .right-column .inspector-scroll { display:flex; flex-direction:column; max-height:none; }
+    .advanced-grid > .timeline-panel { grid-column:1 / -1; grid-row:3; }
+}
+@media (max-width:880px) {
+    .timeline-toolbar-row { flex-wrap:wrap; }
+}
+@media (max-width:760px) {
+    .advanced-grid { grid-template-rows:auto auto auto auto; }
+    .project-column { grid-column:1; grid-row:1; }
+    .master-column { grid-column:1; grid-row:2; }
+    .right-column { grid-column:1; grid-row:3; max-height:min(55vh,480px); }
+    .advanced-grid > .timeline-panel { grid-column:1; grid-row:4; }
+    .timeline-toolbar-row > .timeline-tool { flex-basis:90px; width:90px; min-width:90px; }
+    .timeline-toolbar-row > .snap-options-toggle { flex-basis:30px; min-width:30px; }
+}
 </style>
 </head>
 <body>
@@ -377,7 +417,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <small id="file-count">0 media</small></div></div>
                     <div class="file-toolbar">
                         <button type="button" class="btn" id="btn-import" title="Import media; supported browsers can remember file handles for reopening">➕ Import</button>
-                        <button type="button" class="btn" id="btn-browse">📁 Browse</button>
+                        <button type="button" class="btn" id="btn-browse" title="Choose a folder of media files to import into the project">📁 Browse</button>
                         <button type="button" class="btn" id="btn-relink" title="Reconnect previously permitted files without reimporting; you may need to grant access again">↻ Relink</button>
                     </div>
                     <div class="project-action-buttons"><button type="button" class="btn" id="btn-project-settings" title="Canvas dimensions and frame rate">⚙ Project Settings</button><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button></div>
@@ -389,7 +429,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 </nav>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
-                    <div class="file-list-footer"><span id="media-remember-note" title="File names, sizes and dates are kept in localStorage. File handles (when supported) are kept in IndexedDB, not file contents; access may need permission again.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear all remembered media and timeline clips">🗑 Clear all</button></div>
+                    <div class="file-list-footer"><span id="media-remember-note" title="File names, sizes and dates are kept in localStorage. File handles (when supported) are kept in IndexedDB, not file contents; access may need permission again.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear the active project; Undo can restore it while its history remains">🗑 Clear all</button></div>
                 </div>
                 <section class="asset-library-panel" id="effects-library-panel" hidden role="tabpanel" aria-label="Visual overlay effects">
                     <p class="asset-library-help">Drag an overlay to the timeline or click to insert at the playhead. For A/B effects, use the Transitions button.</p>
@@ -430,47 +470,6 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <button type="button" class="transport-icon png-icon" id="btn-snapshot" title="Save PNG snapshot" aria-label="Save PNG snapshot">🖼️</button>
                     </div>
                 </div>
-                <section class="timeline-panel" id="timeline-panel">
-                    <div class="timeline-zoom-bar" aria-label="Timeline editing and zoom controls">
-                        <div class="timeline-tools" aria-label="Timeline editing controls">
-                            <button type="button" class="btn timeline-tool" id="btn-undo" title="Undo last timeline edit" aria-label="Undo last timeline edit" disabled>↶ Undo</button>
-                            <button type="button" class="btn timeline-tool" id="btn-redo" title="Redo last timeline edit" aria-label="Redo last timeline edit" disabled>↷ Redo</button>
-                            <button type="button" class="btn timeline-tool" id="btn-split-all" title="Split every clip crossing the now line">✂️ Split all</button>
-                            <button type="button" class="btn timeline-tool" id="btn-add-marker" title="Add or remove a cue marker at the playhead">⚑ Marker</button>
-                            <button type="button" class="btn timeline-tool" id="btn-previous-marker" title="Jump to previous marker">⟵</button>
-                            <button type="button" class="btn timeline-tool" id="btn-next-marker" title="Jump to next marker">⟶</button>
-                            <button type="button" class="btn timeline-tool" id="btn-nudge-left" title="Nudge selected clip left by one project frame (or move playhead if none)">◀ Nudge</button>
-                            <button type="button" class="btn timeline-tool" id="btn-nudge-right" title="Nudge selected clip right by one project frame (or move playhead if none)">Nudge ▶</button>
-                            <button type="button" class="btn timeline-tool" id="btn-snap-selection" title="Select two clips to align A end → B start; one clip to see playhead snap options" disabled>⇥ Snap</button>
-                            <button type="button" class="btn timeline-tool snap-options-toggle" id="btn-snap-options" title="Snap options: clip edges or the current playhead" aria-label="Show snap options" aria-expanded="false" disabled>▾</button>
-                            <button type="button" class="btn timeline-tool" id="btn-add-track" title="Add a video, audio, sticker or background track" aria-expanded="false">＋ Track</button>
-                            <button type="button" class="btn timeline-tool" id="btn-open-transitions" title="Apply one of the 41 A/B video transitions">✦ Transitions</button>
-                            <button type="button" class="btn timeline-tool" id="btn-selection-mode" title="Select multiple clips" aria-label="Toggle select mode" aria-pressed="false">☝️ Select</button>
-                            <button type="button" class="btn timeline-tool" id="btn-group-selection" title="Select two or more clips first" aria-label="Group selected clips" disabled>👏 Group</button>
-                            <button type="button" class="btn timeline-tool" id="btn-duplicate-selection" title="Select one or more clips first" aria-label="Duplicate selected clips" disabled>⧉ Duplicate</button>
-                            <button type="button" class="btn timeline-tool btn-danger" id="btn-delete-selection" title="Select one or more clips first" aria-label="Delete selected clips" disabled>🗑 Delete</button>
-                        </div>
-                        <div id="snap-options-menu" class="snap-options-menu track-type-menu" hidden aria-label="Snap clip options">
-                            <button type="button" class="btn" data-snap-mode="pair">↔ A end → B start</button>
-                            <button type="button" class="btn" data-snap-mode="start-playhead">▸ Start → Playhead</button>
-                            <button type="button" class="btn" data-snap-mode="end-playhead">◂ End → Playhead</button>
-                        </div>
-                        <div id="track-type-menu" class="track-type-menu" hidden aria-label="Choose track type"><button type="button" class="btn" data-add-track-type="video">🎬 Video</button><button type="button" class="btn" data-add-track-type="audio">🎵 Audio</button><button type="button" class="btn" data-add-track-type="sticker">✨ Sticker</button><button type="button" class="btn" data-add-track-type="background">🖼 Background</button></div>
-                        <div class="timeline-zoom-controls" aria-label="Timeline zoom controls">
-                            <span class="timeline-zoom-label">Zoom</span>
-                            <input class="timeline-zoom" id="timeline-zoom" type="range" min="25" max="400" value="100" step="5" aria-label="Timeline zoom">
-                            <span class="timeline-zoom-value" id="timeline-zoom-value">100%</span>
-                            <button type="button" class="btn timeline-zoom-reset" id="btn-reset-timeline-zoom" title="Reset timeline zoom" aria-label="Reset timeline zoom">↺</button>
-                        </div>
-                    </div>
-                    <div class="timeline-empty" id="timeline-empty">Drag a Project File here or use ＋ Track to add an empty lane. Right-click clips for Split, Add Layer and Extract Audio.</div>
-                    <div class="timeline-scroll">
-                        <div class="timeline-inner">
-                            <div class="timeline-ruler" id="timeline-ruler" title="Click to position the playhead"></div>
-                            <div id="timeline-lanes"></div>
-                        </div>
-                    </div>
-                </section>
             </div>
         </section>
 
@@ -688,6 +687,48 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 </section>
             </div>
         </aside>
+
+                <section class="timeline-panel" id="timeline-panel">
+                    <div class="timeline-zoom-bar" aria-label="Timeline editing and zoom controls">
+                        <div class="timeline-toolbar-row timeline-primary-row" aria-label="History, zoom and track management">
+                            <button type="button" class="btn timeline-tool" id="btn-undo" title="Undo last timeline edit" aria-label="Undo last timeline edit" disabled>↶ Undo</button>
+                            <button type="button" class="btn timeline-tool" id="btn-redo" title="Redo last timeline edit" aria-label="Redo last timeline edit" disabled>↷ Redo</button>
+                            <div class="timeline-zoom-controls" aria-label="Timeline zoom controls" title="Zoom the timeline without changing clip durations">
+                                <span class="timeline-zoom-label">Zoom</span>
+                                <input class="timeline-zoom" id="timeline-zoom" type="range" min="25" max="400" value="100" step="5" aria-label="Timeline zoom" title="Zoom the timeline between 25% and 400%">
+                                <span class="timeline-zoom-value" id="timeline-zoom-value">100%</span>
+                                <button type="button" class="btn timeline-zoom-reset" id="btn-reset-timeline-zoom" title="Reset timeline zoom to 100%" aria-label="Reset timeline zoom">↺</button>
+                            </div>
+                            <button type="button" class="btn timeline-tool" id="btn-add-track" title="Add a video, audio, sticker or background track" aria-expanded="false">＋ Track</button>
+                            <button type="button" class="btn timeline-tool" id="btn-selection-mode" title="Select multiple clips" aria-label="Toggle select mode" aria-pressed="false">☝ Select</button>
+                            <button type="button" class="btn timeline-tool" id="btn-group-selection" title="Select two or more clips to group them" aria-label="Group selected clips" disabled>▣ Group</button>
+                        </div>
+                        <div class="timeline-toolbar-row timeline-edit-row" aria-label="Clip editing, cue markers, snapping and transitions">
+                            <button type="button" class="btn timeline-tool" id="btn-split-all" title="Split every clip crossing the playhead">✂ Split all</button>
+                            <button type="button" class="btn timeline-tool" id="btn-add-marker" title="Add or remove a cue marker at the playhead">⚑ Marker</button>
+                            <button type="button" class="btn timeline-tool" id="btn-previous-marker" title="Jump to the previous cue marker">◀ Previous</button>
+                            <button type="button" class="btn timeline-tool" id="btn-next-marker" title="Jump to the next cue marker">Next ▶</button>
+                            <button type="button" class="btn timeline-tool" id="btn-nudge-left" title="Nudge selected clip left by one frame; if none selected, move the playhead">◀ Nudge</button>
+                            <button type="button" class="btn timeline-tool" id="btn-nudge-right" title="Nudge selected clip right by one frame; if none selected, move the playhead">Nudge ▶</button>
+                            <button type="button" class="btn timeline-tool" id="btn-snap-selection" title="Snap selected clips by their edges or to the playhead" disabled>⇥ Snap</button>
+                            <button type="button" class="btn timeline-tool snap-options-toggle" id="btn-snap-options" title="Choose snap-to-edge or snap-to-playhead mode" aria-label="Show snap options" aria-expanded="false" disabled>▾</button>
+                            <button type="button" class="btn timeline-tool" id="btn-open-transitions" title="Apply one of the 41 A/B transitions to selected clips">✦ Transitions</button>
+                        </div>
+                        <div id="snap-options-menu" class="snap-options-menu track-type-menu" hidden aria-label="Snap clip options">
+                            <button type="button" class="btn" data-snap-mode="pair" title="Align the first clip's end to the second clip's start">↔ A end → B start</button>
+                            <button type="button" class="btn" data-snap-mode="start-playhead" title="Move the selected clip start to the playhead">▸ Start → Playhead</button>
+                            <button type="button" class="btn" data-snap-mode="end-playhead" title="Move the selected clip end to the playhead">◂ End → Playhead</button>
+                        </div>
+                        <div id="track-type-menu" class="track-type-menu" hidden aria-label="Choose track type"><button type="button" class="btn" data-add-track-type="video" title="Add an empty video lane">🎬 Video</button><button type="button" class="btn" data-add-track-type="audio" title="Add an empty audio lane">🎵 Audio</button><button type="button" class="btn" data-add-track-type="sticker" title="Add an empty sticker lane">✨ Sticker</button><button type="button" class="btn" data-add-track-type="background" title="Add an empty background lane">🖼 Background</button></div>
+                    </div>
+                    <div class="timeline-empty" id="timeline-empty">Drag a Project File here or use ＋ Track to add an empty lane. Right-click clips for Split, Add Layer and Extract Audio.</div>
+                    <div class="timeline-scroll">
+                        <div class="timeline-inner">
+                            <div class="timeline-ruler" id="timeline-ruler" title="Click to position the playhead"></div>
+                            <div id="timeline-lanes"></div>
+                        </div>
+                    </div>
+                </section>
     </main>
 
     <input type="file" id="file-input" accept="video/*,audio/*,image/gif,image/webp,image/png,image/jpeg" multiple hidden>
@@ -695,7 +736,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     <div id="media-bin" class="media-bin" aria-hidden="true"></div>
     <div class="context-menu" id="timeline-context-menu" hidden>
         <div class="context-menu-title" id="context-menu-title">Timeline clip</div>
-        <div class="context-action-grid"><button type="button" id="context-cut">✂ Cut</button><button type="button" id="context-copy">⧉ Copy</button><button type="button" id="context-paste">📋 Paste</button><button type="button" id="context-remove-layer" class="danger">🗑 Delete</button></div>
+        <div class="context-action-grid"><button type="button" id="context-cut" title="Cut this clip for pasting at another timeline position">✂ Cut</button><button type="button" id="context-copy" title="Copy this clip to the clipboard">⧉ Copy</button><button type="button" id="context-duplicate" title="Duplicate this clip immediately after the original">⧉ Duplicate</button><button type="button" id="context-remove-layer" class="danger" title="Delete this clip from the timeline; Undo restores it">🗑 Delete clip</button></div>
+        <button type="button" id="context-paste" title="Paste a previously copied clip at this position">📋 Paste at cursor</button>
         <button type="button" id="context-slice-click">✂ Slice at cursor</button>
         <button type="button" id="context-split-now">✂ Split at now line</button>
         <button type="button" id="context-toggle-visible">◉ Hide clip</button>
