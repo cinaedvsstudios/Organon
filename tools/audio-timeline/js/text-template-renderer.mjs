@@ -163,33 +163,66 @@ const fonts={sans:'system-ui,Arial,sans-serif',
  mono:'"Geist Mono","Courier New",monospace'};
 function drawTitle(ctx,text,x,y,{size=54,weight=800,font='sans',align='center',
  fill='#fff',outline='#333',outlineWidth=3,shadow='#000',shadowBlur=8,
- maxWidth=580,italic=false,letterSpacing=0,metallic=false,fillAlpha=1}={}) {
- let px=size;
- ctx.textAlign=align;ctx.textBaseline='middle';ctx.lineJoin='round';
- const family=fonts[font]||fonts.sans;
- const setFont=()=>{ctx.font=(italic?'italic ':'')+weight+' '+px+'px '+family;};
- setFont();
- // Word-wrap with a shared safe width; template composition controls layout.
- while(px>14 && ctx.measureText(text).width>maxWidth){px-=2;setFont();}
- ctx.shadowColor=shadow;ctx.shadowBlur=shadowBlur;
- ctx.strokeStyle=outline;ctx.lineWidth=outlineWidth;ctx.fillStyle=fill;
- if(metallic){
-  // Contrasting dark and bright bands create a real reflective title,
-  // not just a silver palette swap. Fill remains user-configurable.
-  const gradient=ctx.createLinearGradient(0,y-px*.6,0,y+px*.6);
-  gradient.addColorStop(0,'#ffffff');
-  gradient.addColorStop(.27,fill);
-  gradient.addColorStop(.48,'#324658');
-  gradient.addColorStop(.58,'#ffffff');
-  gradient.addColorStop(1,fill);
-  ctx.fillStyle=gradient;
- }
- if(outlineWidth>0)ctx.strokeText(text,x,y,maxWidth);
+ shadowX=0,shadowY=0,glowColor='#ffffff',glowStrength=0,
+ maxWidth=580,italic=false,letterSpacing=0,lineSpacing=100,
+ metallic=false,fillAlpha=1}={}) {
+ const lines=String(text??'').split('\n').slice(0,5);
  ctx.save();
- ctx.globalAlpha*=clamp(fillAlpha,0,1);
- ctx.fillText(text,x,y,maxWidth);
- ctx.restore();
- ctx.shadowBlur=0;
+ try {
+  let px=size;
+  ctx.textBaseline='middle';ctx.lineJoin='round';ctx.textAlign=align;
+  const family=fonts[font]||fonts.sans;
+  const makeFont=()=>{ctx.font=(italic?'italic ':'')+weight+' '+px+'px '+family;};
+  const spacedWidth=line=>{
+   const letters=Array.from(line);
+   return ctx.measureText(line).width+Math.max(0,letters.length-1)*letterSpacing;
+  };
+  makeFont();
+  while(px>14&&lines.some(line=>spacedWidth(line)>maxWidth)){px-=2;makeFont();}
+  ctx.strokeStyle=outline;ctx.lineWidth=outlineWidth;
+  let fillStyle=fill;
+  if(metallic){
+   // This title uses reflective light/dark bands, not another colour preset.
+   const gradient=ctx.createLinearGradient(0,y-px*.6,0,y+px*.6);
+   gradient.addColorStop(0,'#ffffff');gradient.addColorStop(.27,fill);
+   gradient.addColorStop(.48,'#324658');gradient.addColorStop(.58,'#ffffff');
+   gradient.addColorStop(1,fill);fillStyle=gradient;
+  }
+  ctx.fillStyle=fillStyle;
+  const lineStep=px*lineSpacing/100;
+  const y0=y-(lines.length-1)*lineStep/2;
+  const renderGlyph=(glyph,gx,gy)=>{
+   if(outlineWidth>0)ctx.strokeText(glyph,gx,gy);
+   ctx.save();ctx.globalAlpha*=clamp(fillAlpha,0,1);
+   ctx.fillText(glyph,gx,gy);ctx.restore();
+  };
+  const renderLines=()=>{
+   for(let i=0;i<lines.length;i++){
+    const line=lines[i],lineY=y0+i*lineStep;
+    if(letterSpacing===0 || Array.from(line).length<=1){
+     renderGlyph(line,x,lineY);
+     continue;
+    }
+    const letters=Array.from(line),widths=letters.map(ch=>ctx.measureText(ch).width);
+    const total=widths.reduce((a,b)=>a+b,0)+(letters.length-1)*letterSpacing;
+    let cursor=align==='left'?x:align==='right'?x-total:x-total/2;
+    ctx.textAlign='left';
+    for(let j=0;j<letters.length;j++){
+     renderGlyph(letters[j],cursor,lineY);
+     cursor+=widths[j]+letterSpacing;
+    }
+    ctx.textAlign=align;
+   }
+  };
+  if(glowStrength>0){
+   ctx.save();ctx.shadowColor=glowColor;ctx.shadowBlur=glowStrength;
+   ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+   renderLines();ctx.restore();
+  }
+  ctx.shadowColor=shadow;ctx.shadowBlur=shadowBlur;
+  ctx.shadowOffsetX=shadowX;ctx.shadowOffsetY=shadowY;
+  renderLines();
+ }finally{ctx.restore();}
 }
 /**
  * Individual character motion with measured glyph widths. The output is a
