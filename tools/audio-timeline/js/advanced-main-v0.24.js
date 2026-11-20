@@ -16,7 +16,7 @@ import { paintPairedEffect } from './paired-visual-effects.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
-import { TEXT_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
+import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
@@ -94,6 +94,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             outlineWidth:document.getElementById('text-outline-width'),
             shadowBlur:document.getElementById('text-shadow-blur'),
             animation:document.getElementById('text-animation'),
+            phasedAnimation:document.getElementById('text-phased-animation'),
+            inAnimation:document.getElementById('text-in-animation'),
+            inDuration:document.getElementById('text-in-duration'),
+            outAnimation:document.getElementById('text-out-animation'),
+            outDuration:document.getElementById('text-out-duration'),
+            loopAnimation:document.getElementById('text-loop-animation'),
+            loopDuration:document.getElementById('text-loop-duration'),
             animationDuration:document.getElementById('text-animation-duration'),
             animationDelay:document.getElementById('text-animation-delay'),
             animationSpeed:document.getElementById('text-animation-speed'),
@@ -1220,7 +1227,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         ctx.strokeStyle='rgba(117,178,222,.08)';
         for(let x=0;x<640;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,360);ctx.stroke();}
         const input=elements.textOverlayValue.value.trim()||'MotoriClip';
-        paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input},textPreviewTime,3);
+        paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input,
+            phasedAnimation:true},textPreviewTime,3);
         elements.textPreviewProgress.value=String(Math.round(textPreviewTime*100));
     }
     function advanceTextPreview(now){
@@ -1269,15 +1277,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         if(event.key==='Escape'&&!elements.textPreviewModal.hidden)closeTextPresetPreview();
     });
 
-    for(const [id,label] of TEXT_ANIMATIONS){
-        const option=document.createElement('option');option.value=id;option.textContent=label;
-        elements.textInspectorInputs.animation.appendChild(option);
+    for(const [field,catalog] of [
+        ['animation',TEXT_ANIMATIONS],['inAnimation',TEXT_ANIMATIONS],
+        ['outAnimation',TEXT_OUT_ANIMATIONS],['loopAnimation',TEXT_LOOP_ANIMATIONS]
+    ]){
+        const select=elements.textInspectorInputs[field];
+        for(const [id,label] of catalog){
+            const option=document.createElement('option');
+            option.value=id;option.textContent=label;select.appendChild(option);
+        }
+    }
+    function showTitleAnimationMode(enabled){
+        document.getElementById('text-phased-controls').hidden=!enabled;
+        document.getElementById('text-legacy-animation-controls').hidden=enabled;
     }
     const textNumericUnits={
         fontSize:'%',letterSpacing:'px',lineSpacing:'%',textOpacity:'%',outlineWidth:'px',
         shadowBlur:'px',shadowOffsetX:'px',shadowOffsetY:'px',glowStrength:'px',
         backdropOpacity:'%',shapePadding:'px',shapeRadius:'px',shapeBorderWidth:'px',
         bannerWidth:'%',bannerHeight:'px',animationDuration:'s',animationDelay:'s',
+        inDuration:'s',outDuration:'s',loopDuration:'s',
         animationSpeed:'×',animationIntensity:'%'
     };
     function refreshTitleNumericLabels(config){
@@ -1296,6 +1315,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(!track?.textOverlay || state.selectedTrackIds.size!==1)return;
             const updated={...track.textOverlay,[name]:input.type==='checkbox'?input.checked:input.value};
             track.textOverlay=normaliseTextOverlay(updated);
+            if(name==='phasedAnimation')showTitleAnimationMode(track.textOverlay.phasedAnimation);
             refreshTitleNumericLabels(track.textOverlay);
             engine.renderFrame();
         });
@@ -1501,15 +1521,18 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 'countdown-roll':'countdown',
                 'split-enter':'split'
             };
-            for(const option of elements.textInspectorInputs.animation.options){
-                const required=requiredLayouts[option.value];
-                option.disabled=Boolean(required&&required!==design?.layout);
-                option.title=option.disabled?'Available on the matching title template only':'';
+            for(const field of ['animation','inAnimation','outAnimation','loopAnimation']){
+                for(const option of elements.textInspectorInputs[field].options){
+                    const required=requiredLayouts[option.value];
+                    option.disabled=Boolean(required&&required!==design?.layout);
+                    option.title=option.disabled?'Available on the matching title template only':'';
+                }
             }
             for(const [name,input] of Object.entries(elements.textInspectorInputs)){
                 if(input.type==='checkbox')input.checked=Boolean(config[name]);
                 else input.value=String(config[name]);
             }
+            showTitleAnimationMode(config.phasedAnimation);
             document.getElementById('text-subtitle-row').hidden=config.presetId!=='news-lower-third';
             refreshTitleNumericLabels(config);
         }
@@ -1615,7 +1638,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 // Generated PNG is a portable fallback; actual text stays
                 // editable and animates at playhead time in renderFrame().
                 track.textOverlay=normaliseTextOverlay({
-                    presetId:entry.generated.presetId,value:entry.generated.value||'MotoriClip'
+                    presetId:entry.generated.presetId,value:entry.generated.value||'MotoriClip',
+                    phasedAnimation:true
                 });
             }
             if (!state.tracks.includes(track)) {

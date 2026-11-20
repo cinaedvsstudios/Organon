@@ -460,6 +460,10 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .text-inspector-group .text-setting-row:first-of-type { border-top:0; }
 .text-inspector-group .compact-select { min-width:0; width:100%; }
 .text-inspector-group .text-setting-colours { grid-template-columns:repeat(auto-fit,minmax(53px,1fr)); }
+.text-phase-section {border:1px solid rgba(151,123,87,.36);border-radius:8px;padding:8px;margin:9px 0;background:rgba(20,27,35,.45);}
+.text-phase-section h4 {margin:0 0 4px;color:var(--water-spray);font-size:.66rem;letter-spacing:.025em;}
+.text-phase-section h4 icon {font-style:normal;font-size:.82rem;}
+
 </style>
 </head>
 <body>
@@ -728,17 +732,49 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <label class="text-setting-row"><span>Border width <output id="text-shape-border-width-value">0px</output></span>
                             <input type="range" id="text-shape-border-width" min="0" max="10" step="1" value="0" title="Backing rectangle outline thickness"></label>
                     </details>
-                    <details open class="text-inspector-group">
+                    <details open class="text-inspector-group" id="text-motion-details">
                         <summary>Animation</summary>
-                        <label class="text-setting-row"><span>Animation</span><select class="compact-select" id="text-animation" title="Select title animation"></select></label>
+                        <label class="text-setting-row text-setting-toggle">
+                            <span>Independent In / Out / Loop</span>
+                            <input type="checkbox" id="text-phased-animation" title="Enable separate entrance, repeating movement and exit animation. Older projects can retain their original animation." />
+                        </label>
+                        <div id="text-phased-controls" hidden>
+                            <div class="text-phase-section">
+                                <h4><icon aria-hidden="true">↘</icon> In — entrance</h4>
+                                <label class="text-setting-row"><span>Entrance motion</span>
+                                    <select class="compact-select" id="text-in-animation" title="Choose animation shown when this title appears"></select></label>
+                                <label class="text-setting-row"><span>In duration <output id="text-in-duration-value">1.2s</output></span>
+                                    <input type="range" id="text-in-duration" min=".1" max="10" step=".1" value="1.2" title="Duration of entrance motion"></label>
+                            </div>
+                            <div class="text-phase-section">
+                                <h4><icon aria-hidden="true">↻</icon> Loop — while visible</h4>
+                                <label class="text-setting-row"><span>Repeating effect</span>
+                                    <select class="compact-select" id="text-loop-animation" title="Select an optional repeating animation during the hold"></select></label>
+                                <label class="text-setting-row"><span>Loop cycle <output id="text-loop-duration-value">1.5s</output></span>
+                                    <input type="range" id="text-loop-duration" min=".1" max="10" step=".1" value="1.5" title="Duration of one repeated motion cycle"></label>
+                            </div>
+                            <div class="text-phase-section">
+                                <h4><icon aria-hidden="true">↗</icon> Out — exit</h4>
+                                <label class="text-setting-row"><span>Exit motion</span>
+                                    <select class="compact-select" id="text-out-animation" title="Choose an independent animation as the title leaves"></select></label>
+                                <label class="text-setting-row"><span>Out duration <output id="text-out-duration-value">0.6s</output></span>
+                                    <input type="range" id="text-out-duration" min=".1" max="10" step=".1" value="0.6" title="Duration of the final exit animation"></label>
+                            </div>
+                            <p class="visual-note">In and Out automatically fit within the clip, without overlapping. Loop runs only between them. Select Static/None for any unused phase.</p>
+                        </div>
+                        <div id="text-legacy-animation-controls">
+                            <label class="text-setting-row"><span>Original animation</span><select class="compact-select" id="text-animation" title="Original single animation used by existing projects"></select></label>
+                            <label class="text-setting-row"><span>Animation duration <output id="text-animation-duration-value">1.2s</output></span>
+                                <input type="range" id="text-animation-duration" min=".1" max="10" step=".1" value="1.2" title="Length of the original animation"></label>
+                            <label class="text-setting-row text-setting-toggle"><span>Repeat original animation</span><input type="checkbox" id="text-animation-loop" title="Repeat the single legacy animation"></label>
+                            <p class="visual-note">This is the original animation mode, preserved for previously saved projects. Enable independent phases to configure separate In / Out / Loop movements.</p>
+                        </div>
                         <label class="text-setting-row" id="text-subtitle-row" hidden><span>News subtitle</span><input class="compact-input" type="text" id="text-subtitle" maxlength="100" value="LIVE UPDATE" title="Secondary line for the News Lower Third"></label>
-                        <label class="text-setting-row"><span>Animation duration <output id="text-animation-duration-value">1.2s</output></span><input type="range" id="text-animation-duration" min=".1" max="10" step=".1" value="1.2" title="Length of motion"></label>
-                        <label class="text-setting-row"><span>Start delay <output id="text-animation-delay-value">0s</output></span><input type="range" id="text-animation-delay" min="0" max="5" step=".1" value="0" title="Delay before motion begins"></label>
-                        <label class="text-setting-row"><span>Motion speed <output id="text-animation-speed-value">1×</output></span><input type="range" id="text-animation-speed" min=".25" max="4" step=".05" value="1" title="How quickly motion runs"></label>
-                        <label class="text-setting-row"><span>Direction</span><select class="compact-select" id="text-animation-direction" title="Direction of sliding and wipes"><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option><option value="down">Down</option></select></label>
-                        <label class="text-setting-row"><span>Easing</span><select class="compact-select" id="text-animation-easing" title="Acceleration curve"><option value="linear">Linear</option><option value="ease-in">Accelerate</option><option value="ease-out">Decelerate</option><option value="ease-in-out">Smooth</option></select></label>
-                        <label class="text-setting-row"><span>Intensity <output id="text-animation-intensity-value">100%</output></span><input type="range" id="text-animation-intensity" min="0" max="200" step="5" value="100" title="How strongly characters move"></label>
-                        <label class="text-setting-row text-setting-toggle"><span>Loop selected motion</span><input type="checkbox" id="text-animation-loop" title="Repeat the animation while clip is visible"></label>
+                        <label class="text-setting-row"><span>Start delay <output id="text-animation-delay-value">0s</output></span><input type="range" id="text-animation-delay" min="0" max="5" step=".1" value="0" title="Delay before the In animation starts"></label>
+                        <label class="text-setting-row"><span>Motion speed <output id="text-animation-speed-value">1×</output></span><input type="range" id="text-animation-speed" min=".25" max="4" step=".05" value="1" title="Speed shared by active motion phases"></label>
+                        <label class="text-setting-row"><span>Direction</span><select class="compact-select" id="text-animation-direction" title="Direction of entrance/exit movements"><option value="left">Left</option><option value="right">Right</option><option value="up">Up</option><option value="down">Down</option></select></label>
+                        <label class="text-setting-row"><span>Easing</span><select class="compact-select" id="text-animation-easing" title="Acceleration curve for In and Out"><option value="linear">Linear</option><option value="ease-in">Accelerate</option><option value="ease-out">Decelerate</option><option value="ease-in-out">Smooth</option></select></label>
+                        <label class="text-setting-row"><span>Intensity <output id="text-animation-intensity-value">100%</output></span><input type="range" id="text-animation-intensity" min="0" max="200" step="5" value="100" title="Shared animation strength"></label>
                     </details>
                     <p class="visual-note">Customisations apply to this title clip, not duplicate presets. Changes persist with Undo/Redo and Save Project.</p>
                 </section>
@@ -1012,7 +1048,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     </div>
 
 </div>
-<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-title-typography-v1"></script>
+<script type="module" src="./js/advanced-main-v0.24.js?build=20261120-title-phases-v1"></script>
     <div class="export-overlay" id="export-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="export-overlay-title">
         <div class="export-dialog">
             <h2 id="export-overlay-title">MotoriClip · Rendering</h2>

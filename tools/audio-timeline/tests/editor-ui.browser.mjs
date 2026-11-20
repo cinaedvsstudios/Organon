@@ -421,6 +421,38 @@ try{
         storyFrames.find(x=>x.id==='handwritten-script').done.coverage,
         'Handwriting should reveal characters in sequence');
     console.log('[Stage2 storytelling] PASS five real timeline animations, distinct layouts and reverse seeking');
+    const phasedPixels=await page.evaluate(async()=>{
+        const {paintTimelineText}=await import('./js/text-template-renderer.mjs');
+        const config={presetId:'news-lower-third',value:'WELCOME TO MOTORI',
+            phasedAnimation:true,inAnimation:'fade',inDuration:.6,
+            loopAnimation:'shake',loopDuration:.5,
+            outAnimation:'slide',outDuration:.6,animationEasing:'linear'};
+        function frame(seconds){
+            const canvas=document.createElement('canvas');canvas.width=640;canvas.height=360;
+            const ctx=canvas.getContext('2d',{willReadFrequently:true});
+            paintTimelineText(ctx,640,360,config,seconds,3);
+            const rgba=ctx.getImageData(0,0,640,360).data;
+            let signature=2166136261,visible=0;
+            for(let i=0;i<rgba.length;i+=4){
+                if(rgba[i+3])visible++;
+                if(i%72===0)signature=Math.imul((signature^rgba[i]^rgba[i+1]^rgba[i+2]^rgba[i+3])>>>0,16777619)>>>0;
+            }
+            return {signature,visible};
+        }
+        return {start:frame(0),enter:frame(.3),hold:frame(1.1),
+            loop:frame(1.3),out:frame(2.75),end:frame(3),
+            backwards:frame(.3)};
+    });
+    assert.equal(phasedPixels.start.visible,0,'In starts fully hidden');
+    assert.ok(phasedPixels.enter.visible>0,'Entrance draws real title pixels');
+    assert.ok(phasedPixels.hold.visible>0);
+    assert.notEqual(phasedPixels.hold.signature,phasedPixels.loop.signature,
+        'Loop animates continuously between In and Out');
+    assert.ok(phasedPixels.out.visible>0);
+    assert.equal(phasedPixels.end.visible,0,'Out finishes fully hidden');
+    assert.deepEqual(phasedPixels.enter,phasedPixels.backwards,
+        'Scrubbing backward into In reproduces exactly the same pixels');
+    console.log('[Stage2 independent phases] PASS In, sustained Loop, Out, exact reverse-seek pixels');
     // Inspector customisations must change pixels, not only UI settings.
     // Hold every preset colour constant: these changes are distinct type,
     // light and shape behaviours, never more colour-only templates.
@@ -544,14 +576,21 @@ try{
     await page.locator('#text-banner-height').fill('135');
     assert.equal(await page.locator('#text-letter-spacing-value').innerText(),'9px');
     assert.equal(await page.locator('#text-banner-width-value').innerText(),'77%');
-    await page.locator('#text-animation').selectOption('typewriter');
-    await page.locator('#text-animation-duration').fill('2');
+    assert.equal(await page.locator('#text-phased-animation').isChecked(),true,
+        'New title clips should use independent In/Out/Loop by default');
+    await page.locator('#text-in-animation').selectOption('typewriter');
+    await page.locator('#text-in-duration').fill('1.2');
+    await page.locator('#text-loop-animation').selectOption('wave');
+    await page.locator('#text-loop-duration').fill('0.8');
+    await page.locator('#text-out-animation').selectOption('slide');
+    await page.locator('#text-out-duration').fill('0.6');
     await page.locator('#text-animation-delay').fill('0.3');
     await page.locator('#text-animation-speed').fill('1.5');
     await page.locator('#text-animation-direction').selectOption('right');
     await page.locator('#text-animation-easing').selectOption('ease-in-out');
     await page.locator('#text-animation-intensity').fill('140');
-    await page.locator('#text-animation-loop').check();
+    assert.equal(await page.locator('#text-legacy-animation-controls').isVisible(),false,
+        'Old single-animation controls should not compete with separate phases');
     assert.equal(await page.locator('#text-inspector-value').inputValue(),'LIVE EDITED TITLE');
     const savedTitle=await page.evaluate(()=>{
         const item=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
@@ -561,9 +600,12 @@ try{
     await page.waitForFunction(()=>{
         const item=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
         return item?.tracks?.some(t=>t.textOverlay?.value==='LIVE EDITED TITLE'&&
-            t.textOverlay.animation==='typewriter'&&
+            t.textOverlay.phasedAnimation===true&&t.textOverlay.inAnimation==='typewriter'&&
+            t.textOverlay.inDuration===1.2&&
+            t.textOverlay.loopAnimation==='wave'&&t.textOverlay.loopDuration===.8&&
+            t.textOverlay.outAnimation==='slide'&&t.textOverlay.outDuration===.6&&
             t.textOverlay.animationDelay===.3&&t.textOverlay.animationSpeed===1.5&&
-            t.textOverlay.animationLoop===true&&t.textOverlay.animationIntensity===140&&
+            t.textOverlay.animationIntensity===140&&
             t.textOverlay.fontFamily==='serif'&&t.textOverlay.fontWeight===600&&
             t.textOverlay.fontStyle==='italic'&&t.textOverlay.textAlign==='right'&&
             t.textOverlay.textCase==='lowercase'&&t.textOverlay.letterSpacing===9&&
