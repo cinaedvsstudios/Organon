@@ -17,6 +17,7 @@
 - 20 Nov 2026: Stage 2 first batch in [PR #92](https://github.com/cinaedvsstudios/Organon/pull/92): **16 structurally distinct text templates** (46–61), typewriter/letter-pop/ticker (62, 63, 72), editable text (81), existing transform keyframes (87), no colour duplicates (88), right-click titled animation preview and controls (89–93), portable editable metadata (95), grayscale-distinct browser rendering tests (98). See the PR's Node, Chrome, portable/recovery and cross-browser checks. Remaining motion variants, exhaustive typography/appearance controls and actual exported-pixel verification remain unchecked.
 
 - 20 Nov 2026: Stage 2 next batch in [PR #93](https://github.com/cinaedvsstudios/Organon/pull/93): **Reset corrected** to clear every track/clip/marker (not export settings), while retaining the Media bin, Undo and applied project settings. Added real per-letter shake, kinetic stagger, RGB glitch, waving and neon switch-on, distinct bounce/outline-fill/title-wipe/dissolve-out, and broadcast banner → headline → editable subtitle. New Inspector motion controls for delay, speed, direction, easing, intensity and loop. Checked items 64–66, 68–71, 73–76 and 85 after passing Node, Chrome multi-lane Reset and deterministic pixel checks, project recovery and Firefox/WebKit. Longer actual video-export stress job remains a separate verification.
+- 20 Nov 2026: Stage 2 storytelling batch in [PR #94](https://github.com/cinaedvsstudios/Organon/pull/94): checked **67, 77–80** after Node and real-Chrome title-rendering tests plus Firefox/WebKit. Implemented handwriting writing-on with moving pen, animated social button pulse, falling location pin then revealing label, editable rolling numeric countdown (3 by default for nonnumeric sample text), and split-title entrance. Added genuinely new Countdown and Split Title layouts (18 total, no recolour clones). Inapplicable layout-only animation menu options are disabled, not silently inert. Confirmed browser time-scrubbing reversibility, all 41 existing transitions, portable project/recovery tests. Extended 1080p/720p video-export stress remains unverified.
 
 ## 1. Project controls and interface
 
@@ -98,7 +99,7 @@
 - [x] **64.** Shaking Letters (independent per-character motion).
 - [x] **65.** Broadcast Box Reveal (rectangle draws/wipes then text dissolves).
 - [x] **66.** News Lower-Third Animation (banner, headline and subtitle sequenced).
-- [ ] **67.** Handwriting Reveal (stroke-writing look).
+- [x] **67.** Handwriting Reveal (stroke-writing look).
 - [x] **68.** Outline to Solid.
 - [x] **69.** Kinetic Stagger (words/letters from independent directions).
 - [x] **70.** Glitch Text (fragmentation/channel shifts).
@@ -108,10 +109,10 @@
 - [x] **74.** Neon Switch-On.
 - [x] **75.** Title Wipe.
 - [x] **76.** Dissolve Out.
-- [ ] **77.** Animated Social Prompt.
-- [ ] **78.** Animated Location Pin.
-- [ ] **79.** Countdown/Numeric Reveal.
-- [ ] **80.** Split Title.
+- [x] **77.** Animated Social Prompt.
+- [x] **78.** Animated Location Pin.
+- [x] **79.** Countdown/Numeric Reveal.
+- [x] **80.** Split Title.
 
 ## 6. Text and animation Inspector
 
