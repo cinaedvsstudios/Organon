@@ -112,6 +112,30 @@ try{
     assert.equal(await page.locator('.timeline-cue-marker').count(),1);
     console.log('[MotoriClip project recovery] PASS keyframes, edits, settings and media restored from IndexedDB handle');
 
+    // A remembered handle may still point to the same filename after the
+    // underlying file is overwritten. Never attach changed-size content to
+    // the saved edits as though it were the original source.
+    const overwrittenSize=await page.evaluate(async()=>{
+        const dir=await navigator.storage.getDirectory();
+        const handle=await dir.getFileHandle('remembered-photo.jpg');
+        const writer=await handle.createWritable();
+        await writer.write(Uint8Array.of(1,2,3,4,5,6,7));
+        await writer.close();
+        return (await handle.getFile()).size;
+    });
+    assert.equal(overwrittenSize,7);
+    assert.notEqual(overwrittenSize,saved.files[0].size);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('.timeline-clip.background.needs-relink').waitFor({timeout:15000});
+    assert.equal(await page.locator('#btn-export-offline').isDisabled(),true,
+        'Changed remembered source must remain offline instead of exporting wrong media');
+    assert.equal((await page.evaluate(key=>JSON.parse(localStorage.getItem(key)),storageKey)).files[0].size,
+        saved.files[0].size,'The original source-size metadata must not be overwritten');
+    await page.locator('#file-input').setInputFiles(fixture);
+    await page.locator('.timeline-clip.background:not(.needs-relink)').waitFor({timeout:20000});
+    assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId);
+    console.log('[MotoriClip project recovery] PASS changed-size remembered handles remain offline until reimport');
+
     // Simulate revoked/missing handle on a subsequent launch; the layout must
     // remain recoverable instead of deleting its original clip.
     await page.evaluate(async()=>{
