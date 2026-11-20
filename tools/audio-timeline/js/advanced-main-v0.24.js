@@ -1752,6 +1752,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 // Videos cannot overlap in a lane, so a duplicate gets a fresh video lane.
                 laneId: isVideo ? undefined : original.laneId,
                 laneLabel: isVideo ? undefined : original.laneLabel,
+                label:isVideo ? undefined : original.label,
+                laneColor:original.laneColor,
+                clipColor:original.clipColor,
                 order: isVideo ? undefined : original.order,
                 start: Math.max(0, (Number(original.start) || 0) + originalDuration),
                 sourceOffset: Number(original.sourceOffset) || 0,
@@ -1968,6 +1971,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             laneId:sameLane?target.laneId:undefined,
             laneLabel:sameLane?target.laneLabel:undefined,
             label:sameLane?target.label:undefined,
+            laneColor:sameLane?target.laneColor:clipData.laneColor,
             order:sameLane?target.order:undefined,
             start:Math.max(0,suggestedTime),
             transitionFromId:null,transitionEffectId:null,groupId:null,
