@@ -109,9 +109,9 @@ try{
     await page.setViewportSize({width:1450,height:900});
     assert.equal((await page.locator('#btn-project-settings').innerText()).trim(),'⚙');
     assert.equal(await page.locator('.project-controls-title').innerText().then(v=>/project controls/i.test(v)),false);
-    await page.evaluate(()=>{document.querySelector('#export-bitrate').value='10000';});
-    await page.locator('#btn-reset-export').click();
-    assert.equal(await page.locator('#export-bitrate').inputValue(),'6000');
+    assert.match(await page.locator('#btn-reset-timeline').getAttribute('title'),/timeline/i);
+    assert.equal(await page.locator('#btn-reset-export').count(),0,
+        'Reset must not modify export preferences');
     assert.deepEqual(await page.evaluate(()=>['.file-list','.asset-library-panel','.inspector-scroll']
         .map(selector=>getComputedStyle(document.querySelector(selector)).scrollbarWidth)),
         ['thin','thin','thin']);
@@ -257,6 +257,30 @@ try{
     await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
     assert.match(await lane().innerText(),/My Backgrounds/);
     console.log('[Stage1] PASS lane rename/recolour/reset/delete and Undo; clip overrides');
+    // Reset must empty the whole timeline (all clips/lanes), not export options.
+    // Clearing the source media belongs to a *different* Clear All button.
+    const oldCount=await page.locator('.timeline-clip:not(.placeholder)').count();
+    await page.locator('#btn-reset-timeline').click();
+    assert.match(await page.locator('#timeline-action-title').innerText(),/reset timeline/i);
+    assert.match(await page.locator('#timeline-action-description').innerText(),/Imported media stays/i);
+    await page.locator('#timeline-action-cancel').click();
+    assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
+        'Cancelled Reset must not alter the timeline');
+    await page.locator('#btn-reset-timeline').click();
+    await page.locator('#timeline-action-apply').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip:not(.placeholder)').length===0);
+    assert.equal(await page.locator('.timeline-lane').count(),0,
+        'Reset removes the entire lane structure, not only the selected clip');
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i,
+        'Reset must preserve media bin imports and saved handles');
+    assert.equal(await page.locator('#canvas-width').inputValue(),'640',
+        'Reset must not change the project resolution');
+    await page.locator('#btn-undo').click();
+    await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
+    assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
+        'Undo must fully restore the previous timeline');
+    assert.match(await page.locator('#file-count').innerText(),/1 media/i);
+    console.log('[Stage2 reset] PASS confirmation/cancel, full timeline deletion, media preservation and Undo');
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     assert.equal(await page.locator('#context-duplicate').isVisible(),true,
         'Duplicate should be available from a clip right-click, not the toolbar');
