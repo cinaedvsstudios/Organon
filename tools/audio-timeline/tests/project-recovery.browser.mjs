@@ -245,6 +245,11 @@ try{
     await page.locator('#inspector-text-template').waitFor({state:'visible'});
     await page.locator('#text-inspector-value').fill('UPDATED RECOVERY TITLE');
     await page.locator('#text-animation').selectOption('typewriter');
+    await page.locator('#text-animation-delay').fill('.4');
+    await page.locator('#text-animation-speed').fill('2');
+    await page.locator('#text-animation-easing').selectOption('linear');
+    await page.locator('#text-animation-intensity').fill('125');
+    await page.locator('#text-animation-loop').check();
     await page.locator('#text-fill').fill('#ffee99');
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effects-library-grid [data-preset-id="film-grain"]').click();
@@ -270,6 +275,11 @@ try{
     });
     assert.equal(restoredText?.value,'UPDATED RECOVERY TITLE');
     assert.equal(restoredText?.animation,'typewriter');
+    assert.equal(restoredText?.animationDelay,.4);
+    assert.equal(restoredText?.animationSpeed,2);
+    assert.equal(restoredText?.animationEasing,'linear');
+    assert.equal(restoredText?.animationIntensity,125);
+    assert.equal(restoredText?.animationLoop,true);
     assert.equal(restoredText?.fill,'#ffee99');
     console.log('[MotoriClip project recovery] PASS editable animated title and effects recover from compact recipes and clip metadata');
     assert.deepEqual(errors,[],'Chrome script errors during recovery');
