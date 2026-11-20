@@ -353,8 +353,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),22,
-        'Keep twelve classic overlays plus ten independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),29,
+        'Keep twelve classic overlays plus seventeen independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -705,6 +705,31 @@ try{
     });
     assert.equal(await page.locator('#effect-origin-x').inputValue(),'78',
         'God Rays must expose an adjustable origin');
+    // Phase 3C: source-warping effects must actually move and reproject a
+    // recognizable scene; they cannot pass as opaque or empty PNGs.
+    await page.locator('#effect-category').selectOption('Motion');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3);
+    await page.locator('[data-preset-id="pendulum-swing"]').click({button:'right'});
+    assert.ok(await page.locator('#text-preview-modal').isVisible());
+    const swingStart=await sampleEffect(20),swingMoved=await sampleEffect(130);
+    assert.notEqual(swingStart,swingMoved,'Pendulum must rotate actual scene pixels over time');
+    assert.equal(swingStart,await sampleEffect(20),'Swing reverse seeking is deterministic');
+    await page.locator('#text-preview-close').click();
+    await page.locator('#effect-category').selectOption('Distortion');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3);
+    await page.locator('[data-preset-id="ripple-distortion"]').click({button:'right'});
+    const rippleStart=await sampleEffect(15),rippleLater=await sampleEffect(200);
+    assert.notEqual(rippleStart,rippleLater,'Ripple must refract source pixels at timeline time');
+    assert.equal(rippleStart,await sampleEffect(15));
+    await page.locator('#text-preview-close').click();
+    await page.locator('#effect-category').selectOption('Glitch');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),1);
+    await page.locator('[data-preset-id="fault-cassette"]').click();
+    await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
+    await page.locator('#effect-distortion').evaluate(input=>{
+        input.value='88';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#effect-distortion').inputValue(),'88');
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
