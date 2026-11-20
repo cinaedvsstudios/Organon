@@ -119,6 +119,19 @@ try{
         await clearMediaHandles();
     });
     await page.reload({waitUntil:'domcontentloaded'});
+    await page.locator('#file-count').waitFor();
+    await page.waitForTimeout(600);
+    console.log('[MotoriClip offline recovery diagnostic]',JSON.stringify(await page.evaluate(()=>{
+        const rec=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'{}');
+        return {files:document.querySelector('#file-count')?.textContent,
+            savedTracks:rec.tracks?.map(t=>({id:t.id,type:t.type,source:t.sourceName,fileId:t.sourceFileId})),
+            clipNodes:[...document.querySelectorAll('.timeline-clip')].map(el=>({
+                id:el.dataset.trackId,className:el.className,display:getComputedStyle(el).display,
+                visible:getComputedStyle(el).visibility,text:el.textContent
+            })),
+            errors:document.querySelector('#preview-state')?.textContent
+        };
+    })));
     await page.locator('.timeline-clip.background.needs-relink').waitFor({timeout:15000});
     assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId);
     assert.equal(await page.locator('#btn-export-offline').isDisabled(),true,
