@@ -1,5 +1,6 @@
 import { paintSpiralBlockWipe } from './gl-transitions/SpiralBlockWipe.mjs';
 import { paintHologram } from './gl-transitions/Hologram.mjs';
+import { paintCellDissolve } from './gl-transitions/CellDissolve.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -304,8 +305,9 @@ function traceSplatter(ctx,progress,width,height){
             (seededCell(i+101)-.5)*.8,0,2*Math.PI);
     }
 }
-/** Phase 8J: hexagonal cellular reveals begin in stable shuffled order.
- * Unlike Random squares, each growing, offset cell is a six-sided island.
+/** Legacy Phase 8J helper retained solely to avoid breaking historical API tests.
+ * Render path now uses the original GLSL Voronoi cells and never calls this
+ * regular-hexagon approximation.
  */
 export function cellDissolveGrowth(progress,index) {
     const p=unit(progress);
@@ -313,23 +315,6 @@ export function cellDissolveGrowth(progress,index) {
     if(p>=1)return 1;
     const delay=seededCell(index*71+31)*.57;
     return unit((p-delay)/.38);
-}
-function traceCellDissolve(ctx,progress,width,height) {
-    const columns=12,rows=7,tileW=width/columns,tileH=height/rows;
-    ctx.beginPath();
-    for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
-        const i=row*columns+col,growth=cellDissolveGrowth(progress,i);
-        if(growth<=0)continue;
-        const cx=(col+.5+(seededCell(i*13+51)-.5)*.24)*tileW;
-        const cy=(row+.5+(seededCell(i*19+81)-.5)*.24)*tileH;
-        const rx=tileW*.73*growth,ry=tileH*.76*growth;
-        for(let v=0;v<6;v++){
-            const a=Math.PI*(v/3+1/6);
-            const x=cx+Math.cos(a)*rx,y=cy+Math.sin(a)*ry;
-            if(v===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-        }
-        ctx.closePath();
-    }
 }
 /** A brief overexposed glow accompanies B's entrance, settling to zero
  * at both endpoints and leaving the ordinary rendered B at completion.
@@ -556,6 +541,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='hologram')
         return paintHologram(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='cell-dissolve')
+        return paintCellDissolve(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -892,22 +879,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             context.strokeStyle='rgba(25,12,44,.32)';
             context.lineWidth=Math.max(1,Math.min(width,height)*.018);
             context.stroke();
-            context.restore();
-        }
-        return true;
-    }
-    if(id==='cell-dissolve'){
-        context.save();
-        traceCellDissolve(context,progress,width,height);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
-        // A soft hand-off closes any small gaps between tessellated hexagons.
-        // Cells remain plainly recognizable in early and middle frames.
-        if(progress>.84){
-            context.save();
-            context.globalAlpha=alpha*unit((progress-.84)/.16);
-            renderContained(context,media,width,height);
             context.restore();
         }
         return true;
