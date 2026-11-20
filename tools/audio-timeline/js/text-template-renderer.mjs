@@ -142,8 +142,8 @@ function decorate(ctx,layout,fill,outline,frame) {
    ctx.fillText('⌖',109,274);break;
   }
   case 'quote':{
-   ctx.fillStyle=outline;ctx.font='italic 150px '+fonts.serif;ctx.textAlign='left';
-   ctx.globalAlpha*=.72;ctx.fillText('“',48,132);ctx.globalAlpha=1;
+   ctx.save();ctx.fillStyle=outline;ctx.font='italic 150px '+fonts.serif;ctx.textAlign='left';
+   ctx.globalAlpha*=.72;ctx.fillText('“',48,132);ctx.restore();
    ctx.fillStyle=outline;ctx.fillRect(118,253,403,2);break;
   }
   case 'comic':{
