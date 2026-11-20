@@ -13,28 +13,29 @@
 ## Progress log
 
 - 20 Nov 2026: Initial 102-item tracker created. Pre-existing two-row toolbar/full-width timeline (PRs [#87](https://github.com/cinaedvsstudios/Organon/pull/87), [#88](https://github.com/cinaedvsstudios/Organon/pull/88)) verified in prior Chrome/Firefox/WebKit browser suites.
+- 20 Nov 2026: Stage 1 items **1–20** reviewed/completed in [PR #91](https://github.com/cinaedvsstudios/Organon/pull/91): project controls, consistent scrollbars and dialogs, lane rename/colour/delete, clip-colour inheritance and Undo/Redo persistence. Previously completed toolbar/ruler/marker items retained; Chrome UI, recovery and portable-project regressions passed. Full-duration export stress tests continue separately.
 
 
 ## 1. Project controls and interface
 
-- [ ] **1.** Remove the **Project Controls** heading while keeping controls.
-- [ ] **2.** Replace wide Project Settings control with a **cog beside Open Folder**.
-- [ ] **3.** Add **Reset beside Export** to reset export configuration only, never timeline.
-- [ ] **4.** Standardise comparable action buttons: width, height, padding and alignment.
+- [x] **1.** Remove the **Project Controls** heading while keeping controls.
+- [x] **2.** Replace wide Project Settings control with a **cog beside Open Folder**.
+- [x] **3.** Add **Reset beside Export** to reset export configuration only, never timeline.
+- [x] **4.** Standardise comparable action buttons: width, height, padding and alignment.
 - [x] **5.** Keep toolbar functions logically grouped across two rows. _(pre-existing; verified in PR #87/#88 and/or prior browser tests)_
-- [ ] **6.** Match Media, Effects, Text and Inspector scrollbars (width, thumb, track and hover).
-- [ ] **7.** Use Organon-themed dialogs for confirmation, rename, colour, preview and warning (no default browser alerts).
-- [ ] **8.** Add meaningful mouseover help throughout the editor.
+- [x] **6.** Match Media, Effects, Text and Inspector scrollbars (width, thumb, track and hover).
+- [x] **7.** Use Organon-themed dialogs for confirmation, rename, colour, preview and warning (no default browser alerts).
+- [x] **8.** Add meaningful mouseover help throughout the editor.
 - [x] **9.** Keep full-width timeline and independently vertically scrolling Inspector. _(pre-existing; verified in PR #87/#88 and/or prior browser tests)_
 
 ## 2. Timeline, track and clip management
 
-- [ ] **10.** Distinct default timeline colour for video, still images, audio and generated overlays.
-- [ ] **11.** Right-click clip → Change Colour (visual timeline indicator only).
-- [ ] **12.** Right-click clip → Reset Colour (inherit lane colour or media default).
-- [ ] **13.** Right-click track label → Rename Track, without renaming source files.
-- [ ] **14.** Right-click track label → Change Track Colour, inherited unless clip overrides.
-- [ ] **15.** Right-click track label → Delete Entire Track and clips, confirmed and undoable.
+- [x] **10.** Distinct default timeline colour for video, still images, audio and generated overlays.
+- [x] **11.** Right-click clip → Change Colour (visual timeline indicator only).
+- [x] **12.** Right-click clip → Reset Colour (inherit lane colour or media default).
+- [x] **13.** Right-click track label → Rename Track, without renaming source files.
+- [x] **14.** Right-click track label → Change Track Colour, inherited unless clip overrides.
+- [x] **15.** Right-click track label → Delete Entire Track and clips, confirmed and undoable.
 - [x] **16.** Keep clip context actions: Cut, Copy, Paste, Duplicate, Delete, Slice, Split, Hide/Show, source/trim/audio download. _(pre-existing; verified in PR #87/#88 and/or prior browser tests)_
 - [x] **17.** Ruler fixed above tracks; nonselectable numbers; click moves only playhead. _(pre-existing; verified in PR #87/#88 and/or prior browser tests)_
 - [x] **18.** Main Snap action separate from its snapping-mode dropdown. _(pre-existing; verified in PR #87/#88 and/or prior browser tests)_
