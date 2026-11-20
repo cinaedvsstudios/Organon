@@ -180,6 +180,34 @@ try{
             new DragEvent('drop',{bubbles:true,cancelable:true,dataTransfer:dt,clientX:215,clientY:450}));
     });
     await page.locator('.timeline-clip.background:not(.placeholder)').waitFor({timeout:15000});
+    // Both still-frame formats must encode the latest composited canvas,
+    // not merely download a renamed PNG or a stale decoded video frame.
+    for(const format of [
+        {id:'#btn-snapshot',name:'motoriclip-frame.png',magic:'89504e470d0a1a0a',codec:'png'},
+        {id:'#btn-snapshot-jpeg',name:'motoriclip-frame.jpg',magic:'ffd8ff',codec:'mjpeg'}
+    ]){
+        assert.match(await page.locator(format.id).getAttribute('title'),/frame/i);
+        const downloadEvent=page.waitForEvent('download',{timeout:15000});
+        await page.locator(format.id).click();
+        const fileDownload=await downloadEvent;
+        assert.equal(fileDownload.suggestedFilename(),format.name);
+        const framePath=await fileDownload.path();
+        assert.ok(framePath,'Downloaded frame should have a temporary file');
+        const bytes=readFileSync(framePath);
+        assert.ok(bytes.length>250,'Snapshot image must contain encoded pixels');
+        assert.equal(bytes.subarray(0,format.magic.length/2).toString('hex'),format.magic,
+            'Snapshot file signature must match requested format');
+        const inspection=spawnSync('ffprobe',['-v','error','-select_streams','v:0',
+            '-show_entries','stream=codec_name,width,height','-of','json',framePath],
+            {encoding:'utf8',timeout:15000});
+        assert.equal(inspection.status,0,inspection.stderr||'ffprobe rejected frame');
+        const decoded=JSON.parse(inspection.stdout).streams?.[0];
+        assert.equal(decoded?.codec_name,format.codec,
+            'Image is not truly encoded in its requested format');
+        assert.equal(decoded?.width,640,'Snapshot should use the actual project canvas width');
+        assert.equal(decoded?.height,360,'Snapshot should use the actual project canvas height');
+    }
+    console.log('[MotoriClip UI] PASS genuine PNG and JPEG frame downloads at applied canvas dimensions');
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     assert.equal(await page.locator('#context-duplicate').isVisible(),true,
         'Duplicate should be available from a clip right-click, not the toolbar');
