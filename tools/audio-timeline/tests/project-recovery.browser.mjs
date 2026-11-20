@@ -197,14 +197,42 @@ try{
     assert.equal(await page.locator('.timeline-clip.background').count(),1);
     console.log('[MotoriClip project recovery] PASS offline placeholder and manual same-source reimport');
 
+    // Rebind an exact original-ID handle before Clear All. The OPFS copy is
+    // allowed to have a newer lastModified than its original filesystem file.
+    const clearHandle=await page.evaluate(async({id,base64})=>{
+        const directory=await navigator.storage.getDirectory();
+        const handle=await directory.getFileHandle('remembered-photo.jpg');
+        const writer=await handle.createWritable();
+        await writer.write(Uint8Array.from(atob(base64),char=>char.charCodeAt(0)));
+        await writer.close();
+        const {saveMediaHandle,getMediaHandle}=await import('./js/media-handle-store.mjs');
+        const stored=await saveMediaHandle(id,handle);
+        return {stored,sameName:(await getMediaHandle(id))?.name===handle.name,
+            size:(await handle.getFile()).size};
+    },{id,base64:originalBytes});
+    assert.equal(clearHandle.stored,true);
+    assert.equal(clearHandle.sameName,true);
+    assert.equal(clearHandle.size,saved.files[0].size);
+
     page.once('dialog',dialog=>dialog.accept());
     await page.locator('#btn-clear').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background').length===0);
     await page.reload({waitUntil:'domcontentloaded'});
     assert.equal(await page.locator('.timeline-clip.background').count(),0);
     assert.match(await page.locator('#file-count').innerText(),/0 media/i);
+    assert.equal(await page.locator('#btn-undo').isDisabled(),false,
+        'Clear project Undo history must remain available after reload');
+    await page.locator('#btn-undo').click();
+    await page.locator('.timeline-clip.background:not(.needs-relink)').waitFor({timeout:20000});
+    assert.equal(await page.locator('.timeline-clip.background').first().getAttribute('data-track-id'),clipId,
+        'Undo Clear after reload must restore the original clip ID');
+    assert.equal(await page.locator('#file-count').innerText(),'1 media');
+    await page.locator('#btn-redo').click();
+    await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0,
+        null,{timeout:15000});
+    assert.match(await page.locator('#file-count').innerText(),/0 media/i);
     assert.deepEqual(errors,[],'Chrome script errors during project recovery');
-    console.log('[MotoriClip project recovery] PASS Clear All remains cleared after reload');
+    console.log('[MotoriClip project recovery] PASS Clear All stays cleared after reload; Undo restores exact-ID saved handle and Redo clears again');
 
     // Text and effects are generated PNGs, not original disk files. Their
     // small saved preset/text recipes must reproduce them after reopening.
