@@ -93,8 +93,10 @@ try {
         a.media=source('blue',.5);b.media=source('red',.5);
         engine.tracks=[green,a,b];
         const alpha=read(1.5,variants[0]);
+        a.visible=false;
+        const hidden=read(1.5,variants[0]);
         engine.clearAll();
-        return {opaque,deterministic,alpha:alpha.cells,
+        return {opaque,deterministic,alpha:alpha.cells,hidden: hidden.cells,
             cleanup:engine.spiralBlockWebGL===null
                 &&engine.spiralBlockFromScratch===null
                 &&engine.spiralBlockToScratch===null,
@@ -147,6 +149,13 @@ try {
         for(let i=0;i<4;i++)
             assert.ok(Math.abs(pixel[i]-expected[i])<=9,
                 'Premultiplied alpha compositing mismatch '+JSON.stringify({column,row,pixel,expected}));
+    }
+    for(const {column,row,pixel} of result.hidden) {
+        const m=originalMask(.5,column,row,opts);
+        const expected=[127.5*m,255-127.5*m,0,255];
+        for(let i=0;i<4;i++)
+            assert.ok(Math.abs(pixel[i]-expected[i])<=9,
+                'Hidden outgoing clip must not reappear in GLSL: '+JSON.stringify({column,row,pixel,expected}));
     }
     assert.deepEqual(result.errors,[],'No GL source or render errors');
     assert.deepEqual(errors,[],'No uncaught browser errors');
