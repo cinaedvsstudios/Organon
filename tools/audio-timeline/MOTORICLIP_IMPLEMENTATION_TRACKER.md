@@ -25,6 +25,8 @@
 
 - 20 Nov 2026: Phase 3B in [PR #98](https://github.com/cinaedvsstudios/Organon/pull/98) implements **#26, #28, #35, #36**: editable-origin God Rays; organic animated Light Leaks; Pixel Scan; and Sci-Fi Scan. Tests expanded to 266 Node cases; all Node tests, short Chrome A/B+UI+project Save/Open job, Firefox/WebKit job and basic Chrome real-export/resolution stress stages passed. The 12 classic overlays and 41 paired transitions remain intact. The extended long-form video export/memory certification is tracked separately and is not marked complete.
 
+- 20 Nov 2026: Phase 3C in [PR #99](https://github.com/cinaedvsstudios/Organon/pull/99) implements **#21, #22, #29, #31, #32, #33, #34, #42**: real composed-frame Pendulum/Rebound swings, analogue cassette tracking, Ripple/Electric Ripple refractive bands, masked Shockwave and seeded Vibration Flash. Populates all seven requested categories with nonstatic animated recipes. Added reusable per-context source-frame sampling, editable pivots and distortion controls, and representative animated library previews. Node source-warp/scratch/reverse-seek tests, Chrome 41-transition/editor/recovery/portable suites and Firefox/WebKit export/UI jobs passed. Initial real-media MP4 export and 720p/1080p stress stages passed; longer real-export profiling and explicit effect-pixel-to-encoded-video comparisons remain separate unverified gates. 
+
 ## 1. Project controls and interface
 
 - [x] **1.** Remove the **Project Controls** heading while keeping controls.
@@ -53,20 +55,20 @@
 
 ## 3. Effects library — distinct time-based effects
 
-- [ ] **21.** Pendulum Swing — oscillate around editable pivot.
-- [ ] **22.** Rebound Swing — spring overshoot and decay.
+- [x] **21.** Pendulum Swing — oscillate around editable pivot.
+- [x] **22.** Rebound Swing — spring overshoot and decay.
 - [ ] **23.** Glow — bloom bright image regions.
 - [ ] **24.** Edge Glow — illuminate detected edges only.
 - [x] **25.** Light Sweep — moving directional highlight.
 - [x] **26.** God Rays — directional beams with adjustable origin.
 - [x] **27.** Hazy Atmosphere — drifting diffuse fog.
 - [x] **28.** Light Leaks — animated organic edge illumination.
-- [ ] **29.** Fault Cassette — analogue tape distortions.
+- [x] **29.** Fault Cassette — analogue tape distortions.
 - [x] **30.** Flicker — editable rhythmic brightness variance.
-- [ ] **31.** Ripple Distortion — animated refractive waves.
-- [ ] **32.** Electric Ripple — waves with electrical pulses.
-- [ ] **33.** Shockwave — expanding refractive ring.
-- [ ] **34.** Vibration Flash — shake with brief flashes.
+- [x] **31.** Ripple Distortion — animated refractive waves.
+- [x] **32.** Electric Ripple — waves with electrical pulses.
+- [x] **33.** Shockwave — expanding refractive ring.
+- [x] **34.** Vibration Flash — shake with brief flashes.
 - [x] **35.** Pixel Scan — moving scan band with pixel detail.
 - [x] **36.** Sci-Fi Scan — scan beam and technical HUD marks.
 - [ ] **37.** Chromatic Quirk — independently displaced RGB channels.
@@ -74,7 +76,7 @@
 - [x] **39.** Particle Effects — independent sparks/dust/debris.
 - [ ] **40.** Fire Effects — distinct flames/embers/explosions.
 - [ ] **41.** Additional *distinct* glitch styles: Glass Glitch, Glitch Storm, Negative Chaos, Warning Glitch, Misalignment, Noir Glitch, Glitch Flux, Engine Heat and Retro Glitch.
-- [ ] **42.** Categorise effects as Motion, Light, Distortion, Glitch, Atmospheric, Scanning, Particles/Fire.
+- [x] **42.** Categorise effects as Motion, Light, Distortion, Glitch, Atmospheric, Scanning, Particles/Fire.
 - [x] **43.** Right-click effect → themed animated Preview popup with Play/Pause/Loop/scrub.
 - [x] **44.** Insert effect as a genuinely time-based editable timeline clip, not a static PNG impostor.
 - [ ] **45.** Effect Inspector for suitable parameters (intensity, speed, duration, direction, scale, glow, blur, distortion, particles and colour).
