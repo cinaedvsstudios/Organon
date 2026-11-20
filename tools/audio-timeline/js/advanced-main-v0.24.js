@@ -1463,6 +1463,20 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const config=normaliseTextOverlay(track.textOverlay);
             const design=TEXT_PRESETS.find(item=>item.id===config.presetId);
             elements.textSelectedDesign.textContent=(design?.label||'Title')+' · edit this clip without replacing its template';
+            // The four layout-specific animations must not be selectable on
+            // unrelated title types: a dormant effect is worse than an
+            // intentionally disabled option.
+            const requiredLayouts={
+                'handwriting-reveal':'handwriting',
+                'location-drop':'location',
+                'countdown-roll':'countdown',
+                'split-enter':'split'
+            };
+            for(const option of elements.textInspectorInputs.animation.options){
+                const required=requiredLayouts[option.value];
+                option.disabled=Boolean(required&&required!==design?.layout);
+                option.title=option.disabled?'Available on the matching title template only':'';
+            }
             for(const [name,input] of Object.entries(elements.textInspectorInputs)){
                 if(input.type==='checkbox')input.checked=Boolean(config[name]);
                 else input.value=String(config[name]);
