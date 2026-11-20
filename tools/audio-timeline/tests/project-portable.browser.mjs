@@ -231,6 +231,28 @@ try {
         backgroundId,'The original background clip ID must survive historical relinking');
     assert.deepEqual(errors,[],'No uncaught Chrome errors after history-only media relinking');
     console.log('[MotoriClip portable] PASS media imported before Undo reconnects original history-only clip without a new bin ID');
+
+    // A private-window or full localStorage quota must be surfaced to the
+    // editor user instead of silently pretending that recovery succeeded.
+    await page.evaluate(()=>{
+        const original=Storage.prototype.setItem;
+        window.__motoriOriginalStorageSet=original;
+        Storage.prototype.setItem=function(key,value){
+            if(key==='motori-advanced-project-recovery-v1')
+                throw new DOMException('Simulated storage quota reached','QuotaExceededError');
+            return original.call(this,key,value);
+        };
+    });
+    await page.locator('#btn-add-marker').click();
+    await page.waitForFunction(()=>document.querySelector('#app-toast')?.textContent
+        ?.includes('Automatic project recovery is unavailable'),
+        null,{timeout:10000});
+    await page.evaluate(()=>{
+        Storage.prototype.setItem=window.__motoriOriginalStorageSet;
+        delete window.__motoriOriginalStorageSet;
+    });
+    assert.deepEqual(errors,[],'Storage quota errors must be handled without uncaught browser errors');
+    console.log('[MotoriClip portable] PASS exhausted browser storage shows a backup warning');
     await context.close();
 } finally {
     await browser.close();
