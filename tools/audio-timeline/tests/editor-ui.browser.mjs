@@ -794,7 +794,7 @@ try{
     await page.locator('#text-preview-play').click();
     await page.waitForFunction(()=>Number(document.querySelector('#text-preview-progress').value)<60,
       null,{timeout:4000});
-    assert.match(await page.locator('#text-preview-play').innerText(),/Pause/);
+    assert.match(await page.locator('#text-preview-play').innerText(),/pause/i);
     await page.locator('#text-preview-play').click();
     const afterPause=await page.locator('#text-preview-progress').inputValue();
     await page.waitForTimeout(140);
@@ -808,7 +808,7 @@ try{
     await page.locator('#text-preview-play').click();
     await page.waitForFunction(()=>document.querySelector('#text-preview-progress').value==='300',
       null,{timeout:4000});
-    assert.match(await page.locator('#text-preview-play').innerText(),/Play/,
+    assert.match(await page.locator('#text-preview-play').innerText(),/play/i,
       'Non-looping effect playback stops and restores Play label');
     await page.keyboard.press('Escape');
     assert.ok(await page.locator('#text-preview-modal').isHidden(),'Escape closes themed preview');
