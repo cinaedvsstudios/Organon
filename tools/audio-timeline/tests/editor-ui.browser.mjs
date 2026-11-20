@@ -353,8 +353,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),18,
-        'Keep twelve classic overlays plus six independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),22,
+        'Keep twelve classic overlays plus ten independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -672,7 +672,7 @@ try{
     // insert a procedural clip and edit its saved recipe in the Inspector.
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effect-category').selectOption('Light');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),4);
     await page.locator('[data-preset-id="light-sweep"]').click({button:'right'});
     assert.ok(await page.locator('#text-preview-modal').isVisible());
     const sampleEffect=async(t)=>page.evaluate(time=>{
@@ -694,6 +694,17 @@ try{
         input.value='32';input.dispatchEvent(new Event('input',{bubbles:true}));
     });
     assert.equal(await page.locator('#effect-intensity').inputValue(),'32');
+    await page.locator('#effect-category').selectOption('Scanning');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2,
+        'Pixel Scan and Sci-Fi Scan are separate time-based scanning templates');
+    await page.locator('#effect-category').selectOption('Light');
+    await page.locator('[data-preset-id="god-rays"]').click();
+    await page.locator('#effect-origin-controls').waitFor({state:'visible',timeout:15000});
+    await page.locator('#effect-origin-x').evaluate(input=>{
+        input.value='78';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    assert.equal(await page.locator('#effect-origin-x').inputValue(),'78',
+        'God Rays must expose an adjustable origin');
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
