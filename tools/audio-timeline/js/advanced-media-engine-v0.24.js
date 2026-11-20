@@ -680,7 +680,13 @@ export class AdvancedMediaEngine {
         drawContained(this.context,processed,width,height);
     }
 
-    async snapshot() {
+    async snapshot(format='png') {
+        // PNG is lossless; JPEG is smaller and uses 92% browser encoder quality.
+        // Both must capture the same latest *composited* timeline frame.
+        const supported={png:{mime:'image/png',extension:'png'},
+            jpeg:{mime:'image/jpeg',extension:'jpg',quality:.92}};
+        const option=supported[format];
+        if(!option)throw new Error('Snapshot format must be PNG or JPEG.');
         // A snapshot requested immediately after scrubbing must wait until the
         // *latest* decoded still frame, never a previous seek's canvas contents.
         while (this.pendingSeekPromise) {
@@ -690,11 +696,18 @@ export class AdvancedMediaEngine {
         }
         if (!this.isPlaying) await this.seek(this.currentTime, { resume: false });
         else this.renderFrame();
-        const blob = await new Promise((resolve) => this.canvas.toBlob(resolve, 'image/png'));
-        if (!blob) throw new Error('PNG snapshot could not be created.');
-        const url=URL.createObjectURL(blob), link=document.createElement('a'); link.href=url;
-        link.download='motoriclip-frame.png';
-        document.body.appendChild(link); link.click(); link.remove(); URL.revokeObjectURL(url);
+        const blob=await new Promise(resolve=>this.canvas.toBlob(resolve,option.mime,option.quality));
+        if(!blob || blob.type!==option.mime)
+            throw new Error(`${option.extension.toUpperCase()} snapshot could not be encoded in this browser.`);
+        const url=URL.createObjectURL(blob),link=document.createElement('a');
+        link.download=`motoriclip-frame.${option.extension}`;
+        link.href=url;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        // Some browsers begin an anchor download asynchronously.
+        window.setTimeout(()=>URL.revokeObjectURL(url),30000);
+        return {type:blob.type,size:blob.size,width:this.canvas.width,height:this.canvas.height};
     }
     emitTime() { this.onTimeChange?.({ currentTime:this.currentTime, duration:this.getTimelineDuration() }); }
     emitDuration() { this.onDurationChange?.(this.getTimelineDuration()); }
