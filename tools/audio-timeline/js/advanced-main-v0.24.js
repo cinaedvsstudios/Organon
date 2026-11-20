@@ -327,7 +327,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             canvasHeight:Number(elements.canvasHeight.value),
             fps:Number(elements.projectFps.value),
             previewZoom:state.previewZoom,
-            markers:state.timelineMarkers
+            markers:state.timelineMarkers,
+            history:state.history
         });
     }
     function saveProjectRecovery() {
@@ -401,14 +402,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 canvasHeight:parsed.settings.canvasHeight,
                 fps:parsed.settings.fps,
                 previewZoom:parsed.settings.previewZoom,
-                markers:parsed.markers
+                markers:parsed.markers,
+                history:parsed.history || {undo:[],redo:[]}
             });
         }catch(error){
             console.warn('Invalid portable MotoriClip project:',error);
             showToast('Cannot open project: '+error.message);
             return;
         }
-        if(!window.confirm(`Open ${file.name}? This replaces the current timeline and clears its Undo/Redo history. Save the current project first if you need a backup. Original media may need relinking.`))
+        if(!window.confirm(`Open ${file.name}? This replaces the current timeline and its Undo/Redo history with the saved project history (when available). Save the current project first if needed. Original media may need relinking.`))
             return;
         state.recoveryLoading=true;
         try {
@@ -430,8 +432,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             state.tracks=record.tracks.map(snapshotClip);
             state.sourceFiles=new Map(files.filter(item=>item.file).map(item=>[item.id,item.file]));
             state.savedFileHandles.clear();
-            state.history.undo=[];
-            state.history.redo=[];
+            state.history.undo=record.history?.undo || [];
+            state.history.redo=record.history?.redo || [];
             state.selectedTrackIds=new Set(record.selectedTrackIds.filter(id=>
                 state.tracks.some(track=>track.id===id)));
             state.selectedTrackId=state.tracks.some(track=>track.id===record.selectedTrackId)
@@ -466,6 +468,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         }finally{
             state.recoveryLoading=false;
             state.lastRecoveryText='';
+            updateHistoryButtons();
             saveProjectRecovery();
         }
     }
@@ -491,6 +494,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             existingIds.add(file.id);
         }
         state.tracks=data.tracks.map(record=>snapshotClip(record));
+        state.history.undo=data.history?.undo || [];
+        state.history.redo=data.history?.redo || [];
         state.selectedTrackIds=new Set(data.selectedTrackIds.filter(clipId=>
             state.tracks.some(track=>track.id===clipId)));
         state.selectedTrackId=state.tracks.some(track=>track.id===data.selectedTrackId)
@@ -509,10 +514,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         // Preserve the timestamp until media and player restoration finish.
         return data;
     }
-    function recreateGeneratedProjectOverlays() {
+    function recreateGeneratedProjectOverlays(files=state.files) {
         const presets=[...TEXT_PRESETS,...EFFECT_OVERLAYS];
         let regenerated=0;
-        for(const entry of state.files){
+        for(const entry of files){
             if(entry.file||!entry.generated)continue;
             const recipe=entry.generated;
             const preset=presets.find(item=>item.group===recipe.group&&item.id===recipe.presetId);
@@ -579,8 +584,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
     function updateHistoryButtons() {
-        const undo = !state.historyRestoring && state.history.undo.length > 0;
-        const redo = !state.historyRestoring && state.history.redo.length > 0;
+        const ready=!state.recoveryLoading && !state.historyRestoring && !state.editorDisposing;
+        const undo = ready && state.history.undo.length > 0;
+        const redo = ready && state.history.redo.length > 0;
         elements.btnUndo.disabled = !undo;
         elements.btnRedo.disabled = !redo;
         elements.btnUndo.title = undo ? `Undo ${state.history.undo.at(-1).label}` : 'Nothing to undo';
@@ -601,15 +607,19 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         state.historyRestoring = true;
         updateHistoryButtons();
         try {
-            const files = restoreFileEntries(snapshot.files, state.sourceFiles);
-            if (files.length !== snapshot.files.length) throw new Error('Source file needed by undo/redo is missing.');
+            // Historical sources may no longer be available after reopening.
+            // Retain offline placeholders so edits can still be undone/redone
+            // and exports remain disabled until the user relinks media.
+            const files = restoreFileEntries(snapshot.files, state.sourceFiles, {includeMissing:true});
+            recreateGeneratedProjectOverlays(files);
             engine.pause();
             // Prepare missing players before removing the current ones; reuse
             // unchanged players for a trim, move, group or inspector undo.
             const prepared = await prepareHistoryTracks({
                 records: snapshot.tracks, existingTracks: state.tracks, sourceFiles: state.sourceFiles,
                 loadTrack: (track, file) => engine.loadTrack(track, file),
-                disposeTrack: (track) => engine.detachTrack(track, false)
+                disposeTrack: (track) => engine.detachTrack(track, false),
+                allowMissingSources:true
             });
             prepared.commit();
             state.files = files;
@@ -628,7 +638,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
     async function runHistoryStep(from, to, pastTense) {
-        if (state.historyRestoring || !from.length) return;
+        if (state.recoveryLoading || state.editorDisposing || state.historyRestoring || !from.length) return;
         const entry = from[from.length - 1];
         const previous = captureHistorySnapshot();
         try {
@@ -2592,6 +2602,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             showToast('Project layout recovered; some media may need relinking');
         } finally {
             state.recoveryLoading=false;
+            updateHistoryButtons();
             saveProjectRecovery();
         }
     })();
