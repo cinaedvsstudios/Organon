@@ -640,6 +640,18 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-gallery-settings" class="spiral-glsl-settings gallery-glsl-settings" hidden>
+                            <legend>Gallery · Original 3D GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Incoming slide direction<select data-gallery-param="direction"><option value="1">From the right</option><option value="-1">From the left</option></select></label>
+                                <label>Slide perspective tilt<input type="range" min="0" max="1" step=".05" value=".6" data-gallery-param="tilt"></label>
+                                <label>Space between slides<input type="range" min="0" max="1" step=".05" value=".15" data-gallery-param="gap"></label>
+                                <label>Camera pullback<input type="number" min=".2" max="3" step=".1" value="2" data-gallery-param="zoom"></label>
+                                <label>Floor reflection strength<input type="range" min="0" max="1" step=".05" value=".3" data-gallery-param="reflection"></label>
+                                <label>Wall and floor colour<input type="color" value="#121214" data-gallery-param="backgroundColor"></label>
+                                <label>Wall and floor opacity<input type="range" min="0" max="1" step=".05" value="1" data-gallery-param="backgroundAlpha"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-color-panel-wipe-settings" class="spiral-glsl-settings color-panel-wipe-glsl-settings" hidden>
                             <legend>ColorPanelWipe · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1220,6 +1232,18 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-gallery" class="spiral-glsl-settings gallery-glsl-settings" hidden>
+                            <legend>Gallery · Original 3D GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Incoming slide direction<select data-gallery-param="direction"><option value="1">From the right</option><option value="-1">From the left</option></select></label>
+                                <label>Slide perspective tilt<input type="range" min="0" max="1" step=".05" value=".6" data-gallery-param="tilt"></label>
+                                <label>Space between slides<input type="range" min="0" max="1" step=".05" value=".15" data-gallery-param="gap"></label>
+                                <label>Camera pullback<input type="number" min=".2" max="3" step=".1" value="2" data-gallery-param="zoom"></label>
+                                <label>Floor reflection strength<input type="range" min="0" max="1" step=".05" value=".3" data-gallery-param="reflection"></label>
+                                <label>Wall and floor colour<input type="color" value="#121214" data-gallery-param="backgroundColor"></label>
+                                <label>Wall and floor opacity<input type="range" min="0" max="1" step=".05" value="1" data-gallery-param="backgroundAlpha"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-color-panel-wipe" class="spiral-glsl-settings color-panel-wipe-glsl-settings" hidden>
                             <legend>ColorPanelWipe · Original GL shader</legend>
                             <div class="spiral-settings-grid">

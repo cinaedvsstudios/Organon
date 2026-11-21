@@ -24,6 +24,7 @@ import { normaliseSphereOptions } from './gl-transitions/Sphere.mjs';
 import { normaliseRingsWipeOptions } from './gl-transitions/RingsWipe.mjs';
 import { normaliseSnapshotOptions } from './gl-transitions/Snapshot.mjs';
 import { normaliseColorPanelWipeOptions } from './gl-transitions/ColorPanelWipe.mjs';
+import { normaliseGalleryOptions } from './gl-transitions/Gallery.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1688,6 +1689,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             colorPanelWipeInspector.hidden=!(paired&&track.transitionEffectId==='color-panel-wipe');
             if(!colorPanelWipeInspector.hidden)
                 displayColorPanelWipeSettings(colorPanelWipeInspector,track.transitionParameters?.['color-panel-wipe']);
+            const galleryInspector=document.getElementById('video-gallery-settings');
+            galleryInspector.hidden=!(paired&&track.transitionEffectId==='gallery');
+            if(!galleryInspector.hidden)
+                displayGallerySettings(galleryInspector,track.transitionParameters?.gallery);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2001,6 +2006,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-color-panel-wipe-settings');
             b.transitionParameters={...b.transitionParameters,
                 'color-panel-wipe':readColorPanelWipeSettings(panel)};
+        }
+        if(effectId==='gallery'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-gallery')
+                :document.getElementById('video-gallery-settings');
+            b.transitionParameters={...b.transitionParameters,
+                gallery:readGallerySettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2991,6 +3003,28 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayColorPanelWipeSettings(root,target?.transitionParameters?.['color-panel-wipe']);
         }
     }
+    function readGallerySettings(root){
+        const value=name=>root?.querySelector('[data-gallery-param="'+name+'"]')?.value;
+        return normaliseGalleryOptions({
+            direction:value('direction'),tilt:value('tilt'),gap:value('gap'),
+            zoom:value('zoom'),reflection:value('reflection'),
+            backgroundColor:value('backgroundColor'),backgroundAlpha:value('backgroundAlpha')
+        });
+    }
+    function displayGallerySettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseGalleryOptions(options))){
+            const input=root?.querySelector('[data-gallery-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshGalleryModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-gallery');
+        root.hidden=elements.transitionModalEffect.value!=='gallery';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayGallerySettings(root,target?.transitionParameters?.gallery);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3047,6 +3081,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,snapshot:readSnapshotSettings(document.getElementById('transition-modal-snapshot'))}
                     :effectId==='color-panel-wipe'
                     ?{...b.transitionParameters,'color-panel-wipe':readColorPanelWipeSettings(document.getElementById('transition-modal-color-panel-wipe'))}
+                    :effectId==='gallery'
+                    ?{...b.transitionParameters,gallery:readGallerySettings(document.getElementById('transition-modal-gallery'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3055,7 +3091,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3100,6 +3136,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshRingsWipeModalSettings({restoreValues:true});
         refreshSnapshotModalSettings({restoreValues:true});
         refreshColorPanelWipeModalSettings({restoreValues:true});
+        refreshGalleryModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3151,10 +3188,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSphereModalSettings({restoreValues:true});
         refreshRingsWipeModalSettings({restoreValues:true});
         refreshSnapshotModalSettings({restoreValues:true});
-        refreshColorPanelWipeModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshColorPanelWipeModalSettings({restoreValues:true});
+        refreshGalleryModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-gallery').querySelectorAll('[data-gallery-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-gallery-settings').querySelectorAll('[data-gallery-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='gallery'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readGallerySettings(document.getElementById('video-gallery-settings'));
+            const prior=normaliseGalleryOptions(active.transitionParameters?.gallery);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Gallery GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,gallery:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-color-panel-wipe').querySelectorAll('[data-color-panel-wipe-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-color-panel-wipe-settings').querySelectorAll('[data-color-panel-wipe-param]')
