@@ -373,8 +373,11 @@ try{
         assert.notDeepEqual(frame.finished.center,[0,0,255],
             name+' must resolve to the incoming video');
     }
-    assert.ok(ascii.middle.center[1]>0,
-        'ASCII must draw colored monospace glyphs over the source image');
+    // Original Ascii uses the source image's luminance and colour rather
+    // than painting a fixed green Canvas font at the centre pixel. The
+    // independently compiled shader oracle separately verifies glyph shapes.
+    assert.notEqual(ascii.quarter.fingerprint,ascii.threeQuarter.fingerprint,
+        'Original Ascii must change glyph density and source image across the cut');
     assert.notEqual(ascii.middle.fingerprint,result.pixelize.middle.fingerprint,
         'ASCII glyph sampling must be distinct from Pixelize');
     assert.notEqual(codes.middle.fingerprint,result['color-panel-wipe'].middle.fingerprint,

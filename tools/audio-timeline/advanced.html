@@ -640,6 +640,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-ascii-settings" class="spiral-glsl-settings ascii-glsl-settings" hidden>
+                            <legend>Ascii · Original GL text shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Character cell height<input type="range" min=".01" max=".1" step=".005" value=".04" data-ascii-param="cellSize"></label>
+                                <label>Colour glyphs from source<input type="checkbox" checked data-ascii-param="colored"></label>
+                                <label>Monochrome ink colour<input type="color" value="#4dff73" data-ascii-param="ink"></label>
+                                <label>Ink opacity<input type="range" min="0" max="1" step=".05" value="1" data-ascii-param="inkAlpha"></label>
+                                <label>Text-mode background<input type="color" value="#000000" data-ascii-param="background"></label>
+                                <label>Background opacity<input type="range" min="0" max="1" step=".05" value="1" data-ascii-param="backgroundAlpha"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-disintegrate-settings" class="spiral-glsl-settings disintegrate-glsl-settings" hidden>
                             <legend>Disintegrate · Original dust shader</legend>
                             <div class="spiral-settings-grid">
@@ -1333,6 +1344,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-ascii" class="spiral-glsl-settings ascii-glsl-settings" hidden>
+                            <legend>Ascii · Original GL text shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Character cell height<input type="range" min=".01" max=".1" step=".005" value=".04" data-ascii-param="cellSize"></label>
+                                <label>Colour glyphs from source<input type="checkbox" checked data-ascii-param="colored"></label>
+                                <label>Monochrome ink colour<input type="color" value="#4dff73" data-ascii-param="ink"></label>
+                                <label>Ink opacity<input type="range" min="0" max="1" step=".05" value="1" data-ascii-param="inkAlpha"></label>
+                                <label>Text-mode background<input type="color" value="#000000" data-ascii-param="background"></label>
+                                <label>Background opacity<input type="range" min="0" max="1" step=".05" value="1" data-ascii-param="backgroundAlpha"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-disintegrate" class="spiral-glsl-settings disintegrate-glsl-settings" hidden>
                             <legend>Disintegrate · Original dust shader</legend>
                             <div class="spiral-settings-grid">

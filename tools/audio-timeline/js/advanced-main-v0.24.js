@@ -35,6 +35,7 @@ import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mj
 import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
 import { normaliseBlockCoverOptions } from './gl-transitions/BlockCover.mjs';
 import { normaliseDisintegrateOptions } from './gl-transitions/Disintegrate.mjs';
+import { normaliseAsciiOptions } from './gl-transitions/Ascii.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1743,6 +1744,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             disintegrateInspector.hidden=!(paired&&track.transitionEffectId==='disintegrate');
             if(!disintegrateInspector.hidden)
                 displayDisintegrateSettings(disintegrateInspector,track.transitionParameters?.disintegrate);
+            const asciiInspector=document.getElementById('video-ascii-settings');
+            asciiInspector.hidden=!(paired&&track.transitionEffectId==='ascii');
+            if(!asciiInspector.hidden)
+                displayAsciiSettings(asciiInspector,track.transitionParameters?.ascii);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2133,6 +2138,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-disintegrate-settings');
             b.transitionParameters={...b.transitionParameters,
                 disintegrate:readDisintegrateSettings(panel)};
+        }
+        if(effectId==='ascii'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-ascii')
+                :document.getElementById('video-ascii-settings');
+            b.transitionParameters={...b.transitionParameters,
+                ascii:readAsciiSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3359,6 +3371,32 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayDisintegrateSettings(root,target?.transitionParameters?.disintegrate);
         }
     }
+    function readAsciiSettings(root){
+        const field=name=>root?.querySelector('[data-ascii-param="'+name+'"]');
+        return normaliseAsciiOptions({
+            cellSize:field('cellSize')?.value,
+            colored:field('colored')?.checked,
+            ink:field('ink')?.value,inkAlpha:field('inkAlpha')?.value,
+            background:field('background')?.value,
+            backgroundAlpha:field('backgroundAlpha')?.value
+        });
+    }
+    function displayAsciiSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseAsciiOptions(options))){
+            const field=root?.querySelector('[data-ascii-param="'+name+'"]');
+            if(!field)continue;
+            if(field.type==='checkbox')field.checked=Boolean(value);
+            else field.value=String(value);
+        }
+    }
+    function refreshAsciiModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-ascii');
+        root.hidden=elements.transitionModalEffect.value!=='ascii';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayAsciiSettings(root,target?.transitionParameters?.ascii);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3437,6 +3475,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'block-cover':readBlockCoverSettings(document.getElementById('transition-modal-block-cover'))}
                     :effectId==='disintegrate'
                     ?{...b.transitionParameters,disintegrate:readDisintegrateSettings(document.getElementById('transition-modal-disintegrate'))}
+                    :effectId==='ascii'
+                    ?{...b.transitionParameters,ascii:readAsciiSettings(document.getElementById('transition-modal-ascii'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3445,7 +3485,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3501,6 +3541,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshLightRaysModalSettings({restoreValues:true});
         refreshBlockCoverModalSettings({restoreValues:true});
         refreshDisintegrateModalSettings({restoreValues:true});
+        refreshAsciiModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3563,10 +3604,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
         refreshBlockCoverModalSettings({restoreValues:true});
-        refreshDisintegrateModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshDisintegrateModalSettings({restoreValues:true});
+        refreshAsciiModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-ascii').querySelectorAll('[data-ascii-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-ascii-settings').querySelectorAll('[data-ascii-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='ascii'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readAsciiSettings(document.getElementById('video-ascii-settings'));
+            const prior=normaliseAsciiOptions(active.transitionParameters?.ascii);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Ascii GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,ascii:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-disintegrate').querySelectorAll('[data-disintegrate-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-disintegrate-settings').querySelectorAll('[data-disintegrate-param]')
