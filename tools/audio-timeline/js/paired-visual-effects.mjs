@@ -14,6 +14,7 @@ import { paintVhsTracking } from './gl-transitions/VhsTracking.mjs';
 import { paintCardSwipe } from './gl-transitions/CardSwipe.mjs';
 import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
 import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
+import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -570,6 +571,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintCameraShake(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='smoke-dissolve')
         return paintSmokeDissolve(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='splatter-wipe')
+        return paintSplatterWipe(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -759,11 +762,10 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='paper-tear'||id==='ink-bleed'||id==='splatter-wipe'){
+    if(id==='paper-tear'||id==='ink-bleed'){
         context.save();
         if(id==='paper-tear')tracePaperTear(context,progress,width,height);
-        else if(id==='ink-bleed')traceInkBleed(context,progress,width,height);
-        else traceSplatter(context,progress,width,height);
+        else traceInkBleed(context,progress,width,height);
         context.clip();
         renderContained(context,media,width,height);
         context.restore();
