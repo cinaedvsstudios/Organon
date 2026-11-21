@@ -18,6 +18,7 @@ import { normaliseHologramOptions } from './gl-transitions/Hologram.mjs';
 import { normaliseCellDissolveOptions } from './gl-transitions/CellDissolve.mjs';
 import { normaliseVortexOptions } from './gl-transitions/Vortex.mjs';
 import { normaliseCrumpleOptions } from './gl-transitions/Crumple.mjs';
+import { normaliseLiquidFillOptions } from './gl-transitions/LiquidFill.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1658,6 +1659,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             crumpleInspector.hidden=!(paired&&track.transitionEffectId==='crumple');
             if(!crumpleInspector.hidden)
                 displayCrumpleSettings(crumpleInspector,track.transitionParameters?.crumple);
+            const liquidFillInspector=document.getElementById('video-liquid-fill-settings');
+            liquidFillInspector.hidden=!(paired&&track.transitionEffectId==='liquid-fill');
+            if(!liquidFillInspector.hidden)
+                displayLiquidFillSettings(liquidFillInspector,track.transitionParameters?.['liquid-fill']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1931,6 +1936,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-crumple-settings');
             b.transitionParameters={...b.transitionParameters,
                 crumple:readCrumpleSettings(panel)};
+        }
+        if(effectId==='liquid-fill'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-liquid-fill')
+                :document.getElementById('video-liquid-fill-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'liquid-fill':readLiquidFillSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2784,6 +2796,29 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayCrumpleSettings(root,target?.transitionParameters?.crumple);
         }
     }
+    function readLiquidFillSettings(root){
+        const value=name=>root?.querySelector('[data-liquid-fill-param="'+name+'"]')?.value;
+        return normaliseLiquidFillOptions({
+            directionX:value('directionX'),directionY:value('directionY'),
+            amplitude:value('amplitude'),waves:value('waves'),
+            highlightColor:value('highlightColor'),highlightAlpha:value('highlightAlpha'),
+            refraction:value('refraction'),bubbles:value('bubbles')
+        });
+    }
+    function displayLiquidFillSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseLiquidFillOptions(options))){
+            const input=root?.querySelector('[data-liquid-fill-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshLiquidFillModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-liquid-fill');
+        root.hidden=elements.transitionModalEffect.value!=='liquid-fill';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayLiquidFillSettings(root,target?.transitionParameters?.['liquid-fill']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2828,6 +2863,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,vortex:readVortexSettings(document.getElementById('transition-modal-vortex'))}
                     :effectId==='crumple'
                     ?{...b.transitionParameters,crumple:readCrumpleSettings(document.getElementById('transition-modal-crumple'))}
+                    :effectId==='liquid-fill'
+                    ?{...b.transitionParameters,'liquid-fill':readLiquidFillSettings(document.getElementById('transition-modal-liquid-fill'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2836,7 +2873,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2875,6 +2912,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCellDissolveModalSettings({restoreValues:true});
         refreshVortexModalSettings({restoreValues:true});
         refreshCrumpleModalSettings({restoreValues:true});
+        refreshLiquidFillModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2920,10 +2958,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshHologramModalSettings({restoreValues:true});
         refreshCellDissolveModalSettings({restoreValues:true});
         refreshVortexModalSettings({restoreValues:true});
-        refreshCrumpleModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshCrumpleModalSettings({restoreValues:true});
+        refreshLiquidFillModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-liquid-fill').querySelectorAll('[data-liquid-fill-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-liquid-fill-settings').querySelectorAll('[data-liquid-fill-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='liquid-fill'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readLiquidFillSettings(document.getElementById('video-liquid-fill-settings'));
+            const prior=normaliseLiquidFillOptions(active.transitionParameters?.['liquid-fill']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original LiquidFill GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'liquid-fill':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-crumple').querySelectorAll('[data-crumple-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-crumple-settings').querySelectorAll('[data-crumple-param]')
