@@ -15,6 +15,7 @@ import { paintCardSwipe } from './gl-transitions/CardSwipe.mjs';
 import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
 import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
+import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -573,6 +574,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSmokeDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='splatter-wipe')
         return paintSplatterWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='bloom-dissolve')
+        return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -792,30 +795,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             context.stroke();
             context.restore();
         }
-        return true;
-    }
-    if(id==='bloom-dissolve'){
-        context.save();
-        context.globalAlpha=alpha*progress;
-        renderContained(context,media,width,height);
-        const glow=bloomPulse(progress);
-        if(glow>0){
-            context.globalCompositeOperation='screen';
-            context.globalAlpha=alpha*glow*.68;
-            context.filter='blur('+Math.max(2,Math.round(Math.min(width,height)*.045))+'px) brightness(1.7)';
-            renderContained(context,media,width,height);
-            context.filter='none';
-            const gradient=context.createRadialGradient(
-                width*.52,height*.47,0,width*.52,height*.47,
-                Math.hypot(width,height)*.68);
-            gradient.addColorStop(0,'rgba(255,255,255,.9)');
-            gradient.addColorStop(.42,'rgba(255,242,218,.4)');
-            gradient.addColorStop(1,'rgba(255,245,220,0)');
-            context.globalAlpha=alpha*glow*.48;
-            context.fillStyle=gradient;
-            context.fillRect(0,0,width,height);
-        }
-        context.restore();
         return true;
     }
     if(id==='spin'){
