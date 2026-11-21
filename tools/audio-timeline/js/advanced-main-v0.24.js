@@ -36,6 +36,7 @@ import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
 import { normaliseBlockCoverOptions } from './gl-transitions/BlockCover.mjs';
 import { normaliseDisintegrateOptions } from './gl-transitions/Disintegrate.mjs';
 import { normaliseAsciiOptions } from './gl-transitions/Ascii.mjs';
+import { normaliseFilmStripOptions } from './gl-transitions/FilmStrip.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1748,6 +1749,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             asciiInspector.hidden=!(paired&&track.transitionEffectId==='ascii');
             if(!asciiInspector.hidden)
                 displayAsciiSettings(asciiInspector,track.transitionParameters?.ascii);
+            const filmStripInspector=document.getElementById('video-film-strip-settings');
+            filmStripInspector.hidden=!(paired&&track.transitionEffectId==='film-strip');
+            if(!filmStripInspector.hidden)
+                displayFilmStripSettings(filmStripInspector,track.transitionParameters?.['film-strip']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2145,6 +2150,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-ascii-settings');
             b.transitionParameters={...b.transitionParameters,
                 ascii:readAsciiSettings(panel)};
+        }
+        if(effectId==='film-strip'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-film-strip')
+                :document.getElementById('video-film-strip-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'film-strip':readFilmStripSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3397,6 +3409,29 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayAsciiSettings(root,target?.transitionParameters?.ascii);
         }
     }
+    function readFilmStripSettings(root){
+        const value=name=>root?.querySelector('[data-film-strip-param="'+name+'"]')?.value;
+        return normaliseFilmStripOptions({
+            frames:value('frames'),shrink:value('shrink'),
+            blur:value('blur'),weave:value('weave'),
+            filmColor:value('filmColor'),filmAlpha:value('filmAlpha'),
+            holeColor:value('holeColor'),holeAlpha:value('holeAlpha')
+        });
+    }
+    function displayFilmStripSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseFilmStripOptions(options))){
+            const input=root?.querySelector('[data-film-strip-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshFilmStripModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-film-strip');
+        root.hidden=elements.transitionModalEffect.value!=='film-strip';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayFilmStripSettings(root,target?.transitionParameters?.['film-strip']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3477,6 +3512,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,disintegrate:readDisintegrateSettings(document.getElementById('transition-modal-disintegrate'))}
                     :effectId==='ascii'
                     ?{...b.transitionParameters,ascii:readAsciiSettings(document.getElementById('transition-modal-ascii'))}
+                    :effectId==='film-strip'
+                    ?{...b.transitionParameters,'film-strip':readFilmStripSettings(document.getElementById('transition-modal-film-strip'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3485,7 +3522,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3542,6 +3579,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshBlockCoverModalSettings({restoreValues:true});
         refreshDisintegrateModalSettings({restoreValues:true});
         refreshAsciiModalSettings({restoreValues:true});
+        refreshFilmStripModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3605,10 +3643,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshLightRaysModalSettings({restoreValues:true});
         refreshBlockCoverModalSettings({restoreValues:true});
         refreshDisintegrateModalSettings({restoreValues:true});
-        refreshAsciiModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshAsciiModalSettings({restoreValues:true});
+        refreshFilmStripModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-film-strip').querySelectorAll('[data-film-strip-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-film-strip-settings').querySelectorAll('[data-film-strip-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='film-strip'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readFilmStripSettings(document.getElementById('video-film-strip-settings'));
+            const prior=normaliseFilmStripOptions(active.transitionParameters?.['film-strip']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original FilmStrip GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'film-strip':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-ascii').querySelectorAll('[data-ascii-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-ascii-settings').querySelectorAll('[data-ascii-param]')
