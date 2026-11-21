@@ -1,6 +1,6 @@
 /**
  * #05 Crumple — gre's original MIT GL Transitions paper folding shader.
- * Upstream: https://github.com/gl-transitions/gl-transitions/blob/master/transitions/Crumple.glsl
+ * Upstream: https://github.com/gl-transitions/gl-transitions/blob/7f48be1e2c09a54f74cfdd927bb0f512a652c051/transitions/Crumple.glsl
  * Source blob SHA: 6883cc11cb42c79e49570623d381b51b3da38317
  * The original crease geometry, ridge/valley lighting, paper-ball outline,
  * tossed shadow and premultiplied alpha are preserved verbatim below.
