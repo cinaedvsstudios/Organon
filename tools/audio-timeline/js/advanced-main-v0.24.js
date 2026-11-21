@@ -28,6 +28,7 @@ import { normaliseGalleryOptions } from './gl-transitions/Gallery.mjs';
 import { normaliseVhsTrackingOptions } from './gl-transitions/VhsTracking.mjs';
 import { normaliseCardSwipeOptions } from './gl-transitions/CardSwipe.mjs';
 import { normaliseCameraShakeOptions } from './gl-transitions/CameraShake.mjs';
+import { normaliseSmokeDissolveOptions } from './gl-transitions/SmokeDissolve.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1708,6 +1709,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             cameraShakeInspector.hidden=!(paired&&track.transitionEffectId==='camera-shake');
             if(!cameraShakeInspector.hidden)
                 displayCameraShakeSettings(cameraShakeInspector,track.transitionParameters?.['camera-shake']);
+            const smokeDissolveInspector=document.getElementById('video-smoke-dissolve-settings');
+            smokeDissolveInspector.hidden=!(paired&&track.transitionEffectId==='smoke-dissolve');
+            if(!smokeDissolveInspector.hidden)
+                displaySmokeDissolveSettings(smokeDissolveInspector,track.transitionParameters?.['smoke-dissolve']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2049,6 +2054,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-camera-shake-settings');
             b.transitionParameters={...b.transitionParameters,
                 'camera-shake':readCameraShakeSettings(panel)};
+        }
+        if(effectId==='smoke-dissolve'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-smoke-dissolve')
+                :document.getElementById('video-smoke-dissolve-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'smoke-dissolve':readSmokeDissolveSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3125,6 +3137,28 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayCameraShakeSettings(root,target?.transitionParameters?.['camera-shake']);
         }
     }
+    function readSmokeDissolveSettings(root){
+        const value=name=>root?.querySelector('[data-smoke-dissolve-param="'+name+'"]')?.value;
+        return normaliseSmokeDissolveOptions({
+            directionX:value('directionX'),directionY:value('directionY'),
+            scale:value('scale'),spread:value('spread'),softness:value('softness'),
+            color:value('color'),colorAlpha:value('colorAlpha')
+        });
+    }
+    function displaySmokeDissolveSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseSmokeDissolveOptions(options))){
+            const input=root?.querySelector('[data-smoke-dissolve-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshSmokeDissolveModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-smoke-dissolve');
+        root.hidden=elements.transitionModalEffect.value!=='smoke-dissolve';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displaySmokeDissolveSettings(root,target?.transitionParameters?.['smoke-dissolve']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3189,6 +3223,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'card-swipe':readCardSwipeSettings(document.getElementById('transition-modal-card-swipe'))}
                     :effectId==='camera-shake'
                     ?{...b.transitionParameters,'camera-shake':readCameraShakeSettings(document.getElementById('transition-modal-camera-shake'))}
+                    :effectId==='smoke-dissolve'
+                    ?{...b.transitionParameters,'smoke-dissolve':readSmokeDissolveSettings(document.getElementById('transition-modal-smoke-dissolve'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3197,7 +3233,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3246,6 +3282,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshVhsTrackingModalSettings({restoreValues:true});
         refreshCardSwipeModalSettings({restoreValues:true});
         refreshCameraShakeModalSettings({restoreValues:true});
+        refreshSmokeDissolveModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3301,10 +3338,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshGalleryModalSettings({restoreValues:true});
         refreshVhsTrackingModalSettings({restoreValues:true});
         refreshCardSwipeModalSettings({restoreValues:true});
-        refreshCameraShakeModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshCameraShakeModalSettings({restoreValues:true});
+        refreshSmokeDissolveModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-smoke-dissolve').querySelectorAll('[data-smoke-dissolve-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-smoke-dissolve-settings').querySelectorAll('[data-smoke-dissolve-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='smoke-dissolve'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readSmokeDissolveSettings(document.getElementById('video-smoke-dissolve-settings'));
+            const prior=normaliseSmokeDissolveOptions(active.transitionParameters?.['smoke-dissolve']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original SmokeDissolve GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'smoke-dissolve':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-camera-shake').querySelectorAll('[data-camera-shake-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-camera-shake-settings').querySelectorAll('[data-camera-shake-param]')
