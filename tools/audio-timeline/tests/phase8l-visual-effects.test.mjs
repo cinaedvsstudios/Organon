@@ -2,11 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
     ACTIVE_PAIR_EFFECTS,liquidSurfaceY,disintegrateFragmentProgress,
-    disintegrateFragmentOffset,lightRayFraction,pairedEffectProgress
+    disintegrateFragmentOffset,pairedEffectProgress
 } from '../js/paired-visual-effects.mjs';
 import { TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES } from '../js/transition-catalog.mjs';
 import { planPairedTransition,isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
+import {normaliseLightRaysOptions} from '../js/gl-transitions/LightRays.mjs';
 const selected=['liquid-fill','disintegrate','light-rays'];
 
 test('Phase 8L adds three chosen effects without losing any of the 41 originals',()=>{
@@ -57,22 +58,15 @@ test('Disintegrate has varied, deterministic shard departure and motion',()=>{
     }
     assert.ok(moving>15,'Disintegration must physically move shards, not just flip tiles');
 });
-test('Light rays widen independently across 16 angular sectors',()=>{
-    const fractions=Array.from({length:16},(_,i)=>lightRayFraction(.5,i,16));
-    assert.ok(new Set(fractions.map(x=>Math.round(x*100))).size>8);
-    for(let i=0;i<16;i++){
-        assert.equal(lightRayFraction(0,i,16),0);
-        assert.equal(lightRayFraction(1,i,16),1);
-        let last=0;
-        for(let k=0;k<=100;k++){
-            const f=lightRayFraction(k/100,i,16);
-            assert.ok(f>=last&&f<=1,'Each ray must widen monotonically');
-            assert.equal(f,lightRayFraction(k/100,i,16));
-            last=f;
-        }
-    }
-    assert.ok(fractions.some(f=>f>.7)&&fractions.some(f=>f<.4),
-        'The ray gaps must be uneven at the midpoint');
+test('Original LightRays normalizes seven optical uniforms without fake wedge geometry',()=>{
+ const native=normaliseLightRaysOptions({centerX:.35,centerY:.8,drift:.3,reach:.9,
+  threshold:.4,intensity:2.3,tint:'#ffaa44'});
+ assert.deepEqual(native,{centerX:.35,centerY:.8,drift:.3,reach:.9,threshold:.4,
+  intensity:2.3,tint:'#ffaa44'});
+ assert.deepEqual(normaliseLightRaysOptions({centerX:-1,centerY:3,drift:2,
+  reach:-1,threshold:2,intensity:9,tint:'invalid'}),{
+  centerX:0,centerY:1,drift:.5,reach:0,threshold:.8,intensity:4,tint:'#ffd18c'
+ });
 });
 test('Liquid, Disintegrate and Light rays preserve clips/audio and Undo/Redo',()=>{
     const a={id:'A',type:'video',start:1,clipDuration:5,order:2,laneId:'A',
