@@ -11,6 +11,7 @@ import { paintSnapshot } from './gl-transitions/Snapshot.mjs';
 import { paintColorPanelWipe } from './gl-transitions/ColorPanelWipe.mjs';
 import { paintGallery } from './gl-transitions/Gallery.mjs';
 import { paintVhsTracking } from './gl-transitions/VhsTracking.mjs';
+import { paintCardSwipe } from './gl-transitions/CardSwipe.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -561,6 +562,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintGallery(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='vhs-tracking')
         return paintVhsTracking(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='card-swipe')
+        return paintCardSwipe(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -1007,19 +1010,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const dx=crossWarpShift(progress,row,bands,width);
             context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
         }
-        context.restore();
-        return true;
-    }
-    if(id==='card-swipe'){
-        const dx=cardSwipeOffset(progress,width);
-        context.save();
-        // The shadow and thin card edge separate the incoming B frame from
-        // the outgoing A without altering either video source.
-        context.fillStyle='rgba(0,0,0,.6)';
-        context.fillRect(Math.max(0,dx-7),0,8,height);
-        context.drawImage(full,dx,0,width,height);
-        context.fillStyle='rgba(245,228,198,.95)';
-        context.fillRect(dx,0,Math.max(1,Math.round(width*.009)),height);
         context.restore();
         return true;
     }

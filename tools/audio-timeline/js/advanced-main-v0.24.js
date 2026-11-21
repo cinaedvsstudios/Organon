@@ -26,6 +26,7 @@ import { normaliseSnapshotOptions } from './gl-transitions/Snapshot.mjs';
 import { normaliseColorPanelWipeOptions } from './gl-transitions/ColorPanelWipe.mjs';
 import { normaliseGalleryOptions } from './gl-transitions/Gallery.mjs';
 import { normaliseVhsTrackingOptions } from './gl-transitions/VhsTracking.mjs';
+import { normaliseCardSwipeOptions } from './gl-transitions/CardSwipe.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1698,6 +1699,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             vhsTrackingInspector.hidden=!(paired&&track.transitionEffectId==='vhs-tracking');
             if(!vhsTrackingInspector.hidden)
                 displayVhsTrackingSettings(vhsTrackingInspector,track.transitionParameters?.['vhs-tracking']);
+            const cardSwipeInspector=document.getElementById('video-card-swipe-settings');
+            cardSwipeInspector.hidden=!(paired&&track.transitionEffectId==='card-swipe');
+            if(!cardSwipeInspector.hidden)
+                displayCardSwipeSettings(cardSwipeInspector,track.transitionParameters?.['card-swipe']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2025,6 +2030,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-vhs-tracking-settings');
             b.transitionParameters={...b.transitionParameters,
                 'vhs-tracking':readVhsTrackingSettings(panel)};
+        }
+        if(effectId==='card-swipe'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-card-swipe')
+                :document.getElementById('video-card-swipe-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'card-swipe':readCardSwipeSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3058,6 +3070,28 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayVhsTrackingSettings(root,target?.transitionParameters?.['vhs-tracking']);
         }
     }
+    function readCardSwipeSettings(root){
+        const value=name=>root?.querySelector('[data-card-swipe-param="'+name+'"]')?.value;
+        return normaliseCardSwipeOptions({
+            directionX:value('directionX'),directionY:value('directionY'),
+            rotation:value('rotation'),depth:value('depth'),
+            backColor:value('backColor'),backAlpha:value('backAlpha')
+        });
+    }
+    function displayCardSwipeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseCardSwipeOptions(options))){
+            const input=root?.querySelector('[data-card-swipe-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshCardSwipeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-card-swipe');
+        root.hidden=elements.transitionModalEffect.value!=='card-swipe';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayCardSwipeSettings(root,target?.transitionParameters?.['card-swipe']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3118,6 +3152,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,gallery:readGallerySettings(document.getElementById('transition-modal-gallery'))}
                     :effectId==='vhs-tracking'
                     ?{...b.transitionParameters,'vhs-tracking':readVhsTrackingSettings(document.getElementById('transition-modal-vhs-tracking'))}
+                    :effectId==='card-swipe'
+                    ?{...b.transitionParameters,'card-swipe':readCardSwipeSettings(document.getElementById('transition-modal-card-swipe'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3126,7 +3162,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3173,6 +3209,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshColorPanelWipeModalSettings({restoreValues:true});
         refreshGalleryModalSettings({restoreValues:true});
         refreshVhsTrackingModalSettings({restoreValues:true});
+        refreshCardSwipeModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3226,10 +3263,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSnapshotModalSettings({restoreValues:true});
         refreshColorPanelWipeModalSettings({restoreValues:true});
         refreshGalleryModalSettings({restoreValues:true});
-        refreshVhsTrackingModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshVhsTrackingModalSettings({restoreValues:true});
+        refreshCardSwipeModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-card-swipe').querySelectorAll('[data-card-swipe-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-card-swipe-settings').querySelectorAll('[data-card-swipe-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='card-swipe'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readCardSwipeSettings(document.getElementById('video-card-swipe-settings'));
+            const prior=normaliseCardSwipeOptions(active.transitionParameters?.['card-swipe']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original CardSwipe GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'card-swipe':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-vhs-tracking').querySelectorAll('[data-vhs-tracking-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-vhs-tracking-settings').querySelectorAll('[data-vhs-tracking-param]')
