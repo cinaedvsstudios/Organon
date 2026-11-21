@@ -177,8 +177,15 @@ try{
         'Cross hatch must show diagonal band geometry, not a spiral');
     assert.notEqual(film.fingerprint,block.fingerprint,'Film strip must differ from block cover');
     const card=result['card-swipe'],camera=result['camera-shake'],vhs=result['vhs-tracking'];
-    assert.ok(card.middle.red>400&&card.middle.blue>400,
-        'Card swipe should leave A on the left and slide an intact B card over the right');
+    // The original CardSwipe throws A around an offset pivot, so the cards
+    // do NOT necessarily occupy left/right halves at the midpoint. Validate
+    // A departing and the incoming B growing over the course of the sweep.
+    assert.ok(card.quarter.blue>100,
+        'Original CardSwipe should still show the departing A card early');
+    assert.ok(card.threeQuarter.red>200,
+        'Original CardSwipe should expose the growing incoming B card late');
+    assert.notEqual(card.quarter.fingerprint,card.threeQuarter.fingerprint,
+        'Original CardSwipe must animate the pivot and incoming depth');
     assert.notEqual(card.middle.fingerprint,result.fade.middle.fingerprint,
         'Card swipe must not look like a simple fade');
     assert.ok(camera.quarter.blue>900,
