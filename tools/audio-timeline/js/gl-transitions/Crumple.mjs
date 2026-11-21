@@ -171,7 +171,7 @@ vec4 transition(vec2 uv) {
   vec4 o = vec4(mix(col.rgb * col.a, ball.rgb, m), mix(col.a, 1.0, m));
   return o.a > 0.0 ? vec4(o.rgb / o.a, o.a) : vec4(0.0);
 }
-\`;
+`;
 export const CRUMPLE_DEFAULTS = Object.freeze({
     creases: 16, size: 0.2, directionX: 1, directionY: 0.4,
     paperColor: '#f5f2e8', paperAlpha: 1,
@@ -199,9 +199,9 @@ export function normaliseCrumpleOptions(options={}){
         shadowAlpha: bound(options.shadowAlpha,0,1,.45)
     };
 }
-const vertexSource=\`attribute vec2 position; varying vec2 uv;
-void main(){uv=(position+1.0)*0.5;gl_Position=vec4(position,0.0,1.0);}\`;
-const fragmentSource=\`precision highp float;
+const vertexSource=`attribute vec2 position; varying vec2 uv;
+void main(){uv=(position+1.0)*0.5;gl_Position=vec4(position,0.0,1.0);}`;
+const fragmentSource=`precision highp float;
 varying vec2 uv;
 uniform sampler2D fromTexture;
 uniform sampler2D toTexture;
@@ -209,8 +209,8 @@ uniform float progress;
 uniform float ratio;
 vec4 getFromColor(vec2 p){return texture2D(fromTexture,p);}
 vec4 getToColor(vec2 p){return texture2D(toTexture,p);}
-\${CRUMPLE_SOURCE}
-void main(){gl_FragColor=transition(uv);}\`;
+${CRUMPLE_SOURCE}
+void main(){gl_FragColor=transition(uv);}`;
 function compile(gl,type,source){
     const shader=gl.createShader(type);
     if(!shader)throw Error('Crumple failed to allocate WebGL shader');
