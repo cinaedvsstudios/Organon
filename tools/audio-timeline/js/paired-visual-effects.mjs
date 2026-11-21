@@ -13,6 +13,7 @@ import { paintGallery } from './gl-transitions/Gallery.mjs';
 import { paintVhsTracking } from './gl-transitions/VhsTracking.mjs';
 import { paintCardSwipe } from './gl-transitions/CardSwipe.mjs';
 import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
+import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -567,6 +568,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintCardSwipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='camera-shake')
         return paintCameraShake(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='smoke-dissolve')
+        return paintSmokeDissolve(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -809,29 +812,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             context.globalAlpha=alpha*glow*.48;
             context.fillStyle=gradient;
             context.fillRect(0,0,width,height);
-        }
-        context.restore();
-        return true;
-    }
-    if(id==='smoke-dissolve'){
-        context.save();
-        context.globalAlpha=alpha*progress;
-        renderContained(context,media,width,height);
-        const density=smokeDensity(progress);
-        if(density>0){
-            for(let i=0;i<18;i++){
-                const cloud=smokeCloud(progress,i,width,height);
-                const gradient=context.createRadialGradient(
-                    cloud.x,cloud.y,0,cloud.x,cloud.y,cloud.radius);
-                gradient.addColorStop(0,'rgba(222,227,237,.90)');
-                gradient.addColorStop(.36,'rgba(193,203,221,.45)');
-                gradient.addColorStop(.75,'rgba(159,170,195,.13)');
-                gradient.addColorStop(1,'rgba(159,170,195,0)');
-                context.globalAlpha=alpha*density*(.32+seededCell(i+407)*.2);
-                context.fillStyle=gradient;
-                context.fillRect(cloud.x-cloud.radius,cloud.y-cloud.radius,
-                    cloud.radius*2,cloud.radius*2);
-            }
         }
         context.restore();
         return true;
