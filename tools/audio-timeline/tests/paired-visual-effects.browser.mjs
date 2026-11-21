@@ -308,7 +308,7 @@ try{
     console.log('[MotoriClip 8L] New effect midpoint samples '+JSON.stringify({
         liquid:liquid.middle,disintegrate:disintegrate.middle,rays:rays.middle
     }));
-    for(const [name,frame] of [['liquid-fill',liquid],['disintegrate',disintegrate],['light-rays',rays]]){
+    for(const [name,frame] of [['liquid-fill',liquid],['disintegrate',disintegrate]]){
         assert.ok(frame.middle.red>200&&frame.middle.blue>200,
             name+' must display both Video A and Video B at midpoint');
         assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,
@@ -318,6 +318,14 @@ try{
         assert.ok(frame.finished.red>1300,
             name+' must resolve cleanly to incoming B after completion');
     }
+    // Real LightRays is a screened, highlight-driven light field across a short
+    // A/B switch, not red/blue radial sectors with unshaded source regions.
+    assert.equal(rays.middle.fingerprint,rays.repeat.fingerprint,
+        'Original light shafts must be deterministic under reverse scrubbing');
+    assert.notEqual(rays.middle.fingerprint,result.fade.middle.fingerprint,
+        'Original LightRays must differ from a flat crossfade');
+    assert.ok(rays.finished.red>1300,
+        'Original LightRays must finish on incoming B video');
     assert.deepEqual(liquid.middle.top,[0,0,255],
         'Liquid fill must retain outgoing blue Video A above the liquid surface');
     assert.ok(liquid.middle.mixed>10,'Liquid fill should draw a soft cyan moving crest');
@@ -329,7 +337,7 @@ try{
         'Disintegrate must not be another static random-square reveal');
     assert.notEqual(disintegrate.middle.fingerprint,result['block-cover'].middle.fingerprint,
         'Disintegrate must not just cover cells');
-    assert.ok(rays.middle.mixed>25,'Light rays must have warm highlights between sectors');
+    assert.ok(rays.middle.mixed>25,'LightRays must produce screened transitional light, not opaque radial wedges');
     assert.notEqual(rays.middle.fingerprint,result['rings-wipe'].middle.fingerprint,
         'Light rays must not be a concentric ring wipe');
     assert.notEqual(rays.middle.fingerprint,result['spiral-wipe'].middle.fingerprint,

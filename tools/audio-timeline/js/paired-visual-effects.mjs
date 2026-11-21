@@ -17,6 +17,7 @@ import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
+import { paintLightRays } from './gl-transitions/LightRays.mjs';
 import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
@@ -430,30 +431,6 @@ export function disintegrateFragmentOffset(progress,index,width,height) {
             Math.min(height*.15,95)*released)
     };
 }
-/** Rays are independent angular wedges, widening in a staggered sequence.
- * With all wedges fully open they cover the entire source frame.
- */
-export function lightRayFraction(progress,index,count=16){
-    const p=unit(progress),n=Math.max(1,Math.trunc(count)||16);
-    const i=Math.max(0,Math.min(n-1,Math.trunc(index)||0));
-    if(p===0||p===1)return p;
-    const delay=seededCell(i*37+13)*.36;
-    return unit((p-delay)/.58);
-}
-function traceLightRayMask(ctx,progress,width,height) {
-    const count=16,cx=width/2,cy=height/2;
-    const radius=Math.hypot(width,height);
-    ctx.beginPath();
-    for(let i=0;i<count;i++){
-        const fraction=lightRayFraction(progress,i,count);
-        if(fraction<=0)continue;
-        const from=-Math.PI/2+i*Math.PI*2/count;
-        const end=from+fraction*Math.PI*2/count;
-        ctx.moveTo(cx,cy);
-        ctx.arc(cx,cy,radius,from,end);
-        ctx.closePath();
-    }
-}
 /** Phase 8M: incoming B appears as a fixed-width glyph portrait before
  * resolving into unmodified footage. Only a tiny, resolution-independent
  * 32×18 sample is read; never read full-resolution pixels per frame.
@@ -576,6 +553,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
         return paintBokehDissolve(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='light-rays')
+        return paintLightRays(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -677,31 +656,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='light-rays'){
-        context.save();
-        traceLightRayMask(context,progress,width,height);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
-        // Separate warm beams suggest projected light, not just a radial wipe.
-        const cx=width/2,cy=height/2,radius=Math.hypot(width,height);
-        context.save();
-        context.lineWidth=Math.max(1,Math.min(width,height)*.027);
-        context.strokeStyle='#ffe5a3';
-        context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.43;
-        for(let i=0;i<16;i++){
-            const fraction=lightRayFraction(progress,i,16);
-            if(fraction<=0)continue;
-            const angle=-Math.PI/2+(i+fraction*.45)*Math.PI*2/16;
-            context.beginPath();
-            context.moveTo(cx,cy);
-            context.lineTo(cx+Math.cos(angle)*radius,cy+Math.sin(angle)*radius);
-            context.stroke();
-        }
-        context.restore();
-        return true;
-    }
-
     if(id==='aperture-wipe'||id==='ripple'){
         context.save();
         traceIris(context,id,progress,width,height);
