@@ -29,6 +29,7 @@ import { normaliseVhsTrackingOptions } from './gl-transitions/VhsTracking.mjs';
 import { normaliseCardSwipeOptions } from './gl-transitions/CardSwipe.mjs';
 import { normaliseCameraShakeOptions } from './gl-transitions/CameraShake.mjs';
 import { normaliseSmokeDissolveOptions } from './gl-transitions/SmokeDissolve.mjs';
+import { normaliseSplatterWipeOptions } from './gl-transitions/SplatterWipe.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1713,6 +1714,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             smokeDissolveInspector.hidden=!(paired&&track.transitionEffectId==='smoke-dissolve');
             if(!smokeDissolveInspector.hidden)
                 displaySmokeDissolveSettings(smokeDissolveInspector,track.transitionParameters?.['smoke-dissolve']);
+            const splatterWipeInspector=document.getElementById('video-splatter-wipe-settings');
+            splatterWipeInspector.hidden=!(paired&&track.transitionEffectId==='splatter-wipe');
+            if(!splatterWipeInspector.hidden)
+                displaySplatterWipeSettings(splatterWipeInspector,track.transitionParameters?.['splatter-wipe']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2061,6 +2066,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-smoke-dissolve-settings');
             b.transitionParameters={...b.transitionParameters,
                 'smoke-dissolve':readSmokeDissolveSettings(panel)};
+        }
+        if(effectId==='splatter-wipe'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-splatter-wipe')
+                :document.getElementById('video-splatter-wipe-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'splatter-wipe':readSplatterWipeSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3159,6 +3171,28 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displaySmokeDissolveSettings(root,target?.transitionParameters?.['smoke-dissolve']);
         }
     }
+    function readSplatterWipeSettings(root){
+        const value=name=>root?.querySelector('[data-splatter-wipe-param="'+name+'"]')?.value;
+        return normaliseSplatterWipeOptions({
+            splats:value('splats'),spikiness:value('spikiness'),
+            droplets:value('droplets'),drips:value('drips'),
+            rim:value('rim'),seed:value('seed')
+        });
+    }
+    function displaySplatterWipeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseSplatterWipeOptions(options))){
+            const input=root?.querySelector('[data-splatter-wipe-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshSplatterWipeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-splatter-wipe');
+        root.hidden=elements.transitionModalEffect.value!=='splatter-wipe';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displaySplatterWipeSettings(root,target?.transitionParameters?.['splatter-wipe']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3225,6 +3259,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'camera-shake':readCameraShakeSettings(document.getElementById('transition-modal-camera-shake'))}
                     :effectId==='smoke-dissolve'
                     ?{...b.transitionParameters,'smoke-dissolve':readSmokeDissolveSettings(document.getElementById('transition-modal-smoke-dissolve'))}
+                    :effectId==='splatter-wipe'
+                    ?{...b.transitionParameters,'splatter-wipe':readSplatterWipeSettings(document.getElementById('transition-modal-splatter-wipe'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3233,7 +3269,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3283,6 +3319,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCardSwipeModalSettings({restoreValues:true});
         refreshCameraShakeModalSettings({restoreValues:true});
         refreshSmokeDissolveModalSettings({restoreValues:true});
+        refreshSplatterWipeModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3339,10 +3376,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshVhsTrackingModalSettings({restoreValues:true});
         refreshCardSwipeModalSettings({restoreValues:true});
         refreshCameraShakeModalSettings({restoreValues:true});
-        refreshSmokeDissolveModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshSmokeDissolveModalSettings({restoreValues:true});
+        refreshSplatterWipeModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-splatter-wipe').querySelectorAll('[data-splatter-wipe-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-splatter-wipe-settings').querySelectorAll('[data-splatter-wipe-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='splatter-wipe'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readSplatterWipeSettings(document.getElementById('video-splatter-wipe-settings'));
+            const prior=normaliseSplatterWipeOptions(active.transitionParameters?.['splatter-wipe']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original SplatterWipe GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'splatter-wipe':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-smoke-dissolve').querySelectorAll('[data-smoke-dissolve-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-smoke-dissolve-settings').querySelectorAll('[data-smoke-dissolve-param]')
