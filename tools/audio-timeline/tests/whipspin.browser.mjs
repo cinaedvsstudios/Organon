@@ -175,16 +175,16 @@ void main(){gl_FragColor=transition(uv);}`);
    start:0,clipDuration:4,order:3,visible:true,opacity:1,blendMode:'source-over',
    media:makeSource('BG')};
   a.opacity=.5;b.opacity=.5;engine.tracks=[bg,a,b];
-  // Test during initial ink expansion so outgoing visibility affects output.
+  // Test during early angular motion so outgoing visibility affects the shader.
   const alpha=asImage(.18,opts[0]).hash;
   a.visible=false;
   const hidden=asImage(.18,opts[0]).hash;
-  const used=Boolean(engine.whipspinWebGL);
+  const used=Boolean(engine.whipSpinWebGL);
   engine.clearAll();
   return {samples,representative,used,
    stable:baseline.hash===rewound.hash,variation,chosen,alpha,hidden,aliasMatches,savedMigration,
-   cleanup:engine.whipspinWebGL===null
-    &&engine.whipspinFromScratch===null&&engine.whipspinToScratch===null,
+   cleanup:engine.whipSpinWebGL===null
+    &&engine.whipSpinFromScratch===null&&engine.whipSpinToScratch===null,
    renderErrors};
  });
  assert.equal(result.used,true,'Test MUST run real WhipSpin WebGL shader, not Canvas fallback');
