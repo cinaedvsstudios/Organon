@@ -25,6 +25,7 @@ import { normaliseRingsWipeOptions } from './gl-transitions/RingsWipe.mjs';
 import { normaliseSnapshotOptions } from './gl-transitions/Snapshot.mjs';
 import { normaliseColorPanelWipeOptions } from './gl-transitions/ColorPanelWipe.mjs';
 import { normaliseGalleryOptions } from './gl-transitions/Gallery.mjs';
+import { normaliseVhsTrackingOptions } from './gl-transitions/VhsTracking.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1693,6 +1694,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             galleryInspector.hidden=!(paired&&track.transitionEffectId==='gallery');
             if(!galleryInspector.hidden)
                 displayGallerySettings(galleryInspector,track.transitionParameters?.gallery);
+            const vhsTrackingInspector=document.getElementById('video-vhs-tracking-settings');
+            vhsTrackingInspector.hidden=!(paired&&track.transitionEffectId==='vhs-tracking');
+            if(!vhsTrackingInspector.hidden)
+                displayVhsTrackingSettings(vhsTrackingInspector,track.transitionParameters?.['vhs-tracking']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2013,6 +2018,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-gallery-settings');
             b.transitionParameters={...b.transitionParameters,
                 gallery:readGallerySettings(panel)};
+        }
+        if(effectId==='vhs-tracking'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-vhs-tracking')
+                :document.getElementById('video-vhs-tracking-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'vhs-tracking':readVhsTrackingSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3025,6 +3037,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayGallerySettings(root,target?.transitionParameters?.gallery);
         }
     }
+    function readVhsTrackingSettings(root){
+        const value=name=>root?.querySelector('[data-vhs-tracking-param="'+name+'"]')?.value;
+        return normaliseVhsTrackingOptions({
+            bands:value('bands'),noise:value('noise'),
+            bleed:value('bleed'),wobble:value('wobble')
+        });
+    }
+    function displayVhsTrackingSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseVhsTrackingOptions(options))){
+            const input=root?.querySelector('[data-vhs-tracking-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshVhsTrackingModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-vhs-tracking');
+        root.hidden=elements.transitionModalEffect.value!=='vhs-tracking';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayVhsTrackingSettings(root,target?.transitionParameters?.['vhs-tracking']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3083,6 +3116,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'color-panel-wipe':readColorPanelWipeSettings(document.getElementById('transition-modal-color-panel-wipe'))}
                     :effectId==='gallery'
                     ?{...b.transitionParameters,gallery:readGallerySettings(document.getElementById('transition-modal-gallery'))}
+                    :effectId==='vhs-tracking'
+                    ?{...b.transitionParameters,'vhs-tracking':readVhsTrackingSettings(document.getElementById('transition-modal-vhs-tracking'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3091,7 +3126,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3137,6 +3172,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSnapshotModalSettings({restoreValues:true});
         refreshColorPanelWipeModalSettings({restoreValues:true});
         refreshGalleryModalSettings({restoreValues:true});
+        refreshVhsTrackingModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3189,10 +3225,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshRingsWipeModalSettings({restoreValues:true});
         refreshSnapshotModalSettings({restoreValues:true});
         refreshColorPanelWipeModalSettings({restoreValues:true});
-        refreshGalleryModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshGalleryModalSettings({restoreValues:true});
+        refreshVhsTrackingModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-vhs-tracking').querySelectorAll('[data-vhs-tracking-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-vhs-tracking-settings').querySelectorAll('[data-vhs-tracking-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='vhs-tracking'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readVhsTrackingSettings(document.getElementById('video-vhs-tracking-settings'));
+            const prior=normaliseVhsTrackingOptions(active.transitionParameters?.['vhs-tracking']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original VhsTracking GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'vhs-tracking':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-gallery').querySelectorAll('[data-gallery-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-gallery-settings').querySelectorAll('[data-gallery-param]')
