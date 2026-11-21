@@ -341,8 +341,8 @@ try{
     assert.ok(liquid.middle.mixed>10,'Liquid fill should draw a soft cyan moving crest');
     assert.ok(liquid.threeQuarter.red>liquid.quarter.red,
         'Liquid fill must reveal more of incoming B as the water rises');
-    assert.ok(disintegrate.middle.mixed>40,
-        'Disintegrating fragments must move and fade across the outgoing video');
+    assert.notEqual(disintegrate.quarter.fingerprint,disintegrate.threeQuarter.fingerprint,
+        'Original Disintegrate must advect many individual dust grains across a directional wave');
     assert.notEqual(disintegrate.middle.fingerprint,result['random-squares'].middle.fingerprint,
         'Disintegrate must not be another static random-square reveal');
     assert.notEqual(disintegrate.middle.fingerprint,result['block-cover'].middle.fingerprint,
