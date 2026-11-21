@@ -132,20 +132,32 @@ try{
     const spiral=result['spiral-wipe'].middle;
     const rings=result['rings-wipe'].middle;
     const panels=result['color-panel-wipe'].middle;
-    for(const [name,frame] of [['spiral-wipe',spiral],['rings-wipe',rings],['color-panel-wipe',panels]]){
+    for(const [name,frame] of [['spiral-wipe',spiral],['rings-wipe',rings]]){
         assert.ok(frame.red>120&&frame.blue>120,name+' should reveal parts of B over A halfway through');
         assert.equal(frame.fingerprint,result[name].repeat.fingerprint,name+' must rewind deterministically');
         assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
             name+' must look different from a plain fade');
     }
+    // Original ColorPanelWipe covers the screen with solid colored panels
+    // near the midpoint; it is intentionally NOT a simultaneous red/blue
+    // mosaic. The held coverage masks the cut to incoming B.
+    assert.equal(panels.fingerprint,result['color-panel-wipe'].repeat.fingerprint,
+        'Original colored panels must scrub deterministically');
+    assert.notEqual(panels.fingerprint,result.fade.middle.fingerprint,
+        'Original colored panels must not be a disguised crossfade');
+    assert.notEqual(result['color-panel-wipe'].quarter.fingerprint,
+        result['color-panel-wipe'].threeQuarter.fingerprint,
+        'Original color panels must sweep in and then sweep away');
     assert.notEqual(spiral.fingerprint,result['aperture-wipe'].middle.fingerprint,
         'Spiral angular sweep must differ visually from circular iris');
     assert.notEqual(rings.fingerprint,result['aperture-wipe'].middle.fingerprint,
         'Rings must produce multiple annuli, not a plain expanding iris');
     assert.notEqual(spiral.fingerprint,rings.fingerprint,'Spiral and Rings wipes should be distinct');
     assert.deepEqual(rings.center,[255,0,0],'Concentric rings must reveal the inner source at midpoint');
-    assert.ok(panels.mixed>60,'Color-panel wipe should display tinted panels during transition');
-    assert.ok(panels.red>200&&panels.blue>200,'Panel wipe must preserve clear old/new video colors');
+    assert.ok(panels.mixed>60,'Original ColorPanelWipe must display solid tinted panels mid-transition');
+    assert.ok(result['color-panel-wipe'].before.blue>200
+        &&result['color-panel-wipe'].finished.red>200,
+        'Original panels must begin on outgoing A and end on incoming B');
     const block=result['block-cover'].middle;
     const hatch=result['cross-hatch'].middle;
     const film=result['film-strip'].middle;

@@ -640,6 +640,22 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-color-panel-wipe-settings" class="spiral-glsl-settings color-panel-wipe-glsl-settings" hidden>
+                            <legend>ColorPanelWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Sweep direction X<input type="number" min="-2" max="2" step=".1" value="1" data-color-panel-wipe-param="directionX"></label>
+                                <label>Sweep direction Y<input type="number" min="-2" max="2" step=".1" value="0" data-color-panel-wipe-param="directionY"></label>
+                                <label>Panel count<input type="number" min="1" max="3" step="1" value="3" data-color-panel-wipe-param="panels"></label>
+                                <label>Panel stagger<input type="range" min="0" max="1" step=".05" value=".35" data-color-panel-wipe-param="stagger"></label>
+                                <label>Panel-edge skew<input type="range" min="-1" max="1" step=".05" value=".25" data-color-panel-wipe-param="skew"></label>
+                                <label>Panel 1 colour<input type="color" value="#fac238" data-color-panel-wipe-param="color1"></label>
+                                <label>Panel 1 opacity<input type="range" min="0" max="1" step=".05" value="1" data-color-panel-wipe-param="alpha1"></label>
+                                <label>Panel 2 colour<input type="color" value="#ed545c" data-color-panel-wipe-param="color2"></label>
+                                <label>Panel 2 opacity<input type="range" min="0" max="1" step=".05" value="1" data-color-panel-wipe-param="alpha2"></label>
+                                <label>Panel 3 colour<input type="color" value="#29336b" data-color-panel-wipe-param="color3"></label>
+                                <label>Panel 3 opacity<input type="range" min="0" max="1" step=".05" value="1" data-color-panel-wipe-param="alpha3"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-snapshot-settings" class="spiral-glsl-settings snapshot-glsl-settings" hidden>
                             <legend>Snapshot · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1204,6 +1220,22 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-color-panel-wipe" class="spiral-glsl-settings color-panel-wipe-glsl-settings" hidden>
+                            <legend>ColorPanelWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Sweep direction X<input type="number" min="-2" max="2" step=".1" value="1" data-color-panel-wipe-param="directionX"></label>
+                                <label>Sweep direction Y<input type="number" min="-2" max="2" step=".1" value="0" data-color-panel-wipe-param="directionY"></label>
+                                <label>Panel count<input type="number" min="1" max="3" step="1" value="3" data-color-panel-wipe-param="panels"></label>
+                                <label>Panel stagger<input type="range" min="0" max="1" step=".05" value=".35" data-color-panel-wipe-param="stagger"></label>
+                                <label>Panel-edge skew<input type="range" min="-1" max="1" step=".05" value=".25" data-color-panel-wipe-param="skew"></label>
+                                <label>Panel 1 colour<input type="color" value="#fac238" data-color-panel-wipe-param="color1"></label>
+                                <label>Panel 1 opacity<input type="range" min="0" max="1" step=".05" value="1" data-color-panel-wipe-param="alpha1"></label>
+                                <label>Panel 2 colour<input type="color" value="#ed545c" data-color-panel-wipe-param="color2"></label>
+                                <label>Panel 2 opacity<input type="range" min="0" max="1" step=".05" value="1" data-color-panel-wipe-param="alpha2"></label>
+                                <label>Panel 3 colour<input type="color" value="#29336b" data-color-panel-wipe-param="color3"></label>
+                                <label>Panel 3 opacity<input type="range" min="0" max="1" step=".05" value="1" data-color-panel-wipe-param="alpha3"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-snapshot" class="spiral-glsl-settings snapshot-glsl-settings" hidden>
                             <legend>Snapshot · Original GL shader</legend>
                             <div class="spiral-settings-grid">
