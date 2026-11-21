@@ -640,6 +640,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-vhs-tracking-settings" class="spiral-glsl-settings vhs-tracking-glsl-settings" hidden>
+                            <legend>VhsTracking · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Rolling tracking bands<input type="number" min="1" max="4" step="1" value="3" data-vhs-tracking-param="bands"></label>
+                                <label>White snow / tearing<input type="range" min="0" max="1" step=".05" value=".6" data-vhs-tracking-param="noise"></label>
+                                <label>Rightward colour bleed<input type="range" min="0" max="1" step=".05" value=".5" data-vhs-tracking-param="bleed"></label>
+                                <label>Horizontal line wobble<input type="range" min="0" max="1" step=".05" value=".5" data-vhs-tracking-param="wobble"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-gallery-settings" class="spiral-glsl-settings gallery-glsl-settings" hidden>
                             <legend>Gallery · Original 3D GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1232,6 +1241,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-vhs-tracking" class="spiral-glsl-settings vhs-tracking-glsl-settings" hidden>
+                            <legend>VhsTracking · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Rolling tracking bands<input type="number" min="1" max="4" step="1" value="3" data-vhs-tracking-param="bands"></label>
+                                <label>White snow / tearing<input type="range" min="0" max="1" step=".05" value=".6" data-vhs-tracking-param="noise"></label>
+                                <label>Rightward colour bleed<input type="range" min="0" max="1" step=".05" value=".5" data-vhs-tracking-param="bleed"></label>
+                                <label>Horizontal line wobble<input type="range" min="0" max="1" step=".05" value=".5" data-vhs-tracking-param="wobble"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-gallery" class="spiral-glsl-settings gallery-glsl-settings" hidden>
                             <legend>Gallery · Original 3D GL shader</legend>
                             <div class="spiral-settings-grid">
