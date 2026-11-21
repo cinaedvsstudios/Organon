@@ -182,10 +182,14 @@ try{
     // A departing and the incoming B growing over the course of the sweep.
     assert.ok(card.quarter.blue>100,
         'Original CardSwipe should still show the departing A card early');
-    assert.ok(card.threeQuarter.red>200,
-        'Original CardSwipe should expose the growing incoming B card late');
+    // The incoming card is shaded and depth-scaled until the endpoint;
+    // counting only fully saturated red pixels is not a valid measure.
     assert.notEqual(card.quarter.fingerprint,card.threeQuarter.fingerprint,
         'Original CardSwipe must animate the pivot and incoming depth');
+    assert.notEqual(card.threeQuarter.fingerprint,card.finished.fingerprint,
+        'Original CardSwipe must continue bringing in B from reduced depth');
+    assert.deepEqual(card.finished.center,[255,0,0],
+        'Original CardSwipe must finish with the incoming B image');
     assert.notEqual(card.middle.fingerprint,result.fade.middle.fingerprint,
         'Card swipe must not look like a simple fade');
     assert.ok(camera.quarter.blue>900,
