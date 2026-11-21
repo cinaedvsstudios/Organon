@@ -640,6 +640,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-block-cover-settings" class="spiral-glsl-settings block-cover-glsl-settings" hidden>
+                            <legend>BlockCover · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Blocks across long edge<input type="number" min="1" max="40" step="1" value="16" data-block-cover-param="blocks"></label>
+                                <label>Cover block colour<input type="color" value="#f25242" data-block-cover-param="color"></label>
+                                <label>Cover block opacity<input type="range" min="0" max="1" step=".05" value="1" data-block-cover-param="colorAlpha"></label>
+                                <label>Block pop overshoot<input type="range" min="0" max="1" step=".05" value=".5" data-block-cover-param="pop"></label>
+                                <label>Block edge softness<input type="range" min="0" max=".5" step=".01" value=".03" data-block-cover-param="smoothness"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-light-rays-settings" class="spiral-glsl-settings light-rays-glsl-settings" hidden>
                             <legend>LightRays · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1314,6 +1324,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-block-cover" class="spiral-glsl-settings block-cover-glsl-settings" hidden>
+                            <legend>BlockCover · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Blocks across long edge<input type="number" min="1" max="40" step="1" value="16" data-block-cover-param="blocks"></label>
+                                <label>Cover block colour<input type="color" value="#f25242" data-block-cover-param="color"></label>
+                                <label>Cover block opacity<input type="range" min="0" max="1" step=".05" value="1" data-block-cover-param="colorAlpha"></label>
+                                <label>Block pop overshoot<input type="range" min="0" max="1" step=".05" value=".5" data-block-cover-param="pop"></label>
+                                <label>Block edge softness<input type="range" min="0" max=".5" step=".01" value=".03" data-block-cover-param="smoothness"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-light-rays" class="spiral-glsl-settings light-rays-glsl-settings" hidden>
                             <legend>LightRays · Original GL shader</legend>
                             <div class="spiral-settings-grid">
