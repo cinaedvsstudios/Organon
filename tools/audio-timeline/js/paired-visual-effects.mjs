@@ -8,6 +8,7 @@ import { paintHeatHaze } from './gl-transitions/HeatHaze.mjs';
 import { paintSphere } from './gl-transitions/Sphere.mjs';
 import { paintRingsWipe } from './gl-transitions/RingsWipe.mjs';
 import { paintSnapshot } from './gl-transitions/Snapshot.mjs';
+import { paintColorPanelWipe } from './gl-transitions/ColorPanelWipe.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -552,6 +553,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintRingsWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='snapshot')
         return paintSnapshot(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='color-panel-wipe')
+        return paintColorPanelWipe(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -1123,32 +1126,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='color-panel-wipe'){
-        // Six tinted panels sweep over A before revealing their portion of B.
-        // Each panel is a bounded draw, with no new full-resolution textures.
-        const colors=['#9c733a','#284f9e','#6a377c','#aa8647','#30577c','#855e43'];
-        const count=colors.length;
-        context.save();
-        for(let i=0;i<count;i++){
-            const x=Math.floor(i*width/count);
-            const edge=i===count-1?width:Math.floor((i+1)*width/count);
-            const panelWidth=edge-x;
-            const phase=panelProgress(progress,i,count);
-            if(phase<=0)continue;
-            const shown=Math.min(panelWidth,Math.ceil(2*phase*panelWidth));
-            context.fillStyle=colors[i];
-            if(phase<.5){
-                context.fillRect(x,0,shown,height);
-            }else{
-                context.fillRect(x,0,panelWidth,height);
-                const reveal=Math.min(panelWidth,Math.ceil((phase-.5)*2*panelWidth));
-                if(reveal>0)context.drawImage(full,x,0,reveal,height,x,0,reveal,height);
-            }
-        }
-        context.restore();
-        return true;
-    }
-
     if(id==='random-squares'){
         // Whole-image tile reveal: 112 cells per frame at most. Each tile
         // contributes its *full* opacity, so there is no dark crossfade.
