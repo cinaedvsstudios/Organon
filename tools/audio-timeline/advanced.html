@@ -640,6 +640,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-film-strip-settings" class="spiral-glsl-settings film-strip-glsl-settings" hidden>
+                            <legend>FilmStrip · Original projector gate GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Frames slipping past<input type="number" min="1" max="6" step="1" value="2" data-film-strip-param="frames"></label>
+                                <label>Picture shrink during slip<input type="range" min="0" max=".4" step=".025" value=".2" data-film-strip-param="shrink"></label>
+                                <label>Projector motion blur<input type="range" min="0" max="1" step=".05" value=".5" data-film-strip-param="blur"></label>
+                                <label>Film weave and jitter<input type="range" min="0" max="1" step=".05" value=".5" data-film-strip-param="weave"></label>
+                                <label>Film gate colour<input type="color" value="#0f0d0d" data-film-strip-param="filmColor"></label>
+                                <label>Film gate opacity<input type="range" min="0" max="1" step=".05" value="1" data-film-strip-param="filmAlpha"></label>
+                                <label>Sprocket hole light colour<input type="color" value="#f5edda" data-film-strip-param="holeColor"></label>
+                                <label>Sprocket hole light opacity<input type="range" min="0" max="1" step=".05" value="1" data-film-strip-param="holeAlpha"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-ascii-settings" class="spiral-glsl-settings ascii-glsl-settings" hidden>
                             <legend>Ascii · Original GL text shader</legend>
                             <div class="spiral-settings-grid">
@@ -1344,6 +1357,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-film-strip" class="spiral-glsl-settings film-strip-glsl-settings" hidden>
+                            <legend>FilmStrip · Original projector gate GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Frames slipping past<input type="number" min="1" max="6" step="1" value="2" data-film-strip-param="frames"></label>
+                                <label>Picture shrink during slip<input type="range" min="0" max=".4" step=".025" value=".2" data-film-strip-param="shrink"></label>
+                                <label>Projector motion blur<input type="range" min="0" max="1" step=".05" value=".5" data-film-strip-param="blur"></label>
+                                <label>Film weave and jitter<input type="range" min="0" max="1" step=".05" value=".5" data-film-strip-param="weave"></label>
+                                <label>Film gate colour<input type="color" value="#0f0d0d" data-film-strip-param="filmColor"></label>
+                                <label>Film gate opacity<input type="range" min="0" max="1" step=".05" value="1" data-film-strip-param="filmAlpha"></label>
+                                <label>Sprocket hole light colour<input type="color" value="#f5edda" data-film-strip-param="holeColor"></label>
+                                <label>Sprocket hole light opacity<input type="range" min="0" max="1" step=".05" value="1" data-film-strip-param="holeAlpha"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-ascii" class="spiral-glsl-settings ascii-glsl-settings" hidden>
                             <legend>Ascii · Original GL text shader</legend>
                             <div class="spiral-settings-grid">
