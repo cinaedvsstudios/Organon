@@ -713,6 +713,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-ink-bleed-settings" class="spiral-glsl-settings ink-bleed-glsl-settings" hidden>
+                            <legend>InkBleed · Original ink-in-water GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Ink droplet count<input type="number" min="1" max="8" step="1" value="4" data-ink-bleed-param="drops"></label>
+                                <label>Curling tendril reach<input type="range" min="0" max="1" step=".05" value=".7" data-ink-bleed-param="tendrils"></label>
+                                <label>Dark ink edge rim<input type="range" min="0" max="1" step=".05" value=".5" data-ink-bleed-param="rim"></label>
+                                <label>Droplet positions / noise seed<input type="number" min="-100" max="100" step="1" value="3" data-ink-bleed-param="seed"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-splatter-wipe-settings" class="spiral-glsl-settings splatter-wipe-glsl-settings" hidden>
                             <legend>SplatterWipe · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1428,6 +1437,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Highlight glow threshold<input type="range" min="0" max="1" step=".05" value=".6" data-bloom-dissolve-param="threshold"></label>
                                 <label>Bloom light intensity<input type="range" min="0" max="4" step=".1" value="1.5" data-bloom-dissolve-param="intensity"></label>
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-ink-bleed" class="spiral-glsl-settings ink-bleed-glsl-settings" hidden>
+                            <legend>InkBleed · Original ink-in-water GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Ink droplet count<input type="number" min="1" max="8" step="1" value="4" data-ink-bleed-param="drops"></label>
+                                <label>Curling tendril reach<input type="range" min="0" max="1" step=".05" value=".7" data-ink-bleed-param="tendrils"></label>
+                                <label>Dark ink edge rim<input type="range" min="0" max="1" step=".05" value=".5" data-ink-bleed-param="rim"></label>
+                                <label>Droplet positions / noise seed<input type="number" min="-100" max="100" step="1" value="3" data-ink-bleed-param="seed"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-splatter-wipe" class="spiral-glsl-settings splatter-wipe-glsl-settings" hidden>
