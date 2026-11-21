@@ -431,30 +431,6 @@ export function disintegrateFragmentOffset(progress,index,width,height) {
             Math.min(height*.15,95)*released)
     };
 }
-/** Rays are independent angular wedges, widening in a staggered sequence.
- * With all wedges fully open they cover the entire source frame.
- */
-export function lightRayFraction(progress,index,count=16){
-    const p=unit(progress),n=Math.max(1,Math.trunc(count)||16);
-    const i=Math.max(0,Math.min(n-1,Math.trunc(index)||0));
-    if(p===0||p===1)return p;
-    const delay=seededCell(i*37+13)*.36;
-    return unit((p-delay)/.58);
-}
-function traceLightRayMask(ctx,progress,width,height) {
-    const count=16,cx=width/2,cy=height/2;
-    const radius=Math.hypot(width,height);
-    ctx.beginPath();
-    for(let i=0;i<count;i++){
-        const fraction=lightRayFraction(progress,i,count);
-        if(fraction<=0)continue;
-        const from=-Math.PI/2+i*Math.PI*2/count;
-        const end=from+fraction*Math.PI*2/count;
-        ctx.moveTo(cx,cy);
-        ctx.arc(cx,cy,radius,from,end);
-        ctx.closePath();
-    }
-}
 /** Phase 8M: incoming B appears as a fixed-width glyph portrait before
  * resolving into unmodified footage. Only a tiny, resolution-independent
  * 32×18 sample is read; never read full-resolution pixels per frame.
