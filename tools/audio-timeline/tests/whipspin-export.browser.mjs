@@ -100,7 +100,7 @@ try{
    frames[key]=whipspin();
    if(key==='0.8')screenshots[key]=output.toDataURL('image/png');
   }
-  const usingShader=Boolean(engine.whipspinWebGL);
+  const usingShader=Boolean(engine.whipSpinWebGL);
   let downloaded=false;
   const exporter=new AdvancedOfflineExporter({engine,onProgress(){},onState(){},
    onDownload({blob,extension}){
