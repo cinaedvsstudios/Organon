@@ -17,6 +17,7 @@ import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 import { paintInkBleed } from './gl-transitions/InkBleed.mjs';
 import { paintRefraction } from './gl-transitions/Refraction.mjs';
+import { paintWhipSpin } from './gl-transitions/WhipSpin.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -32,7 +33,7 @@ import { normalizeTransitionEffectId } from './transition-catalog.mjs';
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(normalizeTransitionEffectId(id));
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -527,6 +528,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintInkBleed(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='refraction')
         return paintRefraction(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='whipspin')
+        return paintWhipSpin(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -675,17 +678,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             context.stroke();
             context.restore();
         }
-        return true;
-    }
-    if(id==='spin'){
-        context.save();
-        context.translate(width/2,height/2);
-        context.rotate(spinAngle(progress));
-        const scale=spinScale(progress);
-        context.scale(scale,scale);
-        context.translate(-width/2,-height/2);
-        renderContained(context,media,width,height);
-        context.restore();
         return true;
     }
     if(id==='pixelize'){
