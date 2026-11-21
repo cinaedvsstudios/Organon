@@ -9,6 +9,7 @@ import { paintSphere } from './gl-transitions/Sphere.mjs';
 import { paintRingsWipe } from './gl-transitions/RingsWipe.mjs';
 import { paintSnapshot } from './gl-transitions/Snapshot.mjs';
 import { paintColorPanelWipe } from './gl-transitions/ColorPanelWipe.mjs';
+import { paintGallery } from './gl-transitions/Gallery.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -555,33 +556,20 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSnapshot(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='color-panel-wipe')
         return paintColorPanelWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='gallery')
+        return paintGallery(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
 
 
-    if(id==='gallery'||id==='brokey-dissolve'){
+    if(id==='brokey-dissolve'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fc=full.getContext('2d');
         fc.clearRect(0,0,width,height);
         renderContained(fc,media,width,height);
         context.save();
-        if(id==='gallery'){
-            const count=6;
-            for(let i=0;i<count;i++){
-                const p=galleryTileProgress(progress,i,count);
-                if(p<=0)continue;
-                const x=Math.floor(i*width/count),x1=Math.ceil((i+1)*width/count);
-                const w=x1-x;
-                context.save();
-                context.translate(x+w/2,height/2);
-                context.rotate((1-p)*(i%2?-.22:.22));
-                context.scale(Math.max(.01,p),Math.max(.01,p));
-                context.globalAlpha=alpha*p;
-                context.drawImage(full,x,0,w,height,-w/2,-height/2,w,height);
-                context.restore();
-            }
-        }else{
+        {
             const cols=14,rows=9;
             for(let i=0;i<cols*rows;i++){
                 const p=brokeyFragment(progress,i);
