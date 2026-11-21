@@ -257,8 +257,12 @@ try{
     assert.notEqual(cell.middle.fingerprint,result['ink-bleed'].middle.fingerprint,
         'Cell dissolve must differ from ink bleed');
     assert.ok(bloom.middle.mixed>500,'Bloom dissolve must blend the two source videos');
-    assert.ok(bloom.middle.center[1]>10,
-        'Bloom dissolve must introduce white glow at the center rather than a plain fade');
+    // The authentic shader amplifies actual source highlights, not a fixed
+    // white radial flash. With red B and blue A it brightens red/blue into
+    // magenta without inventing green light that the sources do not contain.
+    assert.ok(bloom.middle.center[0]>result.fade.middle.center[0]+10
+        &&bloom.middle.center[2]>result.fade.middle.center[2]+10,
+        'Original BloomDissolve must amplify both source highlight channels above a plain fade');
     assert.notEqual(bloom.middle.fingerprint,result.fade.middle.fingerprint,
         'Bloom dissolve must visibly differ from a plain fade');
     assert.notEqual(bloom.middle.fingerprint,cell.middle.fingerprint,
