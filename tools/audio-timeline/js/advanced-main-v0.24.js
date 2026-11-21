@@ -22,6 +22,7 @@ import { normaliseLiquidFillOptions } from './gl-transitions/LiquidFill.mjs';
 import { normaliseHeatHazeOptions } from './gl-transitions/HeatHaze.mjs';
 import { normaliseSphereOptions } from './gl-transitions/Sphere.mjs';
 import { normaliseRingsWipeOptions } from './gl-transitions/RingsWipe.mjs';
+import { normaliseSnapshotOptions } from './gl-transitions/Snapshot.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1678,6 +1679,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             ringsWipeInspector.hidden=!(paired&&track.transitionEffectId==='rings-wipe');
             if(!ringsWipeInspector.hidden)
                 displayRingsWipeSettings(ringsWipeInspector,track.transitionParameters?.['rings-wipe']);
+            const snapshotInspector=document.getElementById('video-snapshot-settings');
+            snapshotInspector.hidden=!(paired&&track.transitionEffectId==='snapshot');
+            if(!snapshotInspector.hidden)
+                displaySnapshotSettings(snapshotInspector,track.transitionParameters?.snapshot);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1978,6 +1983,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-rings-wipe-settings');
             b.transitionParameters={...b.transitionParameters,
                 'rings-wipe':readRingsWipeSettings(panel)};
+        }
+        if(effectId==='snapshot'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-snapshot')
+                :document.getElementById('video-snapshot-settings');
+            b.transitionParameters={...b.transitionParameters,snapshot:readSnapshotSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2922,6 +2933,28 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayRingsWipeSettings(root,target?.transitionParameters?.['rings-wipe']);
         }
     }
+    function readSnapshotSettings(root){
+        const value=name=>root?.querySelector('[data-snapshot-param="'+name+'"]')?.value;
+        return normaliseSnapshotOptions({
+            tilt:value('tilt'),border:value('border'),flash:value('flash'),
+            shadow:value('shadow'),borderColor:value('borderColor'),
+            borderAlpha:value('borderAlpha')
+        });
+    }
+    function displaySnapshotSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseSnapshotOptions(options))){
+            const input=root?.querySelector('[data-snapshot-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshSnapshotModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-snapshot');
+        root.hidden=elements.transitionModalEffect.value!=='snapshot';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displaySnapshotSettings(root,target?.transitionParameters?.snapshot);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2974,6 +3007,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,sphere:readSphereSettings(document.getElementById('transition-modal-sphere'))}
                     :effectId==='rings-wipe'
                     ?{...b.transitionParameters,'rings-wipe':readRingsWipeSettings(document.getElementById('transition-modal-rings-wipe'))}
+                    :effectId==='snapshot'
+                    ?{...b.transitionParameters,snapshot:readSnapshotSettings(document.getElementById('transition-modal-snapshot'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2982,7 +3017,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3025,6 +3060,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshHeatHazeModalSettings({restoreValues:true});
         refreshSphereModalSettings({restoreValues:true});
         refreshRingsWipeModalSettings({restoreValues:true});
+        refreshSnapshotModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3074,10 +3110,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshLiquidFillModalSettings({restoreValues:true});
         refreshHeatHazeModalSettings({restoreValues:true});
         refreshSphereModalSettings({restoreValues:true});
-        refreshRingsWipeModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshRingsWipeModalSettings({restoreValues:true});
+        refreshSnapshotModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-snapshot').querySelectorAll('[data-snapshot-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-snapshot-settings').querySelectorAll('[data-snapshot-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='snapshot'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readSnapshotSettings(document.getElementById('video-snapshot-settings'));
+            const prior=normaliseSnapshotOptions(active.transitionParameters?.snapshot);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Snapshot GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,snapshot:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-rings-wipe').querySelectorAll('[data-rings-wipe-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-rings-wipe-settings').querySelectorAll('[data-rings-wipe-param]')
