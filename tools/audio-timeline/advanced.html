@@ -640,6 +640,20 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-rings-wipe-settings" class="spiral-glsl-settings rings-wipe-glsl-settings" hidden>
+                            <legend>RingsWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Number of rings<input type="number" min="1" max="20" step="1" value="6" data-rings-wipe-param="count"></label>
+                                <label>Center X<input type="number" min="0" max="1" step=".05" value=".5" data-rings-wipe-param="centerX"></label>
+                                <label>Center Y<input type="number" min="0" max="1" step=".05" value=".5" data-rings-wipe-param="centerY"></label>
+                                <label>Start stagger<input type="range" min="0" max="1" step=".05" value=".5" data-rings-wipe-param="stagger"></label>
+                                <label>Alternate radial-fill mode<input type="checkbox" data-rings-wipe-param="radial"></label>
+                                <label>Border width<input type="range" min="0" max=".05" step=".001" value=".008" data-rings-wipe-param="borderWidth"></label>
+                                <label>Border colour<input type="color" value="#ffffff" data-rings-wipe-param="borderColor"></label>
+                                <label>Border opacity<input type="range" min="0" max="1" step=".05" value="1" data-rings-wipe-param="borderAlpha"></label>
+                                <label>Edge softness<input type="range" min="0" max=".1" step=".002" value=".004" data-rings-wipe-param="smoothness"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-sphere-settings" class="spiral-glsl-settings sphere-glsl-settings" hidden>
                             <legend>Sphere · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1179,6 +1193,20 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-rings-wipe" class="spiral-glsl-settings rings-wipe-glsl-settings" hidden>
+                            <legend>RingsWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Number of rings<input type="number" min="1" max="20" step="1" value="6" data-rings-wipe-param="count"></label>
+                                <label>Center X<input type="number" min="0" max="1" step=".05" value=".5" data-rings-wipe-param="centerX"></label>
+                                <label>Center Y<input type="number" min="0" max="1" step=".05" value=".5" data-rings-wipe-param="centerY"></label>
+                                <label>Start stagger<input type="range" min="0" max="1" step=".05" value=".5" data-rings-wipe-param="stagger"></label>
+                                <label>Alternate radial-fill mode<input type="checkbox" data-rings-wipe-param="radial"></label>
+                                <label>Border width<input type="range" min="0" max=".05" step=".001" value=".008" data-rings-wipe-param="borderWidth"></label>
+                                <label>Border colour<input type="color" value="#ffffff" data-rings-wipe-param="borderColor"></label>
+                                <label>Border opacity<input type="range" min="0" max="1" step=".05" value="1" data-rings-wipe-param="borderAlpha"></label>
+                                <label>Edge softness<input type="range" min="0" max=".1" step=".002" value=".004" data-rings-wipe-param="smoothness"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-sphere" class="spiral-glsl-settings sphere-glsl-settings" hidden>
                             <legend>Sphere · Original GL shader</legend>
                             <div class="spiral-settings-grid">
