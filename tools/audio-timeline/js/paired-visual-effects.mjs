@@ -18,6 +18,7 @@ import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 import { paintInkBleed } from './gl-transitions/InkBleed.mjs';
 import { paintRefraction } from './gl-transitions/Refraction.mjs';
 import { paintWhipSpin } from './gl-transitions/WhipSpin.mjs';
+import { paintPaperTear } from './gl-transitions/PaperTear.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -530,6 +531,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintRefraction(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='whipspin')
         return paintWhipSpin(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='paper-tear')
+        return paintPaperTear(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -657,27 +660,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.clip();
         renderContained(context,media,width,height);
         context.restore();
-        return true;
-    }
-    if(id==='paper-tear'){
-        context.save();
-        tracePaperTear(context,progress,width,height);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
-        if(id==='paper-tear'){
-            // Thin paper fibers accentuate the discontinuous torn edge.
-            context.save();
-            context.strokeStyle='rgba(245,230,207,.62)';
-            context.lineWidth=Math.max(1,Math.min(width,height)*.009);
-            context.beginPath();
-            for(let i=0;i<=36;i++){
-                const x=paperTearEdge(progress,i,width),y=height*i/36;
-                if(i===0)context.moveTo(x,y);else context.lineTo(x,y);
-            }
-            context.stroke();
-            context.restore();
-        }
         return true;
     }
     if(id==='pixelize'){

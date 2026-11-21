@@ -713,6 +713,18 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-paper-tear-settings" class="spiral-glsl-settings paper-tear-glsl-settings" hidden>
+                            <legend>PaperTear · Original fibrous paper GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Tear jaggedness<input type="range" min="0" max=".3" step=".01" value=".12" data-paper-tear-param="roughness"></label>
+                                <label>Upper-edge tilt<input type="range" min="0" max=".5" step=".025" value=".1" data-paper-tear-param="tilt"></label>
+                                <label>Fibrous white rim width<input type="range" min="0" max=".05" step=".001" value=".012" data-paper-tear-param="rim"></label>
+                                <label>Paper fibres colour<input type="color" value="#fffaf0" data-paper-tear-param="paperColor"></label>
+                                <label>Paper fibres opacity<input type="range" min="0" max="1" step=".05" value="1" data-paper-tear-param="paperAlpha"></label>
+                                <label>Cast shadow colour<input type="color" value="#000000" data-paper-tear-param="shadowColor"></label>
+                                <label>Cast shadow opacity<input type="range" min="0" max="1" step=".05" value=".35" data-paper-tear-param="shadowAlpha"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-whipspin-settings" class="spiral-glsl-settings whipspin-glsl-settings" hidden>
                             <legend>WhipSpin · Original rotating camera GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1455,6 +1467,18 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Highlight glow threshold<input type="range" min="0" max="1" step=".05" value=".6" data-bloom-dissolve-param="threshold"></label>
                                 <label>Bloom light intensity<input type="range" min="0" max="4" step=".1" value="1.5" data-bloom-dissolve-param="intensity"></label>
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-paper-tear" class="spiral-glsl-settings paper-tear-glsl-settings" hidden>
+                            <legend>PaperTear · Original fibrous paper GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Tear jaggedness<input type="range" min="0" max=".3" step=".01" value=".12" data-paper-tear-param="roughness"></label>
+                                <label>Upper-edge tilt<input type="range" min="0" max=".5" step=".025" value=".1" data-paper-tear-param="tilt"></label>
+                                <label>Fibrous white rim width<input type="range" min="0" max=".05" step=".001" value=".012" data-paper-tear-param="rim"></label>
+                                <label>Paper fibres colour<input type="color" value="#fffaf0" data-paper-tear-param="paperColor"></label>
+                                <label>Paper fibres opacity<input type="range" min="0" max="1" step=".05" value="1" data-paper-tear-param="paperAlpha"></label>
+                                <label>Cast shadow colour<input type="color" value="#000000" data-paper-tear-param="shadowColor"></label>
+                                <label>Cast shadow opacity<input type="range" min="0" max="1" step=".05" value=".35" data-paper-tear-param="shadowAlpha"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-whipspin" class="spiral-glsl-settings whipspin-glsl-settings" hidden>
