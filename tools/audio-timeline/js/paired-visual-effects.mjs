@@ -19,6 +19,7 @@ import { paintInkBleed } from './gl-transitions/InkBleed.mjs';
 import { paintRefraction } from './gl-transitions/Refraction.mjs';
 import { paintWhipSpin } from './gl-transitions/WhipSpin.mjs';
 import { paintPaperTear } from './gl-transitions/PaperTear.mjs';
+import { paintApertureWipe } from './gl-transitions/ApertureWipe.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -533,6 +534,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintWhipSpin(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='paper-tear')
         return paintPaperTear(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='aperture-wipe')
+        return paintApertureWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -621,13 +624,13 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
-    if(id==='aperture-wipe'||id==='ripple'){
+    if(id==='ripple'){
         context.save();
         traceIris(context,id,progress,width,height);
         context.clip();
         renderContained(context,media,width,height);
         context.restore();
-        if(id==='ripple'){
+        {
             // Concentric wavefront lines make a ripple visually distinct from
             // the smooth aperture. Phase derives solely from timeline time.
             context.save();

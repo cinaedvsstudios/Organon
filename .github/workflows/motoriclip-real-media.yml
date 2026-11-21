@@ -201,10 +201,17 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/papertear.browser.mjs
+      - name: Compare original ApertureWipe rotating polygonal iris GLSL to Chrome GPU oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/aperturewipe.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
+      - name: Verify ApertureWipe original GLSL blob SHA, native options and history
+        run: node --test tools/audio-timeline/tests/aperturewipe-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -404,6 +411,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/papertear-export.browser.mjs
+      - name: Decode real ApertureWipe H.264 video and compare original shader preview
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/aperturewipe-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
