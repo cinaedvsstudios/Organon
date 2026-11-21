@@ -19,6 +19,7 @@ import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
 import { paintBlockCover } from './gl-transitions/BlockCover.mjs';
+import { paintDisintegrate } from './gl-transitions/Disintegrate.mjs';
 import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
@@ -400,26 +401,6 @@ function traceLiquidFill(ctx,progress,width,height,time) {
     ctx.lineTo(width,height);
     ctx.closePath();
 }
-/** Each old-video shard is staggered and pulled sideways/up as it dissolves.
- * Progress is monotonic for every shard and fully settles at the endpoint.
- */
-export function disintegrateFragmentProgress(progress,index){
-    const p=unit(progress);
-    if(p===0)return 0;
-    if(p===1)return 1;
-    const delay=seededCell(index*41+107)*.67;
-    return unit((p-delay)/.40);
-}
-export function disintegrateFragmentOffset(progress,index,width,height) {
-    const released=disintegrateFragmentProgress(progress,index);
-    if(released===0||released===1)return {x:0,y:0};
-    const drift=seededCell(index*23+47)*2-1;
-    return {
-        x:Math.round(drift*Math.min(width*.13,85)*released),
-        y:Math.round((-1.4-seededCell(index*19+67))*
-            Math.min(height*.15,95)*released)
-    };
-}
 /** Phase 8M: incoming B appears as a fixed-width glyph portrait before
  * resolving into unmodified footage. Only a tiny, resolution-independent
  * 32×18 sample is read; never read full-resolution pixels per frame.
@@ -546,6 +527,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintLightRays(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='block-cover')
         return paintBlockCover(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='disintegrate')
+        return paintDisintegrate(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -620,33 +603,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
-    if(id==='disintegrate'){
-        const from=renderer.tracks?.find(t=>t.id===track.transitionFromId);
-        if(!from?.media || (from.media.readyState!==undefined&&from.media.readyState<2))
-            return false;
-        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
-        const sc=full.getContext('2d');
-        sc.clearRect(0,0,width,height);
-        renderContained(sc,from.media,width,height);
-        context.save();
-        // Start from incoming B, then reassemble outgoing A as 12×8 shards.
-        // As they drift and fade away, the unmodified B is revealed.
-        renderContained(context,media,width,height);
-        const cols=12,rows=8;
-        for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-            const i=row*cols+col,stage=disintegrateFragmentProgress(progress,i);
-            if(stage>=1)continue;
-            const sx=Math.floor(col*width/cols),sy=Math.floor(row*height/rows);
-            const ex=col===cols-1?width:Math.floor((col+1)*width/cols);
-            const ey=row===rows-1?height:Math.floor((row+1)*height/rows);
-            const move=disintegrateFragmentOffset(progress,i,width,height);
-            context.globalAlpha=alpha*(1-stage);
-            context.drawImage(full,sx,sy,ex-sx,ey-sy,
-                sx+move.x,sy+move.y,ex-sx,ey-sy);
-        }
-        context.restore();
-        return true;
-    }
     if(id==='aperture-wipe'||id==='ripple'){
         context.save();
         traceIris(context,id,progress,width,height);
