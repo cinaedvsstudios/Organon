@@ -12,6 +12,7 @@ import { paintColorPanelWipe } from './gl-transitions/ColorPanelWipe.mjs';
 import { paintGallery } from './gl-transitions/Gallery.mjs';
 import { paintVhsTracking } from './gl-transitions/VhsTracking.mjs';
 import { paintCardSwipe } from './gl-transitions/CardSwipe.mjs';
+import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -564,6 +565,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintVhsTracking(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='card-swipe')
         return paintCardSwipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='camera-shake')
+        return paintCameraShake(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -1009,27 +1012,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const y=Math.floor(row*height/bands),next=Math.floor((row+1)*height/bands);
             const dx=crossWarpShift(progress,row,bands,width);
             context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
-        }
-        context.restore();
-        return true;
-    }
-    if(id==='camera-shake'){
-        const from=renderer.tracks.find(t=>t.id===track.transitionFromId);
-        const source=progress<.5?(from?.media||media):media;
-        if(source&&(source.readyState===undefined||source.readyState>=2)){
-            sc.clearRect(0,0,width,height);
-            renderContained(sc,source,width,height);
-        }
-        const {x,y}=cameraShakeOffset(progress,Math.floor(time*30),width,height);
-        context.save();
-        context.fillStyle='#08080c';
-        context.fillRect(0,0,width,height);
-        context.drawImage(full,x,y,width,height);
-        const flash=Math.max(0,1-Math.abs(progress-.5)/.09);
-        if(flash>0){
-            context.globalAlpha=alpha*.42*flash;
-            context.fillStyle='#fff';
-            context.fillRect(0,0,width,height);
         }
         context.restore();
         return true;
