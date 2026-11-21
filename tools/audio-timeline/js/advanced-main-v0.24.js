@@ -21,6 +21,7 @@ import { normaliseCrumpleOptions } from './gl-transitions/Crumple.mjs';
 import { normaliseLiquidFillOptions } from './gl-transitions/LiquidFill.mjs';
 import { normaliseHeatHazeOptions } from './gl-transitions/HeatHaze.mjs';
 import { normaliseSphereOptions } from './gl-transitions/Sphere.mjs';
+import { normaliseRingsWipeOptions } from './gl-transitions/RingsWipe.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1673,6 +1674,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             sphereInspector.hidden=!(paired&&track.transitionEffectId==='sphere');
             if(!sphereInspector.hidden)
                 displaySphereSettings(sphereInspector,track.transitionParameters?.sphere);
+            const ringsWipeInspector=document.getElementById('video-rings-wipe-settings');
+            ringsWipeInspector.hidden=!(paired&&track.transitionEffectId==='rings-wipe');
+            if(!ringsWipeInspector.hidden)
+                displayRingsWipeSettings(ringsWipeInspector,track.transitionParameters?.['rings-wipe']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1966,6 +1971,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 ?document.getElementById('transition-modal-sphere')
                 :document.getElementById('video-sphere-settings');
             b.transitionParameters={...b.transitionParameters,sphere:readSphereSettings(panel)};
+        }
+        if(effectId==='rings-wipe'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-rings-wipe')
+                :document.getElementById('video-rings-wipe-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'rings-wipe':readRingsWipeSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2883,6 +2895,33 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displaySphereSettings(root,target?.transitionParameters?.sphere);
         }
     }
+    function readRingsWipeSettings(root){
+        const value=name=>root?.querySelector('[data-rings-wipe-param="'+name+'"]')?.value;
+        const radial=root?.querySelector('[data-rings-wipe-param="radial"]')?.checked===true;
+        return normaliseRingsWipeOptions({
+            count:value('count'),centerX:value('centerX'),centerY:value('centerY'),
+            stagger:value('stagger'),radial,
+            borderWidth:value('borderWidth'),borderColor:value('borderColor'),
+            borderAlpha:value('borderAlpha'),smoothness:value('smoothness')
+        });
+    }
+    function displayRingsWipeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseRingsWipeOptions(options))){
+            const input=root?.querySelector('[data-rings-wipe-param="'+name+'"]');
+            if(input){
+                if(name==='radial')input.checked=value;
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshRingsWipeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-rings-wipe');
+        root.hidden=elements.transitionModalEffect.value!=='rings-wipe';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayRingsWipeSettings(root,target?.transitionParameters?.['rings-wipe']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2933,6 +2972,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'heat-haze':readHeatHazeSettings(document.getElementById('transition-modal-heat-haze'))}
                     :effectId==='sphere'
                     ?{...b.transitionParameters,sphere:readSphereSettings(document.getElementById('transition-modal-sphere'))}
+                    :effectId==='rings-wipe'
+                    ?{...b.transitionParameters,'rings-wipe':readRingsWipeSettings(document.getElementById('transition-modal-rings-wipe'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2941,7 +2982,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2983,6 +3024,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshLiquidFillModalSettings({restoreValues:true});
         refreshHeatHazeModalSettings({restoreValues:true});
         refreshSphereModalSettings({restoreValues:true});
+        refreshRingsWipeModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3031,10 +3073,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCrumpleModalSettings({restoreValues:true});
         refreshLiquidFillModalSettings({restoreValues:true});
         refreshHeatHazeModalSettings({restoreValues:true});
-        refreshSphereModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshSphereModalSettings({restoreValues:true});
+        refreshRingsWipeModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-rings-wipe').querySelectorAll('[data-rings-wipe-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-rings-wipe-settings').querySelectorAll('[data-rings-wipe-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='rings-wipe'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readRingsWipeSettings(document.getElementById('video-rings-wipe-settings'));
+            const prior=normaliseRingsWipeOptions(active.transitionParameters?.['rings-wipe']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original RingsWipe GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'rings-wipe':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-sphere').querySelectorAll('[data-sphere-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-sphere-settings').querySelectorAll('[data-sphere-param]')
