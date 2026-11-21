@@ -20,6 +20,7 @@ import { paintRefraction } from './gl-transitions/Refraction.mjs';
 import { paintWhipSpin } from './gl-transitions/WhipSpin.mjs';
 import { paintPaperTear } from './gl-transitions/PaperTear.mjs';
 import { paintApertureWipe } from './gl-transitions/ApertureWipe.mjs';
+import { paintSpiralWipe } from './gl-transitions/SpiralWipe.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -536,6 +537,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintPaperTear(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='aperture-wipe')
         return paintApertureWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='spiral-wipe')
+        return paintSpiralWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -645,15 +648,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             }
             context.restore();
         }
-        return true;
-    }
-
-    if(id==='spiral-wipe'){
-        context.save();
-        traceSpiralMask(context,progress,width,height);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
         return true;
     }
 
