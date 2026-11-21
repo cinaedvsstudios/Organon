@@ -20,6 +20,7 @@ import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
 import { paintBlockCover } from './gl-transitions/BlockCover.mjs';
 import { paintDisintegrate } from './gl-transitions/Disintegrate.mjs';
+import { paintAscii } from './gl-transitions/Ascii.mjs';
 import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
@@ -529,6 +530,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintBlockCover(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='disintegrate')
         return paintDisintegrate(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='ascii')
+        return paintAscii(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -758,7 +761,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
-    if(id==='ascii'||id==='color-codes'||id==='prisms'){
+    if(id==='color-codes'||id==='prisms'){
         context.save();
         if(id==='prisms'){
             const count=9,cx=width/2,cy=height/2;
@@ -795,10 +798,10 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             }
         }else{
             // The incoming video is visible behind the code glyphs. Source
-            // sampling is capped at 576 pixels for ASCII, 28 for Color codes.
+            // sampling for Color codes is capped at 28 pixels.
             context.globalAlpha=alpha*(progress*.65);
             context.drawImage(full,0,0,width,height);
-            const columns=id==='ascii'?32:7,rows=id==='ascii'?18:4;
+            const columns=7,rows=4;
             const tiny=scratchCanvas(renderer,'transitionPixelScratch',columns,rows);
             const tc=tiny.getContext('2d',{willReadFrequently:true});
             tc.clearRect(0,0,columns,rows);
@@ -807,20 +810,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const cw=width/columns,ch=height/rows;
             context.textBaseline='middle';
             context.textAlign='center';
-            if(id==='ascii'){
-                const intensity=asciiIntensity(progress);
-                context.globalAlpha=alpha*intensity*.96;
-                context.font='bold '+Math.max(5,Math.floor(ch*.88))+'px monospace';
-                context.fillStyle='#c5ffdc';
-                for(let i=0;i<columns*rows;i++){
-                    const offset=i*4;
-                    const light=pixels[offset]*.2126+pixels[offset+1]*.7152+
-                        pixels[offset+2]*.0722;
-                    const glyph=asciiGlyphForLuminance(light);
-                    if(glyph!==' ')context.fillText(glyph,
-                        (i%columns+.5)*cw,(Math.floor(i/columns)+.52)*ch);
-                }
-            }else{
                 context.font='bold '+Math.max(5,Math.floor(ch*.22))+'px monospace';
                 const inset=Math.max(.5,Math.min(cw,ch)*.065);
                 for(let i=0;i<columns*rows;i++){
@@ -838,7 +827,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
                     context.fillStyle='#f5f3d8';
                     context.fillText(code,x+cw/2,y+ch*.77,cw-inset*3);
                 }
-            }
         }
         context.restore();
         return true;
