@@ -83,7 +83,7 @@ try{
   a.start=0;a.clipDuration=1.5;a.order=2;
   b.start=.5;b.clipDuration=1.5;b.order=1;
   engine.setTracks([a,b]);engine.setCanvasResolution(W,H);
-  const paper-tear=()=>{
+  const captureRgbFrame=()=>{
    const raw=output.getContext('2d').getImageData(0,0,W,H).data;
    const bytes=new Uint8Array(W*H*3);
    for(let i=0;i<W*H;i++){
@@ -97,7 +97,7 @@ try{
   for(const time of [.8,1.2,.8]){
    await engine.seek(time,{resume:false});engine.renderFrame();
    const key=time===.8&&frames['0.8']?'rewind':String(time);
-   frames[key]=paper-tear();
+   frames[key]=captureRgbFrame();
    if(key==='0.8')screenshots[key]=output.toDataURL('image/png');
   }
   const usingShader=Boolean(engine.paperTearWebGL);
@@ -137,7 +137,7 @@ try{
  assert.deepEqual(errors,[]);
  console.log('[PaperTear #28] PASS decoded H.264 frames match live original-GLSL output, seek stability and duration');
  // Retain compact visual evidence in CI logs, taken from the real preview canvas.
- console.log('[PaperTear #01 visual PNG]',preview.screenshots['0.8']);
+ console.log('[PaperTear #28 export visual PNG]',preview.screenshots['0.8']);
 }finally{
  await browser.close();
  await new Promise(done=>server.close(done));
