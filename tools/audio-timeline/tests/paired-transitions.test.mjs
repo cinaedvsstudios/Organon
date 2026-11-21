@@ -18,11 +18,28 @@ test('the first 41 requested effects stay in user order and are additively exten
     assert.equal(TRANSITION_CATALOG.length,41);
     assert.equal(new Set(TRANSITION_CATALOG.map(x=>x.id)).size,41);
     assert.equal(TRANSITION_CATALOG[0].label,'SpiralBlockWipe');
-    assert.equal(TRANSITION_CATALOG[18].label,'Brokey dissolve');
+    assert.equal(TRANSITION_CATALOG[18].label,'Bokeh dissolve');
     assert.equal(TRANSITION_CATALOG.at(-1).label,'Ripple');
     assert.equal(transitionId('Cell dissolve'),'cell-dissolve');
     assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='available').length,41);
     assert.equal(TRANSITION_CATALOG.filter(x=>x.status==='requested').length,0);
+});
+test('old saved Brokey ID migrates into canonical BokehDissolve without losing settings',()=>{
+    assert.equal(transitionId('Brokey dissolve'),'bokeh-dissolve');
+    assert.equal(transitionId('Bokeh dissolve'),'bokeh-dissolve');
+    const a=clip('A',0,4,1),b=clip('B',4,4,2);
+    const legacy={...b,transitionFromId:'A',transitionEffectId:'brokey-dissolve',
+        transitionParameters:{'brokey-dissolve':{radius:.11,blades:5}}};
+    const saved=snapshotClip(legacy);
+    assert.equal(saved.transitionEffectId,'bokeh-dissolve');
+    assert.deepEqual(saved.transitionParameters,{'bokeh-dissolve':{radius:.11,blades:5}});
+    const restored=clip('B',4,4,2);
+    applyClipData(restored,{...saved,transitionEffectId:'brokey-dissolve',
+        transitionParameters:{'brokey-dissolve':{radius:.11,blades:5}}});
+    assert.equal(restored.transitionEffectId,'bokeh-dissolve');
+    assert.deepEqual(restored.transitionParameters,{'bokeh-dissolve':{radius:.11,blades:5}});
+    const plan=planPairedTransition([a,b],['A','B'],1,'brokey-dissolve');
+    assert.equal(plan.effectId,'bokeh-dissolve');
 });
 test('pair planner creates exact overlap for non-adjacent videos without changing sources/audio',()=>{
     const a=clip('A',2,4,1),b=clip('B',6,3,2);
