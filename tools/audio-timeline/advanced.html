@@ -640,6 +640,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-heat-haze-settings" class="spiral-glsl-settings heat-haze-glsl-settings" hidden>
+                            <legend>HeatHaze · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Refraction strength<input type="range" min="0" max=".1" step=".002" value=".04" data-heat-haze-param="strength"></label>
+                                <label>Heat-wave scale<input type="number" min="1" max="12" step=".25" value="6" data-heat-haze-param="scale"></label>
+                                <label>Rise speed<input type="number" min="0" max="6" step=".1" value="2" data-heat-haze-param="speed"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-liquid-fill-settings" class="spiral-glsl-settings liquid-fill-glsl-settings" hidden>
                             <legend>LiquidFill · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1161,6 +1169,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-heat-haze" class="spiral-glsl-settings heat-haze-glsl-settings" hidden>
+                            <legend>HeatHaze · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Refraction strength<input type="range" min="0" max=".1" step=".002" value=".04" data-heat-haze-param="strength"></label>
+                                <label>Heat-wave scale<input type="number" min="1" max="12" step=".25" value="6" data-heat-haze-param="scale"></label>
+                                <label>Rise speed<input type="number" min="0" max="6" step=".1" value="2" data-heat-haze-param="speed"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-liquid-fill" class="spiral-glsl-settings liquid-fill-glsl-settings" hidden>
                             <legend>LiquidFill · Original GL shader</legend>
                             <div class="spiral-settings-grid">

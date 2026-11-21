@@ -4,6 +4,7 @@ import { paintCellDissolve } from './gl-transitions/CellDissolve.mjs';
 import { paintVortex } from './gl-transitions/Vortex.mjs';
 import { paintCrumple } from './gl-transitions/Crumple.mjs';
 import { paintLiquidFill } from './gl-transitions/LiquidFill.mjs';
+import { paintHeatHaze } from './gl-transitions/HeatHaze.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -540,6 +541,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintCrumple(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='liquid-fill')
         return paintLiquidFill(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='heat-haze')
+        return paintHeatHaze(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -606,7 +609,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='heat-haze'||id==='refraction'){
+    if(id==='refraction'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fullCtx=full.getContext('2d');
         fullCtx.clearRect(0,0,width,height);
