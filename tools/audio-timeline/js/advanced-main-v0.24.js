@@ -3292,8 +3292,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function readInkBleedSettings(root){
         const value=name=>root?.querySelector('[data-ink-bleed-param="'+name+'"]')?.value;
         return normaliseInkBleedOptions({
-            splats:value('splats'),spikiness:value('spikiness'),
-            droplets:value('droplets'),drips:value('drips'),
+            drops:value('drops'),tendrils:value('tendrils'),
             rim:value('rim'),seed:value('seed')
         });
     }
