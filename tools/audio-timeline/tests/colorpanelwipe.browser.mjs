@@ -171,9 +171,11 @@ void main(){gl_FragColor=transition(uv);}`);
    start:0,clipDuration:4,order:3,visible:true,opacity:1,blendMode:'source-over',
    media:makeSource('BG')};
   a.opacity=.5;b.opacity=.5;engine.tracks=[bg,a,b];
-  const alpha=asImage(.5,opts[0]).hash;
+  // By .5 the original panel wipe already switches to incoming image B.
+  // Sample before the cut to verify outgoing A visibility is honored.
+  const alpha=asImage(.18,opts[0]).hash;
   a.visible=false;
-  const hidden=asImage(.5,opts[0]).hash;
+  const hidden=asImage(.18,opts[0]).hash;
   const used=Boolean(engine.colorPanelWipeWebGL);
   engine.clearAll();
   return {samples,representative,used,
