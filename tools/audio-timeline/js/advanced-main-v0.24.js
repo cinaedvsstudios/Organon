@@ -23,6 +23,7 @@ import { normaliseHeatHazeOptions } from './gl-transitions/HeatHaze.mjs';
 import { normaliseSphereOptions } from './gl-transitions/Sphere.mjs';
 import { normaliseRingsWipeOptions } from './gl-transitions/RingsWipe.mjs';
 import { normaliseSnapshotOptions } from './gl-transitions/Snapshot.mjs';
+import { normaliseColorPanelWipeOptions } from './gl-transitions/ColorPanelWipe.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1683,6 +1684,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             snapshotInspector.hidden=!(paired&&track.transitionEffectId==='snapshot');
             if(!snapshotInspector.hidden)
                 displaySnapshotSettings(snapshotInspector,track.transitionParameters?.snapshot);
+            const colorPanelWipeInspector=document.getElementById('video-color-panel-wipe-settings');
+            colorPanelWipeInspector.hidden=!(paired&&track.transitionEffectId==='color-panel-wipe');
+            if(!colorPanelWipeInspector.hidden)
+                displayColorPanelWipeSettings(colorPanelWipeInspector,track.transitionParameters?.['color-panel-wipe']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1989,6 +1994,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 ?document.getElementById('transition-modal-snapshot')
                 :document.getElementById('video-snapshot-settings');
             b.transitionParameters={...b.transitionParameters,snapshot:readSnapshotSettings(panel)};
+        }
+        if(effectId==='color-panel-wipe'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-color-panel-wipe')
+                :document.getElementById('video-color-panel-wipe-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'color-panel-wipe':readColorPanelWipeSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2955,6 +2967,30 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displaySnapshotSettings(root,target?.transitionParameters?.snapshot);
         }
     }
+    function readColorPanelWipeSettings(root){
+        const value=name=>root?.querySelector('[data-color-panel-wipe-param="'+name+'"]')?.value;
+        return normaliseColorPanelWipeOptions({
+            directionX:value('directionX'),directionY:value('directionY'),
+            panels:value('panels'),stagger:value('stagger'),skew:value('skew'),
+            color1:value('color1'),alpha1:value('alpha1'),
+            color2:value('color2'),alpha2:value('alpha2'),
+            color3:value('color3'),alpha3:value('alpha3')
+        });
+    }
+    function displayColorPanelWipeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseColorPanelWipeOptions(options))){
+            const input=root?.querySelector('[data-color-panel-wipe-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshColorPanelWipeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-color-panel-wipe');
+        root.hidden=elements.transitionModalEffect.value!=='color-panel-wipe';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayColorPanelWipeSettings(root,target?.transitionParameters?.['color-panel-wipe']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3009,6 +3045,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'rings-wipe':readRingsWipeSettings(document.getElementById('transition-modal-rings-wipe'))}
                     :effectId==='snapshot'
                     ?{...b.transitionParameters,snapshot:readSnapshotSettings(document.getElementById('transition-modal-snapshot'))}
+                    :effectId==='color-panel-wipe'
+                    ?{...b.transitionParameters,'color-panel-wipe':readColorPanelWipeSettings(document.getElementById('transition-modal-color-panel-wipe'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3017,7 +3055,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3061,6 +3099,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSphereModalSettings({restoreValues:true});
         refreshRingsWipeModalSettings({restoreValues:true});
         refreshSnapshotModalSettings({restoreValues:true});
+        refreshColorPanelWipeModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3111,10 +3150,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshHeatHazeModalSettings({restoreValues:true});
         refreshSphereModalSettings({restoreValues:true});
         refreshRingsWipeModalSettings({restoreValues:true});
-        refreshSnapshotModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshSnapshotModalSettings({restoreValues:true});
+        refreshColorPanelWipeModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-color-panel-wipe').querySelectorAll('[data-color-panel-wipe-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-color-panel-wipe-settings').querySelectorAll('[data-color-panel-wipe-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='color-panel-wipe'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readColorPanelWipeSettings(document.getElementById('video-color-panel-wipe-settings'));
+            const prior=normaliseColorPanelWipeOptions(active.transitionParameters?.['color-panel-wipe']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original ColorPanelWipe GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'color-panel-wipe':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-snapshot').querySelectorAll('[data-snapshot-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-snapshot-settings').querySelectorAll('[data-snapshot-param]')
