@@ -114,14 +114,24 @@ try{
         'Pixelize must visibly differ from an ordinary fade');
     assert.notEqual(result['glitch-flicker'].middle.fingerprint,result.fade.middle.fingerprint,
         'Glitch flicker must visibly differ from a simple fade');
-    for(const effect of ['ripple','aperture-wipe']){
-        const middle=result[effect].middle;
-        assert.ok(middle.red>150&&middle.blue>150,effect+' should reveal B inside a circular mask while retaining A outside');
-        assert.deepEqual(middle.center,[255,0,0],effect+' must reveal red B at the center');
-        assert.deepEqual(middle.top,[0,0,255],effect+' must preserve blue A outside the wavefront');
-    }
-    assert.notEqual(result.ripple.middle.fingerprint,result['aperture-wipe'].middle.fingerprint,
-        'Ripple wavefronts must visibly differ from a clean circular aperture');
+    const ripple=result.ripple.middle;
+    assert.ok(ripple.red>150&&ripple.blue>150,
+        'Ripple must reveal incoming B inside an expanding ring, retaining outgoing A beyond it');
+    assert.deepEqual(ripple.center,[255,0,0],
+        'Ripple must reveal incoming B in the center');
+    assert.deepEqual(ripple.top,[0,0,255],
+        'Ripple must leave outgoing A untouched outside its wavefront');
+    const iris=result['aperture-wipe'].middle;
+    assert.ok(iris.red>150&&iris.blue>150,
+        'Original aperture polygon must open on B while retaining outgoing A beyond its blades');
+    assert.deepEqual(iris.center,[255,0,0],
+        'Original ApertureWipe must reveal B through its central iris opening');
+    assert.equal(iris.top[0],0);
+    assert.equal(iris.top[1],0);
+    assert.ok(iris.top[2]>120&&iris.top[2]<=255,
+        'Outside the original iris, A remains visible and may be darkened by authentic blade shadow');
+    assert.notEqual(ripple.fingerprint,iris.fingerprint,
+        'Ripple circular wavefronts must differ from rotating, shaded polygonal ApertureWipe blades');
     const tv=result['tv-turn-off'];
     assert.ok(tv.middle.black>1200,'TV shutdown midpoint should be almost entirely black');
     assert.ok(tv.middle.white>0,'TV shutdown midpoint should show a brief white scanline');
@@ -149,7 +159,7 @@ try{
         result['color-panel-wipe'].threeQuarter.fingerprint,
         'Original color panels must sweep in and then sweep away');
     assert.notEqual(spiral.fingerprint,result['aperture-wipe'].middle.fingerprint,
-        'Spiral angular sweep must differ visually from circular iris');
+        'Spiral angular sweep must differ from polygonal mechanical iris');
     assert.notEqual(rings.fingerprint,result['aperture-wipe'].middle.fingerprint,
         'Rings must produce multiple annuli, not a plain expanding iris');
     assert.notEqual(spiral.fingerprint,rings.fingerprint,'Spiral and Rings wipes should be distinct');
