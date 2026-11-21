@@ -7,7 +7,7 @@ import {
 import { TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES } from '../js/transition-catalog.mjs';
 import { planPairedTransition,isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
-const chosen=['spin','cube','cross-warp'];
+const chosen=['whipspin','cube','cross-warp'];
 test('8H preserves the complete 41-effect shortlist, 19 enabled and 22 remaining',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
     assert.deepEqual(ACTIVE_PAIR_EFFECTS.slice(16,19),chosen);
@@ -17,7 +17,7 @@ test('8H preserves the complete 41-effect shortlist, 19 enabled and 22 remaining
     for(const id of chosen)assert.equal(TRANSITION_CATALOG.find(e=>e.id===id)?.status,'available');
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'available');
 });
-test('Spin reduces angle and enlarges the incoming card smoothly without jumps',()=>{
+test('Legacy Spin helper remains deterministic for historical callers (not the active shader)',()=>{
     assert.equal(spinAngle(0),2*Math.PI);
     assert.equal(spinAngle(.5),Math.PI);
     assert.equal(spinAngle(1),0);
@@ -67,7 +67,7 @@ test('Cross warp cross-shaped reveal expands and band displacement relaxes to ze
         assert.ok(Math.abs(x)<=Math.min(196*.06,52)+1);
     }
 });
-test('Spin, Cube and Cross warp reuse source clips and restore through Undo/Redo',()=>{
+test('WhipSpin, Cube and Cross warp reuse source clips and restore through Undo/Redo',()=>{
     const a={id:'A',type:'video',start:1,clipDuration:5,order:2,laneId:'A',sourceName:'a.mp4',
         file:{name:'a.mp4'},audio:{volume:.35},sourceOffset:.25};
     const b={id:'B',type:'video',start:6,clipDuration:4,order:1,laneId:'B',sourceName:'b.mp4',
