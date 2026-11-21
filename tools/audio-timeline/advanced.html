@@ -640,6 +640,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-splatter-wipe-settings" class="spiral-glsl-settings splatter-wipe-glsl-settings" hidden>
+                            <legend>SplatterWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Paint splat count<input type="number" min="2" max="10" step="1" value="4" data-splatter-wipe-param="splats"></label>
+                                <label>Spiky splash length<input type="range" min="0" max="1" step=".05" value=".6" data-splatter-wipe-param="spikiness"></label>
+                                <label>Thrown droplet density<input type="range" min="0" max="1" step=".05" value=".6" data-splatter-wipe-param="droplets"></label>
+                                <label>Gravity drip length<input type="range" min="0" max="1" step=".05" value=".5" data-splatter-wipe-param="drips"></label>
+                                <label>Glossy paint rim shading<input type="range" min="0" max="1" step=".05" value=".5" data-splatter-wipe-param="rim"></label>
+                                <label>Splatter random seed<input type="number" min="-100" max="100" step="1" value="3" data-splatter-wipe-param="seed"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-smoke-dissolve-settings" class="spiral-glsl-settings smoke-dissolve-glsl-settings" hidden>
                             <legend>SmokeDissolve · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1273,6 +1284,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-splatter-wipe" class="spiral-glsl-settings splatter-wipe-glsl-settings" hidden>
+                            <legend>SplatterWipe · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Paint splat count<input type="number" min="2" max="10" step="1" value="4" data-splatter-wipe-param="splats"></label>
+                                <label>Spiky splash length<input type="range" min="0" max="1" step=".05" value=".6" data-splatter-wipe-param="spikiness"></label>
+                                <label>Thrown droplet density<input type="range" min="0" max="1" step=".05" value=".6" data-splatter-wipe-param="droplets"></label>
+                                <label>Gravity drip length<input type="range" min="0" max="1" step=".05" value=".5" data-splatter-wipe-param="drips"></label>
+                                <label>Glossy paint rim shading<input type="range" min="0" max="1" step=".05" value=".5" data-splatter-wipe-param="rim"></label>
+                                <label>Splatter random seed<input type="number" min="-100" max="100" step="1" value="3" data-splatter-wipe-param="seed"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-smoke-dissolve" class="spiral-glsl-settings smoke-dissolve-glsl-settings" hidden>
                             <legend>SmokeDissolve · Original GL shader</legend>
                             <div class="spiral-settings-grid">
