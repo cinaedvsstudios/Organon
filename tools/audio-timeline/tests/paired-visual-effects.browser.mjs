@@ -162,13 +162,23 @@ try{
     const hatch=result['cross-hatch'].middle;
     const film=result['film-strip'].middle;
     console.log('[MotoriClip 8F] New-effect middle-frame counts '+JSON.stringify({block,hatch,film}));
-    for(const [name,frame] of [['cross-hatch',hatch],['film-strip',film]]){
-        assert.ok(frame.red>100&&frame.blue>100,name+' must visibly retain A and reveal B at its midpoint');
-        assert.equal(frame.fingerprint,result[name].repeat.fingerprint,
-            name+' must return identical pixels after scrubbing');
-        assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
-            name+' must not be a disguised plain fade');
-    }
+    assert.ok(hatch.red>100&&hatch.blue>100,
+        'CrossHatch must retain A and reveal B through its lattice at midpoint');
+    assert.equal(hatch.fingerprint,result['cross-hatch'].repeat.fingerprint,
+        'CrossHatch must scrub deterministically');
+    assert.notEqual(hatch.fingerprint,result.fade.middle.fingerprint,
+        'CrossHatch must differ from a plain fade');
+    // Original FilmStrip slips entire frames vertically through a projector
+    // gate. Mid-slip need not show both A/B colours like the former five
+    // horizontal Canvas rows; the film gate, sprockets and changing frame
+    // positions are covered by the independent pinned original-shader oracle.
+    assert.equal(film.fingerprint,result['film-strip'].repeat.fingerprint,
+        'Original FilmStrip must scrub deterministically');
+    assert.notEqual(film.fingerprint,result.fade.middle.fingerprint,
+        'Original FilmStrip must not be a plain fade');
+    assert.notEqual(result['film-strip'].quarter.fingerprint,
+        result['film-strip'].threeQuarter.fingerprint,
+        'Original FilmStrip must animate vertical transport between outgoing and incoming footage');
     // Original BlockCover completely hides the A/B cut behind solid coloured
     // blocks, unlike the old checkerboard showing old/new footage halfway.
     assert.equal(block.fingerprint,result['block-cover'].repeat.fingerprint,
