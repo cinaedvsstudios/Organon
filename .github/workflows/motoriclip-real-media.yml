@@ -161,6 +161,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/lightrays.browser.mjs
+      - name: Validate original BlockCover popping solid blocks GLSL against independent GPU oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/blockcover.browser.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -320,6 +325,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/lightrays-export.browser.mjs
+      - name: Verify decoded real BlockCover H264 MP4 export against GPU preview pixels
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/blockcover-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome

@@ -18,6 +18,7 @@ import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
+import { paintBlockCover } from './gl-transitions/BlockCover.mjs';
 import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
@@ -137,18 +138,6 @@ function traceRingMask(ctx,progress,width,height) {
         annulusSectorPath(ctx,cx,cy,radius*i/count,
             radius*(i+1)/count,-Math.PI/2,1);
     }
-}
-/** Each square is covered briefly by an opaque slate tile before B replaces it.
- * Stable cell permutations avoid changing the effect during seek/export.
- * Unlike Random squares, the cover stage is a visibly separate state.
- */
-export function blockCoverState(progress,cellIndex) {
-    const p=unit(progress);
-    if(p<=0)return 'old';
-    if(p>=1)return 'new';
-    const delay=seededCell(cellIndex)*.75;
-    if(p<=delay)return 'old';
-    return p<delay+.17?'cover':'new';
 }
 /** Two passes of ±45-degree diagonal hatching widen to reveal incoming B. */
 export function crossHatchWidth(progress,orientation=0) {
@@ -555,6 +544,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintBokehDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='light-rays')
         return paintLightRays(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='block-cover')
+        return paintBlockCover(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -905,25 +896,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const y=Math.floor(row*height/bands),next=Math.floor((row+1)*height/bands);
             const dx=crossWarpShift(progress,row,bands,width);
             context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
-        }
-        context.restore();
-        return true;
-    }
-    if(id==='block-cover'){
-        const cols=10,rows=6;
-        context.save();
-        for(let row=0;row<rows;row++)for(let col=0;col<cols;col++){
-            const sx=Math.floor(col*width/cols),sy=Math.floor(row*height/rows);
-            const ex=col===cols-1?width:Math.floor((col+1)*width/cols);
-            const ey=row===rows-1?height:Math.floor((row+1)*height/rows);
-            const state=blockCoverState(progress,row*cols+col);
-            if(state==='old')continue;
-            if(state==='cover'){
-                context.fillStyle=(row+col)%2===0?'#253348':'#ae8050';
-                context.fillRect(sx,sy,ex-sx,ey-sy);
-            }else{
-                context.drawImage(full,sx,sy,ex-sx,ey-sy,sx,sy,ex-sx,ey-sy);
-            }
         }
         context.restore();
         return true;

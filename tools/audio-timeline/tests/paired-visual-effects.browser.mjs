@@ -162,14 +162,24 @@ try{
     const hatch=result['cross-hatch'].middle;
     const film=result['film-strip'].middle;
     console.log('[MotoriClip 8F] New-effect middle-frame counts '+JSON.stringify({block,hatch,film}));
-    for(const [name,frame] of [['block-cover',block],['cross-hatch',hatch],['film-strip',film]]){
+    for(const [name,frame] of [['cross-hatch',hatch],['film-strip',film]]){
         assert.ok(frame.red>100&&frame.blue>100,name+' must visibly retain A and reveal B at its midpoint');
         assert.equal(frame.fingerprint,result[name].repeat.fingerprint,
             name+' must return identical pixels after scrubbing');
         assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
             name+' must not be a disguised plain fade');
     }
-    assert.ok(block.mixed>80,'Block cover must show distinct tinted cover tiles, not only red and blue squares');
+    // Original BlockCover completely hides the A/B cut behind solid coloured
+    // blocks, unlike the old checkerboard showing old/new footage halfway.
+    assert.equal(block.fingerprint,result['block-cover'].repeat.fingerprint,
+        'Original blocks must scrub deterministically');
+    assert.notEqual(block.fingerprint,result.fade.middle.fingerprint,
+        'Original blocks must not be a fade');
+    assert.ok(block.center[0]>225&&block.center[1]>55&&block.center[2]>45,
+        'Original blocks must cover the entire midpoint with the specified solid pop colour');
+    assert.notEqual(result['block-cover'].quarter.fingerprint,result['block-cover'].threeQuarter.fingerprint,
+        'The colored blocks must pop in and then pop away');
+    assert.ok(block.mixed>80,'Original BlockCover must display a full tinted layer over the cut');
     assert.ok(film.dark>12,'Film strip must have visible dark-gray frame bars');
     assert.notEqual(block.fingerprint,result['random-squares'].middle.fingerprint,
         'Block cover must differ from the existing Random squares effect');

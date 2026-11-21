@@ -33,6 +33,7 @@ import { normaliseSplatterWipeOptions } from './gl-transitions/SplatterWipe.mjs'
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
 import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
+import { normaliseBlockCoverOptions } from './gl-transitions/BlockCover.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1733,6 +1734,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             lightRaysInspector.hidden=!(paired&&track.transitionEffectId==='light-rays');
             if(!lightRaysInspector.hidden)
                 displayLightRaysSettings(lightRaysInspector,track.transitionParameters?.['light-rays']);
+            const blockCoverInspector=document.getElementById('video-block-cover-settings');
+            blockCoverInspector.hidden=!(paired&&track.transitionEffectId==='block-cover');
+            if(!blockCoverInspector.hidden)
+                displayBlockCoverSettings(blockCoverInspector,track.transitionParameters?.['block-cover']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2109,6 +2114,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-light-rays-settings');
             b.transitionParameters={...b.transitionParameters,
                 'light-rays':readLightRaysSettings(panel)};
+        }
+        if(effectId==='block-cover'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-block-cover')
+                :document.getElementById('video-block-cover-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'block-cover':readBlockCoverSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3293,6 +3305,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayLightRaysSettings(root,target?.transitionParameters?.['light-rays']);
         }
     }
+    function readBlockCoverSettings(root){
+        const value=name=>root?.querySelector('[data-block-cover-param="'+name+'"]')?.value;
+        return normaliseBlockCoverOptions({
+            blocks:value('blocks'),color:value('color'),colorAlpha:value('colorAlpha'),
+            pop:value('pop'),smoothness:value('smoothness')
+        });
+    }
+    function displayBlockCoverSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseBlockCoverOptions(options))){
+            const input=root?.querySelector('[data-block-cover-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshBlockCoverModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-block-cover');
+        root.hidden=elements.transitionModalEffect.value!=='block-cover';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayBlockCoverSettings(root,target?.transitionParameters?.['block-cover']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3367,6 +3400,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'bokeh-dissolve':readBokehDissolveSettings(document.getElementById('transition-modal-bokeh-dissolve'))}
                     :effectId==='light-rays'
                     ?{...b.transitionParameters,'light-rays':readLightRaysSettings(document.getElementById('transition-modal-light-rays'))}
+                    :effectId==='block-cover'
+                    ?{...b.transitionParameters,'block-cover':readBlockCoverSettings(document.getElementById('transition-modal-block-cover'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3375,7 +3410,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3429,6 +3464,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
+        refreshBlockCoverModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3489,10 +3525,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSplatterWipeModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
-        refreshLightRaysModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshLightRaysModalSettings({restoreValues:true});
+        refreshBlockCoverModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-block-cover').querySelectorAll('[data-block-cover-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-block-cover-settings').querySelectorAll('[data-block-cover-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='block-cover'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readBlockCoverSettings(document.getElementById('video-block-cover-settings'));
+            const prior=normaliseBlockCoverOptions(active.transitionParameters?.['block-cover']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original BlockCover GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'block-cover':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-light-rays').querySelectorAll('[data-light-rays-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-light-rays-settings').querySelectorAll('[data-light-rays-param]')

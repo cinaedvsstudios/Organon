@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    ACTIVE_PAIR_EFFECTS,blockCoverState,crossHatchWidth,filmStripProgress,
+    ACTIVE_PAIR_EFFECTS,crossHatchWidth,filmStripProgress,
     pairedEffectProgress
 } from '../js/paired-visual-effects.mjs';
 import { TRANSITION_CATALOG, SELECTED_TRANSITION_NAMES } from '../js/transition-catalog.mjs';
 import { planPairedTransition,isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
+import {normaliseBlockCoverOptions} from '../js/gl-transitions/BlockCover.mjs';
 
 const newEffects=['block-cover','cross-hatch','film-strip'];
 
@@ -20,24 +21,12 @@ test('8F retains all 41 wishlist entries and enables exactly three additional ef
     assert.equal(TRANSITION_CATALOG.find(e=>e.id==='spiralblockwipe')?.status,'available');
 });
 
-test('Block cover cells move old → opaque temporary cover → new monotonically',()=>{
-    const steps=['old','cover','new'];
-    for(let i=0;i<60;i++){
-        assert.equal(blockCoverState(0,i),'old');
-        assert.equal(blockCoverState(1,i),'new');
-        let previous=0;
-        for(let p=0;p<=100;p++){
-            const state=blockCoverState(p/100,i);
-            const order=steps.indexOf(state);
-            assert.ok(order>=previous,'Block should never switch back to its older stage');
-            assert.equal(state,blockCoverState(p/100,i),'scrub and export must be identical');
-            previous=order;
-        }
-    }
-    const atHalf=Array.from({length:60},(_,i)=>blockCoverState(.5,i));
-    for(const stage of steps)assert.ok(atHalf.includes(stage),'Midpoint needs distinct '+stage+' tiles');
+test('Original BlockCover retains native colored tile, overshoot and edge controls',()=>{
+ const native=normaliseBlockCoverOptions({blocks:24,color:'#ff33aa',colorAlpha:.65,pop:.9,smoothness:.12});
+ assert.deepEqual(native,{blocks:24,color:'#ff33aa',colorAlpha:.65,pop:.9,smoothness:.12});
+ assert.deepEqual(normaliseBlockCoverOptions({blocks:100,color:'bad',colorAlpha:-1,pop:3,smoothness:1}),
+  {blocks:40,color:'#f25242',colorAlpha:0,pop:1,smoothness:.5});
 });
-
 test('Cross hatch opens both diagonal orientations at staggered rates',()=>{
     assert.equal(crossHatchWidth(0,0),0);
     assert.equal(crossHatchWidth(0,1),0);
