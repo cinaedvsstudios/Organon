@@ -10,6 +10,7 @@ import { paintRingsWipe } from './gl-transitions/RingsWipe.mjs';
 import { paintSnapshot } from './gl-transitions/Snapshot.mjs';
 import { paintColorPanelWipe } from './gl-transitions/ColorPanelWipe.mjs';
 import { paintGallery } from './gl-transitions/Gallery.mjs';
+import { paintVhsTracking } from './gl-transitions/VhsTracking.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -558,6 +559,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintColorPanelWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='gallery')
         return paintGallery(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='vhs-tracking')
+        return paintVhsTracking(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -1038,29 +1041,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             context.fillStyle='#fff';
             context.fillRect(0,0,width,height);
         }
-        context.restore();
-        return true;
-    }
-    if(id==='vhs-tracking'){
-        const bands=24,frame=Math.floor(time*24);
-        context.save();
-        context.globalAlpha=alpha*(.28+progress*.72);
-        for(let row=0;row<bands;row++){
-            const y=Math.floor(row*height/bands);
-            const next=row===bands-1?height:Math.floor((row+1)*height/bands);
-            const dx=vhsTrackingShift(progress,row,frame,width);
-            context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
-        }
-        // A strong rolling tracking line and fine scanlines produce an
-        // analog tape feel; their phase is a pure function of time.
-        const scanY=Math.floor((frame*7 % (height+24)))-12;
-        context.globalAlpha=alpha*(1-progress)*.55;
-        context.fillStyle='#73c7cf';
-        context.fillRect(0,scanY,width,Math.max(2,Math.round(height*.045)));
-        context.globalAlpha=alpha*(1-progress)*.19;
-        context.fillStyle='#d4c4ef';
-        const stride=Math.max(3,Math.round(height/28));
-        for(let y=0;y<height;y+=stride)context.fillRect(0,y,width,1);
         context.restore();
         return true;
     }
