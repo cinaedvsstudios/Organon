@@ -21,6 +21,7 @@ import { paintLightRays } from './gl-transitions/LightRays.mjs';
 import { paintBlockCover } from './gl-transitions/BlockCover.mjs';
 import { paintDisintegrate } from './gl-transitions/Disintegrate.mjs';
 import { paintAscii } from './gl-transitions/Ascii.mjs';
+import { paintFilmStrip } from './gl-transitions/FilmStrip.mjs';
 import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
@@ -532,6 +533,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintDisintegrate(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='ascii')
         return paintAscii(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='film-strip')
+        return paintFilmStrip(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -840,37 +843,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const y=Math.floor(row*height/bands),next=Math.floor((row+1)*height/bands);
             const dx=crossWarpShift(progress,row,bands,width);
             context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
-        }
-        context.restore();
-        return true;
-    }
-    if(id==='film-strip'){
-        // Five sliding strips with narrow dark film-frame bars and light
-        // perforations. Each strip is moved by clipping to a growing window;
-        // outgoing A remains untouched beneath the unrevealed region.
-        const count=5;
-        context.save();
-        for(let row=0;row<count;row++){
-            const y=Math.floor(row*height/count);
-            const yEnd=row===count-1?height:Math.floor((row+1)*height/count);
-            const bandHeight=yEnd-y;
-            const p=filmStripProgress(progress,row,count);
-            if(p<=0)continue;
-            const shown=Math.min(width,Math.ceil(width*p));
-            const x=row%2===0?0:width-shown;
-            context.drawImage(full,x,y,shown,bandHeight,x,y,shown,bandHeight);
-            const rail=Math.max(1,Math.round(bandHeight*.13));
-            context.fillStyle='#141414';
-            context.fillRect(x,y,shown,rail);
-            context.fillRect(x,yEnd-rail,shown,rail);
-            context.fillStyle='#e6d9b6';
-            const holeWidth=Math.max(2,Math.round(width/65));
-            const holeHeight=Math.max(1,Math.floor(rail/2));
-            for(let hx=Math.ceil(x/(holeWidth*6))*(holeWidth*6);hx<x+shown;hx+=holeWidth*6){
-                if(hx+holeWidth>x+shown)break;
-                context.fillRect(hx,y+Math.floor((rail-holeHeight)/2),holeWidth,holeHeight);
-                context.fillRect(hx,yEnd-rail+Math.floor((rail-holeHeight)/2),holeWidth,holeHeight);
-            }
         }
         context.restore();
         return true;
