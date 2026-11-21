@@ -337,7 +337,8 @@ export class AdvancedMediaEngine {
             'snapshotFromScratch','snapshotToScratch',
             'colorPanelWipeFromScratch','colorPanelWipeToScratch',
             'galleryFromScratch','galleryToScratch',
-            'vhsTrackingFromScratch','vhsTrackingToScratch']){
+            'vhsTrackingFromScratch','vhsTrackingToScratch',
+            'cardSwipeFromScratch','cardSwipeToScratch']){
             if(this[name]){ this[name].width=0; this[name].height=0; this[name]=null; }
         }
         if(this.spiralBlockWebGL){
@@ -391,6 +392,10 @@ export class AdvancedMediaEngine {
         if(this.vhsTrackingWebGL){
             this.vhsTrackingWebGL.dispose();
             this.vhsTrackingWebGL=null;
+        }
+        if(this.cardSwipeWebGL){
+            this.cardSwipeWebGL.dispose();
+            this.cardSwipeWebGL=null;
         }
         this.currentTime = 0;
         this.emitDuration(); this.emitTime(); this.renderFrame();
@@ -653,7 +658,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking'].includes(incoming.transitionEffectId)
+                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe'].includes(incoming.transitionEffectId)
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -694,7 +699,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking'].includes(track.transitionEffectId)))
+                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe'].includes(track.transitionEffectId)))
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {
