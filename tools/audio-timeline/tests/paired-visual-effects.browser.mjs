@@ -223,7 +223,14 @@ try{
         'VHS tracking must have distinct frame pixels from Glitch flicker');
     const spin=result.whipspin.middle,cube=result.cube.middle,crossWarp=result['cross-warp'].middle;
     console.log('[MotoriClip 8H] New-effect middle frame counts '+JSON.stringify({spin,cube,crossWarp}));
-    for(const [name,frame] of [['whipspin',spin],['cube',cube],['cross-warp',crossWarp]]){
+    // The original 24-tap WhipSpin mixes A and B across a moving shutter at
+    // p=0.5. Its blended pixels must NOT be counted as pure red/blue regions.
+    assert.ok(spin.mixed>100,'Original WhipSpin shutter must optically blend source frames at the cut');
+    assert.notEqual(spin.fingerprint,result.fade.middle.fingerprint,
+        'Original WhipSpin motion blur must not collapse to a plain alpha fade');
+    assert.equal(spin.fingerprint,result.whipspin.repeat.fingerprint,
+        'WhipSpin must be deterministic when seeking backwards');
+    for(const [name,frame] of [['cube',cube],['cross-warp',crossWarp]]){
         assert.ok(frame.red>100&&frame.blue>100,name+' must show A and B simultaneously at the midpoint');
         assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
             name+' must not look like an ordinary alpha fade');
