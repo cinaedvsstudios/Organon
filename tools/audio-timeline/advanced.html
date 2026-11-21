@@ -640,6 +640,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-crumple-settings" class="spiral-glsl-settings crumple-glsl-settings" hidden>
+                            <legend>Crumple · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Paper creases<input type="number" min="1" max="32" step="1" value="16" data-crumple-param="creases"></label>
+                                <label>Ball radius<input type="number" min=".05" max=".4" step=".01" value=".2" data-crumple-param="size"></label>
+                                <label>Toss direction X<input type="number" min="-2" max="2" step=".1" value="1" data-crumple-param="directionX"></label>
+                                <label>Toss direction Y<input type="number" min="-2" max="2" step=".1" value=".4" data-crumple-param="directionY"></label>
+                                <label>Exposed paper colour<input type="color" value="#f5f2e8" data-crumple-param="paperColor"></label>
+                                <label>Paper colour opacity<input type="range" min="0" max="1" step=".05" value="1" data-crumple-param="paperAlpha"></label>
+                                <label>Cast shadow colour<input type="color" value="#000000" data-crumple-param="shadowColor"></label>
+                                <label>Shadow opacity<input type="range" min="0" max="1" step=".05" value=".45" data-crumple-param="shadowAlpha"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-vortex-settings" class="spiral-glsl-settings vortex-glsl-settings" hidden>
                             <legend>Vortex · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1135,6 +1148,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-crumple" class="spiral-glsl-settings crumple-glsl-settings" hidden>
+                            <legend>Crumple · Original GL shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Paper creases<input type="number" min="1" max="32" step="1" value="16" data-crumple-param="creases"></label>
+                                <label>Ball radius<input type="number" min=".05" max=".4" step=".01" value=".2" data-crumple-param="size"></label>
+                                <label>Toss direction X<input type="number" min="-2" max="2" step=".1" value="1" data-crumple-param="directionX"></label>
+                                <label>Toss direction Y<input type="number" min="-2" max="2" step=".1" value=".4" data-crumple-param="directionY"></label>
+                                <label>Exposed paper colour<input type="color" value="#f5f2e8" data-crumple-param="paperColor"></label>
+                                <label>Paper colour opacity<input type="range" min="0" max="1" step=".05" value="1" data-crumple-param="paperAlpha"></label>
+                                <label>Cast shadow colour<input type="color" value="#000000" data-crumple-param="shadowColor"></label>
+                                <label>Shadow opacity<input type="range" min="0" max="1" step=".05" value=".45" data-crumple-param="shadowAlpha"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-vortex" class="spiral-glsl-settings vortex-glsl-settings" hidden>
                             <legend>Vortex · Original GL shader</legend>
                             <div class="spiral-settings-grid">

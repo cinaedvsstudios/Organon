@@ -2,6 +2,7 @@ import { paintSpiralBlockWipe } from './gl-transitions/SpiralBlockWipe.mjs';
 import { paintHologram } from './gl-transitions/Hologram.mjs';
 import { paintCellDissolve } from './gl-transitions/CellDissolve.mjs';
 import { paintVortex } from './gl-transitions/Vortex.mjs';
+import { paintCrumple } from './gl-transitions/Crumple.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -534,6 +535,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintCellDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='vortex')
         return paintVortex(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='crumple')
+        return paintCrumple(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -595,33 +598,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
                 const y1=Math.min(height,Math.ceil((y+1)*height/rows));
                 context.globalAlpha=alpha*p;
                 context.drawImage(full,x0,y0,x1-x0,y1-y0,x0,y0,x1-x0,y1-y0);
-            }
-        }
-        context.restore();
-        return true;
-    }
-    if(id==='crumple'){
-        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
-        const fc=full.getContext('2d');
-        fc.clearRect(0,0,width,height);
-        renderContained(fc,media,width,height);
-        context.save();
-        {
-            const cols=8,rows=6;
-            context.globalAlpha=alpha*progress;
-            context.drawImage(full,0,0,width,height);
-            const fold=Math.sin(Math.PI*progress);
-            for(let i=0;i<cols*rows;i++){
-                const x=i%cols,y=Math.floor(i/cols);
-                const sx=Math.floor(x*width/cols),sy=Math.floor(y*height/rows);
-                const sw=Math.ceil(width/cols),sh=Math.ceil(height/rows);
-                const d=crumpleFold(progress,i,width,height);
-                context.globalAlpha=alpha*fold*.68;
-                context.drawImage(full,sx,sy,Math.min(sw,width-sx),Math.min(sh,height-sy),
-                    sx+d.x,sy+d.y,Math.min(sw,width-sx),Math.min(sh,height-sy));
-                context.fillStyle=(i%2)?'#f0e5d5':'#1b1724';
-                context.globalAlpha=alpha*fold*.16;
-                context.fillRect(sx+d.x,sy+d.y,sw,Math.max(1,sh*.12));
             }
         }
         context.restore();

@@ -328,7 +328,8 @@ export class AdvancedMediaEngine {
         for(const name of ['transitionPixelScratch','transitionFullScratch',
             'spiralBlockFromScratch','spiralBlockToScratch','hologramFromScratch','hologramToScratch',
             'cellDissolveFromScratch','cellDissolveToScratch',
-            'vortexFromScratch','vortexToScratch']){
+            'vortexFromScratch','vortexToScratch',
+            'crumpleFromScratch','crumpleToScratch']){
             if(this[name]){ this[name].width=0; this[name].height=0; this[name]=null; }
         }
         if(this.spiralBlockWebGL){
@@ -346,6 +347,10 @@ export class AdvancedMediaEngine {
         if(this.vortexWebGL){
             this.vortexWebGL.dispose();
             this.vortexWebGL=null;
+        }
+        if(this.crumpleWebGL){
+            this.crumpleWebGL.dispose();
+            this.crumpleWebGL=null;
         }
         this.currentTime = 0;
         this.emitDuration(); this.emitTime(); this.renderFrame();
@@ -608,7 +613,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex'].includes(incoming.transitionEffectId)
+                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple'].includes(incoming.transitionEffectId)
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -649,7 +654,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex'].includes(track.transitionEffectId)))
+                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple'].includes(track.transitionEffectId)))
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {

@@ -17,6 +17,7 @@ import { normaliseSpiralBlockOptions } from './gl-transitions/SpiralBlockWipe.mj
 import { normaliseHologramOptions } from './gl-transitions/Hologram.mjs';
 import { normaliseCellDissolveOptions } from './gl-transitions/CellDissolve.mjs';
 import { normaliseVortexOptions } from './gl-transitions/Vortex.mjs';
+import { normaliseCrumpleOptions } from './gl-transitions/Crumple.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1653,6 +1654,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             vortexInspector.hidden=!(paired&&track.transitionEffectId==='vortex');
             if(!vortexInspector.hidden)
                 displayVortexSettings(vortexInspector,track.transitionParameters?.vortex);
+            const crumpleInspector=document.getElementById('video-crumple-settings');
+            crumpleInspector.hidden=!(paired&&track.transitionEffectId==='crumple');
+            if(!crumpleInspector.hidden)
+                displayCrumpleSettings(crumpleInspector,track.transitionParameters?.crumple);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1919,6 +1924,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-vortex-settings');
             b.transitionParameters={...b.transitionParameters,
                 vortex:readVortexSettings(panel)};
+        }
+        if(effectId==='crumple'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-crumple')
+                :document.getElementById('video-crumple-settings');
+            b.transitionParameters={...b.transitionParameters,
+                crumple:readCrumpleSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2749,6 +2761,29 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayVortexSettings(root,target?.transitionParameters?.vortex);
         }
     }
+    function readCrumpleSettings(root){
+        const value=name=>root?.querySelector('[data-crumple-param="'+name+'"]')?.value;
+        return normaliseCrumpleOptions({
+            creases:value('creases'),size:value('size'),
+            directionX:value('directionX'),directionY:value('directionY'),
+            paperColor:value('paperColor'),paperAlpha:value('paperAlpha'),
+            shadowColor:value('shadowColor'),shadowAlpha:value('shadowAlpha')
+        });
+    }
+    function displayCrumpleSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseCrumpleOptions(options))){
+            const input=root?.querySelector('[data-crumple-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshCrumpleModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-crumple');
+        root.hidden=elements.transitionModalEffect.value!=='crumple';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayCrumpleSettings(root,target?.transitionParameters?.crumple);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2791,6 +2826,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'cell-dissolve':readCellDissolveSettings(document.getElementById('transition-modal-cell-dissolve'))}
                     :effectId==='vortex'
                     ?{...b.transitionParameters,vortex:readVortexSettings(document.getElementById('transition-modal-vortex'))}
+                    :effectId==='crumple'
+                    ?{...b.transitionParameters,crumple:readCrumpleSettings(document.getElementById('transition-modal-crumple'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2799,7 +2836,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2837,6 +2874,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshHologramModalSettings({restoreValues:true});
         refreshCellDissolveModalSettings({restoreValues:true});
         refreshVortexModalSettings({restoreValues:true});
+        refreshCrumpleModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2881,10 +2919,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSpiralModalSettings({restoreValues:true});
         refreshHologramModalSettings({restoreValues:true});
         refreshCellDissolveModalSettings({restoreValues:true});
-        refreshVortexModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshVortexModalSettings({restoreValues:true});
+        refreshCrumpleModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-crumple').querySelectorAll('[data-crumple-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-crumple-settings').querySelectorAll('[data-crumple-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='crumple'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readCrumpleSettings(document.getElementById('video-crumple-settings'));
+            const prior=normaliseCrumpleOptions(active.transitionParameters?.crumple);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Crumple GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,crumple:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-vortex').querySelectorAll('[data-vortex-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-vortex-settings').querySelectorAll('[data-vortex-param]')
