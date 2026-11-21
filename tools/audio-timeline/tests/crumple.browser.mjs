@@ -189,7 +189,7 @@ void main(){gl_FragColor=transition(uv);}`);
  assert.equal(result.cleanup,true,'Project clear must release Crumple GPU and scratch textures');
  assert.deepEqual(result.renderErrors,[]);
  assert.deepEqual(errors,[]);
- console.log('[Crumple #05] PASS original 24-wave spinning-tile GLSL, two independent option sets,'
+ console.log('[Crumple #05] PASS original shaded folding paper-ball GLSL, two independent option sets,'
    +' 5 timeline timestamps, standalone pixel reference, all eight controls,'
    +' alpha/visibility, seeking and GPU cleanup');
  console.log('[Crumple #05 visual PNG] '+result.representative);
