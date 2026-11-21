@@ -16,6 +16,7 @@ import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
 import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 import { paintInkBleed } from './gl-transitions/InkBleed.mjs';
+import { paintRefraction } from './gl-transitions/Refraction.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -524,6 +525,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSplatterWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='ink-bleed')
         return paintInkBleed(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='refraction')
+        return paintRefraction(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
