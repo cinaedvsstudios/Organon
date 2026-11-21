@@ -227,7 +227,7 @@ export function paintPaperTear(renderer,context,toTrack,width,height,time,drawCo
         ctx.restore();
     }
     const shader=renderer.paperTearWebGL??(renderer.paperTearWebGL=createPaperTearWebGLRenderer());
-    const frame=shader.render(sources[0],sources[1],progress,toTrack.transitionParameters?.paper-tear ?? toTrack.transitionParameters?.spin);
+    const frame=shader.render(sources[0],sources[1],progress,toTrack.transitionParameters?.['paper-tear']);
     context.save();context.setTransform(1,0,0,1,0,0);context.filter='none';
     context.globalCompositeOperation='source-over';context.globalAlpha=1;
     context.drawImage(frame,0,0,width,height);
