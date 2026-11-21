@@ -9,6 +9,7 @@ import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-se
 import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from './media-support.mjs';
 import { isPairedFadeActive } from './clip-pair-transitions.mjs';
 import { paintPairedEffect, pairedEffectProgress } from './paired-visual-effects.mjs';
+import { normalizeTransitionEffectId,normalizeTransitionParameters } from './transition-catalog.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
 import { connectOrgavoxAudioChain, ensureOrgavoxLofiWorklet } from './orgavox-audio-chain.mjs';
@@ -116,6 +117,13 @@ export class AdvancedMediaEngine {
         this.cancelPendingSeek();
         this.resumeAfterSeek = false;
         const next = Array.isArray(tracks) ? tracks : [];
+        // Canonical IDs at the engine boundary also migrate restored legacy Spin clips.
+        for (const clip of next) {
+            if(!clip || !clip.transitionEffectId)continue;
+            clip.transitionEffectId=normalizeTransitionEffectId(clip.transitionEffectId);
+            if(clip.transitionParameters)
+                clip.transitionParameters=normalizeTransitionParameters(clip.transitionParameters);
+        }
         const retained = new Set(next);
         // The controller may replace the array rather than call removeTrack().
         // Dispose every removed clip even when the old array was simply filtered.
@@ -344,6 +352,7 @@ export class AdvancedMediaEngine {
             'splatterWipeFromScratch','splatterWipeToScratch',
             'inkBleedFromScratch','inkBleedToScratch',
             'refractionFromScratch','refractionToScratch',
+            'whipSpinFromScratch','whipSpinToScratch',
             'bloomDissolveFromScratch','bloomDissolveToScratch',
             'bokehDissolveFromScratch','bokehDissolveToScratch',
             'lightRaysFromScratch','lightRaysToScratch',
@@ -428,6 +437,10 @@ export class AdvancedMediaEngine {
         if(this.refractionWebGL){
             this.refractionWebGL.dispose();
             this.refractionWebGL=null;
+        }
+        if(this.whipSpinWebGL){
+            this.whipSpinWebGL.dispose();
+            this.whipSpinWebGL=null;
         }
         if(this.bloomDissolveWebGL){
             this.bloomDissolveWebGL.dispose();
@@ -718,7 +731,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(incoming.transitionEffectId)
+                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(incoming.transitionEffectId))
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -759,7 +772,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(track.transitionEffectId)))
+                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(track.transitionEffectId))))
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {

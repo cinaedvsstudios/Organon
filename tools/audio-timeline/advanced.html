@@ -713,6 +713,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-whipspin-settings" class="spiral-glsl-settings whipspin-glsl-settings" hidden>
+                            <legend>WhipSpin · Original rotating camera GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Rotation (turns, negative reverses)<input type="number" min="-3" max="3" step=".25" value="1" data-whipspin-param="turns"></label>
+                                <label>Angular motion blur<input type="range" min="0" max="1" step=".05" value=".5" data-whipspin-param="blur"></label>
+                                <label>Chromatic channel separation<input type="range" min="0" max="1" step=".05" value=".6" data-whipspin-param="chroma"></label>
+                                <label>Mid-spin camera zoom<input type="range" min="0" max="1" step=".05" value=".25" data-whipspin-param="zoom"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-refraction-settings" class="spiral-glsl-settings refraction-glsl-settings" hidden>
                             <legend>Refraction · Original flowing-glass GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1446,6 +1455,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Highlight glow threshold<input type="range" min="0" max="1" step=".05" value=".6" data-bloom-dissolve-param="threshold"></label>
                                 <label>Bloom light intensity<input type="range" min="0" max="4" step=".1" value="1.5" data-bloom-dissolve-param="intensity"></label>
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-whipspin" class="spiral-glsl-settings whipspin-glsl-settings" hidden>
+                            <legend>WhipSpin · Original rotating camera GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Rotation (turns, negative reverses)<input type="number" min="-3" max="3" step=".25" value="1" data-whipspin-param="turns"></label>
+                                <label>Angular motion blur<input type="range" min="0" max="1" step=".05" value=".5" data-whipspin-param="blur"></label>
+                                <label>Chromatic channel separation<input type="range" min="0" max="1" step=".05" value=".6" data-whipspin-param="chroma"></label>
+                                <label>Mid-spin camera zoom<input type="range" min="0" max="1" step=".05" value=".25" data-whipspin-param="zoom"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-refraction" class="spiral-glsl-settings refraction-glsl-settings" hidden>

@@ -32,6 +32,7 @@ import { normaliseSmokeDissolveOptions } from './gl-transitions/SmokeDissolve.mj
 import { normaliseSplatterWipeOptions } from './gl-transitions/SplatterWipe.mjs';
 import { normaliseInkBleedOptions } from './gl-transitions/InkBleed.mjs';
 import { normaliseRefractionOptions } from './gl-transitions/Refraction.mjs';
+import { normaliseWhipSpinOptions } from './gl-transitions/WhipSpin.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
 import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
@@ -1735,6 +1736,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             refractionInspector.hidden=!(paired&&track.transitionEffectId==='refraction');
             if(!refractionInspector.hidden)
                 displayRefractionSettings(refractionInspector,track.transitionParameters?.['refraction']);
+            const whipspinInspector=document.getElementById('video-whipspin-settings');
+            whipspinInspector.hidden=!(paired&&track.transitionEffectId==='whipspin');
+            if(!whipspinInspector.hidden)
+                displayWhipSpinSettings(whipspinInspector,track.transitionParameters?.['whipspin']);
             const bloomDissolveInspector=document.getElementById('video-bloom-dissolve-settings');
             bloomDissolveInspector.hidden=!(paired&&track.transitionEffectId==='bloom-dissolve');
             if(!bloomDissolveInspector.hidden)
@@ -2132,6 +2137,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-refraction-settings');
             b.transitionParameters={...b.transitionParameters,
                 'refraction':readRefractionSettings(panel)};
+        }
+        if(effectId==='whipspin'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-whipspin')
+                :document.getElementById('video-whipspin-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'whipspin':readWhipSpinSettings(panel)};
         }
         if(effectId==='bloom-dissolve'){
             const panel=preserveOrder===true
@@ -3343,6 +3355,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayRefractionSettings(root,target?.transitionParameters?.['refraction']);
         }
     }
+    function readWhipSpinSettings(root){
+        const value=name=>root?.querySelector('[data-whipspin-param="'+name+'"]')?.value;
+        return normaliseWhipSpinOptions({
+            turns:value('turns'),blur:value('blur'),
+            chroma:value('chroma'),zoom:value('zoom')
+        });
+    }
+    function displayWhipSpinSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseWhipSpinOptions(options))){
+            const input=root?.querySelector('[data-whipspin-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshWhipSpinModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-whipspin');
+        root.hidden=elements.transitionModalEffect.value!=='whipspin';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayWhipSpinSettings(root,target?.transitionParameters?.['whipspin']);
+        }
+    }
     function readBloomDissolveSettings(root){
         const value=name=>root?.querySelector('[data-bloom-dissolve-param="'+name+'"]')?.value;
         return normaliseBloomDissolveOptions({
@@ -3570,6 +3603,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'ink-bleed':readInkBleedSettings(document.getElementById('transition-modal-ink-bleed'))}
                     :effectId==='refraction'
                     ?{...b.transitionParameters,'refraction':readRefractionSettings(document.getElementById('transition-modal-refraction'))}
+                    :effectId==='whipspin'
+                    ?{...b.transitionParameters,'whipspin':readWhipSpinSettings(document.getElementById('transition-modal-whipspin'))}
                     :effectId==='bloom-dissolve'
                     ?{...b.transitionParameters,'bloom-dissolve':readBloomDissolveSettings(document.getElementById('transition-modal-bloom-dissolve'))}
                     :effectId==='bokeh-dissolve'
@@ -3592,7 +3627,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3645,6 +3680,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSplatterWipeModalSettings({restoreValues:true});
         refreshInkBleedModalSettings({restoreValues:true});
         refreshRefractionModalSettings({restoreValues:true});
+        refreshWhipSpinModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
@@ -3712,6 +3748,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSplatterWipeModalSettings({restoreValues:true});
         refreshInkBleedModalSettings({restoreValues:true});
         refreshRefractionModalSettings({restoreValues:true});
+        refreshWhipSpinModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
@@ -3869,6 +3906,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original Refraction GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'refraction':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-whipspin').querySelectorAll('[data-whipspin-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-whipspin-settings').querySelectorAll('[data-whipspin-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='whipspin'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readWhipSpinSettings(document.getElementById('video-whipspin-settings'));
+            const prior=normaliseWhipSpinOptions(active.transitionParameters?.['whipspin']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original WhipSpin GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'whipspin':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));

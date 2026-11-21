@@ -191,6 +191,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/refraction.browser.mjs
+      - name: Compare original WhipSpin 24-tap spin GLSL against separate Chrome shader oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/whipspin.browser.mjs
+      - name: Check legacy spin project migration, original source SHA and native uniforms
+        run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -380,6 +387,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/refraction-export.browser.mjs
+      - name: Decode real WhipSpin H264 MP4 and compare with live shader preview
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/whipspin-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
