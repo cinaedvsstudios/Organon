@@ -151,6 +151,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/bloomdissolve.browser.mjs
+      - name: Validate original BokehDissolve focus/aperture GLSL with independently compiled GPU oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/bokehdissolve.browser.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -300,6 +305,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/bloomdissolve-export.browser.mjs
+      - name: Verify decoded real BokehDissolve H264 export frames against GPU preview
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/bokehdissolve-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
