@@ -34,8 +34,8 @@ test('seven native shader controls preserve defaults and clamp to documented bou
 test('PaperTear settings survive paired clip snapshot and Undo/Redo reapplication',()=>{
  const options={roughness:.23,tilt:.3,rim:.022,paperColor:'#b8efcc',paperAlpha:.65,
   shadowColor:'#254c77',shadowAlpha:.8};
- const a={id:'A',type:'video',sourceName:'a.mp4',start:0,clipDuration:3,order:2,audio:{volume:.4}};
- const b={id:'B',type:'video',sourceName:'b.mp4',start:3,clipDuration:3,order:1,audio:{volume:.9},
+ const a={id:'A',type:'video',sourceName:'a.mp4',file:{name:'a.mp4'},start:0,clipDuration:3,order:2,audio:{volume:.4}};
+ const b={id:'B',type:'video',sourceName:'b.mp4',file:{name:'b.mp4'},start:3,clipDuration:3,order:1,audio:{volume:.9},
   transitionFromId:'A',transitionEffectId:'paper-tear',transitionParameters:{'paper-tear':options},
   visualTransitions:{enter:{type:'fade',curve:'linear',duration:1}}};
  const plan=planPairedTransition([a,b],['B','A'],1,'paper-tear');
