@@ -141,7 +141,10 @@ void main(){gl_FragColor=transition(uv);}`);
    for(let y=0;y<h;y++)for(let x=0;x<w;x++){
     const idx=(y*w+x)*4,ref=((h-1-y)*w+x)*4;
     for(let k=0;k<4;k++){
-     const delta=Math.abs(actual.data[idx+k]-original[ref+k]);
+     // GPU reference is a straight-alpha framebuffer. AdvancedMediaEngine
+     // presents it over opaque black; compare that composite at each pixel.
+     const expected=k===3?255:Math.round(original[ref+k]*(original[ref+3]/255));
+     const delta=Math.abs(actual.data[idx+k]-expected);
      max=Math.max(max,delta);sum+=delta;
     }
    }
