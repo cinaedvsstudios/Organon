@@ -318,9 +318,9 @@ try{
     console.log('[MotoriClip 8L] New effect midpoint samples '+JSON.stringify({
         liquid:liquid.middle,disintegrate:disintegrate.middle,rays:rays.middle
     }));
+    assert.ok(liquid.middle.red>200&&liquid.middle.blue>200,
+        'LiquidFill must retain A above its moving crest while revealing B below');
     for(const [name,frame] of [['liquid-fill',liquid],['disintegrate',disintegrate]]){
-        assert.ok(frame.middle.red>200&&frame.middle.blue>200,
-            name+' must display both Video A and Video B at midpoint');
         assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,
             name+' must produce exactly the same pixels after scrubbing');
         assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,
@@ -328,6 +328,12 @@ try{
         assert.ok(frame.finished.red>1300,
             name+' must resolve cleanly to incoming B after completion');
     }
+    // Original Disintegrate releases fine grains from a directional wave;
+    // A need not occupy 200 fully saturated pixels at the midpoint.
+    assert.ok(disintegrate.middle.red>700&&disintegrate.middle.blue>30,
+        'Original dust wave must reveal incoming B while remnants of A still travel');
+    assert.ok(disintegrate.middle.mixed>30,
+        'Individual disintegrating grains must create partial-coverage dust edges');
     // Real LightRays is a screened, highlight-driven light field across a short
     // A/B switch, not red/blue radial sectors with unshaded source regions.
     assert.equal(rays.middle.fingerprint,rays.repeat.fingerprint,
@@ -341,8 +347,8 @@ try{
     assert.ok(liquid.middle.mixed>10,'Liquid fill should draw a soft cyan moving crest');
     assert.ok(liquid.threeQuarter.red>liquid.quarter.red,
         'Liquid fill must reveal more of incoming B as the water rises');
-    assert.ok(disintegrate.middle.mixed>40,
-        'Disintegrating fragments must move and fade across the outgoing video');
+    assert.notEqual(disintegrate.quarter.fingerprint,disintegrate.threeQuarter.fingerprint,
+        'Original Disintegrate must advect many individual dust grains across a directional wave');
     assert.notEqual(disintegrate.middle.fingerprint,result['random-squares'].middle.fingerprint,
         'Disintegrate must not be another static random-square reveal');
     assert.notEqual(disintegrate.middle.fingerprint,result['block-cover'].middle.fingerprint,

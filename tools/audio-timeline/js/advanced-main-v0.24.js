@@ -34,6 +34,7 @@ import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mj
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
 import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
 import { normaliseBlockCoverOptions } from './gl-transitions/BlockCover.mjs';
+import { normaliseDisintegrateOptions } from './gl-transitions/Disintegrate.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1738,6 +1739,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             blockCoverInspector.hidden=!(paired&&track.transitionEffectId==='block-cover');
             if(!blockCoverInspector.hidden)
                 displayBlockCoverSettings(blockCoverInspector,track.transitionParameters?.['block-cover']);
+            const disintegrateInspector=document.getElementById('video-disintegrate-settings');
+            disintegrateInspector.hidden=!(paired&&track.transitionEffectId==='disintegrate');
+            if(!disintegrateInspector.hidden)
+                displayDisintegrateSettings(disintegrateInspector,track.transitionParameters?.disintegrate);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2121,6 +2126,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-block-cover-settings');
             b.transitionParameters={...b.transitionParameters,
                 'block-cover':readBlockCoverSettings(panel)};
+        }
+        if(effectId==='disintegrate'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-disintegrate')
+                :document.getElementById('video-disintegrate-settings');
+            b.transitionParameters={...b.transitionParameters,
+                disintegrate:readDisintegrateSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3326,6 +3338,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayBlockCoverSettings(root,target?.transitionParameters?.['block-cover']);
         }
     }
+    function readDisintegrateSettings(root){
+        const value=name=>root?.querySelector('[data-disintegrate-param="'+name+'"]')?.value;
+        return normaliseDisintegrateOptions({
+            particleSize:value('particleSize'),directionX:value('directionX'),
+            directionY:value('directionY'),spread:value('spread')
+        });
+    }
+    function displayDisintegrateSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseDisintegrateOptions(options))){
+            const input=root?.querySelector('[data-disintegrate-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshDisintegrateModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-disintegrate');
+        root.hidden=elements.transitionModalEffect.value!=='disintegrate';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayDisintegrateSettings(root,target?.transitionParameters?.disintegrate);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3402,6 +3435,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'light-rays':readLightRaysSettings(document.getElementById('transition-modal-light-rays'))}
                     :effectId==='block-cover'
                     ?{...b.transitionParameters,'block-cover':readBlockCoverSettings(document.getElementById('transition-modal-block-cover'))}
+                    :effectId==='disintegrate'
+                    ?{...b.transitionParameters,disintegrate:readDisintegrateSettings(document.getElementById('transition-modal-disintegrate'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3410,7 +3445,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3465,6 +3500,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
         refreshBlockCoverModalSettings({restoreValues:true});
+        refreshDisintegrateModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3526,10 +3562,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
-        refreshBlockCoverModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshBlockCoverModalSettings({restoreValues:true});
+        refreshDisintegrateModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-disintegrate').querySelectorAll('[data-disintegrate-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-disintegrate-settings').querySelectorAll('[data-disintegrate-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='disintegrate'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readDisintegrateSettings(document.getElementById('video-disintegrate-settings'));
+            const prior=normaliseDisintegrateOptions(active.transitionParameters?.disintegrate);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Disintegrate GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,disintegrate:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-block-cover').querySelectorAll('[data-block-cover-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-block-cover-settings').querySelectorAll('[data-block-cover-param]')

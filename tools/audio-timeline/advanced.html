@@ -640,6 +640,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <p class="transition-summary" id="video-transition-summary">Entrance 0.0s · Exit 0.0s</p>
                         <p class="pair-note" id="video-transition-pair-note" hidden></p>
                         <button type="button" class="btn timeline-tool" id="btn-unpair-transition" hidden>Unlink paired transition</button>
+                        <fieldset id="video-disintegrate-settings" class="spiral-glsl-settings disintegrate-glsl-settings" hidden>
+                            <legend>Disintegrate · Original dust shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Dust grain size<input type="number" min=".0075" max=".03" step=".0005" value=".008" data-disintegrate-param="particleSize"></label>
+                                <label>Wind direction X<input type="number" min="-2" max="2" step=".05" value="1" data-disintegrate-param="directionX"></label>
+                                <label>Wind direction Y<input type="number" min="-2" max="2" step=".05" value="-.15" data-disintegrate-param="directionY"></label>
+                                <label>Dust flight distance<input type="range" min="0" max="1" step=".05" value=".75" data-disintegrate-param="spread"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-block-cover-settings" class="spiral-glsl-settings block-cover-glsl-settings" hidden>
                             <legend>BlockCover · Original GL shader</legend>
                             <div class="spiral-settings-grid">
@@ -1324,6 +1333,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
            <label class="editor-modal-field">To · B<select id="transition-modal-to" class="compact-select" aria-label="Incoming video or image clip"></select></label>
          </div>
          <label class="editor-modal-field">Effect<select id="transition-modal-effect" class="compact-select" aria-label="Transition effect"></select></label>
+         <fieldset id="transition-modal-disintegrate" class="spiral-glsl-settings disintegrate-glsl-settings" hidden>
+                            <legend>Disintegrate · Original dust shader</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Dust grain size<input type="number" min=".0075" max=".03" step=".0005" value=".008" data-disintegrate-param="particleSize"></label>
+                                <label>Wind direction X<input type="number" min="-2" max="2" step=".05" value="1" data-disintegrate-param="directionX"></label>
+                                <label>Wind direction Y<input type="number" min="-2" max="2" step=".05" value="-.15" data-disintegrate-param="directionY"></label>
+                                <label>Dust flight distance<input type="range" min="0" max="1" step=".05" value=".75" data-disintegrate-param="spread"></label>
+                            </div>
+                        </fieldset>
          <fieldset id="transition-modal-block-cover" class="spiral-glsl-settings block-cover-glsl-settings" hidden>
                             <legend>BlockCover · Original GL shader</legend>
                             <div class="spiral-settings-grid">
