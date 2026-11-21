@@ -27,6 +27,7 @@ import { normaliseColorPanelWipeOptions } from './gl-transitions/ColorPanelWipe.
 import { normaliseGalleryOptions } from './gl-transitions/Gallery.mjs';
 import { normaliseVhsTrackingOptions } from './gl-transitions/VhsTracking.mjs';
 import { normaliseCardSwipeOptions } from './gl-transitions/CardSwipe.mjs';
+import { normaliseCameraShakeOptions } from './gl-transitions/CameraShake.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1703,6 +1704,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             cardSwipeInspector.hidden=!(paired&&track.transitionEffectId==='card-swipe');
             if(!cardSwipeInspector.hidden)
                 displayCardSwipeSettings(cardSwipeInspector,track.transitionParameters?.['card-swipe']);
+            const cameraShakeInspector=document.getElementById('video-camera-shake-settings');
+            cameraShakeInspector.hidden=!(paired&&track.transitionEffectId==='camera-shake');
+            if(!cameraShakeInspector.hidden)
+                displayCameraShakeSettings(cameraShakeInspector,track.transitionParameters?.['camera-shake']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2037,6 +2042,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-card-swipe-settings');
             b.transitionParameters={...b.transitionParameters,
                 'card-swipe':readCardSwipeSettings(panel)};
+        }
+        if(effectId==='camera-shake'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-camera-shake')
+                :document.getElementById('video-camera-shake-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'camera-shake':readCameraShakeSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3092,6 +3104,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayCardSwipeSettings(root,target?.transitionParameters?.['card-swipe']);
         }
     }
+    function readCameraShakeSettings(root){
+        const value=name=>root?.querySelector('[data-camera-shake-param="'+name+'"]')?.value;
+        return normaliseCameraShakeOptions({
+            strength:value('strength'),jolts:value('jolts'),
+            blur:value('blur'),split:value('split')
+        });
+    }
+    function displayCameraShakeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseCameraShakeOptions(options))){
+            const input=root?.querySelector('[data-camera-shake-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshCameraShakeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-camera-shake');
+        root.hidden=elements.transitionModalEffect.value!=='camera-shake';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayCameraShakeSettings(root,target?.transitionParameters?.['camera-shake']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3154,6 +3187,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'vhs-tracking':readVhsTrackingSettings(document.getElementById('transition-modal-vhs-tracking'))}
                     :effectId==='card-swipe'
                     ?{...b.transitionParameters,'card-swipe':readCardSwipeSettings(document.getElementById('transition-modal-card-swipe'))}
+                    :effectId==='camera-shake'
+                    ?{...b.transitionParameters,'camera-shake':readCameraShakeSettings(document.getElementById('transition-modal-camera-shake'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3162,7 +3197,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3210,6 +3245,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshGalleryModalSettings({restoreValues:true});
         refreshVhsTrackingModalSettings({restoreValues:true});
         refreshCardSwipeModalSettings({restoreValues:true});
+        refreshCameraShakeModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3264,10 +3300,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshColorPanelWipeModalSettings({restoreValues:true});
         refreshGalleryModalSettings({restoreValues:true});
         refreshVhsTrackingModalSettings({restoreValues:true});
-        refreshCardSwipeModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshCardSwipeModalSettings({restoreValues:true});
+        refreshCameraShakeModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-camera-shake').querySelectorAll('[data-camera-shake-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-camera-shake-settings').querySelectorAll('[data-camera-shake-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='camera-shake'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readCameraShakeSettings(document.getElementById('video-camera-shake-settings'));
+            const prior=normaliseCameraShakeOptions(active.transitionParameters?.['camera-shake']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original CameraShake GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'camera-shake':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-card-swipe').querySelectorAll('[data-card-swipe-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-card-swipe-settings').querySelectorAll('[data-card-swipe-param]')
