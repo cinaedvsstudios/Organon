@@ -3,6 +3,7 @@ import { paintHologram } from './gl-transitions/Hologram.mjs';
 import { paintCellDissolve } from './gl-transitions/CellDissolve.mjs';
 import { paintVortex } from './gl-transitions/Vortex.mjs';
 import { paintCrumple } from './gl-transitions/Crumple.mjs';
+import { paintLiquidFill } from './gl-transitions/LiquidFill.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -537,6 +538,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintVortex(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='crumple')
         return paintCrumple(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='liquid-fill')
+        return paintLiquidFill(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -672,26 +675,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
-    if(id==='liquid-fill'){
-        context.save();
-        traceLiquidFill(context,progress,width,height,time);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
-        // The white-cyan crest is only drawn while liquid is moving.
-        context.save();
-        context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.72;
-        context.strokeStyle='#87ebfb';
-        context.lineWidth=Math.max(1,Math.min(width,height)*.017);
-        context.beginPath();
-        for(let i=0;i<=72;i++){
-            const x=width*i/72,y=liquidSurfaceY(progress,x,width,height,time);
-            if(i===0)context.moveTo(x,y);else context.lineTo(x,y);
-        }
-        context.stroke();
-        context.restore();
-        return true;
-    }
     if(id==='disintegrate'){
         const from=renderer.tracks?.find(t=>t.id===track.transitionFromId);
         if(!from?.media || (from.media.readyState!==undefined&&from.media.readyState<2))
