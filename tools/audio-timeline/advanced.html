@@ -713,6 +713,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-spiral-wipe-settings" class="spiral-glsl-settings spiral-wipe-glsl-settings" hidden>
+                            <legend>SpiralWipe · Original expanding spiral arm GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Spiral turns<input type="range" min="2" max="8" step=".25" value="3" data-spiral-wipe-param="turns"></label>
+                                <label>Spiral arm edge softness<input type="range" min="0" max=".5" step=".01" value=".05" data-spiral-wipe-param="smoothness"></label>
+                                <label>Wind clockwise<input type="checkbox" checked data-spiral-wipe-param="clockwise"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-aperture-wipe-settings" class="spiral-glsl-settings aperture-wipe-glsl-settings" hidden>
                             <legend>ApertureWipe · Original rotating iris GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1475,6 +1483,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Highlight glow threshold<input type="range" min="0" max="1" step=".05" value=".6" data-bloom-dissolve-param="threshold"></label>
                                 <label>Bloom light intensity<input type="range" min="0" max="4" step=".1" value="1.5" data-bloom-dissolve-param="intensity"></label>
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-spiral-wipe" class="spiral-glsl-settings spiral-wipe-glsl-settings" hidden>
+                            <legend>SpiralWipe · Original expanding spiral arm GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Spiral turns<input type="range" min="2" max="8" step=".25" value="3" data-spiral-wipe-param="turns"></label>
+                                <label>Spiral arm edge softness<input type="range" min="0" max=".5" step=".01" value=".05" data-spiral-wipe-param="smoothness"></label>
+                                <label>Wind clockwise<input type="checkbox" checked data-spiral-wipe-param="clockwise"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-aperture-wipe" class="spiral-glsl-settings aperture-wipe-glsl-settings" hidden>
