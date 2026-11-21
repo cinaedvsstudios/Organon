@@ -5,6 +5,7 @@ import { paintVortex } from './gl-transitions/Vortex.mjs';
 import { paintCrumple } from './gl-transitions/Crumple.mjs';
 import { paintLiquidFill } from './gl-transitions/LiquidFill.mjs';
 import { paintHeatHaze } from './gl-transitions/HeatHaze.mjs';
+import { paintSphere } from './gl-transitions/Sphere.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -543,31 +544,20 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintLiquidFill(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='heat-haze')
         return paintHeatHaze(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='sphere')
+        return paintSphere(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
 
 
-    if(id==='sphere'||id==='snapshot'||id==='gallery'||id==='brokey-dissolve'){
+    if(id==='snapshot'||id==='gallery'||id==='brokey-dissolve'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fc=full.getContext('2d');
         fc.clearRect(0,0,width,height);
         renderContained(fc,media,width,height);
         context.save();
-        if(id==='sphere'){
-            const cx=width/2,cy=height/2;
-            const radius=sphereRadius(progress,width,height);
-            context.beginPath();
-            context.arc(cx,cy,radius,0,Math.PI*2);
-            context.clip();
-            context.globalAlpha=alpha;
-            context.drawImage(full,0,0,width,height);
-            const glow=context.createRadialGradient(cx,cy,Math.max(0,radius*.65),cx,cy,Math.max(1,radius));
-            glow.addColorStop(0,'rgba(255,255,255,0)');
-            glow.addColorStop(1,'rgba(125,215,255,.35)');
-            context.fillStyle=glow;
-            context.fillRect(0,0,width,height);
-        }else if(id==='snapshot'){
+        if(id==='snapshot'){
             const flash=snapshotFlash(progress);
             context.globalAlpha=alpha*unit(progress*1.7);
             const scale=1+(1-progress)*.085;

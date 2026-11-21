@@ -20,6 +20,7 @@ import { normaliseVortexOptions } from './gl-transitions/Vortex.mjs';
 import { normaliseCrumpleOptions } from './gl-transitions/Crumple.mjs';
 import { normaliseLiquidFillOptions } from './gl-transitions/LiquidFill.mjs';
 import { normaliseHeatHazeOptions } from './gl-transitions/HeatHaze.mjs';
+import { normaliseSphereOptions } from './gl-transitions/Sphere.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1668,6 +1669,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             heatHazeInspector.hidden=!(paired&&track.transitionEffectId==='heat-haze');
             if(!heatHazeInspector.hidden)
                 displayHeatHazeSettings(heatHazeInspector,track.transitionParameters?.['heat-haze']);
+            const sphereInspector=document.getElementById('video-sphere-settings');
+            sphereInspector.hidden=!(paired&&track.transitionEffectId==='sphere');
+            if(!sphereInspector.hidden)
+                displaySphereSettings(sphereInspector,track.transitionParameters?.sphere);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -1955,6 +1960,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-heat-haze-settings');
             b.transitionParameters={...b.transitionParameters,
                 'heat-haze':readHeatHazeSettings(panel)};
+        }
+        if(effectId==='sphere'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-sphere')
+                :document.getElementById('video-sphere-settings');
+            b.transitionParameters={...b.transitionParameters,sphere:readSphereSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -2851,6 +2862,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayHeatHazeSettings(root,target?.transitionParameters?.['heat-haze']);
         }
     }
+    function readSphereSettings(root){
+        const value=name=>root?.querySelector('[data-sphere-param="'+name+'"]')?.value;
+        return normaliseSphereOptions({
+            directionX:value('directionX'),directionY:value('directionY'),
+            size:value('size'),shading:value('shading'),shadow:value('shadow')
+        });
+    }
+    function displaySphereSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseSphereOptions(options))){
+            const input=root?.querySelector('[data-sphere-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshSphereModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-sphere');
+        root.hidden=elements.transitionModalEffect.value!=='sphere';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displaySphereSettings(root,target?.transitionParameters?.sphere);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -2899,6 +2931,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'liquid-fill':readLiquidFillSettings(document.getElementById('transition-modal-liquid-fill'))}
                     :effectId==='heat-haze'
                     ?{...b.transitionParameters,'heat-haze':readHeatHazeSettings(document.getElementById('transition-modal-heat-haze'))}
+                    :effectId==='sphere'
+                    ?{...b.transitionParameters,sphere:readSphereSettings(document.getElementById('transition-modal-sphere'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -2907,7 +2941,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -2948,6 +2982,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCrumpleModalSettings({restoreValues:true});
         refreshLiquidFillModalSettings({restoreValues:true});
         refreshHeatHazeModalSettings({restoreValues:true});
+        refreshSphereModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -2995,10 +3030,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshVortexModalSettings({restoreValues:true});
         refreshCrumpleModalSettings({restoreValues:true});
         refreshLiquidFillModalSettings({restoreValues:true});
-        refreshHeatHazeModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshHeatHazeModalSettings({restoreValues:true});
+        refreshSphereModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-sphere').querySelectorAll('[data-sphere-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-sphere-settings').querySelectorAll('[data-sphere-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='sphere'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readSphereSettings(document.getElementById('video-sphere-settings'));
+            const prior=normaliseSphereOptions(active.transitionParameters?.sphere);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Sphere GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,sphere:updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-heat-haze').querySelectorAll('[data-heat-haze-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-heat-haze-settings').querySelectorAll('[data-heat-haze-param]')
