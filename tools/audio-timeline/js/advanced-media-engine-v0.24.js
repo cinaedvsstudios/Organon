@@ -341,7 +341,8 @@ export class AdvancedMediaEngine {
             'cardSwipeFromScratch','cardSwipeToScratch',
             'cameraShakeFromScratch','cameraShakeToScratch',
             'smokeDissolveFromScratch','smokeDissolveToScratch',
-            'splatterWipeFromScratch','splatterWipeToScratch']){
+            'splatterWipeFromScratch','splatterWipeToScratch',
+            'bloomDissolveFromScratch','bloomDissolveToScratch']){
             if(this[name]){ this[name].width=0; this[name].height=0; this[name]=null; }
         }
         if(this.spiralBlockWebGL){
@@ -411,6 +412,10 @@ export class AdvancedMediaEngine {
         if(this.splatterWipeWebGL){
             this.splatterWipeWebGL.dispose();
             this.splatterWipeWebGL=null;
+        }
+        if(this.bloomDissolveWebGL){
+            this.bloomDissolveWebGL.dispose();
+            this.bloomDissolveWebGL=null;
         }
         this.currentTime = 0;
         this.emitDuration(); this.emitTime(); this.renderFrame();
@@ -673,7 +678,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe'].includes(incoming.transitionEffectId)
+                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve'].includes(incoming.transitionEffectId)
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -714,7 +719,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe'].includes(track.transitionEffectId)))
+                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve'].includes(track.transitionEffectId)))
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {
