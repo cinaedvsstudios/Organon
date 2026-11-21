@@ -7,6 +7,7 @@ import { paintLiquidFill } from './gl-transitions/LiquidFill.mjs';
 import { paintHeatHaze } from './gl-transitions/HeatHaze.mjs';
 import { paintSphere } from './gl-transitions/Sphere.mjs';
 import { paintRingsWipe } from './gl-transitions/RingsWipe.mjs';
+import { paintSnapshot } from './gl-transitions/Snapshot.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -549,29 +550,20 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSphere(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='rings-wipe')
         return paintRingsWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='snapshot')
+        return paintSnapshot(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
 
 
-    if(id==='snapshot'||id==='gallery'||id==='brokey-dissolve'){
+    if(id==='gallery'||id==='brokey-dissolve'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fc=full.getContext('2d');
         fc.clearRect(0,0,width,height);
         renderContained(fc,media,width,height);
         context.save();
-        if(id==='snapshot'){
-            const flash=snapshotFlash(progress);
-            context.globalAlpha=alpha*unit(progress*1.7);
-            const scale=1+(1-progress)*.085;
-            context.translate(width/2,height/2);
-            context.scale(scale,scale);
-            context.drawImage(full,-width/2,-height/2,width,height);
-            context.setTransform(1,0,0,1,0,0);
-            context.globalAlpha=alpha*flash*.9;
-            context.fillStyle='#ffffff';
-            context.fillRect(0,0,width,height);
-        }else if(id==='gallery'){
+        if(id==='gallery'){
             const count=6;
             for(let i=0;i<count;i++){
                 const p=galleryTileProgress(progress,i,count);
