@@ -15,6 +15,7 @@ import { paintCardSwipe } from './gl-transitions/CardSwipe.mjs';
 import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
 import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
+import { paintInkBleed } from './gl-transitions/InkBleed.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -521,6 +522,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSmokeDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='splatter-wipe')
         return paintSplatterWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='ink-bleed')
+        return paintInkBleed(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -650,10 +653,9 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         context.restore();
         return true;
     }
-    if(id==='paper-tear'||id==='ink-bleed'){
+    if(id==='paper-tear'){
         context.save();
-        if(id==='paper-tear')tracePaperTear(context,progress,width,height);
-        else traceInkBleed(context,progress,width,height);
+        tracePaperTear(context,progress,width,height);
         context.clip();
         renderContained(context,media,width,height);
         context.restore();
@@ -667,16 +669,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
                 const x=paperTearEdge(progress,i,width),y=height*i/36;
                 if(i===0)context.moveTo(x,y);else context.lineTo(x,y);
             }
-            context.stroke();
-            context.restore();
-        }
-        if(id==='ink-bleed'){
-            // Opaque violet-black ink rims make the organic blotches visible
-            // even over footage of similar color; no raster CPU loops.
-            context.save();
-            traceInkBleed(context,progress,width,height);
-            context.strokeStyle='rgba(25,12,44,.32)';
-            context.lineWidth=Math.max(1,Math.min(width,height)*.018);
             context.stroke();
             context.restore();
         }
