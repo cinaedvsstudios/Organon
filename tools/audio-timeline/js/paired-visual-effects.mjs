@@ -6,6 +6,7 @@ import { paintCrumple } from './gl-transitions/Crumple.mjs';
 import { paintLiquidFill } from './gl-transitions/LiquidFill.mjs';
 import { paintHeatHaze } from './gl-transitions/HeatHaze.mjs';
 import { paintSphere } from './gl-transitions/Sphere.mjs';
+import { paintRingsWipe } from './gl-transitions/RingsWipe.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -546,6 +547,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintHeatHaze(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='sphere')
         return paintSphere(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='rings-wipe')
+        return paintRingsWipe(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
@@ -744,10 +747,9 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
-    if(id==='spiral-wipe'||id==='rings-wipe'){
+    if(id==='spiral-wipe'){
         context.save();
-        if(id==='spiral-wipe')traceSpiralMask(context,progress,width,height);
-        else traceRingMask(context,progress,width,height);
+        traceSpiralMask(context,progress,width,height);
         context.clip();
         renderContained(context,media,width,height);
         context.restore();
