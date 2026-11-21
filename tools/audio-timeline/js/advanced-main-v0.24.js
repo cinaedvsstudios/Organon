@@ -32,6 +32,7 @@ import { normaliseSmokeDissolveOptions } from './gl-transitions/SmokeDissolve.mj
 import { normaliseSplatterWipeOptions } from './gl-transitions/SplatterWipe.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
+import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1728,6 +1729,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             bokehDissolveInspector.hidden=!(paired&&track.transitionEffectId==='bokeh-dissolve');
             if(!bokehDissolveInspector.hidden)
                 displayBokehDissolveSettings(bokehDissolveInspector,track.transitionParameters?.['bokeh-dissolve']);
+            const lightRaysInspector=document.getElementById('video-light-rays-settings');
+            lightRaysInspector.hidden=!(paired&&track.transitionEffectId==='light-rays');
+            if(!lightRaysInspector.hidden)
+                displayLightRaysSettings(lightRaysInspector,track.transitionParameters?.['light-rays']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2097,6 +2102,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-bokeh-dissolve-settings');
             b.transitionParameters={...b.transitionParameters,
                 'bokeh-dissolve':readBokehDissolveSettings(panel)};
+        }
+        if(effectId==='light-rays'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-light-rays')
+                :document.getElementById('video-light-rays-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'light-rays':readLightRaysSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3259,6 +3271,28 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayBokehDissolveSettings(root,target?.transitionParameters?.['bokeh-dissolve']);
         }
     }
+    function readLightRaysSettings(root){
+        const value=name=>root?.querySelector('[data-light-rays-param="'+name+'"]')?.value;
+        return normaliseLightRaysOptions({
+            centerX:value('centerX'),centerY:value('centerY'),
+            drift:value('drift'),reach:value('reach'),threshold:value('threshold'),
+            intensity:value('intensity'),tint:value('tint')
+        });
+    }
+    function displayLightRaysSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseLightRaysOptions(options))){
+            const input=root?.querySelector('[data-light-rays-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshLightRaysModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-light-rays');
+        root.hidden=elements.transitionModalEffect.value!=='light-rays';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayLightRaysSettings(root,target?.transitionParameters?.['light-rays']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3331,6 +3365,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'bloom-dissolve':readBloomDissolveSettings(document.getElementById('transition-modal-bloom-dissolve'))}
                     :effectId==='bokeh-dissolve'
                     ?{...b.transitionParameters,'bokeh-dissolve':readBokehDissolveSettings(document.getElementById('transition-modal-bokeh-dissolve'))}
+                    :effectId==='light-rays'
+                    ?{...b.transitionParameters,'light-rays':readLightRaysSettings(document.getElementById('transition-modal-light-rays'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3339,7 +3375,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve','light-rays'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3392,6 +3428,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSplatterWipeModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
+        refreshLightRaysModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3451,10 +3488,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSmokeDissolveModalSettings({restoreValues:true});
         refreshSplatterWipeModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
-        refreshBokehDissolveModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshBokehDissolveModalSettings({restoreValues:true});
+        refreshLightRaysModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-light-rays').querySelectorAll('[data-light-rays-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-light-rays-settings').querySelectorAll('[data-light-rays-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='light-rays'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readLightRaysSettings(document.getElementById('video-light-rays-settings'));
+            const prior=normaliseLightRaysOptions(active.transitionParameters?.['light-rays']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original LightRays GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'light-rays':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-bokeh-dissolve').querySelectorAll('[data-bokeh-dissolve-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-bokeh-dissolve-settings').querySelectorAll('[data-bokeh-dissolve-param]')
