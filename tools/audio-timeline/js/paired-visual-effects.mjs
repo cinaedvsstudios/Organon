@@ -16,6 +16,8 @@ import { paintCameraShake } from './gl-transitions/CameraShake.mjs';
 import { paintSmokeDissolve } from './gl-transitions/SmokeDissolve.mjs';
 import { paintSplatterWipe } from './gl-transitions/SplatterWipe.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
+import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
+import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 /**
  * MotoriClip 8C–8O: deterministic canvas-native paired effects.
  *
@@ -23,8 +25,8 @@ import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','brokey-dissolve']);
-export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(id);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','spin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']);
+export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(normalizeTransitionEffectId(id));
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
     // Stable and reversible: no Math.random(), time dependency or global RNG.
@@ -516,10 +518,6 @@ export function galleryTileProgress(progress,index,count=6){
     const delay=index/Math.max(1,count)*.45;
     return unit((unit(progress)-delay)/.55);
 }
-export function brokeyFragment(progress,index){
-    const threshold=seededCell(index*31+7)*.75;
-    return unit((unit(progress)-threshold)/.25);
-}
 
 function scratchCanvas(renderer,key,width,height) {
     let canvas=renderer[key];
@@ -535,7 +533,7 @@ function scratchCanvas(renderer,key,width,height) {
  * to maintain the editor's existing letterboxing/cropping behaviour.
  */
 export function paintPairedEffect(renderer,context,track,width,height,time,renderContained) {
-    const id=track.transitionEffectId;
+    const id=normalizeTransitionEffectId(track.transitionEffectId);
     if(!isAvailablePairEffect(id)||id==='fade')return false;
     const progress=pairedEffectProgress(track,time);
     if(progress<=0)return true; // Keep A entirely visible at the boundary.
@@ -576,33 +574,13 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSplatterWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='bokeh-dissolve')
+        return paintBokehDissolve(renderer,context,track,width,height,time,renderContained,progress);
     const alpha=context.globalAlpha;
     const media=track.media;
 
 
 
-    if(id==='brokey-dissolve'){
-        const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
-        const fc=full.getContext('2d');
-        fc.clearRect(0,0,width,height);
-        renderContained(fc,media,width,height);
-        context.save();
-        {
-            const cols=14,rows=9;
-            for(let i=0;i<cols*rows;i++){
-                const p=brokeyFragment(progress,i);
-                if(p<=0)continue;
-                const x=i%cols,y=Math.floor(i/cols);
-                const x0=Math.floor(x*width/cols),y0=Math.floor(y*height/rows);
-                const x1=Math.min(width,Math.ceil((x+1)*width/cols));
-                const y1=Math.min(height,Math.ceil((y+1)*height/rows));
-                context.globalAlpha=alpha*p;
-                context.drawImage(full,x0,y0,x1-x0,y1-y0,x0,y0,x1-x0,y1-y0);
-            }
-        }
-        context.restore();
-        return true;
-    }
     if(id==='refraction'){
         const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
         const fullCtx=full.getContext('2d');

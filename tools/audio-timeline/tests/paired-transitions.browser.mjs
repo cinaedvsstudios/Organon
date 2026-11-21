@@ -113,7 +113,7 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.video:not(.placeholder)').length===2);
     await page.locator('#btn-redo').click();
     await page.locator('#video-transition-pair-note').waitFor({state:'visible',timeout:15000});
-    for(const [id,label] of [['pixelize','Pixelize'],['random-squares','Random squares'],['glitch-flicker','Glitch flicker'],['ripple','Ripple'],['tv-turn-off','TV turn off'],['aperture-wipe','Aperture wipe'],['spiral-wipe','Spiral wipe'],['rings-wipe','Rings wipe'],['color-panel-wipe','Color panel wipe'],['block-cover','Block cover'],['cross-hatch','Cross hatch'],['film-strip','Film strip'],['card-swipe','Card swipe'],['camera-shake','Camera shake'],['vhs-tracking','VHS tracking'],['spin','Spin'],['cube','Cube'],['cross-warp','Cross warp'],['paper-tear','Paper tear'],['ink-bleed','Ink bleed'],['splatter-wipe','Splatter wipe'],['cell-dissolve','Cell dissolve'],['bloom-dissolve','Bloom dissolve'],['smoke-dissolve','Smoke dissolve'],['vortex','Vortex'],['heat-haze','Heat haze'],['refraction','Refraction'],['liquid-fill','Liquid fill'],['disintegrate','Disintegrate'],['light-rays','Light rays'],['ascii','ASCII'],['color-codes','Color codes'],['prisms','Prisms'],['spiralblockwipe','SpiralBlockWipe'],['hologram','Hologram'],['crumple','Crumple'],['sphere','Sphere'],['snapshot','Snapshot'],['gallery','Gallery'],['brokey-dissolve','Brokey dissolve']]){
+    for(const [id,label] of [['pixelize','Pixelize'],['random-squares','Random squares'],['glitch-flicker','Glitch flicker'],['ripple','Ripple'],['tv-turn-off','TV turn off'],['aperture-wipe','Aperture wipe'],['spiral-wipe','Spiral wipe'],['rings-wipe','Rings wipe'],['color-panel-wipe','Color panel wipe'],['block-cover','Block cover'],['cross-hatch','Cross hatch'],['film-strip','Film strip'],['card-swipe','Card swipe'],['camera-shake','Camera shake'],['vhs-tracking','VHS tracking'],['spin','Spin'],['cube','Cube'],['cross-warp','Cross warp'],['paper-tear','Paper tear'],['ink-bleed','Ink bleed'],['splatter-wipe','Splatter wipe'],['cell-dissolve','Cell dissolve'],['bloom-dissolve','Bloom dissolve'],['smoke-dissolve','Smoke dissolve'],['vortex','Vortex'],['heat-haze','Heat haze'],['refraction','Refraction'],['liquid-fill','Liquid fill'],['disintegrate','Disintegrate'],['light-rays','Light rays'],['ascii','ASCII'],['color-codes','Color codes'],['prisms','Prisms'],['spiralblockwipe','SpiralBlockWipe'],['hologram','Hologram'],['crumple','Crumple'],['sphere','Sphere'],['snapshot','Snapshot'],['gallery','Gallery'],['bokeh-dissolve','Bokeh dissolve']]){
         await page.locator('.timeline-clip.video:not(.selected)').first().click();
         await page.locator('#pair-transition-panel').waitFor({state:'visible'});
         await page.locator('#pair-transition-effect').selectOption(id);
@@ -125,7 +125,7 @@ try{
     await page.locator('#btn-undo').click();
     await page.locator('#btn-redo').click();
     await page.locator('#video-transition-pair-note').waitFor({state:'visible'});
-    assert.match(await page.locator('#video-transition-pair-note').innerText(),/Brokey dissolve/);
+    assert.match(await page.locator('#video-transition-pair-note').innerText(),/Bokeh dissolve/);
     // Right-click should expose actions without silently splitting the clip.
     await page.locator('.timeline-clip.video:not(.placeholder)').first().click({button:'right'});
     assert.ok(await page.locator('#timeline-context-menu').isVisible());

@@ -3,12 +3,14 @@
  */
 import { normalizeVisualTransitions } from './visual-transitions.mjs';
 import { isAvailablePairEffect } from './paired-visual-effects.mjs';
+import { normalizeTransitionEffectId } from './transition-catalog.mjs';
 
 export const PAIR_VISUAL_TYPES = new Set(['video','sticker','background']);
 const finite=value=>Number.isFinite(Number(value))?Number(value):0;
 const end=track=>finite(track.start)+Math.max(0,finite(track.clipDuration));
 const overlaps=(start,duration,other)=>start<end(other)-.001&&start+duration>finite(other.start)+.001;
 export function planPairedTransition(tracks,selectedIds,requestedDuration=1,effectId='fade',{preserveOrder=false}={}){
+    effectId=normalizeTransitionEffectId(effectId);
     if(!isAvailablePairEffect(effectId))throw new Error('Transition effect is not implemented yet.');
     if(!Array.isArray(selectedIds)||selectedIds.length!==2||new Set(selectedIds).size!==2)
         throw new Error('Select exactly two different video or still-image clips.');

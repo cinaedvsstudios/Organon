@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ACTIVE_PAIR_EFFECTS,sphereRadius,snapshotFlash,galleryTileProgress,brokeyFragment} from '../js/paired-visual-effects.mjs';
-import {TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES} from '../js/transition-catalog.mjs';
-const last=['sphere','snapshot','gallery','brokey-dissolve'];
+import {ACTIVE_PAIR_EFFECTS,sphereRadius,snapshotFlash,galleryTileProgress,isAvailablePairEffect} from '../js/paired-visual-effects.mjs';
+import {TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES,normalizeTransitionEffectId} from '../js/transition-catalog.mjs';
+import {normaliseBokehDissolveOptions} from '../js/gl-transitions/BokehDissolve.mjs';
+const last=['sphere','snapshot','gallery','bokeh-dissolve'];
 test('all 41 selected transitions are now available with stable unique IDs',()=>{
  assert.equal(SELECTED_TRANSITION_NAMES.length,41);
  assert.equal(TRANSITION_CATALOG.length,41);
@@ -31,12 +32,12 @@ test('gallery panels stagger deterministically and all complete',()=>{
   assert.equal(galleryTileProgress(.5,i),middle[i]);
  }
 });
-test('Brokey dissolve uses stable per-fragment thresholds and completes',()=>{
- const middle=Array.from({length:126},(_,i)=>brokeyFragment(.5,i));
- assert.ok(new Set(middle.map(x=>x.toFixed(2))).size>10);
- for(let i=0;i<126;i++){
-  assert.equal(brokeyFragment(0,i),0);
-  assert.equal(brokeyFragment(1,i),1);
-  assert.equal(brokeyFragment(.5,i),middle[i]);
- }
+test('correct BokehDissolve name and native lens controls replace old block thresholds',()=>{
+ assert.equal(normalizeTransitionEffectId('brokey-dissolve'),'bokeh-dissolve');
+ assert.equal(isAvailablePairEffect('brokey-dissolve'),true);
+ assert.equal(TRANSITION_CATALOG.find(x=>x.id==='bokeh-dissolve')?.label,'Bokeh dissolve');
+ const native=normaliseBokehDissolveOptions({radius:.12,blades:6,threshold:.3,intensity:2});
+ assert.deepEqual(native,{radius:.12,blades:6,threshold:.3,intensity:2});
+ assert.deepEqual(normaliseBokehDissolveOptions({radius:0,blades:20,threshold:2,intensity:-1}),
+  {radius:.01,blades:9,threshold:1,intensity:0});
 });

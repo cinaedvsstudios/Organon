@@ -31,6 +31,7 @@ import { normaliseCameraShakeOptions } from './gl-transitions/CameraShake.mjs';
 import { normaliseSmokeDissolveOptions } from './gl-transitions/SmokeDissolve.mjs';
 import { normaliseSplatterWipeOptions } from './gl-transitions/SplatterWipe.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
+import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
@@ -1723,6 +1724,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             bloomDissolveInspector.hidden=!(paired&&track.transitionEffectId==='bloom-dissolve');
             if(!bloomDissolveInspector.hidden)
                 displayBloomDissolveSettings(bloomDissolveInspector,track.transitionParameters?.['bloom-dissolve']);
+            const bokehDissolveInspector=document.getElementById('video-bokeh-dissolve-settings');
+            bokehDissolveInspector.hidden=!(paired&&track.transitionEffectId==='bokeh-dissolve');
+            if(!bokehDissolveInspector.hidden)
+                displayBokehDissolveSettings(bokehDissolveInspector,track.transitionParameters?.['bokeh-dissolve']);
             if(paired){
                 const effect=TRANSITION_CATALOG.find(item=>item.id===track.transitionEffectId);
                 elements.videoTransitionPairNote.textContent=`✦ Paired ${effect?.label||'transition'} from ${from.sourceName} · ${formatSeconds(fadeDuration(track,'enter'))} overlap`;
@@ -2085,6 +2090,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-bloom-dissolve-settings');
             b.transitionParameters={...b.transitionParameters,
                 'bloom-dissolve':readBloomDissolveSettings(panel)};
+        }
+        if(effectId==='bokeh-dissolve'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-bokeh-dissolve')
+                :document.getElementById('video-bokeh-dissolve-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'bokeh-dissolve':readBokehDissolveSettings(panel)};
         }
         refreshAll();
         selectTrack(b.id);
@@ -3226,6 +3238,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayBloomDissolveSettings(root,target?.transitionParameters?.['bloom-dissolve']);
         }
     }
+    function readBokehDissolveSettings(root){
+        const value=name=>root?.querySelector('[data-bokeh-dissolve-param="'+name+'"]')?.value;
+        return normaliseBokehDissolveOptions({
+            radius:value('radius'),blades:value('blades'),
+            threshold:value('threshold'),intensity:value('intensity')
+        });
+    }
+    function displayBokehDissolveSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseBokehDissolveOptions(options))){
+            const input=root?.querySelector('[data-bokeh-dissolve-param="'+name+'"]');
+            if(input)input.value=String(value);
+        }
+    }
+    function refreshBokehDissolveModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-bokeh-dissolve');
+        root.hidden=elements.transitionModalEffect.value!=='bokeh-dissolve';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayBokehDissolveSettings(root,target?.transitionParameters?.['bokeh-dissolve']);
+        }
+    }
     const transitionPreviewScratch = {tracks:[]};
     let transitionPreviewFrame = 0;
     function previewDrawContained(ctx,source,width,height) {
@@ -3296,6 +3329,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'splatter-wipe':readSplatterWipeSettings(document.getElementById('transition-modal-splatter-wipe'))}
                     :effectId==='bloom-dissolve'
                     ?{...b.transitionParameters,'bloom-dissolve':readBloomDissolveSettings(document.getElementById('transition-modal-bloom-dissolve'))}
+                    :effectId==='bokeh-dissolve'
+                    ?{...b.transitionParameters,'bokeh-dissolve':readBokehDissolveSettings(document.getElementById('transition-modal-bokeh-dissolve'))}
                     :b.transitionParameters,
                 visualTransitions:{...b.visualTransitions,enter:{type:'fade',curve:'linear',duration}}};
             if(effectId==='fade') {
@@ -3304,7 +3339,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','bloom-dissolve','bokeh-dissolve'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3356,6 +3391,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshSmokeDissolveModalSettings({restoreValues:true});
         refreshSplatterWipeModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
+        refreshBokehDissolveModalSettings({restoreValues:true});
         updateTransitionModalValidation();
     }
     function updateTransitionModalValidation() {
@@ -3414,10 +3450,26 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCameraShakeModalSettings({restoreValues:true});
         refreshSmokeDissolveModalSettings({restoreValues:true});
         refreshSplatterWipeModalSettings({restoreValues:true});
-        refreshBloomDissolveModalSettings({restoreValues:true});renderTransitionPreview();
+        refreshBloomDissolveModalSettings({restoreValues:true});
+        refreshBokehDissolveModalSettings({restoreValues:true});renderTransitionPreview();
     });
     document.getElementById('transition-modal-spiral').querySelectorAll('[data-spiral-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('transition-modal-bokeh-dissolve').querySelectorAll('[data-bokeh-dissolve-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-bokeh-dissolve-settings').querySelectorAll('[data-bokeh-dissolve-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='bokeh-dissolve'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readBokehDissolveSettings(document.getElementById('video-bokeh-dissolve-settings'));
+            const prior=normaliseBokehDissolveOptions(active.transitionParameters?.['bokeh-dissolve']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original BokehDissolve GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'bokeh-dissolve':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
     document.getElementById('transition-modal-bloom-dissolve').querySelectorAll('[data-bloom-dissolve-param]')
         .forEach(input=>input.addEventListener('input',renderTransitionPreview));
     document.getElementById('video-bloom-dissolve-settings').querySelectorAll('[data-bloom-dissolve-param]')
