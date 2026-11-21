@@ -35,6 +35,7 @@ import { normaliseRefractionOptions } from './gl-transitions/Refraction.mjs';
 import { normaliseWhipSpinOptions } from './gl-transitions/WhipSpin.mjs';
 import { normalisePaperTearOptions } from './gl-transitions/PaperTear.mjs';
 import { normaliseApertureWipeOptions } from './gl-transitions/ApertureWipe.mjs';
+import { normaliseSpiralWipeOptions } from './gl-transitions/SpiralWipe.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
 import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
@@ -1750,6 +1751,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             apertureWipeInspector.hidden=!(paired&&track.transitionEffectId==='aperture-wipe');
             if(!apertureWipeInspector.hidden)
                 displayApertureWipeSettings(apertureWipeInspector,track.transitionParameters?.['aperture-wipe']);
+            const spiralWipeInspector=document.getElementById('video-spiral-wipe-settings');
+            spiralWipeInspector.hidden=!(paired&&track.transitionEffectId==='spiral-wipe');
+            if(!spiralWipeInspector.hidden)
+                displaySpiralWipeSettings(spiralWipeInspector,track.transitionParameters?.['spiral-wipe']);
             const bloomDissolveInspector=document.getElementById('video-bloom-dissolve-settings');
             bloomDissolveInspector.hidden=!(paired&&track.transitionEffectId==='bloom-dissolve');
             if(!bloomDissolveInspector.hidden)
@@ -2168,6 +2173,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-aperture-wipe-settings');
             b.transitionParameters={...b.transitionParameters,
                 'aperture-wipe':readApertureWipeSettings(panel)};
+        }
+        if(effectId==='spiral-wipe'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-spiral-wipe')
+                :document.getElementById('video-spiral-wipe-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'spiral-wipe':readSpiralWipeSettings(panel)};
         }
         if(effectId==='bloom-dissolve'){
             const panel=preserveOrder===true
@@ -3442,6 +3454,32 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayApertureWipeSettings(root,target?.transitionParameters?.['aperture-wipe']);
         }
     }
+    function readSpiralWipeSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-spiral-wipe-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseSpiralWipeOptions({
+            turns:value('turns'),smoothness:value('smoothness'),clockwise:value('clockwise')
+        });
+    }
+    function displaySpiralWipeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseSpiralWipeOptions(options))){
+            const input=root?.querySelector('[data-spiral-wipe-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshSpiralWipeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-spiral-wipe');
+        root.hidden=elements.transitionModalEffect.value!=='spiral-wipe';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displaySpiralWipeSettings(root,target?.transitionParameters?.['spiral-wipe']);
+        }
+    }
     function readBloomDissolveSettings(root){
         const value=name=>root?.querySelector('[data-bloom-dissolve-param="'+name+'"]')?.value;
         return normaliseBloomDissolveOptions({
@@ -3675,6 +3713,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'paper-tear':readPaperTearSettings(document.getElementById('transition-modal-paper-tear'))}
                     :effectId==='aperture-wipe'
                     ?{...b.transitionParameters,'aperture-wipe':readApertureWipeSettings(document.getElementById('transition-modal-aperture-wipe'))}
+                    :effectId==='spiral-wipe'
+                    ?{...b.transitionParameters,'spiral-wipe':readSpiralWipeSettings(document.getElementById('transition-modal-spiral-wipe'))}
                     :effectId==='bloom-dissolve'
                     ?{...b.transitionParameters,'bloom-dissolve':readBloomDissolveSettings(document.getElementById('transition-modal-bloom-dissolve'))}
                     :effectId==='bokeh-dissolve'
@@ -3697,7 +3737,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3753,6 +3793,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshWhipSpinModalSettings({restoreValues:true});
         refreshPaperTearModalSettings({restoreValues:true});
         refreshApertureWipeModalSettings({restoreValues:true});
+        refreshSpiralWipeModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
@@ -3823,6 +3864,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshWhipSpinModalSettings({restoreValues:true});
         refreshPaperTearModalSettings({restoreValues:true});
         refreshApertureWipeModalSettings({restoreValues:true});
+        refreshSpiralWipeModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
@@ -4025,6 +4067,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original ApertureWipe GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'aperture-wipe':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-spiral-wipe').querySelectorAll('[data-spiral-wipe-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-spiral-wipe-settings').querySelectorAll('[data-spiral-wipe-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='spiral-wipe'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readSpiralWipeSettings(document.getElementById('video-spiral-wipe-settings'));
+            const prior=normaliseSpiralWipeOptions(active.transitionParameters?.['spiral-wipe']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original SpiralWipe GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'spiral-wipe':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));
