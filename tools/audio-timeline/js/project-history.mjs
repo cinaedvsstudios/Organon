@@ -7,6 +7,7 @@ import { normalizeVisualTransitions } from './visual-transitions.mjs';
 import { normalizeOrgavoxFx } from './orgavox-audio-chain.mjs';
 import { normaliseTextOverlay } from './text-template-renderer.mjs';
 import { normaliseTimelineEffect } from './timeline-effects.mjs';
+import { normalizeTransitionEffectId, normalizeTransitionParameters } from './transition-catalog.mjs';
 
 export const CLIP_DATA_KEYS = Object.freeze([
     'id', 'type', 'laneId', 'laneLabel', 'label', 'order',
@@ -22,9 +23,8 @@ export function snapshotClip(track) {
         if (track[key] !== undefined) data[key] = track[key];
     }
     data.transitionFromId = track.transitionFromId || null;
-    data.transitionEffectId = track.transitionEffectId || null;
-    data.transitionParameters = track.transitionParameters
-        ? JSON.parse(JSON.stringify(track.transitionParameters)) : {};
+    data.transitionEffectId = normalizeTransitionEffectId(track.transitionEffectId) || null;
+    data.transitionParameters = JSON.parse(JSON.stringify(normalizeTransitionParameters(track.transitionParameters)));
     data.audio = { volume:1, muted:false, fadeIn:0, fadeOut:0, ...(track.audio || {}) };
     if (data.audio.fx) data.audio.fx=normalizeOrgavoxFx(data.audio.fx);
     data.transform = { ...(track.transform||{}) };
@@ -137,9 +137,8 @@ export function applyClipData(target, record) {
         if (Object.hasOwn(record, key)) target[key] = record[key];
     }
     target.transitionFromId = record.transitionFromId || null;
-    target.transitionEffectId = record.transitionEffectId || null;
-    target.transitionParameters = record.transitionParameters
-        ? JSON.parse(JSON.stringify(record.transitionParameters)) : {};
+    target.transitionEffectId = normalizeTransitionEffectId(record.transitionEffectId) || null;
+    target.transitionParameters = JSON.parse(JSON.stringify(normalizeTransitionParameters(record.transitionParameters)));
     // Undoing a colour change must clear overrides absent in old snapshots.
     target.laneColor=record.laneColor || null;
     target.clipColor=record.clipColor || null;
