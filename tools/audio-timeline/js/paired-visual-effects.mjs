@@ -24,6 +24,7 @@ import { paintSpiralWipe } from './gl-transitions/SpiralWipe.mjs';
 import { paintPrisms } from './gl-transitions/Prisms.mjs';
 import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
 import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
+import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -548,6 +549,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintTvTurnOff(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='colorcoords')
         return paintColorCoords(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='cross-warp')
+        return paintCrossWarp(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -713,19 +716,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
-    if(id==='cross-warp'){
-        const bands=24;
-        context.save();
-        traceCrossWarp(context,progress,width,height);
-        context.clip();
-        for(let row=0;row<bands;row++){
-            const y=Math.floor(row*height/bands),next=Math.floor((row+1)*height/bands);
-            const dx=crossWarpShift(progress,row,bands,width);
-            context.drawImage(full,0,y,width,next-y,dx,y,width,next-y);
-        }
-        context.restore();
-        return true;
-    }
     if(id==='random-squares'){
         // Whole-image tile reveal: 112 cells per frame at most. Each tile
         // contributes its *full* opacity, so there is no dark crossfade.
