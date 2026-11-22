@@ -53,12 +53,12 @@ try{
    start:0,clipDuration:2,order:2,visible:true,opacity:1,blendMode:'source-over',media:makeSource('A')};
   const b={id:'B',type:'video',sourceName:'b.png',file:{name:'b.png'},
    start:1,clipDuration:2,order:1,visible:true,opacity:1,blendMode:'source-over',media:makeSource('B'),
-   transitionFromId:'A',transitionEffectId:'randomSquares',
+   transitionFromId:'A',transitionEffectId:'random-squares',
    visualTransitions:{enter:{type:'fade',curve:'linear',duration:1},
     exit:{type:'fade',curve:'linear',duration:0}}};
   engine.tracks=[a,b];
   const asImage=(progress,options)=>{
-   b.transitionParameters={'randomSquares':options};
+   b.transitionParameters={'random-squares':options};
    engine.currentTime=1+progress;
    engine.renderFrame();
    const data=new Uint8Array(output.getContext('2d').getImageData(0,0,w,h).data);
