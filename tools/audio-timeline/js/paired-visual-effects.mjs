@@ -22,6 +22,7 @@ import { paintPaperTear } from './gl-transitions/PaperTear.mjs';
 import { paintApertureWipe } from './gl-transitions/ApertureWipe.mjs';
 import { paintSpiralWipe } from './gl-transitions/SpiralWipe.mjs';
 import { paintPrisms } from './gl-transitions/Prisms.mjs';
+import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -542,6 +543,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintSpiralWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='prisms')
         return paintPrisms(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='tv-turn-off')
+        return paintTvTurnOff(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -701,32 +704,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const shear=cubeRowSkew(progress,row,rows,width);
             if(rightWidth>.5)context.drawImage(full,0,y,width,next-y,
                 width-rightWidth-shear,y,rightWidth,next-y);
-        }
-        context.restore();
-        return true;
-    }
-    if(id==='tv-turn-off'){
-        // In the first half, A collapses into the centerline. In the second,
-        // the clean incoming B expands from that line. The screen is black
-        // between phases, with a short brightness pulse like an old CRT.
-        const showingA=progress<.5;
-        const source=showingA
-            ?renderer.tracks.find(t=>t.id===track.transitionFromId)?.media
-            :media;
-        if(source&&(source.readyState===undefined||source.readyState>=2))
-            renderContained(sc,source,width,height);
-        context.save();
-        context.fillStyle='#000';
-        context.fillRect(0,0,width,height);
-        const heightFraction=tvScanHeight(progress);
-        const size=height*heightFraction;
-        if(size>.001&&source)
-            context.drawImage(full,0,0,width,height,0,(height-size)/2,width,size);
-        const flash=Math.max(0,1-Math.abs(progress-.5)/.045);
-        if(flash>0){
-            context.globalAlpha=alpha*flash;
-            context.fillStyle='#ffffff';
-            context.fillRect(0,Math.floor(height/2),width,Math.max(1,Math.round(height*.012)));
         }
         context.restore();
         return true;
