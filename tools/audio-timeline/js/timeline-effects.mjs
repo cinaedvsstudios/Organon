@@ -11,6 +11,7 @@ import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
+import {renderLightLeaks} from './timeline-light-leaks.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -72,7 +73,7 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,24),
   originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':'#ffd98d'
  };
 }
 // Keep one reusable full-frame scratch buffer per Canvas context. No per-frame
@@ -274,19 +275,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     ctx.closePath();ctx.fill();
    }
   }else if(e.presetId==='light-leaks'){
-   for(let i=0;i<3;i++){
-    const isRight=i===1;
-    const x=isRight?w*1.12:-w*.12;
-    const y=h*(.18+.23*i+.18*Math.sin(t*(.65+i*.24)+i));
-    const radius=w*(.65+i*.08)*size;
-    const gradient=ctx.createRadialGradient(x,y,0,x,y,radius);
-    const color=i===1?'#ff7b78':e.color;
-    gradient.addColorStop(0,rgba(color,.56*strength));
-    gradient.addColorStop(.34,rgba(color,.24*strength));
-    gradient.addColorStop(1,rgba(color,0));
-    ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
-   }
-  }else if(e.presetId==='pixel-scan'){
+    renderLightLeaks(ctx,w,h,e,t,strength);
+   }else if(e.presetId==='pixel-scan'){
    // Dynamic digital population: independent regeneration, not a translated still strip.
    renderPixelScan(ctx,w,h,e,t,strength);
   }else if(e.presetId==='sci-fi-scan'){
