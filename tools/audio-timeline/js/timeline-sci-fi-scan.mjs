@@ -77,7 +77,7 @@ export function buildSciFiScanFrame(width,height,effect={},seconds=0){
   color:o.color,glow:o.glow,scale:o.scale,direction:o.direction};
 }
 function rgba(hex,a){
- const h=hex.slice(1),rgb=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+ const h=hex.slice(1),rgb=[0,2,4].map(i=>parseInt(h.slice(i,i+2),16));
  return 'rgba('+rgb.join(',')+','+clamp(a,0,1).toFixed(4)+')';
 }
 /** Paint scanner on top of already composed video; restore every Canvas state. */
