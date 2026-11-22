@@ -143,7 +143,8 @@ void main(){gl_FragColor=transition(uv);}`);
      max=Math.max(max,delta);sum+=delta;
     }
    }
-   if(settings===opts[0]&&progress===.5)representative=actual.frame;
+   // Frame 6/24 demonstrates the authored glitch; frame 12 intentionally flashes clean B.
+   if(settings===opts[0]&&progress===.25)representative=actual.frame;
    samples.push({settings,progress,mean:sum/(w*h*4),max,hash:actual.hash});
   }
   const baseline=asImage(.5,opts[0]);
