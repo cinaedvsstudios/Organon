@@ -48,8 +48,10 @@ export function buildSciFiScanFrame(width,height,effect={},seconds=0){
   const speed=.54+1.8*hash(i,14);
   const travel=wrap(hash(i,17)+t*speed);
   // Each bar runs on its own clock in an opposite horizontal direction.
-  const offset=direction*((travel-.5)*w*.44);
-  const x=beamX+offset;
+  // Signed clocks wrap telemetry through the full scene, while the beam
+  // remains their moving search origin; never confine bars to one side.
+  const offset=direction*(travel-.5)*1.12;
+  const x=wrap(beamX/w+offset)*w;
   const y=h*(.07+.86*hash(i,33))
    +Math.sin(t*(1+hash(i,40)*2)+i)*h*.016;
   const alpha=(.22+.68*hash(i,29))*(.40+.60*Math.pow(Math.sin(t*(7+hash(i,5)*9)+i),2));
