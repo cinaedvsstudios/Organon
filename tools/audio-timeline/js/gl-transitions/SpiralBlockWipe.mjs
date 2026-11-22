@@ -1,4 +1,5 @@
 /**
+ * Pinned upstream original GLSL git blob e98d9e749d398d84ec927da9286af13843da722e; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * Verified source for GL Transitions SpiralBlockWipe.
  * Upstream https://github.com/gl-transitions/gl-transitions/blob/deeebdee7581cdfe924ed9cf104ea2fd10e63155/transitions/SpiralBlockWipe.glsl
  * Original author: gre; license: MIT. Shader below is verbatim; wrapper only

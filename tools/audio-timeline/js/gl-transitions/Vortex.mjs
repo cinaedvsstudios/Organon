@@ -1,4 +1,5 @@
 /**
+ * Pinned upstream original GLSL git blob dd0b3f76a8ec3e941e9db79d4f6282a75c3282bd; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * #04 Vortex: unmodified original gre/MIT GL Transitions shader.
  * https://github.com/gl-transitions/gl-transitions/blob/deeebdee7581cdfe924ed9cf104ea2fd10e63155/transitions/Vortex.glsl
  * The original 24 waves, per-square 3x3 inverse search, displacement,
