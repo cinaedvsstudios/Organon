@@ -6,6 +6,7 @@
  * implementation; no runtime or nonportable asset dependency is introduced.
  */
 import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel-effects.mjs';
+import {renderPixelScan} from './timeline-pixel-scan.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -292,18 +293,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     ctx.fillStyle=gradient;ctx.fillRect(0,0,w,h);
    }
   }else if(e.presetId==='pixel-scan'){
-   const phase=wrap(t*.28),y=phase*h,band=Math.max(6,18*size);
-   const grad=ctx.createLinearGradient(0,y-band*3,0,y+band*3);
-   grad.addColorStop(0,rgba(e.color,0));grad.addColorStop(.5,rgba(e.color,.50*strength));grad.addColorStop(1,rgba(e.color,0));
-   ctx.fillStyle=grad;ctx.fillRect(0,y-band*3,w,band*6);
-   const grid=Math.max(5,Math.round(13*size));
-   const n=Math.round(e.density);
-   for(let i=0;i<n;i++){
-    const x=Math.floor(random(i+98)*w/grid)*grid;
-    const offset=Math.floor((random(i+201)-.5)*5)*grid;
-    ctx.fillStyle=rgba(e.color,(.13+.34*random(i+331))*strength);
-    ctx.fillRect(x,y+offset,grid*(1+Math.floor(random(i+411)*3)),grid);
-   }
+   // Dynamic digital population: independent regeneration, not a translated still strip.
+   renderPixelScan(ctx,w,h,e,t,strength);
   }else if(e.presetId==='sci-fi-scan'){
    const phase=wrap(t*.23),x=(rad>=0?phase:1-phase)*w;
    const beam=Math.max(3,9*size);
