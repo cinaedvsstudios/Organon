@@ -271,8 +271,15 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/paired-shader-engine.browser.mjs
+      - name: Verify old saved transition IDs render the three original GPU shaders in Chrome
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/transition-alias-compatibility.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
+      - name: Verify all legacy transition aliases, portable snapshots and media-preserving Undo/Redo
+        run: node --test tools/audio-timeline/tests/transition-alias-compatibility.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history
