@@ -26,7 +26,7 @@ test('Sci-Fi Scan has autonomous fast vertical target and independently racing l
 });
 
 test('Detection blips appear and fade with independent generations, positions and pulses',()=>{
- const samples=[.12,.3,.62,1.1].map(at);
+ const samples=[.12,.3,.62,1.1].map(t=>at(t));
  const all=samples.flatMap(f=>f.blips);
  assert.ok(all.some(x=>x.alpha>.2)&&all.some(x=>x.alpha===0),'Short-lived detections must appear and expire');
  assert.ok(new Set(all.map(x=>x.rate.toFixed(3))).size>12,'Detections require independent clocks');
