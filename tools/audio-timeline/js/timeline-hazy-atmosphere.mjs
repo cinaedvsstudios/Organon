@@ -43,8 +43,7 @@ function options(effect={}){
  };
 }
 /** Exposed for tests: independent translucent depth planes at one coordinate. */
-export function sampleHazyAtmosphereLayers(nx,ny,effect={},seconds=0){
- const o=options(effect),t=Math.max(0,Number(seconds)||0);
+function sampleLayers(nx,ny,o,t){
  const u=limit(nx,0,1),v=limit(ny,0,1),fields=[];
  for(let depth=0;depth<3;depth++){
   // Near and far clouds move at different speeds and spatial scales.
@@ -74,16 +73,19 @@ export function sampleHazyAtmosphereLayers(nx,ny,effect={},seconds=0){
  }
  return fields;
 }
+export function sampleHazyAtmosphereLayers(nx,ny,effect={},seconds=0){
+ return sampleLayers(nx,ny,options(effect),Math.max(0,Number(seconds)||0));
+}
 /** Produce transparent RGBA cloud pixels; optionally reuse the same typed array. */
 export function buildHazyAtmosphereFrame(width,height,effect={},seconds=0,reuse){
  const w=Math.max(1,Math.round(Number(width)||1));
  const h=Math.max(1,Math.round(Number(height)||1));
  const data=reuse?.length===w*h*4?reuse:new Uint8ClampedArray(w*h*4);
- const o=options(effect);
+ const o=options(effect),t=Math.max(0,Number(seconds)||0);
  for(let y=0;y<h;y++){
   const v=(y+.5)/h;
   for(let x=0;x<w;x++){
-   const u=(x+.5)/w,fields=sampleHazyAtmosphereLayers(u,v,effect,seconds);
+   const u=(x+.5)/w,fields=sampleLayers(u,v,o,t);
    let alpha=0,r=0,g=0,b=0;
    for(const f of fields){
     const layerAlpha=f.alpha*(1-alpha);
@@ -125,12 +127,11 @@ function getScratch(ctx,w,h){
 }
 /* A live vector fallback for environments without scratch Canvas support;
  * never slides a static texture, and is not used in ordinary browsers. */
-function drawNoScratch(ctx,w,h,e,t,strength){
- const o=options(e);
+function drawNoScratch(ctx,w,h,e,t){
  for(let d=0;d<3;d++){
   const center=h*(.24+d*.22);
   const gradient=ctx.createLinearGradient(0,center-h*.28,0,center+h*.32);
-  const alpha=(.08+.035*d)*strength;
+  const alpha=(.08+.035*d)*limit(e.intensity??70,0,100)/100;
   gradient.addColorStop(0,'rgba(214,224,233,0)');
   gradient.addColorStop(.52,'rgba(214,224,233,'+alpha.toFixed(4)+')');
   gradient.addColorStop(1,'rgba(214,224,233,0)');
@@ -150,15 +151,15 @@ function drawNoScratch(ctx,w,h,e,t,strength){
  }
 }
 /** Use the same alpha-noise field in engine preview, scrub and final export. */
-export function renderHazyAtmosphere(ctx,w,h,e={},cycle=0,strength=1){
+export function renderHazyAtmosphere(ctx,w,h,e={},cycle=0,strength=limit(e.intensity??70,0,100)/100){
  const opacity=limit(strength,0,1);
  if(opacity<=0)return true;
- const settings={...e,intensity:limit((e.intensity??70)*opacity,0,100)};
+ const settings={...e,intensity:100*opacity};
  const scratch=getScratch(ctx,w,h);
  ctx.save();
  try{
   if(!scratch){
-   drawNoScratch(ctx,w,h,settings,cycle,opacity);
+   drawNoScratch(ctx,w,h,settings,cycle);
   }else{
    buildHazyAtmosphereFrame(scratch.canvas.width,scratch.canvas.height,
     settings,cycle,scratch.image.data);
