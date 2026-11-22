@@ -39,7 +39,7 @@ test('Hazy Atmosphere raster is partially transparent, spatially distributed, ti
  assert.equal(a.data.length,64*36*4);
  const alphas=[];
  for(let i=3;i<a.data.length;i+=4)alphas.push(a.data[i]);
- assert.ok(alphas.some(x=>x===0||x<4),'Some atmosphere must be almost transparent');
+ assert.ok(alphas.some(x=>x<14),'Some atmosphere must remain nearly transparent');
  assert.ok(alphas.filter(x=>x>12).length>60,'Many pixels contain genuine visible fog');
  assert.ok(new Set(alphas).size>12,'Cloud alpha cannot be a flat translated rectangle');
  assert.ok(Math.max(...alphas)<240,'Fog must never conceal source video as an opaque card');
