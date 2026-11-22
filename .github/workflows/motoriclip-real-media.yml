@@ -251,6 +251,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/glitchflicker.browser.mjs
+      - name: Compare original Pixelize symmetrical A/B block GLSL with independent Chrome oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/pixelize.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -275,6 +280,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/fade-source.test.mjs
       - name: Pin original GlitchFlicker source SHA, six uniforms and project history
         run: node --test tools/audio-timeline/tests/glitchflicker-source.test.mjs
+      - name: Verify source pinned Pixelize GLSL, native integer parameters and project Undo/Redo
+        run: node --test tools/audio-timeline/tests/pixelize-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -524,6 +531,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/glitchflicker-export.browser.mjs
+      - name: Decode actual Pixelize H264 MP4 and verify original shader preview-pixel parity
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/pixelize-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
