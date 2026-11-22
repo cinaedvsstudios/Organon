@@ -41,6 +41,7 @@ import { normaliseCubeOptions } from './gl-transitions/Cube.mjs';
 import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
 import { normaliseGlitchFlickerOptions } from './gl-transitions/GlitchFlicker.mjs';
 import { normalisePixelizeOptions } from './gl-transitions/Pixelize.mjs';
+import { normaliseRandomSquaresOptions } from './gl-transitions/RandomSquares.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
@@ -1781,6 +1782,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             pixelizeInspector.hidden=!(paired&&track.transitionEffectId==='pixelize');
             if(!pixelizeInspector.hidden)
                 displayPixelizeSettings(pixelizeInspector,track.transitionParameters?.pixelize);
+            const randomSquaresInspector=document.getElementById('video-random-squares-settings');
+            randomSquaresInspector.hidden=!(paired&&track.transitionEffectId==='random-squares');
+            if(!randomSquaresInspector.hidden)
+                displayRandomSquaresSettings(randomSquaresInspector,track.transitionParameters?.['random-squares']);
             const tvTurnOffInspector=document.getElementById('video-tv-turn-off-settings');
             tvTurnOffInspector.hidden=!(paired&&track.transitionEffectId==='tv-turn-off');
             if(!tvTurnOffInspector.hidden)
@@ -2244,6 +2249,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-pixelize-settings');
             b.transitionParameters={...b.transitionParameters,
                 pixelize:readPixelizeSettings(panel)};
+        }
+        if(effectId==='random-squares'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-random-squares')
+                :document.getElementById('video-random-squares-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'random-squares':readRandomSquaresSettings(panel)};
         }
         if(effectId==='tv-turn-off'){
             const panel=preserveOrder===true
@@ -3688,6 +3700,32 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayPixelizeSettings(root,target?.transitionParameters?.['pixelize']);
         }
     }
+    function readRandomSquaresSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-random-squares-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseRandomSquaresOptions({
+            sizeX:value('sizeX'),sizeY:value('sizeY'),smoothness:value('smoothness')
+        });
+    }
+    function displayRandomSquaresSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseRandomSquaresOptions(options))){
+            const input=root?.querySelector('[data-random-squares-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshRandomSquaresModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-random-squares');
+        root.hidden=elements.transitionModalEffect.value!=='random-squares';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayRandomSquaresSettings(root,target?.transitionParameters?.['random-squares']);
+        }
+    }
     function readTvTurnOffSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-tv-turn-off-param="'+name+'"]');
@@ -3959,6 +3997,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'glitch-flicker':readGlitchFlickerSettings(document.getElementById('transition-modal-glitch-flicker'))}
                     :effectId==='pixelize'
                     ?{...b.transitionParameters,pixelize:readPixelizeSettings(document.getElementById('transition-modal-pixelize'))}
+                    :effectId==='random-squares'
+                    ?{...b.transitionParameters,'random-squares':readRandomSquaresSettings(document.getElementById('transition-modal-random-squares'))}
                     :effectId==='tv-turn-off'
                     ?{...b.transitionParameters,'tv-turn-off':readTvTurnOffSettings(document.getElementById('transition-modal-tv-turn-off'))}
                     :effectId==='bloom-dissolve'
@@ -4045,6 +4085,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshPixelizeModalSettings({restoreValues:true});
+        refreshRandomSquaresModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4122,6 +4163,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshPixelizeModalSettings({restoreValues:true});
+        refreshRandomSquaresModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4415,6 +4457,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original Pixelize GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'pixelize':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-random-squares').querySelectorAll('[data-random-squares-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-random-squares-settings').querySelectorAll('[data-random-squares-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='random-squares'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readRandomSquaresSettings(document.getElementById('video-random-squares-settings'));
+            const prior=normaliseRandomSquaresOptions(active.transitionParameters?.['random-squares']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original RandomSquares GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'random-squares':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));

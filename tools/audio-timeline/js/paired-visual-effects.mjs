@@ -28,6 +28,7 @@ import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
 import { paintFade } from './gl-transitions/Fade.mjs';
 import { paintGlitchFlicker } from './gl-transitions/GlitchFlicker.mjs';
 import { paintPixelize } from './gl-transitions/Pixelize.mjs';
+import { paintRandomSquares } from './gl-transitions/RandomSquares.mjs';
 import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
 import { paintCube } from './gl-transitions/Cube.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
@@ -508,6 +509,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintGlitchFlicker(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='pixelize')
         return paintPixelize(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='random-squares')
+        return paintRandomSquares(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='spiralblockwipe')
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='hologram')
@@ -685,19 +688,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     sc.clearRect(0,0,width,height);
     renderContained(sc,media,width,height);
 
-    if(id==='random-squares'){
-        // Whole-image tile reveal: 112 cells per frame at most. Each tile
-        // contributes its *full* opacity, so there is no dark crossfade.
-        const cols=14,rows=8,cellW=width/cols,cellH=height/rows;
-        for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-            if(!revealCell(progress,y*cols+x))continue;
-            const sx=Math.floor(x*cellW),sy=Math.floor(y*cellH);
-            const ex=Math.min(width,Math.ceil((x+1)*cellW));
-            const ey=Math.min(height,Math.ceil((y+1)*cellH));
-            context.drawImage(full,sx,sy,ex-sx,ey-sy,sx,sy,ex-sx,ey-sy);
-        }
-        return true;
-    }
+
 
     return false;
 }

@@ -103,7 +103,10 @@ try{
             &&engine.transitionPixelScratch==null
             &&engine.pixelizeFromScratch==null
             &&engine.pixelizeToScratch==null
-            &&engine.pixelizeWebGL==null;
+            &&engine.pixelizeWebGL==null
+            &&engine.randomSquaresFromScratch==null
+            &&engine.randomSquaresToScratch==null
+            &&engine.randomSquaresWebGL==null;
         return results;
     });
     for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','colorcoords','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
@@ -114,8 +117,13 @@ try{
         assert.notDeepEqual(r.finished.center,[0,0,255],effect+' must reveal B after transition');
     }
     const squares=result['random-squares'].middle;
-    assert.ok(squares.red>100&&squares.blue>100,'Random squares must reveal fully opaque B tiles over A');
-    assert.ok(squares.mixed<5,'Random squares should not darken cells with a global crossfade');
+    // Original RandomSquares.glsl uses a stochastic random field with a
+    // smoothstep edge per cell; its in-flight squares are deliberately mixed.
+    // The old Canvas approximation forced zero soft cells, which was wrong.
+    assert.ok(squares.red>100&&squares.blue>100,
+        'RandomSquares should contain recognizable outgoing and incoming tiles');
+    assert.ok(squares.mixed>10,
+        'Original RandomSquares smoothness must render in-flight partially revealed squares');
     assert.notEqual(result.pixelize.middle.fingerprint,result.fade.middle.fingerprint,
         'Pixelize must visibly differ from an ordinary fade');
     assert.notEqual(result['glitch-flicker'].middle.fingerprint,result.fade.middle.fingerprint,
