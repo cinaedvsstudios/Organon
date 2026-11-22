@@ -189,7 +189,7 @@ export function paintTvTurnOff(renderer,context,toTrack,width,height,time,drawCo
         ctx.restore();
     }
     const shader=renderer.tvTurnOffWebGL??(renderer.tvTurnOffWebGL=createTvTurnOffWebGLRenderer());
-    const frame=shader.render(sources[0],sources[1],progress,toTrack.transitionParameters?.['tvTurnOff']);
+    const frame=shader.render(sources[0],sources[1],progress,toTrack.transitionParameters?.['tv-turn-off']);
     context.save();context.setTransform(1,0,0,1,0,0);context.filter='none';
     context.globalCompositeOperation='source-over';context.globalAlpha=1;
     context.drawImage(frame,0,0,width,height);
