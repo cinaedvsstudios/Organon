@@ -42,6 +42,7 @@ import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
 import { normaliseGlitchFlickerOptions } from './gl-transitions/GlitchFlicker.mjs';
 import { normalisePixelizeOptions } from './gl-transitions/Pixelize.mjs';
 import { normaliseRandomSquaresOptions } from './gl-transitions/RandomSquares.mjs';
+import { normaliseRippleOptions } from './gl-transitions/Ripple.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
@@ -1786,6 +1787,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             randomSquaresInspector.hidden=!(paired&&track.transitionEffectId==='random-squares');
             if(!randomSquaresInspector.hidden)
                 displayRandomSquaresSettings(randomSquaresInspector,track.transitionParameters?.['random-squares']);
+            const rippleInspector=document.getElementById('video-ripple-settings');
+            rippleInspector.hidden=!(paired&&track.transitionEffectId==='ripple');
+            if(!rippleInspector.hidden)
+                displayRippleSettings(rippleInspector,track.transitionParameters?.ripple);
             const tvTurnOffInspector=document.getElementById('video-tv-turn-off-settings');
             tvTurnOffInspector.hidden=!(paired&&track.transitionEffectId==='tv-turn-off');
             if(!tvTurnOffInspector.hidden)
@@ -2256,6 +2261,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-random-squares-settings');
             b.transitionParameters={...b.transitionParameters,
                 'random-squares':readRandomSquaresSettings(panel)};
+        }
+        if(effectId==='ripple'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-ripple')
+                :document.getElementById('video-ripple-settings');
+            b.transitionParameters={...b.transitionParameters,
+                ripple:readRippleSettings(panel)};
         }
         if(effectId==='tv-turn-off'){
             const panel=preserveOrder===true
@@ -3726,6 +3738,32 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayRandomSquaresSettings(root,target?.transitionParameters?.['random-squares']);
         }
     }
+    function readRippleSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-ripple-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseRippleOptions({
+            amplitude:value('amplitude'),speed:value('speed')
+        });
+    }
+    function displayRippleSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseRippleOptions(options))){
+            const input=root?.querySelector('[data-ripple-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshRippleModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-ripple');
+        root.hidden=elements.transitionModalEffect.value!=='ripple';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayRippleSettings(root,target?.transitionParameters?.['ripple']);
+        }
+    }
     function readTvTurnOffSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-tv-turn-off-param="'+name+'"]');
@@ -3999,6 +4037,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,pixelize:readPixelizeSettings(document.getElementById('transition-modal-pixelize'))}
                     :effectId==='random-squares'
                     ?{...b.transitionParameters,'random-squares':readRandomSquaresSettings(document.getElementById('transition-modal-random-squares'))}
+                    :effectId==='ripple'
+                    ?{...b.transitionParameters,ripple:readRippleSettings(document.getElementById('transition-modal-ripple'))}
                     :effectId==='tv-turn-off'
                     ?{...b.transitionParameters,'tv-turn-off':readTvTurnOffSettings(document.getElementById('transition-modal-tv-turn-off'))}
                     :effectId==='bloom-dissolve'
@@ -4086,6 +4126,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshPixelizeModalSettings({restoreValues:true});
         refreshRandomSquaresModalSettings({restoreValues:true});
+        refreshRippleModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4164,6 +4205,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshPixelizeModalSettings({restoreValues:true});
         refreshRandomSquaresModalSettings({restoreValues:true});
+        refreshRippleModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4472,6 +4514,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original RandomSquares GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'random-squares':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-ripple').querySelectorAll('[data-ripple-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-ripple-settings').querySelectorAll('[data-ripple-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='ripple'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readRippleSettings(document.getElementById('video-ripple-settings'));
+            const prior=normaliseRippleOptions(active.transitionParameters?.['ripple']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Ripple GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'ripple':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));
