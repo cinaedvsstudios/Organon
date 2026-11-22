@@ -1597,15 +1597,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
         document.getElementById('effect-origin-controls').hidden=
-            !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan'].includes(track?.effectOverlay?.presetId);
+            !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=
             !(['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
-              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','sci-fi-scan'].includes(track?.effectOverlay?.presetId)
+              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','sci-fi-scan','fire-flames'].includes(track?.effectOverlay?.presetId)
               || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
         document.getElementById('effect-glow-control').hidden=
-            !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan','fire-flames'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-blur-control').hidden=
-            !['glow','edge-glow','halo-blur'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','fire-flames'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
