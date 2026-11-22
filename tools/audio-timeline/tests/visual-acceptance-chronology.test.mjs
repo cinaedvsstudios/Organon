@@ -79,7 +79,13 @@ test('no false bulk acceptance hides remaining overlay, editor, mobile and perfo
  for(const row of rows){
   const m=row.match(/^-\s+\[([ x])\]\s+\*\*(\d+)\./);
   const n=Number(m[2]);
-  if(n>=47)assert.equal(m[1],' ','Unfinished requirements must remain unchecked: #'+n);
+  if(n>=47 && m[1]==='x'){
+   assert.match(row,/\*\*Verified\b/i,'Future accepted requirement must have individually dated evidence: #'+n);
+   assert.match(row,/https:\/\/github\.com\/cinaedvsstudios\/Organon\/pull\/\d+/,
+    'Future accepted requirement must cite its implementation PR: #'+n);
+   assert.match(row,/https:\/\/github\.com\/cinaedvsstudios\/Organon\/actions\/runs\/\d+/,
+    'Future accepted requirement must cite its verification run: #'+n);
+  }
  }
  assert.ok(markdown.includes('**Current verified progress'),'Master progress must remain visible');
 });
