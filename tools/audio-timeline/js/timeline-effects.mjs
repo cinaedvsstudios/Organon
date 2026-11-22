@@ -8,6 +8,7 @@
 import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel-effects.mjs';
 import {renderPixelScan} from './timeline-pixel-scan.mjs';
 import {renderFlamingDust} from './timeline-ember-dust.mjs';
+import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -69,7 +70,7 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,24),
   originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':'#ffd98d'
  };
 }
 // Keep one reusable full-frame scratch buffer per Canvas context. No per-frame
@@ -253,17 +254,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    g.addColorStop(1,'rgba(255,255,255,0)');
    ctx.fillStyle=g;ctx.fillRect(-beam,-h*1.6,beam*2,h*3.2);
   }else if(e.presetId==='hazy-atmosphere'){
-   for(let i=0;i<7;i++){
-    const drift=t*(.11+random(i+3)*.09);
-    const x=wrap(random(i+21)+drift)*w;
-    const y=(.16+random(i+41)*.68)*h+Math.sin(t*.6+i)*h*.08;
-    const radius=Math.max(w,h)*(.16+random(i+51)*.22)*size;
-    const g=ctx.createRadialGradient(x,y,0,x,y,radius);
-    g.addColorStop(0,rgba(e.color,.125*strength));
-    g.addColorStop(.6,rgba(e.color,.05*strength));
-    g.addColorStop(1,rgba(e.color,0));
-    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
-   }
+   renderHazyAtmosphere(ctx,w,h,e,t,strength);
   }else if(e.presetId==='god-rays'){
    const ox=w*e.originX/100,oy=h*e.originY/100;
    const length=Math.hypot(w,h)*1.25*size;
