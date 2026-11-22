@@ -36,7 +36,7 @@ export const SELECTED_TRANSITION_NAMES = Object.freeze([
     "Spiral wipe",
     "Prisms",
     "TV turn off",
-    "Color codes",
+    "ColorCoords",
     "Cross warp",
     "Cross hatch",
     "Cube",
@@ -49,7 +49,8 @@ export const SELECTED_TRANSITION_NAMES = Object.freeze([
 /** Canonicalize selected effect IDs, preserving legacy persisted project aliases. */
 export const normalizeTransitionEffectId = id =>
     id==='brokey-dissolve'?'bokeh-dissolve'
-        :(id==='spin'||id==='whip-spin')?'whipspin':id;
+        :(id==='spin'||id==='whip-spin')?'whipspin'
+        :(id==='color-codes'||id==='color-coords')?'colorcoords':id;
 export function normalizeTransitionParameters(parameters={}){
     const result={...(parameters||{})};
     if(Object.hasOwn(result,'brokey-dissolve')){
@@ -68,11 +69,19 @@ export function normalizeTransitionParameters(parameters={}){
             result.whipspin=result['whip-spin'];
         delete result['whip-spin'];
     }
+    // Preserve previously saved "Color codes" projects as exact original ColorCoords.
+    for(const legacyKey of ['color-codes','color-coords']){
+        if(Object.hasOwn(result,legacyKey)){
+            if(!Object.hasOwn(result,'colorcoords'))
+                result.colorcoords=result[legacyKey];
+            delete result[legacyKey];
+        }
+    }
     return result;
 }
 export const transitionId = name => normalizeTransitionEffectId(String(name).toLowerCase()
     .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''));
 export const TRANSITION_CATALOG = Object.freeze(SELECTED_TRANSITION_NAMES.map((name,index)=>Object.freeze({
     id:transitionId(name),label:name,group:'User selection: first 10 gallery pages',
-    status:['Fade','Pixelize','Random squares','Glitch flicker','Ripple','TV turn off','Aperture wipe','Spiral wipe','Rings wipe','Color panel wipe','Block cover','Cross hatch','Film strip','Card swipe','Camera shake','VHS tracking','WhipSpin','Cube','Cross warp','Paper tear','Ink bleed','Splatter wipe','Cell dissolve','Bloom dissolve','Smoke dissolve','Vortex','Heat haze','Refraction','Liquid fill','Disintegrate','Light rays','ASCII','Color codes','Prisms','SpiralBlockWipe','Hologram','Crumple','Sphere','Snapshot','Gallery','Bokeh dissolve'].includes(name)?'available':'requested',selectedOrder:index+1
+    status:['Fade','Pixelize','Random squares','Glitch flicker','Ripple','TV turn off','Aperture wipe','Spiral wipe','Rings wipe','Color panel wipe','Block cover','Cross hatch','Film strip','Card swipe','Camera shake','VHS tracking','WhipSpin','Cube','Cross warp','Paper tear','Ink bleed','Splatter wipe','Cell dissolve','Bloom dissolve','Smoke dissolve','Vortex','Heat haze','Refraction','Liquid fill','Disintegrate','Light rays','ASCII','ColorCoords','Prisms','SpiralBlockWipe','Hologram','Crumple','Sphere','Snapshot','Gallery','Bokeh dissolve'].includes(name)?'available':'requested',selectedOrder:index+1
 })));
