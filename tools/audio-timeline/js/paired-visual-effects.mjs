@@ -26,6 +26,7 @@ import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
 import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
 import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
 import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
+import { paintCube } from './gl-transitions/Cube.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -554,6 +555,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintCrossWarp(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='cross-hatch')
         return paintCrosshatch(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='cube')
+        return paintCube(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -682,34 +685,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
     const sc=full.getContext('2d');
     sc.clearRect(0,0,width,height);
-    if(id==='cube'){
-        // Rotate around a shared seam: A contracts toward the left as B
-        // opens on the right. Mild row-dependent skew suggests perspective.
-        const from=renderer.tracks?.find(t=>t.id===track.transitionFromId);
-        if(!from?.media || (from.media.readyState!==undefined&&from.media.readyState<2))
-            return false;
-        const rows=24,leftWidth=cubeFaceWidth(progress,width,'outgoing');
-        const rightWidth=cubeFaceWidth(progress,width,'incoming');
-        context.save();
-        context.fillStyle='#090c14';
-        context.fillRect(0,0,width,height);
-        renderContained(sc,from.media,width,height);
-        for(let row=0;row<rows;row++){
-            const y=Math.floor(row*height/rows),next=Math.floor((row+1)*height/rows);
-            const shear=cubeRowSkew(progress,row,rows,width);
-            if(leftWidth>.5)context.drawImage(full,0,y,width,next-y,shear,y,leftWidth,next-y);
-        }
-        sc.clearRect(0,0,width,height);
-        renderContained(sc,media,width,height);
-        for(let row=0;row<rows;row++){
-            const y=Math.floor(row*height/rows),next=Math.floor((row+1)*height/rows);
-            const shear=cubeRowSkew(progress,row,rows,width);
-            if(rightWidth>.5)context.drawImage(full,0,y,width,next-y,
-                width-rightWidth-shear,y,rightWidth,next-y);
-        }
-        context.restore();
-        return true;
-    }
     renderContained(sc,media,width,height);
 
     if(id==='random-squares'){
