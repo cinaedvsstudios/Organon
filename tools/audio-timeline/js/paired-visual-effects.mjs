@@ -25,6 +25,7 @@ import { paintPrisms } from './gl-transitions/Prisms.mjs';
 import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
 import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
 import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
+import { paintFade } from './gl-transitions/Fade.mjs';
 import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
 import { paintCube } from './gl-transitions/Cube.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
@@ -495,10 +496,12 @@ function scratchCanvas(renderer,key,width,height) {
  */
 export function paintPairedEffect(renderer,context,track,width,height,time,renderContained) {
     const id=normalizeTransitionEffectId(track.transitionEffectId);
-    if(!isAvailablePairEffect(id)||id==='fade')return false;
+    if(!isAvailablePairEffect(id))return false;
     const progress=pairedEffectProgress(track,time);
     if(progress<=0)return true; // Keep A entirely visible at the boundary.
     if(progress>=1)return false; // Let normal renderer draw a pristine B.
+    if(id==='fade')
+        return paintFade(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='spiralblockwipe')
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='hologram')
