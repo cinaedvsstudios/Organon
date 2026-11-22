@@ -12,7 +12,7 @@ function hash(a,b=0){
  let n=(Math.imul((Math.trunc(a)+1)>>>0,0x9e3779b1)^Math.imul((Math.trunc(b)+7)>>>0,0x85ebca6b))>>>0;
  n^=n>>>16;n=Math.imul(n,0x7feb352d)>>>0;n^=n>>>15;
  n=Math.imul(n,0x846ca68b)>>>0;n^=n>>>16;
- return n/4294967296;
+ return (n>>>0)/4294967296; // unsigned 32-bit hash: keep independent dropout probabilities in [0,1).
 }
 const palette=['primary','#4ae9ff','#fa68c5','#fff6c4'];
 const primary=e=>/^#[a-f\d]{6}$/i.test(String(e?.color))?String(e.color).toLowerCase():'#ffd98d';
