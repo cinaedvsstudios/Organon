@@ -249,16 +249,23 @@ try{
         'Original WhipSpin motion blur must not collapse to a plain alpha fade');
     assert.equal(spin.fingerprint,result.whipspin.repeat.fingerprint,
         'WhipSpin must be deterministic when seeking backwards');
-    for(const [name,frame] of [['cube',cube],['cross-warp',crossWarp]]){
-        assert.ok(frame.red>100&&frame.blue>100,name+' must show A and B simultaneously at the midpoint');
-        assert.notEqual(frame.fingerprint,result.fade.middle.fingerprint,
-            name+' must not look like an ordinary alpha fade');
-        assert.equal(frame.fingerprint,result[name].repeat.fingerprint,
-            name+' must be repeatable after timeline seeking');
-    }
+    assert.ok(cube.red>100&&cube.blue>100,'Cube must show both rotating scene faces at midpoint');
+    assert.notEqual(cube.fingerprint,result.fade.middle.fingerprint,
+        'Cube must differ from ordinary crossfade');
+    assert.equal(cube.fingerprint,result.cube.repeat.fingerprint,'Cube must seek deterministically');
+    // Original CrossWarp is a smooth x-position-dependent zoomed blend,
+    // NOT a plus-shaped mask with a pure red center and untouched blue corners.
+    assert.ok(crossWarp.red>50&&crossWarp.blue>50&&crossWarp.mixed>1000,
+        'Original CrossWarp must retain both source colours and a broad smooth zoom-blend region');
+    assert.notEqual(crossWarp.fingerprint,result.fade.middle.fingerprint,
+        'Original lateral CrossWarp must differ from ordinary alpha fade');
+    assert.equal(crossWarp.fingerprint,result['cross-warp'].repeat.fingerprint,
+        'Original CrossWarp must seek deterministically');
+    assert.ok(crossWarp.center[0]>20&&crossWarp.center[2]>20,
+        'At half progress the original warp center blends zoomed incoming/outgoing image');
+    assert.ok(crossWarp.top[2]>crossWarp.top[0],
+        'Right-to-left warp must retain predominantly outgoing blue on the left side');
     assert.ok(spin.mixed>0,'Original WhipSpin midpoint blends temporally sampled outgoing and incoming video during the shutter cut');
-    assert.deepEqual(crossWarp.center,[255,0,0],'Cross warp must reveal the incoming frame at the cross center');
-    assert.deepEqual(crossWarp.top,[0,0,255],'Cross warp must leave the outside corners showing A');
     assert.notEqual(spin.fingerprint,result['card-swipe'].middle.fingerprint,
         'Original WhipSpin angular blur must differ from CardSwipe');
     assert.notEqual(cube.fingerprint,result['card-swipe'].middle.fingerprint,

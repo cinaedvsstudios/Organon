@@ -226,6 +226,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/colorcoords.browser.mjs
+      - name: Compare CrossWarp original right-to-left zoom GLSL with Chrome pixel oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/crosswarp.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -240,6 +245,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/tvturnoff-source.test.mjs
       - name: Verify ColorCoords original source SHA and saved Color codes migration
         run: node --test tools/audio-timeline/tests/colorcoords-source.test.mjs
+      - name: Verify original CrossWarp source SHA and zero-uniform project history
+        run: node --test tools/audio-timeline/tests/crosswarp-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -464,6 +471,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/colorcoords-export.browser.mjs
+      - name: Decode actual CrossWarp H264 export and compare original shader preview
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/crosswarp-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
