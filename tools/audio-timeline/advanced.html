@@ -730,6 +730,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge feathering<input type="range" min=".01" max=".5" step=".01" value=".1" data-cross-hatch-param="fadeEdge"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-cube-settings" class="spiral-glsl-settings cube-glsl-settings" hidden>
+                            <legend>Cube · Original two-face perspective / floor reflection GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>3D perspective<input type="range" min="0" max="1" step=".05" value=".7" data-cube-param="persp"></label>
+                                <label>Mid-turn camera pullback<input type="range" min="0" max="1" step=".05" value=".3" data-cube-param="unzoom"></label>
+                                <label>Floor reflection<input type="range" min="0" max="1" step=".05" value=".4" data-cube-param="reflection"></label>
+                                <label>Cube floor gap (%)<input type="range" min="0" max="20" step=".5" value="3" data-cube-param="floating"></label>
+                                <label>Face and floor shading<input type="range" min="0" max="1" step=".05" value=".5" data-cube-param="shading"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-prisms-settings" class="spiral-glsl-settings prisms-glsl-settings" hidden>
                             <legend>Prisms · Original 3D billboard slats GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1529,6 +1539,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Reveal centre Y<input type="range" min="0" max="1" step=".05" value=".5" data-cross-hatch-param="centerY"></label>
                                 <label>Radial threshold<input type="range" min=".1" max="8" step=".1" value="3" data-cross-hatch-param="threshold"></label>
                                 <label>Edge feathering<input type="range" min=".01" max=".5" step=".01" value=".1" data-cross-hatch-param="fadeEdge"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-cube" class="spiral-glsl-settings cube-glsl-settings" hidden>
+                            <legend>Cube · Original two-face perspective / floor reflection GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>3D perspective<input type="range" min="0" max="1" step=".05" value=".7" data-cube-param="persp"></label>
+                                <label>Mid-turn camera pullback<input type="range" min="0" max="1" step=".05" value=".3" data-cube-param="unzoom"></label>
+                                <label>Floor reflection<input type="range" min="0" max="1" step=".05" value=".4" data-cube-param="reflection"></label>
+                                <label>Cube floor gap (%)<input type="range" min="0" max="20" step=".5" value="3" data-cube-param="floating"></label>
+                                <label>Face and floor shading<input type="range" min="0" max="1" step=".05" value=".5" data-cube-param="shading"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-prisms" class="spiral-glsl-settings prisms-glsl-settings" hidden>
