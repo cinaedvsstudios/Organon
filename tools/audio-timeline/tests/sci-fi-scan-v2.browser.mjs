@@ -100,7 +100,7 @@ try{
  assert.equal(new Set(result.hashes).size,4,'Scanner image pixels must evolve at all four absolute times');
  assert.ok(Math.abs(result.targetYs[0]-result.targetYs[1])>18,
   'Actual target must travel rapidly vertically along beam');
- assert.deepEqual(result.segmentDirections,[-1,1].sort((a,b)=>a-b));
+ assert.deepEqual(result.segmentDirections.slice().sort((a,b)=>a-b),[-1,1]);
  assert.ok(result.independentBars>12,'Horizontal telemetry bars must race independently');
  assert.ok(result.activeBlips.some(n=>n>2),'Detection pulses must visibly appear');
  assert.equal(result.rewind,true,'Reverse seeking must restore byte-exact pixels');
