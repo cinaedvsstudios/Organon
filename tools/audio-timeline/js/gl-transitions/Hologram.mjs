@@ -1,4 +1,5 @@
 /**
+ * Pinned upstream original GLSL git blob 284e495b81dabf03070eb1c24ad41583a7ed5ee4; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * Hologram (#02 of 41) — GL Transitions original shader, Author gre, MIT.
  * Upstream https://github.com/gl-transitions/gl-transitions/blob/deeebdee7581cdfe924ed9cf104ea2fd10e63155/transitions/Hologram.glsl
  * Source below is preserved byte-for-byte; only the wrapper supplies the
