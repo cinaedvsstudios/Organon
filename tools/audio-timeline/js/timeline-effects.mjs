@@ -9,6 +9,7 @@ import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel
 import {renderPixelScan} from './timeline-pixel-scan.mjs';
 import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
+import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -70,7 +71,7 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,24),
   originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':'#ffd98d'
  };
 }
 // Keep one reusable full-frame scratch buffer per Canvas context. No per-frame
@@ -288,25 +289,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    // Dynamic digital population: independent regeneration, not a translated still strip.
    renderPixelScan(ctx,w,h,e,t,strength);
   }else if(e.presetId==='sci-fi-scan'){
-   const phase=wrap(t*.23),x=(rad>=0?phase:1-phase)*w;
-   const beam=Math.max(3,9*size);
-   const g=ctx.createLinearGradient(x-beam*7,0,x+beam,0);
-   g.addColorStop(0,rgba(e.color,0));g.addColorStop(.8,rgba(e.color,.21*strength));
-   g.addColorStop(1,rgba(e.color,.85*strength));
-   ctx.fillStyle=g;ctx.fillRect(x-beam*7,0,beam*8,h);
-   ctx.strokeStyle=rgba(e.color,.86*strength);ctx.lineWidth=Math.max(1,1.5*size);
-   ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke();
-   // HUD tick marks, crosshair and bracket corners, rather than pixel blocks.
-   const unit=Math.max(16,Math.round(30*size));
-   for(let y=0;y<h;y+=unit){
-    ctx.beginPath();ctx.moveTo(x-8*size,y);ctx.lineTo(x+(y/unit%5===0?29:12)*size,y);ctx.stroke();
-   }
-   const cy=h*(.52+.22*Math.sin(t*.4));
-   ctx.beginPath();ctx.arc(x,cy,Math.max(12,28*size),0,Math.PI*2);ctx.stroke();
-   ctx.beginPath();ctx.moveTo(x-42*size,cy);ctx.lineTo(x-11*size,cy);
-   ctx.moveTo(x+11*size,cy);ctx.lineTo(x+42*size,cy);
-   ctx.moveTo(x,cy-42*size);ctx.lineTo(x,cy-11*size);ctx.stroke();
-
+   renderSciFiScan(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-flames'){
    // Procedural tongues of fire — layered curves that fold upward with time.
    const count=Math.max(6,Math.min(54,Math.round(e.density*.36)));
