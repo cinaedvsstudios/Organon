@@ -305,6 +305,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/ember-dust-v2.browser.mjs
+      - name: Verify three turbulent fog depth fields, soft alpha, visual parameters and Undo history
+        run: node --test tools/audio-timeline/tests/hazy-atmosphere-v2.test.mjs
+      - name: Inspect actual Chrome Hazy Atmosphere billowing, controls, source visibility and reverse seek
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/hazy-atmosphere-v2.browser.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history
