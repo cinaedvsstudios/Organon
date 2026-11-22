@@ -171,9 +171,10 @@ function fallback(ctx,w,h,e,t,intensity){
   const r=w*(.58+i*.11)*(e.scale??100)/100;
   const g=ctx.createRadialGradient(x,y,0,x,y,r);
   const hex=i%2?'#8666eb':i===2?'#ffe0ed':e.color||'#ed75c8';
-  g.addColorStop(0,'rgba(255,180,225,'+(intensity*.12).toFixed(4)+')');
-  g.addColorStop(.35,'rgba(202,92,218,'+(intensity*.08).toFixed(4)+')');
-  g.addColorStop(1,'rgba(184,85,224,0)');
+  const [r,green,b]=rgb(hex);
+  g.addColorStop(0,'rgba('+r+','+green+','+b+','+(intensity*.21).toFixed(4)+')');
+  g.addColorStop(.35,'rgba('+r+','+green+','+b+','+(intensity*.10).toFixed(4)+')');
+  g.addColorStop(1,'rgba('+r+','+green+','+b+',0)');
   ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
  }
 }
