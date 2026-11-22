@@ -363,6 +363,7 @@ export class AdvancedMediaEngine {
             'crosshatchFromScratch','crosshatchToScratch',
             'cubeFromScratch','cubeToScratch',
             'fadeFromScratch','fadeToScratch',
+            'glitchFlickerFromScratch','glitchFlickerToScratch',
             'bloomDissolveFromScratch','bloomDissolveToScratch',
             'bokehDissolveFromScratch','bokehDissolveToScratch',
             'lightRaysFromScratch','lightRaysToScratch',
@@ -491,6 +492,10 @@ export class AdvancedMediaEngine {
         if(this.fadeWebGL){
             this.fadeWebGL.dispose();
             this.fadeWebGL=null;
+        }
+        if(this.glitchFlickerWebGL){
+            this.glitchFlickerWebGL.dispose();
+            this.glitchFlickerWebGL=null;
         }
         if(this.bloomDissolveWebGL){
             this.bloomDissolveWebGL.dispose();
