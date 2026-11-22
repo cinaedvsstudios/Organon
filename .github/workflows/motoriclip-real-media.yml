@@ -340,6 +340,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/retro-glitch-v2.browser.mjs
+      - name: Verify Organic Light Leaks diffused pink/violet clouds, film overexposure, parameter history and rewind
+        run: node --test tools/audio-timeline/tests/light-leaks-v2.test.mjs
+      - name: Inspect real Chrome diffused Light Leaks, soft alpha, overexposed blooms and source visibility
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/light-leaks-v2.browser.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history
