@@ -10,7 +10,8 @@ const setting=delta=>normaliseTimelineEffect({presetId:'fire-flames',
 const flame=(e,time)=>buildFireFlamesFrame(96,54,e,e.speed*time);
 const fingerprint=data=>{let h=2166136261>>>0;for(const v of data)h=Math.imul(h^v,16777619)>>>0;return h;};
 test('Fire flame bank contains irregular organic bright cores, darker boundaries and transparent air',()=>{
- const e=setting({}),a=flame(e,.65),alpha=[],warm=0;
+ const e=setting({}),a=flame(e,.65),alpha=[];
+ let warm=0;
  for(let i=0;i<a.data.length;i+=4){
   alpha.push(a.data[i+3]);
   if(a.data[i+3]>60&&a.data[i]>a.data[i+1]&&a.data[i+1]>a.data[i+2])warm++;
