@@ -255,8 +255,8 @@ try{
     assert.equal(cube.fingerprint,result.cube.repeat.fingerprint,'Cube must seek deterministically');
     // Original CrossWarp is a smooth x-position-dependent zoomed blend,
     // NOT a plus-shaped mask with a pure red center and untouched blue corners.
-    assert.ok(crossWarp.red>100&&crossWarp.blue>100&&crossWarp.mixed>100,
-        'Original CrossWarp must include blue outgoing, red incoming and moving zoom-blend region');
+    assert.ok(crossWarp.red>50&&crossWarp.blue>50&&crossWarp.mixed>1000,
+        'Original CrossWarp must retain both source colours and a broad smooth zoom-blend region');
     assert.notEqual(crossWarp.fingerprint,result.fade.middle.fingerprint,
         'Original lateral CrossWarp must differ from ordinary alpha fade');
     assert.equal(crossWarp.fingerprint,result['cross-warp'].repeat.fingerprint,
