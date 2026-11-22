@@ -147,9 +147,19 @@ void main(){gl_FragColor=transition(uv);}`);
      max=Math.max(max,delta);sum+=delta;
     }
    }
-   if(settings===opts[0]&&progress===.5)representative=actual.frame;
+   if(settings===opts[0]&&progress===.5)representative=asImage(.65,opts[0]).frame;
    samples.push({settings,progress,mean:sum/(w*h*4),max,hash:actual.hash});
   }
+  // The original reveal table deliberately goes from full B at frame 12
+  // back toward outgoing A at frames 13–16. Check that the blue outgoing
+  // source visibly returns; a monotone fade cannot satisfy this.
+  const peakFrame=asImage(.5,opts[0]).data;
+  const returnFrame=asImage(.62,opts[0]).data;
+  const averageBlue=rgba=>{
+   let sum=0;for(let i=2;i<rgba.length;i+=4)sum+=rgba[i];
+   return sum/(rgba.length/4);
+  };
+  const oldClipReturn=averageBlue(returnFrame)-averageBlue(peakFrame);
   const baseline=asImage(.5,opts[0]);
   asImage(.2,opts[0]);
   const rewound=asImage(.5,opts[0]);
@@ -173,7 +183,7 @@ void main(){gl_FragColor=transition(uv);}`);
   const used=Boolean(engine.glitchFlickerWebGL);
   engine.clearAll();
   return {samples,representative,used,
-   stable:baseline.hash===rewound.hash,variation,chosen,alpha,hidden,
+   stable:baseline.hash===rewound.hash,variation,chosen,alpha,hidden,oldClipReturn,
    cleanup:engine.glitchFlickerWebGL===null
     &&engine.glitchFlickerFromScratch===null&&engine.glitchFlickerToScratch===null,
    renderErrors};
@@ -187,6 +197,7 @@ void main(){gl_FragColor=transition(uv);}`);
  }
  for(const [name,hash] of Object.entries(result.variation))
   assert.notEqual(hash.hash,hash.baseline,'Original GlitchFlicker option '+name+' did not change animation');
+ assert.ok(result.oldClipReturn>5,'Original non-monotonic flicker must flash back to the outgoing blue image after its full incoming frame');
  assert.equal(result.stable,true,'Reverse timeline seeking must reproduce exact same GlitchFlicker pixels');
  assert.notEqual(result.alpha,result.hidden,'Hidden outgoing track must not reappear inside GlitchFlicker');
  assert.equal(result.cleanup,true,'Project clear must release GlitchFlicker GPU and scratch textures');
