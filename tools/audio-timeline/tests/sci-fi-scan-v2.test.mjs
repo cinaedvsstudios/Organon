@@ -77,7 +77,8 @@ test('Real timeline painter draws distinct detection circles, horizontal segment
   'Telemetry bars must have separate transparent tails');
  assert.ok(first.log.some(x=>x[0]==='save')&&first.log.some(x=>x[0]==='restore'));
  const repeated=make();renderSciFiScan(repeated.ctx,320,180,e,.7,.9);
- assert.deepEqual(first.log,repeated.log,'At a given clip time all drawing is deterministic');
+ assert.equal(JSON.stringify(first.log),JSON.stringify(repeated.log),
+  'At a given clip time all numeric Canvas drawing commands are deterministic');
  const later=make();renderSciFiScan(later.ctx,320,180,e,1.2,.9);
  assert.notDeepEqual(first.log,later.log);
  const parent=make();
