@@ -261,6 +261,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/randomsquares.browser.mjs
+      - name: Compare original Ripple sinusoidal UV warp and smooth fade with independent Chrome GLSL oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/ripple.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -289,6 +294,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/pixelize-source.test.mjs
       - name: Verify pinned RandomSquares MIT shader blob, three native parameters and clip history
         run: node --test tools/audio-timeline/tests/randomsquares-source.test.mjs
+      - name: Pin original Ripple source SHA, native speed/amplitude and project history
+        run: node --test tools/audio-timeline/tests/ripple-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -548,6 +555,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/randomsquares-export.browser.mjs
+      - name: Decode Ripple dual-video H264 export and compare exact original shader preview frames
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/ripple-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
