@@ -65,12 +65,14 @@ export function sampleEngineHeatDisplacement(x,y,w,h,e={},cycle=0){
  return displacement(x,y,Math.max(1,w),Math.max(1,h),config(e),
   Math.max(0,Number(cycle)||0),{dx:0,dy:0,weight:0});
 }
-function channel(bytes,w,h,x,y,c){
+function sampleRgba(bytes,w,h,x,y,out){
  const sx=x<0?0:x>w-1?w-1:x,sy=y<0?0:y>h-1?h-1:y;
  const x0=Math.floor(sx),x1=Math.min(w-1,x0+1),y0=Math.floor(sy),y1=Math.min(h-1,y0+1);
- const fx=sx-x0,fy=sy-y0,k0=(y0*w+x0)*4+c,k1=(y1*w+x0)*4+c;
- return mix(mix(bytes[k0],bytes[k0+4*(x1-x0)],fx),
-  mix(bytes[k1],bytes[k1+4*(x1-x0)],fx),fy);
+ const fx=sx-x0,fy=sy-y0;
+ const p00=(y0*w+x0)*4,p10=(y0*w+x1)*4,p01=(y1*w+x0)*4,p11=(y1*w+x1)*4;
+ for(let c=0;c<4;c++)
+  out[c]=mix(mix(bytes[p00+c],bytes[p10+c],fx),mix(bytes[p01+c],bytes[p11+c],fx),fy);
+ return out;
 }
 /**
  * Refract real source pixels with varying two-axis displacement and subtle
@@ -83,23 +85,24 @@ export function buildEngineHeatFrame(source,w,h,effect={},cycle=0,reuse){
  if(!input||input.length!==width*height*4)
   throw Error('Engine Heat requires correctly sized RGBA source pixels');
  const out=reuse?.length===input.length?reuse:new Uint8ClampedArray(input.length);
- const o=config(effect),t=Math.max(0,Number(cycle)||0),pos={dx:0,dy:0,weight:0};
+ const o=config(effect),t=Math.max(0,Number(cycle)||0),pos={dx:0,dy:0,weight:0},
+  primary=[0,0,0,0],softA=[0,0,0,0],softB=[0,0,0,0];
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   const k=(y*width+x)*4;
   displacement(x,y,width,height,o,t,pos);
   if(pos.weight<.0001){out[k]=out[k+1]=out[k+2]=out[k+3]=0;continue;}
-  const sx=x+pos.dx,sy=y+pos.dy;
-  const focus=pos.weight*o.blur*.31;
-  for(let c=0;c<3;c++){
-   const v=channel(input,width,height,sx,sy,c);
-   const blurred=focus>0?
-    (channel(input,width,height,sx+1.2,sy+.4,c)+
-     channel(input,width,height,sx-1.2,sy-.4,c))*.5:v;
-   const base=mix(v,blurred,focus);
-   const warmth=pos.weight*o.glow*.045;
-   out[k+c]=mix(base,o.rgb[c],warmth);
+  const sx=x+pos.dx,sy=y+pos.dy,focus=pos.weight*o.blur*.31;
+  sampleRgba(input,width,height,sx,sy,primary);
+  if(focus>.001){
+   sampleRgba(input,width,height,sx+1.2,sy+.4,softA);
+   sampleRgba(input,width,height,sx-1.2,sy-.4,softB);
   }
-  out[k+3]=Math.round(channel(input,width,height,sx,sy,3)*pos.weight);
+  const warmth=pos.weight*o.glow*.045;
+  for(let c=0;c<3;c++){
+   const blurred=focus>.001?(softA[c]+softB[c])*.5:primary[c];
+   out[k+c]=mix(mix(primary[c],blurred,focus),o.rgb[c],warmth);
+  }
+  out[k+3]=Math.round(primary[3]*pos.weight);
  }
  return {width,height,data:out};
 }
