@@ -64,7 +64,8 @@ test('effect algorithms use different geometry, filters and colour operations',(
  assert.ok(sample.misalignment.includes('hue-rotate'),'Misalignment separates tinted ghost images');
  assert.ok(sample['noir-glitch'].includes('grayscale'),'Noir Glitch uses monochrome contrast');
  assert.ok(sample['glitch-flux'].includes('"drawImage"')||sample['glitch-flux'].includes('"fillRect"'));
- assert.ok(sample['engine-heat'].includes('"bezierCurveTo"'),'Engine Heat includes rising heat tendrils');
+ assert.ok(sample['engine-heat'].includes('"fillRect"')&&!sample['engine-heat'].includes('"bezierCurveTo"'),
+  'Engine Heat should not draw fake vertical heat tendrils');
  assert.ok(sample['retro-glitch'].includes('"fillRect"'),'Retro Glitch has actual CRT scan lines');
 });
 
