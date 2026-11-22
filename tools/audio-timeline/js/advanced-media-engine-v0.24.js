@@ -8,7 +8,7 @@ import { PlaybackBoundaryTracker, getTrackSourceTime } from './playback-schedule
 import { normalizeProjectFps, stepFrameTime, waitForVideoSeek } from './frame-seek.mjs';
 import { checkBrowserMediaSupport, waitForMediaReady, mediaFailureMessage } from './media-support.mjs';
 import { isPairedFadeActive } from './clip-pair-transitions.mjs';
-import { paintPairedEffect, pairedEffectProgress } from './paired-visual-effects.mjs';
+import { paintPairedEffect, pairedEffectProgress, isAvailablePairEffect } from './paired-visual-effects.mjs';
 import { normalizeTransitionEffectId,normalizeTransitionParameters } from './transition-catalog.mjs';
 import { visualFadeOpacity } from './visual-transitions.mjs';
 import { applyVisualContext, drawVisualVignette } from './visual-clip-adjustments.mjs';
@@ -333,7 +333,7 @@ export class AdvancedMediaEngine {
         this.setTracks([]);
         for (const track of loading) this.detachTrack(track, false);
         // Drop any 1080p+ offscreen transition textures when a project clears.
-        for(const name of ['transitionPixelScratch','transitionFullScratch',
+        for(const name of ['transitionPixelScratch','transitionFullScratch','pairedBlendScratch',
             'spiralBlockFromScratch','spiralBlockToScratch','hologramFromScratch','hologramToScratch',
             'cellDissolveFromScratch','cellDissolveToScratch',
             'vortexFromScratch','vortexToScratch',
@@ -801,7 +801,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','colorcoords','cross-warp','cross-hatch','cube','fade','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(incoming.transitionEffectId))
+                    if(!isAvailablePairEffect(incoming.transitionEffectId)
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -824,7 +824,36 @@ export class AdvancedMediaEngine {
                             * visualFadeOpacity(track, this.currentTime, {ignoreEnter:pairedSpatial});
                         applyVisualContext(this.context,track,this.currentTime,width,height);
                         if (track.media.readyState === undefined || track.media.readyState >= 2) {
-                            const painted = pairedSpatial && paintPairedEffect(this,this.context,track,width,height,this.currentTime,drawContained);
+                            // A GLSL transition replaces outgoing A and incoming B
+                            // together. For non-normal Canvas blend modes stage its
+                            // complete RGBA result, then blend it once over lower tracks.
+                            let painted=false;
+                            const blendMode=SUPPORTED_BLEND_MODES.has(track.blendMode)?track.blendMode:'source-over';
+                            const progress=pairedSpatial?pairedEffectProgress(track,this.currentTime):0;
+                            if(pairedSpatial&&blendMode!=='source-over'&&progress>0&&progress<1){
+                                const scratch=this.pairedBlendScratch??(this.pairedBlendScratch=document.createElement('canvas'));
+                                if(scratch.width!==width)scratch.width=width;
+                                if(scratch.height!==height)scratch.height=height;
+                                const sc=scratch.getContext('2d');
+                                sc.save();
+                                sc.setTransform(1,0,0,1,0,0);
+                                sc.globalAlpha=1;
+                                sc.globalCompositeOperation='source-over';
+                                sc.filter='none';
+                                sc.clearRect(0,0,width,height);
+                                sc.restore();
+                                painted=paintPairedEffect(this,sc,track,width,height,this.currentTime,drawContained);
+                                if(painted){
+                                    this.context.save();
+                                    this.context.setTransform(1,0,0,1,0,0);
+                                    this.context.filter='none';
+                                    this.context.globalAlpha=1; // Per-source alpha is already in GLSL.
+                                    this.context.drawImage(scratch,0,0,width,height);
+                                    this.context.restore();
+                                }
+                            }else if(pairedSpatial){
+                                painted=paintPairedEffect(this,this.context,track,width,height,this.currentTime,drawContained);
+                            }
                             if (!painted) {
                                 if (track.type === 'background') drawCovered(this.context, track.media, width, height);
                                 else if (track.type === 'video') drawContained(this.context, track.media, width, height);
@@ -842,7 +871,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','colorcoords','cross-warp','cross-hatch','cube','fade','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(track.transitionEffectId))))
+                            if(track.type!=='sticker'&&!painted)
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {

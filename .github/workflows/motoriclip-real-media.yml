@@ -266,6 +266,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/ripple.browser.mjs
+      - name: Verify 41-shader engine alpha, cropping, orientation, colour mix, blend mode and Canvas layers
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/paired-shader-engine.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
