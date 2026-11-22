@@ -37,6 +37,7 @@ import { normalisePaperTearOptions } from './gl-transitions/PaperTear.mjs';
 import { normaliseApertureWipeOptions } from './gl-transitions/ApertureWipe.mjs';
 import { normaliseSpiralWipeOptions } from './gl-transitions/SpiralWipe.mjs';
 import { normalisePrismsOptions } from './gl-transitions/Prisms.mjs';
+import { normaliseGlitchFlickerOptions } from './gl-transitions/GlitchFlicker.mjs';
 import { normaliseCubeOptions } from './gl-transitions/Cube.mjs';
 import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
@@ -1763,6 +1764,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             prismsInspector.hidden=!(paired&&track.transitionEffectId==='prisms');
             if(!prismsInspector.hidden)
                 displayPrismsSettings(prismsInspector,track.transitionParameters?.['prisms']);
+            const glitchFlickerInspector=document.getElementById('video-glitch-flicker-settings');
+            glitchFlickerInspector.hidden=!(paired&&track.transitionEffectId==='glitch-flicker');
+            if(!glitchFlickerInspector.hidden)
+                displayGlitchFlickerSettings(glitchFlickerInspector,track.transitionParameters?.['glitch-flicker']);
             const cubeInspector=document.getElementById('video-cube-settings');
             cubeInspector.hidden=!(paired&&track.transitionEffectId==='cube');
             if(!cubeInspector.hidden)
@@ -2207,7 +2212,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-prisms-settings');
             b.transitionParameters={...b.transitionParameters,
                 'prisms':readPrismsSettings(panel)};
-        }        if(effectId==='cube'){
+        }
+        if(effectId==='glitch-flicker'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-glitch-flicker')
+                :document.getElementById('video-glitch-flicker-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'glitch-flicker':readGlitchFlickerSettings(panel)};
+        }
+        if(effectId==='cube'){
             const panel=preserveOrder===true
                 ?document.getElementById('transition-modal-cube')
                 :document.getElementById('video-cube-settings');
@@ -3555,6 +3568,35 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayPrismsSettings(root,target?.transitionParameters?.['prisms']);
         }
     }
+
+    function readGlitchFlickerSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-glitch-flicker-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseGlitchFlickerOptions({
+            frameRate:value('frameRate'),rgbOffset:value('rgbOffset'),
+            blockAmount:value('blockAmount'),ghostAmount:value('ghostAmount'),
+            redCyan:value('redCyan'),scanline:value('scanline')
+        });
+    }
+    function displayGlitchFlickerSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseGlitchFlickerOptions(options))){
+            const input=root?.querySelector('[data-glitch-flicker-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshGlitchFlickerModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-glitch-flicker');
+        root.hidden=elements.transitionModalEffect.value!=='glitch-flicker';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayGlitchFlickerSettings(root,target?.transitionParameters?.['glitch-flicker']);
+        }
+    }
     function readCubeSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-cube-param="'+name+'"]');
@@ -3872,6 +3914,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'spiral-wipe':readSpiralWipeSettings(document.getElementById('transition-modal-spiral-wipe'))}
                     :effectId==='prisms'
                     ?{...b.transitionParameters,'prisms':readPrismsSettings(document.getElementById('transition-modal-prisms'))}
+                    :effectId==='glitch-flicker'
+                    ?{...b.transitionParameters,'glitch-flicker':readGlitchFlickerSettings(document.getElementById('transition-modal-glitch-flicker'))}
                     :effectId==='cube'
                     ?{...b.transitionParameters,'cube':readCubeSettings(document.getElementById('transition-modal-cube'))}
                     :effectId==='cross-hatch'
@@ -3900,7 +3944,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','cube','cross-hatch','tv-turn-off','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','cube','glitch-flicker','cross-hatch','tv-turn-off','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3958,6 +4002,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
         refreshPrismsModalSettings({restoreValues:true});
+        refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
@@ -4033,6 +4078,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
         refreshPrismsModalSettings({restoreValues:true});
+        refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
@@ -4268,6 +4314,22 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original Prisms GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'prisms':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+
+    document.getElementById('transition-modal-glitch-flicker').querySelectorAll('[data-glitch-flicker-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-glitch-flicker-settings').querySelectorAll('[data-glitch-flicker-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='glitch-flicker'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readGlitchFlickerSettings(document.getElementById('video-glitch-flicker-settings'));
+            const prior=normaliseGlitchFlickerOptions(active.transitionParameters?.['glitch-flicker']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original GlitchFlicker GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'glitch-flicker':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));

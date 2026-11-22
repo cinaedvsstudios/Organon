@@ -740,6 +740,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Face and floor shading<input type="range" min="0" max="1" step=".05" value=".5" data-cube-param="shading"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-glitch-flicker-settings" class="spiral-glsl-settings glitch-flicker-glsl-settings" hidden>
+                            <legend>GlitchFlicker · Original flickering RGB and scanline GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Glitch frame rate<input type="number" min="1" max="120" step="1" value="24" data-glitch-flicker-param="frameRate"></label>
+                                <label>RGB separation<input type="range" min="0" max=".1" step=".001" value=".014" data-glitch-flicker-param="rgbOffset"></label>
+                                <label>Pixel block distortion<input type="range" min="0" max="2" step=".05" value=".72" data-glitch-flicker-param="blockAmount"></label>
+                                <label>Old-frame ghost amount<input type="range" min="0" max="1" step=".05" value=".62" data-glitch-flicker-param="ghostAmount"></label>
+                                <label>Red / cyan flashes<input type="range" min="0" max="1" step=".05" value=".58" data-glitch-flicker-param="redCyan"></label>
+                                <label>Scanline intensity<input type="range" min="0" max=".3" step=".005" value=".075" data-glitch-flicker-param="scanline"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-prisms-settings" class="spiral-glsl-settings prisms-glsl-settings" hidden>
                             <legend>Prisms · Original 3D billboard slats GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1549,6 +1560,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Floor reflection<input type="range" min="0" max="1" step=".05" value=".4" data-cube-param="reflection"></label>
                                 <label>Cube floor gap (%)<input type="range" min="0" max="20" step=".5" value="3" data-cube-param="floating"></label>
                                 <label>Face and floor shading<input type="range" min="0" max="1" step=".05" value=".5" data-cube-param="shading"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-glitch-flicker" class="spiral-glsl-settings glitch-flicker-glsl-settings" hidden>
+                            <legend>GlitchFlicker · Original flickering RGB and scanline GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Glitch frame rate<input type="number" min="1" max="120" step="1" value="24" data-glitch-flicker-param="frameRate"></label>
+                                <label>RGB separation<input type="range" min="0" max=".1" step=".001" value=".014" data-glitch-flicker-param="rgbOffset"></label>
+                                <label>Pixel block distortion<input type="range" min="0" max="2" step=".05" value=".72" data-glitch-flicker-param="blockAmount"></label>
+                                <label>Old-frame ghost amount<input type="range" min="0" max="1" step=".05" value=".62" data-glitch-flicker-param="ghostAmount"></label>
+                                <label>Red / cyan flashes<input type="range" min="0" max="1" step=".05" value=".58" data-glitch-flicker-param="redCyan"></label>
+                                <label>Scanline intensity<input type="range" min="0" max=".3" step=".005" value=".075" data-glitch-flicker-param="scanline"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-prisms" class="spiral-glsl-settings prisms-glsl-settings" hidden>

@@ -26,6 +26,7 @@ import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
 import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
 import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
 import { paintFade } from './gl-transitions/Fade.mjs';
+import { paintGlitchFlicker } from './gl-transitions/GlitchFlicker.mjs';
 import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
 import { paintCube } from './gl-transitions/Cube.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
@@ -502,6 +503,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     if(progress>=1)return false; // Let normal renderer draw a pristine B.
     if(id==='fade')
         return paintFade(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='glitch-flicker')
+        return paintGlitchFlicker(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='spiralblockwipe')
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='hologram')
@@ -700,19 +703,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
             const ex=Math.min(width,Math.ceil((x+1)*cellW));
             const ey=Math.min(height,Math.ceil((y+1)*cellH));
             context.drawImage(full,sx,sy,ex-sx,ey-sy,sx,sy,ex-sx,ey-sy);
-        }
-        return true;
-    }
-    if(id==='glitch-flicker'){
-        // Deterministic horizontal strip shifts with intermittent flicker;
-        // only B is distorted, so the underlying A stays spatially stable.
-        const bands=18,h=height/bands,step=Math.floor(time*24);
-        context.globalAlpha=alpha*progress;
-        for(let i=0;i<bands;i++){
-            if(seededCell(i+step*17)<Math.pow(1-progress,2)*.20)continue;
-            const y=Math.floor(i*h),next=Math.min(height,Math.ceil((i+1)*h));
-            const shift=glitchShift(progress,i,step,width);
-            context.drawImage(full,0,y,width,next-y,shift,y,width,next-y);
         }
         return true;
     }
