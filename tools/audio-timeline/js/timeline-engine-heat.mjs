@@ -86,22 +86,18 @@ export function buildEngineHeatFrame(source,w,h,effect={},cycle=0,reuse){
   throw Error('Engine Heat requires correctly sized RGBA source pixels');
  const out=reuse?.length===input.length?reuse:new Uint8ClampedArray(input.length);
  const o=config(effect),t=Math.max(0,Number(cycle)||0),pos={dx:0,dy:0,weight:0},
-  primary=[0,0,0,0],softA=[0,0,0,0],softB=[0,0,0,0];
+  primary=[0,0,0,0];
  for(let y=0;y<height;y++)for(let x=0;x<width;x++){
   const k=(y*width+x)*4;
   displacement(x,y,width,height,o,t,pos);
   if(pos.weight<.0001){out[k]=out[k+1]=out[k+2]=out[k+3]=0;continue;}
-  const sx=x+pos.dx,sy=y+pos.dy,focus=pos.weight*o.blur*.31;
+  const sx=x+pos.dx,sy=y+pos.dy;
   sampleRgba(input,width,height,sx,sy,primary);
-  if(focus>.001){
-   sampleRgba(input,width,height,sx+1.2,sy+.4,softA);
-   sampleRgba(input,width,height,sx-1.2,sy-.4,softB);
-  }
-  const warmth=pos.weight*o.glow*.045;
-  for(let c=0;c<3;c++){
-   const blurred=focus>.001?(softA[c]+softB[c])*.5:primary[c];
-   out[k+c]=mix(mix(primary[c],blurred,focus),o.rgb[c],warmth);
-  }
+  // Small admixture of untouched light softens the shifting sample without
+  // an extra two resampling passes or an opaque colour fog.
+  const soften=pos.weight*o.blur*.24,warmth=pos.weight*o.glow*.045;
+  for(let c=0;c<3;c++)
+   out[k+c]=mix(mix(primary[c],input[k+c],soften),o.rgb[c],warmth);
   out[k+3]=Math.round(primary[3]*pos.weight);
  }
  return {width,height,data:out};
