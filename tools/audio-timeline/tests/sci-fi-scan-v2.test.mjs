@@ -71,6 +71,9 @@ test('Real timeline painter draws distinct detection circles, horizontal segment
  };
  const first=make();
  assert.equal(renderSciFiScan(first.ctx,320,180,e,.7,.9),true);
+ assert.ok(first.log.some(x=>x[0]==='set'&&x[1]==='strokeStyle'&&
+  String(x[2]).startsWith('rgba(84,217,255,')),
+  'Selected #54d9ff cyan must decode to RGB 84,217,255 (not amber)');
  assert.ok(first.log.some(x=>x[0]==='arc'),'Scanner must draw detection rings and shuttle reticle');
  assert.ok(first.log.filter(x=>x[0]==='fillRect').length>15,'Individual bars and blips must paint');
  assert.ok(first.log.filter(x=>x[0]==='createLinearGradient').length>10,
