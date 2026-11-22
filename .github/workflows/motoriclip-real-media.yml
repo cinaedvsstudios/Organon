@@ -221,6 +221,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/tvturnoff.browser.mjs
+      - name: Compare exact ColorCoords original colour UV displacement against independent Chrome GLSL
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/colorcoords.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -233,6 +238,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/prisms-source.test.mjs
       - name: Verify TvTurnOff source SHA and CRT colour and glow/history
         run: node --test tools/audio-timeline/tests/tvturnoff-source.test.mjs
+      - name: Verify ColorCoords original source SHA and saved Color codes migration
+        run: node --test tools/audio-timeline/tests/colorcoords-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -452,6 +459,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/tvturnoff-export.browser.mjs
+      - name: Decode true ColorCoords H264 MP4 and verify original shader preview parity
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/colorcoords-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
