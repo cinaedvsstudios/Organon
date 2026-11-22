@@ -27,6 +27,7 @@ import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
 import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
 import { paintFade } from './gl-transitions/Fade.mjs';
 import { paintGlitchFlicker } from './gl-transitions/GlitchFlicker.mjs';
+import { paintPixelize } from './gl-transitions/Pixelize.mjs';
 import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
 import { paintCube } from './gl-transitions/Cube.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
@@ -505,6 +506,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintFade(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='glitch-flicker')
         return paintGlitchFlicker(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='pixelize')
+        return paintPixelize(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='spiralblockwipe')
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='hologram')
@@ -676,18 +679,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
 
 
-    if(id==='pixelize'){
-        const block=pixelScale(progress);
-        const small=scratchCanvas(renderer,'transitionPixelScratch',
-            Math.max(1,Math.ceil(width/block)),Math.max(1,Math.ceil(height/block)));
-        const sc=small.getContext('2d');
-        sc.clearRect(0,0,small.width,small.height);
-        renderContained(sc,media,small.width,small.height);
-        context.globalAlpha=alpha*progress;
-        context.imageSmoothingEnabled=false;
-        context.drawImage(small,0,0,width,height);
-        return true;
-    }
+
     const full=scratchCanvas(renderer,'transitionFullScratch',width,height);
     const sc=full.getContext('2d');
     sc.clearRect(0,0,width,height);
