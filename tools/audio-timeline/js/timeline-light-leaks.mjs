@@ -95,21 +95,27 @@ function lightAt(u,v,o,time,out){
  const main=magenta*.68+vertical*.38;
  const purple=violet*.77+upperBlush*.52;
  const bloom=diagonal*.80+vertical*.28;
+ // Narrow moving inner exposure hotspot nested inside the broad diagonal
+ // cloud, like film light saturating locally rather than an opaque beam.
+ const hotspot=gaussian(x-diagonalX,.052+.07*o.blur)
+  *gaussian(y-(.40+anchorY*.18),.21+.12*o.blur)
+  *(.73+.35*fine);
  const sum=main+purple+bloom+.00001;
  const strength=(.50+.54*(.52*low+.48*fine))*flicker;
  const luminance=main*.55+purple*.45+bloom*.92;
- const alpha=clamp(luminance*strength*o.intensity*(.72+.48*o.glow),0,.94);
- // Luminous pink/violet mix; broad diagonal hot spots move toward near-white
- // under screen compositing to suggest locally overexposed film stock.
- const hot=clamp(bloom*(.57+.48*o.glow),0,.88);
+ const alpha=clamp(Math.max(0,luminance-.12)*strength*o.intensity
+  *(1.00+.52*o.glow)+hotspot*.62*o.intensity*(.65+.35*o.glow),0,.94);
+ // Luminous pink/violet mix; the bright diagonal hotspot saturates toward
+ // pale warm white while leaving adjacent footage and shadows visible.
+ const exposure=clamp(hotspot*(.75+.78*o.glow),0,.94);
  const color=out.color;
  for(let c=0;c<3;c++){
-  const purpleRGB=[129,72,225][c],warmWhite=[255,223,245][c];
+  const purpleRGB=[129,72,225][c],warmWhite=[255,239,249][c];
   const chroma=(main*o.main[c]+purple*purpleRGB+bloom*warmWhite)/sum;
-  color[c]=mix(chroma,warmWhite,hot*.28);
+  color[c]=mix(chroma,warmWhite,exposure*.88);
  }
  out.alpha=alpha;out.magenta=magenta;out.violet=violet;out.diagonal=diagonal;
- out.vertical=vertical;out.bloom=bloom;out.flicker=flicker;
+ out.vertical=vertical;out.bloom=bloom;out.hotspot=hotspot;out.flicker=flicker;
  return out;
 }
 /** Pure sample for visual and independent-change QA. */
