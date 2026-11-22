@@ -1,0 +1,171 @@
+/**
+ * MotoriClip #49 — Hazy Atmosphere.
+ *
+ * Real procedural translucent fog, not a translated bitmap or seven radial
+ * gradient discs. Three independently advected depth fields use spatially
+ * warped fractal value noise, irregular soft margins and slow density breathing.
+ * The entire image is a pure function of stored settings and clip-relative time.
+ * Render the small alpha field to a bounded, reused Canvas2D scratch surface
+ * and bilinearly upscale it; preview and fixed-frame export share this painter.
+ */
+const limit=(v,a,b)=>Math.max(a,Math.min(b,Number.isFinite(Number(v))?Number(v):a));
+const smooth=(a,b,x)=>{const v=limit((x-a)/(b-a),0,1);return v*v*(3-2*v);};
+const lerp=(a,b,t)=>a+(b-a)*t;
+function hash(x,y,seed){
+ let n=(Math.imul(x,374761393)^Math.imul(y,668265263)^Math.imul(seed+1,2246822519))>>>0;
+ n^=n>>>13;n=Math.imul(n,1274126177)>>>0;n^=n>>>16;
+ return (n>>>0)/4294967296;
+}
+function noise(x,y,seed){
+ const ix=Math.floor(x),iy=Math.floor(y),u=smooth(0,1,x-ix),v=smooth(0,1,y-iy);
+ return lerp(lerp(hash(ix,iy,seed),hash(ix+1,iy,seed),u),
+             lerp(hash(ix,iy+1,seed),hash(ix+1,iy+1,seed),u),v);
+}
+function fractal(x,y,seed){
+ return .55*noise(x,y,seed)+.29*noise(x*2.11,y*2.11,seed+19)
+       +.16*noise(x*4.03,y*4.03,seed+47);
+}
+const DEFAULT_COLOR='#d6e0e9';
+function options(effect={}){
+ const hex=/^#[a-f\d]{6}$/i.test(String(effect.color))?String(effect.color):DEFAULT_COLOR;
+ const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+ return {
+  rgb,
+  density:limit(effect.density??48,1,120)/120,
+  scale:limit(effect.scale??100,10,300)/100,
+  blur:limit(effect.blur??24,0,60)/60,
+  distortion:limit(effect.distortion??55,0,100)/100,
+  glow:limit(effect.glow??64,0,100)/100,
+  angle:limit(effect.direction??0,-180,180)*Math.PI/180,
+  originX:limit(effect.originX??20,0,100)/100,
+  originY:limit(effect.originY??12,0,100)/100,
+  strength:limit(effect.intensity??70,0,100)/100
+ };
+}
+/** Exposed for tests: independent translucent depth planes at one coordinate. */
+export function sampleHazyAtmosphereLayers(nx,ny,effect={},seconds=0){
+ const o=options(effect),t=Math.max(0,Number(seconds)||0);
+ const u=limit(nx,0,1),v=limit(ny,0,1),fields=[];
+ for(let depth=0;depth<3;depth++){
+  // Near and far clouds move at different speeds and spatial scales.
+  const parallax=.11+.09*depth,scale=(2.35+depth*.92)/o.scale;
+  const driftX=Math.cos(o.angle)*t*parallax;
+  const driftY=Math.sin(o.angle)*t*parallax-t*(.025+.012*depth);
+  const px=(u+o.originX*.19+driftX)*scale;
+  const py=(v+o.originY*.14+driftY)*scale;
+  const warpA=fractal(px*.69+t*.045,py*.76-t*.053,depth*101+7)-.5;
+  const warpB=fractal(px*.81-t*.071,py*.67+t*.036,depth*101+13)-.5;
+  const wx=px+warpA*(.32+o.distortion*.94);
+  const wy=py+warpB*(.28+o.distortion*.87);
+  const billow=fractal(wx,wy,depth*101+29);
+  const folds=fractal(wx*.59+t*.06,wy*.67-t*.045,depth*101+61);
+  const center=.23+depth*.245+(o.originY-.12)*.25
+      +.07*(fractal(u*3.1+t*.055,depth*1.8,depth*101+37)-.5);
+  const edgeWarp=(folds-.5)*(.16+.12*o.distortion);
+  const vertical=1-smooth(.19+.055*depth,.54+.065*depth,
+   Math.abs(v-center+edgeWarp));
+  const threshold=.43-o.density*.115;
+  const fullness=smooth(threshold,threshold+.21+o.blur*.12,
+   billow*.82+folds*.18);
+  const breathing=.79+.21*Math.sin(t*(.35+depth*.19)+depth*1.71+folds*2);
+  const alpha=limit((.23+.055*depth)*(.6+o.density*.82)
+     *fullness*vertical*breathing*o.strength,0,.42);
+  fields.push({depth,alpha,billow,folds,driftX,driftY});
+ }
+ return fields;
+}
+/** Produce transparent RGBA cloud pixels; optionally reuse the same typed array. */
+export function buildHazyAtmosphereFrame(width,height,effect={},seconds=0,reuse){
+ const w=Math.max(1,Math.round(Number(width)||1));
+ const h=Math.max(1,Math.round(Number(height)||1));
+ const data=reuse?.length===w*h*4?reuse:new Uint8ClampedArray(w*h*4);
+ const o=options(effect);
+ for(let y=0;y<h;y++){
+  const v=(y+.5)/h;
+  for(let x=0;x<w;x++){
+   const u=(x+.5)/w,fields=sampleHazyAtmosphereLayers(u,v,effect,seconds);
+   let alpha=0,r=0,g=0,b=0;
+   for(const f of fields){
+    const layerAlpha=f.alpha*(1-alpha);
+    const white=.12+f.depth*.16+o.glow*.17+f.folds*.09;
+    const light=.86+.14*f.billow;
+    r+=layerAlpha*(o.rgb[0]*(1-white)+255*white)*light;
+    g+=layerAlpha*(o.rgb[1]*(1-white)+255*white)*light;
+    b+=layerAlpha*(o.rgb[2]*(1-white)+255*white)*light;
+    alpha+=layerAlpha;
+   }
+   const k=(y*w+x)*4;
+   data[k]=alpha?r/alpha:0;
+   data[k+1]=alpha?g/alpha:0;
+   data[k+2]=alpha?b/alpha:0;
+   data[k+3]=Math.round(alpha*255);
+  }
+ }
+ return {width:w,height:h,data};
+}
+const SCRATCH=new WeakMap();
+function getScratch(ctx,w,h){
+ if(!ctx||typeof ctx!=='object')return null;
+ const width=Math.max(56,Math.min(240,Math.round(w/2.6)));
+ const height=Math.max(32,Math.min(180,Math.round(width*h/w)));
+ let cache=SCRATCH.get(ctx);
+ if(!cache){
+  const canvas=typeof document!=='undefined'?document.createElement('canvas')
+    :typeof OffscreenCanvas==='function'?new OffscreenCanvas(width,height):null;
+  const painter=canvas?.getContext('2d',{willReadFrequently:false});
+  if(!painter)return null;
+  cache={canvas,painter,image:null};
+  SCRATCH.set(ctx,cache);
+ }
+ if(cache.canvas.width!==width||cache.canvas.height!==height){
+  cache.canvas.width=width;cache.canvas.height=height;cache.image=null;
+ }
+ if(!cache.image)cache.image=cache.painter.createImageData(width,height);
+ return cache;
+}
+/* A live vector fallback for environments without scratch Canvas support;
+ * never slides a static texture, and is not used in ordinary browsers. */
+function drawNoScratch(ctx,w,h,e,t,strength){
+ const o=options(e);
+ for(let d=0;d<3;d++){
+  const center=h*(.24+d*.22);
+  const gradient=ctx.createLinearGradient(0,center-h*.28,0,center+h*.32);
+  const alpha=(.08+.035*d)*strength;
+  gradient.addColorStop(0,'rgba(214,224,233,0)');
+  gradient.addColorStop(.52,'rgba(214,224,233,'+alpha.toFixed(4)+')');
+  gradient.addColorStop(1,'rgba(214,224,233,0)');
+  ctx.fillStyle=gradient;ctx.beginPath();
+  for(let i=0;i<=24;i++){
+   const x=w*i/24;
+   const sample=sampleHazyAtmosphereLayers(i/24,.3+d*.2,e,t)[d];
+   const y=center-h*.30+(sample.billow-.5)*h*.22;
+   if(!i)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  }
+  for(let i=24;i>=0;i--){
+   const x=w*i/24;
+   const sample=sampleHazyAtmosphereLayers(i/24,.3+d*.2,e,t)[d];
+   ctx.lineTo(x,center+h*.31+(sample.folds-.5)*h*.25);
+  }
+  ctx.closePath();ctx.fill();
+ }
+}
+/** Use the same alpha-noise field in engine preview, scrub and final export. */
+export function renderHazyAtmosphere(ctx,w,h,e={},cycle=0,strength=1){
+ const opacity=limit(strength,0,1);
+ if(opacity<=0)return true;
+ const settings={...e,intensity:limit((e.intensity??70)*opacity,0,100)};
+ const scratch=getScratch(ctx,w,h);
+ ctx.save();
+ try{
+  if(!scratch){
+   drawNoScratch(ctx,w,h,settings,cycle,opacity);
+  }else{
+   buildHazyAtmosphereFrame(scratch.canvas.width,scratch.canvas.height,
+    settings,cycle,scratch.image.data);
+   scratch.painter.putImageData(scratch.image,0,0);
+   ctx.imageSmoothingEnabled=true;
+   ctx.drawImage(scratch.canvas,0,0,w,h);
+  }
+ }finally{ctx.restore();}
+ return true;
+}
