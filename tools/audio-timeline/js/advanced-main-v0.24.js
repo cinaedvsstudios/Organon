@@ -36,6 +36,7 @@ import { normaliseWhipSpinOptions } from './gl-transitions/WhipSpin.mjs';
 import { normalisePaperTearOptions } from './gl-transitions/PaperTear.mjs';
 import { normaliseApertureWipeOptions } from './gl-transitions/ApertureWipe.mjs';
 import { normaliseSpiralWipeOptions } from './gl-transitions/SpiralWipe.mjs';
+import { normalisePrismsOptions } from './gl-transitions/Prisms.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
 import { normaliseLightRaysOptions } from './gl-transitions/LightRays.mjs';
@@ -1755,6 +1756,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             spiralWipeInspector.hidden=!(paired&&track.transitionEffectId==='spiral-wipe');
             if(!spiralWipeInspector.hidden)
                 displaySpiralWipeSettings(spiralWipeInspector,track.transitionParameters?.['spiral-wipe']);
+            const prismsInspector=document.getElementById('video-prisms-settings');
+            prismsInspector.hidden=!(paired&&track.transitionEffectId==='prisms');
+            if(!prismsInspector.hidden)
+                displayPrismsSettings(prismsInspector,track.transitionParameters?.['prisms']);
             const bloomDissolveInspector=document.getElementById('video-bloom-dissolve-settings');
             bloomDissolveInspector.hidden=!(paired&&track.transitionEffectId==='bloom-dissolve');
             if(!bloomDissolveInspector.hidden)
@@ -2180,6 +2185,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-spiral-wipe-settings');
             b.transitionParameters={...b.transitionParameters,
                 'spiral-wipe':readSpiralWipeSettings(panel)};
+        }
+        if(effectId==='prisms'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-prisms')
+                :document.getElementById('video-prisms-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'prisms':readPrismsSettings(panel)};
         }
         if(effectId==='bloom-dissolve'){
             const panel=preserveOrder===true
@@ -3480,6 +3492,34 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displaySpiralWipeSettings(root,target?.transitionParameters?.['spiral-wipe']);
         }
     }
+    function readPrismsSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-prisms-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normalisePrismsOptions({
+            slats:value('slats'),stagger:value('stagger'),perspective:value('perspective'),
+            shading:value('shading'),horizontal:value('horizontal'),
+            backColor:value('backColor'),backAlpha:value('backAlpha')
+        });
+    }
+    function displayPrismsSettings(root,options={}){
+        for(const [name,value] of Object.entries(normalisePrismsOptions(options))){
+            const input=root?.querySelector('[data-prisms-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshPrismsModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-prisms');
+        root.hidden=elements.transitionModalEffect.value!=='prisms';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayPrismsSettings(root,target?.transitionParameters?.['prisms']);
+        }
+    }
     function readBloomDissolveSettings(root){
         const value=name=>root?.querySelector('[data-bloom-dissolve-param="'+name+'"]')?.value;
         return normaliseBloomDissolveOptions({
@@ -3715,6 +3755,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'aperture-wipe':readApertureWipeSettings(document.getElementById('transition-modal-aperture-wipe'))}
                     :effectId==='spiral-wipe'
                     ?{...b.transitionParameters,'spiral-wipe':readSpiralWipeSettings(document.getElementById('transition-modal-spiral-wipe'))}
+                    :effectId==='prisms'
+                    ?{...b.transitionParameters,'prisms':readPrismsSettings(document.getElementById('transition-modal-prisms'))}
                     :effectId==='bloom-dissolve'
                     ?{...b.transitionParameters,'bloom-dissolve':readBloomDissolveSettings(document.getElementById('transition-modal-bloom-dissolve'))}
                     :effectId==='bokeh-dissolve'
@@ -3737,7 +3779,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3794,6 +3836,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshPaperTearModalSettings({restoreValues:true});
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
+        refreshPrismsModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
@@ -3865,6 +3908,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshPaperTearModalSettings({restoreValues:true});
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
+        refreshPrismsModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
         refreshLightRaysModalSettings({restoreValues:true});
@@ -4082,6 +4126,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original SpiralWipe GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'spiral-wipe':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-prisms').querySelectorAll('[data-prisms-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-prisms-settings').querySelectorAll('[data-prisms-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='prisms'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readPrismsSettings(document.getElementById('video-prisms-settings'));
+            const prior=normalisePrismsOptions(active.transitionParameters?.['prisms']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Prisms GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'prisms':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));
