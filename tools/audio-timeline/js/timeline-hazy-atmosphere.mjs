@@ -33,10 +33,6 @@ function noise(x,y,seed){
  return lerp(lerp(table[y0+x0],table[y0+x1],u),
              lerp(table[y1+x0],table[y1+x1],u),v);
 }
-function fractal(x,y,seed){
- return .55*noise(x,y,seed)+.29*noise(x*2.11,y*2.11,seed+19)
-       +.16*noise(x*4.03,y*4.03,seed+47);
-}
 const DEFAULT_COLOR='#d6e0e9';
 function options(effect={}){
  const hex=/^#[a-f\d]{6}$/i.test(String(effect.color))?String(effect.color):DEFAULT_COLOR;
@@ -64,14 +60,22 @@ function sampleLayers(nx,ny,o,t){
   const driftY=Math.sin(o.angle)*t*parallax-t*(.025+.012*depth);
   const px=(u+o.originX*.19+driftX)*scale;
   const py=(v+o.originY*.14+driftY)*scale;
-  const warpA=fractal(px*.69+t*.045,py*.76-t*.053,depth*101+7)-.5;
-  const warpB=fractal(px*.81-t*.071,py*.67+t*.036,depth*101+13)-.5;
-  const wx=px+warpA*(.32+o.distortion*.94);
-  const wy=py+warpB*(.28+o.distortion*.87);
-  const billow=fractal(wx,wy,depth*101+29);
-  const folds=fractal(wx*.59+t*.06,wy*.67-t*.045,depth*101+61);
+  // Two different seeded octaves per plane, continuously phase-advected,
+  // with cross-axis time-varying domain warp. Fine folds and the upper/lower
+  // cloud boundary also deform over time; no translated still noise bitmap.
+  const warpA=Math.sin(py*1.31-t*.24+depth*1.9)
+    *Math.cos(px*.83+t*.14+depth*.57);
+  const warpB=Math.cos(px*1.17+t*.19+depth*2.13)
+    *Math.sin(py*.91-t*.16);
+  const wx=px+warpA*(.18+o.distortion*.63);
+  const wy=py+warpB*(.15+o.distortion*.6);
+  const low=noise(wx,wy,depth*101+29);
+  const fine=noise(wx*2.08+t*.021,wy*1.93-t*.018,depth*101+61);
+  const billow=.69*low+.31*fine;
+  const folds=.5+.21*Math.sin(wx*1.33+wy*.64+t*.22+depth)
+    +.19*Math.cos(wy*1.87-wx*.4-t*.31+depth*2);
   const center=.23+depth*.245+(o.originY-.12)*.25
-      +.07*(fractal(u*3.1+t*.055,depth*1.8,depth*101+37)-.5);
+    +.044*Math.sin(u*8.2+t*.22+depth*1.87);
   const edgeWarp=(folds-.5)*(.16+.12*o.distortion);
   const vertical=1-smooth(.19+.055*depth,.54+.065*depth,
    Math.abs(v-center+edgeWarp));
@@ -120,8 +124,8 @@ export function buildHazyAtmosphereFrame(width,height,effect={},seconds=0,reuse)
 const SCRATCH=new WeakMap();
 function getScratch(ctx,w,h){
  if(!ctx||typeof ctx!=='object')return null;
- const width=Math.max(56,Math.min(240,Math.round(w/2.6)));
- const height=Math.max(32,Math.min(180,Math.round(width*h/w)));
+ const width=Math.max(56,Math.min(176,Math.round(w/2.6)));
+ const height=Math.max(32,Math.min(110,Math.round(width*h/w)));
  let cache=SCRATCH.get(ctx);
  if(!cache){
   const canvas=typeof document!=='undefined'?document.createElement('canvas')
