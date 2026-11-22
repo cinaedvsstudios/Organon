@@ -143,9 +143,14 @@ export function renderEngineHeat(ctx,source,w,h,e={},cycle=0,amount=1){
    ctx.fillStyle=g;ctx.fillRect(0,y,w,h-y);
    return true;
   }
-  // Restore full-resolution unmodified upper image: the caller previously
-  // displayed (1-alpha) of source for glitch crossfades.
+  // Restore the exact full-resolution source first. The parent's generic
+  // glitch path previously painted it at (1-alpha); simply layering alpha
+  // again would darken the unheated upper image. Replace that translucent
+  // placeholder without touching the media, then blend refraction locally.
+  ctx.globalAlpha=1;
+  ctx.clearRect(0,0,w,h);
   ctx.drawImage(source,0,0,w,h);
+  ctx.globalAlpha=alpha;
   const cache=scratch(ctx,w,h);
   if(!cache)return true;
   cache.sourceCtx.globalCompositeOperation='source-over';
