@@ -106,7 +106,10 @@ try{
             &&engine.pixelizeWebGL==null
             &&engine.randomSquaresFromScratch==null
             &&engine.randomSquaresToScratch==null
-            &&engine.randomSquaresWebGL==null;
+            &&engine.randomSquaresWebGL==null
+            &&engine.rippleFromScratch==null
+            &&engine.rippleToScratch==null
+            &&engine.rippleWebGL==null;
         return results;
     });
     for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','colorcoords','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
@@ -129,12 +132,16 @@ try{
     assert.notEqual(result['glitch-flicker'].middle.fingerprint,result.fade.middle.fingerprint,
         'Glitch flicker must visibly differ from a simple fade');
     const ripple=result.ripple.middle;
-    assert.ok(ripple.red>150&&ripple.blue>150,
-        'Ripple must reveal incoming B inside an expanding ring, retaining outgoing A beyond it');
-    assert.deepEqual(ripple.center,[255,0,0],
-        'Ripple must reveal incoming B in the center');
-    assert.deepEqual(ripple.top,[0,0,255],
-        'Ripple must leave outgoing A untouched outside its wavefront');
+    // The exact gre Ripple.glsl is a whole-frame radial UV displacement of
+    // A plus smoothstep fade towards B, NOT a hard circular reveal mask.
+    assert.ok(ripple.mixed>1200,
+        'Original Ripple must continuously blend source colours across the full frame');
+    assert.notDeepEqual(ripple.center,[255,0,0],
+        'Original Ripple must not prematurely reveal a hard-red circular center');
+    assert.notDeepEqual(ripple.top,[0,0,255],
+        'Original Ripple must not leave the whole exterior completely blue');
+    assert.notEqual(ripple.fingerprint,result.fade.middle.fingerprint,
+        'Original Ripple smoothstep transition timing must differ from linear Fade');
     const iris=result['aperture-wipe'].middle;
     assert.ok(iris.red>150&&iris.blue>150,
         'Original aperture polygon must open on B while retaining outgoing A beyond its blades');
