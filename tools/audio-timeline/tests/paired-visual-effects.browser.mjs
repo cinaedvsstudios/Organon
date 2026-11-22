@@ -96,8 +96,14 @@ try{
             };
         }
         engine.clearAll();
-        results.scratchReleased=engine.transitionFullScratch===null
-            &&engine.transitionPixelScratch===null;
+        // Pixelize now uses original two-texture WebGL instead of the legacy
+        // transitionPixelScratch Canvas. Absence of that old allocation is valid;
+        // actual GPU context and new A/B scratch surfaces must be released.
+        results.scratchReleased=engine.transitionFullScratch==null
+            &&engine.transitionPixelScratch==null
+            &&engine.pixelizeFromScratch==null
+            &&engine.pixelizeToScratch==null
+            &&engine.pixelizeWebGL==null;
         return results;
     });
     for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','colorcoords','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){

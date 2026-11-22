@@ -40,6 +40,7 @@ import { normalisePrismsOptions } from './gl-transitions/Prisms.mjs';
 import { normaliseCubeOptions } from './gl-transitions/Cube.mjs';
 import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
 import { normaliseGlitchFlickerOptions } from './gl-transitions/GlitchFlicker.mjs';
+import { normalisePixelizeOptions } from './gl-transitions/Pixelize.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
@@ -1776,6 +1777,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             glitchFlickerInspector.hidden=!(paired&&track.transitionEffectId==='glitch-flicker');
             if(!glitchFlickerInspector.hidden)
                 displayGlitchFlickerSettings(glitchFlickerInspector,track.transitionParameters?.['glitch-flicker']);
+            const pixelizeInspector=document.getElementById('video-pixelize-settings');
+            pixelizeInspector.hidden=!(paired&&track.transitionEffectId==='pixelize');
+            if(!pixelizeInspector.hidden)
+                displayPixelizeSettings(pixelizeInspector,track.transitionParameters?.pixelize);
             const tvTurnOffInspector=document.getElementById('video-tv-turn-off-settings');
             tvTurnOffInspector.hidden=!(paired&&track.transitionEffectId==='tv-turn-off');
             if(!tvTurnOffInspector.hidden)
@@ -2232,6 +2237,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-glitch-flicker-settings');
             b.transitionParameters={...b.transitionParameters,
                 'glitch-flicker':readGlitchFlickerSettings(panel)};
+        }
+        if(effectId==='pixelize'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-pixelize')
+                :document.getElementById('video-pixelize-settings');
+            b.transitionParameters={...b.transitionParameters,
+                pixelize:readPixelizeSettings(panel)};
         }
         if(effectId==='tv-turn-off'){
             const panel=preserveOrder===true
@@ -3649,6 +3661,33 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayGlitchFlickerSettings(root,target?.transitionParameters?.['glitch-flicker']);
         }
     }
+    function readPixelizeSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-pixelize-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normalisePixelizeOptions({
+            squaresX:value('squaresX'),squaresY:value('squaresY'),
+            steps:value('steps')
+        });
+    }
+    function displayPixelizeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normalisePixelizeOptions(options))){
+            const input=root?.querySelector('[data-pixelize-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshPixelizeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-pixelize');
+        root.hidden=elements.transitionModalEffect.value!=='pixelize';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayPixelizeSettings(root,target?.transitionParameters?.['pixelize']);
+        }
+    }
     function readTvTurnOffSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-tv-turn-off-param="'+name+'"]');
@@ -3918,6 +3957,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'cross-hatch':readCrosshatchSettings(document.getElementById('transition-modal-cross-hatch'))}
                     :effectId==='glitch-flicker'
                     ?{...b.transitionParameters,'glitch-flicker':readGlitchFlickerSettings(document.getElementById('transition-modal-glitch-flicker'))}
+                    :effectId==='pixelize'
+                    ?{...b.transitionParameters,pixelize:readPixelizeSettings(document.getElementById('transition-modal-pixelize'))}
                     :effectId==='tv-turn-off'
                     ?{...b.transitionParameters,'tv-turn-off':readTvTurnOffSettings(document.getElementById('transition-modal-tv-turn-off'))}
                     :effectId==='bloom-dissolve'
@@ -4003,6 +4044,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshGlitchFlickerModalSettings({restoreValues:true});
+        refreshPixelizeModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4079,6 +4121,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshGlitchFlickerModalSettings({restoreValues:true});
+        refreshPixelizeModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4357,6 +4400,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original GlitchFlicker GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'glitch-flicker':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-pixelize').querySelectorAll('[data-pixelize-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-pixelize-settings').querySelectorAll('[data-pixelize-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='pixelize'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readPixelizeSettings(document.getElementById('video-pixelize-settings'));
+            const prior=normalisePixelizeOptions(active.transitionParameters?.['pixelize']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Pixelize GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'pixelize':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));
