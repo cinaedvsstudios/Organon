@@ -119,7 +119,7 @@ export function buildRetroGlitchFrame(source,width,height,effect={},time=0,reuse
     input[base+1]*brightness+snow*.91+burstValue*.55+tint[1]*tintAmount,0,255);
    output[dest+2]=clip(
     input[(y*w+bX)*4+2]*brightness+snow*1.04-burstValue*.38+tint[2]*tintAmount,0,255);
-   output[dest+3]=input[base+3];
+   output[dest+3]=input[dest+3]; // Preserve each source pixel's transparency
   }
  }
  return {width:w,height:h,data:output,state};
