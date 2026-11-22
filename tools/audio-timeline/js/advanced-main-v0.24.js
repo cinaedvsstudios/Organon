@@ -39,6 +39,7 @@ import { normaliseSpiralWipeOptions } from './gl-transitions/SpiralWipe.mjs';
 import { normalisePrismsOptions } from './gl-transitions/Prisms.mjs';
 import { normaliseCubeOptions } from './gl-transitions/Cube.mjs';
 import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
+import { normaliseGlitchFlickerOptions } from './gl-transitions/GlitchFlicker.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
@@ -1771,6 +1772,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             crosshatchInspector.hidden=!(paired&&track.transitionEffectId==='cross-hatch');
             if(!crosshatchInspector.hidden)
                 displayCrosshatchSettings(crosshatchInspector,track.transitionParameters?.['cross-hatch']);
+            const glitchFlickerInspector=document.getElementById('video-glitch-flicker-settings');
+            glitchFlickerInspector.hidden=!(paired&&track.transitionEffectId==='glitch-flicker');
+            if(!glitchFlickerInspector.hidden)
+                displayGlitchFlickerSettings(glitchFlickerInspector,track.transitionParameters?.['glitch-flicker']);
             const tvTurnOffInspector=document.getElementById('video-tv-turn-off-settings');
             tvTurnOffInspector.hidden=!(paired&&track.transitionEffectId==='tv-turn-off');
             if(!tvTurnOffInspector.hidden)
@@ -2220,6 +2225,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-cross-hatch-settings');
             b.transitionParameters={...b.transitionParameters,
                 'cross-hatch':readCrosshatchSettings(panel)};
+        }
+        if(effectId==='glitch-flicker'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-glitch-flicker')
+                :document.getElementById('video-glitch-flicker-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'glitch-flicker':readGlitchFlickerSettings(panel)};
         }
         if(effectId==='tv-turn-off'){
             const panel=preserveOrder===true
@@ -3609,6 +3621,34 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayCrosshatchSettings(root,target?.transitionParameters?.['cross-hatch']);
         }
     }
+    function readGlitchFlickerSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-glitch-flicker-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseGlitchFlickerOptions({
+            frameRate:value('frameRate'),rgbOffset:value('rgbOffset'),
+            blockAmount:value('blockAmount'),ghostAmount:value('ghostAmount'),
+            redCyan:value('redCyan'),scanline:value('scanline')
+        });
+    }
+    function displayGlitchFlickerSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseGlitchFlickerOptions(options))){
+            const input=root?.querySelector('[data-glitch-flicker-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshGlitchFlickerModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-glitch-flicker');
+        root.hidden=elements.transitionModalEffect.value!=='glitch-flicker';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayGlitchFlickerSettings(root,target?.transitionParameters?.['glitch-flicker']);
+        }
+    }
     function readTvTurnOffSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-tv-turn-off-param="'+name+'"]');
@@ -3876,6 +3916,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'cube':readCubeSettings(document.getElementById('transition-modal-cube'))}
                     :effectId==='cross-hatch'
                     ?{...b.transitionParameters,'cross-hatch':readCrosshatchSettings(document.getElementById('transition-modal-cross-hatch'))}
+                    :effectId==='glitch-flicker'
+                    ?{...b.transitionParameters,'glitch-flicker':readGlitchFlickerSettings(document.getElementById('transition-modal-glitch-flicker'))}
                     :effectId==='tv-turn-off'
                     ?{...b.transitionParameters,'tv-turn-off':readTvTurnOffSettings(document.getElementById('transition-modal-tv-turn-off'))}
                     :effectId==='bloom-dissolve'
@@ -3960,6 +4002,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshPrismsModalSettings({restoreValues:true});
         refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
+        refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4035,6 +4078,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshPrismsModalSettings({restoreValues:true});
         refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
+        refreshGlitchFlickerModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4298,6 +4342,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original Crosshatch GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'cross-hatch':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-glitch-flicker').querySelectorAll('[data-glitch-flicker-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-glitch-flicker-settings').querySelectorAll('[data-glitch-flicker-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='glitch-flicker'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readGlitchFlickerSettings(document.getElementById('video-glitch-flicker-settings'));
+            const prior=normaliseGlitchFlickerOptions(active.transitionParameters?.['glitch-flicker']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original GlitchFlicker GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'glitch-flicker':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));
