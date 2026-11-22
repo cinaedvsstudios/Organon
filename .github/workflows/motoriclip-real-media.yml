@@ -256,6 +256,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/pixelize.browser.mjs
+      - name: Compare original soft randomized RandomSquares cell shader to independently compiled Chrome GLSL
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/randomsquares.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -282,6 +287,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/glitchflicker-source.test.mjs
       - name: Verify source pinned Pixelize GLSL, native integer parameters and project Undo/Redo
         run: node --test tools/audio-timeline/tests/pixelize-source.test.mjs
+      - name: Verify pinned RandomSquares MIT shader blob, three native parameters and clip history
+        run: node --test tools/audio-timeline/tests/randomsquares-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -536,6 +543,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/pixelize-export.browser.mjs
+      - name: Decode actual RandomSquares H264 MP4 and compare original GLSL preview pixels
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/randomsquares-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
