@@ -189,12 +189,12 @@ try{
       problems};
   });
   for(const [p,measure] of Object.entries(result.fade)){
-    assert.ok(measure.mean<=16&&measure.max<=38,
+    assert.ok(measure.mean<=2&&measure.max<=4,
       'Fade source/crop/alpha/colour-space must match independent Canvas oracle at '+p+': '+JSON.stringify(measure));
   }
   for(const key of ['letterbox','sticker','multiply','cover','resized']){
     const value=result[key];
-    assert.ok(value.mean<=20&&value.max<=48,
+    assert.ok(value.mean<=2&&value.max<=4,
       'Shader Canvas integration mismatch in '+key+': '+JSON.stringify(value));
   }
   assert.equal(result.reverseStable,true);
