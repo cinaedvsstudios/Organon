@@ -1,3 +1,4 @@
+import {renderRetroGlitch} from './timeline-retro-glitch.mjs';
 import {renderEngineHeat} from './timeline-engine-heat.mjs';
 /**
  * MotoriClip Phase 3E — nine substantively different source-frame glitches.
@@ -139,38 +140,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   }else if(e.presetId==='engine-heat'){
    renderEngineHeat(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='retro-glitch'){
-   // Actual low-resolution re-sample, nearest-neighbour upscale, CRT
-   // scanlines and a rolling displaced horizontal dropout strip.
-   if(source&&typeof document!=='undefined'){
-    let pair=cache.get(ctx);
-    if(!pair){
-     const canvas=document.createElement('canvas');
-     const context=canvas.getContext('2d');
-     if(context){pair={canvas,context};cache.set(ctx,pair);}
-    }
-    if(pair){
-     const downscale=Math.min(1/Math.max(3,4*size),640/Math.max(w,h));
-     const sw=Math.max(1,Math.round(w*downscale));
-     const sh=Math.max(1,Math.round(h*downscale));
-     if(pair.canvas.width!==sw||pair.canvas.height!==sh){pair.canvas.width=sw;pair.canvas.height=sh;}
-     pair.context.setTransform(1,0,0,1,0,0);
-     pair.context.globalAlpha=1;pair.context.globalCompositeOperation='source-over';
-     pair.context.clearRect(0,0,sw,sh);
-     pair.context.drawImage(source,0,0,sw,sh);
-     ctx.imageSmoothingEnabled=false;
-     ctx.drawImage(pair.canvas,0,0,w,h);
-    }
-   }else{
-    for(let y=0;y<h;y+=Math.max(4,8*size)){
-     ctx.fillStyle=y%3?'#203948':'#b5d7e3';
-     ctx.fillRect(0,y,w*.8,Math.max(2,4*size));
-    }
-   }
-   const step=Math.max(3,Math.round(5*size));
-   ctx.fillStyle='rgba(0,0,0,.32)';
-   for(let y=0;y<h;y+=step)ctx.fillRect(0,y,w,Math.max(1,step*.35));
-   const tear=wrap(t*.39)*h;
-   draw(ctx,source,0,Math.max(0,tear-h*.03),w,h*.03,Math.sin(t*8)*amp,tear,w,h*.03);
+   renderRetroGlitch(ctx,source,w,h,e,t,amount);
   }
  }finally{ctx.restore();}
  return true;
