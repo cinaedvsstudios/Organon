@@ -236,6 +236,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/crosshatch.browser.mjs
+      - name: Compare original Cube two-face perspective and floor GLSL to independent Chrome GPU oracle
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/cube.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -254,6 +259,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/crosswarp-source.test.mjs
       - name: Pin original Crosshatch source and validate 3 controls/history
         run: node --test tools/audio-timeline/tests/crosshatch-source.test.mjs
+      - name: Pin original Cube source SHA and verify five native settings/history
+        run: node --test tools/audio-timeline/tests/cube-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -488,6 +495,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/crosshatch-export.browser.mjs
+      - name: Decode genuine Cube dual-source H264 MP4 and compare original shader preview
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/cube-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
