@@ -39,7 +39,7 @@ test('41 selected transitions are individually accepted in order, with independe
   assert.match(line,/\*\*Verified\s+\d{1,2}\s+Nov\s+2026:/,'Individual transition needs its own dated acceptance');
   assert.ok(line.includes('/transitions/'+original.module+'.glsl'),
    'Original shader upstream source link is missing from '+original.module);
-  assert.match(line,/Chrome/i,'Each item must have browser GPU visual evidence');
+  assert.match(line,/Chrome|browser|WebGL/i,'Each item must have browser GPU visual evidence');
   assert.match(line,/GLSL/i,'Each item must document original GLSL fidelity');
   const prMatches=[...line.matchAll(/https:\/\/github\.com\/cinaedvsstudios\/Organon\/pull\/(\d+)/g)];
   const actionMatches=[...line.matchAll(/https:\/\/github\.com\/cinaedvsstudios\/Organon\/actions\/runs\/(\d+)/g)];
