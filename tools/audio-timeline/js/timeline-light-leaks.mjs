@@ -46,10 +46,13 @@ function config(e={}){
   originX:clamp(e.originX??20,0,100)/100,
   originY:clamp(e.originY??12,0,100)/100,
   main:rgb(e.color),
+  lean:Math.tan(clamp(e.direction??0,-180,180)*Math.PI/180*.43)*.32+.40,
   broadNoise:table(43),smallNoise:table(71)
  };
 }
-const gaussian=(v,w)=>Math.exp(-(v*v)/(2*w*w));
+// Smooth finite-support bell (C1 at its edge) avoids costly per-pixel exp.
+const gaussian=(v,w)=>{const q=v/(w*2.35),a=1-q*q;return a>0?a*a:0;};
+const PURPLE=[129,72,225],WARM=[255,239,249];
 function lightAt(u,v,o,time,out){
  // The two advected scales distort CLOUD SHAPE and internal brightness;
  // there is no cached still source image being dragged across the canvas.
@@ -77,7 +80,7 @@ function lightAt(u,v,o,time,out){
   *(.61+.52*fine);
  // A soft luminous diagonal column: brightness grows and fades within
  // the light itself, not by sweeping an opaque beam-shaped rectangle.
- const lean=Math.tan(o.direction*.43)*.32+.40;
+ const lean=o.lean;
  const diagonalX=.31+anchorX*.47+Math.sin(time*.20+1.4)*.09
    +(y-.5)*lean;
  const diagonal=gaussian(x-diagonalX,.155+.19*o.blur+.065*o.scale)
@@ -110,9 +113,8 @@ function lightAt(u,v,o,time,out){
  const exposure=clamp(hotspot*(.75+.78*o.glow),0,.94);
  const color=out.color;
  for(let c=0;c<3;c++){
-  const purpleRGB=[129,72,225][c],warmWhite=[255,239,249][c];
-  const chroma=(main*o.main[c]+purple*purpleRGB+bloom*warmWhite)/sum;
-  color[c]=mix(chroma,warmWhite,exposure*.88);
+  const chroma=(main*o.main[c]+purple*PURPLE[c]+bloom*WARM[c])/sum;
+  color[c]=mix(chroma,WARM[c],exposure*.88);
  }
  out.alpha=alpha;out.magenta=magenta;out.violet=violet;out.diagonal=diagonal;
  out.vertical=vertical;out.bloom=bloom;out.hotspot=hotspot;out.flicker=flicker;
@@ -139,7 +141,7 @@ export function buildLightLeaksFrame(width,height,effect={},cycle=0,reuse){
 const SCRATCH=new WeakMap();
 function scratchFor(ctx,w,h){
  let item=SCRATCH.get(ctx);
- const factor=Math.min(1,176/Math.max(w,h));
+ const factor=Math.min(1,144/Math.max(w,h));
  const sw=Math.max(40,Math.round(w*factor)),sh=Math.max(24,Math.round(h*factor));
  if(!item){
   const canvas=typeof document!=='undefined'?document.createElement('canvas'):
