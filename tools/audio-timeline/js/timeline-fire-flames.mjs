@@ -20,7 +20,8 @@ function noiseSeed(seed){
  HASH.set(seed,map);return map;
 }
 function noise(x,y,seed){
- const ix=Math.floor(x),iy=Math.floor(y),fx=ease(0,1,x-ix),fy=ease(0,1,y-iy);
+ const ix=Math.floor(x),iy=Math.floor(y),dx=x-ix,dy=y-iy,
+  fx=dx*dx*(3-2*dx),fy=dy*dy*(3-2*dy);
  const tab=noiseSeed(seed),x0=ix&63,x1=(ix+1)&63,y0=(iy&63)*64,y1=((iy+1)&63)*64;
  return mix(mix(tab[y0+x0],tab[y0+x1],fx),mix(tab[y1+x0],tab[y1+x1],fx),fy);
 }
@@ -90,7 +91,7 @@ export function buildFireFlamesFrame(width,height,effect={},cycle=0,reuse){
 const SCRATCH=new WeakMap();
 function scratchFor(ctx,w,h){
  let entry=SCRATCH.get(ctx);
- const ratio=Math.min(1,176/Math.max(w,h)),width=Math.max(48,Math.round(w*ratio)),
+ const ratio=Math.min(1,144/Math.max(w,h)),width=Math.max(48,Math.round(w*ratio)),
   height=Math.max(32,Math.round(h*ratio));
  if(!entry){
   const canvas=typeof document!=='undefined'?document.createElement('canvas'):
