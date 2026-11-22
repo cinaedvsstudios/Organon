@@ -319,6 +319,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/sci-fi-scan-v2.browser.mjs
+      - name: Verify organically bending Fire Flames, flicker, core/edge alpha, controls and Undo
+        run: node --test tools/audio-timeline/tests/fire-flames-v2.test.mjs
+      - name: Inspect real Chrome Fire Flames, warm contour pixels, source transparency, visual PNG and reverse seek
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/fire-flames-v2.browser.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history
