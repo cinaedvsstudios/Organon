@@ -298,6 +298,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/pixel-scan-v2.browser.mjs
+      - name: Verify individually seeded accelerating ember and floating-dust trajectories, settings and Undo history
+        run: node --test tools/audio-timeline/tests/ember-dust-v2.test.mjs
+      - name: Inspect actual Chrome curved ember/dust particles, snapshots, visibility and backward seek
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/ember-dust-v2.browser.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history

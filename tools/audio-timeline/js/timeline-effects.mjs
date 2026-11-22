@@ -7,6 +7,7 @@
  */
 import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel-effects.mjs';
 import {renderPixelScan} from './timeline-pixel-scan.mjs';
+import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -341,20 +342,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    }
    ctx.globalAlpha=clip;
   }else if(e.presetId==='fire-embers'){
-   // Independently rising, fading motes rather than a flame-sheet impostor.
-   const count=Math.min(120,Math.max(10,Math.round(e.density)));
-   const clip=ctx.globalAlpha;
-   for(let i=0;i<count;i++){
-    const life=wrap(random(i*13+7)+t*(.1+.13*random(i+3)));
-    const drift=Math.sin(t*.45+i*1.7)*w*.065*size;
-    const x=wrap(random(i*29+5)+drift/w)*w;
-    const y=(1-life)*h;
-    const radius=(.6+random(i*43+15)*2.2)*size;
-    ctx.globalAlpha=clip*strength*Math.max(0,1-life)*(.3+.7*random(i+8));
-    ctx.fillStyle=i%4===0?'#fff6bc':i%3===0?e.color:'#ff7d34';
-    ctx.beginPath();ctx.arc(x,y,radius,0,Math.PI*2);ctx.fill();
-   }
-   ctx.globalAlpha=clip;
+   renderFlamingDust(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-explosion'){
    // Radial burst with a decaying shock crown and distributed fiery projectiles.
    const p=wrap(t*.33),cx=w*e.originX/100,cy=h*e.originY/100;
@@ -389,6 +377,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    ctx.fillStyle=dark?'rgba(0,0,0,'+(.42*strength*(flash-.2))+')'
                      :rgba(e.color,.13*strength*(1-flash));
    ctx.fillRect(0,0,w,h);
+  }else if(e.presetId==='particle-dust'){
+   renderFlamingDust(ctx,w,h,e,t,strength);
   }else if(e.presetId.startsWith('particle-')){
    const sparks=e.presetId==='particle-sparks',debris=e.presetId==='particle-debris';
    const count=Math.min(120,Math.max(1,Math.round(e.density)));
