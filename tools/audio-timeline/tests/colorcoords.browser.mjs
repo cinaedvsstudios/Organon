@@ -161,11 +161,21 @@ void main(){gl_FragColor=transition(uv);}`);
    variation[key]={hash:fingerprint({...opts[0],[key]:value}),
      baseline:fingerprint(opts[0])};
   const chosen=asImage(.55,opts[0]).hash;
+  // Reopen a historical project: the original Canvas effect ID and settings
+  // must transparently become canonical ColorCoords without changing pixels.
+  const canonicalFrame=asImage(.42,{}).hash;
+  b.transitionEffectId='color-codes';
+  b.transitionParameters={'color-codes':{}};
+  engine.setTracks([a,b]);
+  const aliasMigrated=b.transitionEffectId==='colorcoords'
+    &&Object.hasOwn(b.transitionParameters,'colorcoords')
+    &&!Object.hasOwn(b.transitionParameters,'color-codes');
+  const aliasSamePixels=asImage(.42,{}).hash===canonicalFrame;
   const bg={id:'BG',type:'video',sourceName:'green.png',file:{name:'green.png'},
    start:0,clipDuration:4,order:3,visible:true,opacity:1,blendMode:'source-over',
    media:makeSource('BG')};
   a.opacity=.5;b.opacity=.5;engine.tracks=[bg,a,b];
-  // Test during initial ink expansion so outgoing visibility affects output.
+  // Test halfway through coordinate displacement so outgoing visibility changes the shader output.
   const alpha=asImage(.18,opts[0]).hash;
   a.visible=false;
   const hidden=asImage(.18,opts[0]).hash;
@@ -173,6 +183,7 @@ void main(){gl_FragColor=transition(uv);}`);
   engine.clearAll();
   return {samples,representative,used,
    stable:baseline.hash===rewound.hash,variation,chosen,alpha,hidden,displacementDifference,
+   aliasMigrated,aliasSamePixels,
    cleanup:engine.colorCoordsWebGL===null
     &&engine.colorCoordsFromScratch===null&&engine.colorCoordsToScratch===null,
    renderErrors};
@@ -187,14 +198,16 @@ void main(){gl_FragColor=transition(uv);}`);
  for(const [name,hash] of Object.entries(result.variation))
   assert.notEqual(hash.hash,hash.baseline,'Original ColorCoords option '+name+' did not change animation');
  assert.ok(result.displacementDifference>4,'Color-coordinate sampling must differ visibly from a naive image crossfade');
+ assert.equal(result.aliasMigrated,true,'Old color-codes project ID and parameter key must migrate to ColorCoords');
+ assert.equal(result.aliasSamePixels,true,'Legacy project must render identical original ColorCoords GLSL pixels');
  assert.equal(result.stable,true,'Reverse timeline seeking must reproduce exact same ColorCoords pixels');
  assert.notEqual(result.alpha,result.hidden,'Hidden outgoing track must not reappear inside ColorCoords');
  assert.equal(result.cleanup,true,'Project clear must release ColorCoords GPU and scratch textures');
  assert.deepEqual(result.renderErrors,[]);
  assert.deepEqual(errors,[]);
- console.log('[ColorCoords #33] PASS original colour-channel coordinates driving actual source A/B UV displacement GLSL, two independent option sets,'
-   +' 5 timeline timestamps, standalone pixel reference, native colour RGBA and glow uniforms,'
-   +' alpha/visibility, seeking and GPU cleanup');
+ console.log('[ColorCoords #33] PASS authentic colour-channel coordinates drive A/B UV displacement,'
+   +' 5 independent original GLSL frame comparisons; no native effect uniforms,'
+   +' legacy project migration, real texture displacement, alpha/visibility, seeking and GPU cleanup');
  console.log('[ColorCoords #33 visual PNG] '+result.representative);
 }finally{
  await browser.close();
