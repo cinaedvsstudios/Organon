@@ -249,7 +249,12 @@ try{
         'Original WhipSpin motion blur must not collapse to a plain alpha fade');
     assert.equal(spin.fingerprint,result.whipspin.repeat.fingerprint,
         'WhipSpin must be deterministic when seeking backwards');
-    assert.ok(cube.red>100&&cube.blue>100,'Cube must show both rotating scene faces at midpoint');
+    // The original Cube shader darkens both textured faces as they turn.
+    // Unlike the old 24-strip Canvas stand-in it should not have large pure
+    // #ff0000 or #0000ff areas at midturn; independently compiled GPU oracle
+    // verifies the A/B face orientation and reflected floor precisely.
+    assert.ok(cube.mixed>200&&cube.dark>0,
+        'Original Cube must shade textured rotating faces and leave a dark reflected-floor backdrop');
     assert.notEqual(cube.fingerprint,result.fade.middle.fingerprint,
         'Cube must differ from ordinary crossfade');
     assert.equal(cube.fingerprint,result.cube.repeat.fingerprint,'Cube must seek deterministically');
