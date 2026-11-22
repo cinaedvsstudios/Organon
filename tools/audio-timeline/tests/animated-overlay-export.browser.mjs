@@ -68,7 +68,7 @@ try{
  const pageErrors=[];
  page.on('pageerror',err=>pageErrors.push(String(err)));
  await page.goto('http://127.0.0.1:'+port+'/tools/audio-timeline/tests/browser-harness.html');
- for(const preset of ['light-sweep','glitch-flux']){
+ for(const preset of ['light-sweep','glitch-flux','pixel-scan']){
   const downloadPromise=page.waitForEvent('download',{timeout:180000});
   const preview=await page.evaluate(async({preset,W,H})=>{
    const [{AdvancedMediaEngine},{AdvancedOfflineExporter}]=await Promise.all([
