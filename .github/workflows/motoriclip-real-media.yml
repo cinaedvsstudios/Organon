@@ -333,6 +333,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/engine-heat-v2.browser.mjs
+      - name: Verify Retro Glitch independently seeded snow, seven CRT tears, RGB shifts and saved history
+        run: node --test tools/audio-timeline/tests/retro-glitch-v2.test.mjs
+      - name: Inspect real Chrome Retro Glitch analogue noise, source image, RGB streaks and deterministic rewind
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/retro-glitch-v2.browser.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history

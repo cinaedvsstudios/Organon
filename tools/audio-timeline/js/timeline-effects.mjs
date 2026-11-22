@@ -72,7 +72,7 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,24),
   originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':'#ffd98d'
  };
 }
 // Keep one reusable full-frame scratch buffer per Canvas context. No per-frame
