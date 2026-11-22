@@ -23,6 +23,7 @@ import { paintApertureWipe } from './gl-transitions/ApertureWipe.mjs';
 import { paintSpiralWipe } from './gl-transitions/SpiralWipe.mjs';
 import { paintPrisms } from './gl-transitions/Prisms.mjs';
 import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
+import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -38,7 +39,7 @@ import { normalizeTransitionEffectId } from './transition-catalog.mjs';
  * effects, not copies of third-party GLSL shaders. All operations use a bounded
  * number of draw calls and the same canvas path for preview and fixed export.
  */
-export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']);
+export const ACTIVE_PAIR_EFFECTS = Object.freeze(['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','colorcoords','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']);
 export const isAvailablePairEffect = id => ACTIVE_PAIR_EFFECTS.includes(normalizeTransitionEffectId(id));
 export const unit = x => Math.max(0, Math.min(1, Number.isFinite(Number(x)) ? Number(x) : 0));
 export const seededCell = index => {
@@ -545,6 +546,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintPrisms(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='tv-turn-off')
         return paintTvTurnOff(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='colorcoords')
+        return paintColorCoords(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -710,41 +713,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
-    if(id==='color-codes'){
-        context.save();
-        // The incoming video is visible behind the code glyphs. Source
-            // sampling for Color codes is capped at 28 pixels.
-            context.globalAlpha=alpha*(progress*.65);
-            context.drawImage(full,0,0,width,height);
-            const columns=7,rows=4;
-            const tiny=scratchCanvas(renderer,'transitionPixelScratch',columns,rows);
-            const tc=tiny.getContext('2d',{willReadFrequently:true});
-            tc.clearRect(0,0,columns,rows);
-            tc.drawImage(full,0,0,columns,rows);
-            const pixels=tc.getImageData(0,0,columns,rows).data;
-            const cw=width/columns,ch=height/rows;
-            context.textBaseline='middle';
-            context.textAlign='center';
-                context.font='bold '+Math.max(5,Math.floor(ch*.22))+'px monospace';
-                const inset=Math.max(.5,Math.min(cw,ch)*.065);
-                for(let i=0;i<columns*rows;i++){
-                    const strength=colorCodeStrength(progress,i);
-                    if(strength<=0)continue;
-                    const offset=i*4;
-                    const code=rgbToColorCode(pixels[offset],pixels[offset+1],pixels[offset+2]);
-                    const x=i%columns*cw,y=Math.floor(i/columns)*ch;
-                    context.globalAlpha=alpha*strength*.9;
-                    context.fillStyle='#101a35';
-                    context.fillRect(x+inset,y+inset,cw-inset*2,ch-inset*2);
-                    context.fillStyle=code;
-                    context.fillRect(x+inset*2,y+inset*2,
-                        cw-inset*4,ch*.46);
-                    context.fillStyle='#f5f3d8';
-                    context.fillText(code,x+cw/2,y+ch*.77,cw-inset*3);
-                }
-        context.restore();
-        return true;
-    }
     if(id==='cross-warp'){
         const bands=24;
         context.save();

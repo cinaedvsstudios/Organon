@@ -82,9 +82,9 @@ try{
             return {fingerprint,red,blue,black,dark,white,mixed,top:p(6,6),center:p(98,60)};
         };
         const results={};
-        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
+        for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','colorcoords','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
             b.transitionEffectId=effect;
-            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','liquid-fill','disintegrate','light-rays','color-codes'].includes(effect)?source('red'):source('stripes');
+            b.media=['random-squares','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','liquid-fill','disintegrate','light-rays','colorcoords'].includes(effect)?source('red'):source('stripes');
             results[effect]={
                 before:sample(.8),
                 start:sample(1),
@@ -100,7 +100,7 @@ try{
             &&engine.transitionPixelScratch===null;
         return results;
     });
-    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','color-codes','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
+    for(const effect of ['fade','pixelize','random-squares','glitch-flicker','ripple','tv-turn-off','aperture-wipe','spiral-wipe','rings-wipe','color-panel-wipe','block-cover','cross-hatch','film-strip','card-swipe','camera-shake','vhs-tracking','whipspin','cube','cross-warp','paper-tear','ink-bleed','splatter-wipe','cell-dissolve','bloom-dissolve','smoke-dissolve','vortex','heat-haze','refraction','liquid-fill','disintegrate','light-rays','ascii','colorcoords','prisms','spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
         const r=result[effect];
         assert.deepEqual(r.before.center,[0,0,255],effect+' should show A before B');
         assert.deepEqual(r.start.center,[0,0,255],effect+' should start with only A');
@@ -395,11 +395,11 @@ try{
     assert.notEqual(rays.middle.fingerprint,result['spiral-wipe'].middle.fingerprint,
         'Light rays must not be a spiral');
     assert.notEqual(rays.middle.fingerprint,liquid.middle.fingerprint);
-    const ascii=result.ascii,codes=result['color-codes'],prisms=result.prisms;
+    const ascii=result.ascii,codes=result['colorcoords'],prisms=result.prisms;
     console.log('[MotoriClip 8M] New-effect sampled pixels '+JSON.stringify({
-        ascii:ascii.middle,colorCodes:codes.middle,prisms:prisms.middle
+        ascii:ascii.middle,colorCoords:codes.middle,prisms:prisms.middle
     }));
-    for(const [name,frame] of [['ascii',ascii],['color-codes',codes],['prisms',prisms]]){
+    for(const [name,frame] of [['ascii',ascii],['colorcoords',codes],['prisms',prisms]]){
         assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,
             name+' must render identically after scrubbing to the same time');
         assert.notEqual(frame.middle.fingerprint,result.fade.middle.fingerprint,
@@ -417,13 +417,13 @@ try{
     assert.notEqual(ascii.middle.fingerprint,result.pixelize.middle.fingerprint,
         'ASCII glyph sampling must be distinct from Pixelize');
     assert.notEqual(codes.middle.fingerprint,result['color-panel-wipe'].middle.fingerprint,
-        'Hex color-code panels must differ from color panel wipe');
+        'Source-colour UV sampling must differ from solid color panel wipe');
     assert.notEqual(codes.middle.fingerprint,ascii.middle.fingerprint,
-        'Hex color codes must differ from ASCII art');
+        'Source-colour UV sampling must differ from ASCII glyph art');
     assert.notEqual(prisms.middle.fingerprint,result.refraction.middle.fingerprint,
-        'Prisms must use spectral radial facets rather than triangular Refraction tiles');
+        'Original Prisms perspective slats must differ from Refraction');
     assert.notEqual(prisms.middle.fingerprint,result.vortex.middle.fingerprint,
-        'Prisms must differ from swirling annular Vortex');
+        'Original Prisms 3D face turnover must differ from Vortex');
     for(const id of ['spiralblockwipe','hologram','crumple','sphere','snapshot','gallery','bokeh-dissolve']){
         const frame=result[id];
         assert.equal(frame.middle.fingerprint,frame.repeat.fingerprint,id+' must scrub deterministically');
@@ -435,7 +435,7 @@ try{
     assert.notEqual(result.crumple.middle.fingerprint,result.refraction.middle.fingerprint);
     assert.ok(result.scratchReleased,'Engine.clearAll must release scratch canvas buffers');
     assert.deepEqual(errors,[],'No uncaught browser errors');
-    console.log('[MotoriClip 8O] PASS real Chrome 41-effect pixel checks (ASCII, Color codes, Prisms), deterministic rewind and scratch release '+JSON.stringify(result));
+    console.log('[MotoriClip 8O] PASS real Chrome 41-effect pixel checks (ASCII, ColorCoords, Prisms), deterministic rewind and scratch release '+JSON.stringify(result));
 }finally{
     await browser.close();
     await new Promise(done=>server.close(done));

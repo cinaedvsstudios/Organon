@@ -7,7 +7,7 @@ import {
 import { TRANSITION_CATALOG,SELECTED_TRANSITION_NAMES } from '../js/transition-catalog.mjs';
 import { planPairedTransition,isPairedFadeActive } from '../js/clip-pair-transitions.mjs';
 import { snapshotClip,applyClipData } from '../js/project-history.mjs';
-const selected=['ascii','color-codes','prisms'];
+const selected=['ascii','colorcoords','prisms'];
 
 test('Phase 8M retains all 41 names and enables only the three new choices',()=>{
     assert.equal(SELECTED_TRANSITION_NAMES.length,41);
@@ -31,7 +31,7 @@ test('ASCII glyph mapping is luminance-derived and fades only within overlap',()
     assert.ok(Math.abs(asciiIntensity(.25)-asciiIntensity(.75))<1e-10);
 });
 
-test('Color codes express source pixel RGB as actual hex, panels stagger and vanish',()=>{
+test('Historical Color codes Canvas math remains deterministic for older test fixtures (not the live ColorCoords shader)',()=>{
     assert.equal(rgbToColorCode(255,0,0),'#FF0000');
     assert.equal(rgbToColorCode(0,0,255),'#0000FF');
     assert.equal(rgbToColorCode(1,15,160),'#010FA0');
@@ -46,7 +46,7 @@ test('Color codes express source pixel RGB as actual hex, panels stagger and van
     }
 });
 
-test('Prism ray facets disperse into different directions and return to alignment',()=>{
+test('Historical Canvas prism offset helper remains deterministic (live 3D GLSL verified separately)',()=>{
     const offsets=Array.from({length:9},(_,i)=>prismFacetOffset(.5,i,196,112));
     assert.ok(new Set(offsets.map(p=>p.x+','+p.y)).size>=8);
     for(let i=0;i<9;i++){
@@ -58,7 +58,7 @@ test('Prism ray facets disperse into different directions and return to alignmen
     }
 });
 
-test('ASCII, Color codes and Prisms preserve paired source/audio and Undo/Redo',()=>{
+test('ASCII, ColorCoords and Prisms preserve paired source/audio and Undo/Redo',()=>{
     const a={id:'A',type:'video',start:1,clipDuration:5,order:2,laneId:'A',
         sourceName:'a.mp4',file:{name:'a.mp4'},sourceOffset:.45,audio:{volume:.61}};
     const b={id:'B',type:'video',start:6,clipDuration:4,order:1,laneId:'B',
