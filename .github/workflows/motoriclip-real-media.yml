@@ -246,6 +246,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/fade.browser.mjs
+      - name: Compare GlitchFlicker frame-flash RGB pixel output with independent original GLSL in Chrome
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/glitchflicker.browser.mjs
       - name: Check legacy spin project migration, original source SHA and native uniforms
         run: node --test tools/audio-timeline/tests/whipspin-compat.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
@@ -268,6 +273,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/cube-source.test.mjs
       - name: Verify original Fade source SHA, RGBA mix and paired edit/history
         run: node --test tools/audio-timeline/tests/fade-source.test.mjs
+      - name: Pin original GlitchFlicker source SHA, six uniforms and project history
+        run: node --test tools/audio-timeline/tests/glitchflicker-source.test.mjs
       - name: Verify real Chrome pixels for all forty-one selected A/B transition effects
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -512,6 +519,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/fade-export.browser.mjs
+      - name: Decode actual GlitchFlicker H264 MP4 and compare frame-accurate live shader preview
+        timeout-minutes: 12
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/glitchflicker-export.browser.mjs
       - name: Stress-test 720p/1080p, multiple frame rates, clip counts and cancellation
         env:
           CHROME_BIN: /usr/bin/google-chrome
