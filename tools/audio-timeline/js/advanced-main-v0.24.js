@@ -37,6 +37,7 @@ import { normalisePaperTearOptions } from './gl-transitions/PaperTear.mjs';
 import { normaliseApertureWipeOptions } from './gl-transitions/ApertureWipe.mjs';
 import { normaliseSpiralWipeOptions } from './gl-transitions/SpiralWipe.mjs';
 import { normalisePrismsOptions } from './gl-transitions/Prisms.mjs';
+import { normaliseCubeOptions } from './gl-transitions/Cube.mjs';
 import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
@@ -1762,6 +1763,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             prismsInspector.hidden=!(paired&&track.transitionEffectId==='prisms');
             if(!prismsInspector.hidden)
                 displayPrismsSettings(prismsInspector,track.transitionParameters?.['prisms']);
+            const cubeInspector=document.getElementById('video-cube-settings');
+            cubeInspector.hidden=!(paired&&track.transitionEffectId==='cube');
+            if(!cubeInspector.hidden)
+                displayCubeSettings(cubeInspector,track.transitionParameters?.['cube']);
             const crosshatchInspector=document.getElementById('video-cross-hatch-settings');
             crosshatchInspector.hidden=!(paired&&track.transitionEffectId==='cross-hatch');
             if(!crosshatchInspector.hidden)
@@ -2202,6 +2207,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-prisms-settings');
             b.transitionParameters={...b.transitionParameters,
                 'prisms':readPrismsSettings(panel)};
+        }        if(effectId==='cube'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-cube')
+                :document.getElementById('video-cube-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'cube':readCubeSettings(panel)};
         }
         if(effectId==='cross-hatch'){
             const panel=preserveOrder===true
@@ -3544,6 +3555,33 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayPrismsSettings(root,target?.transitionParameters?.['prisms']);
         }
     }
+    function readCubeSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-cube-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseCubeOptions({
+            persp:value('persp'),unzoom:value('unzoom'),reflection:value('reflection'),
+            floating:value('floating'),shading:value('shading')
+        });
+    }
+    function displayCubeSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseCubeOptions(options))){
+            const input=root?.querySelector('[data-cube-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshCubeModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-cube');
+        root.hidden=elements.transitionModalEffect.value!=='cube';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayCubeSettings(root,target?.transitionParameters?.['cube']);
+        }
+    }
     function readCrosshatchSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-cross-hatch-param="'+name+'"]');
@@ -3834,6 +3872,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'spiral-wipe':readSpiralWipeSettings(document.getElementById('transition-modal-spiral-wipe'))}
                     :effectId==='prisms'
                     ?{...b.transitionParameters,'prisms':readPrismsSettings(document.getElementById('transition-modal-prisms'))}
+                    :effectId==='cube'
+                    ?{...b.transitionParameters,'cube':readCubeSettings(document.getElementById('transition-modal-cube'))}
                     :effectId==='cross-hatch'
                     ?{...b.transitionParameters,'cross-hatch':readCrosshatchSettings(document.getElementById('transition-modal-cross-hatch'))}
                     :effectId==='tv-turn-off'
@@ -3860,7 +3900,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','cross-hatch','tv-turn-off','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','cube','cross-hatch','tv-turn-off','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3918,6 +3958,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
         refreshPrismsModalSettings({restoreValues:true});
+        refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
@@ -3992,6 +4033,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
         refreshPrismsModalSettings({restoreValues:true});
+        refreshCubeModalSettings({restoreValues:true});
         refreshCrosshatchModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
@@ -4226,6 +4268,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original Prisms GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'prisms':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-cube').querySelectorAll('[data-cube-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-cube-settings').querySelectorAll('[data-cube-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='cube'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readCubeSettings(document.getElementById('video-cube-settings'));
+            const prior=normaliseCubeOptions(active.transitionParameters?.['cube']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Cube GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'cube':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));
