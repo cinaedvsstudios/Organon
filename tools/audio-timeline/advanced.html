@@ -721,6 +721,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>CRT line and dot glow<input type="range" min="0" max="2" step=".05" value="1" data-tv-turn-off-param="glow"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-cross-hatch-settings" class="spiral-glsl-settings crosshatch-glsl-settings" hidden>
+                            <legend>Crosshatch · Original centre-radiating GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Reveal centre X<input type="range" min="0" max="1" step=".05" value=".5" data-cross-hatch-param="centerX"></label>
+                                <label>Reveal centre Y<input type="range" min="0" max="1" step=".05" value=".5" data-cross-hatch-param="centerY"></label>
+                                <label>Radial threshold<input type="range" min=".1" max="8" step=".1" value="3" data-cross-hatch-param="threshold"></label>
+                                <label>Edge feathering<input type="range" min=".01" max=".5" step=".01" value=".1" data-cross-hatch-param="fadeEdge"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-prisms-settings" class="spiral-glsl-settings prisms-glsl-settings" hidden>
                             <legend>Prisms · Original 3D billboard slats GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1511,6 +1520,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Switched-off screen colour<input type="color" value="#000000" data-tv-turn-off-param="color"></label>
                                 <label>Switched-off screen opacity<input type="range" min="0" max="1" step=".05" value="1" data-tv-turn-off-param="colorAlpha"></label>
                                 <label>CRT line and dot glow<input type="range" min="0" max="2" step=".05" value="1" data-tv-turn-off-param="glow"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-cross-hatch" class="spiral-glsl-settings crosshatch-glsl-settings" hidden>
+                            <legend>Crosshatch · Original centre-radiating GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Reveal centre X<input type="range" min="0" max="1" step=".05" value=".5" data-cross-hatch-param="centerX"></label>
+                                <label>Reveal centre Y<input type="range" min="0" max="1" step=".05" value=".5" data-cross-hatch-param="centerY"></label>
+                                <label>Radial threshold<input type="range" min=".1" max="8" step=".1" value="3" data-cross-hatch-param="threshold"></label>
+                                <label>Edge feathering<input type="range" min=".01" max=".5" step=".01" value=".1" data-cross-hatch-param="fadeEdge"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-prisms" class="spiral-glsl-settings prisms-glsl-settings" hidden>

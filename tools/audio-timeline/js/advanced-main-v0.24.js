@@ -37,6 +37,7 @@ import { normalisePaperTearOptions } from './gl-transitions/PaperTear.mjs';
 import { normaliseApertureWipeOptions } from './gl-transitions/ApertureWipe.mjs';
 import { normaliseSpiralWipeOptions } from './gl-transitions/SpiralWipe.mjs';
 import { normalisePrismsOptions } from './gl-transitions/Prisms.mjs';
+import { normaliseCrosshatchOptions } from './gl-transitions/Crosshatch.mjs';
 import { normaliseTvTurnOffOptions } from './gl-transitions/TvTurnOff.mjs';
 import { normaliseBloomDissolveOptions } from './gl-transitions/BloomDissolve.mjs';
 import { normaliseBokehDissolveOptions } from './gl-transitions/BokehDissolve.mjs';
@@ -1761,6 +1762,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             prismsInspector.hidden=!(paired&&track.transitionEffectId==='prisms');
             if(!prismsInspector.hidden)
                 displayPrismsSettings(prismsInspector,track.transitionParameters?.['prisms']);
+            const crosshatchInspector=document.getElementById('video-cross-hatch-settings');
+            crosshatchInspector.hidden=!(paired&&track.transitionEffectId==='cross-hatch');
+            if(!crosshatchInspector.hidden)
+                displayCrosshatchSettings(crosshatchInspector,track.transitionParameters?.['cross-hatch']);
             const tvTurnOffInspector=document.getElementById('video-tv-turn-off-settings');
             tvTurnOffInspector.hidden=!(paired&&track.transitionEffectId==='tv-turn-off');
             if(!tvTurnOffInspector.hidden)
@@ -2197,6 +2202,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 :document.getElementById('video-prisms-settings');
             b.transitionParameters={...b.transitionParameters,
                 'prisms':readPrismsSettings(panel)};
+        }
+        if(effectId==='cross-hatch'){
+            const panel=preserveOrder===true
+                ?document.getElementById('transition-modal-cross-hatch')
+                :document.getElementById('video-cross-hatch-settings');
+            b.transitionParameters={...b.transitionParameters,
+                'cross-hatch':readCrosshatchSettings(panel)};
         }
         if(effectId==='tv-turn-off'){
             const panel=preserveOrder===true
@@ -3532,6 +3544,33 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             displayPrismsSettings(root,target?.transitionParameters?.['prisms']);
         }
     }
+    function readCrosshatchSettings(root){
+        const value=name=>{
+            const input=root?.querySelector('[data-cross-hatch-param="'+name+'"]');
+            return input?.type==='checkbox'?input.checked:input?.value;
+        };
+        return normaliseCrosshatchOptions({
+            centerX:value('centerX'),centerY:value('centerY'),
+            threshold:value('threshold'),fadeEdge:value('fadeEdge')
+        });
+    }
+    function displayCrosshatchSettings(root,options={}){
+        for(const [name,value] of Object.entries(normaliseCrosshatchOptions(options))){
+            const input=root?.querySelector('[data-cross-hatch-param="'+name+'"]');
+            if(input){
+                if(input.type==='checkbox')input.checked=Boolean(value);
+                else input.value=String(value);
+            }
+        }
+    }
+    function refreshCrosshatchModalSettings({restoreValues=false}={}){
+        const root=document.getElementById('transition-modal-cross-hatch');
+        root.hidden=elements.transitionModalEffect.value!=='cross-hatch';
+        if(!root.hidden&&restoreValues){
+            const target=getTrack(elements.transitionModalTo.value);
+            displayCrosshatchSettings(root,target?.transitionParameters?.['cross-hatch']);
+        }
+    }
     function readTvTurnOffSettings(root){
         const value=name=>{
             const input=root?.querySelector('[data-tv-turn-off-param="'+name+'"]');
@@ -3795,6 +3834,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                     ?{...b.transitionParameters,'spiral-wipe':readSpiralWipeSettings(document.getElementById('transition-modal-spiral-wipe'))}
                     :effectId==='prisms'
                     ?{...b.transitionParameters,'prisms':readPrismsSettings(document.getElementById('transition-modal-prisms'))}
+                    :effectId==='cross-hatch'
+                    ?{...b.transitionParameters,'cross-hatch':readCrosshatchSettings(document.getElementById('transition-modal-cross-hatch'))}
                     :effectId==='tv-turn-off'
                     ?{...b.transitionParameters,'tv-turn-off':readTvTurnOffSettings(document.getElementById('transition-modal-tv-turn-off'))}
                     :effectId==='bloom-dissolve'
@@ -3819,7 +3860,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             } else {
                 // Original GL shader composes A and B together; clear the
                 // already drawn A to avoid doubling transparent source pixels.
-                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
+                if(['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','cross-hatch','tv-turn-off','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(effectId)){
                     ctx.clearRect(0,0,width,height);
                     ctx.fillStyle='#0c1012';ctx.fillRect(0,0,width,height);
                 }
@@ -3877,6 +3918,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
         refreshPrismsModalSettings({restoreValues:true});
+        refreshCrosshatchModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -3950,6 +3992,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         refreshApertureWipeModalSettings({restoreValues:true});
         refreshSpiralWipeModalSettings({restoreValues:true});
         refreshPrismsModalSettings({restoreValues:true});
+        refreshCrosshatchModalSettings({restoreValues:true});
         refreshTvTurnOffModalSettings({restoreValues:true});
         refreshBloomDissolveModalSettings({restoreValues:true});
         refreshBokehDissolveModalSettings({restoreValues:true});
@@ -4183,6 +4226,21 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             if(JSON.stringify(prior)===JSON.stringify(updated))return;
             recordHistory('Edit original Prisms GLSL uniforms');
             active.transitionParameters={...active.transitionParameters,'prisms':updated};
+            engine.renderFrame();
+            saveProjectRecovery();
+        }));
+    document.getElementById('transition-modal-cross-hatch').querySelectorAll('[data-cross-hatch-param]')
+        .forEach(input=>input.addEventListener('input',renderTransitionPreview));
+    document.getElementById('video-cross-hatch-settings').querySelectorAll('[data-cross-hatch-param]')
+        .forEach(input=>input.addEventListener('change',()=>{
+            const active=getTrack();
+            if(!active||active.transitionEffectId!=='cross-hatch'
+                ||!isPairedFadeActive(active,state.tracks))return;
+            const updated=readCrosshatchSettings(document.getElementById('video-cross-hatch-settings'));
+            const prior=normaliseCrosshatchOptions(active.transitionParameters?.['cross-hatch']);
+            if(JSON.stringify(prior)===JSON.stringify(updated))return;
+            recordHistory('Edit original Crosshatch GLSL uniforms');
+            active.transitionParameters={...active.transitionParameters,'cross-hatch':updated};
             engine.renderFrame();
             saveProjectRecovery();
         }));

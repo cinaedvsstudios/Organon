@@ -25,6 +25,7 @@ import { paintPrisms } from './gl-transitions/Prisms.mjs';
 import { paintTvTurnOff } from './gl-transitions/TvTurnOff.mjs';
 import { paintColorCoords } from './gl-transitions/ColorCoords.mjs';
 import { paintCrossWarp } from './gl-transitions/CrossWarp.mjs';
+import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -551,6 +552,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintColorCoords(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='cross-warp')
         return paintCrossWarp(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='cross-hatch')
+        return paintCrosshatch(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -663,14 +666,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
-    if(id==='cross-hatch'){
-        context.save();
-        traceCrossHatch(context,progress,width,height);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
-        return true;
-    }
+
     if(id==='pixelize'){
         const block=pixelScale(progress);
         const small=scratchCanvas(renderer,'transitionPixelScratch',
