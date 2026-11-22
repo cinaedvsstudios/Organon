@@ -366,6 +366,7 @@ export class AdvancedMediaEngine {
             'glitchFlickerFromScratch','glitchFlickerToScratch',
             'pixelizeFromScratch','pixelizeToScratch',
             'randomSquaresFromScratch','randomSquaresToScratch',
+            'rippleFromScratch','rippleToScratch',
             'bloomDissolveFromScratch','bloomDissolveToScratch',
             'bokehDissolveFromScratch','bokehDissolveToScratch',
             'lightRaysFromScratch','lightRaysToScratch',
@@ -506,6 +507,10 @@ export class AdvancedMediaEngine {
         if(this.randomSquaresWebGL){
             this.randomSquaresWebGL.dispose();
             this.randomSquaresWebGL=null;
+        }
+        if(this.rippleWebGL){
+            this.rippleWebGL.dispose();
+            this.rippleWebGL=null;
         }
         if(this.bloomDissolveWebGL){
             this.bloomDissolveWebGL.dispose();

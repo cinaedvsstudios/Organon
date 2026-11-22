@@ -29,6 +29,7 @@ import { paintFade } from './gl-transitions/Fade.mjs';
 import { paintGlitchFlicker } from './gl-transitions/GlitchFlicker.mjs';
 import { paintPixelize } from './gl-transitions/Pixelize.mjs';
 import { paintRandomSquares } from './gl-transitions/RandomSquares.mjs';
+import { paintRipple } from './gl-transitions/Ripple.mjs';
 import { paintCrosshatch } from './gl-transitions/Crosshatch.mjs';
 import { paintCube } from './gl-transitions/Cube.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
@@ -511,6 +512,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintPixelize(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='random-squares')
         return paintRandomSquares(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='ripple')
+        return paintRipple(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='spiralblockwipe')
         return paintSpiralBlockWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='hologram')
@@ -657,29 +660,7 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return true;
     }
 
-    if(id==='ripple'){
-        context.save();
-        traceIris(context,id,progress,width,height);
-        context.clip();
-        renderContained(context,media,width,height);
-        context.restore();
-        {
-            // Concentric wavefront lines make a ripple visually distinct from
-            // the smooth aperture. Phase derives solely from timeline time.
-            context.save();
-            context.lineWidth=Math.max(1,Math.min(width,height)*.008);
-            context.strokeStyle='#cceaff';
-            for(let wave=1;wave<=2;wave++){
-                const ringProgress=progress-wave*.10;
-                if(ringProgress<=0)continue;
-                context.globalAlpha=alpha*(1-progress)*.26;
-                traceIris(context,'ripple',ringProgress,width,height);
-                context.stroke();
-            }
-            context.restore();
-        }
-        return true;
-    }
+
 
 
 
