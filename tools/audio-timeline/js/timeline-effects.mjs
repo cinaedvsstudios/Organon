@@ -10,6 +10,7 @@ import {renderPixelScan} from './timeline-pixel-scan.mjs';
 import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
+import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -291,30 +292,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
   }else if(e.presetId==='sci-fi-scan'){
    renderSciFiScan(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-flames'){
-   // Procedural tongues of fire — layered curves that fold upward with time.
-   const count=Math.max(6,Math.min(54,Math.round(e.density*.36)));
-   const y0=h*(.96-.1*Math.sin(t*.3)),height=h*.48*size;
-   const clip=ctx.globalAlpha;
-   for(let i=0;i<count;i++){
-    const u=(i+.5)/count;
-    const baseX=w*u;
-    const phase=t*(2.8+random(i+79)*2)+random(i+17)*7;
-    const rise=(.35+.65*random(i+53))*height*(.7+.3*Math.cos(phase*.35));
-    const drift=Math.sin(phase)*w*.025*size;
-    const wide=Math.max(3,w/count*.7);
-    ctx.globalAlpha=clip*strength*(.37+.5*random(i+11));
-    const gradient=ctx.createLinearGradient(baseX,y0,baseX,y0-rise);
-    gradient.addColorStop(0,'#bd1f13');
-    gradient.addColorStop(.42,'#ff771c');
-    gradient.addColorStop(.75,e.color);
-    gradient.addColorStop(1,'rgba(255,238,169,0)');
-    ctx.fillStyle=gradient;
-    ctx.beginPath();ctx.moveTo(baseX-wide,y0);
-    ctx.quadraticCurveTo(baseX+drift-wide*.3,y0-rise*.65,baseX+drift,y0-rise);
-    ctx.quadraticCurveTo(baseX+drift+wide*.55,y0-rise*.5,baseX+wide,y0);
-    ctx.closePath();ctx.fill();
-   }
-   ctx.globalAlpha=clip;
+   renderFireFlames(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-embers'){
    renderFlamingDust(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-explosion'){
