@@ -98,13 +98,13 @@ export function buildEngineHeatFrame(source,w,h,effect={},cycle=0,reuse){
   const soften=pos.weight*o.blur*.24,warmth=pos.weight*o.glow*.045;
   for(let c=0;c<3;c++)
    out[k+c]=mix(mix(primary[c],input[k+c],soften),o.rgb[c],warmth);
-  out[k+3]=Math.round(primary[3]*pos.weight);
+  out[k+3]=Math.round(primary[3]*pos.weight*.75);
  }
  return {width,height,data:out};
 }
 const BUFFERS=new WeakMap();
 function scratch(ctx,w,h){
- const scale=Math.min(1,256/Math.max(w,h));
+ const scale=Math.min(1,192/Math.max(w,h));
  const width=Math.max(48,Math.round(w*scale)),height=Math.max(32,Math.round(h*scale));
  let cache=BUFFERS.get(ctx);
  if(!cache){
