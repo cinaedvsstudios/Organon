@@ -12,7 +12,8 @@ const fx=delta=>normaliseTimelineEffect({presetId:'light-leaks',
 const frame=(e,t)=>buildLightLeaksFrame(96,54,e,t*e.speed);
 const hash=bytes=>{let h=2166136261>>>0;for(const byte of bytes)h=Math.imul(h^byte,16777619)>>>0;return h;};
 test('Light leak creates broad soft pink/violet fog and locally overexposed pale film bloom',()=>{
- const e=fx({}),f=frame(e,.67),alpha=[],warm=0,violet=0,exposed=0;
+ const e=fx({}),f=frame(e,.67),alpha=[];
+ let warm=0,violet=0,exposed=0;
  for(let i=0;i<f.data.length;i+=4){
   const r=f.data[i],g=f.data[i+1],b=f.data[i+2],a=f.data[i+3];
   alpha.push(a);
