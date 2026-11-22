@@ -133,12 +133,21 @@ try{
     assert.notEqual(ripple.fingerprint,iris.fingerprint,
         'Ripple circular wavefronts must differ from rotating, shaded polygonal ApertureWipe blades');
     const tv=result['tv-turn-off'];
-    assert.ok(tv.middle.black>1200,'TV shutdown midpoint should be almost entirely black');
-    assert.ok(tv.middle.white>0,'TV shutdown midpoint should show a brief white scanline');
-    assert.deepEqual(tv.quarter.center,[0,0,255],'First half of shutdown should still display collapsing A');
-    assert.deepEqual(tv.quarter.top,[0,0,0],'Outside the shrinking A image should be black');
-    assert.deepEqual(tv.threeQuarter.center,[255,0,0],'Second half should expand incoming B');
-    assert.deepEqual(tv.threeQuarter.top,[0,0,0],'Outside the expanding B image should be black');
+    // In original TvTurnOff GLSL the midpoint is a soft luminous dot, not
+    // a white horizontal scanline. The halo leaves many nonzero dark pixels.
+    assert.ok(tv.middle.black+tv.middle.dark>1000,
+        'Original CRT shutdown should be dark outside the central luminous dot');
+    assert.ok(tv.middle.center.some(channel=>channel>30),
+        'At midpoint the original CRT dot must remain visibly glowing');
+    assert.ok(tv.quarter.center.every(channel=>channel>70),
+        'Outgoing A must compress into the luminous horizontal line');
+    assert.ok(tv.threeQuarter.center.every(channel=>channel>70),
+        'Incoming B must expand back out from the luminous line');
+    assert.ok(tv.quarter.top.every(channel=>channel<50)
+        &&tv.threeQuarter.top.every(channel=>channel<50),
+        'Outside the CRT line the powered-down screen must remain dark');
+    assert.notEqual(tv.quarter.fingerprint,tv.threeQuarter.fingerprint,
+        'Source A power-off and source B power-on must preserve distinct video colours');
     const spiral=result['spiral-wipe'].middle;
     const rings=result['rings-wipe'].middle;
     const panels=result['color-panel-wipe'].middle;

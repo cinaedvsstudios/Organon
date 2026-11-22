@@ -713,6 +713,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-tv-turn-off-settings" class="spiral-glsl-settings tv-turn-off-glsl-settings" hidden>
+                            <legend>TvTurnOff · Original CRT line, dot &amp; glow GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Switched-off screen colour<input type="color" value="#000000" data-tv-turn-off-param="color"></label>
+                                <label>Switched-off screen opacity<input type="range" min="0" max="1" step=".05" value="1" data-tv-turn-off-param="colorAlpha"></label>
+                                <label>CRT line and dot glow<input type="range" min="0" max="2" step=".05" value="1" data-tv-turn-off-param="glow"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-prisms-settings" class="spiral-glsl-settings prisms-glsl-settings" hidden>
                             <legend>Prisms · Original 3D billboard slats GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1495,6 +1503,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Highlight glow threshold<input type="range" min="0" max="1" step=".05" value=".6" data-bloom-dissolve-param="threshold"></label>
                                 <label>Bloom light intensity<input type="range" min="0" max="4" step=".1" value="1.5" data-bloom-dissolve-param="intensity"></label>
                                 <label>Edge glow tint<input type="color" value="#ffe6bf" data-bloom-dissolve-param="tint"></label>
+                            </div>
+                        </fieldset>
+         <fieldset id="transition-modal-tv-turn-off" class="spiral-glsl-settings tv-turn-off-glsl-settings" hidden>
+                            <legend>TvTurnOff · Original CRT line, dot &amp; glow GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Switched-off screen colour<input type="color" value="#000000" data-tv-turn-off-param="color"></label>
+                                <label>Switched-off screen opacity<input type="range" min="0" max="1" step=".05" value="1" data-tv-turn-off-param="colorAlpha"></label>
+                                <label>CRT line and dot glow<input type="range" min="0" max="2" step=".05" value="1" data-tv-turn-off-param="glow"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-prisms" class="spiral-glsl-settings prisms-glsl-settings" hidden>
