@@ -730,6 +730,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Edge feathering<input type="range" min=".01" max=".5" step=".01" value=".1" data-cross-hatch-param="fadeEdge"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-glitch-flicker-settings" class="spiral-glsl-settings glitch-flicker-glsl-settings" hidden>
+                            <legend>GlitchFlicker · Original RGB ghosting and scanlines</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Frame sampling rate<input type="range" min="1" max="120" step="1" value="24" data-glitch-flicker-param="frameRate"></label>
+                                <label>RGB channel offset<input type="range" min="0" max=".08" step=".001" value=".014" data-glitch-flicker-param="rgbOffset"></label>
+                                <label>Glitch block intensity<input type="range" min="0" max="2" step=".02" value=".72" data-glitch-flicker-param="blockAmount"></label>
+                                <label>Outgoing-frame ghosting<input type="range" min="0" max="1" step=".02" value=".62" data-glitch-flicker-param="ghostAmount"></label>
+                                <label>Red / cyan colour bleed<input type="range" min="0" max="1" step=".02" value=".58" data-glitch-flicker-param="redCyan"></label>
+                                <label>Scanline strength<input type="range" min="0" max=".3" step=".005" value=".075" data-glitch-flicker-param="scanline"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-cube-settings" class="spiral-glsl-settings cube-glsl-settings" hidden>
                             <legend>Cube · Original two-face perspective / floor reflection GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1539,6 +1550,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Reveal centre Y<input type="range" min="0" max="1" step=".05" value=".5" data-cross-hatch-param="centerY"></label>
                                 <label>Radial threshold<input type="range" min=".1" max="8" step=".1" value="3" data-cross-hatch-param="threshold"></label>
                                 <label>Edge feathering<input type="range" min=".01" max=".5" step=".01" value=".1" data-cross-hatch-param="fadeEdge"></label>
+                            </div>
+                        </fieldset>
+                        <fieldset id="transition-modal-glitch-flicker" class="spiral-glsl-settings glitch-flicker-glsl-settings" hidden>
+                            <legend>GlitchFlicker · Original RGB ghosting and scanlines</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Frame sampling rate<input type="range" min="1" max="120" step="1" value="24" data-glitch-flicker-param="frameRate"></label>
+                                <label>RGB channel offset<input type="range" min="0" max=".08" step=".001" value=".014" data-glitch-flicker-param="rgbOffset"></label>
+                                <label>Glitch block intensity<input type="range" min="0" max="2" step=".02" value=".72" data-glitch-flicker-param="blockAmount"></label>
+                                <label>Outgoing-frame ghosting<input type="range" min="0" max="1" step=".02" value=".62" data-glitch-flicker-param="ghostAmount"></label>
+                                <label>Red / cyan colour bleed<input type="range" min="0" max="1" step=".02" value=".58" data-glitch-flicker-param="redCyan"></label>
+                                <label>Scanline strength<input type="range" min="0" max=".3" step=".005" value=".075" data-glitch-flicker-param="scanline"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-cube" class="spiral-glsl-settings cube-glsl-settings" hidden>
