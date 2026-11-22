@@ -21,6 +21,7 @@ import { paintWhipSpin } from './gl-transitions/WhipSpin.mjs';
 import { paintPaperTear } from './gl-transitions/PaperTear.mjs';
 import { paintApertureWipe } from './gl-transitions/ApertureWipe.mjs';
 import { paintSpiralWipe } from './gl-transitions/SpiralWipe.mjs';
+import { paintPrisms } from './gl-transitions/Prisms.mjs';
 import { paintBloomDissolve } from './gl-transitions/BloomDissolve.mjs';
 import { paintBokehDissolve } from './gl-transitions/BokehDissolve.mjs';
 import { paintLightRays } from './gl-transitions/LightRays.mjs';
@@ -539,6 +540,8 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
         return paintApertureWipe(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='spiral-wipe')
         return paintSpiralWipe(renderer,context,track,width,height,time,renderContained,progress);
+    if(id==='prisms')
+        return paintPrisms(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bloom-dissolve')
         return paintBloomDissolve(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='bokeh-dissolve')
@@ -730,43 +733,9 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
     }
     renderContained(sc,media,width,height);
 
-    if(id==='color-codes'||id==='prisms'){
+    if(id==='color-codes'){
         context.save();
-        if(id==='prisms'){
-            const count=9,cx=width/2,cy=height/2;
-            const radius=Math.hypot(width,height);
-            const hues=['#ff6190','#69e4ff','#fce17e'];
-            for(let i=0;i<count;i++){
-                const start=-Math.PI/2+i*Math.PI*2/count;
-                const end=start+Math.PI*2/count;
-                const shift=prismFacetOffset(progress,i,width,height);
-                context.save();
-                context.beginPath();
-                context.moveTo(cx,cy);
-                context.arc(cx,cy,radius,start,end);
-                context.closePath();
-                context.clip();
-                context.globalAlpha=alpha*progress;
-                context.drawImage(full,shift.x,shift.y,width,height);
-                context.globalCompositeOperation='screen';
-                context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.35;
-                context.fillStyle=hues[i%3];
-                context.fillRect(0,0,width,height);
-                context.restore();
-            }
-            context.globalAlpha=alpha*Math.sin(Math.PI*progress)*.65;
-            context.lineWidth=Math.max(1,Math.min(width,height)*.014);
-            for(let i=0;i<count;i++){
-                const angle=-Math.PI/2+i*Math.PI*2/count;
-                context.strokeStyle=hues[i%3];
-                context.beginPath();
-                context.moveTo(cx,cy);
-                context.lineTo(cx+Math.cos(angle)*radius,
-                    cy+Math.sin(angle)*radius);
-                context.stroke();
-            }
-        }else{
-            // The incoming video is visible behind the code glyphs. Source
+        // The incoming video is visible behind the code glyphs. Source
             // sampling for Color codes is capped at 28 pixels.
             context.globalAlpha=alpha*(progress*.65);
             context.drawImage(full,0,0,width,height);
@@ -796,7 +765,6 @@ export function paintPairedEffect(renderer,context,track,width,height,time,rende
                     context.fillStyle='#f5f3d8';
                     context.fillText(code,x+cw/2,y+ch*.77,cw-inset*3);
                 }
-        }
         context.restore();
         return true;
     }
