@@ -72,6 +72,11 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/hologram.browser.mjs
+      - name: Compare original SpiralBlockWipe (01) and Hologram (02) against independent WebGL oracles
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/legacy-original-shader-oracles.browser.mjs
       - name: Validate original CellDissolve Voronoi shader against independent pixel oracle
         env:
           CHROME_BIN: /usr/bin/google-chrome
@@ -282,6 +287,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/transition-alias-compatibility.test.mjs
       - name: Audit all 41 pinned upstream GLSL sources, git blob SHAs, authors, MIT licences and UI defaults
         run: node --test tools/audio-timeline/tests/original-glsl-provenance.test.mjs
+      - name: Audit all 41 original GL shader visual qualification tests and progress coverage
+        run: node --test tools/audio-timeline/tests/visual-qualification-coverage.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history
