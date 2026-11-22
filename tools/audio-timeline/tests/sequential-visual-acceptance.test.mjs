@@ -101,8 +101,8 @@ test('master checklist is the only acceptance tracker and records each PR with i
   assert.match(ci,new RegExp('node tools/audio-timeline/tests/'+mod+'-export\\.browser\\.mjs'),
    'Original '+mod+' H264 export qualification must remain scheduled');
  }
- assert.ok(!/\b102\/102\b/.test(rows.get(46).line),
-  'Master process rule should distinguish visual acceptance from historical implementation totals');
+ assert.match(rows.get(46).line,/102\/102.*not visual acceptance/i,
+  'Master process rule must explicitly distinguish historical 102/102 implementation from real visual acceptance');
  // A future unchecked item must never be interpreted as completed from the
  // aggregate progress heading or the historic green CI implementation suite.
  const pending=[...rows.entries()].filter(([n,row])=>n>=47&&!row.done);
