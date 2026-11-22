@@ -362,6 +362,7 @@ export class AdvancedMediaEngine {
             'crossWarpFromScratch','crossWarpToScratch',
             'crosshatchFromScratch','crosshatchToScratch',
             'cubeFromScratch','cubeToScratch',
+            'fadeFromScratch','fadeToScratch',
             'bloomDissolveFromScratch','bloomDissolveToScratch',
             'bokehDissolveFromScratch','bokehDissolveToScratch',
             'lightRaysFromScratch','lightRaysToScratch',
@@ -486,6 +487,10 @@ export class AdvancedMediaEngine {
         if(this.cubeWebGL){
             this.cubeWebGL.dispose();
             this.cubeWebGL=null;
+        }
+        if(this.fadeWebGL){
+            this.fadeWebGL.dispose();
+            this.fadeWebGL=null;
         }
         if(this.bloomDissolveWebGL){
             this.bloomDissolveWebGL.dispose();
@@ -776,7 +781,7 @@ export class AdvancedMediaEngine {
                 // twice over the underlying layers.
                 const shaderReplacedSources=new Set();
                 for(const incoming of this.tracks){
-                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','colorcoords','cross-warp','cross-hatch','cube','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(incoming.transitionEffectId))
+                    if(!['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','colorcoords','cross-warp','cross-hatch','cube','fade','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(incoming.transitionEffectId))
                         ||!incoming.media||incoming.visible===false
                         ||!this.isTrackActive(incoming)
                         ||!isPairedFadeActive(incoming,this.tracks))continue;
@@ -793,7 +798,7 @@ export class AdvancedMediaEngine {
                     this.context.save();
                     try {
                         this.context.globalCompositeOperation = SUPPORTED_BLEND_MODES.has(track.blendMode) ? track.blendMode : 'source-over';
-                        const pairedSpatial = VISUAL_TYPES.has(track.type) && track.transitionEffectId !== 'fade'
+                        const pairedSpatial = VISUAL_TYPES.has(track.type)
                             && isPairedFadeActive(track,this.tracks);
                         this.context.globalAlpha = clamp(Number(track.opacity ?? 1), 0, 1)
                             * visualFadeOpacity(track, this.currentTime, {ignoreEnter:pairedSpatial});
@@ -817,7 +822,7 @@ export class AdvancedMediaEngine {
                                     } else this.drawSticker(track, width, height);
                                 }
                             }
-                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','colorcoords','cross-warp','cross-hatch','cube','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(track.transitionEffectId))))
+                            if(track.type!=='sticker'&&!(pairedSpatial&&['spiralblockwipe','hologram','cell-dissolve','vortex','crumple','liquid-fill','heat-haze','sphere','rings-wipe','snapshot','color-panel-wipe','gallery','vhs-tracking','card-swipe','camera-shake','smoke-dissolve','splatter-wipe','ink-bleed','refraction','whipspin','paper-tear','aperture-wipe','spiral-wipe','prisms','tv-turn-off','colorcoords','cross-warp','cross-hatch','cube','fade','bloom-dissolve','bokeh-dissolve','light-rays','block-cover','disintegrate','ascii','film-strip'].includes(normalizeTransitionEffectId(track.transitionEffectId))))
                                 drawVisualVignette(this.context,track,this.currentTime,width,height);
                         }
                     } catch (error) {
