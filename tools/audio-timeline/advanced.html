@@ -749,6 +749,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Pixelation steps (0 = smooth)<input type="range" min="0" max="200" step="1" value="50" data-pixelize-param="steps"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-random-squares-settings" class="spiral-glsl-settings random-squares-glsl-settings" hidden>
+                            <legend>RandomSquares · Original stochastic cell GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Grid columns<input type="range" min="1" max="128" step="1" value="10" data-random-squares-param="sizeX"></label>
+                                <label>Grid rows<input type="range" min="1" max="128" step="1" value="10" data-random-squares-param="sizeY"></label>
+                                <label>Square-edge softness<input type="range" min=".01" max="1" step=".01" value=".5" data-random-squares-param="smoothness"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-cube-settings" class="spiral-glsl-settings cube-glsl-settings" hidden>
                             <legend>Cube · Original two-face perspective / floor reflection GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1577,6 +1585,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Strongest pixel grid width<input type="range" min="1" max="128" step="1" value="20" data-pixelize-param="squaresX"></label>
                                 <label>Strongest pixel grid height<input type="range" min="1" max="128" step="1" value="20" data-pixelize-param="squaresY"></label>
                                 <label>Pixelation steps (0 = smooth)<input type="range" min="0" max="200" step="1" value="50" data-pixelize-param="steps"></label>
+                            </div>
+                        </fieldset>
+                        <fieldset id="transition-modal-random-squares" class="spiral-glsl-settings random-squares-glsl-settings" hidden>
+                            <legend>RandomSquares · Original stochastic cell GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Grid columns<input type="range" min="1" max="128" step="1" value="10" data-random-squares-param="sizeX"></label>
+                                <label>Grid rows<input type="range" min="1" max="128" step="1" value="10" data-random-squares-param="sizeY"></label>
+                                <label>Square-edge softness<input type="range" min=".01" max="1" step=".01" value=".5" data-random-squares-param="smoothness"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-cube" class="spiral-glsl-settings cube-glsl-settings" hidden>
