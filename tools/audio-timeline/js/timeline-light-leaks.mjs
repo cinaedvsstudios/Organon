@@ -53,46 +53,53 @@ function config(e={}){
 // Smooth finite-support bell (C1 at its edge) avoids costly per-pixel exp.
 const gaussian=(v,w)=>{const q=v/(w*2.35),a=1-q*q;return a>0?a*a:0;};
 const PURPLE=[129,72,225],WARM=[255,239,249];
+// Cache every time-only value once PER FRAME, not for each cloud pixel.
+function prepare(o,time){
+ const anchorX=(o.originX-.2)*.55,anchorY=(o.originY-.12)*.45;
+ o.windX=Math.sin(o.direction);o.windY=Math.cos(o.direction);
+ o.anchorX=anchorX;o.anchorY=anchorY;
+ o.leftX=-.07+anchorX+Math.sin(time*.19+.4)*.09;
+ o.leftY=.34+anchorY+Math.sin(time*.31+1.4)*.12;
+ o.rightX=1.10+anchorX*.42+Math.cos(time*.25+1.8)*.11;
+ o.rightY=.63+anchorY*.7+Math.sin(time*.18+.2)*.13;
+ o.diagonalOrigin=.31+anchorX*.47+Math.sin(time*.20+1.4)*.09;
+ o.verticalOrigin=.05+anchorX*.42+Math.cos(time*.16)*.08;
+ o.blushY=.04+anchorY*.20+Math.sin(time*.27)*.08;
+ return o;
+}
 function lightAt(u,v,o,time,out){
  // The two advected scales distort CLOUD SHAPE and internal brightness;
  // there is no cached still source image being dragged across the canvas.
- const windX=Math.sin(o.direction),windY=Math.cos(o.direction);
- const low=noise(u*(2.5+3*o.density)+time*.14*windX,
+ const low=noise(u*(2.5+3*o.density)+time*.14*o.windX,
    v*(2.8+2*o.density)-time*.19,o.broadNoise);
  const fine=noise(u*(8+6*o.density)-time*.24,
-   v*(7+6*o.density)+time*.17*windY,o.smallNoise);
+   v*(7+6*o.density)+time*.17*o.windY,o.smallNoise);
  const warp=(.014+.075*o.distortion)*o.scale;
  const x=u+(low-.5)*warp+(fine-.5)*warp*.4;
  const y=v+(fine-.5)*warp*.8+(low-.5)*warp*.65;
- const anchorX=(o.originX-.2)*.55,anchorY=(o.originY-.12)*.45;
  const breathe=.82+.18*Math.sin(time*1.14+fine*5.5+u*6.2);
  const cloudRadius=(.46+.14*o.blur)*o.scale;
  // Broad chromatic fog entering from two opposing, differently shaped edges.
- const leftX=-.07+anchorX+Math.sin(time*.19+.4)*.09;
- const leftY=.34+anchorY+Math.sin(time*.31+1.4)*.12;
- const rightX=1.10+anchorX*.42+Math.cos(time*.25+1.8)*.11;
- const rightY=.63+anchorY*.7+Math.sin(time*.18+.2)*.13;
- const magenta=gaussian((x-leftX)/cloudRadius,1)
-  *gaussian((y-leftY)/(.61+.18*o.blur),1)
+ const magenta=gaussian((x-o.leftX)/cloudRadius,1)
+  *gaussian((y-o.leftY)/(.61+.18*o.blur),1)
   *(.66+.49*low);
- const violet=gaussian((x-rightX)/(.57*o.scale+.16*o.blur),1)
-  *gaussian((y-rightY)/(.66+.11*o.blur),1)
+ const violet=gaussian((x-o.rightX)/(.57*o.scale+.16*o.blur),1)
+  *gaussian((y-o.rightY)/(.66+.11*o.blur),1)
   *(.61+.52*fine);
  // A soft luminous diagonal column: brightness grows and fades within
  // the light itself, not by sweeping an opaque beam-shaped rectangle.
  const lean=o.lean;
- const diagonalX=.31+anchorX*.47+Math.sin(time*.20+1.4)*.09
-   +(y-.5)*lean;
+ const diagonalX=o.diagonalOrigin+(y-.5)*lean;
  const diagonal=gaussian(x-diagonalX,.155+.19*o.blur+.065*o.scale)
    *(.48+.52*gaussian(y-.42,.55))
    *(.63+.5*low);
- const vertical=gaussian(x-(.05+anchorX*.42+Math.cos(time*.16)*.08),
+ const vertical=gaussian(x-o.verticalOrigin,
    .10+.10*o.blur+.075*o.scale)
   *gaussian(y-.50,.70)
   *(.5+.64*fine);
  // A second diffuse blush creates nonuniform internal light accumulation.
- const upperBlush=gaussian(x-(.76+anchorX*.3),.38*o.scale+.13)
-  *gaussian(y-(.04+anchorY*.20+Math.sin(time*.27)*.08),.34+.1*o.blur)
+ const upperBlush=gaussian(x-(.76+o.anchorX*.3),.38*o.scale+.13)
+  *gaussian(y-o.blushY,.34+.1*o.blur)
   *(.32+.68*(.6*low+.4*fine));
  const flicker=(.83+.17*Math.sin(time*1.6+fine*6+low*4))*breathe;
  const main=magenta*.68+vertical*.38;
@@ -101,7 +108,7 @@ function lightAt(u,v,o,time,out){
  // Narrow moving inner exposure hotspot nested inside the broad diagonal
  // cloud, like film light saturating locally rather than an opaque beam.
  const hotspot=gaussian(x-diagonalX,.052+.07*o.blur)
-  *gaussian(y-(.40+anchorY*.18),.21+.12*o.blur)
+  *gaussian(y-(.40+o.anchorY*.18),.21+.12*o.blur)
   *(.73+.35*fine);
  const sum=main+purple+bloom+.00001;
  const strength=(.50+.54*(.52*low+.48*fine))*flicker;
@@ -122,14 +129,14 @@ function lightAt(u,v,o,time,out){
 }
 /** Pure sample for visual and independent-change QA. */
 export function sampleLightLeak(u,v,effect={},cycle=0){
- return lightAt(clamp(u,0,1),clamp(v,0,1),config(effect),
-  Math.max(0,Number(cycle)||0),{color:[0,0,0]});
+ const t=Math.max(0,Number(cycle)||0);
+ return lightAt(clamp(u,0,1),clamp(v,0,1),prepare(config(effect),t),t,{color:[0,0,0]});
 }
 export function buildLightLeaksFrame(width,height,effect={},cycle=0,reuse){
  const w=Math.max(1,Math.round(Number(width)||1)),
   h=Math.max(1,Math.round(Number(height)||1));
  const data=reuse?.length===w*h*4?reuse:new Uint8ClampedArray(w*h*4);
- const o=config(effect),t=Math.max(0,Number(cycle)||0),sample={color:[0,0,0]};
+ const t=Math.max(0,Number(cycle)||0),o=prepare(config(effect),t),sample={color:[0,0,0]};
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   lightAt((x+.5)/w,(y+.5)/h,o,t,sample);
   const k=(y*w+x)*4;
@@ -141,7 +148,7 @@ export function buildLightLeaksFrame(width,height,effect={},cycle=0,reuse){
 const SCRATCH=new WeakMap();
 function scratchFor(ctx,w,h){
  let item=SCRATCH.get(ctx);
- const factor=Math.min(1,144/Math.max(w,h));
+ const factor=Math.min(1,120/Math.max(w,h));
  const sw=Math.max(40,Math.round(w*factor)),sh=Math.max(24,Math.round(h*factor));
  if(!item){
   const canvas=typeof document!=='undefined'?document.createElement('canvas'):
