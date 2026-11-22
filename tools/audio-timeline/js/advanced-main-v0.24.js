@@ -1605,7 +1605,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-glow-control').hidden=
             !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan','fire-flames'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-blur-control').hidden=
-            !['glow','edge-glow','halo-blur','fire-flames','engine-heat'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','fire-flames','engine-heat','retro-glitch'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
