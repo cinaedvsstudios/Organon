@@ -1,4 +1,5 @@
 /**
+ * Pinned upstream original GLSL git blob f0f086ae5f62985c3003a340f8e547345e34572f; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * CellDissolve (#03): original GL Transitions Voronoi shader by gre, MIT.
  * Upstream: https://github.com/gl-transitions/gl-transitions/blob/deeebdee7581cdfe924ed9cf104ea2fd10e63155/transitions/CellDissolve.glsl
  * Original shader body preserved exactly, including 3x3 sites, 5x5 border
