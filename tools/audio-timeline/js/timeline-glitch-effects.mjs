@@ -1,3 +1,4 @@
+import {renderEngineHeat} from './timeline-engine-heat.mjs';
 /**
  * MotoriClip Phase 3E — nine substantively different source-frame glitches.
  * All geometry is a pure function of clip-relative seconds, effect parameters
@@ -136,24 +137,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
    ctx.fillStyle=rgba(color,.5);
    ctx.fillRect(w*wrap(t*.24),0,Math.max(5,w*.055*size),h);
   }else if(e.presetId==='engine-heat'){
-   // Upward heat haze strengthens near the bottom; incandescent bloom follows.
-   const bands=26;
-   for(let i=0;i<bands;i++){
-    const y=i*h/bands,bh=Math.ceil(h/bands)+1,nearFire=(i/bands)**2;
-    const dx=Math.sin(t*8+i*.79+rad)*amp*2*nearFire;
-    draw(ctx,source,0,y,w,bh,dx,y,w,bh);
-   }
-   const gradient=ctx.createLinearGradient(0,h*.45,0,h);
-   gradient.addColorStop(0,'rgba(245,126,38,0)');
-   gradient.addColorStop(1,'rgba(255,92,23,'+(.22+.22*strength)+')');
-   ctx.fillStyle=gradient;ctx.fillRect(0,h*.45,w,h*.55);
-   for(let i=0;i<4;i++){
-    const x=wrap(seeded(i+11)+Math.sin(t*.7+i)*.09)*w;
-    ctx.strokeStyle=rgba(color,.16);ctx.lineWidth=Math.max(2,w*.012*size);
-    ctx.beginPath();ctx.moveTo(x,h);
-    ctx.bezierCurveTo(x+w*.06*Math.sin(t+i),h*.7,x-w*.04,h*.55,x+w*.02,h*.36);
-    ctx.stroke();
-   }
+   renderEngineHeat(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='retro-glitch'){
    // Actual low-resolution re-sample, nearest-neighbour upscale, CRT
    // scanlines and a rolling displaced horizontal dropout strip.
