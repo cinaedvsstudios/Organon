@@ -289,6 +289,8 @@ jobs:
         run: node --test tools/audio-timeline/tests/original-glsl-provenance.test.mjs
       - name: Audit all 41 original GL shader visual qualification tests and progress coverage
         run: node --test tools/audio-timeline/tests/visual-qualification-coverage.test.mjs
+      - name: Verify every original transition was accepted individually in order with PR, real export and shader evidence
+        run: node --test tools/audio-timeline/tests/visual-acceptance-chronology.test.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history
