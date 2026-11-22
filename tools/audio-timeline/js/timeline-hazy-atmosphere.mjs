@@ -16,10 +16,22 @@ function hash(x,y,seed){
  n^=n>>>13;n=Math.imul(n,1274126177)>>>0;n^=n>>>16;
  return (n>>>0)/4294967296;
 }
+// Seeded lattice values are immutable and built once per seed. Inner-pixel
+// sampling uses four bounded table lookups instead of four integer hashes.
+const NOISE_LATTICES=new Map();
+function lattice(seed){
+ let table=NOISE_LATTICES.get(seed);
+ if(table)return table;
+ table=new Float32Array(64*64);
+ for(let y=0;y<64;y++)for(let x=0;x<64;x++)table[y*64+x]=hash(x,y,seed);
+ NOISE_LATTICES.set(seed,table);
+ return table;
+}
 function noise(x,y,seed){
  const ix=Math.floor(x),iy=Math.floor(y),u=smooth(0,1,x-ix),v=smooth(0,1,y-iy);
- return lerp(lerp(hash(ix,iy,seed),hash(ix+1,iy,seed),u),
-             lerp(hash(ix,iy+1,seed),hash(ix+1,iy+1,seed),u),v);
+ const table=lattice(seed),x0=ix&63,x1=(ix+1)&63,y0=(iy&63)*64,y1=((iy+1)&63)*64;
+ return lerp(lerp(table[y0+x0],table[y0+x1],u),
+             lerp(table[y1+x0],table[y1+x1],u),v);
 }
 function fractal(x,y,seed){
  return .55*noise(x,y,seed)+.29*noise(x*2.11,y*2.11,seed+19)
