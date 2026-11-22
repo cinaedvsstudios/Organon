@@ -72,7 +72,7 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/hologram.browser.mjs
-      - name: Compare #01 SpiralBlockWipe and #02 Hologram to independently compiled original GLSL at five progress marks
+      - name: Compare original SpiralBlockWipe (01) and Hologram (02) against independent WebGL oracles
         timeout-minutes: 10
         env:
           CHROME_BIN: /usr/bin/google-chrome
