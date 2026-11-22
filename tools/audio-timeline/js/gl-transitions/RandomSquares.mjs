@@ -159,7 +159,7 @@ export function paintRandomSquares(renderer,context,toTrack,width,height,time,dr
         ctx.restore();
     }
     const shader=renderer.randomSquaresWebGL??(renderer.randomSquaresWebGL=createRandomSquaresWebGLRenderer());
-    const frame=shader.render(sources[0],sources[1],progress,toTrack.transitionParameters?.['randomSquares']);
+    const frame=shader.render(sources[0],sources[1],progress,toTrack.transitionParameters?.['random-squares']);
     context.save();context.setTransform(1,0,0,1,0,0);context.filter='none';
     context.globalCompositeOperation='source-over';context.globalAlpha=1;
     context.drawImage(frame,0,0,width,height);
