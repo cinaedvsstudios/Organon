@@ -78,6 +78,9 @@ export function buildRetroGlitchFrame(source,width,height,effect={},time=0,reuse
  const snowLevel=(.11+.38*o.density)*amplitude;
  const darkLine=.09+.34*amplitude;
  const tint=o.color;
+ // Per-absolute-frame xorshift sequence: two fresh independent noise bytes
+ // per pixel, avoiding expensive lattice hashing in the inner video loop.
+ let rng=(Math.imul(state.frame+1,0x9e3779b1)^0x95e12931)>>>0;
  for(let y=0;y<h;y++){
   const sy=y/h,scanLine=Math.sin(y*(2.9/o.scale)+t*19+sy*13);
   const scanWave=.5+.5*Math.sin(y*.61-t*13+hash(y,13)*5.4);
@@ -104,10 +107,12 @@ export function buildRetroGlitchFrame(source,width,height,effect={},time=0,reuse
    const sx=clip(x+rowOffset,0,w-1),
     rX=clip(sx+red,0,w-1),bX=clip(sx+blue,0,w-1);
    const base=(y*w+sx)*4;
-   // Separate temporal hash for EACH individual source pixel. The grain is
-   // not one bitmap translated across the screen or a repeated horizontal bar.
-   const n=hash(x,y,state.frame);
-   const n2=hash(x+53,y+17,state.frame+37);
+   // Fresh per-pixel pseudorandom sequence (seeded by absolute video frame).
+   // Rewinding produces exactly the same snow, not a cached moving bitmap.
+   rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;
+   const n=(rng>>>0)/4294967296;
+   rng^=rng<<13;rng^=rng>>>17;rng^=rng<<5;
+   const n2=(rng>>>0)/4294967296;
    const snow=(n-.5)*255*snowLevel*1.7;
    const burst=n2<o.density*.095*amplitude;
    const burstValue=burst?(n>.5?92:-78)*amplitude:0;
@@ -127,7 +132,7 @@ export function buildRetroGlitchFrame(source,width,height,effect={},time=0,reuse
 const SCRATCH=new WeakMap();
 function getScratch(ctx,w,h,e){
  let item=SCRATCH.get(ctx);
- const sw=Math.max(1,Math.round(Math.max(1,w)*Math.min(1,384/Math.max(w,h)))),
+ const sw=Math.max(1,Math.round(Math.max(1,w)*Math.min(1,256/Math.max(w,h)))),
   sh=Math.max(1,Math.round(Math.max(1,h)*Math.min(1,384/Math.max(w,h))));
  if(!item){
   const canvas=typeof document!=='undefined'?document.createElement('canvas'):
