@@ -741,6 +741,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Scanline strength<input type="range" min="0" max=".3" step=".005" value=".075" data-glitch-flicker-param="scanline"></label>
                             </div>
                         </fieldset>
+                        <fieldset id="video-pixelize-settings" class="spiral-glsl-settings pixelize-glsl-settings" hidden>
+                            <legend>Pixelize · Original A/B pixelation and crossfade GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Strongest pixel grid width<input type="range" min="1" max="128" step="1" value="20" data-pixelize-param="squaresX"></label>
+                                <label>Strongest pixel grid height<input type="range" min="1" max="128" step="1" value="20" data-pixelize-param="squaresY"></label>
+                                <label>Pixelation steps (0 = smooth)<input type="range" min="0" max="200" step="1" value="50" data-pixelize-param="steps"></label>
+                            </div>
+                        </fieldset>
                         <fieldset id="video-cube-settings" class="spiral-glsl-settings cube-glsl-settings" hidden>
                             <legend>Cube · Original two-face perspective / floor reflection GLSL</legend>
                             <div class="spiral-settings-grid">
@@ -1561,6 +1569,14 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                                 <label>Outgoing-frame ghosting<input type="range" min="0" max="1" step=".02" value=".62" data-glitch-flicker-param="ghostAmount"></label>
                                 <label>Red / cyan colour bleed<input type="range" min="0" max="1" step=".02" value=".58" data-glitch-flicker-param="redCyan"></label>
                                 <label>Scanline strength<input type="range" min="0" max=".3" step=".005" value=".075" data-glitch-flicker-param="scanline"></label>
+                            </div>
+                        </fieldset>
+                        <fieldset id="transition-modal-pixelize" class="spiral-glsl-settings pixelize-glsl-settings" hidden>
+                            <legend>Pixelize · Original A/B pixelation and crossfade GLSL</legend>
+                            <div class="spiral-settings-grid">
+                                <label>Strongest pixel grid width<input type="range" min="1" max="128" step="1" value="20" data-pixelize-param="squaresX"></label>
+                                <label>Strongest pixel grid height<input type="range" min="1" max="128" step="1" value="20" data-pixelize-param="squaresY"></label>
+                                <label>Pixelation steps (0 = smooth)<input type="range" min="0" max="200" step="1" value="50" data-pixelize-param="steps"></label>
                             </div>
                         </fieldset>
          <fieldset id="transition-modal-cube" class="spiral-glsl-settings cube-glsl-settings" hidden>
