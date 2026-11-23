@@ -428,8 +428,15 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),49,
-        'Keep twelve classic overlays plus thirty-seven independently animated procedural effects');
+    const expectedEffectCards=await page.evaluate(async()=>{
+        const [{EFFECT_OVERLAYS},{TIMELINE_EFFECTS}]=await Promise.all([
+            import('./js/overlay-preset-library.mjs'),
+            import('./js/timeline-effects.mjs')
+        ]);
+        return EFFECT_OVERLAYS.length+TIMELINE_EFFECTS.length;
+    });
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),expectedEffectCards,
+        'Every classic and procedural effect must have exactly one library card');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
