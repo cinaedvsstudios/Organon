@@ -113,19 +113,19 @@ h1{margin:6px 0;font-size:clamp(24px,3vw,37px);letter-spacing:.3px}h2{font-size:
   </div>
   <section class="detail" id="detail"><h2>Extend the existing Library drawer</h2><div class="status">ONDA-02 • High priority</div><p>This is an example of adding functionality without abandoning the present Onda drawer, palette, or control icons.</p></section>
   <div class="detail" id="researchPanel">
-    <div class="status">Source audit recorded • Android tests not yet run</div>
+    <div class="status">v3.11 fixes committed • Android testing still pending</div>
     <h2 style="margin-top:8px">What the code investigation established</h2>
     <p>These are implementation findings, not changes to the player:</p>
     <ul>
-      <li><strong>Visualiser:</strong> currently schedules frames continuously; pause/hidden scheduler design is documented.</li>
+      <li><strong>Visualiser:</strong> v3.11 now stops scheduling continuous frames while paused or hidden; Android battery impact still needs measuring.</li>
       <li><strong>Local media:</strong> imported Files are cached in IndexedDB; permission-based Android relinking needs testing before migration.</li>
-      <li><strong>Storage Health:</strong> cached files not yet loaded into memory can be mislabeled as needing relink.</li>
-      <li><strong>Resume:</strong> low-priority optional item (P3). Existing track identity is saved; a position checkpoint is not.</li>
+      <li><strong>Storage Health:</strong> v3.11 adds a read-only IndexedDB inventory, cache bytes and more accurate relink labels; needs Android testing.</li>
+      <li><strong>Saved playback:</strong> v3.11 improves one-tap playback and has a direct Reconnect for genuinely missing audio. Position resume remains optional P3.</li>
       <li><strong>Drawer:</strong> some mobile-view controls are referenced in JavaScript/CSS but not in static HTML; actual phone layout needs verification.</li>
       <li><strong>Cloud:</strong> existing Netlify sync backs up JSON, not audio. Future online media is planned on public GitHub Pages, with a JSON catalogue and playable files.</li>
       <li><strong>Home-screen icon:</strong> approved circular icon is configured; Chrome installed-mode validation and a native 512 PNG remain open.</li>
     </ul>
-    <p><a href="./TECHNICAL_INVESTIGATION.md">Read the exact source/function plan</a> · <a href="./QA_MIGRATION_MATRIX.md">Read the test and rollback checklist</a></p>
+    <p><a href="./TECHNICAL_INVESTIGATION.md">Read the source/function plan</a> · <a href="./QA_MIGRATION_MATRIX.md">Read Android tests</a> · <a href="./RELEASE_V3_11.md">See implemented v3.11 changes</a></p>
    </div>
    <div class="feedback">
    <h2>Review notes</h2>
