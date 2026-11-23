@@ -18,6 +18,7 @@ import {renderSignalTear} from './timeline-signal-tear.mjs';
 import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
 import {renderLineCorruption} from './timeline-line-corruption.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
+import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -93,6 +94,7 @@ export function normaliseTimelineEffect(effect={}){
   const lineCorruption=presetId==='line-corruption';
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
+ const electricSparks=presetId==='particle-sparks';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
@@ -103,9 +105,14 @@ export function normaliseTimelineEffect(effect={}){
   distortion:clamp(raw.distortion,0,100,lineCorruption?71:rgbBlockGlitch?76:signalTear?72:signalInterference?70:mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,mistFog?34:24),
-  originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
-  originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':'#ffd98d'
+  originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||['halo-blur','fire-explosion'].includes(presetId))?50:20),
+  originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:swing?10:12),
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':'#ffd98d'
+ };
+ if(electricSparks)return {...base,
+  sparkForks:Math.round(clamp(raw.sparkForks,0,4,2)),
+  sparkLife:clamp(raw.sparkLife,.12,.9,.38),
+  sparkSeed:Math.round(clamp(raw.sparkSeed,0,99999,6666))
  };
  if(cameraFrame)return {...base,
   hudScale:clamp(raw.hudScale,60,150,100),
@@ -423,8 +430,12 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    ctx.fillRect(0,0,w,h);
   }else if(e.presetId==='particle-dust'){
    renderFlamingDust(ctx,w,h,e,t,strength);
-  }else if(e.presetId.startsWith('particle-')){
-   const sparks=e.presetId==='particle-sparks',debris=e.presetId==='particle-debris';
+  }else if(e.presetId==='particle-sparks'){
+   renderElectricSparks(ctx,w,h,e,t,strength);
+  }else if(e.presetId==='particle-debris'){
+   // The old shared path still uses the sparks/debris flags for size and drift.
+   // The dedicated Electric Sparks painter above never enters this branch.
+   const sparks=false,debris=true;
    const count=Math.min(120,Math.max(1,Math.round(e.density)));
    const clipAlpha=ctx.globalAlpha;
    const dx=Math.cos(rad),dy=Math.sin(rad);
