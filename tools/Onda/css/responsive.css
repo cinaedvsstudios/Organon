@@ -1654,45 +1654,45 @@ body.onda-force-mobile-mode .onda-mobile-marquee.is-marquee-overflowing .onda-ma
 /* v3.15: The active queue is a first-class part of Current on mobile.
    Place it immediately below the Now Playing heading (not inside Library). */
 @media (max-width: 768px) {
-  #tab-library #metadata-display-card {
+  body:not(.onda-force-desktop-mode) #tab-library #metadata-display-card {
     display: flex;
     flex-direction: column;
     min-width: 0;
   }
-  #tab-library #metadata-display-card > .card-header { order: 0; }
-  #tab-library #now-playing-playlist-panel { order: 1; width: 100%; min-width: 0; }
-  #tab-library #metadata-display-card > .now-playing-layout { order: 2; width: 100%; min-width: 0; }
-  #tab-library #metadata-display-card > .now-playing-edit-panel { order: 3; width: 100%; min-width: 0; }
+  body:not(.onda-force-desktop-mode) #tab-library #metadata-display-card > .card-header { order: 0; }
+  body:not(.onda-force-desktop-mode) #tab-library #now-playing-playlist-panel { order: 1; width: 100%; min-width: 0; }
+  body:not(.onda-force-desktop-mode) #tab-library #metadata-display-card > .now-playing-layout { order: 2; width: 100%; min-width: 0; }
+  body:not(.onda-force-desktop-mode) #tab-library #metadata-display-card > .now-playing-edit-panel { order: 3; width: 100%; min-width: 0; }
 
-  #tab-library .onda-current-queue-header:not(.onda-current-queue-has-playlist) {
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-header:not(.onda-current-queue-has-playlist) {
     display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 7px;
   }
-  #tab-library .onda-current-queue-header .playlist-detail-title-block,
-  #tab-library .onda-current-queue-header .playlist-detail-meta-row { width: 100%; }
-  #tab-library .onda-current-queue-header .playlist-row-tools {
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-header .playlist-detail-title-block,
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-header .playlist-detail-meta-row { width: 100%; }
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-header .playlist-row-tools {
     display: flex;
     flex-wrap: wrap;
     gap: 7px;
   }
-  #tab-library .onda-current-queue-header .playlist-detail-art {
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-header .playlist-detail-art {
     width: 64px;
     height: 64px;
   }
-  #tab-library .onda-current-queue-tools .btn-pill,
-  #tab-library .onda-current-queue-list .library-row-buttons .btn-pill {
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-tools .btn-pill,
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-list .library-row-buttons .btn-pill {
     min-width: 40px;
     min-height: 40px;
   }
-  #tab-library .onda-current-queue-list .library-row-buttons { flex-wrap: wrap; }
-  #tab-library .onda-current-queue-list .now-playing-queue-row {
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-list .library-row-buttons { flex-wrap: wrap; }
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-list .now-playing-queue-row {
     box-sizing: border-box;
     min-width: 0;
     max-width: 100%;
   }
-  #tab-library .onda-current-queue-extra { grid-column: 1 / -1; }
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-extra { grid-column: 1 / -1; }
 }
 
 body.onda-force-mobile-mode #tab-library #metadata-display-card {
@@ -1726,7 +1726,7 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-extra {
 /* Keep long active queues scrollable without pushing Current's song details
    hundreds of rows down the page. No separate drawer or floating overlay. */
 @media (max-width: 768px) {
-  #tab-library .onda-current-queue-list {
+  body:not(.onda-force-desktop-mode) #tab-library .onda-current-queue-list {
     box-sizing: border-box;
     max-height: min(46vh, 430px);
     overflow-y: auto;
