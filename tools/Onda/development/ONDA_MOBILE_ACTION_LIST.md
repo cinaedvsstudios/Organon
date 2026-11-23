@@ -1,13 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** Static source research completed and documented; mobile-device verification and user choices remain before code changes  
+**Status:** First production implementation batch committed as Onda v3.11; Android device and deployment verification pending; remaining features tracked below  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, currently identified as v3.10 in `js/app-core.js`  
+**Application:** Onda Media Player, source version **v3.11** (prior investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
-**Implementation policy:** Research and mock-ups first; do **not** change the live player without review.  
+**Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
-**QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)
+**QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
+**First implementation release:** [Onda v3.11 changes and tests](./RELEASE_V3_11.md)
 
 ## Agreed product direction
 
@@ -27,14 +28,14 @@
 | ONDA-02 | P1 | Expand and simplify mobile Library drawer | Preserve existing drawer | Fully mapped; static markup gap to verify on phone |
 | ONDA-03 | P3 / optional | Remember playback position | Nice-to-have, if low effort only | Deferred behind main mobile work |
 | ONDA-04 | P3 / scale | Large-library search/render optimisation | Not a present user issue | Monitor until needed |
-| ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | Source issue confirmed; detailed implementation path ready |
+| ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | **Implemented v3.11; 21 isolated/static checks passed across batch; Android battery QA pending** |
 | ONDA-06 | Closed | Replace existing play symbols | Do not change | Closed — no action |
-| ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | Source architecture mapped; Android handle proof pending |
-| ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | User rule approved; optional audition later |
+| ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | **v3.11: cache status and one-tap playback improved; full cache redesign/handle proof pending** |
+| ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **Saved-track Play path improved v3.11; optional new-file Quick Play not yet implemented** |
 | ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
-| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | Read-only inventory & cleanup safeguards specified |
+| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.11: read-only cached-audio bytes and status implemented; cleanup still not implemented** |
 | ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | Specific instrumentation points defined |
-| ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | Source-resolver design ready; actual permission testing pending |
+| ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.11: direct one-file Reconnect implemented; advanced persistent handle testing pending** |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
 | ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | CSS/API review done; computed style and interaction QA pending |
 | ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Use approved bronze/charcoal/cyan circle; don't change player controls | Implemented in GitHub; Android device check pending |
@@ -305,3 +306,15 @@ The source audit now covers all 6,195 lines of the main app-core.js module, the 
 GitHub Docs: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage ; https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
 
 - 2026-11-23 — v1.5 decisions entered; older Quick Play, resume and online hosting questions superseded. Production Onda unchanged.
+
+## Implementation progress — Onda v3.11, 2026-11-23
+
+[Read the v3.11 release changes and Android smoke plan](./RELEASE_V3_11.md).
+
+The first user-authorised production batch is committed to `main`: the unbounded idle/hidden visualiser loop is replaced with a single active-only scheduler; MIDI can trigger redraws; the last-track restore no longer sends an extra early play request; `playAudio()` starts playback within the originating mobile tap where possible; existing IndexedDB audio files load automatically without a reimport prompt; a genuinely unavailable saved file gets a direct **Reconnect** picker using the existing stable ID. Storage Health now shows read-only cached audio count/bytes, unlinked cache entries, and a distinct whole-site storage estimate; the Library filter uses verified cache status instead of incorrectly assuming unloaded means missing.
+
+**Verification:** 21 static/isolated checks passed, including actual extracted scheduler/status logic and JavaScript syntax parsing. The actual Android device, installed shortcut, real audio autoplay/locking and Netlify deployment are **not yet verified**. No schema upgrade or automatic deletion was performed; the existing `OndaMediaPlayerPersistentDB` v2 data is retained.
+
+**Next dependency:** test the public v3.11 deployment on Android and desktop; fix real-device regressions before the larger file-handle migration. Keep Queue / Now Playing on the main Current screen (future UI work), not drawer. New-file Quick Play optional P2, GitHub Pages online media future P3, position resume optional P3.
+
+- 2026-11-23 — v1.6 backlog updated following first implementation. Details and rollback in RELEASE_V3_11.md.
