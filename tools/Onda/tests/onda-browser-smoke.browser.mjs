@@ -535,6 +535,190 @@ async function rememberedHandlePermissionSmoke(browser, baseUrl) {
     }
 }
 
+async function mediaSessionSmoke(browser, baseUrl) {
+    // Invoke the actual handlers registered with Chrome's Media Session API.
+    // This tests real audio + handler routing, not physical headset/lock-screen input.
+    const context = await browser.newContext({
+        viewport: { width: 1280, height: 800 },
+        serviceWorkers: 'block'
+    });
+    const page = await context.newPage();
+    try {
+        await page.addInitScript(() => {
+            window.__ondaSystemActions = {};
+            const session = navigator.mediaSession;
+            if (!session || typeof session.setActionHandler !== 'function') return;
+            const register = session.setActionHandler.bind(session);
+            session.setActionHandler = (action, callback) => {
+                window.__ondaSystemActions[action] = callback;
+                return register(action, callback);
+            };
+        });
+        await expectLoaded(page, baseUrl);
+        await chooseFreshLocalSession(page);
+        const actions = await page.evaluate(() => Object.keys(window.__ondaSystemActions || {}));
+        const expected = [
+            'play', 'pause', 'stop', 'seekto', 'seekbackward',
+            'seekforward', 'nexttrack', 'previoustrack'
+        ];
+        for (const action of expected) {
+            assert.ok(actions.includes(action), 'Chrome Media Session must register ' + action);
+        }
+        assert.equal(await page.evaluate(() => window.OndaMediaSession?.supported), true);
+        console.log('media session: Chrome registered all eight system playback actions');
+
+        // Two real generated WAV tracks, to exercise transport switching and
+        // Media Session metadata while decoding in Chromium's native audio.
+        await page.locator('#file-input').setInputFiles([
+            { name: 'onda-background-one.wav', mimeType: 'audio/wav', buffer: wavTone(12) },
+            { name: 'onda-background-two.wav', mimeType: 'audio/wav', buffer: wavTone(12) }
+        ]);
+        await page.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return audio?.src.startsWith('blob:') && !audio.paused &&
+                audio.currentTime > 0.05 && audio.duration > 10;
+        }, { timeout: 15000 });
+        await page.waitForFunction(() =>
+            navigator.mediaSession?.metadata?.title?.includes('onda-background-one'),
+        { timeout: 10000 });
+        assert.equal(await page.evaluate(() => navigator.mediaSession.playbackState), 'playing');
+
+        const invoke = async (action, details = {}) => {
+            return page.evaluate(({ action, details }) => {
+                const fn = window.__ondaSystemActions[action];
+                if (typeof fn !== 'function') throw new Error('Missing registered system action: ' + action);
+                return fn(details);
+            }, { action, details });
+        };
+        const audioState = () => page.evaluate(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return {
+                paused: audio.paused,
+                time: audio.currentTime,
+                src: audio.currentSrc || audio.src,
+                metadata: navigator.mediaSession?.metadata?.title || '',
+                sessionState: navigator.mediaSession?.playbackState
+            };
+        });
+
+        await invoke('pause');
+        await page.waitForFunction(() => document.querySelector('audio.onda-hidden-audio')?.paused);
+        assert.equal((await audioState()).sessionState, 'paused');
+        await invoke('play');
+        await page.waitForFunction(() =>
+            !document.querySelector('audio.onda-hidden-audio')?.paused &&
+            navigator.mediaSession?.playbackState === 'playing',
+        { timeout: 10000 });
+        await invoke('seekto', { seekTime: 3.0 });
+        await page.waitForFunction(() =>
+            document.querySelector('audio.onda-hidden-audio')?.currentTime >= 2.8);
+        const atThree = (await audioState()).time;
+        await invoke('seekforward', { seekOffset: 2 });
+        const forward = (await audioState()).time;
+        assert.ok(forward >= atThree + 1.5, 'system seekforward must advance main playback');
+        await invoke('seekbackward', { seekOffset: 1 });
+        const backward = (await audioState()).time;
+        assert.ok(backward <= forward - 0.7, 'system seekbackward must move main playback');
+        console.log('media session: saved audio play/pause/seekto/forward/backward operate');
+
+        // Simulate the visibilitychange event used when Chrome backgrounds the
+        // tab. This is not an Android screen-lock or actual process suspension.
+        const beforeHidden = (await audioState()).time;
+        await page.evaluate(() => {
+            Object.defineProperty(document, 'hidden', { configurable: true, value: true });
+            Object.defineProperty(document, 'visibilityState', {
+                configurable: true, value: 'hidden'
+            });
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+        await page.waitForTimeout(350);
+        const hiddenState = await audioState();
+        assert.equal(hiddenState.paused, false, 'hidden event must not pause audio');
+        assert.ok(hiddenState.time > beforeHidden + 0.08,
+            'playback must continue advancing after the hidden-state handler');
+        await page.evaluate(() => {
+            delete document.hidden;
+            delete document.visibilityState;
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+        console.log('media session: synthetic hidden/visible event does not interrupt saved audio');
+
+        await invoke('nexttrack');
+        await page.waitForFunction(() =>
+            navigator.mediaSession?.metadata?.title?.includes('onda-background-two') &&
+            !document.querySelector('audio.onda-hidden-audio')?.paused,
+        { timeout: 15000 });
+        await invoke('previoustrack');
+        await page.waitForFunction(() =>
+            navigator.mediaSession?.metadata?.title?.includes('onda-background-one') &&
+            !document.querySelector('audio.onda-hidden-audio')?.paused,
+        { timeout: 15000 });
+        console.log('media session: next/previous switches real queued WAV files and metadata');
+
+        // Quick Play must temporarily own media keys, seek and metadata, not
+        // mutate the saved queue; a Next/Previous command cannot navigate it.
+        const beforePreview = await audioState();
+        const cachedBefore = await cachedAudioCount(page);
+        await page.locator('#onda-quick-play-input').setInputFiles({
+            name: 'onda-background-preview.wav',
+            mimeType: 'audio/wav', buffer: wavTone(12)
+        });
+        await page.waitForFunction(() => {
+            const preview = window.OndaQuickPlay?.getActiveAudio?.();
+            return preview && !preview.paused && preview.currentTime > 0.06;
+        }, { timeout: 12000 });
+        await page.waitForFunction(() =>
+            navigator.mediaSession?.metadata?.title?.includes('onda-background-preview'),
+        { timeout: 10000 });
+        assert.equal((await audioState()).paused, true,
+            'temporary audition must pause but preserve main player track');
+        await invoke('pause');
+        await page.waitForFunction(() => window.OndaQuickPlay?.getActiveAudio?.()?.paused);
+        assert.equal((await audioState()).paused, true);
+        await invoke('play');
+        await page.waitForFunction(() => {
+            const preview = window.OndaQuickPlay?.getActiveAudio?.();
+            return preview && !preview.paused;
+        });
+        await invoke('seekto', { seekTime: 4.0 });
+        await page.waitForFunction(() =>
+            window.OndaQuickPlay?.getActiveAudio?.()?.currentTime >= 3.8);
+        const previewAtFour = await page.evaluate(() =>
+            window.OndaQuickPlay.getActiveAudio()?.currentTime);
+        await invoke('seekbackward', { seekOffset: 1 });
+        const previewBackward = await page.evaluate(() =>
+            window.OndaQuickPlay.getActiveAudio()?.currentTime);
+        assert.ok(previewBackward <= previewAtFour - 0.7);
+        await invoke('seekforward', { seekOffset: 2 });
+        const previewForward = await page.evaluate(() =>
+            window.OndaQuickPlay.getActiveAudio()?.currentTime);
+        assert.ok(previewForward >= previewBackward + 1.5);
+        await invoke('nexttrack');
+        await invoke('previoustrack');
+        assert.equal((await audioState()).src, beforePreview.src,
+            'Media Session next/previous must not change permanent queue during preview');
+        assert.equal((await audioState()).paused, true);
+        assert.equal(await cachedAudioCount(page), cachedBefore,
+            'system controls on temporary audio must not add to persistent cache');
+        console.log('media session: Quick Play takes media keys/metadata without changing saved queue');
+
+        await invoke('stop');
+        await page.waitForFunction(() =>
+            !window.OndaQuickPlay?.getActiveAudio?.() &&
+            navigator.mediaSession?.metadata?.title?.includes('onda-background-one'),
+        { timeout: 10000 });
+        await invoke('play');
+        await page.waitForFunction(() =>
+            !document.querySelector('audio.onda-hidden-audio')?.paused &&
+            document.querySelector('audio.onda-hidden-audio')?.currentTime > 0,
+        { timeout: 10000 });
+        assert.equal(await cachedAudioCount(page), cachedBefore);
+        console.log('media session: stop preview restores main metadata and system Play resumes main track');
+    } finally {
+        await context.close();
+    }
+}
+
 async function mobileSmoke(browser, baseUrl) {
     // Browser device emulation does not establish actual Android lock-screen results.
     const context = await browser.newContext({
@@ -572,6 +756,7 @@ try {
     await desktopSmoke(browser, baseUrl);
     await missingMediaReconnectSmoke(browser, baseUrl);
     await rememberedHandlePermissionSmoke(browser, baseUrl);
+    await mediaSessionSmoke(browser, baseUrl);
     await mobileSmoke(browser, baseUrl);
     console.log('PASS: actual Chrome desktop + mobile-emulated Onda smoke tests');
 } finally {
