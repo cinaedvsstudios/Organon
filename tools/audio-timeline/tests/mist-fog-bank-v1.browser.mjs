@@ -86,6 +86,11 @@ try{
    clear:alpha.filter(v=>v<6).length,visible:alpha.filter(v=>v>18).length,
    alphaVariants:new Set(alpha).size,peakAlpha:Math.max(...alpha),renderErrors};
  });
+ // Log the actual rendered frame *before* assertions so even a rejected
+ // visual regression provides inspectable evidence rather than an unseen hash.
+ console.log('[MotoriClip #58 real Chrome Mist-Fog Bank PNG] '+result.png);
+ console.log('[MotoriClip #58 real Chrome metrics] '+JSON.stringify(
+  Object.fromEntries(Object.entries(result).filter(([key])=>key!=='png'))));
  assert.ok(result.changed>750,'Mist Bank needs many real source pixels');
  assert.ok(result.bottomChanged>800,'Fog should accumulate along lower bank');
  assert.ok(result.topChanged<result.bottomChanged*.4,'Bank must leave much of top video unobscured');
@@ -100,7 +105,5 @@ try{
  for(const [name,hash] of Object.entries(result.variants))
   assert.notEqual(hash,result.original,'Inspector control '+name+' must change actual pixels');
  assert.deepEqual(result.renderErrors,[]);assert.deepEqual(errors,[]);
- console.log('[MotoriClip #58 real Chrome Mist-Fog Bank PNG] '+result.png);
- console.log('[MotoriClip #58 real Chrome] PASS '+JSON.stringify(
-  Object.fromEntries(Object.entries(result).filter(([key])=>key!=='png'))));
+
 }finally{await browser.close();await new Promise(done=>server.close(done));}
