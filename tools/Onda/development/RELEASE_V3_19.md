@@ -1,7 +1,7 @@
 # Onda v3.19 — Temporary Quick Play for Unsaved Audio
 
 **Implemented:** 2026-11-23  
-**Status:** Source implementation, functional isolated DOM/audio tests and isolated Media Session tests passed; **real Android Chrome, desktop browser, installed shortcut and Netlify deployment remain unverified.**  
+**Status:** Source implementation, **53 final consolidated static/isolated tests passed**, including mock DOM/audio and Media Session; **real Android Chrome, desktop browser, installed shortcut and Netlify deployment remain unverified.**  
 **Action:** ONDA-08.  
 **Previous:** [v3.18 performance diagnostics](./RELEASE_V3_18.md).
 
