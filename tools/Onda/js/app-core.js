@@ -2516,9 +2516,12 @@
                             const cursor = cursorRequest.result;
                             if (!cursor) return;
                             const record = cursor.value || {};
-                            ids.add(String(cursor.key));
-                            const size = record.file?.size ?? record.blob?.size ?? record.sizeBytes ?? 0;
-                            if (Number.isFinite(Number(size))) bytes += Number(size);
+                            const media = record.file || record.blob || null;
+                            // A metadata-only or damaged cache record cannot supply audio.
+                            if (media && typeof media.arrayBuffer === 'function') {
+                                ids.add(String(cursor.key));
+                                if (Number.isFinite(Number(media.size))) bytes += Number(media.size);
+                            }
                             cursor.continue();
                         };
                         tx.oncomplete = () => { close(); resolve({ ids, bytes }); };
