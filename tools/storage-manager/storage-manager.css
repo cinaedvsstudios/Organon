@@ -1,0 +1,64 @@
+/* Organon storage manager: compact, responsive sandstone interface */
+#osm-overlay { z-index: 150; padding: 12px; box-sizing: border-box; }
+#osm-overlay[hidden] { display:none !important; }
+.osm-shell {
+  width:min(100%, 920px); max-height:92vh; overflow:auto; box-sizing:border-box;
+  color:#f5f0db; border:2px solid #896b49; border-radius:12px; padding:20px;
+  background:linear-gradient(rgba(24,25,25,.97),rgba(24,25,25,.97)),url('../../images/stonetext.jpg');
+  box-shadow:0 12px 45px rgba(0,0,0,.85); font-family:Inter,Arial,sans-serif;
+}
+.osm-shell *, .osm-shell *::before, .osm-shell *::after { box-sizing:border-box; }
+.osm-header { display:flex;align-items:flex-start;justify-content:space-between; gap:12px;border-bottom:1px solid #896b49;padding-bottom:12px; }
+.osm-header h3 { margin:0;color:#e0a360;font:700 21px Cinzel,Georgia,serif; }
+.osm-shell p { margin:8px 0;line-height:1.5; }
+.osm-muted, #osm-quota, #osm-technical { font-size:12px;color:#bdbaad; }
+#osm-summary { margin:15px 0 4px;color:#75b2de;font-weight:600; }
+#osm-safe { margin-bottom:12px;color:#93c2af;font-size:13px; }
+.osm-actions { display:flex;flex-wrap:wrap;gap:8px;margin:12px 0; }
+.osm-button {
+  border:1px solid #896b49; background:#292a24; color:#f5f0db;
+  padding:9px 12px; border-radius:18px; cursor:pointer;font:600 12px Inter,Arial,sans-serif;
+}
+.osm-button:hover { border-color:#75b2de;background:#334956; }
+.osm-button:focus-visible {outline:2px solid #75b2de;outline-offset:2px;}
+.osm-button:disabled {opacity:.38;cursor:not-allowed;}
+.osm-primary {background:#26615c;color:white;}.osm-primary:hover {background:#449e92;}
+.osm-danger {color:#ffa2b6;border-color:#9a2f4f;}.osm-danger:hover {background:#9a2f4f;color:white;}
+.osm-section {margin:14px 0;padding:13px;background:rgba(0,0,0,.3);border:1px solid rgba(137,107,73,.52);border-radius:10px;}
+.osm-section h4 {font:700 14px Cinzel,Georgia,serif;color:#e0a360;margin:0 0 8px;}
+.osm-category {display:flex;align-items:center;gap:9px;padding:7px 4px;border-bottom:1px solid #343634;font-size:12px;cursor:pointer;}
+.osm-category:last-child {border-bottom:0;}
+.osm-category input {width:auto;flex:none;accent-color:#449e92;}
+.osm-toolbar {display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:12px 0;}
+#osm-search, #osm-filter, #osm-value {
+  background:#181919;color:#f5f0db;border:1px solid #896b49;border-radius:6px;
+  padding:9px 10px; font-size:13px;max-width:100%;
+}
+#osm-search {flex:1;min-width:180px;}
+#osm-filter {width:170px;}
+#osm-list {max-height:300px;overflow:auto;border:1px solid #4b473c;border-radius:8px;}
+.osm-record {display:flex;gap:8px;align-items:center;justify-content:space-between;padding:9px 10px;border-bottom:1px solid #35362e;}
+.osm-record:last-child{border-bottom:0;}
+.osm-record div { min-width:0;overflow-wrap:anywhere; }
+.osm-record strong {display:block;color:#f5f0db;font-size:12px;}
+.osm-record small {display:block;color:#9cb0b5;font-size:11px;margin-top:3px;}
+#osm-inspector {border:1px solid #75b2de;border-radius:10px;padding:12px;margin-top:10px;background:#161b1b;}
+#osm-inspector[hidden] {display:none!important;}
+#osm-inspector-title {color:#75b2de;overflow-wrap:anywhere;font-size:13px;}
+#osm-value {display:block;width:100%;min-height:150px;max-height:320px;resize:vertical;margin-top:10px;font-family:'Geist Mono',Consolas,monospace;white-space:pre;overflow:auto;}
+#osm-message {min-height:22px;padding:7px 0;color:#79d2bf;font-size:12px;overflow-wrap:anywhere;}
+#osm-message.osm-error {color:#ff9cb3;}
+.osm-toggle {display:flex;align-items:start;gap:10px;font-size:12px;padding:8px 0;}
+.osm-toggle input {flex:none;width:auto;accent-color:#449e92;}
+@media(max-width:600px){
+ #osm-overlay {padding:5px;}
+ .osm-shell{max-height:97vh;padding:12px;border-radius:8px;}
+ .osm-header h3{font-size:17px;}
+ .osm-button{min-height:36px;}
+ .osm-record{align-items:flex-start;}
+ #osm-search, #osm-filter{width:100%;flex:auto;}
+ .osm-actions > button{flex:1 1 auto;}
+}
+
+/* Keep the expanded hub Settings dialog reachable on short mobile screens. */
+#settings-overlay .settings-modal { max-height: calc(100dvh - 24px); overflow-y: auto; }

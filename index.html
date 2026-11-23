@@ -928,6 +928,7 @@
       50% { transform: scale(1.2); opacity: 1; }
     }
   </style>
+  <link rel="stylesheet" href="tools/storage-manager/storage-manager.css">
 </head>
 <body>
 
@@ -989,11 +990,11 @@
   <div class="modal-overlay" id="settings-overlay" onclick="if(event.target === this) closeSettingsModal()">
     <div class="settings-modal">
       <div class="modal-header">
-        <h3>System Settings & Global Sync</h3>
+        <h3>System Settings &amp; Storage</h3>
         <button class="modal-close-x" onclick="closeSettingsModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <p>This panel synchronizes user data, preferences, and favorites across the entire suite of Organon applications. Individual files are aggregated here into a single, clean system database package.</p>
+        <p>Manage Organon preferences, local backups and browser storage. Other applications sharing the same browser origin are protected from cleanup and imports.</p>
         
         <div class="settings-actions-group">
           <!-- Force Mobile View Action Row -->
@@ -1005,11 +1006,20 @@
             <button class="settings-btn-action" id="force-mobile-button" onclick="toggleForceMobileView()">Off</button>
           </div>
 
+          <!-- Organon-owned storage inspector and safe cleanup -->
+          <div class="settings-action-row">
+            <div class="settings-action-desc">
+              <span class="settings-action-title">💾 Storage &amp; Cleanup</span>
+              <span class="settings-action-sub">Browse, back up and safely clear Organon application data</span>
+            </div>
+            <button class="settings-btn-action" onclick="openOrganonStorageManager()">Open</button>
+          </div>
+
           <!-- Export Action Row -->
           <div class="settings-action-row">
             <div class="settings-action-desc">
-              <span class="settings-action-title">Export Settings Backup</span>
-              <span class="settings-action-sub">Download your global workspace data as a .json file</span>
+              <span class="settings-action-title">Export Organon Backup</span>
+              <span class="settings-action-sub">Download known Organon browser settings and state (not IndexedDB media)</span>
             </div>
             <button class="settings-btn-action" onclick="exportSystemBackup()">Export</button>
           </div>
@@ -1018,7 +1028,7 @@
           <div class="settings-action-row">
             <div class="settings-action-desc">
               <span class="settings-action-title">Import (Merge)</span>
-              <span class="settings-action-sub">Combine backup keys with existing settings</span>
+              <span class="settings-action-sub">Import recognised Organon keys only; unrelated apps untouched</span>
             </div>
             <button class="settings-btn-action" onclick="triggerImportFile('merge')">Merge</button>
           </div>
@@ -1027,7 +1037,7 @@
           <div class="settings-action-row">
             <div class="settings-action-desc">
               <span class="settings-action-title" style="color: #ff9cb3;">Import (Replace)</span>
-              <span class="settings-action-sub">Overwrite all existing settings with the backup file</span>
+              <span class="settings-action-sub">Replace known Organon localStorage keys; confirmation required</span>
             </div>
             <button class="settings-btn-action btn-danger" onclick="triggerImportFile('replace')">Replace</button>
           </div>
@@ -1035,14 +1045,79 @@
           <!-- Purge Action Row -->
           <div class="settings-action-row">
             <div class="settings-action-desc">
-              <span class="settings-action-title" style="color: #ff9cb3;">Purge All System Data</span>
-              <span class="settings-action-sub">Erase local storage tables and cache states</span>
+              <span class="settings-action-title" style="color: #ff9cb3;">Reset Organon Data</span>
+              <span class="settings-action-sub">Review the data to reset, back it up and confirm</span>
             </div>
-            <button class="settings-btn-action btn-danger" id="reset-button" onclick="handlePurgeClick()">Purge</button>
+            <button class="settings-btn-action btn-danger" id="reset-button" onclick="openOrganonStorageManager()">Review</button>
           </div>
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- Organon-owned browser storage inspector: unknown and other-app entries are read-only -->
+  <div class="modal-overlay" id="osm-overlay" role="dialog" aria-modal="true" aria-label="Organon Storage Manager" hidden>
+    <section class="osm-shell">
+      <div class="osm-header">
+        <div><h3>💾 Storage &amp; Cleanup</h3>
+          <p class="osm-muted">Inspect browser storage. Only positively identified Organon data may be edited or removed.</p></div>
+        <button class="osm-button" id="osm-close" aria-label="Close storage manager">✕ Close</button>
+      </div>
+      <p id="osm-summary">Scanning available storage...</p>
+      <p id="osm-safe"></p>
+      <p id="osm-quota" class="osm-muted"></p>
+      <div class="osm-actions">
+        <button class="osm-button osm-primary" id="osm-quick">Quick Clean</button>
+        <button class="osm-button" id="osm-refresh">Refresh</button>
+        <button class="osm-button" id="osm-backup">Export Backup</button>
+        <button class="osm-button" id="osm-report">Copy Storage Report</button>
+        <button class="osm-button" id="osm-verify-all">Check Server Copies</button>
+      </div>
+      <div class="osm-section">
+        <h4>Choose categories</h4>
+        <p class="osm-muted">Only confirmed disposable entries are eligible for category cleanup. Projects, drafts and settings remain protected.</p>
+        <div id="osm-categories"></div>
+        <div class="osm-actions">
+          <button class="osm-button" id="osm-clear-selected">Clear Selected Safe Data</button>
+          <button class="osm-button osm-danger" id="osm-clear-all">Clear Everything (Organon Only)</button>
+        </div>
+      </div>
+      <div class="osm-section">
+        <h4>Storage Browser</h4>
+        <div class="osm-toolbar">
+          <input id="osm-search" aria-label="Search stored entries" type="search" placeholder="Search storage keys or categories">
+          <select id="osm-filter" aria-label="Filter storage">
+            <option value="all">All recognised Organon</option>
+            <option value="owned">Organon-owned records</option>
+            <option value="safe">Safe to clean</option>
+            <option value="localStorage">localStorage</option>
+            <option value="sessionStorage">sessionStorage</option>
+            <option value="IndexedDB">IndexedDB</option>
+            <option value="Cache Storage">Cache Storage</option>
+          </select>
+        </div>
+        <div id="osm-list" aria-live="polite"></div>
+        <div id="osm-inspector" hidden>
+          <strong id="osm-inspector-title"></strong>
+          <textarea id="osm-value" spellcheck="false" aria-label="Storage entry value"></textarea>
+          <p class="osm-muted">Legacy records may not provide dates. Editing stores the exact text; reload the affected tool afterwards.</p>
+          <div class="osm-actions">
+            <button class="osm-button" id="osm-save">Save Entry</button>
+            <button class="osm-button" id="osm-export-entry">Export Entry</button>
+            <button class="osm-button" id="osm-verify">Verify Server</button>
+            <button class="osm-button osm-danger" id="osm-delete">Delete Entry</button>
+            <button class="osm-button" id="osm-inspector-close">Close Details</button>
+          </div>
+        </div>
+      </div>
+      <div class="osm-section">
+        <h4>Optional verified-copy cleanup</h4>
+        <label class="osm-toggle"><input type="checkbox" id="osm-auto"> Automatically remove approved duplicates after exact server verification</label>
+        <p class="osm-muted" id="osm-auto-explain"></p>
+        <p id="osm-technical" class="osm-muted"></p>
+      </div>
+      <p id="osm-message" role="status" aria-live="polite"></p>
+    </section>
   </div>
 
   <input type="file" id="import-file-input" accept="application/json" onchange="importSystemBackup(event)">
@@ -1160,28 +1235,14 @@
       setStatusText('ORGANON ONLINE');
     }
 
-    function exportSystemBackup() {
+    // Backups are restricted to recognised Organon keys. The browser origin is shared.
+    async function exportSystemBackup() {
       try {
-        const backupData = {};
-        for (let i = 0; i < localStorage.length; i++) {
-          const key = localStorage.key(i);
-          backupData[key] = localStorage.getItem(key);
-        }
-
-        const jsonString = JSON.stringify(backupData, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const link = document.createElement('a');
-        link.download = `organon_global_sync_${new Date().toISOString().slice(0,10)}.json`;
-        link.href = url;
-        link.click();
-        
-        URL.revokeObjectURL(url);
-        setStatusText('Backup exported successfully!', true);
+        await window.OrganonStorageManager.downloadBackup();
+        setStatusText('ORGANON BACKUP PREPARED', true);
       } catch (err) {
-        console.error('Failed to export system backup', err);
-        setStatusText('Export failed', true);
+        console.error('Organon backup failed', err);
+        setStatusText('BACKUP FAILED', true);
       }
     }
 
@@ -1193,78 +1254,36 @@
     function importSystemBackup(event) {
       const file = event.target.files[0];
       if (!file) return;
-
       const reader = new FileReader();
       reader.onload = function(e) {
         try {
-          const importedData = JSON.parse(e.target.result);
-          
-          if (importedData && typeof importedData === 'object') {
-            // Replace mode completely flushes the local database beforehand
-            if (importMode === 'replace') {
-              localStorage.clear();
-            }
-
-            Object.keys(importedData).forEach(key => {
-              localStorage.setItem(key, importedData[key]);
-            });
-
-            setStatusText('SYNC COMPLETE - RELOADING SYSTEM', true);
-            
-            // Reload active iframe to synchronize settings immediately
+          const data = JSON.parse(e.target.result);
+          const imported = window.OrganonStorageManager.importBackup(data, importMode);
+          if (imported) {
+            setStatusText('ORGANON BACKUP IMPORTED - RELOAD TO APPLY', true);
             const iframe = document.getElementById('basin-frame');
-            if (iframe && iframe.src !== 'about:blank') {
-              iframe.contentWindow.location.reload();
-            }
-
-            setTimeout(() => {
-              closeSettingsModal();
-              event.target.value = ''; // clear input state
-            }, 1200);
-          } else {
-            setStatusText('INVALID BACKUP FILE STRUCTURE', true);
+            if (iframe && iframe.src !== 'about:blank') iframe.contentWindow.location.reload();
+            closeSettingsModal();
           }
         } catch (err) {
-          console.error('Import parse error', err);
-          setStatusText('PARSE ERROR - IMPORT ABORTED', true);
+          console.error('Organon import failed', err);
+          window.alert('Backup not imported: ' + (err.message || String(err)));
+          setStatusText('IMPORT ABORTED', true);
+        } finally {
+          event.target.value = '';
         }
       };
+      reader.onerror = () => { event.target.value = ''; setStatusText('IMPORT READ FAILED', true); };
       reader.readAsText(file);
     }
 
     function handlePurgeClick() {
-      const btn = document.getElementById('reset-button');
-      if (purgeStage === 0) {
-        purgeStage = 1;
-        btn.innerText = "CONFIRM PURGE?";
-        btn.style.backgroundColor = "#9a2f4f";
-        btn.style.color = "#ffffff";
-        setStatusText('ATTENTION: PURGE REQUIRES CONFIRMATION', true);
-
-        purgeTimeout = setTimeout(() => {
-          resetPurgeButton();
-        }, 3000);
-      } else {
-        clearTimeout(purgeTimeout);
-        localStorage.clear();
-        setStatusText('SYSTEM SETTINGS PURGED - REBOOTING', true);
-        const iframe = document.getElementById('basin-frame');
-        if (iframe) iframe.src = 'about:blank';
-        
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
-      }
+      window.openOrganonStorageManager();
     }
 
     function resetPurgeButton() {
-      purgeStage = 0;
       const btn = document.getElementById('reset-button');
-      if (btn) {
-        btn.innerText = "PURGE";
-        btn.style.backgroundColor = "";
-        btn.style.color = "";
-      }
+      if (btn) btn.textContent = 'Review';
     }
 
     // High-precision circular SVG countdown ticker
@@ -1880,5 +1899,6 @@
       }
     });
   </script>
+  <script src="tools/storage-manager/storage-manager.js"></script>
 </body>
 </html>
