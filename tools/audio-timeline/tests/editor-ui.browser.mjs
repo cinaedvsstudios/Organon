@@ -824,6 +824,31 @@ try{
       'Non-looping effect playback stops and restores Play label');
     await page.keyboard.press('Escape');
     assert.ok(await page.locator('#text-preview-modal').isHidden(),'Escape closes themed preview');
+    // #56: actual new Starburst Inspector widgets and preview, not dummy fields.
+    await page.locator('#effect-category').selectOption('Light');
+    await page.locator('[data-preset-id="starburst"]').click();
+    await page.locator('#effect-starburst-controls').waitFor({state:'visible',timeout:15000});
+    assert.equal(await page.locator('#effect-intensity-label').innerText(),'Opacity (%)');
+    assert.equal(await page.locator('#effect-color-label').innerText(),'Primary ray colour');
+    assert.ok(await page.locator('#effect-density-control').isHidden());
+    assert.ok(await page.locator('#effect-scale-control').isHidden());
+    await page.locator('#effect-ray-count').evaluate(input=>{
+        input.value='26';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-ray-thickness').evaluate(input=>{
+        input.value='42';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-secondary-color').fill('#dcaaff');
+    await page.locator('#effect-spin-direction').selectOption('-1');
+    assert.equal(await page.locator('#effect-ray-count').inputValue(),'26');
+    assert.equal(await page.locator('#effect-ray-thickness').inputValue(),'42');
+    assert.equal(await page.locator('#effect-secondary-color').inputValue(),'#dcaaff');
+    assert.equal(await page.locator('#effect-spin-direction').inputValue(),'-1');
+    await page.locator('[data-preset-id="starburst"]').click({button:'right'});
+    const burstStart=await sampleEffect(20),burstLater=await sampleEffect(170);
+    assert.notEqual(burstStart,burstLater,'Starburst preview must rotate in time');
+    assert.equal(burstStart,await sampleEffect(20),'Starburst reverse seek is deterministic');
+    await page.locator('#text-preview-close').click();
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
