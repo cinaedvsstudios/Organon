@@ -18,7 +18,7 @@ function lattice(seed){
  for(let y=0;y<64;y++)for(let x=0;x<64;x++){
   let v=(Math.imul(x,374761393)^Math.imul(y,668265263)^Math.imul(seed+1,2246822519))>>>0;
   v^=v>>>13;v=Math.imul(v,1274126177)>>>0;v^=v>>>16;
-  data[y*64+x]=v/4294967296;
+  data[y*64+x]=(v>>>0)/4294967296;
  }
  // Don't retain unlimited lookup tables after successive changes to seed.
  if(TABLES.size>=12)TABLES.delete(TABLES.keys().next().value);
