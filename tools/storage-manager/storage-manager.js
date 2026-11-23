@@ -271,6 +271,27 @@
       JSON.stringify(payload, null, 2));
     note('Backup file prepared. This export excludes IndexedDB, Cache Storage and OPFS.');
   }
+  async function copyReport() {
+    const lines = [
+      'ORGANON STORAGE DIAGNOSTIC REPORT',
+      'Created: ' + new Date().toISOString(),
+      'Environment: ' + location.protocol + ' / ' + location.hostname,
+      'Recognised records: ' + entries.length,
+      '',
+      ...entries.map(e => [e.type, e.category, e.key, sizeLabel(e.size),
+        e.protected ? 'Protected' : 'Disposable', e.status].join(' | ')),
+      '', 'Additional technical notes:', ...meta
+    ];
+    const report = lines.join('\n');
+    try {
+      if (!navigator.clipboard || !navigator.clipboard.writeText) throw Error('Clipboard API unavailable');
+      await navigator.clipboard.writeText(report);
+      note('Organon storage report copied (record values and secrets excluded).');
+    } catch (_) {
+      download('organon-storage-report-' + new Date().toISOString().slice(0, 10) + '.txt', report, 'text/plain');
+      note('Clipboard unavailable. A text report download was prepared instead.');
+    }
+  }
   function parseBackup(value) {
     if (!value || Array.isArray(value) || typeof value !== 'object') throw Error('Invalid backup structure');
     const data = value.format === 'organon-storage-backup-v1' ? value.localStorage : value;
@@ -541,7 +562,14 @@
     $('osm-overlay').style.display = 'flex';
     $('osm-overlay').classList.add('open');
     $('osm-inspector').hidden = true;
-    scan().catch(err => note('Scan failed: ' + (err.message || String(err)), true));
+    scan().then(async () => {
+      const auto = (() => { try {return localStorage.getItem('organon_storage_manager_autoclean_v1') === 'true';} catch (_) {return false;} })();
+      if (auto && Object.keys(serverSources).length) {
+        for (const entry of entries.filter(e => e.owned && serverSources[e.key] && e.value !== undefined)) {
+          await verify(entry);
+        }
+      }
+    }).catch(err => note('Scan failed: ' + (err.message || String(err)), true));
   }
   function hide() {
     const overlay = $('osm-overlay');
@@ -559,6 +587,7 @@
     $('osm-clear-selected').addEventListener('click', clearSelected);
     $('osm-clear-all').addEventListener('click', clearEverything);
     $('osm-backup').addEventListener('click', downloadBackup);
+    $('osm-report').addEventListener('click', copyReport);
     $('osm-search').addEventListener('input', render);
     $('osm-filter').addEventListener('change', render);
     $('osm-inspector-close').addEventListener('click', () => { $('osm-inspector').hidden = true; });
