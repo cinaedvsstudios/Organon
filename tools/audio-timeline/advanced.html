@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-signal-interference-controls" hidden>
+                     <div id="effect-data-burst-controls" hidden>
+                          <details open class="text-inspector-group">
+                              <summary>Digital packet bursts</summary>
+                              <label class="text-setting-row"><span>Block size (%)</span><input id="effect-burst-size" class="range-control" type="range" min="5" max="100" step="1" value="48" title="Size of independently corrupted RGB packets"></label>
+                              <label class="text-setting-row"><span>Packet lifetime (s)</span><input id="effect-burst-life" class="range-control" type="range" min="0.06" max="0.6" step="0.01" value="0.23" title="Short independent blink and fade duration of each digital burst"></label>
+                              <label class="text-setting-row"><span>Clustering (%)</span><input id="effect-burst-cluster" class="range-control" type="range" min="0" max="100" step="1" value="67" title="Number and concentration of small companion glitch blocks"></label>
+                              <label class="text-setting-row"><span>RGB separation (%)</span><input id="effect-burst-chroma" class="range-control" type="range" min="0" max="100" step="1" value="72" title="Offset, colour overdrive and corruption of the real source-image RGB channels"></label>
+                              <label class="text-setting-row"><span>Burst seed</span><input id="effect-burst-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6262" title="Deterministic packet layout for reversible seeks and video export"></label>
+                          </details>
+                      </div>
+                      <div id="effect-signal-interference-controls" hidden>
                          <details open class="text-inspector-group">
                              <summary>Analogue signal interference</summary>
                              <label class="text-setting-row"><span>Signal dropout (%)</span><input id="effect-signal-loss" class="range-control" type="range" min="0" max="100" step="1" value="56" title="Depth of intermittent rolling-band loss and momentary blackouts"></label>
