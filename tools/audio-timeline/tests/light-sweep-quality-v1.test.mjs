@@ -47,7 +47,7 @@ test('luminosity catches the bright image rather than drawing a flat opaque slab
   original[i+1]-source[i+1]+original[i+2]-source[i+2];};
  // Near the beam centre: the bright lower band must catch more reflected
  // light than a uniform dark region in the upper band.
- assert.ok(changed(118,100)>changed(118,25),'Bright content must catch more bloom');
+ assert.ok(changed(140,100)>changed(140,25),'Bright uniform content must catch more bloom than a uniformly dark region');
 });
 test('absolute-time motion, backward seeks and colour geometry are deterministic',()=>{
  const times=[.28,.65,1.3,1.75,2.18];
