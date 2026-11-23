@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css" rel="stylesheet"/><link href="css/playlists-now-playing.css" rel="stylesheet"/><link href="css/modals-settings.css" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.10" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
+<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css" rel="stylesheet"/><link href="css/playlists-now-playing.css" rel="stylesheet"/><link href="css/modals-settings.css?v=3.14" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.10" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
@@ -389,6 +389,11 @@
 <div class="library-help">Save or restore app settings, visualiser stacks, mobile icon labels, playlists, and the current library catalogue. This does not save actual music files.</div>
 <div class="library-track-meta library-save-status-line" id="library-save-status-line">Last local save: checking…</div>
 <div class="settings-health-grid" id="settings-health-grid"></div>
+<div class="onda-storage-audit-actions">
+<button class="btn-pill" id="btn-review-audio-cache" type="button" title="Read-only review of saved audio, unlinked cache records and possible duplicates">🔎 Review Cached Audio</button>
+<span class="library-help">Preview only. No music or browser cache can be deleted from this report.</span>
+</div>
+<div class="onda-storage-audit-report" id="storage-audit-report" aria-live="polite" hidden></div>
 <div class="library-action-grid">
 <button class="btn-pill" id="btn-export-everything-json" title="Export every saved thing in the app: library catalogue, playlists, history, settings, visualisers and mobile labels">Export Everything</button>
 <button class="btn-pill" id="btn-save-local-now" title="Force-save the current library catalogue to browser storage now">Save Local Now</button>
@@ -673,6 +678,6 @@
 
 
 
-<script src="js/file-access.js?v=3.13"></script><script src="js/app-core.js?v=3.13"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
+<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/app-core.js?v=3.13"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
 </body>
 </html>
