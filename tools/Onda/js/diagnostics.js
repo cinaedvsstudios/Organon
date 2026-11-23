@@ -7,7 +7,7 @@
     const EVENTS = new Set([
         'core-init', 'restore-local', 'restore-indexeddb', 'restore-total',
         'library-render', 'cache-inventory', 'cache-write-batch',
-        'import-prepare', 'track-resolve', 'audio-play', 'search-render'
+        'import-prepare', 'track-resolve', 'audio-play', 'search-render', 'visualizer-frame'
     ]);
     const NUMERIC_FIELDS = new Set(['trackCount', 'visibleCount', 'savedCount', 'skippedCount', 'failedCount', 'cachedCount']);
     let enabled = false;
