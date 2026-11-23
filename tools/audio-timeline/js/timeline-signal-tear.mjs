@@ -45,7 +45,7 @@ export function signalTearFrameState(width,height,effect={},seconds=0){
   const center=Math.round((.08+.84*hash(event,p.seed+5))*h);
   for(let part=0;part<count;part++){
    const key=event*13+part;
-   const thick=Math.max(2,Math.round(h*p.height*(.25+.85*hash(key,p.seed+7))));
+   const thick=Math.max(2,Math.round(h*p.height*(.13+.34*hash(key,p.seed+7))));
    const across=Math.round((hash(key,p.seed+8)-.5)*h*p.height*(1+3*p.fragments));
    const top=Math.max(0,Math.min(h-thick,center+across));
    const startX=Math.round(hash(key,p.seed+9)*w*.38);
