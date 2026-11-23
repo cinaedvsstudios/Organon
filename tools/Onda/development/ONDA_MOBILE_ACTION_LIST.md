@@ -418,6 +418,8 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 
 **How to use:** Settings → Storage Health → collapsed Developer performance diagnostics panel → Start recording. To measure the beginning of Onda startup, deliberately click Reload & record startup; its single-use sessionStorage flag is consumed on reload. Export generates a local redacted JSON (up to 200 samples); Clear discards data in memory. Completely off unless requested; no network, cloud or IndexedDB analytics writes.
 
+**Source tests:** 62 static/isolated checks passed, including full timing-event bindings, opt-in collection, redacted output, one-time startup capture, sample buffer limits and no extra cloud/IndexedDB writes. Real-device performance values remain unmeasured.
+
 **Scope/safety:** Existing audio engine, playback symbols, Current queue, playlists, Library saved data, cached audio, file handles and original files are unchanged. No speculative worker/virtualisation/deletion optimisations. ONDA-11 now has source instrumentation but is **not yet verified** with actual Android/desktop timing data, Netlify deployment, lock-screen playback or storage profiles.
 
 **Next:** Confirm v3.18 deploy on Android/desktop, export at least one startup and a Library search measurement, then use evidence to determine whether large-library rendering or caching needs further work. Optional ONDA-08 Quick Play for new unsaved files is a separate later change, not a prerequisite for these measurements.
