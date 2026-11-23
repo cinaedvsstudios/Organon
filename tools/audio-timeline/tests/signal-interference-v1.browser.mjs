@@ -49,6 +49,7 @@ try{
   const times=[.14,.65,1.36,2.15],frames=times.map(frame);
   const exact=frame(.65).every((v,i)=>v===frames[1][i]);
   frame(.65);const png=canvas.toDataURL('image/png');
+  frame(1.36);const recoveryPng=canvas.toDataURL('image/png');
   let changed=0,rowsChanged=new Set(),alphaChanges=0,highDeviation=0;
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
    const i=(y*W+x)*4,d=Math.abs(frames[1][i]-baseline[i])
@@ -71,14 +72,15 @@ try{
   const sourcePixels=c.getImageData(0,0,W,H),signal=buildSignalInterferenceFrame(sourcePixels,W,H,effect,.65);
   const resampleSource=requiresCompositeSource(effect.presetId);
   engine.clearAll();
-  return {png,sourceAware:resampleSource,hashes:frames.map(hash),baseline:hash(baseline),hidden,
+  return {png,recoveryPng,sourceAware:resampleSource,hashes:frames.map(hash),baseline:hash(baseline),hidden,
     changed,highDeviation,changedRows:rowsChanged.size,alphaChanges,exact,variants,
     sampledAlpha:Array.from({length:W*H},(_,i)=>signal.data[i*4+3]).every((v,i)=>v===sourcePixels.data[i*4+3]),
     bandCount:signal.state.bands.filter(b=>b.active).length,errors};
  });
  console.log('[MotoriClip #60 Signal Interference real Chrome PNG] '+proof.png);
+ console.log('[MotoriClip #60 recovered video Chrome PNG] '+proof.recoveryPng);
  console.log('[MotoriClip #60 Signal Interference Chrome metrics] '+JSON.stringify(
-    Object.fromEntries(Object.entries(proof).filter(([name])=>name!=='png'))));
+    Object.fromEntries(Object.entries(proof).filter(([name])=>!['png','recoveryPng'].includes(name)))));
  assert.deepEqual(pageErrors,[]);
  assert.deepEqual(proof.errors,[]);
  assert.equal(proof.sourceAware,true,'Must deform actual lower-layer video source');
