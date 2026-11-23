@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-ripple-distortion-controls" hidden>
+                     <div id="effect-electric-ripple-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Electric Ripple — branching high-voltage fronts</summary>
+                          <label class="text-setting-row"><span>Forks per travelling pulse</span><input id="effect-electric-branches" class="range-control" type="range" min="0" max="4" step="1" value="2" title="Independent lightning tendrils branching off an irregular expanding electric wavefront"></label>
+                          <label class="text-setting-row"><span>Electrical wavefront width</span><input id="effect-electric-width" class="range-control" type="range" min="1" max="20" step="1" value="6" title="Thickness of each high-voltage travelling wavefront and its blue-white halo"></label>
+                          <label class="text-setting-row"><span>RGB chromatic displacement (%)</span><input id="effect-electric-chroma" class="range-control" type="range" min="0" max="100" step="1" value="67" title="Local colour-channel misalignment inside electricity-disturbed source pixels"></label>
+                          <label class="text-setting-row"><span>Arc flicker &amp; gaps (%)</span><input id="effect-electric-flicker" class="range-control" type="range" min="0" max="100" step="1" value="70" title="Broken and rapidly varying electrical pulse brightness, rather than smooth water ripples"></label>
+                          <label class="text-setting-row"><span>Electric pattern seed</span><input id="effect-electric-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="7272" title="Exactly reproduce electric arcs and source refraction on reverse seek and decoded export"></label>
+                      </details>
+                  </div>
+                  <div id="effect-ripple-distortion-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Ripple Distortion — expanding water ripples</summary>
                           <label class="text-setting-row"><span>Concentric waves per impact</span><input id="effect-ripple-rings" class="range-control" type="range" min="1" max="6" step="1" value="3" title="Independent expanding concentric wavefronts from each impact"></label>

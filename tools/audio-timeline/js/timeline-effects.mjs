@@ -19,6 +19,7 @@ import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
 import {renderLineCorruption} from './timeline-line-corruption.mjs';
 import {renderFaultCassette} from './timeline-fault-cassette.mjs';
 import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
+import {renderElectricRipple} from './timeline-electric-ripple.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
@@ -103,6 +104,7 @@ export function normaliseTimelineEffect(effect={}){
  const fireExplosion=presetId==='fire-explosion';
  const faultCassette=presetId==='fault-cassette';
  const rippleDistortion=presetId==='ripple-distortion';
+ const electricRipple=presetId==='electric-ripple';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
@@ -115,7 +117,19 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
+ };
+ if(electricRipple)return {...base,
+  density:clamp(raw.density,1,120,52),
+  distortion:clamp(raw.distortion,0,100,76),
+  glow:clamp(raw.glow,0,100,75),
+  originX:clamp(raw.originX,0,100,50),
+  originY:clamp(raw.originY,0,100,50),
+  electricBranches:Math.round(clamp(raw.electricBranches,0,4,2)),
+  electricWidth:clamp(raw.electricWidth,1,20,6),
+  electricChroma:clamp(raw.electricChroma,0,100,67),
+  electricFlicker:clamp(raw.electricFlicker,0,100,70),
+  electricSeed:Math.round(clamp(raw.electricSeed,0,99999,7272))
  };
  if(rippleDistortion)return {...base,
   density:clamp(raw.density,1,120,48),
@@ -357,29 +371,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    }else if(e.presetId==='ripple-distortion'){
     renderRippleDistortion(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='electric-ripple'){
-    const electric=true;
-    const rows=36;
-    for(let i=0;i<rows;i++){
-     const y=i*h/rows,bh=Math.ceil(h/rows)+1;
-     const offset=Math.sin(y/h*(7+e.density*.23)-t*(electric?12:6))
-         *(.8+e.distortion*.23)*size;
-     if(source)ctx.drawImage(source,0,y,w,bh,offset,y,w,bh);
-     else{ctx.fillStyle=rgba(e.color,.2);ctx.fillRect(offset,y,w*.6,bh*.48);}
-    }
-    if(electric){
-     ctx.globalAlpha=amount;
-     ctx.strokeStyle=rgba(e.color,.83);ctx.lineWidth=Math.max(1,size*2);
-     for(let j=0;j<4;j++){
-      const y=h*(.1+j*.25)+Math.sin(t*3+j)*h*.045;
-      ctx.beginPath();
-      for(let i=0;i<=18;i++){
-       const x=i*w/18;
-       const jitter=(random(j*101+i*13+Math.floor(t*30))-.5)*h*.07;
-       if(i===0)ctx.moveTo(x,y+jitter);else ctx.lineTo(x,y+jitter);
-      }
-      ctx.stroke();
-     }
-    }
+    renderElectricRipple(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='shockwave'){
     // Only the annulus is refracted; the rest of the composed frame remains intact.
     if(source){ctx.globalAlpha=1;ctx.drawImage(source,0,0,w,h);ctx.globalAlpha=amount;}
