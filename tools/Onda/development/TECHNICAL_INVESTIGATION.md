@@ -1,7 +1,7 @@
 # Onda v3.10 — Mobile-First Technical Investigation and Implementation Blueprint
 
 **Review date:** 2026-11-23  
-**Status:** Source audit complete; user authorised implementation and first v3.11 fixes committed. Android device validation remains open. See [release notes](./RELEASE_V3_11.md).  
+**Status:** Architecture audit complete; v3.11 reliability and v3.12 safe storage-write optimisation committed. Real Android device validation pending. See [v3.11](./RELEASE_V3_11.md) and [v3.12](./RELEASE_V3_12.md).  
 **Primary target:** Android Chrome, including Chrome home-screen shortcut / standalone installed mode. Secondary: desktop Chrome.  
 **Companion:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Interactive concept page](./mobile-review.html) · [QA and migration matrix](./QA_MIGRATION_MATRIX.md)
 
@@ -278,3 +278,17 @@ References: https://docs.github.com/en/pages/getting-started-with-github-pages/g
 **What remains:** Real Android Chrome and standalone shortcut playback/lock-screen testing; persistent file handle proof before any v3 storage/schema migration; Current queue mobile layout; optional new-file Quick Play; optional position resume; GitHub Pages hosted online media. The original static findings for v3.10 are kept as evidence of why these fixes were made, not as descriptions of current v3.11 defects.
 
 **Test evidence:** 21 V8 static/isolated checks passed (syntax, original icon/version, cache status cases, visualiser RAF scheduling states). These are not a browser integration test and are not a battery benchmark. See [Android QA matrix](./QA_MIGRATION_MATRIX.md).
+
+
+## K. Second implementation batch — v3.12 safe storage write optimisation
+
+**This section supersedes v3.10 baseline observations only for the code paths listed here.** Full change details and rollback are in [RELEASE_V3_12.md](./RELEASE_V3_12.md).
+
+- **Repeated audio Blob writes:** \`isIdenticalCachedAudio()\` compares full filename, relative path, file byte size, MIME type and known nonzero lastModified, and \`saveAudioFileOnlyIfChanged()\` serialises each track ID's writes, skipping \`idbSetAudioFile()\` when there is a matching saved File/Blob. Unknown metadata, file-content identity uncertainty, source changes or malformed records cause a safe write. No hashing, full audio buffer reads or new stores are used.
+- **Repeated catalogue writes on import:** \`handleUploadedFiles()\` queues tracks, switches the initial track if appropriate, renders and writes full metadata once **before** asynchronous IDB audio caching. No additional full JSON saves on cache completion/failure. Failed cache writes still surface a warning; metadata and track IDs remain preserved.
+- **Viewport writes:** \`saveLocalUiStateCheckpoint()\` skips heavy library and preset serialisation on pure \`screen-resize\` / orientation events. Non-layout UI saves and pagehide/visibility handling retain their previous data-preserving behaviour.
+- **Non-changes:** Existing cache-first import default, v2 IndexedDB, playlist structure, source IDs, original audio Files, manual Reconnect, player icons, queue location and visualiser remain unchanged.
+
+**Validation result:** 18 static/isolated tests, including metadata-match, changed media cases, uncertain metadata fallback, concurrent writes and checkpoint lifecycle. Live Android storage and performance benefits not measured. No audio files deleted or cache migrated.
+
+**Important nuance:** Since the audioFiles store is keyed by track ID, an ordinary \`put()\` to an existing ID already replaces that record; v3.12 avoids the expensive rewrite. This does **not** itself reduce the count of pre-existing records with different IDs. Do not infer freed storage bytes or automatic duplicate cleanup. A later *user-reviewed*, read-only orphan/duplicate inventory must precede any optional manual deletion.
