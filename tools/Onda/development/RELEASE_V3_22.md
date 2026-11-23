@@ -24,7 +24,7 @@ The committed `tools/Onda/tests/onda-regression.test.mjs` has been corrected to:
 - Simulate an invalid version containing markup and verify both visible/report fields return `unavailable`.
 - Retain the previous no-storage-writes, preview, Media Session, saved Library and privacy tests.
 
-A GitHub Actions green result demonstrates Node.js regression/source correctness only. **Android file access, actual audio playback, lock-screen controls, Netlify production deployment and real performance measurements remain unverified** until tested on a device and the live app.
+The first branch run of the permanent suite, [GitHub Actions #45229083186](https://github.com/cinaedvsstudios/Organon/actions/runs/45229083186), passed **5/5 tests** under Node.js 22. A GitHub Actions green result demonstrates Node.js regression/source correctness only. **Android file access, actual audio playback, lock-screen controls, Netlify production deployment and real performance measurements remain unverified** until tested on a device and the live app.
 
 ## Device acceptance
 
