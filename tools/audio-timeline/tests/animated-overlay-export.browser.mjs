@@ -68,7 +68,10 @@ try{
  const pageErrors=[];
  page.on('pageerror',err=>pageErrors.push(String(err)));
  await page.goto('http://127.0.0.1:'+port+'/tools/audio-timeline/tests/browser-harness.html');
- for(const preset of ['light-sweep','glitch-flux','pixel-scan','fire-embers','particle-dust','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays','starburst','camera-frame']){
+ const presets=['light-sweep','glitch-flux','pixel-scan','fire-embers','particle-dust','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays','starburst','camera-frame','mist-fog-bank'];
+ const selectedPreset=process.env.MOTORICLIP_EFFECT_PRESET;
+ if(selectedPreset)assert.ok(presets.includes(selectedPreset),'Requested acceptance preset is not in the effect list');
+ for(const preset of selectedPreset?[selectedPreset]:presets){
   const downloadPromise=page.waitForEvent('download',{timeout:180000});
   const preview=await page.evaluate(async({preset,W,H})=>{
    const [{AdvancedMediaEngine},{AdvancedOfflineExporter}]=await Promise.all([

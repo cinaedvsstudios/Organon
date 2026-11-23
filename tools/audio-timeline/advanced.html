@@ -1095,17 +1095,25 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <label class="text-setting-row"><span>Duration (seconds)</span><input id="effect-duration" class="compact-input" type="number" min="0.1" max="120" step="0.1" value="3" title="Length of this generated effect clip on the timeline"></label>
                     <label class="text-setting-row"><span id="effect-intensity-label">Intensity (%)</span><input id="effect-intensity" class="range-control" type="range" min="0" max="100" step="1" value="70" title="Strength of the effect"></label>
                     <label class="text-setting-row"><span>Speed (×)</span><input id="effect-speed" class="range-control" type="range" min="0.1" max="8" step="0.1" value="1" title="Timeline animation speed"></label>
-                    <label class="text-setting-row" id="effect-density-control"><span>Density</span><input id="effect-density" class="range-control" type="range" min="1" max="120" step="1" value="48" title="Number of particles; used for particle effects"></label>
-                    <label class="text-setting-row" id="effect-scale-control"><span>Scale (%)</span><input id="effect-scale" class="range-control" type="range" min="10" max="300" step="5" value="100" title="Beam/fog/particle scale"></label>
+                    <label class="text-setting-row" id="effect-density-control"><span id="effect-density-label">Density</span><input id="effect-density" class="range-control" type="range" min="1" max="120" step="1" value="48" title="Number of particles; used for particle effects"></label>
+                    <label class="text-setting-row" id="effect-scale-control"><span id="effect-scale-label">Scale (%)</span><input id="effect-scale" class="range-control" type="range" min="10" max="300" step="5" value="100" title="Beam/fog/particle scale"></label>
                     <label class="text-setting-row" id="effect-direction-control"><span id="effect-direction-label">Direction (°)</span><input id="effect-direction" class="range-control" type="range" min="-180" max="180" step="5" value="0" title="Angle of motion or light sweep"></label>
                     <label class="text-setting-row" id="effect-glow-control" hidden><span>Glow (%)</span><input id="effect-glow" class="range-control" type="range" min="0" max="100" step="1" value="64" title="Glow brightness or halo size"></label>
-                    <label class="text-setting-row" id="effect-blur-control" hidden><span>Blur (px)</span><input id="effect-blur" class="range-control" type="range" min="0" max="60" step="1" value="24" title="Radius of bloom and soft-focus blur"></label>
-                    <label class="text-setting-row" id="effect-distortion-control" hidden><span>Distortion (%)</span><input id="effect-distortion" class="range-control" type="range" min="0" max="100" step="1" value="55" title="Strength of swinging, shake, tape displacement or wave refraction"></label>
+                    <label class="text-setting-row" id="effect-blur-control" hidden><span id="effect-blur-label">Blur (px)</span><input id="effect-blur" class="range-control" type="range" min="0" max="60" step="1" value="24" title="Radius of bloom and soft-focus blur"></label>
+                    <label class="text-setting-row" id="effect-distortion-control" hidden><span id="effect-distortion-label">Distortion (%)</span><input id="effect-distortion" class="range-control" type="range" min="0" max="100" step="1" value="55" title="Strength of swinging, shake, tape displacement or wave refraction"></label>
                     <div id="effect-origin-controls" hidden>
                         <label class="text-setting-row"><span>Origin / pivot X (%)</span><input id="effect-origin-x" class="range-control" type="range" min="0" max="100" step="1" value="20" title="Horizontal origin of God Rays or pivot point for Swing/Shockwave"></label>
                         <label class="text-setting-row"><span>Origin / pivot Y (%)</span><input id="effect-origin-y" class="range-control" type="range" min="0" max="100" step="1" value="12" title="Vertical origin of God Rays or pivot point for Swing/Shockwave"></label>
                     </div>
                     <label class="text-setting-row"><span id="effect-color-label">Colour</span><input id="effect-color" type="color" value="#ffd98d" title="Primary effect colour"></label>
+                    <div id="effect-mist-fog-controls" hidden>
+                        <details open class="text-inspector-group">
+                            <summary>Mist bank formation and wind</summary>
+                            <label class="text-setting-row"><span>Wind speed (×)</span><input id="effect-wind-speed" class="range-control" type="range" min="0" max="4" step="0.1" value="1.2" title="Cloud advection speed, independently of timeline speed"></label>
+                            <label class="text-setting-row"><span>Bank height (%)</span><input id="effect-bank-height" class="range-control" type="range" min="15" max="90" step="1" value="64" title="Height of the irregular fog bank crest"></label>
+                            <label class="text-setting-row"><span>Noise seed</span><input id="effect-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="58" title="Repeatable cloud bank variation; the same seed and time regenerate exact pixels"></label>
+                        </details>
+                    </div>
                     <div id="effect-camera-frame-controls" hidden>
                         <details open class="text-inspector-group">
                             <summary>Camera HUD components</summary>
