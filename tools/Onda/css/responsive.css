@@ -1864,3 +1864,12 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-list {
     width: 100%;
   }
 }
+
+/* v3.16: Existing Play action is easier to touch; row-body selection is unchanged. */
+body.onda-force-mobile-mode #library-manager-drawer #db-library-results .btn-db-play-track {
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
+}
