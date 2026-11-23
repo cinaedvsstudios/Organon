@@ -1,7 +1,7 @@
 # Onda v3.10 — Mobile-First Technical Investigation and Implementation Blueprint
 
 **Review date:** 2026-11-23  
-**Status:** v3.11–v3.14 updates committed; v3.14 adds read-only cache inspection without cleanup. Real Android/Netlify validation is pending. See [v3.14](./RELEASE_V3_14.md).  
+**Status:** v3.11–v3.15 updates committed; real Current Queue now renders on the main screen for ad-hoc and named playlists. Android/Netlify validation pending. See [v3.15](./RELEASE_V3_15.md).  
 **Primary target:** Android Chrome, including Chrome home-screen shortcut / standalone installed mode. Secondary: desktop Chrome.  
 **Companion:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Interactive concept page](./mobile-review.html) · [QA and migration matrix](./QA_MIGRATION_MATRIX.md)
 
@@ -322,3 +322,11 @@ This update supersedes the baseline's *proposed* cache-inventory phase for read-
 **Important definitions:** 'Unlinked' means not referenced by the inspected active/backup IDs, *not* safe to delete. 'Possible duplicates' require exact name/size/mtime/type matches but can have different content, and the estimated surplus can overlap orphan bytes. Never present the two categories as additive. Existing `navigator.storage.estimate()` remains a separate origin-wide approximation, not exact audio bytes.
 
 **Test evidence:** 18 analysis/readonly-cursor/protected-reference checks, 12 renderer/browser-mock checks and 9 additional scanner failure/record-limit checks passed (39 static/isolated checks total). Actual Android IndexedDB performance, site deployment, the user's cache inventory and post-restart playback are not yet confirmed. The further cleanup gate remains completely **unimplemented and requires explicit approval**.
+
+## N. v3.15 Current-screen Queue implementation
+
+The user-approved Queue / Now Playing location is `index.html#tab-library`, **not the Library drawer**. The updated `updateNowPlayingPlaylistPanel()` no longer hides the panel when `getCurrentPlaybackPlaylistName()` is empty; it shows the real `playlistTracks` queue regardless of source, with an empty state, Up Next label, current row, shuffle warning and enabled Show/Hide queue toggle. Named playlist artwork/edit remain optional context.
+
+Non-playing queue items can be removed safely: `playlistTracks.splice()` only, adjusted `currentTrackIndex`, autosaved queue; no Library, saved-playlist or IndexedDB deletion. Inline Info intentionally does not replace `currentFile`, preventing metadata/audio mismatch. Add to Playlist retains existing assignment logic. Mobile CSS places queue directly under Now Playing with bounded scrolling, not on a separate tab; forced desktop mode is preserved.
+
+**Verification:** 19 interaction + 13 queue-state mock-DOM/static checks passed. Real Android UI, scroll and playback still require validation. Full details: [RELEASE_V3_15.md](./RELEASE_V3_15.md).
