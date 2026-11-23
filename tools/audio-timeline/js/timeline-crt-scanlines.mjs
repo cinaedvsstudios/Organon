@@ -21,7 +21,7 @@ function cfg(e={}){
   opacity:clamp(e.lineOpacity??61,0,100)/100,
   grid:clamp(e.gridStrength??38,0,100)/100,
   flicker:clamp(e.flickerStrength??35,0,100)/100,
-  roll:clamp(e.rollRate??.75,0,4),
+  roll:clamp(e.crtRollRate??.75,0,4),
   seed:Math.round(clamp(e.scanSeed??6161,0,99999))
  };
 }
