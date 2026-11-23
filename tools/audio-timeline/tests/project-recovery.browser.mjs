@@ -32,6 +32,10 @@ const browser=await chromium.launch({executablePath:chrome,headless:true,args:['
 try{
     const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:true});
     const page=await context.newPage();
+    const chooseReset=async target=>{
+        await page.locator('#btn-reset-menu').click();
+        await page.locator(target).click();
+    };
     const errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
     await page.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',
@@ -214,7 +218,7 @@ try{
     assert.equal(clearHandle.sameName,true);
     assert.equal(clearHandle.size,saved.files[0].size);
 
-    await page.locator('#btn-clear').click();
+    await chooseReset('#btn-clear');
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.background').length===0);
