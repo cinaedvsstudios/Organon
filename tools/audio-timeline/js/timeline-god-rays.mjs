@@ -111,7 +111,7 @@ function shaftSample(source,w,h,o,x,y,out){
  const attenuation=Math.pow(Math.max(0,reach),.78+.57*o.blur);
  const sourceGate=smooth(.02,.44,sourceEnergy);
  const strength=sourceGate*cone*attenuation*filament*wave;
- const alpha=limit(strength*(.32+.58*o.glow)*o.intensity,0,.68);
+ const alpha=limit(strength*(.56+.95*o.glow)*o.intensity*2.55,0,.67);
  out.alpha=alpha;out.shaft=filament;out.illumination=sourceGate;
  return out;
 }
