@@ -493,3 +493,13 @@ These are source/mock tests, **not** Android playback validation. Continue with 
 **Scope:** No playback, music file access, cloud, cache, IndexedDB, playlist/history, import or media-control changes. Real device behaviour and production Netlify deployment remain unverified until observed.
 
 - 2026-11-23 — v2.8: fix device QA false version mismatch, future-proof CI assertions.
+
+## Automated real Chromium test milestone — source remains v3.22 (2026-11-23)
+
+A second [Onda GitHub Actions job](../../../.github/workflows/onda-regression.yml) now runs an [actual Chrome smoke test](../tests/onda-browser-smoke.browser.mjs) in a disposable local browser profile (desktop plus mobile touch/viewport emulation), **after** the five original Node source tests. The original source check and the actual browser job both passed in [run #45235601393](https://github.com/cinaedvsstudios/Organon/actions/runs/45235601393).
+
+Confirmed in actual Chrome: full Onda page starts and announces v3.22; Storage Health's QA panel runs and downloads redacted JSON; a generated WAV decodes/plays in Quick Play; its audio cache is unchanged during audition/Discard; only explicit import creates a persistent IndexedDB audio entry; reload preserves the deliberately cached test file; mobile-emulated Library drawer and search operate. Normal first-run Cloud/Recovery dialogs are explicitly dismissed via their existing **local-only/continue-empty** controls in the disposable test context.
+
+**Still unverified:** Actual Android Chrome on user's phone, installed shortcut, long-lived permissions/file reconnection, lock-screen/headphone controls, offline behavior, measured battery/large-library performance, and live production Netlify deployment. No real user files, profiles, cache or media data were accessed. The change is tests/CI/docs only; **Onda application version remains v3.22**.
+
+- 2026-11-23 — v2.9: durable actual Chrome smoke test added; real Android acceptance still required.
