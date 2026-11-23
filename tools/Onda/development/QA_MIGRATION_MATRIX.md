@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.7 for Onda v3.18 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 isolated/static privacy and source checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.18 release notes](./RELEASE_V3_18.md).  
+**Version:** QA v1.8 for Onda v3.19 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 56 initial static/isolated Quick Play and Media Session checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.19 release notes](./RELEASE_V3_19.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -344,3 +344,28 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | PERF-15 Netlify deployment | Public code is v3.18 and new diagnostics module successfully loaded | NEEDS DEPLOY / BROWSER |
 
 **Release gate:** These are *instrumentation* source checks, not actual performance benchmarks. Any future code optimization should use real, opt-in Android/desktop timings; a static source check cannot establish response time, battery use or lock-screen playback reliability.
+
+## v3.19 Quick Play temporary file audition — acceptance matrix
+
+| Test | Expected | Status |
+|---|---|---|
+| QP-01 Choose from Add | System file chooser opens only from tap/click; one audio file selected | PASS isolated; NEEDS DEVICE |
+| QP-02 Mobile Library shortcut | Same chooser, returns to Add with temporary player visible | PASS isolated; NEEDS DEVICE |
+| QP-03 No persistence during audition | No new Library, queue, history, localStorage, IndexedDB audio, cloud, or JSON record | PASS source; NEEDS DEVICE |
+| QP-04 Temporary audio | Blob URL created and native audio control plays, pauses and seeks | PASS isolated; NEEDS DEVICE |
+| QP-05 Safe filename display | Filename inserted using textContent, never HTML/JS | PASS isolated |
+| QP-06 Main audio coexistence | Preview pauses main; main playback stops preview (no overlapping sound) | PASS isolated; NEEDS DEVICE |
+| QP-07 Replay/Discard | Replay uses selected File, Discard drops File, revokes object URL | PASS isolated; NEEDS DEVICE |
+| QP-08 Navigate away or pagehide | Temporary playback stops and object URL is revoked | PASS isolated; NEEDS DEVICE |
+| QP-09 Explicit Add | Only Add to Library + Queue calls normal importer, once | PASS isolated; NEEDS DEVICE |
+| QP-10 Existing import compatibility | Normal Add Files, folder import, drop zone and saved-track Play unchanged | PASS source; NEEDS BROWSER |
+| QP-11 MIDI/video and bad formats | No unintended import; user given feedback and existing Add option | PASS source; NEEDS DEVICE |
+| QP-12 Media Session metadata | Temporary track is presented instead of last saved track while auditioning | PASS isolated; NEEDS DEVICE |
+| QP-13 Media Session actions | Play/pause/seek/stop act on temporary audio, previous/next don't mutate saved queue | PASS isolated; NEEDS DEVICE |
+| QP-14 Media Session recovery | Saved-track state returns when temporary preview stops | PASS isolated; NEEDS DEVICE |
+| QP-15 Phone responsive controls | Quick controls fit portrait 320/360/390/420px and desktop layout | PASS CSS source; NEEDS DEVICE |
+| QP-16 Source cache/deletion safety | No new cleanup, cache schema migration, source-file changes or device permissions | PASS source; NEEDS DEVICE |
+| QP-17 Deployment/version | Live Onda serves v3.19 app-core, new Quick Play JS and Media Session CSS | NEEDS DEPLOY / BROWSER |
+| QP-18 Android lock-screen and headphone | Background audio focus, seek/play/pause/stop verified on actual phone | NEEDS DEVICE |
+
+**Release gate:** Quick Play intentionally bypasses permanent import *only* for auditioning. Do not claim Android media/codec compatibility, guaranteed background playback or cache persistence until device tests. No automatic cleanup of older media; preview has no persistent audio bytes.
