@@ -76,7 +76,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.16';
+        const ONDA_VERSION = 'v3.17';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1232,6 +1232,12 @@
 
         function updateBulkActionUI() {
             if (btnDbSelectMode) btnDbSelectMode.textContent = isLibrarySelectMode ? 'Exit Select' : 'Select Multiple';
+            const mobileSelectButton = document.getElementById('btn-mobile-select-mode');
+            if (mobileSelectButton) {
+                mobileSelectButton.setAttribute('aria-pressed', String(isLibrarySelectMode));
+                mobileSelectButton.classList.toggle('select-mode-enabled', isLibrarySelectMode);
+                mobileSelectButton.title = isLibrarySelectMode ? 'Exit multi-selection' : 'Select multiple tracks';
+            }
             if (dbBulkActions) dbBulkActions.classList.toggle('bulk-open', isLibrarySelectMode);
             if (dbSelectionSummary) dbSelectionSummary.textContent = `${selectedLibraryIds.size} selected`;
 

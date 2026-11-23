@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.5 for Onda v3.15 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 isolated/static checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.15 release notes](./RELEASE_V3_15.md).  
+**Version:** QA v1.6 for Onda v3.17 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.17 release notes](./RELEASE_V3_17.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -301,3 +301,24 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | QUEUE-14 View Current after restore/add | Updated list appears without opening Library drawer | PASS static; NEEDS DEVICE |
 
 **Release gate:** verify v3.15 actually deployed and real Android queue UI/playback before declaring it mobile validated. There was no music data migration or deletion. [Release details](./RELEASE_V3_15.md).
+
+## v3.16–v3.17 Mobile Library navigation and touch QA
+
+| Test | Expected | Status |
+|---|---|---|
+| LIB-01 Search across drawer reopen | Search retains user input and no-match text, no delayed autofill reset | PASS static; NEEDS DEVICE |
+| LIB-02 Search after switching view | Typing in Recents, Playlists or Icon Guide moves view to Results | PASS static; NEEDS DEVICE |
+| LIB-03 Mobile views | Results, Recents, Playlists and Icon Guide visible with preserved custom icons | PASS static; NEEDS DEVICE |
+| LIB-04 Playlist navigation | Saved playlist list and edit actions work with stored playlist records | PASS static; NEEDS DEVICE |
+| LIB-05 Library Import & Storage | File picker opens from a real tap; Storage Health opens from shortcut without data loss | PASS source wiring; NEEDS DEVICE |
+| LIB-06 Explicit Play and selection | Play remains explicit, row-body selection unchanged; Select toggles selection mode | PASS static; NEEDS DEVICE |
+| LIB-07 Mobile filter grid | Only search and source filter reserve width; at 320/360/390/420px input is usable | PASS CSS source; NEEDS BROWSER |
+| LIB-08 Clear-search control | Clear target 44px, search text not covered; no-match query can be cleared | PASS CSS source; NEEDS DEVICE |
+| LIB-09 Header & drawer touch targets | Header Select/Settings/Close, source filter and bulk/settings actions use 44px hitboxes | PASS CSS source; NEEDS DEVICE |
+| LIB-10 Select on/off accessibility | Real `aria-pressed`, title and visual enabled state reflect selection state | PASS isolated; NEEDS DEVICE |
+| LIB-11 Icon Guide scroll and saved settings | Guide accessible, scrollable, custom icon values survive reload | PASS static; NEEDS DEVICE |
+| LIB-12 Desktop regression | Desktop Library layout, original track actions, cloud sync and Current queue unaffected | PASS source scope; NEEDS BROWSER |
+| LIB-13 Netlify version gate | Public app reports v3.17 and loads fresh assets without clearing site data | NEEDS DEPLOY / DEVICE |
+| LIB-14 Android media regression | MP3, saved cache, Reconnect, Media Session screen lock/background and playback unchanged | NEEDS DEVICE |
+
+**Release gate:** 28 v3.17 source checks are not runtime tests. Do not mark ONDA-14 finished until Android tab/installed shortcut and desktop computed-layout, touch/accessibility and audio playback checks are performed. No destructive cache or music-file tests against the user's primary storage.

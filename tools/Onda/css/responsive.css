@@ -1873,3 +1873,57 @@ body.onda-force-mobile-mode #library-manager-drawer #db-library-results .btn-db-
   min-height: 44px;
   min-width: 44px;
 }
+
+
+/* v3.17 — mobile Library usability QA: two actual toolbar controls, not
+   four reserved columns; comfortable touch targets in the existing drawer. */
+@media (max-width: 768px) {
+  body.onda-force-mobile-mode #library-manager-drawer .library-manager-toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(112px, .42fr);
+    gap: 6px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .search-input-wrap {
+    min-width: 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer #db-library-search {
+    box-sizing: border-box;
+    min-height: 44px;
+    padding-right: 50px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer #btn-db-clear-search {
+    height: 44px;
+    min-height: 44px;
+    right: 2px;
+    width: 44px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer #db-library-filter {
+    min-height: 44px;
+    min-width: 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-drawer-header .tiny-icon-btn {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 44px;
+    height: 44px;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .bulk-actions-stack .btn-pill,
+  body.onda-force-mobile-mode #library-manager-drawer .library-settings-actions .btn-pill {
+    min-height: 44px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer #btn-mobile-select-mode.select-mode-enabled {
+    background: rgba(75, 132, 191, .35);
+    border-color: var(--water-spray);
+    box-shadow: 0 0 10px rgba(117, 178, 222, .35);
+  }
+}

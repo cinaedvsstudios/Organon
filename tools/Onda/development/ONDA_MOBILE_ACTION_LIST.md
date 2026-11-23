@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.16 source development committed; v3.16 adds mobile Library views, search preservation, and drawer shortcuts. Android/Netlify deployment and usability verification remain pending.  
+**Status:** v3.11–v3.17 source development committed; v3.17 refines mobile Library search width and touch accessibility. Android/Netlify deployment and usability verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.16** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.17** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md)
 
 ## Agreed product direction
 
@@ -37,7 +37,7 @@
 | ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.12: full autosaves on resize/rotation removed and import saves consolidated; performance timing still unmeasured** |
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.13: Remember Files/Folder & read-permission Reconnect implemented; actual Android QA pending** |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
-| ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | CSS/API review done; computed style and interaction QA pending |
+| ONDA-14 | P2 | Mobile touch/accessibility checks | Improve narrow-phone Library controls without changing player layout | **v3.17 source fixes: two-column search/filter, 44px drawer targets, accessible Select state; physical Android/desktop QA pending** |
 | ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Use approved bronze/charcoal/cyan circle; don't change player controls | Implemented in GitHub; Android device check pending |
 
 **Priority legend:** P0 = first technical fix/safeguard; P1 = near term; P2 = useful follow-up; P3 = future/conditional. Priority is not a claim that current user-visible breakage has been reproduced.
@@ -395,3 +395,17 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Next:** Android and desktop smoke test v3.16, correct any layout/playback issues, then reconsider the lower-priority Quick Play for *new unsaved* files, online GitHub Pages library and optional playback position only after the mobile basics are verified.
 
 - 2026-11-23 — v2.1: v3.16 mobile Library UX source implemented and recorded; device QA pending.
+
+## Implementation progress — v3.17 Mobile Library touch QA (2026-11-23)
+
+[Full v3.17 release notes and phone/desktop verification steps](./RELEASE_V3_17.md).
+
+**Source-level correction:** v3.16's narrow-screen Library toolbar still reserved four grid columns although the mobile Select/Settings actions were hidden from that bar; search and source-filter were the only visible children. v3.17 makes it two columns to free space for typing. Library header buttons, search/clear/filter and bulk/settings actions have 44px touch targets. The search field reserves room for the larger clear button. The mobile Select button now communicates its actual `isLibrarySelectMode` state through `aria-pressed`, title and active styling; row-body selection and the explicit ▶️ Play button are unchanged. Other Library control labels are more accessible. The earlier suspected Icon Guide placement issue was ruled out after direct DOM inspection; no relocation needed.
+
+**Source checks:** 28 assertions passed, including parsing, DOM IDs/labels, CSS specificity/structure, versioned assets and running the real selection-state renderer in isolated mode with Select ON/OFF. No device or computed-layout test has yet passed; Android, desktop and public Netlify verification still need to be performed.
+
+**Safety:** Zero media storage/schema/cache migration changes. No background playback, core transport, queue, or desktop drawer redesign. Track/library state and source files remain untouched.
+
+**Next:** Run the Android and desktop acceptance tests for v3.11–v3.17 before considering P2 Quick Play for new unsaved files or future GitHub Pages streaming.
+
+- 2026-11-23 — v2.2: v3.17 touch/accessibility source updated; actual phone and desktop UI QA still outstanding.
