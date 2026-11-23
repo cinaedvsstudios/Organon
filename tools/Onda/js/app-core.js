@@ -3839,15 +3839,35 @@
                     return;
                 }
                 if (button.classList.contains('btn-now-info-track')) {
-                    // Do not overwrite currentFile: that would make metadata disagree with real audio.
+                    // Info must not change currentFile while a different song is playing.
+                    const oldInfo = row.querySelector('.onda-current-queue-extra');
+                    if (oldInfo) { oldInfo.remove(); return; }
                     const track = virtualLibrary[id] || playlistTracks[targetIndex];
-                    showToast(getDisplayTitle(track) + ' · ' + (track.fileName || track.sourceType || 'Saved track'));
+                    const info = document.createElement('div');
+                    info.className = 'onda-current-queue-extra';
+                    const details = [
+                        track?.fileName ? 'File: ' + track.fileName : '',
+                        track?.artist ? 'Artist: ' + track.artist : '',
+                        track?.album ? 'Album: ' + track.album : '',
+                        track?.sourceType ? 'Source: ' + track.sourceType : '',
+                        track?.localPath ? 'Location: ' + track.localPath : '',
+                        Array.isArray(track?.tags) && track.tags.length ? 'Tags: ' + track.tags.join(', ') : ''
+                    ].filter(Boolean);
+                    info.textContent = details.join(' · ') || 'No further information saved.';
+                    row.appendChild(info);
                     return;
                 }
                 if (button.classList.contains('btn-onda-add-playlist')) {
-                    // Leave playlist editing to its existing dedicated workspace rather than
-                    // creating a second, incompatible playlist editor in the queue.
-                    showToast('Use the Playlists tab to manage saved playlist membership.');
+                    if (!virtualLibrary[id]) return;
+                    const chosenName = prompt('Add this track to which playlist? Enter an existing or new playlist name:');
+                    if (!chosenName || !chosenName.trim()) return;
+                    addTrackIdToPlaylist(id, chosenName.trim());
+                    syncAllTrackPlaylistMetadata();
+                    renderPlaylistsList();
+                    renderLibraryManager();
+                    saveActiveLibraryState('current-queue-add-to-playlist');
+                    updateNowPlayingPlaylistPanel();
+                    showToast('Added to playlist: ' + chosenName.trim());
                 }
             });
             panel.appendChild(list);
