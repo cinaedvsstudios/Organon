@@ -1153,7 +1153,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-data-burst-controls" hidden>
+                     <div id="effect-signal-tear-controls" hidden>
+                          <details open class="text-inspector-group">
+                              <summary>Discontinuous video tearing</summary>
+                              <label class="text-setting-row"><span>Tear slice height (%)</span><input id="effect-tear-height" class="range-control" type="range" min="1" max="30" step="1" value="9" title="Vertical thickness of each abruptly displaced image slice"></label>
+                              <label class="text-setting-row"><span>Fragment offsets (%)</span><input id="effect-tear-fragment" class="range-control" type="range" min="0" max="100" step="1" value="68" title="Number and vertical discontinuity of independently borrowed source-image fragments"></label>
+                              <label class="text-setting-row"><span>Recovery time (s)</span><input id="effect-tear-life" class="range-control" type="range" min="0.06" max="0.6" step="0.01" value="0.17" title="Lifetime of sharp line breaks before intact source footage returns"></label>
+                              <label class="text-setting-row"><span>Tear pattern seed</span><input id="effect-tear-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6363" title="Repeatable nonperiodic tear positions for backwards seeking and export"></label>
+                          </details>
+                      </div>
+                      <div id="effect-data-burst-controls" hidden>
                           <details open class="text-inspector-group">
                               <summary>Digital packet bursts</summary>
                               <label class="text-setting-row"><span>Block size (%)</span><input id="effect-burst-size" class="range-control" type="range" min="5" max="100" step="1" value="48" title="Size of independently corrupted RGB packets"></label>
