@@ -53,6 +53,10 @@
         const ONDA_IDB_VERSION = 2;
         const ONDA_IDB_STORE = "state";
         const ONDA_IDB_AUDIO_STORE = "audioFiles";
+        let cachedAudioTrackIds = new Set();
+        let cachedAudioBytes = 0;
+        let audioCacheIndexState = "pending";
+        let audioCacheScanPromise = null;
         const ONDA_IDB_ACTIVE_LIBRARY_KEY = "activeLibrary";
         const ONDA_LAST_LIBRARY_SAVE_KEY = "ondaLastLibrarySaveStatusV1";
         let libraryStorageReady = false;
@@ -848,7 +852,7 @@
                 sourceType: meta.sourceType || (meta.streamUrl ? 'stream' : 'local'),
                 streamUrl: meta.streamUrl || null,
                 blobFile: meta.blobFile || null,
-                needsRelink: (meta.sourceType !== 'stream' && !meta.blobFile)
+                needsRelink: (meta.sourceType !== 'stream' && meta.sourceType !== 'reference' && !meta.streamUrl && !meta.blobFile && audioCacheIndexState === 'ready' && !cachedAudioTrackIds.has(meta.id))
             };
         }
 
@@ -1086,9 +1090,12 @@
         function sourceStatus(meta) {
             if (!meta) return 'unknown';
             if (meta.sourceType === 'stream' || meta.streamUrl) return 'stream';
-            if (meta.sourceType === 'midi') return meta.blobFile ? 'MIDI ready' : 'MIDI needs relink';
-            if (meta.blobFile) return 'local ready';
-            return 'needs relink';
+            if (meta.sourceType === 'reference') return 'external reference';
+            const midi = meta.sourceType === 'midi';
+            if (meta.blobFile) return midi ? 'MIDI ready' : 'local ready';
+            if (cachedAudioTrackIds.has(meta.id)) return midi ? 'MIDI cached' : 'local cached';
+            // Without a successful scan, we cannot claim the audio is missing.
+            return audioCacheIndexState === 'ready' ? 'needs relink' : 'cache not verified';
         }
 
         function addTrackToQueueFromLibrary(trackId, playNow = true) {
@@ -1626,7 +1633,7 @@
                     if (search && !matchesLibrarySearch(haystack, search)) return false;
                     if (filter === 'stream') return meta.sourceType === 'stream' || !!meta.streamUrl;
                     if (filter === 'local') return !(meta.sourceType === 'stream' || meta.streamUrl);
-                    if (filter === 'missing') return !(meta.sourceType === 'stream' || meta.streamUrl) && !meta.blobFile;
+                    if (filter === 'missing') return sourceStatus(meta) === 'needs relink';
                     return true;
                 })
                 .sort((a, b) => getDisplayTitle(a[1]).localeCompare(getDisplayTitle(b[1])));
@@ -2490,6 +2497,47 @@
             });
         }
 
+
+        // Inspect cache metadata only, without reading music bytes or mutating existing data.
+        async function refreshAudioCacheIndex() {
+            if (audioCacheScanPromise) return audioCacheScanPromise;
+            audioCacheScanPromise = (async () => {
+                const db = await openOndaIndexedDb();
+                return new Promise((resolve, reject) => {
+                    const ids = new Set();
+                    let bytes = 0;
+                    let closed = false;
+                    const close = () => { if (!closed) { closed = true; db.close(); } };
+                    try {
+                        const tx = db.transaction(ONDA_IDB_AUDIO_STORE, 'readonly');
+                        const cursorRequest = tx.objectStore(ONDA_IDB_AUDIO_STORE).openCursor();
+                        cursorRequest.onsuccess = () => {
+                            const cursor = cursorRequest.result;
+                            if (!cursor) return;
+                            const record = cursor.value || {};
+                            ids.add(String(cursor.key));
+                            const size = record.file?.size ?? record.blob?.size ?? record.sizeBytes ?? 0;
+                            if (Number.isFinite(Number(size))) bytes += Number(size);
+                            cursor.continue();
+                        };
+                        tx.oncomplete = () => { close(); resolve({ ids, bytes }); };
+                        tx.onerror = () => { close(); reject(tx.error || new Error('Cache inventory failed.')); };
+                        tx.onabort = () => { close(); reject(tx.error || new Error('Cache inventory aborted.')); };
+                    } catch (error) { close(); reject(error); }
+                });
+            })().then(({ ids, bytes }) => {
+                cachedAudioTrackIds = ids;
+                cachedAudioBytes = bytes;
+                audioCacheIndexState = 'ready';
+                return true;
+            }).catch(error => {
+                audioCacheIndexState = 'unavailable';
+                console.warn('Onda audio cache status unavailable:', error);
+                return false;
+            }).finally(() => { audioCacheScanPromise = null; });
+            return audioCacheScanPromise;
+        }
+
         async function idbSetAudioFile(trackId, file, meta = {}) {
             if (!trackId || !file) return false;
             const db = await openOndaIndexedDb();
@@ -2544,6 +2592,7 @@
                 const meta = virtualLibrary[trackId] || track;
                 try {
                     await idbSetAudioFile(trackId, track.blobFile, meta);
+                    cachedAudioTrackIds.add(String(trackId));
                     saved += 1;
                 } catch (err) {
                     failed += 1;
@@ -2561,6 +2610,7 @@
                 const record = await idbGetAudioFile(trackId);
                 const file = record?.file || record?.blob || null;
                 if (file) {
+                    cachedAudioTrackIds.add(String(trackId));
                     meta.blobFile = file;
                     meta.needsRelink = false;
                     meta.localPath = meta.localPath || record.localPath || record.fileName || meta.fileName || trackId;
@@ -2841,6 +2891,11 @@
         }
 
         const persistentLibraryReady = initialisePersistentLibraryStorage();
+        // Cache IDs become known after metadata restoration; no audio is read or removed.
+        persistentLibraryReady.then(() => refreshAudioCacheIndex()).then(() => {
+            renderLibraryManager();
+            if (typeof renderHistoryTab === 'function') renderHistoryTab();
+        }).catch(error => console.warn('Cache check unavailable:', error));
 
         async function probeStreamUrl(url, timeoutMs = 3500) {
             return new Promise(resolve => {
@@ -2864,6 +2919,7 @@
         }
 
         async function checkLibraryFiles() {
+            await refreshAudioCacheIndex();
             const lines = [];
             const tracks = Object.values(virtualLibrary);
             lines.push(`Onda Library Check — ${new Date().toLocaleString()}`);
@@ -2878,10 +2934,10 @@
                     lines.push(`  URL: ${meta.streamUrl}`);
                     lines.push(`  Check: ${result}`);
                 } else {
-                    const hasLoadedFile = !!meta.blobFile;
+                    const cachedStatus = sourceStatus(meta);
                     lines.push(`[${meta.sourceType === 'midi' ? 'MIDI' : 'LOCAL'}] ${label}`);
                     lines.push(`  Recorded path/name: ${meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No path stored'}`);
-                    lines.push(`  Check: ${hasLoadedFile ? 'OK — file is loaded in this session' : 'NEEDS RELINK — browser cannot verify saved local paths without the user selecting the file/folder again'}`);
+                    lines.push(`  Check: ${cachedStatus === 'needs relink' ? 'NEEDS RELINK — no current file or saved Onda audio cache' : cachedStatus}`);
                 }
                 lines.push('');
             }
@@ -3189,7 +3245,9 @@
             saveActiveLibraryState('add-local-files-immediate');
             showToast(summary);
 
-            persistLocalAudioFilesToIndexedDb(allIncomingTracks).then(cacheResult => {
+            persistLocalAudioFilesToIndexedDb(allIncomingTracks).then(async cacheResult => {
+                await refreshAudioCacheIndex();
+                renderLibraryManager();
                 if (cacheResult.failed > 0) {
                     showToast(`${summary} · ${cacheResult.failed} audio cache failures`);
                 }
