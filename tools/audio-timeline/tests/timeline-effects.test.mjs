@@ -125,7 +125,7 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
   assert.notEqual(atStart,later,id+' must vary as seconds change');
   assert.equal(atStart,paint(id,.24),id+' must reproduce pixels after reverse seek');
  }
- assert.equal(requiresCompositeSource('light-sweep'),false);
+ assert.equal(requiresCompositeSource('light-sweep'),true,'Light Sweep now blooms actual source highlights rather than a flat moving rectangle');
  assert.notEqual(paint('pendulum-swing',.6),paint('rebound-swing',.6));
  assert.notEqual(paint('ripple-distortion',.6),paint('electric-ripple',.6));
  assert.notEqual(paint('electric-ripple',.6),paint('shockwave',.6));
