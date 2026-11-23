@@ -3349,8 +3349,12 @@
             playlistTracks = [...playlistTracks, ...tracksToQueue];
 
             const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${refreshedTracks.length} refreshed${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
+            if (wasEmpty && playlistTracks.length) switchTrack(0);
             renderLibraryManager();
-            saveActiveLibraryState('add-local-files-immediate');
+            // The queue and current track are now set. Save their metadata once;
+            // caching only changes IndexedDB audio bytes, not the catalogue JSON.
+            // Keep this immediate save before awaiting any large audio writes.
+            saveActiveLibraryState('add-local-files');
             showToast(summary);
 
             persistLocalAudioFilesToIndexedDb(allIncomingTracks).then(async cacheResult => {
@@ -3359,16 +3363,10 @@
                 if (cacheResult.failed > 0) {
                     showToast(`${summary} · ${cacheResult.failed} audio cache failures`);
                 }
-                saveActiveLibraryState('add-local-files-cache-complete');
             }).catch(err => {
                 console.warn('Folder/audio cache failed after library metadata save:', err);
                 showToast(`${summary} · audio cache failed, catalogue saved`);
-                saveActiveLibraryState('add-local-files-cache-failed');
             });
-
-            if (wasEmpty && playlistTracks.length) switchTrack(0);
-            renderLibraryManager();
-            saveActiveLibraryState('add-local-files-final');
         }
 
         function switchTrack(index) {
