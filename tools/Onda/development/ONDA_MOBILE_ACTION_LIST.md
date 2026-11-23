@@ -60,7 +60,7 @@
 
 ### ONDA-02 — mobile drawer (confirmed in source)
 - Existing `index.html` already has a bottom Library button, drawer search/filter, select/settings actions and separate result/recent/playlist areas. `js/app-core.js` already has mobile drawer views `results`, `recents`, `playlists`, `help`, along with user-editable mobile icons.
-- **Do not rebuild what exists.** Candidate enhancement: add accessible Queue, a prominent Import/Quick Play entry, visible local/online status, and a compact storage/connection shortcut within the existing drawer.
+- **Keep Queue / Now Playing on the main Current screen, never in the Library drawer** (user decision 2026-11-23). Candidate drawer enhancements: prominent Import/Quick Play entry, visible local/online status, and compact storage/connection shortcut. The Current screen remains the owner of playback/queue controls.
 - **Acceptance:** Existing custom icon settings and mobile drawer behaviour survive. Everyday track selection can happen in the drawer without leaving playback.
 
 ### ONDA-03 — resume position (confirmed in source)
@@ -102,7 +102,7 @@
 ## Investigation queue / decisions still to make
 
 1. Validate on **the actual Android phone**: Chrome version, browser tab vs installed PWA shortcut, picker/folder permission after app relaunch, lock-screen controls and storage usage.
-2. Decide mobile drawer layout after reviewing the [HTML concept](./mobile-review.html): Queue placement, drawer views, Quick Play entry, and whether some Settings should appear inside the drawer.
+2. **Decided:** Queue and Now Playing remain visible on the main screen, within Onda's existing Current workspace (not a new Library drawer tab). Review only the remaining drawer views, Quick Play entry and compact storage shortcuts.
 3. Establish whether 'resume playback' means music, podcasts/long recordings, or all audio; use sensible completed-track reset rules.
 4. Design non-destructive cache migration with an inventory, permission/relink test and explicit user action before any bulk cleanup.
 5. Profile current visualiser frame count/CPU/energy while playing, paused and hidden; then implement a scheduler without changing its appearance.
@@ -154,7 +154,7 @@
 
 - Current drawer's search and result rows already have Play/Info/+Playlist actions and its mobile icons can be changed by the user (`buildTrackRow()`, `setMobileLibraryView()`). The tap on the **row body** currently toggles selection, while the smaller Play button plays. Test whether this causes accidental selections on phone; only propose changing it after user feedback.
 - The drawer search field currently clears its value when opened and also has delayed autofill-clearing timers (around 950–960). On Android, test that opening the drawer or switching away doesn't unexpectedly erase user-entered search queries.
-- Proposed mock-up adds a Queue view; this is **new**, not a claim that it exists today. Keep existing Results, Recents, Playlists, Help and icon editing.
+- **Superseded:** Do not add a Queue view to the Library drawer. The user explicitly wants Queue / Now Playing on the main screen, using the existing Current workspace. Keep existing Results, Recents, Playlists, Help and icon editing in the drawer.
 - Avoid duplicating full settings in the drawer: provide 1–2 shortcuts to the existing Storage Health panel instead.
 
 ### Resume and playback: avoid unintended side effects
@@ -181,7 +181,7 @@
 ## Mock-up review
 
 The standalone, self-contained [mobile-review.html](./mobile-review.html) contains interactive proposals for:
-- the existing Library drawer extended with a Queue view and quick links;
+- the existing Library drawer retained for browsing and quick links, with Queue / Now Playing visibly on the main Current screen;
 - Storage Health and safe cache choices;
 - Play Once / Add to Queue / Add to Library;
 - resume-position prompt for longer recordings;
@@ -191,7 +191,7 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 
 ### Decisions to ask the user after showing the page
 
-1. Should **Queue** be its own view within the drawer, or be part of **Current**?
+1. **Answered:** Queue / Now Playing belongs on the **main Current screen**; do not add a drawer tab for it.
 2. When a file is selected from Android, what should the default action be: **Play once**, **Add to queue**, or **Add to Library**, while keeping a choice for the others?
 3. Should saved playback position apply to **all audio**, or only long recordings?
 4. Is Onda normally used through **Chrome tab, home-screen shortcut / installed app, or another browser**? This strongly affects how local file permissions and background playback should be verified.
@@ -202,7 +202,7 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 **Batch A — safe low-risk improvement:** visualiser idle scheduler + position checkpoint/restore; protect Media Session behaviours and existing icons.  
 **Batch B — storage groundwork:** read-only cache inventory and accurate source/status labels, before changing any caching default.  
 **Batch C — media source architecture:** Android capability tests, relink flow, explicit offline cache, temporary Quick Play mode; migrate only after compatibility validation.  
-**Batch D — drawer enhancements:** user-approved Queue layout and compact storage/source entry points.  
+**Batch D — main Current screen + drawer enhancements:** retain Queue / Now Playing on-screen; add only approved browsing and compact storage/source entry points to the Library drawer.  
 **Batch E — online library and scaling:** after hosting decisions and measurable library growth.
 
 ## Change journal, continued
@@ -279,3 +279,17 @@ The source audit now covers all 6,195 lines of the main app-core.js module, the 
 ## Change journal, continued
 
 - 2026-11-23 — v1.3 extensive static audit finished; added detailed technical implementation blueprint and Android QA/migration matrix, linked to companion HTML review. Live player unchanged.
+
+## Decision record — 2026-11-23: Queue / Now Playing placement
+
+**Decision (approved):** Queue and Now Playing must remain on Onda's **main screen**. Specifically, use the existing **Current** workspace, and keep the queue visible/accessible there. **Do not create a Queue tab inside the Library drawer** and do not require opening the drawer to inspect the current playback order.
+
+**UX ownership:** The main screen handles now-playing metadata, the current/next track, playback order, and queue actions. The drawer handles discovering tracks, searches, recents, saved playlists, importing, selecting and adding items to the queue; a button in the drawer may enqueue an item, but the queue itself is not displayed/managed there. Preserve the fixed transport icons and current layout unless a specific change is approved.
+
+**Existing code to retain/reuse:** `index.html#tab-library` ('Current'), `#now-playing-playlist-panel`, `#now-playing-mode-pills`, and `app-core.js` `updateNowPlayingPlaylistPanel()`, `setNowPlayingVisibilityToggle()`, `setNowPlayingMode()`. Source currently marks the panel/visibility pills hidden in HTML; investigate when the application enables them before deciding how to surface the queue. Treat this as extending the on-screen Current view, not a navigation redesign.
+
+**Acceptance:** While using the main screen, the user can always reach Now Playing and Queue without opening the Library drawer; the drawer contains no Queue tab. Library row actions may still include Add to Queue. Confirm compact mobile visibility without obscuring the player or changing the approved transport symbols.
+
+**Updated preview:** [mobile-review.html](./mobile-review.html) now places an illustrative current/next track list on the main screen and removes Queue from the drawer tabs.
+
+- 2026-11-23 — v1.4 user-approved placement recorded; proposal and mock-up corrected; no production code changed.
