@@ -59,13 +59,15 @@ For the explicit layout-only reasons \`screen-resize\`, \`screen-orientation-cha
 
 ## Static and isolated verification
 
-**18 checks passed** against the repository's actual \`app-core.js\` functions under a JavaScript test harness:
+**22 checks passed** against the repository's actual \`app-core.js\` functions under a JavaScript test harness:
 
 - first file import saves once;
 - identical reimport skips a \`put()\`;
 - changed timestamp, size or relative path results in a replacement write;
 - unknown timestamp results in a safe replacement rather than a skip;
 - malformed cached media is replaced;
+- comparison-read failures fall back to normal write without blocking import;
+- simulated write/quota failures are counted, not silently marked successful;
 - parallel imports for the same track serialize correctly, with one saved write and one skip;
 - pending write queue fully drains;
 - import pathway has one metadata save, before cache operations;
@@ -95,6 +97,7 @@ For the explicit layout-only reasons \`screen-resize\`, \`screen-orientation-cha
 - \`ca18f769\` — consolidate import metadata saves
 - \`070ecfdf\` — mark v3.12 source version
 - \`c71e1696\` — change the public app's core script URL to v3.12
+- `c34e71c9` — fall back to normal cache write on optional read failure
 
 ## Next work
 
