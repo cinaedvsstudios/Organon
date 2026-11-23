@@ -1,0 +1,36 @@
+name: Onda source regression QA
+
+on:
+  pull_request:
+    paths:
+      - 'tools/Onda/**'
+      - '.github/workflows/onda-regression.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'tools/Onda/**'
+      - '.github/workflows/onda-regression.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: onda-source-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  source-and-isolated-regressions:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Check out Organon
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run dependency-free Onda regression tests
+        working-directory: tools/Onda
+        run: npm test
