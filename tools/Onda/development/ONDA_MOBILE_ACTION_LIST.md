@@ -35,6 +35,7 @@
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | Investigation |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Investigation |
 | ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | Investigation |
+| ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Fix wrong or generic shortcut icon; preserve intended Onda logo | Confirmed config missing; blocked pending actual icon artwork |
 
 **Priority legend:** P0 = first technical fix/safeguard; P1 = near term; P2 = useful follow-up; P3 = future/conditional. Priority is not a claim that current user-visible breakage has been reproduced.
 
@@ -205,3 +206,30 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 ## Change journal, continued
 
 - 2026-11-23 — v1.1 second source investigation: identified existing mobile drawer features, cached-but-not-hydrated status discrepancy to test, media-source ID stability, actual `webkitdirectory` fallback, metadata-only JSON exports, and Android-specific test plan. Standalone HTML mock-up committed. Production player untouched.
+
+
+## ONDA-15 — Android shortcut icon and web app identity investigation (2026-11-23)
+
+**User report:** Onda was previously added to the Android home screen; the shortcut disappeared or was replaced, and after adding it back Chrome used the wrong icon. User primarily opens Onda on Android using a home-screen shortcut. This should be treated as an important mobile UX issue, not as a cosmetic redesign.
+
+**Confirmed from GitHub source:** 
+- `tools/Onda/index.html` currently has `<title>Onda Media Player - Engine</title>` but contains no `rel="icon"`, `rel="apple-touch-icon"`, or `rel="manifest"` declarations and no `theme-color`.
+- The tracked `tools/Onda/` directory contains no `manifest.webmanifest`, `favicon.ico`, app icon PNGs or SVGs, and the full repository tree contains no clearly Onda-specific image/icon asset.
+- The current Onda Netlify deployment has not been independently verified from a live browser. A missing declared icon is a strong cause of a generic or incorrect Chrome shortcut icon, but the exact shortcut on the user's phone hasn't been inspected.
+- **Do not use the Organon root lion logo or invent a replacement Onda icon without the user's approval.** The existing playback eye emoji is not evidence that it should be the application logo.
+
+**Proposed implementation once the official icon artwork is identified:**
+1. Add the approved Onda icon files beneath `tools/Onda/icons/`: **192x192** and **512x512** PNG, optionally a padded maskable version for Android's adaptive icon treatment; add 32x32 favicon and 180x180 touch icon if appropriate. Preserve the original logo artwork with proper aspect ratio, no stretching.
+2. Add `tools/Onda/manifest.webmanifest` with `name`, `short_name`, stable `id`, root-relative-to-deploy `start_url` and `scope`, `display` per agreed shortcut/full-screen preference, Onda theme/background colors, and correctly typed icon declarations. Prefer local same-origin asset URLs for install reliability. Mind that Netlify publishes from `tools/Onda` as site root and that GitHub Pages would have a different base path.
+3. Add `<link rel="icon">`, `<link rel="manifest">`, `<meta name="theme-color">` and optional touch-icon metadata to the `index.html` head.
+4. Verify manifest and icon URLs serve successfully, correct image dimensions, no clipping in maskable safe region, phone home-screen icon, Android launcher label and launched URL.
+5. Test whether Android Chrome presents **Install app** vs **Create shortcut**, and whether `display: standalone` changes the existing background-audio behaviour or access to files. **Do not add a service worker that caches media or catalogue files without a separate review.**
+6. After deployment, user may need to remove and re-add the shortcut because home-screen icons can remain cached. Verify this as a follow-up, not a guaranteed automatic correction.
+
+**Dependencies and open question:** Obtain the **existing intended Onda icon image** or its exact image URL. GitHub currently does not contain an Onda-specific app icon to point Chrome at. Do not claim a complete icon fix until an approved icon is actually deployed and checked on the user's device.
+
+**References:** https://web.dev/articles/add-manifest and https://developer.chrome.com/docs/lighthouse/pwa/installable-manifest/
+
+## Change journal, continued
+
+- 2026-11-23 — v1.2 added ONDA-15 (home-screen icon/PWA identity) after user confirmed Android home-screen shortcut usage. Verified missing favicon/manifest/icon in repo. Awaiting official icon asset; player unchanged.
