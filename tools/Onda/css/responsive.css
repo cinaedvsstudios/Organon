@@ -1927,3 +1927,58 @@ body.onda-force-mobile-mode #library-manager-drawer #db-library-results .btn-db-
     box-shadow: 0 0 10px rgba(117, 178, 222, .35);
   }
 }
+
+/* v3.19 — Quick Play is an isolated, temporary audition on the existing Add tab. */
+.onda-quick-play-chooser {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 12px auto 0;
+  max-width: 800px;
+}
+.onda-quick-play-chooser .library-track-meta {
+  flex: 1 1 200px;
+}
+.onda-quick-play-panel {
+  background: rgba(0, 0, 0, .2);
+  border: 1px solid rgba(117, 178, 222, .4);
+  border-radius: 14px;
+  box-sizing: border-box;
+  margin: 12px 0 0;
+  padding: 12px;
+  width: 100%;
+}
+.onda-quick-play-panel[hidden] {
+  display: none !important;
+}
+.onda-quick-play-title {
+  color: var(--stone-ochre);
+  font-size: .92rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.onda-quick-play-panel audio {
+  display: block;
+  margin: 12px 0;
+  max-width: 100%;
+  width: 100%;
+}
+.onda-quick-play-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.onda-quick-play-chooser .btn-pill,
+.onda-quick-play-actions .btn-pill {
+  min-height: 44px;
+}
+@media (max-width: 768px) {
+  body.onda-force-mobile-mode .onda-quick-play-actions .btn-pill {
+    flex: 1 1 140px;
+  }
+  body.onda-force-mobile-mode .onda-quick-play-chooser .btn-pill {
+    flex: 1 1 180px;
+  }
+}
