@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-fault-cassette-controls" hidden>
+                     <div id="effect-ripple-distortion-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Ripple Distortion — expanding water ripples</summary>
+                          <label class="text-setting-row"><span>Concentric waves per impact</span><input id="effect-ripple-rings" class="range-control" type="range" min="1" max="6" step="1" value="3" title="Independent expanding concentric wavefronts from each impact"></label>
+                          <label class="text-setting-row"><span>Wavefront width (%)</span><input id="effect-ripple-width" class="range-control" type="range" min="2" max="24" step="1" value="8" title="Width of each refractive water wavefront"></label>
+                          <label class="text-setting-row"><span>Energy dissipation (%)</span><input id="effect-ripple-falloff" class="range-control" type="range" min="0" max="100" step="1" value="58" title="How quickly spreading ripples lose their refractive strength"></label>
+                          <label class="text-setting-row"><span>Caustic edge highlights (%)</span><input id="effect-ripple-highlights" class="range-control" type="range" min="0" max="100" step="1" value="42" title="Subtle coloured light catching the high points of travelling waves"></label>
+                          <label class="text-setting-row"><span>Impact pattern seed</span><input id="effect-ripple-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6262" title="Reproduce the same impact locations and rings when seeking backwards or exporting"></label>
+                      </details>
+                  </div>
+                  <div id="effect-fault-cassette-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Fault Cassette — analogue tracking damage</summary>
                           <label class="text-setting-row"><span>Head tracking instability (%)</span><input id="effect-cassette-tracking" class="range-control" type="range" min="0" max="100" step="1" value="79" title="Moving head-sync distortion that rolls through actual source footage"></label>
