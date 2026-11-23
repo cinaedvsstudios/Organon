@@ -22,6 +22,7 @@
         let localSource = null;
         let isPlaying = false;
         let visualizerRunning = false;
+        let visualizerFrameId = 0;
         
         // Multi-track Active Playlist queue
         let playlistTracks = [];
@@ -68,7 +69,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.10';
+        const ONDA_VERSION = 'v3.11';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -3076,6 +3077,7 @@
                     isPlaying = false;
                     btnPlay.textContent = '🧿';
                     btnPlay.classList.remove('active-state');
+                    startVisualizer();
                 }
             });
             audioObj.addEventListener('play', (e) => {
@@ -3083,6 +3085,7 @@
                     isPlaying = true;
                     btnPlay.textContent = '🧿';
                     btnPlay.classList.add('active-state');
+                    startVisualizer();
                 }
             });
         });
@@ -3685,10 +3688,12 @@
                 isPlaying = true;
                 btnPlay.textContent = '🧿';
                 btnPlay.classList.add('active-state');
+                startVisualizer();
             } catch (err) {
                 isPlaying = false;
                 btnPlay.textContent = '🧿';
                 btnPlay.classList.remove('active-state');
+                startVisualizer();
                 console.warn('Playback failed:', err);
                 showToast('Playback blocked or failed. Click Play again.');
             }
@@ -3699,10 +3704,16 @@
             isPlaying = false;
             btnPlay.textContent = '🧿';
             btnPlay.classList.remove('active-state');
+            startVisualizer();
         }
 
         function togglePrimaryPlayControl() {
-            if (!currentFile && !restoreLastPlayedTrack()) return;
+            // Restoring a saved track already initiates loading/playback; don't play twice
+            // while an IndexedDB audio file is still being read.
+            if (!currentFile) {
+                restoreLastPlayedTrack();
+                return;
+            }
             if (ignoreNextPlayClick) {
                 ignoreNextPlayClick = false;
                 return;
@@ -5104,7 +5115,10 @@
                 canvas.height = height;
             }
         }
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            startVisualizer();
+        });
         resizeCanvas();
 
         let dragScrollDown = false;
@@ -5127,11 +5141,34 @@
             tagsBar.scrollLeft = scrollLeftTags - walk;
         });
 
-        function startVisualizer() {
-            if (visualizerRunning) return;
-            visualizerRunning = true;
-            drawVisualizer();
+        // Schedule only visible canvas frames; never pause the audio engine for battery savings.
+        function visualizerShouldAnimate() {
+            return document.visibilityState !== 'hidden' && isPlaying && activeAudio && !activeAudio.paused;
         }
+
+        function stopVisualizerFrames() {
+            if (visualizerFrameId) cancelAnimationFrame(visualizerFrameId);
+            visualizerFrameId = 0;
+            visualizerRunning = false;
+        }
+
+        function startVisualizer() {
+            if (document.visibilityState === 'hidden') {
+                stopVisualizerFrames();
+                return;
+            }
+            if (visualizerFrameId) return; // Coalesce redraws and avoid duplicate loops.
+            visualizerRunning = true;
+            visualizerFrameId = requestAnimationFrame(() => {
+                visualizerFrameId = 0;
+                drawVisualizer();
+                if (visualizerShouldAnimate()) startVisualizer();
+                else visualizerRunning = false;
+            });
+        }
+
+        // MIDI uses a separate playback adapter with no native HTML audio events.
+        window.OndaVisualizerRefresh = startVisualizer;
 
         function drawIdleOrStreamVisualizer(label = '') {
             const t = performance.now() / 1000;
@@ -5817,7 +5854,8 @@
         }
 
         function drawVisualizer() {
-            requestAnimationFrame(drawVisualizer);
+            // draw only the requested frame; startVisualizer owns all scheduling.
+            if (document.visibilityState === 'hidden') return;
             resizeCanvas();
             canvasCtx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -5860,9 +5898,10 @@
         }
 
         startVisualizer();
-
-
-
+        // Settings changes must redraw a paused visualiser once without a perpetual loop.
+        visualizerLayerList?.addEventListener('input', startVisualizer);
+        visualizerLayerList?.addEventListener('change', startVisualizer);
+        visualizerPresetSelect?.addEventListener('change', startVisualizer);
 
         // --- 8B. SETTINGS, LAYOUT MODE, FULLSCREEN, AND CURRENT-TRACK MARQUEE ---
         function setSettingsTab(tab = 'audio') {
@@ -6188,7 +6227,10 @@
         });
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
+                stopVisualizerFrames(); // Audio and lock-screen controls continue.
                 saveLocalUiStateCheckpoint('visibility-hidden');
                 flushActiveLibraryState('visibility-hidden-flush');
+            } else {
+                startVisualizer();
             }
         });
