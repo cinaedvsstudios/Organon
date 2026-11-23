@@ -203,6 +203,36 @@ async function desktopSmoke(browser, baseUrl) {
         await page.waitForFunction(() => Boolean(window.OndaQuickPlay?.getActiveAudio));
         assert.equal(await cachedAudioCount(page), importedCount, 'browser reload preserves explicitly cached audio');
         console.log('desktop: explicit import + browser cache persistence after reload confirmed');
+
+        // A stored blob is not enough: Onda must restore the saved Library
+        // metadata and actually decode/play that blob after the browser reload.
+        await page.locator('#btn-database-engine').click();
+        const savedRow = page.locator('#db-library-results .library-result-row')
+            .filter({ hasText: 'onda-synthetic-check.wav' });
+        await savedRow.waitFor({ state: 'visible', timeout: 15000 });
+        const sourceLine = await savedRow.locator('.library-file-line').textContent();
+        assert.match(sourceLine, /local cached|local ready/i,
+            'saved file must be identified as available, not requiring relink');
+        assert.equal(await savedRow.locator('.btn-db-reconnect-track').count(), 0,
+            'a cached track should not require a file picker after reload');
+
+        // Network is disabled only AFTER the page has loaded successfully, to
+        // verify actual local cache retrieval without requiring a remote stream.
+        await context.setOffline(true);
+        await savedRow.locator('.btn-db-play-track').click();
+        await page.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return Boolean(audio && audio.src.startsWith('blob:') &&
+                Number.isFinite(audio.duration) && audio.duration >= 2);
+        }, { timeout: 15000 });
+        await page.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return audio && !audio.paused && audio.currentTime > 0.12;
+        }, { timeout: 15000 });
+        assert.equal(await cachedAudioCount(page), importedCount,
+            'playing the restored track must not create duplicate cached media');
+        console.log('desktop: saved track restored and played OFFLINE from IndexedDB after reload');
+        await context.setOffline(false);
     } finally {
         await context.close();
     }
