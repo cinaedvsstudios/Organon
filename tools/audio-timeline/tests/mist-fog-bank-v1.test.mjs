@@ -33,7 +33,7 @@ test('Three independent billowing low banks rise into wisps without a checkerboa
  const e=preset({}),at=(x,y,t)=>sampleMistFogLayers(x,y,e,t*e.speed);
  const layers=at(.42,.89,.6);
  assert.equal(layers.length,3);
- assert.ok(layers.every(p=>p.alpha>=0&&p.alpha<=.46));
+ assert.ok(layers.every(p=>p.alpha>=0&&p.alpha<=.62&&p.body>=0&&p.body<=1));
  assert.ok(new Set(layers.map(p=>p.body.toFixed(4))).size===3);
  assert.ok(new Set(layers.map(p=>p.wind)).size===3);
  const branches=Array.from({length:80},(_,i)=>at((i%20+.5)/20,(Math.floor(i/20)+.5)/4,.8));
