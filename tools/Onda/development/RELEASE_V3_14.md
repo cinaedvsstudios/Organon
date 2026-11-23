@@ -50,7 +50,9 @@ Two isolated/static groups passed against repository source:
 - **18 audit/data checks:** JavaScript syntax; summary export; valid/invalid counts; byte totals; strict duplicate grouping; protected IDs; a simulated read-only IndexedDB cursor; metadata-only reads; no deletion API; preservation of queue, playlist, history, current and backup references.
 - **12 report/UI checks:** HTML escaping of potentially malicious filenames and paths; summary, unlinked, duplicate, damaged and snapshot displays; no delete controls; successful report execution with protected IDs; disabled/enabled Review button state and read-only flow.
 
-These tests are **simulations and source inspection**, not real Android IndexedDB operations, real performance measurements, or proof that Netlify is serving the new version. The core JavaScript and module were also parsed. **30 isolated/static tests passed** in these groups.
+- **9 additional scanner failure/cap checks:** normal readonly scan, DB closure, no Blob content reads, denied storage transaction, cleanup on errors, 20,000-record limit returns a clear error rather than partial data, no byte reads at limit, and unusable entries do not count as recoverable bytes.
+
+These checks are **simulations and source inspection**, not real Android IndexedDB operations, real performance measurements, or proof that Netlify is serving the new version. The core JavaScript and module were also parsed. **39 isolated/static checks passed** across the source and simulated tests listed here.
 
 ## Android / desktop acceptance still required
 
