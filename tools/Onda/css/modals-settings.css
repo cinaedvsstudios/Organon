@@ -348,3 +348,74 @@
     min-height: 44px;
   }
 }
+
+/* v3.20 — on-device, read-only compatibility QA in the existing Storage Health tab. */
+.onda-device-qa-panel {
+  border: 1px solid rgba(117, 178, 222, .32);
+  border-radius: 12px;
+  margin: 12px 0;
+  padding: 10px 12px;
+}
+.onda-device-qa-panel > summary {
+  color: var(--water-spray);
+  cursor: pointer;
+  font-size: .82rem;
+  font-weight: 750;
+  padding: 4px 0;
+}
+.onda-device-qa-panel .library-help {
+  line-height: 1.45;
+  margin: 9px 0;
+}
+.onda-device-qa-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0;
+}
+.onda-device-qa-actions .btn-pill {
+  min-height: 44px;
+}
+.onda-qa-capabilities {
+  font-size: .78rem;
+  line-height: 1.5;
+  list-style: disc;
+  margin: 9px 0 14px;
+  padding-left: 18px;
+}
+.onda-qa-capabilities li {
+  padding: 3px 0;
+  overflow-wrap: anywhere;
+}
+.onda-device-qa-heading {
+  color: var(--stone-ochre);
+  font-size: .86rem;
+  margin: 12px 0 5px;
+}
+.onda-device-qa-row {
+  align-items: center;
+  border-top: 1px solid rgba(117, 178, 222, .17);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+.onda-device-qa-row > span {
+  flex: 1 1 170px;
+  font-size: .78rem;
+}
+.onda-device-qa-row select {
+  flex: 0 0 120px;
+  font-size: .82rem;
+  min-height: 44px;
+}
+@media (max-width: 768px) {
+  .onda-device-qa-actions .btn-pill {
+    flex: 1 1 160px;
+  }
+  .onda-device-qa-row select {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}

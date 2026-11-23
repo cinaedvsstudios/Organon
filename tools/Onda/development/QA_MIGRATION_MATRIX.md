@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.8 for Onda v3.19 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 consolidated static/isolated Quick Play and Media Session checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.19 release notes](./RELEASE_V3_19.md).  
+**Version:** QA v1.9 for Onda v3.20 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 checks; v3.20: 37 isolated/static device-check privacy and UI tests. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.20 release notes](./RELEASE_V3_20.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -369,3 +369,27 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | QP-18 Android lock-screen and headphone | Background audio focus, seek/play/pause/stop verified on actual phone | NEEDS DEVICE |
 
 **Release gate:** Quick Play intentionally bypasses permanent import *only* for auditioning. Do not claim Android media/codec compatibility, guaranteed background playback or cache persistence until device tests. No automatic cleanup of older media; preview has no persistent audio bytes.
+
+## v3.20 Read-only on-device compatibility and release verification
+
+| Test | Expected | Status |
+|---|---|---|
+| QA20-01 Initial load | No automatic permission prompts, audio play, storage mutation or file scanning | PASS isolated/source; NEEDS DEVICE |
+| QA20-02 Explicit Run | Capability report appears only after pressing Run | PASS isolated; NEEDS DEVICE |
+| QA20-03 Loaded source version | Actual deployed version shown; version mismatch flagged | PASS isolated; NEEDS DEPLOY |
+| QA20-04 Picker APIs | Show only supported feature booleans, not permission grants | PASS isolated; NEEDS DEVICE |
+| QA20-05 Media Session and codecs | Identify API presence and browser `canPlayType` hints; do not claim playback success | PASS isolated; NEEDS DEVICE |
+| QA20-06 Source modules | Report Quick Play, performance diagnostics, Library, and player element availability | PASS isolated; NEEDS BROWSER |
+| QA20-07 Manual tests default | All eight cases initially Not tested; no fabricated PASS values | PASS isolated |
+| QA20-08 Manual test verdicts | Only Pass/Fail/Blocked/Not tested accepted; malformed values rejected | PASS isolated; NEEDS DEVICE |
+| QA20-09 Report privacy | No filenames, track IDs, paths, credentials, userAgent or storage byte totals | PASS isolated |
+| QA20-10 Export | Explicit local redacted JSON; export disabled until Run; object URL revoked | PASS isolated; NEEDS BROWSER |
+| QA20-11 Storage guard | No localStorage, IndexedDB, sessionStorage, file picker, network or media playback operations in QA module | PASS source |
+| QA20-12 Android saved playback | Previously cached files play after restart without unnecessary reimport | NEEDS DEVICE |
+| QA20-13 Android screen lock | Regular and Quick Play Media Session controls operate when locked | NEEDS DEVICE |
+| QA20-14 Quick Play source protection | Audition leaves Library, queue, history and cache unchanged until Add | NEEDS DEVICE |
+| QA20-15 Library touch/responsive | Portrait/landscape controls usable with actual taps, keyboard and text size | NEEDS DEVICE |
+| QA20-16 Normal Add and reconnect | Existing folder/file picker, import/cache, reconnect, desktop mode keep working | NEEDS DEVICE |
+| QA20-17 Public deployment | Netlify actually serves v3.20 and the new device-qa.js module | NEEDS DEPLOY / BROWSER |
+
+**Release gate:** 37 source-only tests cannot establish that an Android phone plays sound, retains file access across restart, or exposes reliable lock-screen controls. Use explicit manual verdicts from the user's real phone/desktop before marking those runtime scenarios passed.

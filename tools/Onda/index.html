@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.18" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.19" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
+<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.20" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.19" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
@@ -426,6 +426,18 @@
 <span class="library-help">Preview only. No music or browser cache can be deleted from this report.</span>
 </div>
 <div class="onda-storage-audit-report" id="storage-audit-report" aria-live="polite" hidden></div>
+<details class="onda-device-qa-panel" id="onda-device-qa-panel">
+<summary>Device compatibility and playback QA (read-only)</summary>
+<p class="library-help">Run safe browser capability checks, then mark the playback tests yourself. Reports contain only yes/no capabilities, rough viewport size, audio codec hints and pass/fail answers. No music files, track names, paths, account details or secrets are inspected or uploaded.</p>
+<div class="onda-device-qa-actions">
+<button type="button" class="btn-pill" id="btn-onda-device-qa-run">Run device checks</button>
+<button type="button" class="btn-pill" id="btn-onda-device-qa-export" disabled>Export redacted QA JSON</button>
+</div>
+<div class="library-track-meta" id="onda-device-qa-results" aria-live="polite">No device checks run yet. Nothing will be scanned until you press Run.</div>
+<h3 class="onda-device-qa-heading">Manual playback checks</h3>
+<p class="library-help">Use a disposable MP3 and your existing saved tracks. These tests cannot be confirmed automatically; mark each after trying it on your phone or desktop. Leave anything unknown as Not tested.</p>
+<div id="onda-device-qa-manual"></div>
+</details>
 <details class="onda-diagnostics-panel" id="onda-diagnostics-panel">
 <summary>Developer performance diagnostics (opt-in)</summary>
 <p class="library-help">Off by default. Records anonymous timing and count metrics only in memory, never music names, paths, URLs or cloud secrets. Export is manual and local. No network upload.</p>
@@ -721,6 +733,6 @@
 
 
 
-<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/diagnostics.js?v=3.18"></script><script src="js/app-core.js?v=3.19"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.19"></script><script src="js/quick-play.js?v=3.19"></script>
+<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/diagnostics.js?v=3.18"></script><script src="js/app-core.js?v=3.20"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.19"></script><script src="js/quick-play.js?v=3.19"></script><script src="js/device-qa.js?v=3.20"></script>
 </body>
 </html>
