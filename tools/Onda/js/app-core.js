@@ -4063,16 +4063,48 @@
             syncAllTrackPlaylistMetadata(); renderLibraryManager(); updateMetadataUI(); saveActiveLibraryState('metadata-overlay-import'); showToast(`Metadata overlay merged: ${matched} matched, ${unmatched} unmatched.`);
         }
         function importMetadataOverlayFile(file) { if (!file) return; const reader = new FileReader(); reader.onload = () => { try { mergeMetadataOverlay(JSON.parse(reader.result)); } catch (err) { showToast('Metadata overlay import failed: invalid JSON.'); } }; reader.readAsText(file); }
-        function updateSettingsHealthPanel() {
-            const grid = document.getElementById('settings-health-grid'); if (!grid) return;
+        async function updateSettingsHealthPanel() {
+            const grid = document.getElementById('settings-health-grid');
+            if (!grid) return;
+            if (audioCacheIndexState === 'pending') {
+                grid.textContent = 'Checking Onda audio cache…';
+                await refreshAudioCacheIndex();
+            }
             const trackCount = Object.keys(virtualLibrary || {}).length;
             const playlistCount = Object.keys(playlists || {}).length;
-            const missingRelink = Object.values(virtualLibrary || {}).filter(meta => meta && meta.sourceType !== 'stream' && meta.sourceType !== 'reference' && !meta.blobFile).length;
+            const verifiedCache = audioCacheIndexState === 'ready';
+            const needsRelink = verifiedCache
+                ? Object.values(virtualLibrary || {}).filter(meta => sourceStatus(meta) === 'needs relink').length
+                : 'not verified';
             const noLyrics = Object.values(virtualLibrary || {}).filter(meta => meta && !meta.lyrics).length;
             const noTags = Object.values(virtualLibrary || {}).filter(meta => meta && (!meta.tags || !meta.tags.length)).length;
             const device = localStorage.getItem('ondaCloudDeviceIdV1') || localStorage.getItem('onda-cloud-device-id') || 'not set';
             const lastCloud = localStorage.getItem('ondaCloudLastSyncV1') || 'not recorded';
-            grid.innerHTML = [['Tracks',trackCount],['Playlists',playlistCount],['Needs relink',missingRelink],['Missing lyrics',noLyrics],['No tags',noTags],['Device profile',device],['Last cloud sync',lastCloud]].map(([label,value]) => `<div class="settings-health-item"><div class="settings-health-label">${escapeHtml(label)}</div><div class="settings-health-value">${escapeHtml(value)}</div></div>`).join('');
+            const referencedCache = verifiedCache
+                ? [...cachedAudioTrackIds].filter(id => Boolean(virtualLibrary[id])).length : 0;
+            const cachedAudio = verifiedCache
+                ? cachedAudioTrackIds.size + ' files · ' + formatBytes(cachedAudioBytes)
+                : 'not available';
+            let originUsage = 'not available';
+            try {
+                if (navigator.storage?.estimate) {
+                    const estimate = await navigator.storage.estimate();
+                    originUsage = formatBytes(estimate.usage || 0) + ' (whole site)';
+                }
+            } catch (error) {
+                console.warn('Onda storage estimate could not be read:', error);
+            }
+            const rows = [
+                ['Tracks', trackCount], ['Playlists', playlistCount],
+                ['Cached audio', cachedAudio], ['Unlinked cache records', verifiedCache ? cachedAudioTrackIds.size - referencedCache : 'not verified'],
+                ['Site storage used', originUsage], ['Needs relink', needsRelink],
+                ['Missing lyrics', noLyrics], ['No tags', noTags],
+                ['Device profile', device], ['Last cloud sync', lastCloud]
+            ];
+            grid.innerHTML = rows.map(([label, value]) =>
+                '<div class="settings-health-item"><div class="settings-health-label">' +
+                escapeHtml(label) + '</div><div class="settings-health-value">' +
+                escapeHtml(value) + '</div></div>').join('');
         }
         function exportMissingInfoJson() { const data = buildMissingInfoExport(); downloadJsonFile(`onda-missing-info-${new Date().toISOString().slice(0,10)}.json`, data); showToast(`Exported ${data.tracks.length} tracks with missing info.`); }
         safeBind('btn-export-missing-info','click',exportMissingInfoJson);
