@@ -1153,7 +1153,19 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-rgb-block-glitch-controls" hidden>
+                     <div id="effect-line-corruption-controls" hidden>
+                          <details open class="text-inspector-group">
+                              <summary>Fragmented coloured data-lines</summary>
+                              <label class="text-setting-row"><span>Segment length (%)</span><input id="effect-line-length" class="range-control" type="range" min="5" max="100" step="1" value="57" title="Maximum length of scattered, independent line fragments"></label>
+                              <label class="text-setting-row"><span>Line thickness (px)</span><input id="effect-line-thickness" class="range-control" type="range" min="1" max="12" step="1" value="4" title="Approximate thickness of each corrupted pixel line at preview sampling size"></label>
+                              <label class="text-setting-row"><span>Fragment gaps (%)</span><input id="effect-line-fragments" class="range-control" type="range" min="0" max="100" step="1" value="73" title="Broken fragments and gaps rather than a solid horizontal box"></label>
+                              <label class="text-setting-row"><span>Colour static (%)</span><input id="effect-line-static" class="range-control" type="range" min="0" max="100" step="1" value="67" title="Colourful bright micro-noise mixed with displaced source rows"></label>
+                              <label class="text-setting-row"><span>Accent streak colour</span><input id="effect-line-accent" class="compact-input" type="color" value="#ff53ba" title="Alternate source-interference static streak tint"></label>
+                              <label class="text-setting-row"><span>Segment lifetime (s)</span><input id="effect-line-life" class="range-control" type="range" min="0.04" max="0.4" step="0.01" value="0.14" title="Life of each quick independent data-line failure"></label>
+                              <label class="text-setting-row"><span>Line pattern seed</span><input id="effect-line-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6565" title="Deterministic fragment placement for reversible seeking and exact exports"></label>
+                          </details>
+                      </div>
+                      <div id="effect-rgb-block-glitch-controls" hidden>
                           <details open class="text-inspector-group">
                               <summary>Independent RGB block misregistration</summary>
                               <label class="text-setting-row"><span>Block width (%)</span><input id="effect-rgb-block-width" class="range-control" type="range" min="2" max="45" step="1" value="21" title="Horizontal size of independent rectangular RGB glitch islands"></label>
