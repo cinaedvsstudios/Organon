@@ -50,7 +50,7 @@ This release does **not** change Onda's audio playback behaviour, saved files, m
 
 ## Verification
 
-Source/static and isolated mock-DOM tests cover: module JS syntax, disabled default, intentional enable/disable, no recording before opt-in, one-use reload, strict redaction, disallowed event/metric fields, invalid durations, bounded 200-sample buffer, clearing records, correct script order, and app source syntax. See [QA matrix](./QA_MIGRATION_MATRIX.md) for browser/device gates.
+**62 source/static and isolated checks passed.** Tests cover: module JS syntax, disabled default, intentional enable/disable, no recording before opt-in, one-use reload, strict redaction, disallowed event/metric fields, invalid durations, bounded 200-sample buffer, clearing records, correct script order, and app source syntax. See [QA matrix](./QA_MIGRATION_MATRIX.md) for browser/device gates.
 
 ## Android/desktop acceptance checks still required
 
