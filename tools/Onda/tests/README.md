@@ -56,3 +56,11 @@ It confirms real app startup; the existing player controls; Storage Health/devic
 The actual Chromium suite also verifies that a synthetic file deliberately imported through Quick Play survives a page reload as a **real Library entry**, is marked `local cached` or `local ready` (no Reconnect button), and plays from its IndexedDB cache with the network disabled **after the page has loaded**. Chromium must report a real `blob:` audio source, decoded duration and advancing playback position; playing it must not create a duplicate cached audio record. The test restores online mode afterward.
 
 This proves a local browser-cache recovery/playback path in desktop Chrome. It does **not** test a cold startup while offline, persisted file-handle permissions, Android system suspension, physical phone storage, cloud syncing or Bluetooth/lock-screen behaviour.
+
+### Missing audio and explicit Reconnect (real Chromium)
+
+A separate disposable Chrome context imports an **Onda Library JSON containing metadata only**: one intentionally missing local WAV, a stable track ID, playlist membership, tag and note. No audio bytes are imported or cached. After reloading, the test confirms that Onda retains the Library row, labels its source **needs relink**, and offers **Reconnect**. Clicking Play without audio shows the missing-file warning but does not remove metadata or silently open a picker.
+
+The test then clicks the actual **Reconnect** control, handles Chrome's genuine filechooser event, supplies an in-memory WAV, and verifies that audio plays under the original track ID, metadata and playlist membership survive, only one cache record is created and the track no longer requires Reconnect after another reload.
+
+**Evidence:** [GitHub Actions run #45256546568](https://github.com/cinaedvsstudios/Organon/actions/runs/45256546568) passed both source and actual-Chromium jobs. This tests a user-selected file on a desktop Chromium browser and never touches the user's real Library. It does **not** establish Android persistent File System Access handles, filesystem permissions after phone restart, or a renamed-file mismatch confirmation.
