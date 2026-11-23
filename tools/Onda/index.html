@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.14" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.16" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
+<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.14" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.17" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
@@ -287,10 +287,10 @@
 <div class="library-drawer-title-row">
 <div class="library-drawer-title">Library</div>
 <div aria-label="Library quick actions" class="mobile-library-header-actions">
-<button class="tiny-icon-btn" data-library-action-panel="select" id="btn-mobile-select-mode" title="Select" type="button">☝️</button>
-<button class="tiny-icon-btn" data-library-action-panel="settings" id="btn-mobile-settings-mode" title="Settings" type="button">⚙️</button>
+<button class="tiny-icon-btn" data-library-action-panel="select" id="btn-mobile-select-mode" title="Select" aria-label="Select multiple tracks" aria-pressed="false" type="button">☝️</button>
+<button class="tiny-icon-btn" data-library-action-panel="settings" id="btn-mobile-settings-mode" title="Settings" aria-label="Library settings" type="button">⚙️</button>
 </div>
-<button class="tiny-icon-btn" id="btn-close-library-manager" title="Close library manager">×</button>
+<button class="tiny-icon-btn" id="btn-close-library-manager" title="Close library manager" aria-label="Close Library">×</button>
 </div>
 </div>
 <div class="onda-mobile-library-nav" role="group" aria-label="Library sections and shortcuts">
@@ -304,14 +304,14 @@
 <div class="onda-library-status" id="onda-library-status" aria-live="polite"></div>
 <div class="library-manager-toolbar">
 <div class="search-input-wrap">
-<input aria-autocomplete="none" autocomplete="new-password" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" inputmode="search" name="onda-library-filter-not-login" placeholder="Search filename, nickname, tag, playlist, URL or source..." spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
+<input aria-autocomplete="none" autocomplete="new-password" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" aria-label="Search library tracks" inputmode="search" name="onda-library-filter-not-login" placeholder="Search filename, nickname, tag, playlist, URL or source..." spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
 <button aria-label="Clear search" class="search-clear-btn" id="btn-db-clear-search" title="Clear search">×</button>
 </div>
 <div class="library-manager-actions library-actions-menu">
 <button class="btn-pill library-action-main-btn active" data-library-action-panel="select" id="btn-db-select-mode" type="button"><span class="library-action-icon">☝️</span><span class="library-action-label">Select</span></button>
 <button class="btn-pill library-action-main-btn" data-library-action-panel="settings" id="btn-db-settings-mode" type="button"><span class="library-action-icon">⚙️</span><span class="library-action-label">Settings</span></button>
 </div>
-<select id="db-library-filter">
+<select id="db-library-filter" aria-label="Filter library sources">
 <option value="all">All sources</option>
 <option value="local">Local files</option>
 <option value="stream">Streams</option>
@@ -693,6 +693,6 @@
 
 
 
-<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/app-core.js?v=3.16"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
+<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/app-core.js?v=3.17"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
 </body>
 </html>
