@@ -10,6 +10,7 @@ import {renderPixelScan} from './timeline-pixel-scan.mjs';
 import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
 import {renderMistFog} from './timeline-mist-fog.mjs';
+import {renderTVStatic} from './timeline-tv-static.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -21,6 +22,7 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
  {id:'hazy-atmosphere',label:'Hazy Atmosphere',group:'effect',category:'Atmospheric',animated:true},
  {id:'mist-fog-bank',label:'Mist / Fog Bank',group:'effect',category:'Atmospheric',animated:true},
+ {id:'tv-static',label:'TV Static / Snow',group:'effect',category:'Glitch',animated:true},
  {id:'rhythmic-flicker',label:'Rhythmic Flicker',group:'effect',category:'Light',animated:true},
  {id:'particle-dust',label:'Floating Dust',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
@@ -69,13 +71,14 @@ export function normaliseTimelineEffect(effect={}){
  const swing=['pendulum-swing','rebound-swing'].includes(presetId);
  const shockwave=presetId==='shockwave';
  const mistFog=presetId==='mist-fog-bank';
+ const tvStatic=presetId==='tv-static';
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
  const base={
   presetId,
-  intensity:clamp(raw.intensity,0,100,70),
+  intensity:clamp(raw.intensity,0,100,tvStatic?72:70),
   speed:clamp(raw.speed,.1,8,1),
-  density:clamp(raw.density,1,120,mistFog?73:48),
+  density:clamp(raw.density,1,120,tvStatic?88:mistFog?73:48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
   distortion:clamp(raw.distortion,0,100,mistFog?65:55),
@@ -102,6 +105,12 @@ export function normaliseTimelineEffect(effect={}){
   windSpeed:clamp(raw.windSpeed,0,4,1.2),
   bankHeight:clamp(raw.bankHeight,15,90,64),
   seed:Math.round(clamp(raw.seed,0,99999,58))
+ };
+ if(tvStatic)return {...base,
+  staticMode:raw.staticMode==='color'?'color':'mono',
+  staticBrightness:clamp(raw.staticBrightness,0,100,52),
+  staticVariance:clamp(raw.staticVariance,0,100,88),
+  staticSeed:Math.round(clamp(raw.staticSeed,0,99999,59))
  };
  if(!starburst)return base;
  return {...base,
@@ -297,6 +306,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    renderHazyAtmosphere(ctx,w,h,e,t,strength);
   }else if(e.presetId==='mist-fog-bank'){
    renderMistFog(ctx,w,h,e,t,strength);
+  }else if(e.presetId==='tv-static'){
+   renderTVStatic(ctx,w,h,e,t,strength);
   }else if(e.presetId==='starburst'){
    renderStarburst(ctx,w,h,e,t,strength);
   }else if(e.presetId==='camera-frame'){

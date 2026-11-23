@@ -365,8 +365,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),48,
-        'Keep twelve classic overlays plus thirty-six independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),49,
+        'Keep twelve classic overlays plus thirty-seven independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -736,7 +736,7 @@ try{
     assert.equal(rippleStart,await sampleEffect(15));
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Glitch');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),10);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
     await page.locator('[data-preset-id="fault-cassette"]').click();
     await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-distortion').evaluate(input=>{
@@ -780,7 +780,7 @@ try{
     await page.locator('#effect-category').selectOption('Glitch');
     const glitchIds=['glass-glitch','glitch-storm','negative-chaos','warning-glitch',
       'misalignment','noir-glitch','glitch-flux','engine-heat','retro-glitch'];
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),10);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
     const variants=new Set();
     for(const id of glitchIds){
       await page.locator(`#effects-library-grid [data-preset-id="${id}"]`).click({button:'right'});
@@ -849,6 +849,36 @@ try{
     const burstStart=await sampleEffect(20),burstLater=await sampleEffect(170);
     assert.notEqual(burstStart,burstLater,'Starburst preview must rotate in time');
     assert.equal(burstStart,await sampleEffect(20),'Starburst reverse seek is deterministic');
+    await page.locator('#text-preview-close').click();
+    // #59: native snow controls must really appear and operate on selected
+    // TV Static clip, while unrelated colour/scale/angle knobs stay hidden.
+    await page.locator('#effect-category').selectOption('Glitch');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    await page.locator('[data-preset-id="tv-static"]').click();
+    await page.locator('#effect-tv-static-controls').waitFor({state:'visible',timeout:15000});
+    assert.equal(await page.locator('#effect-intensity-label').innerText(),'Snow opacity (%)');
+    assert.equal(await page.locator('#effect-density-label').innerText(),'Static coverage');
+    assert.ok(await page.locator('#effect-color-control').isHidden(),'RGB snow is not a flat tint');
+    assert.ok(await page.locator('#effect-scale-control').isHidden(),'Random per-pixel TV snow has no scale transform');
+    assert.ok(await page.locator('#effect-direction-control').isHidden());
+    assert.ok(await page.locator('#effect-distortion-control').isHidden());
+    await page.locator('#effect-static-mode').selectOption('color');
+    await page.locator('#effect-static-brightness').evaluate(input=>{
+        input.value='34';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-static-variance').evaluate(input=>{
+        input.value='91';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-static-seed').fill('4312');
+    await page.locator('#effect-static-seed').dispatchEvent('input');
+    assert.equal(await page.locator('#effect-static-mode').inputValue(),'color');
+    assert.equal(await page.locator('#effect-static-brightness').inputValue(),'34');
+    assert.equal(await page.locator('#effect-static-variance').inputValue(),'91');
+    assert.equal(await page.locator('#effect-static-seed').inputValue(),'4312');
+    await page.locator('[data-preset-id="tv-static"]').click({button:'right'});
+    const snowStart=await sampleEffect(20),snowLater=await sampleEffect(170);
+    assert.notEqual(snowStart,snowLater,'TV Static preview must evolve fresh pixels');
+    assert.equal(snowStart,await sampleEffect(20),'TV Static reverse seek must be identical');
     await page.locator('#text-preview-close').click();
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');

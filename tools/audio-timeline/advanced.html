@@ -1105,13 +1105,22 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <label class="text-setting-row"><span>Origin / pivot X (%)</span><input id="effect-origin-x" class="range-control" type="range" min="0" max="100" step="1" value="20" title="Horizontal origin of God Rays or pivot point for Swing/Shockwave"></label>
                         <label class="text-setting-row"><span>Origin / pivot Y (%)</span><input id="effect-origin-y" class="range-control" type="range" min="0" max="100" step="1" value="12" title="Vertical origin of God Rays or pivot point for Swing/Shockwave"></label>
                     </div>
-                    <label class="text-setting-row"><span id="effect-color-label">Colour</span><input id="effect-color" type="color" value="#ffd98d" title="Primary effect colour"></label>
+                    <label class="text-setting-row" id="effect-color-control"><span id="effect-color-label">Colour</span><input id="effect-color" type="color" value="#ffd98d" title="Primary effect colour"></label>
                     <div id="effect-mist-fog-controls" hidden>
                         <details open class="text-inspector-group">
                             <summary>Mist bank formation and wind</summary>
                             <label class="text-setting-row"><span>Wind speed (×)</span><input id="effect-wind-speed" class="range-control" type="range" min="0" max="4" step="0.1" value="1.2" title="Cloud advection speed, independently of timeline speed"></label>
                             <label class="text-setting-row"><span>Bank height (%)</span><input id="effect-bank-height" class="range-control" type="range" min="15" max="90" step="1" value="64" title="Height of the irregular fog bank crest"></label>
                             <label class="text-setting-row"><span>Noise seed</span><input id="effect-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="58" title="Repeatable cloud bank variation; the same seed and time regenerate exact pixels"></label>
+                        </details>
+                    </div>
+                    <div id="effect-tv-static-controls" hidden>
+                        <details open class="text-inspector-group">
+                            <summary>Animated TV snow settings</summary>
+                            <label class="text-setting-row"><span>Noise type</span><select id="effect-static-mode" class="compact-select" title="Black-and-white or independent RGB television snow"><option value="mono">Black &amp; white</option><option value="color">Colour RGB</option></select></label>
+                            <label class="text-setting-row"><span>Brightness (%)</span><input id="effect-static-brightness" class="range-control" type="range" min="0" max="100" step="1" value="52" title="Average snow brightness"></label>
+                            <label class="text-setting-row"><span>Brightness variance (%)</span><input id="effect-static-variance" class="range-control" type="range" min="0" max="100" step="1" value="88" title="Black-to-white or independent RGB noise variation"></label>
+                            <label class="text-setting-row"><span>Noise seed</span><input id="effect-static-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="59" title="Repeatable random snow pattern for exact seeking and export"></label>
                         </details>
                     </div>
                     <div id="effect-camera-frame-controls" hidden>
