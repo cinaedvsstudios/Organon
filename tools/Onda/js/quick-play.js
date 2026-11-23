@@ -59,6 +59,7 @@
     function startPreview(file = selectedFile) {
         if (!isPlayableAudioFile(file)) {
             showStatus('Choose an audio file. MIDI and video remain available through normal Add Files.');
+            bridge?.notify?.('Quick Play accepts audio only. Use Add Files for MIDI or video.');
             return false;
         }
         // Stop Onda's existing track only when a new audition actually starts.
@@ -66,8 +67,14 @@
         selectedFile = file;
         panel.hidden = false;
         if (title) title.textContent = file.name;
-        previewUrl = URL.createObjectURL(file);
-        previewAudio.src = previewUrl;
+        try {
+            previewUrl = URL.createObjectURL(file);
+            previewAudio.src = previewUrl;
+        } catch (_) {
+            stopPreview('Could not open this file for temporary playback.');
+            bridge?.notify?.('Unable to preview that file. Try normal Add Files or another format.');
+            return false;
+        }
         previewActive = true;
         bridge?.pauseMain?.();
         refreshSession();
@@ -101,6 +108,7 @@
         if (!file) return;
         if (!isPlayableAudioFile(file)) {
             showStatus('That file is not audio. Use Add Files for MIDI or video.');
+            bridge?.notify?.('Quick Play accepts audio only. Use Add Files for MIDI or video.');
             return;
         }
         returnToAddView();
