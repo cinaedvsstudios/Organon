@@ -433,7 +433,9 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
   }else if(e.presetId==='particle-sparks'){
    renderElectricSparks(ctx,w,h,e,t,strength);
   }else if(e.presetId==='particle-debris'){
-   const debris=true;
+   // The old shared path still uses the sparks/debris flags for size and drift.
+   // The dedicated Electric Sparks painter above never enters this branch.
+   const sparks=false,debris=true;
    const count=Math.min(120,Math.max(1,Math.round(e.density)));
    const clipAlpha=ctx.globalAlpha;
    const dx=Math.cos(rad),dy=Math.sin(rad);
