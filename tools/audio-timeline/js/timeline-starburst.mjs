@@ -18,7 +18,7 @@ export function starburstGeometry(width,height,effect={},cycle=0){
  const spinDirection=Number(effect.spinDirection)===-1?-1:1;
  const angleOffset=limit(effect.direction??0,-180,180,0)*Math.PI/180;
  const phase=Math.max(0,Number(cycle)||0);
- const rotation=angleOffset+spinDirection*phase*.62;
+ const rotation=angleOffset+spinDirection*phase*.79;
  const cx=w*limit(effect.originX??50,0,100,50)/100;
  const cy=h*limit(effect.originY??50,0,100,50)/100;
  const radius=Math.hypot(w,h)*2.05;
