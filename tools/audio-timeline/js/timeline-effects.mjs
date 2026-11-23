@@ -17,6 +17,7 @@ import {renderDataBurst} from './timeline-data-burst.mjs';
 import {renderSignalTear} from './timeline-signal-tear.mjs';
 import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
 import {renderLineCorruption} from './timeline-line-corruption.mjs';
+import {renderFaultCassette} from './timeline-fault-cassette.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
@@ -99,6 +100,7 @@ export function normaliseTimelineEffect(effect={}){
  const electricSparks=presetId==='particle-sparks';
  const flyingDebris=presetId==='particle-debris';
  const fireExplosion=presetId==='fire-explosion';
+ const faultCassette=presetId==='fault-cassette';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
@@ -112,6 +114,16 @@ export function normaliseTimelineEffect(effect={}){
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':'#ffd98d'
+ };
+ if(faultCassette)return {...base,
+  density:clamp(raw.density,1,120,62),
+  distortion:clamp(raw.distortion,0,100,72),
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():'#ffe0aa',
+  cassetteTracking:clamp(raw.cassetteTracking,0,100,79),
+  cassetteDropouts:clamp(raw.cassetteDropouts,0,100,62),
+  cassetteChroma:clamp(raw.cassetteChroma,0,100,64),
+  cassetteRoll:clamp(raw.cassetteRoll,0,100,48),
+  cassetteSeed:Math.round(clamp(raw.cassetteSeed,0,99999,6969))
  };
  if(fireExplosion)return {...base,
   glow:clamp(raw.glow,0,100,78),
@@ -329,20 +341,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
      ctx.fillRect(0,0,w,h);
     }
    }else if(e.presetId==='fault-cassette'){
-    const bands=Math.max(6,Math.min(25,Math.round(e.density*.19)));
-    const tick=Math.floor(t*17);
-    for(let i=0;i<bands;i++){
-     const y=i*h/bands,bandH=Math.ceil(h/bands)+1;
-     const jitter=(random(tick*31+i*7)-.5)*(5+e.distortion*.43)*size;
-     if(source)ctx.drawImage(source,0,y,w,bandH,jitter,y,w,bandH);
-     else{ctx.fillStyle=rgba(e.color,.22);ctx.fillRect(jitter,y,w*.65,bandH);}
-    }
-    ctx.globalAlpha=amount;
-    ctx.fillStyle=rgba(e.color,.08);
-    for(let i=0;i<13;i++){
-     const y=wrap(random(i+51)+t*.19)*h;
-     ctx.fillRect(0,y,w,Math.max(1,h*.002));
-    }
+    renderFaultCassette(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='ripple-distortion'||e.presetId==='electric-ripple'){
     const electric=e.presetId==='electric-ripple';
     const rows=36;
