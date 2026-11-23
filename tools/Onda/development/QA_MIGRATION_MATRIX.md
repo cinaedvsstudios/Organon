@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.4 for Onda v3.14 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 isolated/static checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.14 release notes](./RELEASE_V3_14.md).  
+**Version:** QA v1.5 for Onda v3.15 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 isolated/static checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.15 release notes](./RELEASE_V3_15.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -280,3 +280,24 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | AUDIT-16 | Verify privacy of real file paths | Only presented locally; no network upload of report or music | PASS static; network inspection pending |
 
 **Release gate:** read-only review can be tested without destructive operations, but **cleanup must not be implemented** until the user has reviewed real Android findings, source availability and backup implications. Never clear actual Onda site storage or manually delete entries to force a test on the user's only copy. Refer to [RELEASE_V3_14.md](./RELEASE_V3_14.md).
+
+## v3.15 Current-screen queue — mobile test checklist
+
+| Test | Expected | Status |
+|---|---|---|
+| QUEUE-01 Ad-hoc imported tracks | Actual queue visible on Current without a saved named playlist | PASS isolated; NEEDS DEVICE |
+| QUEUE-02 Empty queue | Clear action hint and usable Show/Hide queue toggle | PASS isolated; NEEDS DEVICE |
+| QUEUE-03 Named saved playlist with ad-hoc queue additions | Actual queue rows, source playlist preserved | PASS isolated; NEEDS DEVICE |
+| QUEUE-04 Play a non-current queued track | One tap plays existing track; no reimport | PASS isolated; NEEDS DEVICE |
+| QUEUE-05 Remove earlier non-playing track | Current playing track/index unchanged; no Library or playlist deletion | PASS isolated; NEEDS DEVICE |
+| QUEUE-06 Playing track | No Remove button for active track | PASS isolated |
+| QUEUE-07 Info and Add to Playlist | Info inline does not change playing song, playlist assignment still works | PASS isolated; NEEDS DEVICE |
+| QUEUE-08 Shuffle and repeat-all | No false deterministic upcoming order; wrap label correct | PASS isolated; NEEDS DEVICE |
+| QUEUE-09 Mobile portrait/landscape 320/360/390/420px | Queue immediately under Now Playing, usable bounded scroll and controls | NEEDS DEVICE |
+| QUEUE-10 Force-desktop mode on narrow window | Desktop presentation not overridden by mobile queue positioning | PASS CSS review; NEEDS BROWSER |
+| QUEUE-11 Show/Hide queue after reload | Stored visibility setting respected without requiring a saved playlist | PASS isolated; NEEDS DEVICE |
+| QUEUE-12 MIDI, stream, Android lock screen | Real media playback and Media Session unaffected | NEEDS DEVICE |
+| QUEUE-13 HTML-special track names | Escaped, no arbitrary markup insertion | PASS isolated |
+| QUEUE-14 View Current after restore/add | Updated list appears without opening Library drawer | PASS static; NEEDS DEVICE |
+
+**Release gate:** verify v3.15 actually deployed and real Android queue UI/playback before declaring it mobile validated. There was no music data migration or deletion. [Release details](./RELEASE_V3_15.md).
