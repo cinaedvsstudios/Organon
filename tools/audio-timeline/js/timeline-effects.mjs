@@ -129,7 +129,7 @@ export function normaliseTimelineEffect(effect={}){
   lineOpacity:clamp(raw.lineOpacity,0,100,61),
   gridStrength:clamp(raw.gridStrength,0,100,38),
   flickerStrength:clamp(raw.flickerStrength,0,100,35),
-  rollRate:clamp(raw.rollRate,0,4,.75),
+  crtRollRate:clamp(raw.crtRollRate,0,4,.75),
   scanSeed:Math.round(clamp(raw.scanSeed,0,99999,6161))
  };
  if(!starburst)return base;
