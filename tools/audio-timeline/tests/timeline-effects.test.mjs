@@ -25,7 +25,7 @@ const paint=(preset,t,settings={})=>{
  return JSON.stringify(ctx.log);
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
- assert.equal(TIMELINE_EFFECTS.length,39);
+ assert.equal(TIMELINE_EFFECTS.length,40);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
  assert.deepEqual(
