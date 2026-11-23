@@ -520,3 +520,19 @@ These tests make no changes to Onda's real runtime, browser storage scheme or pl
 | ANDROID-BG | Real Android screen lock, app switching/background throttling, Bluetooth/headphones, notification controls and battery | NEEDS PHYSICAL DEVICE |
 
 **Scope:** Onda source remains **v3.22**. This PR changes only automated tests and QA documentation. Generated audio, private localhost context, no access to user's media/cache or production Netlify app. Background state was simulated by dispatching a visibility event; genuine Android OS process/background behaviour cannot be established from this.
+
+## v3.23 real Chromium offline COLD START (after online install) — 2026-11-23
+
+**Evidence:** [GitHub Actions run #45280311658](https://github.com/cinaedvsstudios/Organon/actions/runs/45280311658) completed **both** Node source and real Chromium tests successfully. All previously passing Chrome saved-audio, missing/reconnect, file handles, permission-denied and Media Session paths remain passing. Source bump: **v3.23**, release details in [RELEASE_V3_23.md](./RELEASE_V3_23.md).
+
+| ID | Actual Chrome observation | Result |
+|---|---|---|
+| BROWSER-33 | First online session registers `onda-sw.js`, installs worker and precaches complete static Onda shell | PASS real Chromium |
+| BROWSER-34 | Shell cache includes exact-version `index.html`, linked JS/CSS, MIDI, icons and manifest, with no media, personal Library JSON or cloud responses | PASS real Chromium + Node allowlist |
+| BROWSER-35 | Synthetic WAV explicitly saved to real IndexedDB audioFiles; Chrome process then fully closed | PASS real Chromium |
+| BROWSER-36 | Reopened same disposable Chrome profile, set network OFF **before** first Onda page navigation; app shell and runtime v3.23 loaded | PASS real Chromium cold start |
+| BROWSER-37 | Recovered Library entry still cached and WAV plays with a real blob URL and advancing playback position, without duplicate writes | PASS real Chromium cold start |
+| BROWSER-38 | Unknown offline JSON route does not get a misleading HTML/JSON shell fallback; worker's cache contents unchanged | PASS real Chromium |
+| ANDROID-OFFLINE | First online PWA install on user's actual phone, then airplane mode / phone restart / app shortcut; storage eviction and remote streaming exclusions | NEEDS PHYSICAL DEVICE |
+
+**Safe scope:** User audio is stored only via Onda's existing IndexedDB import, **not the new Cache Storage app shell**. Service worker only claims its Onda directory and deletes caches with its own `onda-static-shell-` prefix during updates. No changes to Library/IndexedDB schema, source files, file handles, cloud sync or player engine. Test Chrome profile is generated in a temporary folder and destroyed afterward. This does **not** prove cold first-ever offline installation, Android OS background process or live Netlify deployment.
