@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v2.0 for Onda v3.21 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 checks; v3.20: 37 checks; v3.21: 66 isolated/static checkpoint regression checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.21 release notes](./RELEASE_V3_21.md).  
+**Version:** QA v2.1 for Onda v3.22 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 checks; v3.20: 37 checks; v3.21: 66 isolated/static checkpoint regression checks; v3.22: corrected loaded-version reporting and release-agnostic CI assertions. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.22 release notes](./RELEASE_V3_22.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -426,3 +426,17 @@ The suite retains five top-level Node tests: (1) script parse/version/order/tran
 These tests are **source and mocked-browser** checks. They do not establish that a real Android phone plays audio after reloading, that permission grants persist, that screen-lock/headset controls work, that a Netlify deployment succeeded or that real performance meets targets.
 
 Do not treat Actions green as physical-device acceptance. Continue using v3.20's read-only device QA panel and v3.18 opt-in timing tools on actual Android and desktop.
+
+## v3.22 correct loaded-version reporting
+
+| Test | Expected | Status |
+|---|---|---|
+| V22-01 Loaded version | QA shows app-core's actual `v3.22` rather than a `v3.20` hardcoded QA version | SOURCE FIX; NEEDS DEPLOY |
+| V22-02 Redacted export | `sourceVersion` and `capabilities.loadedVersion` equal the loaded version | SOURCE FIX; NEEDS DEVICE |
+| V22-03 Future-version resilience | Cached older QA module reports a different valid app version, not a false mismatch | SIMULATED; NEEDS BROWSER |
+| V22-04 Malformed version | HTML, long or invalid version values return `unavailable`; never enter export | SIMULATED; NEEDS BROWSER |
+| V22-05 Repeatable test longevity | CI reads the current source version and matching HTML asset query without hard-coded v3.21 | PASS GitHub Actions Node 22 (run #45229083186) |
+| V22-06 Playback/cache safety | Onda music, IndexedDB, File System Access, Quick Play and Media Session unchanged | CODE SCOPE; NEEDS DEVICE |
+| V22-07 Netlify production | A live browser actually serves v3.22 and both revised JS assets | NEEDS DEPLOY / BROWSER |
+
+A successful source or GitHub Actions run is not evidence of Android playback, browser storage persistence, or live production deployment.

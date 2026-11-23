@@ -42,8 +42,11 @@ test('Onda shipped modules parse and script order preserves compatibility', () =
     ]) {
         assert.doesNotThrow(() => new Script(source(name), { filename: name }), name);
     }
-    assert.match(app, /const ONDA_VERSION = 'v3\.21'/);
-    assert.match(markup, /js\/app-core\.js\?v=3\.21/);
+    // Keep this test release-agnostic: v3.23 must not require editing it.
+    const appVersion = app.match(/const ONDA_VERSION = '(v[0-9]+\.[0-9]+(?:\.[0-9]+)?)';/);
+    assert.ok(appVersion, 'app-core must expose a valid version');
+    assert.ok(markup.includes('js/app-core.js?v=' + appVersion[1].slice(1)),
+        'HTML cache version must match app-core');
     const modules = ['app-core.js', 'media-session.js', 'quick-play.js', 'device-qa.js'];
     const positions = modules.map(name => markup.indexOf('js/' + name + '?v='));
     assert.ok(positions.every(position => position > 0));
@@ -285,8 +288,9 @@ test('Device QA does nothing until Run and exports only fixed redacted fields', 
     ];
     const elements = Object.fromEntries(names.map(name => [name, element()]));
     const labels = new Map();
+    const version = source('app-core.js').match(/const ONDA_VERSION = '(v[0-9]+\.[0-9]+(?:\.[0-9]+)?)';/)[1];
     const document = {
-        documentElement: { dataset: { ondaVersion: 'v3.21' } },
+        documentElement: { dataset: { ondaVersion: version } },
         getElementById: name => elements[name] || labels.get(name) || null,
         createElement: tag => {
             const el = element(tag);
@@ -335,9 +339,24 @@ test('Device QA does nothing until Run and exports only fixed redacted fields', 
     assert.equal(window.OndaDeviceQA.snapshot().capabilities, null);
     elements['btn-onda-device-qa-run'].listeners.click();
     const report = window.OndaDeviceQA.snapshot();
-    assert.equal(report.capabilities.loadedVersion, 'different-or-unavailable');
+    assert.equal(report.capabilities.loadedVersion, version);
+    assert.equal(report.sourceVersion, version);
     assert.equal(report.capabilities.viewport.width, 390);
     assert.equal(report.capabilities.browserFeatures.filePicker, true);
+
+    // The checker may be cached from an earlier Onda release; it must report
+    // future app versions, but reject anything that isn't a safe version token.
+    document.documentElement.dataset.ondaVersion = 'v18.47';
+    elements['btn-onda-device-qa-run'].listeners.click();
+    assert.equal(window.OndaDeviceQA.snapshot().capabilities.loadedVersion, 'v18.47');
+    assert.equal(window.OndaDeviceQA.snapshot().sourceVersion, 'v18.47');
+    document.documentElement.dataset.ondaVersion = 'v18.47<script>';
+    elements['btn-onda-device-qa-run'].listeners.click();
+    assert.equal(window.OndaDeviceQA.snapshot().capabilities.loadedVersion, 'unavailable');
+    assert.equal(window.OndaDeviceQA.snapshot().sourceVersion, 'unavailable');
+    document.documentElement.dataset.ondaVersion = version;
+    elements['btn-onda-device-qa-run'].listeners.click();
+
     labels.get('onda-qa-saved-audio').value = 'pass';
     labels.get('onda-qa-media-session').value = 'incorrect-status';
     elements['btn-onda-device-qa-export'].listeners.click();
@@ -345,6 +364,7 @@ test('Device QA does nothing until Run and exports only fixed redacted fields', 
     assert.equal(output.manualChecks['saved-audio'], 'pass');
     assert.equal(output.manualChecks['media-session'], 'not-tested');
     assert.equal(revocations[0], 'blob:qa-export');
-    assert.equal(output.capabilities.loadedVersion, 'different-or-unavailable');
+    assert.equal(output.capabilities.loadedVersion, version);
+    assert.equal(output.sourceVersion, version);
     assert.doesNotMatch(JSON.stringify(output), /fileName|userAgent|secret|password|localPath/i);
 });

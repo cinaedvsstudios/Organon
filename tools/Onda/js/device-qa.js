@@ -1,8 +1,15 @@
-/* Onda v3.20 — read-only device QA report, created only on explicit request.
+/* Onda read-only device QA report, created only on explicit request.
  * No media access, playback, storage writes, network requests or diagnostics upload. */
 (() => {
     'use strict';
-    const VERSION = 'v3.20';
+    // The device checker may be cached across application releases. Its report
+    // must describe the actual loaded app, never a version frozen in this module.
+    // Strict validation also prevents arbitrary page data entering exported JSON.
+    const APP_VERSION_PATTERN = /^v[0-9]{1,3}\.[0-9]{1,3}(?:\.[0-9]{1,3})?$/;
+    function currentAppVersion() {
+        const value = document.documentElement?.dataset?.ondaVersion;
+        return typeof value === 'string' && APP_VERSION_PATTERN.test(value) ? value : 'unavailable';
+    }
     const STATUSES = new Set(['not-tested', 'pass', 'fail', 'blocked']);
     const CHECKS = Object.freeze([
         ['saved-audio', 'Saved track plays after reload'],
@@ -35,9 +42,9 @@
 
     function capabilities() {
         const mediaSession = navigator.mediaSession || null;
-        const version = String(document.documentElement.dataset.ondaVersion || '');
+        const version = currentAppVersion();
         return {
-            loadedVersion: version === VERSION ? VERSION : 'different-or-unavailable',
+            loadedVersion: version,
             secureContext: window.isSecureContext === true,
             standalone: Boolean(window.matchMedia?.('(display-mode: standalone)').matches),
             viewport: {
@@ -80,7 +87,7 @@
     function snapshot() {
         return {
             report: 'onda-device-qa-redacted-v1',
-            sourceVersion: VERSION,
+            sourceVersion: currentAppVersion(),
             generatedAtUtc: new Date().toISOString(),
             note: 'Capability presence and codec hints are not proof of working playback, permissions, or lock-screen behaviour.',
             capabilities: lastCapabilities,
@@ -97,7 +104,7 @@
             item.textContent = name + ': ' + value;
             list.appendChild(item);
         };
-        append('Onda source version', data.loadedVersion);
+        append('Loaded Onda version', data.loadedVersion);
         append('Secure browser context', data.secureContext ? 'yes' : 'no');
         append('Installed/standalone mode', data.standalone ? 'yes' : 'no (normal browser tab)');
         append('Viewport', data.viewport.width + ' × ' + data.viewport.height + ' px');

@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.21 source development committed; v3.21 eliminates redundant full Library/visualiser saves during UI-only navigation. Android/Netlify deployment and playback verification remain pending.  
+**Status:** v3.11–v3.22 source development committed; v3.22 fixes stale loaded-version reporting in read-only device QA. Android/Netlify deployment and playback verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.21** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.22** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md) · [v3.20 device QA](./RELEASE_V3_20.md) · [v3.21 save efficiency](./RELEASE_V3_21.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md) · [v3.20 device QA](./RELEASE_V3_20.md) · [v3.21 save efficiency](./RELEASE_V3_21.md) · [v3.22 QA version correction](./RELEASE_V3_22.md)
 
 ## Agreed product direction
 
@@ -481,3 +481,15 @@ Coverage: script syntax/asset ordering; navigation vs meaningful save checkpoint
 These are source/mock tests, **not** Android playback validation. Continue with physical Android Chrome + desktop acceptance; never clear or automatically migrate the user's existing music cache just to force a test.
 
 - 2026-11-23 — v2.7: committed source test suite/CI infrastructure; no Onda runtime version bump or media behaviour changes.
+
+## Implementation progress — v3.22 QA version correctness (2026-11-23)
+
+[Release notes, exact defect and Android acceptance](./RELEASE_V3_22.md).
+
+**Confirmed source error:** The v3.20 read-only device QA component compared the running core version against a frozen `v3.20` module constant and exported that constant as `sourceVersion`. This falsely flagged the correctly loaded v3.21 app as `different-or-unavailable`. The first committed regression tests unintentionally asserted the wrong outcome.
+
+**Fix:** The panel now reports the currently loaded app's validated `document.documentElement.dataset.ondaVersion` value in both UI and redacted export. Valid version tokens stay supported across future releases without changing QA JS; malformed/untrusted strings become `unavailable`. The permanent suite now derives the expected app version from source, verifies the HTML asset query and exercises current/future/malformed version scenarios. Onda core and QA asset links are bumped to v3.22.
+
+**Scope:** No playback, music file access, cloud, cache, IndexedDB, playlist/history, import or media-control changes. Real device behaviour and production Netlify deployment remain unverified until observed.
+
+- 2026-11-23 — v2.8: fix device QA false version mismatch, future-proof CI assertions.
