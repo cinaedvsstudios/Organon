@@ -3744,7 +3744,7 @@
             panel.replaceChildren();
         
             const header = document.createElement('div');
-            header.className = 'playlist-detail-header now-playing-queue-header onda-current-queue-header';
+            header.className = 'playlist-detail-header now-playing-queue-header onda-current-queue-header' + (name ? ' onda-current-queue-has-playlist' : '');
             const playlistArt = name ? getPlaylistArtwork(name) : '';
             const currentLabel = selectedIndex >= 0 ? 'Playing ' + (selectedIndex + 1) + ' of ' + ids.length
                 : ids.length + ' in queue';
