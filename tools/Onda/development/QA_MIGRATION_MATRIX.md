@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
 **Version:** QA v1.8 for Onda v3.19 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 56 initial static/isolated Quick Play and Media Session checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.19 release notes](./RELEASE_V3_19.md).  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 consolidated static/isolated Quick Play and Media Session checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.19 release notes](./RELEASE_V3_19.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -351,7 +351,7 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 |---|---|---|
 | QP-01 Choose from Add | System file chooser opens only from tap/click; one audio file selected | PASS isolated; NEEDS DEVICE |
 | QP-02 Mobile Library shortcut | Same chooser, returns to Add with temporary player visible | PASS isolated; NEEDS DEVICE |
-| QP-03 No persistence during audition | No new Library, queue, history, localStorage, IndexedDB audio, cloud, or JSON record | PASS source; NEEDS DEVICE |
+| QP-03 No persisted track during audition | No new Library, queue, history, IndexedDB audio, cloud or JSON record; existing UI navigation preferences may still save normally | PASS source; NEEDS DEVICE |
 | QP-04 Temporary audio | Blob URL created and native audio control plays, pauses and seeks | PASS isolated; NEEDS DEVICE |
 | QP-05 Safe filename display | Filename inserted using textContent, never HTML/JS | PASS isolated |
 | QP-06 Main audio coexistence | Preview pauses main; main playback stops preview (no overlapping sound) | PASS isolated; NEEDS DEVICE |
