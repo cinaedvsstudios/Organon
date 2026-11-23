@@ -1,6 +1,6 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.17 source development committed; v3.17 refines mobile Library search width and touch accessibility. Android/desktop runtime testing remains outstanding. Android/Netlify deployment and usability verification remain pending.  
+**Status:** v3.11–v3.17 source development committed; v3.17 refines mobile Library search width and touch accessibility. Android/Netlify deployment and usability verification remain pending.  
 **Created:** 2026-11-23  
 **Application:** Onda Media Player, source version **v3.17** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
