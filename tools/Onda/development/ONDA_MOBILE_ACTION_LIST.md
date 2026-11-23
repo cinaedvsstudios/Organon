@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.17 source development committed; v3.17 refines mobile Library search width and touch accessibility. Android/Netlify deployment and usability verification remain pending.  
+**Status:** v3.11–v3.18 source development committed; v3.18 adds opt-in, redacted performance measurements for objective startup/render/cache profiling. Android/Netlify deployment and usability verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.17** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.18** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md)
 
 ## Agreed product direction
 
@@ -34,7 +34,7 @@
 | ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **Saved-track Play path improved v3.11; optional new-file Quick Play not yet implemented** |
 | ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
 | ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.14 adds read-only unlinked/possible-duplicate inventory and preview; no deletion or cleanup commands** |
-| ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.12: full autosaves on resize/rotation removed and import saves consolidated; performance timing still unmeasured** |
+| ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.18: opt-in redacted timing records added for startup, restore, search/render, cache writes, playback and sampled visualiser frames; device measurements pending** |
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.13: Remember Files/Folder & read-permission Reconnect implemented; actual Android QA pending** |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
 | ONDA-14 | P2 | Mobile touch/accessibility checks | Improve narrow-phone Library controls without changing player layout | **v3.17 source fixes: two-column search/filter, 44px drawer targets, accessible Select state; physical Android/desktop QA pending** |
@@ -409,3 +409,17 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Next:** Run the Android and desktop acceptance tests for v3.11–v3.17 before considering P2 Quick Play for new unsaved files or future GitHub Pages streaming.
 
 - 2026-11-23 — v2.2: v3.17 touch/accessibility source updated; actual phone and desktop UI QA still outstanding.
+
+## Implementation progress — v3.18 opt-in performance diagnostics (2026-11-23)
+
+[Release notes, privacy specification and device test procedure](./RELEASE_V3_18.md).
+
+**Measured stages (when explicitly enabled):** app-core initialization; localStorage candidate recovery; IndexedDB restore; overall catalogue recovery; read-only audio cache inventory; Library render/search-to-results; new file import setup; IndexedDB audio write batch; track source resolution; audio-play response; and one in every 60 visible visualiser frames. Count metrics include tracks, visible results, cached records, saved/skipped/failed writes. No filename, file ID, path, URL, tag, playlist title, app JSON, cloud credential or music content is collected.
+
+**How to use:** Settings → Storage Health → collapsed Developer performance diagnostics panel → Start recording. To measure the beginning of Onda startup, deliberately click Reload & record startup; its single-use sessionStorage flag is consumed on reload. Export generates a local redacted JSON (up to 200 samples); Clear discards data in memory. Completely off unless requested; no network, cloud or IndexedDB analytics writes.
+
+**Scope/safety:** Existing audio engine, playback symbols, Current queue, playlists, Library saved data, cached audio, file handles and original files are unchanged. No speculative worker/virtualisation/deletion optimisations. ONDA-11 now has source instrumentation but is **not yet verified** with actual Android/desktop timing data, Netlify deployment, lock-screen playback or storage profiles.
+
+**Next:** Confirm v3.18 deploy on Android/desktop, export at least one startup and a Library search measurement, then use evidence to determine whether large-library rendering or caching needs further work. Optional ONDA-08 Quick Play for new unsaved files is a separate later change, not a prerequisite for these measurements.
+
+- 2026-11-23 — v2.3: v3.18 developer diagnostics instrumentation committed; runtime performance measurement pending.
