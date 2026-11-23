@@ -145,8 +145,8 @@ Current: index.html library-manager-drawer, bottom Library button, search, filte
 
 Investigate and test before changing:
 1. Inspect on Android whether Results/Recents/Playlists/Help mobile icon actions render at all. The current HTML file has no static .mobile-db-icon-btn or #mobile-icon-help-list despite JS selectors and CSS. There could be an inaccessible/dead feature; verify the live DOM rather than assuming.
-2. Preserve the existing four view modes and user's icon mappings; if adding Queue use new stable key, default icon and a backwards-compatible fallback for old saved mappings.
-3. Decide Queue location with user after companion mock-up: drawer tab or existing Current workspace. Avoid duplicating functionality and navigation.
+2. Preserve the existing drawer view modes and user's icon mappings; **do not add Queue as a drawer view**.
+3. **User decision:** Queue / Now Playing belongs on the main **Current** workspace (`#tab-library`), not the drawer. Reuse `#now-playing-playlist-panel`, `#now-playing-mode-pills`, `updateNowPlayingPlaylistPanel()` and related logic. Check how the presently hidden panel is made visible; make queue accessible on-screen without inventing duplicate navigation.
 4. Add only compact shortcuts: import/Quick Play and Storage Health; keep full settings popup as owner of advanced storage controls.
 5. Test tap semantics: the row body currently toggles selection; small ▶ plays. Consider 'tap row to play / long-press to select' **only with approval** because it changes expected behaviour.
 6. Preserve drawer height, scroll position, keyboard/search focus, safe-area insets and input behaviour. Existing delayed search clearing (~950–960) may erase typed searches; verify.
@@ -211,7 +211,7 @@ Video is low-use and deferred. Current intake accepts video MIME/extensions but 
 
 **Phase 3: Android source-resolver proof** — prototype handle save/reopen on user's Android Chrome; if viable, versioned IndexedDB expansion plus safe relink. Keep legacy audioFiles intact and fallback. Add explicit offline mode.
 
-**Phase 4: reviewed UI** — enhance existing drawer with only approved Queue/Quick Play/Storage actions; update index.html + responsive.css/library.css, test screen sizes and existing icon settings.
+**Phase 4: reviewed UI** — keep Now Playing / Queue on the main Current screen, and enhance the separate Library drawer with approved browsing/Quick Play/Storage shortcuts. Reuse existing Current playlist panel and controls; update index.html + responsive.css/library.css only as needed after device tests.
 
 **Phase 5: later work** — offline TTL cleanup after migration and user approval; background playback refinements, performance/large library optimisation, remote media catalogue, eventually video.
 
@@ -250,3 +250,11 @@ NOT VERIFIED: how Onda renders on user's phone, installed-mode icon update, actu
 The immediate implementation is straightforward enough to specify in advance for visualiser idle lifecycle and playback resume. Storage architecture is also well-defined conceptually, but its choice of *default local-file cache versus remembered direct file handle* needs one real Android handle-persistence experiment and a measured cache inventory. Drawer enhancements and online library hosting remain product decisions; they should not be coded speculatively.
 
 This technical file is the source-of-truth implementation blueprint. [QA_MIGRATION_MATRIX.md](./QA_MIGRATION_MATRIX.md) is the test/rollback companion; [ONDA_MOBILE_ACTION_LIST.md](./ONDA_MOBILE_ACTION_LIST.md) is the short decision register.
+
+## H. Confirmed product decision: Current screen owns Queue / Now Playing (2026-11-23)
+
+The user rejected the proposed Queue drawer tab. The correct architecture is: **Current (`#tab-library`) = Now Playing, queue visibility and playback order; Library drawer = browse/search/recents/playlists/import/add-to-queue actions only.** Do not put Queue in the drawer as another mobile view, and do not require reopening the drawer just to see what's playing next.
+
+The existing `index.html` already provides `#tab-btn-library` labelled Current, `#metadata-display-card`, `#now-playing-playlist-panel` (initially `hidden`) and `#now-playing-mode-pills` (initially `u-hidden`). The code has `updateNowPlayingPlaylistPanel()`, `setNowPlayingVisibilityToggle()`, and `setNowPlayingMode()`. Before coding, trace exactly what toggles their visibility and which queue type is shown: active playlist, playback queue, or both. Avoid conflating persistent playlists with the ephemeral playback queue.
+
+Implementation acceptance: Current screen presents now-playing context and upcoming playback order with manageable tap targets; transport remains visible; no Queue tab within drawer; existing mobile drawer icon customisation remains intact; adding a track from the Library drawer updates Current without navigating away unless the user chooses to switch. The companion HTML now demonstrates this division.
