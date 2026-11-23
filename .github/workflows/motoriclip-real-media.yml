@@ -229,6 +229,32 @@ jobs:
           MOTORICLIP_EFFECT_PRESET: line-corruption
         run: node tools/audio-timeline/tests/animated-overlay-export.browser.mjs
 
+  light-sweep-quality-visual-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - name: Check out independently rendered Light Sweep Quality source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Chrome browser and encoded-media parity tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose packaged FFmpeg and ffprobe on PATH
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Prove real scene-dependent specular highlights and bloom, reverse-seek, alpha and portable controls
+        run: node --test tools/audio-timeline/tests/light-sweep-quality-v1.test.mjs
+      - name: Capture real Chrome source-aware real Chrome Light Sweep PNGs with native Inspector
+        run: node tools/audio-timeline/tests/light-sweep-quality-v1.browser.mjs
+      - name: Decode actual Light Sweep Quality H264 frames and compare same-time Chrome preview
+        env:
+          MOTORICLIP_EFFECT_PRESET: light-sweep
+        run: node tools/audio-timeline/tests/animated-overlay-export.browser.mjs
+
   transition-smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
