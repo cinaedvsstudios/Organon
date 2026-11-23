@@ -535,3 +535,13 @@ Added actual Chromium integration coverage for Onda's **registered system playba
 **Not yet validated on Android hardware:** actual lock-screen controls and notifications, Bluetooth/headphone media buttons, Chrome suspension when app is backgrounded, device power management and long-run battery, notification artwork, MP3-specific or real media collection behaviour. The callback test is not an OS-level test; the synthetic visibility event does not duplicate real background scheduling. No runtime source or Onda version changes.
 
 - 2026-11-23 — v2.13: added real Chromium Media Session routing + simulated visibility playback regression.
+
+## v3.23 offline installed shell — source + real browser gate (2026-11-23)
+
+Onda v3.22 had no registered service worker: its stored audio would play offline **only once the app itself was loaded**. v3.23 adds a narrowly scoped static app-shell cache (HTML, exact linked JS/CSS, icons/manifest/MIDI; never user audio or cloud requests), enabling previously installed/visited Onda to reopen offline after Chrome restarts. No browser music cache deletion, no new audio storage format and no permissions change. The first app visit **must** be online.
+
+[GitHub Actions run #45280311658](https://github.com/cinaedvsstudios/Organon/actions/runs/45280311658) passed with a **complete Chrome process shutdown/restart**, networking disabled before opening Onda on the second launch, and a real cached WAV restoring and playing after offline startup. Previously added source, Reconnect, permission and Media Session tests remained green.
+
+**Release acceptance still needs real-device check:** after Netlify v3.23 is verified live, open Onda once while online, close it, enable airplane mode, reopen same installed shortcut in Android Chrome, and play previously cached music. Repeat after phone restart and verify browser storage is still retained; do not clear site data because that may delete saved audio. Test Android media keys, lock screen and background playback separately. See [RELEASE_V3_23.md](./RELEASE_V3_23.md).
+
+- 2026-11-23 — v2.14: safe v3.23 offline app-shell startup implementation and actual cold Chrome restart regression.
