@@ -29,7 +29,7 @@ test('nine genuinely different source-aware glitch IDs populate the existing Gli
  assert.equal(GLITCH_PRESETS.length,9);
  assert.equal(new Set(GLITCH_PRESETS.map(x=>x.id)).size,9);
  const full=new Set(TIMELINE_EFFECTS.map(x=>x.id));
- assert.equal(TIMELINE_EFFECTS.length,36);
+ assert.equal(TIMELINE_EFFECTS.length,37);
  for(const entry of GLITCH_PRESETS){
   assert.equal(entry.category,'Glitch');
   assert.equal(entry.group,'effect');
@@ -38,7 +38,7 @@ test('nine genuinely different source-aware glitch IDs populate the existing Gli
   assert.equal(isGlitchEffect(entry.id),true);
   assert.equal(requiresCompositeSource(entry.id),true);
  }
- assert.equal(TIMELINE_EFFECTS.filter(x=>x.category==='Glitch').length,10);
+ assert.equal(TIMELINE_EFFECTS.filter(x=>x.category==='Glitch').length,11);
  assert.equal(isGlitchEffect('fault-cassette'),false);
 });
 
