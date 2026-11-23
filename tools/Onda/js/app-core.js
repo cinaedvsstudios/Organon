@@ -57,6 +57,9 @@
         let cachedAudioBytes = 0;
         let audioCacheIndexState = "pending";
         let audioCacheScanPromise = null;
+        // Independently stored read-only File System Access handles (never cloud-synced).
+        let linkedFileTrackIds = new Set();
+        let linkedFileIndexState = 'pending';
         const ONDA_IDB_ACTIVE_LIBRARY_KEY = "activeLibrary";
         const ONDA_LAST_LIBRARY_SAVE_KEY = "ondaLastLibrarySaveStatusV1";
         let libraryStorageReady = false;
@@ -860,7 +863,7 @@
                 sourceType: meta.sourceType || (meta.streamUrl ? 'stream' : 'local'),
                 streamUrl: meta.streamUrl || null,
                 blobFile: meta.blobFile || null,
-                needsRelink: (meta.sourceType !== 'stream' && meta.sourceType !== 'reference' && !meta.streamUrl && !meta.blobFile && audioCacheIndexState === 'ready' && !cachedAudioTrackIds.has(meta.id))
+                needsRelink: (meta.sourceType !== 'stream' && meta.sourceType !== 'reference' && !meta.streamUrl && !meta.blobFile && audioCacheIndexState === 'ready' && !cachedAudioTrackIds.has(meta.id) && !linkedFileTrackIds.has(meta.id))
             };
         }
 
@@ -1103,8 +1106,10 @@
             if (meta.blobFile) return midi ? 'MIDI ready' : 'local ready';
             if (cachedAudioTrackIds.has(meta.id)) return midi ? 'MIDI cached' : 'local cached';
             if (meta.needsRelink === true) return 'needs relink';
-            // Without a successful scan, we cannot claim the audio is missing.
-            return audioCacheIndexState === 'ready' ? 'needs relink' : 'cache not verified';
+            if (linkedFileTrackIds.has(meta.id)) return midi ? 'MIDI linked' : 'file linked';
+            // Do not label the audio missing until BOTH storage inventories have finished.
+            return audioCacheIndexState === 'ready' && linkedFileIndexState !== 'pending'
+                ? 'needs relink' : 'cache not verified';
         }
 
         function addTrackToQueueFromLibrary(trackId, playNow = true) {
@@ -2674,7 +2679,7 @@
             try {
                 const record = await idbGetAudioFile(trackId);
                 const file = record?.file || record?.blob || null;
-                if (file) {
+                if (file && typeof file.arrayBuffer === 'function') {
                     cachedAudioTrackIds.add(String(trackId));
                     meta.blobFile = file;
                     meta.needsRelink = false;
@@ -2683,6 +2688,21 @@
                 }
             } catch (err) {
                 console.warn('Could not hydrate local audio file from IndexedDB:', trackId, err);
+            }
+            // Cache-first remains the safe default. A remembered handle is a silent
+            // fallback only when Chrome still grants read access — no surprise prompt.
+            if (window.OndaFileHandles?.readFile) {
+                try {
+                    const linkedFile = await window.OndaFileHandles.readFile(trackId);
+                    if (linkedFile) {
+                        meta.blobFile = linkedFile;
+                        meta.needsRelink = false;
+                        linkedFileTrackIds.add(String(trackId));
+                        return linkedFile;
+                    }
+                } catch (error) {
+                    console.warn('Linked file is not currently available:', error);
+                }
             }
             return null;
         }
@@ -2955,12 +2975,31 @@
             }
         }
 
+        async function refreshLinkedFileIndex() {
+            if (!window.OndaFileHandles?.listTrackIds) {
+                linkedFileIndexState = 'unavailable';
+                return false;
+            }
+            try {
+                const ids = await window.OndaFileHandles.listTrackIds();
+                // Merge because a new import may finish while startup is scanning.
+                linkedFileTrackIds = new Set([...linkedFileTrackIds, ...ids]);
+                linkedFileIndexState = 'ready';
+                return true;
+            } catch (error) {
+                linkedFileIndexState = 'unavailable';
+                console.warn('Saved file handle inventory unavailable:', error);
+                return false;
+            }
+        }
+
         const persistentLibraryReady = initialisePersistentLibraryStorage();
-        // Cache IDs become known after metadata restoration; no audio is read or removed.
-        persistentLibraryReady.then(() => refreshAudioCacheIndex()).then(() => {
+        // Both inventories are additive read-only checks after catalogue recovery.
+        persistentLibraryReady.then(async () => {
+            await Promise.all([refreshAudioCacheIndex(), refreshLinkedFileIndex()]);
             renderLibraryManager();
             if (typeof renderHistoryTab === 'function') renderHistoryTab();
-        }).catch(error => console.warn('Cache check unavailable:', error));
+        }).catch(error => console.warn('Audio source inventory unavailable:', error));
 
         async function probeStreamUrl(url, timeoutMs = 3500) {
             return new Promise(resolve => {
