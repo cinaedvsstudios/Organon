@@ -3691,158 +3691,174 @@
             }, 140);
         }
 
-        function updateNowPlayingPlaylistPanel() {
+        function updatedPanel() {
             const card = document.getElementById('metadata-display-card');
             const panel = document.getElementById('now-playing-playlist-panel');
             const pills = document.getElementById('now-playing-mode-pills');
-            const lyricsViewer = document.getElementById('lyrics-viewer');
             const name = getCurrentPlaybackPlaylistName();
-
             if (!card || !panel) return;
-
-            card.classList.remove('now-playing-song-only', 'now-playing-playlist-only', 'now-playing-basic', 'lyrics-collapsed', 'now-playing-hide-song-info', 'now-playing-hide-playlist', 'now-playing-no-playlist');
+        
+            card.classList.remove('now-playing-song-only','now-playing-playlist-only','now-playing-basic',
+                'lyrics-collapsed','now-playing-hide-song-info','now-playing-hide-playlist','now-playing-no-playlist');
             card.classList.toggle('now-playing-hide-song-info', nowPlayingHideSongInfo);
             card.classList.toggle('now-playing-hide-playlist', nowPlayingHidePlaylist);
+            if (!name) card.classList.add('now-playing-no-playlist');
             card.classList.add('lyrics-collapsed');
-
+        
+            const queue = Array.isArray(playlistTracks) ? playlistTracks : [];
+            const ids = queue.map(getTrackId);
+            const selectedIndex = Number.isInteger(currentTrackIndex) &&
+                currentTrackIndex >= 0 && currentTrackIndex < ids.length &&
+                ids[currentTrackIndex] === currentFile?.name
+                ? currentTrackIndex : ids.indexOf(currentFile?.name);
+            const nextIndex = selectedIndex >= 0 && selectedIndex + 1 < ids.length
+                ? selectedIndex + 1 : (selectedIndex >= 0 && isRepeatAll && ids.length > 1 ? 0 : -1);
+            const nextMeta = nextIndex >= 0 ? (virtualLibrary[ids[nextIndex]] || queue[nextIndex]) : null;
+        
             if (pills) {
                 pills.classList.remove('u-hidden');
                 pills.classList.add('is-open');
                 const songBtn = pills.querySelector('[data-now-toggle="song-info"]');
-                const playlistBtn = pills.querySelector('[data-now-toggle="playlist"]');
+                const queueBtn = pills.querySelector('[data-now-toggle="playlist"]');
                 if (songBtn) {
                     songBtn.textContent = nowPlayingHideSongInfo ? 'Show song info' : 'Hide song info';
                     songBtn.classList.toggle('active-now-mode', nowPlayingHideSongInfo);
+                    songBtn.setAttribute('aria-pressed', String(nowPlayingHideSongInfo));
                 }
-                if (playlistBtn) {
-                    playlistBtn.textContent = nowPlayingHidePlaylist ? 'Show playlist' : 'Hide playlist';
-                    playlistBtn.classList.toggle('active-now-mode', nowPlayingHidePlaylist);
-                    playlistBtn.disabled = !name || !playlists[name];
-                    playlistBtn.classList.toggle('is-disabled-soft', !name || !playlists[name]);
+                if (queueBtn) {
+                    queueBtn.textContent = nowPlayingHidePlaylist ? 'Show queue' : 'Hide queue';
+                    queueBtn.disabled = false; // An ad-hoc queue does not require a named playlist.
+                    queueBtn.classList.remove('is-disabled-soft');
+                    queueBtn.classList.toggle('active-now-mode', nowPlayingHidePlaylist);
+                    queueBtn.setAttribute('aria-pressed', String(nowPlayingHidePlaylist));
                 }
             }
-
-            if (!name || !playlists[name]) {
-                panel.hidden = true;
-                panel.innerHTML = '';
-                card.classList.add('now-playing-no-playlist');
-                return;
-            }
-
-            let ids = normalisePlaylistToIds(playlists[name] || []);
-
-            // Fallback: if playlist metadata is temporarily stale, use the live queue.
-            if (!ids.length && currentPlaybackPlaylistName === name && Array.isArray(playlistTracks) && playlistTracks.length) {
-                ids = playlistTracks.map(getTrackId).filter(Boolean);
-            }
-
-            const index = currentFile ? ids.indexOf(currentFile.name) : -1;
-            const meta = playlistMeta[name] || {};
-            const art = getPlaylistArtwork(name);
-
-            panel.hidden = false;
-            panel.innerHTML = '';
-
-            const divider = document.createElement('hr');
-            divider.className = 'now-playing-divider';
-            panel.appendChild(divider);
-
+        
+            panel.hidden = nowPlayingHidePlaylist;
+            panel.replaceChildren();
+        
             const header = document.createElement('div');
-            header.className = 'playlist-detail-header now-playing-queue-header';
+            header.className = 'playlist-detail-header now-playing-queue-header onda-current-queue-header';
+            const playlistArt = name ? getPlaylistArtwork(name) : '';
+            const currentLabel = selectedIndex >= 0 ? 'Playing ' + (selectedIndex + 1) + ' of ' + ids.length
+                : ids.length + ' in queue';
+            const nextLabel = isShuffle
+                ? 'Shuffle enabled — upcoming order may vary'
+                : nextMeta ? 'Up next: ' + getDisplayTitle(nextMeta)
+                    : (ids.length ? 'End of queue' : 'Add music using Add or Library');
             header.innerHTML = `
-                <div class="playlist-detail-art">${imageHtmlOrFallback(art || getDefaultArtworkSrc(), `${name} artwork`)}</div>
+                ${name ? `<div class="playlist-detail-art">${imageHtmlOrFallback(playlistArt || getDefaultArtworkSrc(), name + ' artwork')}</div>` : ''}
                 <div class="playlist-detail-title-block">
-                    <div class="playlist-detail-title">${escapeHtml(name)}</div>
+                    <div class="playlist-detail-title">Queue / Up Next</div>
+                    ${name ? `<div class="onda-current-queue-origin">From playlist: ${escapeHtml(name)}</div>` : ''}
+                    <div class="onda-current-queue-next" title="${escapeHtml(nextLabel)}">${escapeHtml(nextLabel)}</div>
                 </div>
-                <div class="playlist-row-tools">
-                    <button type="button" class="btn-pill btn-jump-playlist" onclick="jumpToPlayingSongInPlaylist()" title="Jump to playing track">🎯</button>
-                    <button type="button" class="btn-pill btn-edit-playlist" onclick="openPlaylistEditModal('${escapeHtml(name).replace(/'/g, "\'")}')" title="Edit playlist">✏️</button>
+                <div class="playlist-row-tools onda-current-queue-tools">
+                    <button type="button" class="btn-pill btn-now-jump-current" title="Find current track in queue" aria-label="Find current track in queue" ${selectedIndex < 0 ? 'disabled' : ''}>🎯</button>
+                    ${name ? '<button type="button" class="btn-pill btn-now-edit-source-playlist" title="Edit the source playlist" aria-label="Edit the source playlist">✏️</button>' : ''}
                 </div>
-                <div class="playlist-detail-meta-row">
-                    <span class="mini-tag">Track ${index >= 0 ? index + 1 : '?'} of ${ids.length}</span>
-                    <span class="mini-tag">Created: ${escapeHtml(getPlaylistCreatedLabel(name))}</span>
-                    <span class="mini-tag">Updated: ${escapeHtml(getPlaylistUpdatedLabel(name))}</span>
+                <div class="playlist-detail-meta-row onda-current-queue-summary">
+                    <span class="mini-tag">${escapeHtml(currentLabel)}</span>
+                    <span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'} in active queue</span>
                 </div>
-                ${meta.description ? `<div class="library-track-meta playlist-detail-description">${escapeHtml(meta.description)}</div>` : ''}
             `;
             panel.appendChild(header);
-
+        
+            header.querySelector('.btn-now-jump-current')?.addEventListener('click', () => {
+                scrollCurrentTrackRowsIntoView('manual-queue-jump');
+            });
+            if (name) header.querySelector('.btn-now-edit-source-playlist')?.addEventListener('click', () => {
+                openPlaylistEditModal(name);
+            });
+        
             const list = document.createElement('div');
             list.id = 'now-playing-playlist-track-list';
-            list.className = 'now-playing-queue-list';
-
-            if (!ids.length) {
-                list.innerHTML = '<div class="library-track-meta">This playlist has no tracks yet.</div>';
+            list.className = 'now-playing-queue-list onda-current-queue-list';
+            if (!queue.length) {
+                const empty = document.createElement('div');
+                empty.className = 'onda-current-queue-empty';
+                empty.textContent = 'Nothing queued yet. Add a file or press Play on a Library track.';
+                list.appendChild(empty);
             } else {
-                ids.forEach((id, idx) => {
-                    const trackMeta = virtualLibrary[id];
-                    const active = currentFile && id === currentFile.name;
+                queue.forEach((item, idx) => {
+                    const id = ids[idx];
+                    const meta = virtualLibrary[id] || item;
+                    const hasRecord = Boolean(meta);
+                    const active = idx === selectedIndex;
+                    const upNext = !isShuffle && idx === nextIndex && !active;
                     const row = document.createElement('div');
-                    row.className = `now-playing-queue-row library-result-row${active ? ' active-track now-playing-current-track' : ''}`;
-                    row.dataset.trackId = id;
-
-                    if (!trackMeta) {
-                        row.innerHTML = `
-                            <div class="history-list-number">${idx + 1}</div>
-                            <div class="onda-track-text-wrap">
-                                <div class="library-track-title">Missing track record</div>
-                                <div class="library-track-meta">${escapeHtml(id)}</div>
+                    row.className = 'now-playing-queue-row library-result-row' +
+                        (active ? ' active-track now-playing-current-track' : '') +
+                        (upNext ? ' onda-current-queue-next-row' : '');
+                    row.dataset.trackId = id || '';
+                    row.dataset.queueIndex = String(idx);
+                    if (active) row.setAttribute('aria-current', 'true');
+                    const statusLabel = active ? 'Now playing' : upNext ? 'Up next' : 'Queued';
+                    row.innerHTML = `
+                        <div class="history-list-number">${idx + 1}</div>
+                        <div class="onda-track-text-wrap">
+                            <div class="library-track-title">${active ? '▶ ' : ''}${escapeHtml(getDisplayTitle(meta))}</div>
+                            <div class="library-track-meta library-file-line">
+                                <span class="onda-queue-row-status">${statusLabel}</span>
+                                · ${escapeHtml(meta?.fileName || id || 'Unknown track')}
                             </div>
-                            <div class="library-row-buttons"></div>
-                        `;
-                    } else {
-                        row.innerHTML = `
-                            <div class="history-list-number">${idx + 1}</div>
-                            <div class="onda-track-text-wrap">
-                                <div class="library-track-title">${active ? '▶ ' : ''}${escapeHtml(getDisplayTitle(trackMeta))}</div>
-                                <div class="library-track-meta library-file-line">${escapeHtml(trackMeta.fileName || trackMeta.id)} · ${escapeHtml(sourceStatus(trackMeta))}</div>
-                            </div>
-                            <div class="library-row-buttons">
-                                <button type="button" class="btn-pill btn-now-play-track btn-onda-row-play" data-track-id="${escapeHtml(id)}" title="Play">▶️</button>
-                                <button type="button" class="btn-pill btn-now-info-track" data-track-id="${escapeHtml(id)}" title="Info">ℹ️</button>
-                                <button type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist">➕</button>
-                            </div>
-                        `;
-                    }
-
+                        </div>
+                        <div class="library-row-buttons">
+                            ${hasRecord ? `<button type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}">▶️</button>
+                            <button type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information">ℹ️</button>
+                            <button type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist">➕</button>` : ''}
+                            ${!active ? '<button type="button" class="btn-pill btn-now-remove-from-queue" title="Remove from current queue only" aria-label="Remove from current queue only">×</button>' : ''}
+                        </div>`;
                     list.appendChild(row);
                 });
             }
-
-            list.addEventListener('click', (e) => {
-                const button = e.target.closest('button');
-                const clickedId = button?.dataset.trackId || e.target.closest('[data-track-id]')?.dataset.trackId;
-                if (!clickedId || !virtualLibrary[clickedId]) return;
-
-                if (button?.classList.contains('btn-now-info-track')) {
-                    currentFile = createPlayableTrackFromMeta(virtualLibrary[clickedId]);
-                    currentFile.name = clickedId;
-                    switchWorkspaceTab('tab-library');
-                    updateMetadataUI();
+        
+            list.addEventListener('click', event => {
+                const button = event.target.closest('button');
+                const row = button?.closest('[data-queue-index]');
+                if (!button || !row) return;
+                const targetIndex = Number(row.dataset.queueIndex);
+                if (!Number.isInteger(targetIndex) || targetIndex < 0 || targetIndex >= playlistTracks.length) return;
+                const id = getTrackId(playlistTracks[targetIndex]);
+                if (!id) return;
+                if (button.classList.contains('btn-now-remove-from-queue')) {
+                    if (targetIndex === currentTrackIndex || id === currentFile?.name && targetIndex === selectedIndex) {
+                        showToast('The playing track stays in the queue.');
+                        return;
+                    }
+                    playlistTracks.splice(targetIndex, 1); // Only remove from active queue, never Library or saved playlist.
+                    if (targetIndex < currentTrackIndex) currentTrackIndex -= 1;
+                    if (isShuffle) resetShuffleQueue(currentTrackIndex);
+                    saveActiveLibraryState('remove-from-active-queue');
+                    updateNowPlayingPlaylistPanel();
+                    showToast('Removed from current queue. Saved music and playlists are unchanged.');
                     return;
                 }
-
-                if (button?.classList.contains('btn-now-play-track')) {
-                    const queueIds = normalisePlaylistToIds(playlists[name] || []);
-                    playlistTracks = queueIds.map(trackId => virtualLibrary[trackId] ? createPlayableTrackFromMeta(virtualLibrary[trackId]) : null).filter(Boolean);
-                    currentPlaybackPlaylistName = name;
-                    const targetIndex = playlistTracks.findIndex(track => getTrackId(track) === clickedId);
-                    switchTrack(targetIndex >= 0 ? targetIndex : 0);
-                    updateNowPlayingPlaylistPanel();
+                if (button.classList.contains('btn-now-play-track')) {
+                    switchTrack(targetIndex); // Play the existing queue item; never import it again.
+                    return;
+                }
+                if (button.classList.contains('btn-now-info-track')) {
+                    // Do not overwrite currentFile: that would make metadata disagree with real audio.
+                    const track = virtualLibrary[id] || playlistTracks[targetIndex];
+                    showToast(getDisplayTitle(track) + ' · ' + (track.fileName || track.sourceType || 'Saved track'));
+                    return;
+                }
+                if (button.classList.contains('btn-onda-add-playlist')) {
+                    // Leave playlist editing to its existing dedicated workspace rather than
+                    // creating a second, incompatible playlist editor in the queue.
+                    showToast('Use the Playlists tab to manage saved playlist membership.');
                 }
             });
-
             panel.appendChild(list);
-
-            // Expose a quick debug count for checking from the browser console.
             window.OndaDebug = window.OndaDebug || {};
-        window.OndaDebug.nowPlayingQueue = {
-                playlist: name,
+            window.OndaDebug.nowPlayingQueue = {
+                playlist: name || null,
                 count: ids.length,
-                renderedRows: list.querySelectorAll('[data-track-id]').length,
+                renderedRows: list.querySelectorAll('[data-queue-index]').length,
                 activeTrack: currentFile?.name || null
             };
-            scrollCurrentTrackRowsIntoView('now-playing-queue-render');
+            if (selectedIndex >= 0) scrollCurrentTrackRowsIntoView('now-playing-queue-render');
         }
 
         function setNowPlayingEditMode(on) {
