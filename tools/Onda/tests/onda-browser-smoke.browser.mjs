@@ -237,6 +237,132 @@ async function desktopSmoke(browser, baseUrl) {
         await context.close();
     }
 }
+async function missingMediaReconnectSmoke(browser, baseUrl) {
+    // Import metadata ONLY in its own disposable Chrome context. Unlike the
+    // explicit audio import scenario, there must be no associated cached audio.
+    const context = await browser.newContext({
+        viewport: { width: 1280, height: 800 },
+        serviceWorkers: 'block'
+    });
+    const page = await context.newPage();
+    const id = 'trk_synthetic_missing_reconnect_01';
+    const filename = 'onda-reconnect-demo.wav';
+    const playlist = 'QA Recovery Playlist';
+    try {
+        await expectLoaded(page, baseUrl);
+        await chooseFreshLocalSession(page);
+        const fixture = {
+            app: 'Onda Media Player', type: 'onda-library', version: 1,
+            libraryName: 'Test recovery metadata',
+            tracks: {
+                [id]: {
+                    id, fileName: filename, title: 'QA Reconnect Demo',
+                    sourceType: 'local', tags: ['Synthetic Recovery'],
+                    playlists: [playlist], notes: 'retain this metadata',
+                    localPath: filename
+                }
+            },
+            playlists: { [playlist]: { trackIds: [id] } }
+        };
+        await page.locator('#json-file-input').setInputFiles({
+            name: 'onda-synthetic-missing-catalogue.json',
+            mimeType: 'application/json',
+            buffer: Buffer.from(JSON.stringify(fixture))
+        });
+        await page.waitForFunction((trackId) => {
+            const saved = JSON.parse(localStorage.getItem('ondaActiveLibraryV1') || '{}');
+            const data = saved.library || saved;
+            return Boolean(data.tracks?.[trackId]);
+        }, id);
+        assert.equal(await cachedAudioCount(page), 0,
+            'metadata-only import must not create audio cache entries');
+        await page.reload({ waitUntil: 'load' });
+        await page.waitForFunction(() => Boolean(window.OndaQuickPlay?.getActiveAudio));
+        await page.locator('#btn-database-engine').click();
+        const row = page.locator('#db-library-results .library-result-row')
+            .filter({ hasText: filename });
+        await row.waitFor({ state: 'visible', timeout: 15000 });
+        await page.waitForFunction(trackId => {
+            const item = document.querySelector('#db-library-results .library-result-row[data-track-id="' + trackId + '"]');
+            return item?.querySelector('.library-file-line')?.textContent.includes('needs relink')
+                && item.querySelector('.btn-db-reconnect-track');
+        }, id, { timeout: 15000 });
+        assert.equal(await row.locator('.btn-db-reconnect-track').count(), 1);
+        assert.equal(await cachedAudioCount(page), 0);
+        console.log('reconnect: metadata-only track survives reload; missing audio shows Reconnect');
+
+        // Clicking Play with no bytes should not silently import a track,
+        // clear saved metadata or bring up a file picker without the user's
+        // explicit Reconnect action.
+        await row.locator('.btn-db-play-track').click();
+        await page.waitForFunction(() => document.getElementById('toast-notice')?.textContent
+            .includes('Saved audio unavailable'), { timeout: 10000 });
+        assert.equal(await cachedAudioCount(page), 0);
+        const savedBefore = await page.evaluate(trackId => {
+            const payload = JSON.parse(localStorage.getItem('ondaActiveLibraryV1') || '{}');
+            return (payload.library || payload).tracks?.[trackId];
+        }, id);
+        assert.equal(savedBefore.notes, 'retain this metadata');
+        assert.ok(savedBefore.playlists.includes(playlist));
+        assert.equal(await page.locator('#db-library-results .library-result-row').count(), 1,
+            'missing source must not be silently removed or duplicated');
+
+        // Reconnect is a distinct explicit user gesture. Use the real Chrome
+        // filechooser event to provide an in-memory synthetic WAV.
+        const chooserEvent = page.waitForEvent('filechooser');
+        await row.locator('.btn-db-reconnect-track').click();
+        const chooser = await chooserEvent;
+        await chooser.setFiles({
+            name: filename, mimeType: 'audio/wav', buffer: wavTone()
+        });
+        await page.waitForFunction(async trackId => {
+            const db = await new Promise((resolve, reject) => {
+                const req = indexedDB.open('OndaMediaPlayerPersistentDB');
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+            try {
+                const request = db.transaction('audioFiles', 'readonly')
+                    .objectStore('audioFiles').get(trackId);
+                return await new Promise((resolve, reject) => {
+                    request.onsuccess = () => resolve(Boolean(request.result?.file || request.result?.blob));
+                    request.onerror = () => reject(request.error);
+                });
+            } finally { db.close(); }
+        }, id, { timeout: 15000 });
+        await page.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return audio?.src.startsWith('blob:') && !audio.paused && audio.currentTime > 0.08;
+        }, { timeout: 15000 });
+        assert.equal(await cachedAudioCount(page), 1, 'Reconnect restores one existing track cache');
+        assert.equal(await page.locator('#db-library-results .library-result-row').count(), 1,
+            'Reconnect must preserve one stable Library row');
+        const after = await page.evaluate(trackId => {
+            const payload = JSON.parse(localStorage.getItem('ondaActiveLibraryV1') || '{}');
+            return (payload.library || payload).tracks?.[trackId];
+        }, id);
+        assert.equal(after.id, id);
+        assert.equal(after.notes, 'retain this metadata');
+        assert.ok(after.playlists.includes(playlist));
+        console.log('reconnect: real file chooser restores saved ID, metadata and playback');
+
+        await page.reload({ waitUntil: 'load' });
+        await page.waitForFunction(() => Boolean(window.OndaQuickPlay?.getActiveAudio));
+        await page.locator('#btn-database-engine').click();
+        const restored = page.locator('#db-library-results .library-result-row')
+            .filter({ hasText: filename });
+        await restored.waitFor({ state: 'visible', timeout: 15000 });
+        await page.waitForFunction(trackId => {
+            const item = document.querySelector('#db-library-results .library-result-row[data-track-id="' + trackId + '"]');
+            return item && !item.querySelector('.btn-db-reconnect-track')
+                && /cached|ready/.test(item.querySelector('.library-file-line')?.textContent || '');
+        }, id, { timeout: 15000 });
+        assert.equal(await cachedAudioCount(page), 1);
+        console.log('reconnect: recovered audio still cached, no Reconnect after reload');
+    } finally {
+        await context.close();
+    }
+}
 async function mobileSmoke(browser, baseUrl) {
     // Browser device emulation does not establish actual Android lock-screen results.
     const context = await browser.newContext({
@@ -272,6 +398,7 @@ try {
     });
     const baseUrl = 'http://127.0.0.1:' + port + '/';
     await desktopSmoke(browser, baseUrl);
+    await missingMediaReconnectSmoke(browser, baseUrl);
     await mobileSmoke(browser, baseUrl);
     console.log('PASS: actual Chrome desktop + mobile-emulated Onda smoke tests');
 } finally {
