@@ -363,6 +363,178 @@ async function missingMediaReconnectSmoke(browser, baseUrl) {
         await context.close();
     }
 }
+
+async function rememberedHandlePermissionSmoke(browser, baseUrl) {
+    // A real browser-serializable Origin Private File System handle stands in
+    // for a remembered file handle, without ever reading the user's real disk.
+    // Permission denial is explicitly simulated by instrumenting its methods;
+    // only hardware Android can establish OS permission prompt behaviour.
+    const context = await browser.newContext({
+        viewport: { width: 1280, height: 800 }, serviceWorkers: 'block'
+    });
+    const page = await context.newPage();
+    const id = 'trk_synthetic_linked_handle_01';
+    const filename = 'onda-remembered-handle-test.wav';
+    const listName = 'QA Linked Handle Playlist';
+    try {
+        await expectLoaded(page, baseUrl);
+        await chooseFreshLocalSession(page);
+        const created = await page.evaluate(async ({ trackId, fileName, bytes }) => {
+            const root = await navigator.storage.getDirectory();
+            const handle = await root.getFileHandle(fileName, { create: true });
+            const writer = await handle.createWritable();
+            await writer.write(Uint8Array.from(bytes));
+            await writer.close();
+            const saved = await window.OndaFileHandles.rememberMany([{
+                trackId, handle, fileName, relativePath: fileName
+            }]);
+            return { saved, kind: handle.kind, bytes: (await handle.getFile()).size };
+        }, { trackId: id, fileName: filename, bytes: [...wavTone()] });
+        assert.equal(created.saved, 1);
+        assert.equal(created.kind, 'file');
+        assert.ok(created.bytes >= 2 * 12000, 'the synthetic OPFS file must contain actual WAV bytes');
+
+        const fixture = {
+            app: 'Onda Media Player', type: 'onda-library', version: 1,
+            libraryName: 'Synthetic remembered handle test',
+            tracks: {
+                [id]: {
+                    id, fileName: filename, title: 'Linked Handle Demo',
+                    sourceType: 'local', tags: ['Synthetic Handle'],
+                    playlists: [listName], notes: 'keep original linked metadata',
+                    localPath: filename
+                }
+            },
+            playlists: { [listName]: { trackIds: [id] } }
+        };
+        await page.locator('#json-file-input').setInputFiles({
+            name: 'onda-synthetic-linked-handle-library.json',
+            mimeType: 'application/json',
+            buffer: Buffer.from(JSON.stringify(fixture))
+        });
+        await page.waitForFunction(trackId => {
+            const payload = JSON.parse(localStorage.getItem('ondaActiveLibraryV1') || '{}');
+            return Boolean((payload.library || payload).tracks?.[trackId]);
+        }, id);
+        assert.equal(await cachedAudioCount(page), 0,
+            'a remembered handle must not cause an implicit audio cache copy');
+        await page.reload({ waitUntil: 'load' });
+        await page.waitForFunction(trackId => {
+            const row = document.querySelector('#db-library-results [data-track-id="' + trackId + '"]');
+            return row?.querySelector('.library-file-line')?.textContent.includes('file linked');
+        }, id, { timeout: 15000 });
+        const fromDisk = await page.evaluate(async trackId => {
+            const ids = await window.OndaFileHandles.listTrackIds();
+            const record = await window.OndaFileHandles.getLinkedRecord(trackId);
+            const opened = await window.OndaFileHandles.readFile(trackId);
+            return {
+                hasId: ids.includes(trackId),
+                sameName: record?.handle?.name === opened?.name,
+                bytes: opened?.size || 0
+            };
+        }, id);
+        assert.equal(fromDisk.hasId, true,
+            'IndexedDB must restore the real structured-cloned file handle');
+        assert.equal(fromDisk.sameName, true);
+        assert.ok(fromDisk.bytes > 0);
+        if (!await page.locator('#library-manager-drawer').evaluate(el => el.classList.contains('drawer-open'))) {
+            await page.locator('#btn-database-engine').click();
+        }
+        const row = page.locator('#db-library-results .library-result-row[data-track-id="' + id + '"]');
+        await row.waitFor({ state: 'visible', timeout: 15000 });
+        assert.equal(await row.locator('.btn-db-reconnect-track').count(), 0);
+        await context.setOffline(true);
+        await row.locator('.btn-db-play-track').click();
+        await page.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return audio?.src.startsWith('blob:') && !audio.paused && audio.currentTime > 0.12;
+        }, { timeout: 15000 });
+        assert.equal(await cachedAudioCount(page), 0,
+            'granted remembered-handle playback should not silently duplicate audio in IndexedDB');
+        await context.setOffline(false);
+        console.log('handles: persisted OPFS file handle restored and played offline without an audio cache');
+
+        // After another reload simulate a browser which has retained the handle
+        // but denies access. Normal Play must NOT invoke requestPermission.
+        await page.addInitScript(() => {
+            const type = window.FileSystemFileHandle;
+            if (!type?.prototype) return;
+            window.__ondaPermissionProbe = { query: 0, request: 0 };
+            Object.defineProperty(type.prototype, 'queryPermission', {
+                configurable: true,
+                value() {
+                    window.__ondaPermissionProbe.query++;
+                    return Promise.resolve('denied');
+                }
+            });
+            Object.defineProperty(type.prototype, 'requestPermission', {
+                configurable: true,
+                value() {
+                    window.__ondaPermissionProbe.request++;
+                    return Promise.resolve('denied');
+                }
+            });
+        });
+        await page.reload({ waitUntil: 'load' });
+        await page.waitForFunction(trackId => {
+            const row = document.querySelector('#db-library-results .library-result-row[data-track-id="' + trackId + '"]');
+            return row?.querySelector('.library-file-line')?.textContent.includes('file linked');
+        }, id, { timeout: 15000 });
+        const denied = await page.evaluate(async trackId => {
+            const file = await window.OndaFileHandles.readFile(trackId);
+            return { fileIsNull: file === null, probe: { ...window.__ondaPermissionProbe } };
+        }, id);
+        assert.equal(denied.fileIsNull, true, 'silent read must not bypass denied permission');
+        assert.ok(denied.probe.query > 0);
+        assert.equal(denied.probe.request, 0, 'silent read must never ask for read permission');
+        if (!await page.locator('#library-manager-drawer').evaluate(el => el.classList.contains('drawer-open'))) {
+            await page.locator('#btn-database-engine').click();
+        }
+        const deniedRow = page.locator('#db-library-results .library-result-row[data-track-id="' + id + '"]');
+        await deniedRow.locator('.btn-db-play-track').click();
+        await page.waitForFunction(trackId => {
+            const row = document.querySelector('#db-library-results .library-result-row[data-track-id="' + trackId + '"]');
+            return row?.querySelector('.btn-db-reconnect-track') &&
+                document.getElementById('toast-notice')?.textContent.includes('Saved audio unavailable');
+        }, id, { timeout: 15000 });
+        assert.equal(await page.evaluate(() => window.__ondaPermissionProbe.request), 0,
+            'normal Play must not trigger a permission prompt');
+        assert.equal(await cachedAudioCount(page), 0);
+        console.log('handles: denied permission caused safe missing-source warning, not a permission prompt');
+
+        // The FIRST explicit Reconnect asks for permission. If denied, Onda
+        // offers its fallback manual picker on the NEXT explicit Reconnect.
+        await deniedRow.locator('.btn-db-reconnect-track').click();
+        await page.waitForFunction(() =>
+            window.__ondaPermissionProbe?.request === 1 &&
+            document.getElementById('toast-notice')?.textContent.includes('Tap Reconnect again'),
+        { timeout: 10000 });
+        const chooserEvent = page.waitForEvent('filechooser', { timeout: 12000 });
+        await deniedRow.locator('.btn-db-reconnect-track').click();
+        const chooser = await chooserEvent;
+        await chooser.setFiles({ name: filename, mimeType: 'audio/wav', buffer: wavTone() });
+        await page.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return audio?.src.startsWith('blob:') && !audio.paused && audio.currentTime > 0.1;
+        }, { timeout: 15000 });
+        assert.equal(await page.evaluate(() => window.__ondaPermissionProbe.request), 1,
+            'fallback picker must not trigger a second permission request');
+        assert.equal(await cachedAudioCount(page), 1,
+            'explicit manual Reconnect may create one audio cache entry');
+        const savedMeta = await page.evaluate(trackId => {
+            const payload = JSON.parse(localStorage.getItem('ondaActiveLibraryV1') || '{}');
+            return (payload.library || payload).tracks?.[trackId];
+        }, id);
+        assert.equal(savedMeta.id, id);
+        assert.equal(savedMeta.notes, 'keep original linked metadata');
+        assert.ok(savedMeta.playlists.includes(listName));
+        assert.equal(await page.locator('#db-library-results .library-result-row').count(), 1);
+        console.log('handles: explicit denied grant fell back to manual picker, retaining ID and playlist');
+    } finally {
+        await context.close();
+    }
+}
+
 async function mobileSmoke(browser, baseUrl) {
     // Browser device emulation does not establish actual Android lock-screen results.
     const context = await browser.newContext({
@@ -399,6 +571,7 @@ try {
     const baseUrl = 'http://127.0.0.1:' + port + '/';
     await desktopSmoke(browser, baseUrl);
     await missingMediaReconnectSmoke(browser, baseUrl);
+    await rememberedHandlePermissionSmoke(browser, baseUrl);
     await mobileSmoke(browser, baseUrl);
     console.log('PASS: actual Chrome desktop + mobile-emulated Onda smoke tests');
 } finally {

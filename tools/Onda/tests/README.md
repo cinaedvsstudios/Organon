@@ -64,3 +64,13 @@ A separate disposable Chrome context imports an **Onda Library JSON containing m
 The test then clicks the actual **Reconnect** control, handles Chrome's genuine filechooser event, supplies an in-memory WAV, and verifies that audio plays under the original track ID, metadata and playlist membership survive, only one cache record is created and the track no longer requires Reconnect after another reload.
 
 **Evidence:** [GitHub Actions run #45256546568](https://github.com/cinaedvsstudios/Organon/actions/runs/45256546568) passed both source and actual-Chromium jobs. This tests a user-selected file on a desktop Chromium browser and never touches the user's real Library. It does **not** establish Android persistent File System Access handles, filesystem permissions after phone restart, or a renamed-file mismatch confirmation.
+
+### Remembered file handles and permission-denied fallback (real Chromium)
+
+An additional **disposable** Chromium browser context creates its own synthetic WAV in **Origin Private File System (OPFS)** and stores its *real structured-clonable FileSystemFileHandle* using Onda's `OndaFileHandles.rememberMany()` IndexedDB pipeline. It imports only metadata, reloads, checks that the remembered handle survives, and confirms that the linked WAV plays **offline with no audio cache duplicate**.
+
+Next it reloads with a deliberately **simulated** denial from `queryPermission()` and `requestPermission()` for the synthetic handle. The test verifies that silent/normal Play calls only the non-prompting query path, produces the missing-source warning instead of making an unexpected permission request, and preserves metadata. The first explicit Reconnect tries read permission and is denied; the second explicit Reconnect opens Chrome's real file chooser for a synthetic WAV under the **same track ID**, retaining playlist membership and notes.
+
+**Evidence:** [GitHub Actions #45270809740](https://github.com/cinaedvsstudios/Organon/actions/runs/45270809740) — all original Node and actual-Chromium jobs passed.
+
+**Limitations:** OPFS is a browser-private substitute used only for safe automated testing. Its storage/permission characteristics are not identical to a user-picked external file or folder on Android. Denial is simulated by instrumenting browser handle methods, not an observed Android OS dialog. Permission persistence and re-prompt behaviour must be checked on the user's physical phone. No files, permissions, library data or cache belonging to the user were accessed.

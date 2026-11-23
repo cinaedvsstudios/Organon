@@ -487,3 +487,19 @@ This is a **test-only change** on the user's disposable localhost Chrome profile
 | ANDROID-RECONNECT | Actual Android picker permission grant/denial, remembered handles, filename mismatch, relink after phone restart | STILL NEEDS DEVICE |
 
 These tests make no changes to Onda's real runtime, browser storage scheme or playback engine. The synthetic Library and file exist only in an isolated Chrome test profile, with no user data, no Netlify account access and no user-cache deletion. **Onda remains v3.22**.
+
+## Browser-persisted handle, permission denial and Reconnect fallback (2026-11-23)
+
+[GitHub Actions run #45270809740](https://github.com/cinaedvsstudios/Organon/actions/runs/45270809740) passed both Onda jobs: five source regression groups and actual Chromium desktop/mobile-emulated smoke checks with the new independent remembered-handle scenario.
+
+| ID | Actual Chrome test condition | Status |
+|---|---|---|
+| BROWSER-20 | Synthetic WAV written to test-only OPFS and its true FileSystemFileHandle stored in Onda file-handle IndexedDB | PASS actual Chromium |
+| BROWSER-21 | Browser reload restores structured-cloned handle; linked track plays offline directly without writing an audio cache copy | PASS actual Chromium |
+| BROWSER-22 | **Simulated** read-permission denial makes silent read return null; normal Play does not request permission | PASS Chromium + simulated denial |
+| BROWSER-23 | With denial, Onda displays saved-audio-unavailable/needs-relink warning and retains Library metadata | PASS Chromium + simulated denial |
+| BROWSER-24 | First explicit Reconnect requests read permission; if denied Onda prompts for another explicit reconnect | PASS Chromium + simulated denial |
+| BROWSER-25 | Second explicit Reconnect opens real Chrome filechooser; synthetic WAV reattaches without duplicate ID, preserving notes/playlist | PASS Chromium + simulated denial |
+| ANDROID-HANDLES | Android OS picked-file/folder permission after restart, permission denial, Bluetooth/lock-screen and phone battery | NEEDS PHYSICAL DEVICE |
+
+**Scope:** No app code changes, no version bump (Onda stays **v3.22**). Test media and handle reside only in a disposable localhost browser profile, not the user's Android files or production site. OPFS handles have different permission behaviour from externally picked Android file handles, and denial was instrumented specifically for the regression test. Do not mark hardware Android criteria as passed.
