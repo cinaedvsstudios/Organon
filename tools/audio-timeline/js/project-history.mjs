@@ -50,8 +50,8 @@ export function snapshotClip(track) {
 export function snapshotProject({ files, tracks, selectedTrackIds, selectedTrackId, selectedFileId,
     currentTime, markers, settings }) {
     return {
-        files: files.map(({ id, name, kind, file, size, lastModified, generated }) => ({
-            id, name, kind, size: file?.size ?? size ?? 0,
+        files: files.map(({ id, name, kind, file, size, lastModified, generated, hiddenFromBin }) => ({
+            id, name, kind, hiddenFromBin:Boolean(hiddenFromBin), size: file?.size ?? size ?? 0,
             lastModified: file?.lastModified ?? lastModified ?? 0,
             ...(generated && ['text','effect'].includes(generated.group)
                 ? {generated:{group:generated.group,presetId:generated.presetId,value:generated.value || ''}} : {})
