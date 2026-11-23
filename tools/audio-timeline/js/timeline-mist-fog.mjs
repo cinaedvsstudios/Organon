@@ -84,9 +84,12 @@ function sampleLayers(u,v,o,t){
     *(.48+.42*d/2);
   const densityMask=smooth(.27-o.density*.12,.63-o.density*.04,body);
   const internal=.62+.38*body+.14*Math.sin(t*.41+d+px*.79);
+  // Fog never paints an opaque sky/whole-frame wash: upper air remains
+  // transparent even when a seeded crest briefly branches above the horizon.
+  const clearSky=smooth(.10,.30,v);
   const alpha=clamp(
    ((bank*(.35+.75*densityMask)+fingers)
-    *(.43+.38*o.density)*internal*o.opacity),0,.62);
+    *(.43+.38*o.density)*internal*o.opacity*clearSky),0,.62);
   layers.push({depth:d,alpha,body,crest,bank,fingers,wind});
  }
  return layers;
