@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-electric-ripple-controls" hidden>
+                     <div id="effect-shockwave-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Shockwave — pressure front and rarefaction</summary>
+                          <label class="text-setting-row"><span>Pressure shell width (%)</span><input id="effect-shock-width" class="range-control" type="range" min="1" max="16" step="1" value="6" title="Radial thickness of the outward shock compression front"></label>
+                          <label class="text-setting-row"><span>Compression force (%)</span><input id="effect-shock-compression" class="range-control" type="range" min="0" max="100" step="1" value="78" title="Strength of pressure displacement and the asymmetrical compression/release wake"></label>
+                          <label class="text-setting-row"><span>Front irregularity (%)</span><input id="effect-shock-turbulence" class="range-control" type="range" min="0" max="100" step="1" value="38" title="Smoothly uneven shockfront boundary rather than a perfect geometric circle"></label>
+                          <label class="text-setting-row"><span>Energy dissipation (%)</span><input id="effect-shock-decay" class="range-control" type="range" min="0" max="100" step="1" value="55" title="How rapidly outward shocks and their weaker aftershocks lose energy"></label>
+                          <label class="text-setting-row"><span>Shock pattern seed</span><input id="effect-shock-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="7474" title="Reproducible irregular pressure boundaries and aftershock positions"></label>
+                      </details>
+                  </div>
+                  <div id="effect-electric-ripple-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Electric Ripple — branching high-voltage fronts</summary>
                           <label class="text-setting-row"><span>Forks per travelling pulse</span><input id="effect-electric-branches" class="range-control" type="range" min="0" max="4" step="1" value="2" title="Independent lightning tendrils branching off an irregular expanding electric wavefront"></label>

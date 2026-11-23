@@ -20,6 +20,7 @@ import {renderLineCorruption} from './timeline-line-corruption.mjs';
 import {renderFaultCassette} from './timeline-fault-cassette.mjs';
 import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderElectricRipple} from './timeline-electric-ripple.mjs';
+import {renderShockwave} from './timeline-shockwave.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
@@ -118,6 +119,15 @@ export function normaliseTimelineEffect(effect={}){
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
+ };
+ if(shockwave)return {...base,
+  distortion:clamp(raw.distortion,0,100,65),
+  density:clamp(raw.density,1,120,48),
+  shockWidth:clamp(raw.shockWidth,1,16,6),
+  shockCompression:clamp(raw.shockCompression,0,100,78),
+  shockTurbulence:clamp(raw.shockTurbulence,0,100,38),
+  shockDecay:clamp(raw.shockDecay,0,100,55),
+  shockSeed:Math.round(clamp(raw.shockSeed,0,99999,7474))
  };
  if(electricRipple)return {...base,
   density:clamp(raw.density,1,120,52),
@@ -373,26 +383,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    }else if(e.presetId==='electric-ripple'){
     renderElectricRipple(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='shockwave'){
-    // Only the annulus is refracted; the rest of the composed frame remains intact.
-    if(source){ctx.globalAlpha=1;ctx.drawImage(source,0,0,w,h);ctx.globalAlpha=amount;}
-    const cx=w*e.originX/100,cy=h*e.originY/100;
-    const radius=wrap(t*.35)*Math.hypot(w,h)*.95;
-    const thickness=Math.max(6,Math.min(w,h)*(.035+e.distortion*.0005)*size);
-    if(source){
-     ctx.save();
-     ctx.beginPath();
-     ctx.arc(cx,cy,radius+thickness,0,Math.PI*2);
-     ctx.arc(cx,cy,Math.max(0,radius-thickness),0,Math.PI*2,true);
-     ctx.clip('evenodd');
-     const dilation=1+.04*e.distortion/100;
-     ctx.translate(cx,cy);ctx.scale(dilation,dilation);
-     ctx.drawImage(source,-cx,-cy,w,h);
-     ctx.restore();
-    }
-    ctx.globalAlpha=amount;
-    ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);
-    ctx.strokeStyle=rgba(e.color,.75);ctx.lineWidth=Math.max(1,thickness*.14);
-    ctx.stroke();
+    renderShockwave(ctx,source,w,h,e,t,amount);
    }
    return true;
   }
