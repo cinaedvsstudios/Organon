@@ -3804,24 +3804,28 @@
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
         async function playAudio() {
             if (!currentFile) return;
-
-            if (activeAudio === localAudio) {
-                await initAudioEngine();
-            }
+            const requestedAudio = activeAudio;
+            const requestId = trackLoadRequestId;
+            // Start AudioContext resume and media.play() in the same gesture.
+            // Waiting for AudioContext first can make Chrome discard tap activation.
+            const engineReady = requestedAudio === localAudio ? initAudioEngine() : Promise.resolve();
 
             try {
-                await activeAudio.play();
+                const playbackStarted = requestedAudio.play();
+                await Promise.all([engineReady, playbackStarted]);
+                if (requestedAudio !== activeAudio || requestId !== trackLoadRequestId || requestedAudio.paused) return;
                 isPlaying = true;
                 btnPlay.textContent = '🧿';
                 btnPlay.classList.add('active-state');
                 startVisualizer();
             } catch (err) {
+                if (requestedAudio !== activeAudio || requestId !== trackLoadRequestId || err?.name === 'AbortError') return;
                 isPlaying = false;
                 btnPlay.textContent = '🧿';
                 btnPlay.classList.remove('active-state');
                 startVisualizer();
                 console.warn('Playback failed:', err);
-                showToast('Playback blocked or failed. Click Play again.');
+                showToast('Playback was blocked by the browser. Tap Play to retry.');
             }
         }
 
