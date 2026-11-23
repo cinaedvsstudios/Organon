@@ -3324,6 +3324,33 @@
             });
         }
 
+        // Optional pickers; current Add/Folder inputs still work unchanged. They
+        // must be invoked immediately from button gestures for browser security.
+        async function chooseFilesWithRememberedAccess(kind) {
+            const provider = window.OndaFileHandles;
+            const folder = kind === 'folder';
+            if (!provider || (folder ? !provider.supportsDirectoryPicker() : !provider.supportsFilePicker())) {
+                showToast('Remembered file access is unavailable here. Use the normal Add Folder / Add action.');
+                return;
+            }
+            try {
+                const entries = await (folder ? provider.pickFolder() : provider.pickFiles());
+                if (!entries.length) {
+                    showToast('No supported audio or MIDI files were selected.');
+                    return;
+                }
+                const handles = new Map(entries.map(entry => [entry.file, entry.handle]));
+                const relativePaths = new Map(entries.map(entry => [entry.file, entry.relativePath]));
+                await handleUploadedFiles(entries.map(entry => entry.file), {
+                    fileHandles: handles, relativePaths
+                });
+            } catch (error) {
+                if (error?.name === 'AbortError') return; // User cancelled picker.
+                console.warn('Remember Files / Folder was unavailable:', error);
+                showToast('Could not remember that selection. You can still use the normal Add Folder / Add action.');
+            }
+        }
+
         async function handleUploadedFiles(files, options = {}) {
             const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
@@ -4403,6 +4430,12 @@
             }
             folderInput.click();
         });
+        safeBind('btn-db-link-files', 'click', () => chooseFilesWithRememberedAccess('files'));
+        safeBind('btn-db-link-folder', 'click', () => chooseFilesWithRememberedAccess('folder'));
+        const rememberFilesBtn = document.getElementById('btn-db-link-files');
+        const rememberFolderBtn = document.getElementById('btn-db-link-folder');
+        if (rememberFilesBtn && !window.OndaFileHandles?.supportsFilePicker()) rememberFilesBtn.style.display = 'none';
+        if (rememberFolderBtn && !window.OndaFileHandles?.supportsDirectoryPicker()) rememberFolderBtn.style.display = 'none';
         safeBind('btn-db-save-local-now', 'click', async () => {
             await flushActiveLibraryState('manual-library-drawer-save');
             showToast('Saved local library now.');
