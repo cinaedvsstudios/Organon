@@ -365,8 +365,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),47,
-        'Keep twelve classic overlays plus thirty-five independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),48,
+        'Keep twelve classic overlays plus thirty-six independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -762,7 +762,7 @@ try{
     await page.locator('#effect-duration').dispatchEvent('change');
     assert.equal(await page.locator('#effect-duration').inputValue(),'5.5');
     await page.locator('#effect-category').selectOption('Atmospheric');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3);
     await page.locator('#effect-category').selectOption('Distortion');
     await page.locator('[data-preset-id="chromatic-quirk"]').click({button:'right'});
     const chromaFirst=await sampleEffect(20),chromaMoved=await sampleEffect(200);
