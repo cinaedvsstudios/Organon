@@ -471,3 +471,19 @@ The new `tests/onda-browser-smoke.browser.mjs` is invoked after `npm test` from 
 | BROWSER-13 Android hardware-specific recovery | Actual Android cold start offline, File System Access grant persistence, screen lock, battery | NEEDS DEVICE |
 
 This is a **test-only change** on the user's disposable localhost Chrome profile; no live user file/Library/profile is read or modified, and no code changes are made to Onda's playback/storage engine. The app remains **v3.22**.
+
+## Real Chromium missing-audio / manual Reconnect regression (2026-11-23)
+
+[GitHub Actions #45256546568](https://github.com/cinaedvsstudios/Organon/actions/runs/45256546568) passed all existing source tests and the expanded Chromium suite. A **separate disposable browser profile** imported one metadata-only synthetic local track, with no cached audio or linked filesystem handle.
+
+| ID | Observation | Result |
+|---|---|---|
+| BROWSER-14 | Metadata-only Library import persists after reload without an audio cache write | PASS actual Chromium |
+| BROWSER-15 | Missing audio is labelled **needs relink** and offers Reconnect | PASS actual Chromium |
+| BROWSER-16 | Play on missing media shows a warning and preserves track, tags, notes and playlist; no duplicate imported | PASS actual Chromium |
+| BROWSER-17 | Explicit Reconnect launches Chrome's genuine filechooser for user-selected synthetic audio | PASS actual Chromium |
+| BROWSER-18 | Reconnected file decodes/plays with original track ID, one cache entry, and preserved notes/playlist | PASS actual Chromium |
+| BROWSER-19 | After reload, reconnected audio is recognised as cached/ready and no Reconnect is needed | PASS actual Chromium |
+| ANDROID-RECONNECT | Actual Android picker permission grant/denial, remembered handles, filename mismatch, relink after phone restart | STILL NEEDS DEVICE |
+
+These tests make no changes to Onda's real runtime, browser storage scheme or playback engine. The synthetic Library and file exist only in an isolated Chrome test profile, with no user data, no Netlify account access and no user-cache deletion. **Onda remains v3.22**.
