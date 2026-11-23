@@ -89,27 +89,109 @@
       meta.push(type + ': not accessible (' + (err.message || String(err)) + ')');
     }
   }
+  async function sampleDatabaseRecords(databaseName) {
+    // Read keys, not media contents. Keep large databases responsive.
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open(databaseName);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || Error('Could not open database'));
+      request.onblocked = () => reject(Error('Database blocked by another tab'));
+    });
+    try {
+      for (const storeName of Array.from(db.objectStoreNames)) {
+        const marker = {
+          id: 'IndexedDB:' + databaseName + '/' + storeName, type: 'IndexedDB',
+          key: databaseName + ' / ' + storeName, owned: true,
+          category: 'Projects & user data', size: NaN, protected: true,
+          editable: false, removable: false, status: 'Protected object store'
+        };
+        entries.push(marker);
+        try {
+          const keys = await new Promise((resolve, reject) => {
+            const found = [];
+            const tx = db.transaction(storeName, 'readonly');
+            const request = tx.objectStore(storeName).openKeyCursor();
+            request.onsuccess = () => {
+              const cursor = request.result;
+              if (!cursor || found.length >= 75) return resolve(found);
+              found.push(cursor.primaryKey);
+              cursor.continue();
+            };
+            request.onerror = () => reject(request.error || Error('Key enumeration failed'));
+            tx.onabort = () => reject(tx.error || Error('Transaction aborted'));
+          });
+          for (const recordKey of keys) {
+            let keyText;
+            try {keyText = JSON.stringify(recordKey) ?? String(recordKey);}
+            catch (_) {keyText = String(recordKey);}
+            entries.push({
+              id: 'IndexedDB:' + databaseName + '/' + storeName + '/' + keyText,
+              type: 'IndexedDB', key: databaseName + ' / ' + storeName + ' / ' + keyText,
+              owned: true, category: 'Projects & user data', size: NaN,
+              status: 'Protected database record', protected: true,
+              editable: false, removable: false, dbRecord: {databaseName, storeName, recordKey}
+            });
+          }
+          if (keys.length === 75) {
+            meta.push('IndexedDB ' + databaseName + '/' + storeName +
+              ': first 75 keys shown (additional records may exist).');
+          }
+        } catch (err) {
+          meta.push('Could not inspect ' + databaseName + '/' + storeName + ': ' +
+            (err.message || String(err)));
+        }
+      }
+    } finally { db.close(); }
+  }
+  async function readDatabaseRecord(entry) {
+    const descriptor = entry.dbRecord;
+    if (!descriptor) return 'This database/store is protected; select an individual record to inspect it.';
+    const db = await new Promise((resolve, reject) => {
+      const req = indexedDB.open(descriptor.databaseName);
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || Error('Could not open database'));
+    });
+    try {
+      const value = await new Promise((resolve, reject) => {
+        const tx = db.transaction(descriptor.storeName, 'readonly');
+        const req = tx.objectStore(descriptor.storeName).get(descriptor.recordKey);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error || Error('Could not read record'));
+      });
+      const json = JSON.stringify(value, (key, val) => {
+        if (typeof Blob !== 'undefined' && val instanceof Blob)
+          return '[Binary Blob ' + sizeLabel(val.size) + ' — contents hidden]';
+        if (val instanceof ArrayBuffer) return '[ArrayBuffer ' + sizeLabel(val.byteLength) + ']';
+        if (ArrayBuffer.isView(val)) return '[Binary typed array — contents hidden]';
+        if (val && typeof val === 'object' && /^(FileSystemFileHandle|FileSystemDirectoryHandle)$/.test(val.constructor?.name))
+          return '[File system handle — contents hidden]';
+        return val;
+      }, 2);
+      if (json === undefined) return 'Record is missing or not JSON-displayable.';
+      return json.length > 100000 ? json.slice(0, 100000) + '\n\n[Preview truncated at 100,000 characters]' : json;
+    } finally { db.close(); }
+  }
   async function scanDatabases() {
     if (!window.indexedDB) {
       meta.push('IndexedDB: not available');
       return;
     }
     if (typeof indexedDB.databases !== 'function') {
-      meta.push('IndexedDB: database listing unsupported; existing databases were not opened');
+      meta.push('IndexedDB: database enumeration unsupported by this browser; no database deleted');
       return;
     }
     try {
       const dbs = await indexedDB.databases();
-      for (const db of dbs) {
-        if (!db.name) continue;
-        const owned = knownDatabases.has(db.name);
-        if (!owned) continue; // Do not inspect other projects' databases.
+      for (const info of dbs) {
+        if (!info.name || !knownDatabases.has(info.name)) continue;
         entries.push({
-          id: 'IndexedDB:' + db.name, type: 'IndexedDB', key: db.name, owned,
-          category: owned ? 'Projects & user data' : 'Unclassified / other apps',
-          size: NaN, status: 'Local database (not server-verified)', protected: true,
-          editable: false, removable: owned, database: true, version: db.version
+          id: 'IndexedDB:' + info.name, type: 'IndexedDB', key: info.name,
+          owned: true, category: 'Projects & user data', size: NaN,
+          status: 'Local database (not server-verified)', protected: true,
+          editable: false, removable: true, database: true, version: info.version
         });
+        try { await sampleDatabaseRecords(info.name); }
+        catch (err) {meta.push('IndexedDB ' + info.name + ': ' + (err.message || String(err)));}
       }
     } catch (err) {
       meta.push('IndexedDB: ' + (err.message || String(err)));
@@ -334,7 +416,7 @@
     catch (_) { return value; }
   }
   function selectedEntry() { return entries.find(e => e.id === previewed); }
-  function view(entry) {
+  async function view(entry) {
     previewed = entry.id;
     const box = $('osm-inspector');
     if (!box) return;
@@ -343,6 +425,11 @@
     $('osm-inspector-title').textContent = entry.key + ' · ' + entry.type +
       (entry.owned ? ' · Organon-owned' : ' · Shared/unknown: read only');
     $('osm-value').value = entry.value === undefined ? 'No generic editor is available for this storage type.' : formatValue(entry.value);
+    if (entry.dbRecord) {
+      $('osm-value').value = 'Reading selected IndexedDB record...';
+      try { $('osm-value').value = await readDatabaseRecord(entry); }
+      catch (err) { $('osm-value').value = 'Read failed: ' + (err.message || String(err)); }
+    }
     $('osm-value').readOnly = !canEdit;
     $('osm-save').disabled = !canEdit;
     $('osm-delete').disabled = !entry.removable;
