@@ -368,3 +368,31 @@ test('Device QA does nothing until Run and exports only fixed redacted fields', 
     assert.equal(output.sourceVersion, version);
     assert.doesNotMatch(JSON.stringify(output), /fileName|userAgent|secret|password|localPath/i);
 });
+
+test('Offline app shell precaches exact current UI assets, excludes music and cloud data', () => {
+    const markup = html();
+    const sw = readFileSync(new URL('../onda-sw.js', import.meta.url), 'utf8');
+    assert.doesNotThrow(() => new Script(sw, { filename: 'onda-sw.js' }));
+    assert.match(markup, /serviceWorker\.register\('\.\/onda-sw\.js'/);
+    assert.match(markup, /updateViaCache: 'none'/);
+    assert.match(sw, /const SHELL_CACHE = SHELL_CACHE_PREFIX \+ 'v3\.23';/);
+    assert.match(sw, /if \(request\.method !== 'GET'\) return;/);
+    assert.match(sw, /if \(url\.origin !== self\.location\.origin\) return;/);
+    assert.match(sw, /if \(!SHELL_URLS\.has\(url\.href\)\) return;/);
+    const list = sw.match(/const SHELL_FILES = \[([\s\S]*?)\];/);
+    assert.ok(list, 'offline worker must define an explicit asset allowlist');
+    const files = [...list[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
+    assert.ok(files.includes('./index.html'));
+    assert.equal(new Set(files).size, files.length, 'precache list must not contain duplicates');
+    // Ensure ALL linked scripts, CSS, icons and manifest used by index.html
+    // have an exactly matching versioned cache key for an offline cold start.
+    const linked = [...markup.matchAll(/(?:src|href)="([^"]+)"/g)]
+        .map(match => match[1])
+        .filter(path => /^(?:\.\/)?(?:css\/|js\/|icons\/|manifest\.webmanifest|onda-midi\.js)/.test(path))
+        .map(path => path.startsWith('./') ? path : './' + path);
+    for (const path of linked) {
+        assert.ok(files.includes(path), 'offline shell misses linked asset ' + path);
+    }
+    assert.ok(files.every(path => !/\.(?:wav|mp3|flac|ogg|json)(?:\?|$)|netlify\/functions|api\//i.test(path)),
+        'offline worker must not cache audio, user Library JSON or cloud endpoints');
+});
