@@ -167,10 +167,28 @@ export function renderSignalInterference(ctx,source,width,height,effect={},secon
    const result=buildSignalInterferenceFrame(sourceImage,sw,sh,effect,seconds,scratch.data?.data);
    if(!scratch.data||scratch.data.data.length!==result.data.length)
     scratch.data=c.createImageData(sw,sh);
-   scratch.data.data.set(result.data);
+   const output=scratch.data.data;
+   output.set(result.data);
+   // Apply strength by interpolating RGB, not by stacking two semiopaque
+   // images: source-over blending would incorrectly reduce source alpha.
+   if(a<1){
+    const original=sourceImage.data;
+    for(let i=0;i<output.length;i+=4){
+     output[i]=original[i]+(output[i]-original[i])*a;
+     output[i+1]=original[i+1]+(output[i+1]-original[i+1])*a;
+     output[i+2]=original[i+2]+(output[i+2]-original[i+2])*a;
+     output[i+3]=original[i+3];
+    }
+   }
    c.putImageData(scratch.data,0,0);
-   ctx.imageSmoothingEnabled=true;
-   ctx.drawImage(scratch.canvas,0,0,w,h);
+   ctx.save();
+   try{
+    // Replace captured video composition without modifying alpha.
+    ctx.globalCompositeOperation='copy';
+    ctx.globalAlpha=1;
+    ctx.imageSmoothingEnabled=true;
+    ctx.drawImage(scratch.canvas,0,0,w,h);
+   }finally{ctx.restore();}
    return true;
   }
  }
