@@ -59,3 +59,6 @@
  #osm-search, #osm-filter{width:100%;flex:auto;}
  .osm-actions > button{flex:1 1 auto;}
 }
+
+/* Keep the expanded hub Settings dialog reachable on short mobile screens. */
+#settings-overlay .settings-modal { max-height: calc(100dvh - 24px); overflow-y: auto; }
