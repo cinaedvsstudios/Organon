@@ -86,7 +86,7 @@ h1{margin:6px 0;font-size:clamp(24px,3vw,37px);letter-spacing:.3px}h2{font-size:
 <div class="app">
 <header>
  <div><div class="eyebrow">Organon / Onda / development review</div><h1>Onda mobile-first concepts</h1><p>Interactive proposals based on Onda v3.10. Review layouts here before changing the actual player.</p></div>
- <div class="headlinks"><span class="pill">CONCEPT ONLY • v1.1</span><a href="./ONDA_MOBILE_ACTION_LIST.md">Action list</a><a href="./TECHNICAL_INVESTIGATION.md">Technical investigation</a><a href="./QA_MIGRATION_MATRIX.md">Android QA plan</a><a href="../index.html">Current player</a></div>
+ <div class="headlinks"><span class="pill">CONCEPT ONLY • v1.2</span><a href="./ONDA_MOBILE_ACTION_LIST.md">Action list</a><a href="./TECHNICAL_INVESTIGATION.md">Technical investigation</a><a href="./QA_MIGRATION_MATRIX.md">Android QA plan</a><a href="../index.html">Current player</a></div>
 </header>
 <div class="notice"><b>Nothing here is connected to your music.</b> Controls simulate possible interfaces only. Your real Onda code, library and settings are not changed by this page.</div>
 <div class="workspace">
@@ -129,7 +129,7 @@ h1{margin:6px 0;font-size:clamp(24px,3vw,37px);letter-spacing:.3px}h2{font-size:
    </div>
    <div class="feedback">
    <h2>Review notes</h2>
-   <p id="question" class="question">Would you prefer Queue as a new drawer tab, or within Current?</p>
+   <p id="question" class="question">Queue / Now Playing is on the main Current screen. What else would you like accessible in the Library drawer?</p>
    <textarea id="notes" placeholder="Write changes you'd want to this concept. These notes stay in this browser until you copy them."></textarea>
    <div class="row wrap"><button class="mini-btn primary" id="copyNotes">Copy notes to send in chat</button><small id="copyStatus">No changes are sent automatically.</small></div>
   </div>
@@ -143,7 +143,7 @@ h1{margin:6px 0;font-size:clamp(24px,3vw,37px);letter-spacing:.3px}h2{font-size:
 var mode='drawer', libraryView='Library', online=true, playing=false, overlay=document.getElementById('overlay');
 var detail=document.getElementById('detail'), main=document.getElementById('mainContent'), sheet=document.getElementById('sheet');
 var descriptions={
-drawer:{title:'Extend the existing Library drawer',id:'ONDA-02 • P1',intro:'Keep the upward-opening drawer, user-defined icon system, and original playback controls. The mock-up adds Queue and fast actions in the drawer rather than replacing the entire navigation.',steps:['Existing Results, Recents, Playlists and Help views are preserved.','Add a Queue section and quick import actions without duplicating what Onda already does.','Keep advanced batch tools in the drawer settings/action area.'],question:'Would you prefer Queue as a new drawer tab, or within Current?'},
+drawer:{title:'Main Current screen + existing Library drawer',id:'ONDA-02 • P1',intro:'Your decision: Queue / Now Playing stays on the main Current screen. The existing Library drawer is only for browsing, searches, recents, playlists, and shortcuts. The player symbols and design are unchanged.',steps:['Current main screen always provides Now Playing and the upcoming queue without opening the drawer.','The drawer preserves existing Results, Recents, Playlists and Help; there is no Queue tab.','Play / Import and Storage may be quick drawer actions, while playback order stays on-screen.'],question:'Queue / Now Playing stays on the main Current screen. What additional browsing or library actions should the drawer offer?'},
 storage:{title:'Mobile storage management',id:'ONDA-07 / 10 / 12 • P0–P1',intro:'Show cache use and protect your saved music. A 48-hour expiry would apply only to temporary Quick Play data, never to imported library files or explicit offline media.',steps:['Retain legacy IndexedDB media during migration.','Use Android file/folder handles where reliably supported; otherwise reselect or explicitly cache.','Show clear separation between original files, metadata, temporary media and offline copies.'],question:'Should Onda prompt before caching imported files, or keep automatic cache as the fallback only when direct reopening is unreliable?'},
 quick:{title:'Quick Play without importing',id:'ONDA-08 • P2',intro:'A phone-friendly action sheet lets you audition files without growing a permanent library or duplicating everything into the cache.',steps:['Play once, Add to Queue, or Add to Library.','Temporary data stays in memory by default where practical.','Protect current import behaviour until you choose the new default.'],question:'When you select a file, should the default be Play once or Add to Library?'},
 resume:{title:'Remember listening position',id:'ONDA-03 • P1',intro:'Restore the last track and seek position on the next visit, without automatically starting audio when the browser blocks autoplay.',steps:['Checkpoint progress periodically and on pause.','Wait for metadata before seeking, handle missing file with a relink prompt.','Set finished tracks back to the beginning; long-form audio may use a different reset rule.'],question:'Do you want position saved for every track, or only for longer recordings/podcasts?'},
@@ -156,7 +156,7 @@ function closeOverlay(){overlay.classList.remove('show');overlay.setAttribute('a
 function renderMain(){
 var title={drawer:'Now Playing',storage:'Storage Health',quick:'Add audio',resume:'Welcome back',online:'Your Library'}[mode];
 main.innerHTML='<div class="top-label">Mobile preview • '+mode+'</div><div class="section-title">'+title+'</div>';
-if(mode==='drawer')main.innerHTML+='<div class="hero-card"><div class="art">🎵</div><div><b>Sample recording</b><p class="small">Example artwork & metadata</p><button class="mini-btn" id="mainDrawer">Explore Library</button></div></div><div class="mini-card"><div class="row"><span class="small">Current playlist</span><b>12 tracks</b></div><p class="small">The existing top player and drawer remain. We can add more actions without adding another permanent navigation bar.</p></div>';
+if(mode==='drawer')main.innerHTML+='<div class="hero-card"><div class="art">🎵</div><div><b>Now playing</b><p class="small">Sample recording • Local audio</p><button class="mini-btn" id="mainDrawer">Browse Library</button></div></div><div class="mini-card"><div class="row"><b>Queue / Up Next</b><span class="small">Current screen</span></div>'+row('Sample recording','Playing now','🧿','▶')+row('Following track','Next up','🎵','⋮')+row('Another recording','Third in queue','🎶','⋮')+'<p class="small">Queue stays here on the main screen, not inside the Library drawer.</p></div>';
 if(mode==='storage')main.innerHTML+='<div class="hero-card"><div class="art">💾</div><div><b>Manage Onda storage</b><p class="small">Catalogue safe • 3 example cache items</p><button class="mini-btn" id="mainDrawer">Open Storage Health</button></div></div><div class="mini-card"><div class="small">Example usage • demonstration only</div><div class="meter"><span></span></div><b>Cache controls in the drawer / Settings</b></div>';
 if(mode==='quick')main.innerHTML+='<div class="hero-card"><div class="art">📥</div><div><b>Choose files from phone</b><p class="small">Decide what happens to each selection</p><button class="mini-btn primary" id="mainDrawer">Choose action</button></div></div><div class="mini-card"><p class="small">This preview does not open the phone file picker or store media.</p></div>';
 if(mode==='resume')main.innerHTML+='<div class="hero-card"><div class="art">↩</div><div><b>Continue sample track?</b><p class="small">Last heard at 18:24 of 42:10</p><button class="mini-btn primary" id="mainDrawer">Review resume</button></div></div><div class="mini-card"><p class="small">Playback begins only after you press play. Missing files offer to reconnect.</p></div>';
@@ -165,10 +165,9 @@ var b=document.getElementById('mainDrawer');if(b)b.onclick=openCurrent;
 var sw=document.getElementById('connSwitch');if(sw)sw.onchange=function(){online=sw.checked;renderMain();openCurrent()}
 }
 function drawer(){
-var names=['Library','Queue','Recents','Playlists','Help'];var nav='<div class="tabs">'+names.map(function(n){return '<button class="tab '+(n===libraryView?'active':'')+'" data-library-view="'+n+'">'+n+'</button>'}).join('')+'</div>';
+var names=['Library','Recents','Playlists','Help'];var nav='<div class="tabs">'+names.map(function(n){return '<button class="tab '+(n===libraryView?'active':'')+'" data-library-view="'+n+'">'+n+'</button>'}).join('')+'</div>';
 var body='';
 if(libraryView==='Library')body='<input class="search" aria-label="Search demo library" placeholder="Search music, tags, playlists…"><div class="actionrow"><button class="mini-btn primary" data-action="quick">＋ Play / Import</button><button class="mini-btn" data-action="storage">💾 Storage</button><button class="mini-btn" data-action="online">🌐 Online</button></div>'+row('Sample local track','Local file · available','🎵','▶')+row('Favourite mix','Playlist · 12 tracks','🎧','▶')+row('Long recording','Local audio · 42 min','🎤','▶');
-if(libraryView==='Queue')body='<div class="actionrow"><button class="mini-btn primary" data-action="quick">＋ Add to queue</button><button class="mini-btn">Clear played</button></div>'+row('Now playing','Track 1 of 3','🧿','▶')+row('Next track','Track 2 of 3','🎵','⋮')+row('Later','Track 3 of 3','🎶','⋮');
 if(libraryView==='Recents')body=row('Last opened track','A few moments ago','🕘','▶')+row('Previous listening session','Earlier','🎧','▶');
 if(libraryView==='Playlists')body=row('Favourites','12 tracks','📚','›')+row('Long-form audio','4 tracks','📚','›');
 if(libraryView==='Help')body='<div class="mini-card"><b>Existing mobile icon customisation stays</b><p class="small">Icon editing and the current Help view are preserved rather than replaced by the mock-up.</p></div>';
@@ -195,10 +194,10 @@ function activateMode(next){
 mode=next;closeOverlay();document.querySelectorAll('.modebar button').forEach(function(b){var active=b.getAttribute('data-mode')===mode;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});
 var d=descriptions[mode];detail.innerHTML='<h2>'+d.title+'</h2><div class="status">'+d.id+'</div><p>'+d.intro+'</p><ul>'+d.steps.map(function(s){return '<li>'+s+'</li>'}).join('')+'</ul><div style="margin-top:17px"><button class="mini-btn primary" id="showPanel">Try this mock-up</button></div>';
 document.getElementById('showPanel').onclick=openCurrent;document.getElementById('question').textContent=d.question;
-renderMain();openCurrent();
+renderMain();if(mode!=='drawer')openCurrent();
 }
 document.querySelectorAll('.modebar button').forEach(function(b){b.onclick=function(){activateMode(b.getAttribute('data-mode'))}});
-document.getElementById('openLibrary').onclick=function(){libraryView='Library';mode='drawer';activateMode(mode)};
+document.getElementById('openLibrary').onclick=function(){libraryView='Library';activateMode('drawer');openCurrent()};
 document.getElementById('playButton').onclick=function(){playing=!playing;document.getElementById('playingLabel').textContent=playing?'Sample track • Playing (mock)':'Sample track • Paused (mock)';document.getElementById('viz').style.opacity=playing?'1':'.45'};
 overlay.addEventListener('click',function(e){if(e.target===overlay)closeOverlay()});
 document.addEventListener('keydown',function(e){if(e.key==='Escape')closeOverlay()});
