@@ -1766,16 +1766,16 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-list {
   }
 
   body.onda-force-mobile-mode #library-manager-drawer .onda-mobile-library-nav .mobile-db-icon-btn {
-    flex: 0 0 42px;
-    height: 42px;
-    min-width: 42px;
+    flex: 0 0 44px;
+    height: 44px;
+    min-width: 44px;
     font-size: 1.08rem;
   }
 
   body.onda-force-mobile-mode #library-manager-drawer .onda-library-quick-action {
     flex: 0 0 auto;
     font-size: .74rem;
-    min-height: 42px;
+    min-height: 44px;
     padding: 7px 11px;
     white-space: nowrap;
   }
@@ -1820,7 +1820,7 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-list {
 
   body.onda-force-mobile-mode #library-manager-drawer .onda-drawer-playlist-row .btn-db-edit-playlist {
     flex: 0 0 auto;
-    min-height: 42px;
+    min-height: 44px;
   }
 
   body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="help"] .mobile-icon-help-panel {
@@ -1860,7 +1860,7 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-list {
   body.onda-force-mobile-mode #library-manager-drawer .mobile-icon-edit-input {
     box-sizing: border-box;
     grid-column: 1 / -1;
-    min-height: 42px;
+    min-height: 44px;
     width: 100%;
   }
 }
