@@ -5747,6 +5747,7 @@
             visualizerRunning = false;
         }
 
+        let ondaDiagnosticFrameCount = 0;
         function startVisualizer() {
             if (document.visibilityState === 'hidden') {
                 stopVisualizerFrames();
@@ -5756,7 +5757,16 @@
             visualizerRunning = true;
             visualizerFrameId = requestAnimationFrame(() => {
                 visualizerFrameId = 0;
-                drawVisualizer();
+                // Sampling only one in 60 frames avoids adding diagnostic cost
+                // to each animation while capturing real draw-time examples.
+                const sampleDraw = window.OndaDiagnostics?.isEnabled() &&
+                    (++ondaDiagnosticFrameCount % 60 === 0);
+                const finishDraw = sampleDraw ? window.OndaDiagnostics.begin('visualizer-frame') : null;
+                try {
+                    drawVisualizer();
+                } finally {
+                    finishDraw?.();
+                }
                 if (visualizerShouldAnimate()) startVisualizer();
                 else visualizerRunning = false;
             });
