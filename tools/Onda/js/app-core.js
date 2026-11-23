@@ -6815,6 +6815,7 @@
                 if (currentFile && activeAudio && !activeAudio.paused) pauseAudio();
             },
             addToLibrary: file => handleUploadedFiles([file]),
+            notify: message => showToast(String(message || 'Quick Play unavailable.')),
             onMainPlayback: callback => {
                 if (typeof callback !== 'function') return;
                 [localAudio, streamAudio, window.OndaMidi?.audio].forEach(audio => {
