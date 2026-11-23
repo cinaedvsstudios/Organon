@@ -414,3 +414,15 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | SAVE21-14 Public deployment | Netlify serves v3.21 and all new previous modules | NEEDS DEPLOY / BROWSER |
 
 **Release gate:** 66 isolated assertions are evidence that the checkpoint function calls expensive save methods fewer times for navigation. They do not prove end-to-end device playback, persisted metadata survival, Android background audio, Netlify version or measured milliseconds of improvement.
+
+## Repeatable Onda source regression suite — added 2026-11-23
+
+**Test source:** [tests/onda-regression.test.mjs](../tests/onda-regression.test.mjs)  
+**Local command:** `cd tools/Onda && npm test` (Node.js 22, no additional dependencies).  
+**Continuous integration:** [.github/workflows/onda-regression.yml](../../../.github/workflows/onda-regression.yml); scoped to Onda changes on PRs, main pushes and manual runs.
+
+The suite retains five top-level Node tests: (1) script parse/version/order/transport symbols; (2) navigation-only vs real-data save paths, including all 14/13 isolated checkpoint scenarios; (3) temporary Quick Play lifetime, no implicit import, explicit import and object URL cleanup; (4) Media Session route isolation and return to saved playback; (5) device QA opt-in, manual statuses and redacted export. The five tests also **passed on GitHub Actions using Node.js 22** in [workflow run #45216940426](https://github.com/cinaedvsstudios/Organon/actions/runs/45216940426) for PR #185 (5 passed, 0 failed). The external runtime checks remain separate.
+
+These tests are **source and mocked-browser** checks. They do not establish that a real Android phone plays audio after reloading, that permission grants persist, that screen-lock/headset controls work, that a Netlify deployment succeeded or that real performance meets targets.
+
+Do not treat Actions green as physical-device acceptance. Continue using v3.20's read-only device QA panel and v3.18 opt-in timing tools on actual Android and desktop.
