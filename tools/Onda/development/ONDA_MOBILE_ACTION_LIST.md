@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** Production batches v3.11 (player reliability) and v3.12 (safe storage write optimisation) committed; real Android and deployment verification pending  
+**Status:** v3.11 player reliability, v3.12 storage optimisation, and v3.13 optional persistent Android file access committed; real Android/Netlify verification pending  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.12** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.13** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback and diagnostics](./RELEASE_V3_11.md) · [v3.12 safe storage optimisation](./RELEASE_V3_12.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 Android file access](./RELEASE_V3_13.md)
 
 ## Agreed product direction
 
@@ -30,12 +30,12 @@
 | ONDA-04 | P3 / scale | Large-library search/render optimisation | Not a present user issue | Monitor until needed |
 | ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | **Implemented v3.11; 21 isolated/static checks passed across batch; Android battery QA pending** |
 | ONDA-06 | Closed | Replace existing play symbols | Do not change | Closed — no action |
-| ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | **v3.12: unchanged file reimports skip duplicate cache writes; cache-first preserved. Full resolver/handle proof pending** |
+| ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | **v3.13: optional remembered file handles added as cache fallback, cache-first retained; device proof pending** |
 | ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **Saved-track Play path improved v3.11; optional new-file Quick Play not yet implemented** |
 | ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
-| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.11 diagnostics present; v3.12 avoids redundant writes; cleanup deliberately not implemented** |
+| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.13 adds remembered-link count to existing v3.11 storage report; cleanup not implemented** |
 | ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.12: full autosaves on resize/rotation removed and import saves consolidated; performance timing still unmeasured** |
-| ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.11: direct one-file Reconnect implemented; advanced persistent handle testing pending** |
+| ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.13: Remember Files/Folder & read-permission Reconnect implemented; actual Android QA pending** |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
 | ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | CSS/API review done; computed style and interaction QA pending |
 | ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Use approved bronze/charcoal/cyan circle; don't change player controls | Implemented in GitHub; Android device check pending |
@@ -335,3 +335,18 @@ The first user-authorised production batch is committed to `main`: the unbounded
 **Next steps:** Confirm v3.12 deployment and playback/Storage Health on Android, then move on to persistent file/folder access proofs and safe manual orphan review (with explicit consent); afterwards refine the Current/Now Playing main-screen queue and mobile Library drawer. Resume position and GitHub Pages hosting remain low priority.
 
 - 2026-11-23 — v1.7: v3.12 implementation recorded; no user data migration.
+
+
+## Implementation progress — v3.13 persistent file access (2026-11-23)
+
+**Committed:** [v3.13 release specification and Android verification plan](./RELEASE_V3_13.md).
+
+Chrome's File System Access API is available on recent Android Chrome, but retained handles can lose permission between sessions. To keep Onda convenient, v3.13 introduces **optional Remember Files and Remember Folder** actions in the existing Library drawer Settings. On supported Chrome, they allow user-selected read-only file references to be saved. Onda still stores normal cached music; it first plays the existing cached audio, then a linked file when already permitted. A missing file can use the existing **Reconnect** button to request read permission explicitly. The user can always fall back to existing Add/Folder input flows.
+
+**Storage safety:** The new `OndaMediaPlayerFileHandlesDB` v1 is **separate** from the existing `OndaMediaPlayerPersistentDB` v2. No migration, deletion, automatic cache cleanup or original-file writes. The handle store contains browser-local references/paths, not extra audio copies, and is not included in cloud JSON backups. Library IDs, playlists and caches stay intact.
+
+**Source-level verification:** 13 isolated file-handle tests + 18 integration/source tests passed. Chrome and Android permission persistence, device lock-screen playback, actual Netlify deployment, and large music libraries still require real-device verification. File/folder paths that differ from old imports may generate different IDs; use Reconnect to preserve an existing track identity rather than silently merging ambiguous files.
+
+**Next recommended work:** Test v3.13 on the user's Android Chrome with an expendable MP3, then build a **read-only, user-reviewed orphan/duplicate cache report** before any opt-in cleanup. Current/Now Playing layout remains on the main screen; resume position stays optional P3.
+
+- 2026-11-23 — v1.8 v3.13 implemented and documented; device tests remain pending.
