@@ -1094,6 +1094,7 @@
             const midi = meta.sourceType === 'midi';
             if (meta.blobFile) return midi ? 'MIDI ready' : 'local ready';
             if (cachedAudioTrackIds.has(meta.id)) return midi ? 'MIDI cached' : 'local cached';
+            if (meta.needsRelink === true) return 'needs relink';
             // Without a successful scan, we cannot claim the audio is missing.
             return audioCacheIndexState === 'ready' ? 'needs relink' : 'cache not verified';
         }
@@ -1109,7 +1110,7 @@
             } else if (playNow) {
                 switchTrack(existingIndex);
             }
-            showToast(`Queued: ${getDisplayTitle(meta)}`);
+            if (!playNow) showToast(`Queued: ${getDisplayTitle(meta)}`);
         }
 
         function buildTrackRow(trackId, compact = false) {
@@ -1132,7 +1133,7 @@
                         <div class="library-track-meta library-file-line">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
                         ${compact ? '' : `<div class="library-track-meta library-playlist-line">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
                     </div>
-                    ${compact ? '' : `<div class="library-row-buttons"><button class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play">▶️</button><button class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info">ℹ️</button><button class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist">➕</button></div>`}
+                    ${compact ? '' : `<div class="library-row-buttons"><button class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play">▶️</button>${sourceStatus(meta) === 'needs relink' ? `<button type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track">Reconnect</button>` : ''}<button class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info">ℹ️</button><button class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist">➕</button></div>`}
                 </div>
                 ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             `;
@@ -3147,6 +3148,58 @@
         });
 
         // --- 2. MULTI-FILE INTAKE LOADING SYSTEM ---
+        // Separate reconnect picker: never feed an existing Library track through
+        // the ordinary import flow or create a second Library ID.
+        const reconnectFileInput = document.createElement('input');
+        reconnectFileInput.type = 'file';
+        reconnectFileInput.accept = 'audio/*,.mp3,.wav,.ogg,.flac,.m4a,.aac,.mid,.midi';
+        reconnectFileInput.hidden = true;
+        document.body.appendChild(reconnectFileInput);
+        let reconnectTargetId = null;
+        function offerReconnect(trackId) {
+            if (!virtualLibrary[trackId]) return;
+            reconnectTargetId = trackId;
+            reconnectFileInput.value = '';
+            reconnectFileInput.click();
+        }
+        reconnectFileInput.addEventListener('change', async () => {
+            const trackId = reconnectTargetId;
+            reconnectTargetId = null;
+            const file = reconnectFileInput.files?.[0] || null;
+            reconnectFileInput.value = '';
+            const meta = virtualLibrary[trackId];
+            if (!file || !meta) return;
+            const wantsMidi = meta.sourceType === 'midi';
+            const selectedMidi = Boolean(window.OndaMidi?.isMidiFile(file)) || /\.(mid|midi)$/i.test(file.name);
+            if (wantsMidi !== selectedMidi) {
+                showToast(wantsMidi ? 'Please select the original MIDI file.' : 'Please select the original audio file.');
+                return;
+            }
+            if (meta.fileName && file.name.toLowerCase() !== String(meta.fileName).toLowerCase() &&
+                !confirm('This filename differs from the saved track. Connect this file to the existing library entry?')) return;
+            // Preserve ID, playlists, history, tags, notes, and artwork.
+            meta.blobFile = file;
+            meta.needsRelink = false;
+            meta.localPath = file.webkitRelativePath || file.name;
+            meta.sizeBytes = file.size;
+            meta.size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            let cached = false;
+            try {
+                await idbSetAudioFile(trackId, file, meta); // Same ID; replaces the browser copy, not the Android original.
+                cachedAudioTrackIds.add(trackId);
+                cached = true;
+            } catch (error) {
+                console.warn('Reconnected track is playable this session but could not be cached:', error);
+            }
+            playlistTracks = playlistTracks.map(track => getTrackId(track) === trackId
+                ? { ...track, blobFile: file, needsRelink: false } : track);
+            saveActiveLibraryState('reconnect-existing-track');
+            renderLibraryManager();
+            if (!cached) showToast('Connected for this session; browser storage is unavailable.');
+            const queueIndex = playlistTracks.findIndex(track => getTrackId(track) === trackId);
+            if (queueIndex >= 0) switchTrack(queueIndex);
+            else addTrackToQueueFromLibrary(trackId, true);
+        });
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('dragover'); });
@@ -3312,7 +3365,7 @@
                 activeAudio = window.OndaMidi.audio;
                 let blob = file.blobFile || meta.blobFile;
                 if (!blob) {
-                    showToast('Restoring cached MIDI file...');
+                    // Reopen cached media silently: playing a saved item is not importing it.
                     blob = await hydrateLocalAudioBlob(key);
                     if (requestId !== trackLoadRequestId) return;
                     if (blob) {
@@ -3321,10 +3374,12 @@
                     }
                 }
                 if (!blob) {
+                    cachedAudioTrackIds.delete(String(key));
+                    meta.needsRelink = true;
                     updateMetadataUI();
                     pauseAudio();
                     startVisualizer();
-                    showToast('MIDI metadata is saved, but the file needs to be reselected before it can play.');
+                    showToast('Saved MIDI file unavailable. Tap Reconnect to choose it again.');
                     return;
                 }
                 try {
@@ -3345,7 +3400,7 @@
                 activeAudio = localAudio;
                 let blob = file.blobFile || meta.blobFile;
                 if (!blob) {
-                    showToast('Restoring cached local audio...');
+                    // Reopen cached media silently: Play should require no further steps.
                     blob = await hydrateLocalAudioBlob(key);
                     if (requestId !== trackLoadRequestId) return;
                     if (blob) {
@@ -3354,10 +3409,12 @@
                     }
                 }
                 if (!blob) {
+                    cachedAudioTrackIds.delete(String(key));
+                    meta.needsRelink = true;
                     updateMetadataUI();
                     pauseAudio();
                     startVisualizer();
-                    showToast('Local file metadata is saved, but Chrome no longer has the audio file. Use Add Folder / Relink Folder to play it again.');
+                    showToast('Saved audio unavailable. Tap Reconnect to choose the file again.');
                     return;
                 }
                 if (activeAudio.src && activeAudio.src.startsWith('blob:')) {
@@ -3638,7 +3695,18 @@
             const sourceTypeEl = document.getElementById('meta-source-type');
             const sourceDetailEl = document.getElementById('meta-source-detail');
             if (sourceTypeEl) sourceTypeEl.innerText = meta.sourceType === 'stream' || meta.streamUrl ? 'Stream / online source' : (meta.sourceType === 'midi' ? 'MIDI sequence file' : 'Local file metadata');
-            if (sourceDetailEl) sourceDetailEl.innerText = meta.streamUrl || meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No location recorded';
+            if (sourceDetailEl) {
+                sourceDetailEl.innerText = meta.streamUrl || meta.localPath || meta.desktopPath || meta.phonePath || meta.fileName || 'No location recorded';
+                if (sourceStatus(meta) === 'needs relink') {
+                    const reconnect = document.createElement('button');
+                    reconnect.type = 'button';
+                    reconnect.className = 'btn-pill btn-reconnect-current';
+                    reconnect.textContent = 'Reconnect';
+                    reconnect.addEventListener('click', () => offerReconnect(currentFile.name));
+                    sourceDetailEl.appendChild(document.createTextNode(' '));
+                    sourceDetailEl.appendChild(reconnect);
+                }
+            }
             const playlistsDisplay = document.getElementById('meta-playlists-display');
             if (playlistsDisplay) playlistsDisplay.innerText = playlistNames.length ? playlistNames.join(' / ') : 'No playlists assigned.';
 
@@ -4381,6 +4449,10 @@
                 const trackId = e.target.dataset.trackId || e.target.closest('[data-track-id]')?.dataset.trackId || e.target.closest('.library-result-row')?.dataset.trackId;
                 if (!trackId) return;
 
+                if (e.target.closest('.btn-db-reconnect-track')) {
+                    offerReconnect(trackId);
+                    return;
+                }
                 if (e.target.closest('.btn-db-play-track')) {
                     addTrackToQueueFromLibrary(trackId, true);
                     return;
