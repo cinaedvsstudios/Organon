@@ -806,7 +806,12 @@ try{
     assert.equal(rippleStart,await sampleEffect(15));
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Glitch');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    const expectedGlitchCount=await page.evaluate(async()=>{
+        const {TIMELINE_EFFECTS}=await import('./js/timeline-effects.mjs');
+        return TIMELINE_EFFECTS.filter(effect=>effect.category==='Glitch').length;
+    });
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount,
+        'Glitch library must display all registered procedural effects');
     await page.locator('[data-preset-id="fault-cassette"]').click();
     await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-distortion').evaluate(input=>{
@@ -850,7 +855,7 @@ try{
     await page.locator('#effect-category').selectOption('Glitch');
     const glitchIds=['glass-glitch','glitch-storm','negative-chaos','warning-glitch',
       'misalignment','noir-glitch','glitch-flux','engine-heat','retro-glitch'];
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount);
     const variants=new Set();
     for(const id of glitchIds){
       await page.locator(`#effects-library-grid [data-preset-id="${id}"]`).click({button:'right'});
@@ -923,7 +928,7 @@ try{
     // #59: native snow controls must really appear and operate on selected
     // TV Static clip, while unrelated colour/scale/angle knobs stay hidden.
     await page.locator('#effect-category').selectOption('Glitch');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount);
     await page.locator('[data-preset-id="tv-static"]').click();
     await page.locator('#effect-tv-static-controls').waitFor({state:'visible',timeout:15000});
     assert.equal(await page.locator('#effect-intensity-label').innerText(),'Snow opacity (%)');

@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {TIMELINE_EFFECTS,normaliseTimelineEffect,effectFrameSignature,paintTimelineEffect,requiresCompositeSource,paintEffectPreviewScene} from '../js/timeline-effects.mjs';
 import {snapshotClip,applyClipData} from '../js/project-history.mjs';
 import {PIXEL_EFFECT_IDS,deriveLightMask,separateRgb,isPixelEffect} from '../js/timeline-pixel-effects.mjs';
+import {buildDataBurstFrame} from '../js/timeline-data-burst.mjs';
 
 const makeCanvasRecorder=()=>{
  const log=[];
@@ -25,7 +26,7 @@ const paint=(preset,t,settings={})=>{
  return JSON.stringify(ctx.log);
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
- assert.equal(TIMELINE_EFFECTS.length,39);
+ assert.equal(TIMELINE_EFFECTS.length,40);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
  assert.deepEqual(
@@ -39,6 +40,18 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
+  if(preset.id==='data-burst'){
+   // This source-pixel effect cannot be evaluated by a mock Canvas call log.
+   // Require actual changing pixels and reversible seeking instead.
+   const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
+   for(let i=0;i<data.length;i+=4){data[i]=92;data[i+1]=142;data[i+2]=186;data[i+3]=255;}
+   const recipe=normaliseTimelineEffect({presetId:'data-burst',density:65,burstSize:60,burstLife:.32});
+   const frame=t=>buildDataBurstFrame(data,w,h,recipe,t*recipe.speed).data;
+   const early=frame(.3),later=frame(1.19);
+   assert.notDeepEqual(early,later,'Data Burst must visually evolve over actual RGBA source');
+   assert.deepEqual(early,frame(.3),'Data Burst must reproduce the same pixels after reverse seek');
+   continue;
+  }
   const start=paint(preset.id,.1),later=paint(preset.id,1.19);
   assert.notEqual(start,later,preset.id+' must change with time');
   assert.equal(start,paint(preset.id,.1),preset.id+' should recreate identical frame after backward seek');
