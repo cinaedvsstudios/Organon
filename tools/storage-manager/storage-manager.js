@@ -140,21 +140,9 @@
   }
   async function scanOther() {
     if (navigator.storage && navigator.storage.getDirectory) {
-      try {
-        const root = await navigator.storage.getDirectory();
-        let count = 0;
-        for await (const handle of root.values()) count++;
-        meta.push('OPFS: ' + count + ' origin-wide top-level entries; protected from bulk cleanup');
-      } catch (err) {
-        meta.push('OPFS: unavailable (' + (err.message || String(err)) + ')');
-      }
-    } else meta.push('OPFS: unavailable in this browser/context');
-    try {
-      const count = document.cookie ? document.cookie.split(';').length : 0;
-      meta.push('Cookies: ' + count + ' JavaScript-visible origin cookies (contents hidden, never cleared)');
-    } catch (_) {
-      meta.push('Cookies: inaccessible');
-    }
+      meta.push('OPFS: supported, but no Organon-owned directory registry exists; data is excluded and protected.');
+    } else meta.push('OPFS: unavailable in this browser/context.');
+    meta.push('Cookies: excluded from cleanup; cookies are shared across paths and may be inaccessible to JavaScript.');
   }
   async function scan() {
     if (scanBusy) return;
@@ -424,7 +412,7 @@
     const list = $('osm-list');
     list.replaceChildren();
     let visible = entries.filter(e => (!term || (e.key + ' ' + e.category + ' ' + e.type).toLowerCase().includes(term)) &&
-      (scope === 'all' || (scope === 'owned' && e.owned) || (scope === 'unknown' && !e.owned) ||
+      (scope === 'all' || (scope === 'owned' && e.owned) ||
        (scope === 'safe' && isSafe(e)) || scope === e.type));
     visible.sort((a, b) => (a.owned === b.owned ? a.key.localeCompare(b.key) : a.owned ? -1 : 1));
     for (const e of visible.slice(0, 300)) {
