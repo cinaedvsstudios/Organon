@@ -1,7 +1,7 @@
 # Onda v3.10 — Mobile-First Technical Investigation and Implementation Blueprint
 
 **Review date:** 2026-11-23  
-**Status:** Architecture audit complete; v3.11 reliability and v3.12 safe storage-write optimisation committed. Real Android device validation pending. See [v3.11](./RELEASE_V3_11.md) and [v3.12](./RELEASE_V3_12.md).  
+**Status:** v3.11 player fixes, v3.12 storage-write optimisation and v3.13 optional persistent file handles committed; real Android verification pending. See [v3.13](./RELEASE_V3_13.md) for current implementation.  
 **Primary target:** Android Chrome, including Chrome home-screen shortcut / standalone installed mode. Secondary: desktop Chrome.  
 **Companion:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Interactive concept page](./mobile-review.html) · [QA and migration matrix](./QA_MIGRATION_MATRIX.md)
 
@@ -292,3 +292,20 @@ References: https://docs.github.com/en/pages/getting-started-with-github-pages/g
 **Validation result:** 22 static/isolated tests, including metadata-match, changed media cases, uncertain metadata fallback, concurrent writes and checkpoint lifecycle. Live Android storage and performance benefits not measured. No audio files deleted or cache migrated.
 
 **Important nuance:** Since the audioFiles store is keyed by track ID, an ordinary `put()` to an existing ID already replaces that record; v3.12 avoids the expensive rewrite. This does **not** itself reduce the count of pre-existing records with different IDs. Do not infer freed storage bytes or automatic duplicate cleanup. A later *user-reviewed*, read-only orphan/duplicate inventory must precede any optional manual deletion.
+
+
+## L. Implemented optional Android File System Access — Onda v3.13
+
+This **postdates** the baseline blueprint in sections A–I. Full code review and real-device checklist: [RELEASE_V3_13.md](./RELEASE_V3_13.md).
+
+**Why no in-place IndexedDB v2→v3 upgrade:** A database version upgrade would prevent older app code from reopening the same DB without a compatibility plan. To minimise rollback risk, a separate `OndaMediaPlayerFileHandlesDB` v1 now stores structured-cloned **file** handles; it does not modify Onda's existing v2 audio/state stores. No original Android music is altered or deleted.
+
+**UI integration:** Two optional Settings actions in the existing Library drawer, **Remember Files** / **Remember Folder**, feature-detected and hidden on unsupported browsers. Normal Add, Add Folder and drag/drop remain the default. `js/file-access.js` is loaded before `js/app-core.js`; the file-access module performs file/folder picker selection, bounded directory traversal, handle persistence, silent permission checks, and explicit permission reauthorisation.
+
+**Track resolution precedence:** in-session File → old IndexedDB cached audio File/Blob → saved handle **only if its read permission is currently granted** → one Reconnect button when unavailable. Existing cache is never automatically removed. Remember Files/Folder imports still cache full audio by default while Android permission persistence is unverified; do **not** claim this version by itself reduces total cached audio space.
+
+**Track IDs:** Path, file name, length and modified time produce deterministic IDs. Remember Folder uses root-relative paths matching conventional folder import where equivalent. When paths differ, a new ID may be generated. Do **not** silently coalesce ambiguous same-name media; manual Reconnect preserves a chosen existing track's identity.
+
+**Permission caveat:** A stored handle is not a permanent permission grant. `queryPermission` can return `prompt` after Chrome restart, so an ordinary Play never opens an unexpected permission modal. Clicking Reconnect attempts `requestPermission({mode:'read'})` using a startup-restored in-memory handle. If refused, the next Reconnect tap opens the original picker.
+
+**QA:** 13 isolated module tests and 18 extracted-core/static integration checks passed. Real device tests and Netlify deployment are pending; see release notes. The earlier architecture discussion of an optional v3 schema upgrade should now be treated as **not implemented and unnecessary for this first experimental handle feature**. Future schema changes require an explicit migration/rollback plan.
