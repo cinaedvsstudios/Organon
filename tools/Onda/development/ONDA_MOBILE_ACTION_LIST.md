@@ -124,3 +124,84 @@
 ## Change journal
 
 - 2026-11-23 — v1.0 initial working list based on user decisions and Onda v3.10 source; audit findings added; mobile-first direction established; no production code modified.
+
+
+## Source investigation pass 2 — precise implementation notes (2026-11-23)
+
+**Reviewed:** `index.html`, `js/app-core.js`, `js/media-session.js`, `js/cloud-sync.js`, and relevant `css/tokens.css`. These are *static source findings*, not measurements from a physical phone.
+
+### Storage / cache: important existing-state distinctions
+
+1. The **current Storage Health panel** (`updateSettingsHealthPanel()`, `app-core.js` around 3997) counts tracks/playlists/missing metadata and cloud device status, but it **does not currently measure audio-cache bytes**. Build cache inventory from the Onda audio IndexedDB object store and label that figure distinctly from the broader `navigator.storage.estimate()` origin total.
+2. `sourceStatus()` (around 1082) and the Storage Health 'Needs relink' count inspect in-memory `meta.blobFile`; they do not check whether the file already exists in IndexedDB. Since `hydrateLocalAudioBlob()` loads media lazily, **a saved cached track may be labelled 'needs relink' until played**. Verify the behaviour on a fresh Android page load, then define statuses `Ready`, `Cached but not hydrated`, `Permission needed`, `Missing`, `Streaming`.
+3. Existing tracks use a generated ID from relative path + name + size + modification time (`handleUploadedFiles()`, around 3120). Retain stable IDs during any migration so playlists, artwork, tags, positions and cloud sync references do not break. File renaming/moving can legitimately require a relink.
+4. Existing `Add Folder` uses `<input webkitdirectory>` (`index.html`, `app-core.js` around 3103/4109), **not** `showDirectoryPicker()`. A new File System Access handle feature must be capability-detected and must preserve the input fallback on browsers/devices where the newer picker is unavailable or permissions are unreliable.
+5. Proposed non-destructive upgrade sequence: (a) inventory current catalogue and cached media, (b) preserve old schema/objects, (c) add source-resolver interface, (d) test direct read and permission regrant, (e) prefer direct handle only where usable, (f) retain legacy cache until verification, (g) offer user-confirmed cleanup. **No blanket 48-hour deletion of legacy library files.**
+6. Keep metadata backups distinct from media bytes: existing JSON export deliberately omits `blobFile`. Tell users clearly that an 'Export Everything' JSON backup does **not** include the playable audio.
+
+### Import and Quick Play: implementation outline
+
+- Introduce one shared `resolveMediaInput(file, mode)` pipeline with `mode='session'|'queue'|'library'`; avoid three inconsistent ways to parse MIDI, audio and supported formats.
+- Session mode: build object URL or retain a temporary File reference in memory; revoke object URL when genuinely unused; do **not** `virtualLibrary[id] = ...` or call `idbSetAudioFile` unless user upgrades to permanent library.
+- Queue mode: decide with user whether queue survives reload; avoid promising queue persistence when the file cannot be reopened without permission/cache.
+- Library mode: preserve existing tracking, metadata and playlists; choose source resolver and optional offline cache on Android.
+- The existing import renders the library twice and performs multiple catalogue saves immediately plus a save after cache completion (around 3185–3202). Once safe, coalesce redundant renders/saves for imports; do **not** assume this is measurable with a small library before profiling.
+
+### Drawer: use existing functionality before adding UI
+
+- Current drawer's search and result rows already have Play/Info/+Playlist actions and its mobile icons can be changed by the user (`buildTrackRow()`, `setMobileLibraryView()`). The tap on the **row body** currently toggles selection, while the smaller Play button plays. Test whether this causes accidental selections on phone; only propose changing it after user feedback.
+- The drawer search field currently clears its value when opened and also has delayed autofill-clearing timers (around 950–960). On Android, test that opening the drawer or switching away doesn't unexpectedly erase user-entered search queries.
+- Proposed mock-up adds a Queue view; this is **new**, not a claim that it exists today. Keep existing Results, Recents, Playlists, Help and icon editing.
+- Avoid duplicating full settings in the drawer: provide 1–2 shortcuts to the existing Storage Health panel instead.
+
+### Resume and playback: avoid unintended side effects
+
+- `rememberRecentTrack()` is invoked early during `loadTrack()` before a missing-file/cached-file failure is resolved; a failed attempt may therefore appear in History. Consider registering a 'play' as history only after a successful start, but **test current expected behaviour before changing**.
+- Existing `timeupdate` handlers (around 3056–3067) update the seekbar but do not persist position. Position persistence should use one checkpoint writer shared across local audio, streams and MIDI **only where their API supports seeking**. The key should be stable track ID, not display name.
+- At track end, reset progress sensibly to avoid reopening at the last second. Avoid fighting existing repeat/shuffle/queue logic and update the saved position on manual seek.
+- `media-session.js` already uses audio element events and adds a **1-second timer** to rebind/update Media Session state. Leave this running until real Android battery/background tests justify changing it; an eventual event-driven or lower-frequency strategy must not break headphones or lock-screen controls.
+
+### Specific validation cases before implementation
+
+| Scenario | Required result |
+|---|---|
+| Android first import from Files | Plays immediately, no unexpected permission changes |
+| Close and reopen browser after imported music | Playback access restored or a clear reconnect action |
+| Prior installed Onda data on same origin | All playlists, tags, history and old cached audio still present |
+| New source handle rejected by Android | Falls back to reselect/cached source; does not remove catalogue |
+| Pause a 45-minute recording and reopen Onda | Same track and approximately same position restored without autoplay |
+| Lock phone while audio plays | Audio continues and media controls are usable where supported |
+| Pause and lock screen with visualiser enabled | No unnecessary visualiser animation in inactive page |
+| Switch to offline while remote track is displayed | Local music remains available; remote items show unavailable |
+| Clean temporary cache | Lists exactly what will be deleted; originals untouched |
+
+## Mock-up review
+
+The standalone, self-contained [mobile-review.html](./mobile-review.html) contains interactive proposals for:
+- the existing Library drawer extended with a Queue view and quick links;
+- Storage Health and safe cache choices;
+- Play Once / Add to Queue / Add to Library;
+- resume-position prompt for longer recordings;
+- local/online library while switching simulated connectivity.
+
+The page contains **no production Onda scripts, no network calls, and no actual media or storage mutations**; its actions are demonstrations only. Its layout is conceptual, not an exact pixel-copy of the current site. The primary product design requirement remains **preserve the existing drawer and playback icons**.
+
+### Decisions to ask the user after showing the page
+
+1. Should **Queue** be its own view within the drawer, or be part of **Current**?
+2. When a file is selected from Android, what should the default action be: **Play once**, **Add to queue**, or **Add to Library**, while keeping a choice for the others?
+3. Should saved playback position apply to **all audio**, or only long recordings?
+4. Is Onda normally used through **Chrome tab, home-screen shortcut / installed app, or another browser**? This strongly affects how local file permissions and background playback should be verified.
+5. Where should the **future online playable media** actually be hosted?
+
+### Next technical implementation batch (subject to review)
+
+**Batch A — safe low-risk improvement:** visualiser idle scheduler + position checkpoint/restore; protect Media Session behaviours and existing icons.  
+**Batch B — storage groundwork:** read-only cache inventory and accurate source/status labels, before changing any caching default.  
+**Batch C — media source architecture:** Android capability tests, relink flow, explicit offline cache, temporary Quick Play mode; migrate only after compatibility validation.  
+**Batch D — drawer enhancements:** user-approved Queue layout and compact storage/source entry points.  
+**Batch E — online library and scaling:** after hosting decisions and measurable library growth.
+
+## Change journal, continued
+
+- 2026-11-23 — v1.1 second source investigation: identified existing mobile drawer features, cached-but-not-hydrated status discrepancy to test, media-source ID stability, actual `webkitdirectory` fallback, metadata-only JSON exports, and Android-specific test plan. Standalone HTML mock-up committed. Production player untouched.
