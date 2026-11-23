@@ -503,3 +503,20 @@ These tests make no changes to Onda's real runtime, browser storage scheme or pl
 | ANDROID-HANDLES | Android OS picked-file/folder permission after restart, permission denial, Bluetooth/lock-screen and phone battery | NEEDS PHYSICAL DEVICE |
 
 **Scope:** No app code changes, no version bump (Onda stays **v3.22**). Test media and handle reside only in a disposable localhost browser profile, not the user's Android files or production site. OPFS handles have different permission behaviour from externally picked Android file handles, and denial was instrumented specifically for the regression test. Do not mark hardware Android criteria as passed.
+
+## Real Chromium Media Session and background-visibility routing (2026-11-23)
+
+[GitHub Actions #45277569315](https://github.com/cinaedvsstudios/Organon/actions/runs/45277569315): existing source tests and new actual-Chromium Media Session audio tests passed. Real Chrome registered all eight Onda system action handlers. Tests invoke these registered callbacks against native browser audio playing synthetic WAVs, **not physical system media keys**.
+
+| ID | Test evidence | Status |
+|---|---|---|
+| BROWSER-26 | Chrome registers play, pause, stop, seekto, seekbackward, seekforward, nexttrack, previoustrack | PASS real Chromium |
+| BROWSER-27 | Saved WAV system play/pause, metadata, direct seek and ± offset seek | PASS real Chromium |
+| BROWSER-28 | Two imported WAV tracks switch by next/previous; Media Session metadata follows the track | PASS real Chromium |
+| BROWSER-29 | Synthetic hidden/visible `visibilitychange` event does not pause or stop advancing audio | PASS simulated visibility in real Chromium |
+| BROWSER-30 | Quick Play captures system controls and metadata; pause/play/seek use preview, not saved main audio | PASS real Chromium |
+| BROWSER-31 | Next/previous during preview leave saved queue unchanged; no media imported to persistent cache | PASS real Chromium |
+| BROWSER-32 | Stop preview releases temporary source, restores main metadata and system Play resumes main track | PASS real Chromium |
+| ANDROID-BG | Real Android screen lock, app switching/background throttling, Bluetooth/headphones, notification controls and battery | NEEDS PHYSICAL DEVICE |
+
+**Scope:** Onda source remains **v3.22**. This PR changes only automated tests and QA documentation. Generated audio, private localhost context, no access to user's media/cache or production Netlify app. Background state was simulated by dispatching a visibility event; genuine Android OS process/background behaviour cannot be established from this.
