@@ -34,3 +34,23 @@ jobs:
       - name: Run dependency-free Onda regression tests
         working-directory: tools/Onda
         run: npm test
+
+  actual-chromium-smoke:
+    needs: source-and-isolated-regressions
+    runs-on: ubuntu-24.04
+    timeout-minutes: 9
+    steps:
+      - name: Check out Organon source
+        uses: actions/checkout@v4
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser automation (test runner only)
+        working-directory: tools/Onda
+        run: npm install --no-save --no-package-lock playwright-core@1.56.1
+      - name: Test actual Chromium desktop and simulated mobile playback
+        working-directory: tools/Onda
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tests/onda-browser-smoke.browser.mjs
