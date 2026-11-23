@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.15 source development committed; v3.15 improves main-screen Current queue. Android/Netlify deployment and usability verification remain pending.  
+**Status:** v3.11–v3.16 source development committed; v3.16 adds mobile Library views, search preservation, and drawer shortcuts. Android/Netlify deployment and usability verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.15** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.16** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md)
 
 ## Agreed product direction
 
@@ -25,7 +25,7 @@
 | ID | Priority | Item | Decision | Current status |
 |---|---|---|---|---|
 | ONDA-01 | P3 / later | Video playback | Deferred, low use | Backlog |
-| ONDA-02 | P1 | Current-screen Queue and mobile Library drawer | Queue remains on Current, never drawer | **v3.15 Current-screen queue implemented; drawer improvements remain** |
+| ONDA-02 | P1 | Current-screen Queue and mobile Library drawer | Queue remains on Current, never drawer | **v3.15 queue + v3.16 mobile drawer improvements committed; Android usability QA pending** |
 | ONDA-03 | P3 / optional | Remember playback position | Nice-to-have, if low effort only | Deferred behind main mobile work |
 | ONDA-04 | P3 / scale | Large-library search/render optimisation | Not a present user issue | Monitor until needed |
 | ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | **Implemented v3.11; 21 isolated/static checks passed across batch; Android battery QA pending** |
@@ -379,3 +379,19 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Source tests:** 19 queue-interaction + 13 named/empty/shuffle/accessibility/escaping checks passed (32 isolated/static checks). Netlify deployment, Android real touch/audio and layout remain unverified. Next: improve existing mobile Library browsing without adding a queue tab.
 
 - 2026-11-23 — v2.0: v3.15 Current Queue committed, phone QA pending.
+
+## Implementation progress — v3.16 Mobile Library UX (2026-11-23)
+
+[Release details, scope, and phone verification checklist](./RELEASE_V3_16.md).
+
+**Committed source changes:** Added a visible mobile Library navigation row for Results, Recents, Playlists and the existing custom icon editor. The stored mobile icon values and existing Results/Recents/Playlists/Help view names remain unchanged. The previously hidden Recents and Playlist containers can now be shown in their mobile views; the Playlist view renders saved playlist rows with a View/open action and existing Edit action. The drawer has an Add Files shortcut using the existing file input and a Storage shortcut opening the existing Storage Health settings page. The status line gives displayed/total track and stream counts.
+
+**Usability correction:** Opening/reopening the drawer no longer clears a deliberately typed search or schedules follow-up clears; searches with no matches stay visible. Mobile search switches to Results. A normal mobile track-row tap plays an existing track directly without reimport; explicit selection mode is still available via the existing Select action. Desktop row-selection behaviour is unchanged. The most recent mobile drawer subview is restored when reopening.
+
+**Safety and scope:** No change to the playback symbols, Current-screen queue, audio persistence, file IDs, caches, IndexedDB, original files, stored playlists, visualiser or cloud sync. No online library, cleanup or automatic deletion introduced. The mobile navigation and view panels are mobile-only.
+
+**Verification:** 24 source/static and isolated mobile-tab checks passed, including JavaScript syntax, version/cache references, view bindings, preserved search logic, a real extracted tab-switcher run, accessible pressed states and desktop/mobile CSS scoping. Physical Android touch/viewport/font/rotation checks, audio playback, permission tests, Netlify deployment and desktop regressions remain pending. Confirm on the real phone before calling the UX fully verified.
+
+**Next:** Android and desktop smoke test v3.16, correct any layout/playback issues, then reconsider the lower-priority Quick Play for *new unsaved* files, online GitHub Pages library and optional playback position only after the mobile basics are verified.
+
+- 2026-11-23 — v2.1: v3.16 mobile Library UX source implemented and recorded; device QA pending.
