@@ -855,7 +855,7 @@ try{
     await page.locator('#effect-category').selectOption('Glitch');
     const glitchIds=['glass-glitch','glitch-storm','negative-chaos','warning-glitch',
       'misalignment','noir-glitch','glitch-flux','engine-heat','retro-glitch'];
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount);
     const variants=new Set();
     for(const id of glitchIds){
       await page.locator(`#effects-library-grid [data-preset-id="${id}"]`).click({button:'right'});
@@ -928,7 +928,7 @@ try{
     // #59: native snow controls must really appear and operate on selected
     // TV Static clip, while unrelated colour/scale/angle knobs stay hidden.
     await page.locator('#effect-category').selectOption('Glitch');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount);
     await page.locator('[data-preset-id="tv-static"]').click();
     await page.locator('#effect-tv-static-controls').waitFor({state:'visible',timeout:15000});
     assert.equal(await page.locator('#effect-intensity-label').innerText(),'Snow opacity (%)');
