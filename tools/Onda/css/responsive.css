@@ -1744,3 +1744,123 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-list {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+/* v3.16: Keep the existing drawer and its customisable icon/navigation model. */
+@media (max-width: 768px) {
+  body.onda-force-mobile-mode #library-manager-drawer .library-drawer-inner {
+    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .onda-mobile-library-nav {
+    align-items: center;
+    -webkit-overflow-scrolling: touch;
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid rgba(117, 178, 222, .2);
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 7px;
+    overflow-x: auto;
+    padding: 6px 9px;
+    scrollbar-width: thin;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .onda-mobile-library-nav .mobile-db-icon-btn {
+    flex: 0 0 42px;
+    height: 42px;
+    min-width: 42px;
+    font-size: 1.08rem;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .onda-library-quick-action {
+    flex: 0 0 auto;
+    font-size: .74rem;
+    min-height: 42px;
+    padding: 7px 11px;
+    white-space: nowrap;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .onda-library-status {
+    color: var(--water-spray);
+    display: block;
+    font-size: .7rem;
+    padding: 4px 10px 0;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .library-manager-content {
+    min-height: 0;
+    overflow: auto;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="recents"] .library-action-panel,
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="playlists"] .library-action-panel {
+    display: none;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="recents"] .library-sidebar,
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="playlists"] .library-sidebar {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 6px 8px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="recents"] #db-recent-list,
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="playlists"] #db-playlist-list {
+    display: block;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .onda-drawer-playlist-row {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    justify-content: space-between;
+    min-height: 48px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .onda-drawer-playlist-row .btn-db-edit-playlist {
+    flex: 0 0 auto;
+    min-height: 42px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer[data-mobile-view="help"] .mobile-icon-help-panel {
+    display: block;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px 12px 20px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .mobile-icon-help-row {
+    align-items: start;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 38px minmax(0, 1fr);
+    margin: 0 0 10px;
+    padding: 9px;
+    border: 1px solid rgba(117, 178, 222, .22);
+    border-radius: 10px;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .mobile-icon-help-preview {
+    color: var(--water-spray);
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .mobile-icon-help-name {
+    color: var(--stone-ochre);
+    font-weight: 700;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .mobile-icon-help-desc {
+    font-size: .72rem;
+  }
+
+  body.onda-force-mobile-mode #library-manager-drawer .mobile-icon-edit-input {
+    box-sizing: border-box;
+    grid-column: 1 / -1;
+    min-height: 42px;
+    width: 100%;
+  }
+}
