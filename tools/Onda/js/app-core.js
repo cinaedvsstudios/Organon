@@ -4880,11 +4880,7 @@
                     return;
                 }
 
-                if (isMobileLayoutActive() && !isLibrarySelectMode) {
-                    addTrackToQueueFromLibrary(trackId, true);
-                } else {
-                    toggleSelectedTrack(trackId);
-                }
+                toggleSelectedTrack(trackId);
             });
         }
         if (dbRecentList) {
