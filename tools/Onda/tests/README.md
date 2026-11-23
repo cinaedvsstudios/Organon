@@ -50,3 +50,9 @@ It confirms real app startup; the existing player controls; Storage Health/devic
 **Safety:** The audio is generated in memory, the local server binds to `127.0.0.1`, and browser contexts are new and isolated. It never reads the user's audio files, logged-in Chrome profile, real Onda site storage, cloud account or filesystem. All browser storage it writes belongs to this disposable test profile, which is closed when the test finishes. No existing Onda cache is deleted or migrated.
 
 **Limitations:** Headless desktop Chromium with a mobile viewport/touch emulation is **not a physical Android browser**. It cannot prove Android file-picker permission persistence, lock-screen/headphone audio controls, Bluetooth behaviour, actual mobile battery usage or deployment of Netlify production. Use the real-device QA matrix for those acceptance tests. The browser job requires Chrome and the pinned Playwright package, while `npm test` itself remains dependency-free.
+
+### Saved audio restoration and offline playback (extended browser check)
+
+The actual Chromium suite also verifies that a synthetic file deliberately imported through Quick Play survives a page reload as a **real Library entry**, is marked `local cached` or `local ready` (no Reconnect button), and plays from its IndexedDB cache with the network disabled **after the page has loaded**. Chromium must report a real `blob:` audio source, decoded duration and advancing playback position; playing it must not create a duplicate cached audio record. The test restores online mode afterward.
+
+This proves a local browser-cache recovery/playback path in desktop Chrome. It does **not** test a cold startup while offline, persisted file-handle permissions, Android system suspension, physical phone storage, cloud syncing or Bluetooth/lock-screen behaviour.
