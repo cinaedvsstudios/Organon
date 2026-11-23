@@ -102,7 +102,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
         effectDuration:document.getElementById('effect-duration'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y'})[name]||'effect-'+name)])),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -1596,20 +1596,29 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
+        const isStarburst=track?.effectOverlay?.presetId==='starburst';
+        document.getElementById('effect-starburst-controls').hidden=!isStarburst;
+        document.getElementById('effect-density-control').hidden=isStarburst;
+        document.getElementById('effect-scale-control').hidden=isStarburst;
+        document.getElementById('effect-intensity-label').textContent=isStarburst?'Opacity (%)':'Intensity (%)';
+        document.getElementById('effect-direction-label').textContent=isStarburst?'Starting angle (°)':'Direction (°)';
+        document.getElementById('effect-color-label').textContent=isStarburst?'Primary ray colour':'Colour';
         document.getElementById('effect-origin-controls').hidden=
-            !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
+            !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=
             !(['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
               'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId)
               || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
         document.getElementById('effect-glow-control').hidden=
-            !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-blur-control').hidden=
             !['glow','edge-glow','halo-blur','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
-            for(const [name,input] of Object.entries(elements.effectInspectorInputs))input.value=String(effect[name]);
+            for(const [name,input] of Object.entries(elements.effectInspectorInputs)){
+                if(effect[name]!==undefined)input.value=String(effect[name]);
+            }
         }
         if(!multiple&&track?.textOverlay){
             const config=normaliseTextOverlay(track.textOverlay);

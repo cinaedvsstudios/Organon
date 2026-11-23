@@ -13,6 +13,7 @@ import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
 import {renderGodRays} from './timeline-god-rays.mjs';
+import {renderStarburst} from './timeline-starburst.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -22,6 +23,7 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-debris',label:'Flying Debris',group:'effect',category:'Particles/Fire',animated:true},
  {id:'god-rays',label:'God Rays',group:'effect',category:'Light',animated:true},
+ {id:'starburst',label:'Rotating Starburst',group:'effect',category:'Light',animated:true},
  {id:'light-leaks',label:'Organic Light Leaks',group:'effect',category:'Light',animated:true},
  {id:'pixel-scan',label:'Pixel Scan',group:'effect',category:'Scanning',animated:true},
  {id:'sci-fi-scan',label:'Sci-Fi Scan',group:'effect',category:'Scanning',animated:true},
@@ -62,7 +64,8 @@ export function normaliseTimelineEffect(effect={}){
  const presetId=ids.has(raw.presetId)?raw.presetId:'light-sweep';
  const swing=['pendulum-swing','rebound-swing'].includes(presetId);
  const shockwave=presetId==='shockwave';
- return {
+ const starburst=presetId==='starburst';
+ const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,70),
   speed:clamp(raw.speed,.1,8,1),
@@ -72,9 +75,16 @@ export function normaliseTimelineEffect(effect={}){
   distortion:clamp(raw.distortion,0,100,55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,24),
-  originX:clamp(raw.originX,0,100,(swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
-  originY:clamp(raw.originY,0,100,(shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':'#ffd98d'
+  originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
+  originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':'#ffd98d'
+ };
+ if(!starburst)return base;
+ return {...base,
+  secondaryColor:/^#[0-9a-f]{6}$/i.test(String(raw.secondaryColor))?String(raw.secondaryColor).toLowerCase():'#ffffff',
+  rayCount:Math.round(clamp(raw.rayCount,4,64,18)),
+  rayThickness:clamp(raw.rayThickness,10,90,54),
+  spinDirection:Number(raw.spinDirection)===-1?-1:1
  };
 }
 // Keep one reusable full-frame scratch buffer per Canvas context. No per-frame
@@ -261,6 +271,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    ctx.fillStyle=g;ctx.fillRect(-beam,-h*1.6,beam*2,h*3.2);
   }else if(e.presetId==='hazy-atmosphere'){
    renderHazyAtmosphere(ctx,w,h,e,t,strength);
+  }else if(e.presetId==='starburst'){
+   renderStarburst(ctx,w,h,e,t,strength);
   }else if(e.presetId==='light-leaks'){
     renderLightLeaks(ctx,w,h,e,t,strength);
    }else if(e.presetId==='pixel-scan'){

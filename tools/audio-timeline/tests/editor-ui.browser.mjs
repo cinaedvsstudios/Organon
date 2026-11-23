@@ -365,8 +365,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),45,
-        'Keep twelve classic overlays plus thirty-three independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),46,
+        'Keep twelve classic overlays plus thirty-four independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -684,7 +684,8 @@ try{
     // insert a procedural clip and edit its saved recipe in the Inspector.
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effect-category').selectOption('Light');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),6);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),7,
+        'New Starburst adds a distinct seventh animated light effect');
     await page.locator('[data-preset-id="light-sweep"]').click({button:'right'});
     assert.ok(await page.locator('#text-preview-modal').isVisible());
     const sampleEffect=async(t)=>page.evaluate(time=>{
@@ -824,6 +825,31 @@ try{
       'Non-looping effect playback stops and restores Play label');
     await page.keyboard.press('Escape');
     assert.ok(await page.locator('#text-preview-modal').isHidden(),'Escape closes themed preview');
+    // #56: actual new Starburst Inspector widgets and preview, not dummy fields.
+    await page.locator('#effect-category').selectOption('Light');
+    await page.locator('[data-preset-id="starburst"]').click();
+    await page.locator('#effect-starburst-controls').waitFor({state:'visible',timeout:15000});
+    assert.equal(await page.locator('#effect-intensity-label').innerText(),'Opacity (%)');
+    assert.equal(await page.locator('#effect-color-label').innerText(),'Primary ray colour');
+    assert.ok(await page.locator('#effect-density-control').isHidden());
+    assert.ok(await page.locator('#effect-scale-control').isHidden());
+    await page.locator('#effect-ray-count').evaluate(input=>{
+        input.value='26';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-ray-thickness').evaluate(input=>{
+        input.value='42';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-secondary-color').fill('#dcaaff');
+    await page.locator('#effect-spin-direction').selectOption('-1');
+    assert.equal(await page.locator('#effect-ray-count').inputValue(),'26');
+    assert.equal(await page.locator('#effect-ray-thickness').inputValue(),'42');
+    assert.equal(await page.locator('#effect-secondary-color').inputValue(),'#dcaaff');
+    assert.equal(await page.locator('#effect-spin-direction').inputValue(),'-1');
+    await page.locator('[data-preset-id="starburst"]').click({button:'right'});
+    const burstStart=await sampleEffect(20),burstLater=await sampleEffect(170);
+    assert.notEqual(burstStart,burstLater,'Starburst preview must rotate in time');
+    assert.equal(burstStart,await sampleEffect(20),'Starburst reverse seek is deterministic');
+    await page.locator('#text-preview-close').click();
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
