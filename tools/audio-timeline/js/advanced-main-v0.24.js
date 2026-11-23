@@ -1603,6 +1603,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
         const isStarburst=track?.effectOverlay?.presetId==='starburst';
+        const isLightSweep=track?.effectOverlay?.presetId==='light-sweep';
         const isCameraFrame=track?.effectOverlay?.presetId==='camera-frame';
         const isMistFog=track?.effectOverlay?.presetId==='mist-fog-bank';
         const isTVStatic=track?.effectOverlay?.presetId==='tv-static';
@@ -1629,10 +1630,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':isMistFog?'Fog opacity (%)':isTVStatic?'Snow opacity (%)':isSignalInterference?'Signal strength (%)':isCRTScanlines?'Raster strength (%)':isDataBurst?'Packet corruption (%)':isLineCorruption?'Line damage strength (%)':isRGBBlockGlitch?'RGB block strength (%)':isSignalTear?'Tear intensity (%)':'Intensity (%)';
         document.getElementById('effect-direction-label').textContent=isStarburst?'Starting angle (°)':isMistFog?'Wind direction (°)':'Direction (°)';
         document.getElementById('effect-color-label').textContent=isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':isLineCorruption?'Primary streak colour':isMistFog?'Mist colour':'Colour';
-        document.getElementById('effect-density-label').textContent=isMistFog?'Fog density':isTVStatic?'Static coverage':isSignalInterference?'Interference frequency':isDataBurst?'Packet density':isLineCorruption?'Corruption frequency':isRGBBlockGlitch?'Block burst frequency':isSignalTear?'Tear frequency':'Density';
-        document.getElementById('effect-scale-label').textContent=isMistFog?'Bank spread (%)':'Scale (%)';
+        document.getElementById('effect-density-label').textContent=isLightSweep?'Highlight detail':isMistFog?'Fog density':isTVStatic?'Static coverage':isSignalInterference?'Interference frequency':isDataBurst?'Packet density':isLineCorruption?'Corruption frequency':isRGBBlockGlitch?'Block burst frequency':isSignalTear?'Tear frequency':'Density';
+        document.getElementById('effect-scale-label').textContent=isLightSweep?'Beam width (%)':isMistFog?'Bank spread (%)':'Scale (%)';
         document.getElementById('effect-distortion-label').textContent=isMistFog?'Rolling turbulence (%)':isSignalInterference?'Horizontal displacement (%)':isLineCorruption?'Source line displacement (%)':isRGBBlockGlitch?'Block displacement (%)':isSignalTear?'Horizontal tear shift (%)':'Distortion (%)';
-        document.getElementById('effect-blur-label').textContent=isMistFog?'Edge feathering (%)':'Blur (px)';
+        document.getElementById('effect-blur-label').textContent=isLightSweep?'Beam softness (px)':isMistFog?'Edge feathering (%)':'Blur (px)';
         document.getElementById('effect-origin-controls').hidden=
             !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=
@@ -1640,9 +1641,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
               'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','mist-fog-bank','sci-fi-scan','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId)
               || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
         document.getElementById('effect-glow-control').hidden=
-            !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','light-sweep','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-blur-control').hidden=
-            !['glow','edge-glow','halo-blur','mist-fog-bank','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','light-sweep','mist-fog-bank','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
