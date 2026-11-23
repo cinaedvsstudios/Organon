@@ -15,8 +15,8 @@ The Recents view now shows the existing recent-track rows, and the Playlists vie
 
 ## Mobile browsing actions
 
-- **Direct tap to play:** Outside multi-select mode, tapping an existing Library result row on mobile starts its saved-track playback using the existing source resolver. The individual ▶️ button still works; missing sources still use Reconnect. Desktop row-selection behaviour is not changed.
-- **Explicit Select mode:** The existing mobile Select button now toggles actual multi-selection. In multi-select mode, row taps select/deselect rather than play.
+- **Play stays explicit:** The existing ▶️ button plays an already saved track through Onda's existing source resolver; its mobile touch target is now 44px. Missing sources still use Reconnect. The row body still selects a track, as before, until actual phone feedback supports changing that behaviour.
+- **Select mode:** The existing mobile Select button now toggles multi-selection mode. Existing row selection and desktop behaviour are otherwise preserved.
 - **Search is preserved:** Opening/reopening the Library no longer empties the search box or runs delayed forced clearing. A search with no matches remains visible until cleared by the user. Typing in another mobile Library view switches to Results.
 - **Restore view:** Reopening the drawer respects the last selected view instead of forcing Results.
 - **Quick file import:** The Add Files action opens Onda's existing import picker; it does not create a new Quick Play or alter the existing cache behaviour.
@@ -42,7 +42,7 @@ These checks do not test actual Android DOM layout, Chrome file permissions, loc
 1. Confirm the public app reports **v3.16** after Netlify deployment. Do **not** clear browser storage or cached audio as part of version testing.
 2. Open the Library on Android in portrait. Confirm Results, Recents, Playlists, Icon Guide, Add Files and Storage are visible and tappable; scroll the horizontal shortcut bar if needed.
 3. Search for a saved track, close and reopen Library, and confirm the search is still present. Enter a string with no match and confirm it is **not** auto-cleared.
-4. Tap a normal result row: the existing saved track should play immediately without reimport. Use Select mode and confirm the same tap instead selects/deselects the row; disable Select to restore tap-to-play.
+4. Tap the explicit ▶️ Play button: the saved track should play without reimport. Tap the row body and confirm existing selection behaviour is preserved; use Select mode to inspect bulk-selection actions. Check the enlarged Play touch target.
 5. Tap Recents and play an entry. Open Playlists, inspect named playlists, open one and edit one, then return to Results. Confirm custom navigation icons survive reopening and app relaunch.
 6. Tap Add Files and pick a disposable MP3. Check normal import and current queue, metadata and cache preservation.
 7. Tap Storage; confirm the Settings popup opens directly to Storage Health and cached-audio review remains read-only.
