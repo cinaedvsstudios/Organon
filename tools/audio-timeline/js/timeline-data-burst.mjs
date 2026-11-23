@@ -9,7 +9,7 @@ function hash(a,b=0){
  let n=(Math.imul((a|0)+31,0x9e3779b1)^Math.imul((b|0)+211,0x85ebca6b))>>>0;
  n^=n>>>16;n=Math.imul(n,0x7feb352d)>>>0;
  n^=n>>>15;n=Math.imul(n,0x846ca68b)>>>0;
- n^=n>>>16;return n/4294967296;
+ n^=n>>>16;return (n>>>0)/4294967296;
 }
 const options=(e={})=>({
  strength:clamp(e.intensity,0,100,84)/100,
