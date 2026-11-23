@@ -14,6 +14,7 @@ import {renderTVStatic} from './timeline-tv-static.mjs';
 import {renderSignalInterference} from './timeline-signal-interference.mjs';
 import {renderCRTScanlines} from './timeline-crt-scanlines.mjs';
 import {renderDataBurst} from './timeline-data-burst.mjs';
+import {renderSignalTear} from './timeline-signal-tear.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -29,6 +30,7 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'signal-interference',label:'Signal Interference',group:'effect',category:'Glitch',animated:true},
  {id:'crt-scanlines',label:'CRT Scanlines',group:'effect',category:'Glitch',animated:true},
   {id:'data-burst',label:'Data Burst',group:'effect',category:'Glitch',animated:true},
+  {id:'signal-tear',label:'Signal Tear',group:'effect',category:'Glitch',animated:true},
  {id:'rhythmic-flicker',label:'Rhythmic Flicker',group:'effect',category:'Light',animated:true},
  {id:'particle-dust',label:'Floating Dust',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
@@ -81,16 +83,17 @@ export function normaliseTimelineEffect(effect={}){
  const signalInterference=presetId==='signal-interference';
  const crtScanlines=presetId==='crt-scanlines';
   const dataBurst=presetId==='data-burst';
+  const signalTear=presetId==='signal-tear';
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
  const base={
   presetId,
-  intensity:clamp(raw.intensity,0,100,dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
+  intensity:clamp(raw.intensity,0,100,signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
   speed:clamp(raw.speed,.1,8,1),
-  density:clamp(raw.density,1,120,dataBurst?46:signalInterference?68:tvStatic?88:mistFog?73:48),
+  density:clamp(raw.density,1,120,signalTear?72:dataBurst?46:signalInterference?68:tvStatic?88:mistFog?73:48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
-  distortion:clamp(raw.distortion,0,100,signalInterference?70:mistFog?65:55),
+  distortion:clamp(raw.distortion,0,100,signalTear?72:signalInterference?70:mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
@@ -135,7 +138,13 @@ export function normaliseTimelineEffect(effect={}){
   crtRollRate:clamp(raw.crtRollRate,0,4,.75),
   scanSeed:Math.round(clamp(raw.scanSeed,0,99999,6161))
  };
- if(dataBurst)return {...base,
+ if(signalTear)return {...base,
+   tearHeight:clamp(raw.tearHeight,1,30,9),
+   tearFragment:clamp(raw.tearFragment,0,100,68),
+   tearLife:clamp(raw.tearLife,.06,.6,.17),
+   tearSeed:Math.round(clamp(raw.tearSeed,0,99999,6363))
+  };
+  if(dataBurst)return {...base,
    burstSize:clamp(raw.burstSize,5,100,48),
    burstLife:clamp(raw.burstLife,.06,.6,.23),
    burstCluster:clamp(raw.burstCluster,0,100,67),
@@ -171,7 +180,7 @@ function captureCompositeFrame(ctx,w,h){
  return canvas;
 }
 const SOURCE_EFFECTS=new Set(['god-rays','pendulum-swing','rebound-swing','vibration-flash',
- 'fault-cassette','ripple-distortion','electric-ripple','shockwave','signal-interference','crt-scanlines','data-burst',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
+ 'fault-cassette','ripple-distortion','electric-ripple','shockwave','signal-interference','crt-scanlines','data-burst','signal-tear',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
  * Live clips operate on their real previously composited media instead.
@@ -238,6 +247,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     renderCRTScanlines(ctx,source,w,h,e,t,amount);
     }else if(e.presetId==='data-burst'){
      renderDataBurst(ctx,source,w,h,e,t,amount);
+    }else if(e.presetId==='signal-tear'){
+     renderSignalTear(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='god-rays'){
     renderGodRays(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
