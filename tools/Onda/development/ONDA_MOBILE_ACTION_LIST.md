@@ -241,12 +241,12 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 
 **Approved:** User selected the weathered circular bronze ring with north/south/east/west tabs, dark charcoal inner circle, and cyan/blue/green signal arcs, with everything beyond the ring transparent.
 
-**Committed on main (\`eb7f42e19e6207ef848a50f085ad97cd5416b2d9\`):**
-- \`icons/onda-icon-192.png\`: transparent 192×192 downscaled PNG of the approved design.
-- \`icons/onda-icon.svg\`: 512×512-format SVG containing the approved 192×192 PNG as a self-contained data URI; enlarges that image without introducing a new design. This is **not** a fully vectorised source image or a true high-resolution 512×512 PNG.
-- \`manifest.webmanifest\`: Onda name, short name, standalone display, relative launch/scope, theme colors and 192 PNG + scalable-format SVG icon entries.
-- \`index.html\`: manifest, favicon, SVG icon, Apple touch icon, theme color tags. No playback/layout JavaScript changed.
-- \`icons/README.md\`: source/size notes and shortcut cache advice.
+**Committed on main (`eb7f42e19e6207ef848a50f085ad97cd5416b2d9`):**
+- `icons/onda-icon-192.png`: transparent 192×192 downscaled PNG of the approved design.
+- `icons/onda-icon.svg`: 512×512-format SVG containing the approved 192×192 PNG as a self-contained data URI; enlarges that image without introducing a new design. This is **not** a fully vectorised source image or a true high-resolution 512×512 PNG.
+- `manifest.webmanifest`: Onda name, short name, standalone display, relative launch/scope, theme colors and 192 PNG + scalable-format SVG icon entries.
+- `index.html`: manifest, favicon, SVG icon, Apple touch icon, theme color tags. No playback/layout JavaScript changed.
+- `icons/README.md`: source/size notes and shortcut cache advice.
 
 **Follow-up:** Verify Netlify deployment and inspect Android Chrome's home-screen appearance, label and launch behaviour. The browser may retain an old icon until the user removes and recreates the shortcut. If Chrome requires an actual 512×512 PNG rather than the SVG entry for a fully installable experience, add a true 512 PNG from the original approved source. A separate maskable/padded icon could be considered only if needed because the user's preferred design has transparent outer space. Do not add a background square.
 
@@ -324,7 +324,7 @@ The first user-authorised production batch is committed to `main`: the unbounded
 
 [Read the v3.12 release notes, safety contract and Android tests](./RELEASE_V3_12.md).
 
-**Implemented and committed:** \`persistLocalAudioFilesToIndexedDb()\` now compares a previously cached File's verified metadata (filename, relative path, size, MIME type, known lastModified) to an incoming File before writing. An unchanged reimport *skips the redundant IndexedDB blob put*, and in-flight writes are serialised per track ID. Unknown/changed metadata **or an optional cache-comparison read error** uses the safe full-write path. This prevents redundant IO on repeated imports but **does not reclaim old duplicate caches under different IDs** or provide byte-for-byte cryptographic deduplication.
+**Implemented and committed:** `persistLocalAudioFilesToIndexedDb()` now compares a previously cached File's verified metadata (filename, relative path, size, MIME type, known lastModified) to an incoming File before writing. An unchanged reimport *skips the redundant IndexedDB blob put*, and in-flight writes are serialised per track ID. Unknown/changed metadata **or an optional cache-comparison read error** uses the safe full-write path. This prevents redundant IO on repeated imports but **does not reclaim old duplicate caches under different IDs** or provide byte-for-byte cryptographic deduplication.
 
 **Additional write reductions:** local UI resize and orientation checkpoints no longer serialise and rewrite the entire music catalogue and visualiser stack. The normal import pathway now saves catalogue metadata only **once**, after the queue is established and **before** asynchronous caching starts, rather than three times. Other user/lifecycle saves remain in place.
 
