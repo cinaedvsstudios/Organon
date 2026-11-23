@@ -5,7 +5,7 @@
     // The device checker may be cached across application releases. Its report
     // must describe the actual loaded app, never a version frozen in this module.
     // Strict validation also prevents arbitrary page data entering exported JSON.
-    const APP_VERSION_PATTERN = /^v[0-9]{1,3}\\.[0-9]{1,3}(?:\\.[0-9]{1,3})?$/;
+    const APP_VERSION_PATTERN = /^v[0-9]{1,3}\.[0-9]{1,3}(?:\.[0-9]{1,3})?$/;
     function currentAppVersion() {
         const value = document.documentElement?.dataset?.ondaVersion;
         return typeof value === 'string' && APP_VERSION_PATTERN.test(value) ? value : 'unavailable';
