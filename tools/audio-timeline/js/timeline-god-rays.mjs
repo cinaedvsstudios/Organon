@@ -77,7 +77,7 @@ function config(e,source,w,h,cycle){
  o.maxReach=Math.hypot(w,h)*(.54+o.scale*.72);
  o.fanAngle=Math.PI*.5+o.direction;
  o.time=t;
- o.drift=Math.sin(t*.31)*(.025+.07*o.distortion);
+ o.drift=Math.sin(t*.57)*(.05+.19*o.distortion);
  o.freq=7+o.density*33;
  return o;
 }
@@ -104,12 +104,12 @@ function shaftSample(source,w,h,o,x,y,out){
  // Multiscale curved turbulent modulation. Diffuse filaments are not
  // rigid wedges; different rays and depth regions fade/drift separately.
  const phase=angle*o.freq+o.drift+noise(x*.025+t*.16,y*.024-t*.12,o.broad)*o.distortion*2.3;
- const broad=noise(phase*.30+t*.075,dist*.014-t*.14,o.broad);
- const finer=noise(phase*.82-t*.18,dist*.028+t*.07,o.fine);
+ const broad=noise(phase*.30+t*.25,dist*.014-t*.38,o.broad);
+ const finer=noise(phase*.82-t*.50,dist*.028+t*.29,o.fine);
  const filament=smooth(.18,.82,broad*.60+finer*.40);
- const wave=.81+.19*Math.sin(t*.85+angle*3.1+dist*.018+finer*5.2);
+ const wave=.64+.36*Math.sin(t*1.45+angle*3.1+dist*.018+finer*5.2);
  const attenuation=Math.pow(Math.max(0,reach),.78+.57*o.blur);
- const sourceGate=smooth(.02,.44,sourceEnergy);
+ const sourceGate=smooth(.15,.65,o.luminosity)*(.55+.45*smooth(.02,.44,sourceEnergy));
  const strength=sourceGate*cone*attenuation*filament*wave;
  const alpha=limit(strength*(.56+.95*o.glow)*o.intensity*2.55,0,.67);
  out.alpha=alpha;out.shaft=filament;out.illumination=sourceGate;
