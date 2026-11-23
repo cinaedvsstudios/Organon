@@ -11,6 +11,7 @@ import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
 import {renderMistFog} from './timeline-mist-fog.mjs';
 import {renderTVStatic} from './timeline-tv-static.mjs';
+import {renderSignalInterference} from './timeline-signal-interference.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -23,6 +24,7 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'hazy-atmosphere',label:'Hazy Atmosphere',group:'effect',category:'Atmospheric',animated:true},
  {id:'mist-fog-bank',label:'Mist / Fog Bank',group:'effect',category:'Atmospheric',animated:true},
  {id:'tv-static',label:'TV Static / Snow',group:'effect',category:'Glitch',animated:true},
+ {id:'signal-interference',label:'Signal Interference',group:'effect',category:'Glitch',animated:true},
  {id:'rhythmic-flicker',label:'Rhythmic Flicker',group:'effect',category:'Light',animated:true},
  {id:'particle-dust',label:'Floating Dust',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
@@ -72,16 +74,17 @@ export function normaliseTimelineEffect(effect={}){
  const shockwave=presetId==='shockwave';
  const mistFog=presetId==='mist-fog-bank';
  const tvStatic=presetId==='tv-static';
+ const signalInterference=presetId==='signal-interference';
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
  const base={
   presetId,
-  intensity:clamp(raw.intensity,0,100,tvStatic?72:70),
+  intensity:clamp(raw.intensity,0,100,signalInterference?76:tvStatic?72:70),
   speed:clamp(raw.speed,.1,8,1),
-  density:clamp(raw.density,1,120,tvStatic?88:mistFog?73:48),
+  density:clamp(raw.density,1,120,signalInterference?68:tvStatic?88:mistFog?73:48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
-  distortion:clamp(raw.distortion,0,100,mistFog?65:55),
+  distortion:clamp(raw.distortion,0,100,signalInterference?70:mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
@@ -112,6 +115,12 @@ export function normaliseTimelineEffect(effect={}){
   staticVariance:clamp(raw.staticVariance,0,100,88),
   staticSeed:Math.round(clamp(raw.staticSeed,0,99999,59))
  };
+ if(signalInterference)return {...base,
+  signalLoss:clamp(raw.signalLoss,0,100,56),
+  colorBleed:clamp(raw.colorBleed,0,100,64),
+  rollRate:clamp(raw.rollRate,.1,5,1.1),
+  signalSeed:Math.round(clamp(raw.signalSeed,0,99999,6060))
+ };
  if(!starburst)return base;
  return {...base,
   secondaryColor:/^#[0-9a-f]{6}$/i.test(String(raw.secondaryColor))?String(raw.secondaryColor).toLowerCase():'#ffffff',
@@ -141,7 +150,7 @@ function captureCompositeFrame(ctx,w,h){
  return canvas;
 }
 const SOURCE_EFFECTS=new Set(['god-rays','pendulum-swing','rebound-swing','vibration-flash',
- 'fault-cassette','ripple-distortion','electric-ripple','shockwave',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
+ 'fault-cassette','ripple-distortion','electric-ripple','shockwave','signal-interference',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
  * Live clips operate on their real previously composited media instead.
@@ -202,6 +211,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     renderPixelEffect(ctx,source,w,h,e,t,amount);
    }else if(isGlitchEffect(e.presetId)){
     renderGlitchEffect(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='signal-interference'){
+    renderSignalInterference(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='god-rays'){
     renderGodRays(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){

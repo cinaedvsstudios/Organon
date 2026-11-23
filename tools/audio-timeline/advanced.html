@@ -1142,7 +1142,16 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <label class="text-setting-row"><span>Noise seed</span><input id="effect-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="58" title="Repeatable cloud bank variation; the same seed and time regenerate exact pixels"></label>
                         </details>
                     </div>
-                    <div id="effect-tv-static-controls" hidden>
+                    <div id="effect-signal-interference-controls" hidden>
+                         <details open class="text-inspector-group">
+                             <summary>Analogue signal interference</summary>
+                             <label class="text-setting-row"><span>Signal dropout (%)</span><input id="effect-signal-loss" class="range-control" type="range" min="0" max="100" step="1" value="56" title="Depth of intermittent rolling-band loss and momentary blackouts"></label>
+                             <label class="text-setting-row"><span>RGB colour bleeding (%)</span><input id="effect-color-bleed" class="range-control" type="range" min="0" max="100" step="1" value="64" title="Horizontal misalignment and smearing of real source red and blue channels"></label>
+                             <label class="text-setting-row"><span>Roll rate (×)</span><input id="effect-roll-rate" class="range-control" type="range" min="0.1" max="5" step="0.1" value="1.1" title="Speed of vertical travel of intermittent horizontal sync bands"></label>
+                             <label class="text-setting-row"><span>Signal seed</span><input id="effect-signal-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6060" title="Repeatable pattern for exact backwards seeking and export"></label>
+                         </details>
+                     </div>
+                     <div id="effect-tv-static-controls" hidden>
                         <details open class="text-inspector-group">
                             <summary>Animated TV snow settings</summary>
                             <label class="text-setting-row"><span>Noise type</span><select id="effect-static-mode" class="compact-select" title="Black-and-white or independent RGB television snow"><option value="mono">Black &amp; white</option><option value="color">Colour RGB</option></select></label>
