@@ -14,7 +14,7 @@ function hash(a,b=0){
  let n=(Math.imul((a|0)+157,0x9e3779b1)^Math.imul((b|0)+113,0x85ebca6b))>>>0;
  n^=n>>>16;n=Math.imul(n,0x7feb352d)>>>0;
  n^=n>>>15;n=Math.imul(n,0x846ca68b)>>>0;n^=n>>>16;
- return n/4294967296;
+ return (n>>>0)/4294967296;
 }
 function options(effect={}){
  return {
