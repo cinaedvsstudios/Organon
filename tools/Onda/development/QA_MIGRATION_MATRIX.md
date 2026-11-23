@@ -440,3 +440,20 @@ Do not treat Actions green as physical-device acceptance. Continue using v3.20's
 | V22-07 Netlify production | A live browser actually serves v3.22 and both revised JS assets | NEEDS DEPLOY / BROWSER |
 
 A successful source or GitHub Actions run is not evidence of Android playback, browser storage persistence, or live production deployment.
+
+## Actual Chromium browser smoke — source v3.22 (2026-11-23)
+
+**Automated run:** [GitHub Actions Onda source regression QA #45235601393](https://github.com/cinaedvsstudios/Organon/actions/runs/45235601393): Node isolated source suite **PASS**, actual Chromium smoke **PASS**. An earlier browser run initially missed a download while Onda's normal startup prompts appeared, then confirmed the download worked but was blocked when those same overlays covered Settings. The test now explicitly selects **Continue Local Only** and **Continue Empty** in its disposable first-run browser profile; it does not bypass or alter Onda's normal recovery protections.
+
+| Test | Actual Chrome observation | Status |
+|---|---|---|
+| BROWSER-01 | New browser origin starts Onda v3.22, existing 🧿 ⏮ ⏭ controls intact | PASS actual Chromium |
+| BROWSER-02 | Settings → Storage Health → Device QA Run shows loaded version and absent manual verdicts | PASS actual Chromium |
+| BROWSER-03 | Browser generates/downloads redacted QA JSON with correct source version and no secrets | PASS actual Chromium |
+| BROWSER-04 | Generated three-second WAV decodes and currentTime advances during native temporary Quick Play | PASS actual Chromium |
+| BROWSER-05 | Quick Play and Discard leave IndexedDB audioFiles count unchanged | PASS actual Chromium |
+| BROWSER-06 | Explicit Add populates the isolated audio cache and persists after page reload | PASS actual Chromium |
+| BROWSER-07 | Mobile-emulated viewport/touch opens Library drawer and accepts search input | PASS actual Chromium, mobile emulation only |
+| BROWSER-08 | Android hardware, file-picker persistence, screen lock/Bluetooth, battery and live production Netlify | NEEDS DEVICE / DEPLOY |
+
+The new `tests/onda-browser-smoke.browser.mjs` is invoked after `npm test` from [.github/workflows/onda-regression.yml](../../../.github/workflows/onda-regression.yml). The runner uses a 127.0.0.1 test server, pinned Playwright core, a fresh Chrome profile and synthetic media. **No Onda application behaviour or version was changed by this infrastructure-only PR.** A successful local Chromium test does not establish production Netlify deployment or Android OS-specific behaviour.
