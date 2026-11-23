@@ -17,6 +17,7 @@ import {renderDataBurst} from './timeline-data-burst.mjs';
 import {renderSignalTear} from './timeline-signal-tear.mjs';
 import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
 import {renderLineCorruption} from './timeline-line-corruption.mjs';
+import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -202,7 +203,7 @@ function captureCompositeFrame(ctx,w,h){
  return canvas;
 }
 const SOURCE_EFFECTS=new Set(['god-rays','pendulum-swing','rebound-swing','vibration-flash',
- 'fault-cassette','ripple-distortion','electric-ripple','shockwave','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch','line-corruption',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
+ 'fault-cassette','ripple-distortion','electric-ripple','shockwave','light-sweep','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch','line-corruption',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
  * Live clips operate on their real previously composited media instead.
@@ -259,7 +260,9 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     ctx.drawImage(source,0,0,w,h);
     ctx.globalAlpha=amount;
    }
-   if(isPixelEffect(e.presetId)){
+   if(e.presetId==='light-sweep'){
+    renderLightSweep(ctx,source,w,h,e,t,amount);
+   }else if(isPixelEffect(e.presetId)){
     renderPixelEffect(ctx,source,w,h,e,t,amount);
    }else if(isGlitchEffect(e.presetId)){
     renderGlitchEffect(ctx,source,w,h,e,t,amount);
@@ -363,19 +366,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    return true;
   }
   
-  if(e.presetId==='light-sweep'){
-   const phase=wrap(t*.26),pos=(-.35+phase*1.7)*w;
-   const beam=Math.max(12,w*.18*size);
-   ctx.translate(pos,h*.5);
-   ctx.rotate(rad+.26);
-   const g=ctx.createLinearGradient(-beam,0,beam,0);
-   g.addColorStop(0,'rgba(255,255,255,0)');
-   g.addColorStop(.35,rgba(e.color,.06*strength));
-   g.addColorStop(.5,rgba(e.color,.64*strength));
-   g.addColorStop(.65,rgba(e.color,.08*strength));
-   g.addColorStop(1,'rgba(255,255,255,0)');
-   ctx.fillStyle=g;ctx.fillRect(-beam,-h*1.6,beam*2,h*3.2);
-  }else if(e.presetId==='hazy-atmosphere'){
+  if(e.presetId==='hazy-atmosphere'){
    renderHazyAtmosphere(ctx,w,h,e,t,strength);
   }else if(e.presetId==='mist-fog-bank'){
    renderMistFog(ctx,w,h,e,t,strength);
