@@ -4389,7 +4389,9 @@
             [LIBRARY_AUTOSAVE_KEY, LIBRARY_AUTOSAVE_BACKUP_KEY, LIBRARY_LAST_GOOD_KEY].forEach(key => {
                 const backup = safeGetLocalStorageJson(key);
                 const library = backup?.library || backup;
-                if (library?.tracks && typeof library.tracks === 'object') {
+                if (Array.isArray(library?.tracks)) {
+                    library.tracks.forEach(track => add(track?.id || getTrackId(track)));
+                } else if (library?.tracks && typeof library.tracks === 'object') {
                     Object.keys(library.tracks).forEach(add);
                 }
                 if (library?.playlists && typeof library.playlists === 'object') {
