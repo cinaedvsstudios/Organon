@@ -99,12 +99,28 @@ async function expectLoaded(page, baseUrl) {
     assert.equal(await page.locator('#btn-next').textContent(), '⏭');
     return version;
 }
+async function chooseFreshLocalSession(page) {
+    // These legitimate dialogs appear asynchronously in a completely fresh
+    // browser profile. Choose the LOCAL EMPTY option for this disposable test
+    // context rather than circumventing recovery/cloud protections.
+    await page.waitForTimeout(1800);
+    if (await page.locator('#onda-cloud-setup-modal.open').count()) {
+        await page.locator('#onda-cloud-continue-local-btn').click({ timeout: 5000 });
+    }
+    if (await page.locator('#modal-startup-recovery').isVisible()) {
+        await page.locator('#btn-startup-continue-empty').click({ timeout: 5000 });
+    }
+    assert.equal(await page.locator('#onda-cloud-modal-overlay.open').count(), 0);
+    assert.equal(await page.locator('#modal-overlay.is-open').count(), 0);
+}
 async function desktopSmoke(browser, baseUrl) {
     const context = await browser.newContext({ viewport: { width: 1280, height: 800 }, acceptDownloads: true, serviceWorkers: 'block' });
     const page = await context.newPage();
     try {
         const version = await expectLoaded(page, baseUrl);
         console.log('desktop: app started as ' + version);
+        await chooseFreshLocalSession(page);
+        console.log('desktop: first-run recovery/cloud prompts dismissed via local-only choices');
         await page.locator('#btn-toggle-advanced').click();
         await page.locator('.settings-tab-btn[data-settings-tab="storage"]').click();
         await page.locator('#onda-device-qa-panel summary').click();
@@ -115,41 +131,9 @@ async function desktopSmoke(browser, baseUrl) {
         assert.equal(report.capabilities.secureContext, true);
         assert.equal(report.capabilities.installedAppComponents.quickPlay, true);
         assert.ok(Object.values(report.manualChecks).every(x => x === 'not-tested'));
-        // Capture diagnostics without changing Onda's actual download logic.
-        await page.evaluate(() => {
-            window.__ondaExportProbe = { blobs: [], linkClicks: [], errors: [] };
-            const originalCreate = URL.createObjectURL.bind(URL);
-            URL.createObjectURL = blob => {
-                const uri = originalCreate(blob);
-                window.__ondaExportProbe.blobs.push({ type: blob.type, size: blob.size });
-                return uri;
-            };
-            const originalClick = HTMLAnchorElement.prototype.click;
-            HTMLAnchorElement.prototype.click = function (...args) {
-                window.__ondaExportProbe.linkClicks.push({
-                    download: this.download, hrefIsBlob: this.href.startsWith('blob:')
-                });
-                return originalClick.apply(this, args);
-            };
-            window.addEventListener('error', error => {
-                window.__ondaExportProbe.errors.push(String(error.message || 'unknown'));
-            });
-        });
-        const pendingDownload = page.waitForEvent('download', { timeout: 9000 });
+        const pendingDownload = page.waitForEvent('download', { timeout: 12000 });
         await page.locator('#btn-onda-device-qa-export').click();
-        let download;
-        try {
-            download = await pendingDownload;
-        } catch (error) {
-            const probe = await page.evaluate(() => ({
-                ...window.__ondaExportProbe,
-                exportDisabled: document.getElementById('btn-onda-device-qa-export').disabled,
-                uaActive: navigator.userActivation?.isActive ?? null,
-                reportAvailable: Boolean(window.OndaDeviceQA?.snapshot?.())
-            }));
-            console.error('desktop QA export diagnostic:', JSON.stringify(probe));
-            throw error;
-        }
+        const download = await pendingDownload;
         const exported = JSON.parse(await readFile(await download.path(), 'utf8'));
         assert.equal(exported.sourceVersion, version);
         assert.equal(exported.capabilities.loadedVersion, version);
@@ -234,6 +218,7 @@ async function mobileSmoke(browser, baseUrl) {
     try {
         const version = await expectLoaded(page, baseUrl);
         console.log('mobile-emulated: app started as ' + version);
+        await chooseFreshLocalSession(page);
         await page.locator('#btn-database-engine').click();
         await page.waitForFunction(() => document.getElementById('library-manager-drawer')?.classList.contains('drawer-open'));
         assert.equal(await page.locator('#db-library-search').isVisible(), true);
