@@ -443,3 +443,79 @@
   overflow: visible;
 }
 
+
+/* v3.15 — Current-screen queue (including ad-hoc queues not from a playlist). */
+#now-playing-playlist-panel[hidden] { display: none !important; }
+.onda-current-queue-header:not(.onda-current-queue-has-playlist) {
+  display: grid;
+  grid-template-areas: "title tools" "meta meta";
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 12px;
+}
+.onda-current-queue-header .playlist-detail-title-block { min-width: 0; }
+.onda-current-queue-header .playlist-detail-title { color: var(--alabaster-paper); }
+.onda-current-queue-origin {
+  font-size: .78rem;
+  color: var(--stone-ochre);
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.onda-current-queue-next {
+  color: var(--water-spray);
+  font-size: .82rem;
+  font-weight: 700;
+  line-height: 1.4;
+  margin-top: 6px;
+  overflow-wrap: anywhere;
+}
+.onda-current-queue-summary {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.onda-current-queue-tools .btn-pill {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 38px;
+}
+.onda-current-queue-tools .btn-pill[disabled] { opacity: .42; cursor: default; }
+.onda-current-queue-list { display: flex; flex-direction: column; gap: 6px; }
+.onda-current-queue-empty {
+  border: 1px dashed rgba(137,107,73,.42);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: .85rem;
+  color: var(--alabaster-paper);
+  text-align: center;
+}
+.onda-current-queue-list .now-playing-current-track {
+  border-color: var(--stone-ochre);
+  background: rgba(224, 163, 96, .10);
+}
+.onda-current-queue-list .onda-current-queue-next-row {
+  border-color: rgba(75,132,191,.46);
+  background: rgba(75,132,191,.09);
+}
+.onda-current-queue-list .onda-queue-row-status {
+  color: var(--water-spray);
+  font-weight: 800;
+}
+.onda-current-queue-list .btn-now-remove-from-queue {
+  border-color: rgba(190,97,97,.62);
+  color: #e3aaaa;
+  min-width: 38px;
+  min-height: 38px;
+}
+.onda-current-queue-extra {
+  grid-column: 1 / -1;
+  grid-area: auto;
+  padding: 8px;
+  margin-top: 5px;
+  border-top: 1px solid rgba(137,107,73,.28);
+  font-size: .76rem;
+  line-height: 1.4;
+  color: var(--alabaster-paper);
+  overflow-wrap: anywhere;
+}
