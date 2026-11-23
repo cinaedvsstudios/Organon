@@ -6,6 +6,7 @@ import {PIXEL_EFFECT_IDS,deriveLightMask,separateRgb,isPixelEffect} from '../js/
 import {buildDataBurstFrame} from '../js/timeline-data-burst.mjs';
 import {buildSignalTearFrame} from '../js/timeline-signal-tear.mjs';
 import {buildRgbBlockGlitchFrame} from '../js/timeline-rgb-block-glitch.mjs';
+import {buildLineCorruptionFrame} from '../js/timeline-line-corruption.mjs';
 
 const makeCanvasRecorder=()=>{
  const log=[];
@@ -28,7 +29,7 @@ const paint=(preset,t,settings={})=>{
  return JSON.stringify(ctx.log);
 };
 test('phase 3 effect catalog has distinct identities and categories',()=>{
- assert.equal(TIMELINE_EFFECTS.length,42);
+ assert.equal(TIMELINE_EFFECTS.length,43);
  assert.equal(new Set(TIMELINE_EFFECTS.map(x=>x.id)).size,TIMELINE_EFFECTS.length);
  assert.ok(TIMELINE_EFFECTS.every(x=>x.animated&&x.category&&x.group==='effect'));
  assert.deepEqual(
@@ -42,13 +43,13 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
    for(let i=0;i<data.length;i+=4){const x=(i/4)%w,y=Math.floor(i/4/w);data[i]=(x*7)%255;data[i+1]=(y*11)%255;data[i+2]=(x*3+y*5)%255;data[i+3]=255;}
-   const recipe=normaliseTimelineEffect({presetId:preset.id,density:85,burstSize:60,burstLife:.32,tearHeight:15,tearLife:.26,rgbBlockWidth:27,rgbBlockHeight:19,rgbBlockLife:.28,rgbSeparation:94});
-   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:buildRgbBlockGlitchFrame;
+   const recipe=normaliseTimelineEffect({presetId:preset.id,density:85,burstSize:60,burstLife:.32,tearHeight:15,tearLife:.26,rgbBlockWidth:27,rgbBlockHeight:19,rgbBlockLife:.28,rgbSeparation:94,lineLength:72,lineThickness:6,lineLife:.22,lineFragments:78,lineStatic:94});
+   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');

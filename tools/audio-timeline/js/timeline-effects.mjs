@@ -16,6 +16,7 @@ import {renderCRTScanlines} from './timeline-crt-scanlines.mjs';
 import {renderDataBurst} from './timeline-data-burst.mjs';
 import {renderSignalTear} from './timeline-signal-tear.mjs';
 import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
+import {renderLineCorruption} from './timeline-line-corruption.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -33,6 +34,7 @@ export const TIMELINE_EFFECTS=Object.freeze([
   {id:'data-burst',label:'Data Burst',group:'effect',category:'Glitch',animated:true},
   {id:'signal-tear',label:'Signal Tear',group:'effect',category:'Glitch',animated:true},
   {id:'rgb-block-glitch',label:'RGB Block Glitch',group:'effect',category:'Glitch',animated:true},
+  {id:'line-corruption',label:'Line Corruption',group:'effect',category:'Glitch',animated:true},
  {id:'rhythmic-flicker',label:'Rhythmic Flicker',group:'effect',category:'Light',animated:true},
  {id:'particle-dust',label:'Floating Dust',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
@@ -87,21 +89,22 @@ export function normaliseTimelineEffect(effect={}){
   const dataBurst=presetId==='data-burst';
   const signalTear=presetId==='signal-tear';
   const rgbBlockGlitch=presetId==='rgb-block-glitch';
+  const lineCorruption=presetId==='line-corruption';
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
  const base={
   presetId,
-  intensity:clamp(raw.intensity,0,100,rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
+  intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
   speed:clamp(raw.speed,.1,8,1),
-  density:clamp(raw.density,1,120,rgbBlockGlitch?63:signalTear?72:dataBurst?46:signalInterference?68:tvStatic?88:mistFog?73:48),
+  density:clamp(raw.density,1,120,lineCorruption?81:rgbBlockGlitch?63:signalTear?72:dataBurst?46:signalInterference?68:tvStatic?88:mistFog?73:48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
-  distortion:clamp(raw.distortion,0,100,rgbBlockGlitch?76:signalTear?72:signalInterference?70:mistFog?65:55),
+  distortion:clamp(raw.distortion,0,100,lineCorruption?71:rgbBlockGlitch?76:signalTear?72:signalInterference?70:mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':'#ffd98d'
  };
  if(cameraFrame)return {...base,
   hudScale:clamp(raw.hudScale,60,150,100),
@@ -141,6 +144,15 @@ export function normaliseTimelineEffect(effect={}){
   crtRollRate:clamp(raw.crtRollRate,0,4,.75),
   scanSeed:Math.round(clamp(raw.scanSeed,0,99999,6161))
  };
+ if(lineCorruption)return {...base,
+   lineLength:clamp(raw.lineLength,5,100,57),
+   lineThickness:clamp(raw.lineThickness,1,12,4),
+   lineFragments:clamp(raw.lineFragments,0,100,73),
+   lineStatic:clamp(raw.lineStatic,0,100,67),
+   lineLife:clamp(raw.lineLife,.04,.4,.14),
+   lineSeed:Math.round(clamp(raw.lineSeed,0,99999,6565)),
+   lineAccent:/^#[0-9a-f]{6}$/i.test(String(raw.lineAccent))?String(raw.lineAccent).toLowerCase():'#ff53ba'
+  };
  if(rgbBlockGlitch)return {...base,
    rgbBlockWidth:clamp(raw.rgbBlockWidth,2,45,21),
    rgbBlockHeight:clamp(raw.rgbBlockHeight,2,45,15),
@@ -190,7 +202,7 @@ function captureCompositeFrame(ctx,w,h){
  return canvas;
 }
 const SOURCE_EFFECTS=new Set(['god-rays','pendulum-swing','rebound-swing','vibration-flash',
- 'fault-cassette','ripple-distortion','electric-ripple','shockwave','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
+ 'fault-cassette','ripple-distortion','electric-ripple','shockwave','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch','line-corruption',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
  * Live clips operate on their real previously composited media instead.
@@ -261,6 +273,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
      renderSignalTear(ctx,source,w,h,e,t,amount);
     }else if(e.presetId==='rgb-block-glitch'){
      renderRgbBlockGlitch(ctx,source,w,h,e,t,amount);
+    }else if(e.presetId==='line-corruption'){
+     renderLineCorruption(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='god-rays'){
     renderGodRays(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
