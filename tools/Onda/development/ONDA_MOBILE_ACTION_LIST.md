@@ -519,3 +519,11 @@ The existing actual-Chromium suite now tests a **missing saved file**, not just 
 **Remaining actual Android verification:** file-handle permission persistence and rejection, device reboot, Android picker and storage differences, Bluetooth/headset and screen-lock actions, cold offline startup and measured large-library performance. This change adds only tests and documentation, no Onda runtime change or version increment.
 
 - 2026-11-23 — v2.11: actual Chrome missing audio + explicit Reconnect/reload regression test passed.
+
+## Remembered file-handle and denial fallback QA — Onda v3.22 (2026-11-23)
+
+[GitHub Actions #45270809740](https://github.com/cinaedvsstudios/Organon/actions/runs/45270809740) passed a new actual-Chromium case: a synthetic WAV kept in test-only OPFS is linked by a genuine FileSystemFileHandle, serialized into Onda's file-handle IndexedDB, restored after page reload and played offline **without copying its audio into the persistent audio cache**. With explicitly simulated permission denial, silent normal Play never calls `requestPermission()`, while user-triggered Reconnect requests permission once and falls back to the real manual picker after denial. The original Library ID, metadata and playlist remain intact.
+
+The source/player/storage schema are unchanged. This is safe automated browser coverage only: **OPFS is not an externally picked Android file handle**, and permission denial was simulated. Physical Android permission persistence after phone/browser restart, actual OS denial dialogs, Bluetooth and background audio still require on-device testing.
+
+- 2026-11-23 — v2.12: added real-browser remembered-handle, simulated denial and explicit reconnect regression.
