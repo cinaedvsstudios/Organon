@@ -684,7 +684,8 @@ try{
     // insert a procedural clip and edit its saved recipe in the Inspector.
     await page.locator('[data-library-tab="effects"]').click();
     await page.locator('#effect-category').selectOption('Light');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),6);
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),7,
+        'New Starburst adds a distinct seventh animated light effect');
     await page.locator('[data-preset-id="light-sweep"]').click({button:'right'});
     assert.ok(await page.locator('#text-preview-modal').isVisible());
     const sampleEffect=async(t)=>page.evaluate(time=>{
