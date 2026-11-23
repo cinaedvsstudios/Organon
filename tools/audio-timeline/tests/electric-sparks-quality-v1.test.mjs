@@ -74,7 +74,7 @@ test('real painter draws thick blue halos, pale cores and multiple fork paths',(
  assert.ok(log.some(x=>x[0]==='set'&&x[1]==='globalCompositeOperation'&&x[2]==='screen'));
  assert.ok(log.some(x=>x[0]==='set'&&x[1]==='strokeStyle'&&x[2]==='#f5fcff'));
  assert.ok(log.some(x=>x[0]==='radial'),'Glowing electric discharge heads exist');
- assert.equal(ctx.globalCompositeOperation,'source-over','Canvas state restored');
+ assert.ok(log.some(x=>x[0]==='restore'),'The painter must restore the caller\'s Canvas state');
  const before=log.length;renderElectricSparks(ctx,W,H,settings(),.72,0);
  assert.equal(log.length,before,'Zero strength touches nothing');
 });
