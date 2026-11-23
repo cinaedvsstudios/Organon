@@ -2625,7 +2625,16 @@
             const previous = pendingAudioCacheWrites.get(id) || Promise.resolve();
             const operation = previous.catch(() => {}).then(async () => {
                 const shouldCheckExisting = audioCacheIndexState !== 'ready' || cachedAudioTrackIds.has(id);
-                const existing = shouldCheckExisting ? await idbGetAudioFile(id) : null;
+                let existing = null;
+                if (shouldCheckExisting) {
+                    try {
+                        existing = await idbGetAudioFile(id);
+                    } catch (error) {
+                        // A failed optimisation check must never prevent a normal
+                        // cache write that may still succeed.
+                        console.warn('Audio cache comparison unavailable; writing selected file normally:', error);
+                    }
+                }
                 if (isIdenticalCachedAudio(existing, file, meta)) return 'skipped';
                 await idbSetAudioFile(id, file, meta);
                 cachedAudioTrackIds.add(id);
