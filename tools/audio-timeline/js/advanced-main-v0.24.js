@@ -6,7 +6,7 @@
 
 import { AdvancedTimeline } from './advanced-timeline-v0.24.js';
 import { AdvancedMediaEngine } from './advanced-media-engine-v0.24.js?build=20261120-orgavox-lofi';
-import { snapshotProject, snapshotClip, applyClipData, restoreFileEntries, prepareHistoryTracks, referencedFileIds, matchesHistoricalSource, historicalMediaIdsForFile } from './project-history.mjs?build=20261120-orgavox-audio';
+import { snapshotProject, snapshotClip, applyClipData, restoreFileEntries, prepareHistoryTracks, referencedFileIds, matchesHistoricalSource, historicalMediaIdsForFile } from './project-history.mjs?build=20261123-reset-ui';
 import { AdvancedLiveExporter } from './advanced-live-export.mjs';
 import { AdvancedOfflineExporter, OFFLINE_EXPORT_LIMIT_SECONDS } from './advanced-offline-export.mjs?build=20261120-wav-only';
 import { normalizeVisualTransitions, splitVisualTransitions, fadeDuration } from './visual-transitions.mjs';
@@ -59,7 +59,7 @@ import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTe
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
 import { DEFAULT_TRANSFORM, DEFAULT_ADJUSTMENTS, VISIBLE_VISUAL_TYPES, visualParameterAt, upsertVisualKeyframe, getBaseVisualValue } from './visual-clip-adjustments.mjs';
 import { getMediaHandle, saveMediaHandle, getPermittedMediaFile, isPersistentFileHandle, matchesSavedMediaReference } from './media-handle-store.mjs';
-import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord, writeRecoveryRecordWithQuota } from './project-recovery.mjs';
+import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, parseRecoveryRecord, serializeRecoveryRecord, writeRecoveryRecordWithQuota } from './project-recovery.mjs?build=20261123-reset-ui';
 
 (() => {
     const FILE_PATTERN = /\.(mp4|webm|mov|m4v|avi|mkv|mp3|wav|m4a|aac|ogg|opus|flac|gif|webp|png|jpe?g)$/i;
