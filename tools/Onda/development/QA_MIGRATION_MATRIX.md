@@ -457,3 +457,17 @@ A successful source or GitHub Actions run is not evidence of Android playback, b
 | BROWSER-08 | Android hardware, file-picker persistence, screen lock/Bluetooth, battery and live production Netlify | NEEDS DEVICE / DEPLOY |
 
 The new `tests/onda-browser-smoke.browser.mjs` is invoked after `npm test` from [.github/workflows/onda-regression.yml](../../../.github/workflows/onda-regression.yml). The runner uses a 127.0.0.1 test server, pinned Playwright core, a fresh Chrome profile and synthetic media. **No Onda application behaviour or version was changed by this infrastructure-only PR.** A successful local Chromium test does not establish production Netlify deployment or Android OS-specific behaviour.
+
+## Real browser restore-and-play regression extension (2026-11-23)
+
+**Run:** [GitHub Actions #45245006631](https://github.com/cinaedvsstudios/Organon/actions/runs/45245006631). Both original source regression and real Chromium browser jobs completed successfully.
+
+| Test | Actual Chrome observation | Status |
+|---|---|---|
+| BROWSER-09 Library metadata restore | Synthetic WAV remains visible in Library after reload, marked cached/ready | PASS actual Chromium |
+| BROWSER-10 No unnecessary reconnect | Previously imported audio shows no Reconnect button after a reload | PASS actual Chromium |
+| BROWSER-11 Offline cached playback | With network disabled after page load, saved track decodes from `blob:` and playback time advances | PASS actual Chromium |
+| BROWSER-12 No duplicate cache write | Playing restored track leaves IndexedDB `audioFiles` count unchanged | PASS actual Chromium |
+| BROWSER-13 Android hardware-specific recovery | Actual Android cold start offline, File System Access grant persistence, screen lock, battery | NEEDS DEVICE |
+
+This is a **test-only change** on the user's disposable localhost Chrome profile; no live user file/Library/profile is read or modified, and no code changes are made to Onda's playback/storage engine. The app remains **v3.22**.
