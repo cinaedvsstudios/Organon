@@ -371,6 +371,8 @@
             btnPlay.innerHTML = playing ? '<span class="playing-spinner">𖦹</span>' : '▷';
             btnPlay.classList.toggle('active-state', Boolean(playing));
         }
+        // MIDI has no HTMLAudioElement events, so notify the shared canvas scheduler.
+        window.OndaVisualizerRefresh?.();
     }
 
     function clearTimers() {
