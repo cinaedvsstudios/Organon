@@ -76,7 +76,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.12';
+        const ONDA_VERSION = 'v3.13';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4358,6 +4358,7 @@
             const rows = [
                 ['Tracks', trackCount], ['Playlists', playlistCount],
                 ['Cached audio', cachedAudio], ['Unlinked cache records', verifiedCache ? cachedAudioTrackIds.size - referencedCache : 'not verified'],
+                ['Remembered file links', linkedFileIndexState === 'ready' ? linkedFileTrackIds.size : 'not available'],
                 ['Site storage used', originUsage], ['Needs relink', needsRelink],
                 ['Missing lyrics', noLyrics], ['No tags', noTags],
                 ['Device profile', device], ['Last cloud sync', lastCloud]
