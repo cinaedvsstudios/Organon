@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
 **Version:** QA v1.7 for Onda v3.18 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: isolated privacy/source checks (documented in v3.18 release). All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.18 release notes](./RELEASE_V3_18.md).  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 isolated/static privacy and source checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.18 release notes](./RELEASE_V3_18.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
