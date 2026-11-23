@@ -324,13 +324,13 @@ The first user-authorised production batch is committed to `main`: the unbounded
 
 [Read the v3.12 release notes, safety contract and Android tests](./RELEASE_V3_12.md).
 
-**Implemented and committed:** \`persistLocalAudioFilesToIndexedDb()\` now compares a previously cached File's verified metadata (filename, relative path, size, MIME type, known lastModified) to an incoming File before writing. An unchanged reimport *skips the redundant IndexedDB blob put*, and in-flight writes are serialised per track ID. Unknown/changed metadata uses the existing safe full-write path. This prevents redundant IO on repeated imports but **does not reclaim old duplicate caches under different IDs** or provide byte-for-byte cryptographic deduplication.
+**Implemented and committed:** \`persistLocalAudioFilesToIndexedDb()\` now compares a previously cached File's verified metadata (filename, relative path, size, MIME type, known lastModified) to an incoming File before writing. An unchanged reimport *skips the redundant IndexedDB blob put*, and in-flight writes are serialised per track ID. Unknown/changed metadata **or an optional cache-comparison read error** uses the safe full-write path. This prevents redundant IO on repeated imports but **does not reclaim old duplicate caches under different IDs** or provide byte-for-byte cryptographic deduplication.
 
 **Additional write reductions:** local UI resize and orientation checkpoints no longer serialise and rewrite the entire music catalogue and visualiser stack. The normal import pathway now saves catalogue metadata only **once**, after the queue is established and **before** asynchronous caching starts, rather than three times. Other user/lifecycle saves remain in place.
 
 **Safety:** IndexedDB version 2 unchanged; no existing cached bytes deleted or altered by cleanup; automatic audio caching remains enabled to keep Android music playable. **No cache deletion, orphan removal, new permissions or file-handle migration introduced.** Version bumped to v3.12 and script URL cache-busted.
 
-**Verification:** 18 isolated/static checks passed, including the actual metadata-comparison and per-track serial queue functions, unknown metadata fallback, concurrent imports, import save count, lightweight resize checkpoint and preserved pagehide save. Android Chrome and Netlify release still need real verification.
+**Verification:** 22 isolated/static checks passed, including the actual metadata-comparison and per-track serial queue functions, unknown metadata fallback, concurrent imports, import save count, lightweight resize checkpoint and preserved pagehide save. Android Chrome and Netlify release still need real verification.
 
 **Next steps:** Confirm v3.12 deployment and playback/Storage Health on Android, then move on to persistent file/folder access proofs and safe manual orphan review (with explicit consent); afterwards refine the Current/Now Playing main-screen queue and mobile Library drawer. Resume position and GitHub Pages hosting remain low priority.
 
