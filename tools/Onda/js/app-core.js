@@ -281,9 +281,17 @@
 
         function saveLocalUiStateCheckpoint(reason = 'checkpoint') {
             try {
-                syncVisibleVisualizerCardsToState();
-                saveActiveVisualizerStack();
-                if (typeof saveActiveLibraryState === 'function') saveActiveLibraryState(`ui:${reason}`);
+                // A resize/orientation notification has not changed music, playlists
+                // or visualiser presets. Avoid serialising the entire Library (and
+                // every visible layer) for each Android viewport/keyboard resize.
+                const layoutOnly = reason === 'screen-resize' ||
+                    reason === 'screen-orientation-change' ||
+                    reason === 'screen-orientation-change-settled';
+                if (!layoutOnly) {
+                    syncVisibleVisualizerCardsToState();
+                    saveActiveVisualizerStack();
+                    if (typeof saveActiveLibraryState === 'function') saveActiveLibraryState(`ui:${reason}`);
+                }
 
                 const activeTab = document.querySelector('.viewport-content.active-content')?.id;
                 if (activeTab) localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, activeTab);
