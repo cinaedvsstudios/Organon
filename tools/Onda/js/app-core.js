@@ -3324,7 +3324,8 @@
             });
         }
 
-        async function handleUploadedFiles(files) {
+        async function handleUploadedFiles(files, options = {}) {
+            const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
                 return Boolean(window.OndaMidi?.isMidiFile(file)) || file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm|mid|midi)$/i);
             });
@@ -3342,7 +3343,8 @@
                 const isMidi = Boolean(window.OndaMidi?.isMidiFile(file)) || /\.(mid|midi)$/i.test(file.name || '');
                 const localSourceType = isMidi ? 'midi' : 'local';
                 const defaultLocalTag = isMidi ? 'MIDI File' : 'Local File';
-                const relativePath = file.webkitRelativePath || file.name;
+                const relativePath = options.relativePaths?.get(file) || file.webkitRelativePath || file.name;
+                const handle = options.fileHandles?.get(file) || null;
                 const nextId = createTrackIdFromParts(['local', relativePath, file.name, file.size, file.lastModified || '']);
                 const legacyId = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
                 const id = virtualLibrary[nextId] ? nextId : (virtualLibrary[legacyId] ? legacyId : nextId);
@@ -3377,6 +3379,9 @@
                     blobFile: file
                 };
 
+                if (handle?.kind === 'file') linkedRecords.push({
+                    trackId: id, handle, relativePath, fileName: file.name
+                });
                 if (alreadyInLibrary) refreshedTracks.push(track);
                 else newTracks.push(track);
             });
@@ -3405,6 +3410,17 @@
             saveActiveLibraryState('add-local-files');
             showToast(summary);
 
+            if (linkedRecords.length && window.OndaFileHandles?.rememberMany) {
+                // The handle index is additive: never remove or bypass existing cache.
+                window.OndaFileHandles.rememberMany(linkedRecords).then(() => {
+                    linkedRecords.forEach(entry => linkedFileTrackIds.add(String(entry.trackId)));
+                    linkedFileIndexState = 'ready';
+                    renderLibraryManager();
+                }).catch(error => {
+                    console.warn('Chrome did not retain file handle references:', error);
+                    showToast('Files imported, but Chrome cannot remember direct access. Cached audio remains available.');
+                });
+            }
             persistLocalAudioFilesToIndexedDb(allIncomingTracks).then(async cacheResult => {
                 await refreshAudioCacheIndex();
                 renderLibraryManager();
