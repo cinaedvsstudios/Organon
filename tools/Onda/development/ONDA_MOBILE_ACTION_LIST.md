@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11 player reliability, v3.12 storage optimisation, and v3.13 optional persistent Android file access committed; real Android/Netlify verification pending  
+**Status:** v3.11–v3.14 development committed, including v3.14 read-only cache review; Android/Netlify verification and any cleanup approvals remain pending  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.13** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.14** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 Android file access](./RELEASE_V3_13.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 read-only cache review](./RELEASE_V3_14.md)
 
 ## Agreed product direction
 
@@ -33,7 +33,7 @@
 | ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | **v3.13: optional remembered file handles added as cache fallback, cache-first retained; device proof pending** |
 | ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **Saved-track Play path improved v3.11; optional new-file Quick Play not yet implemented** |
 | ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
-| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.13 adds remembered-link count to existing v3.11 storage report; cleanup not implemented** |
+| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.14 adds read-only unlinked/possible-duplicate inventory and preview; no deletion or cleanup commands** |
 | ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.12: full autosaves on resize/rotation removed and import saves consolidated; performance timing still unmeasured** |
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.13: Remember Files/Folder & read-permission Reconnect implemented; actual Android QA pending** |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
@@ -350,3 +350,20 @@ Chrome's File System Access API is available on recent Android Chrome, but retai
 **Next recommended work:** Test v3.13 on the user's Android Chrome with an expendable MP3, then build a **read-only, user-reviewed orphan/duplicate cache report** before any opt-in cleanup. Current/Now Playing layout remains on the main screen; resume position stays optional P3.
 
 - 2026-11-23 — v1.8 v3.13 implemented and documented; device tests remain pending.
+
+
+## Implementation progress — Onda v3.14 read-only cache review (2026-11-23)
+
+**Committed:** [v3.14 release report, tests and safety decisions](./RELEASE_V3_14.md).
+
+In **Settings → Storage → 🔎 Review Cached Audio**, Onda can now explicitly scan the existing IndexedDB `audioFiles` store in **readonly mode**. The report shows saved audio records and File/Blob size totals, entries unlinked from the currently restored Library/queue/playlists/history or known local backup IDs, and candidate duplicate groups.
+
+**Duplicate caution:** Candidates require matching normalised filename, bytes, nonzero modification timestamp and media type. They are *not verified identical content*. Potential duplicate surplus bytes can overlap unlinked bytes; the report never adds these estimates into a guaranteed storage saving.
+
+**Safety:** This release contains **NO delete button, no `delete` transaction, no cleanup, no automatic TTL, no media byte inspection, no original file writes and no database migration.** Filenames and local paths stay on the device and are escaped before display; no report is uploaded. The existing cache remains the default for playback.
+
+**Verification:** 18 static/data/readonly-cursor tests plus 12 UI/escape/binding tests passed. Real Android cache sizes, permission persistence and the Netlify deployment remain unverified. A future manual cleanup requires the user's explicit approval of exact records and a confirmed remaining playable source.
+
+**Next development (after phone smoke test):** Current-screen Queue / Now Playing refinements (never a Queue tab in the Library drawer), then mobile Library browsing. Optional Quick Play for new unsaved files and public GitHub Pages streaming remain later work.
+
+- 2026-11-23 — v1.9 v3.14 read-only audit committed; no deletion capability implemented.
