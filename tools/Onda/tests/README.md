@@ -74,3 +74,11 @@ Next it reloads with a deliberately **simulated** denial from `queryPermission()
 **Evidence:** [GitHub Actions #45270809740](https://github.com/cinaedvsstudios/Organon/actions/runs/45270809740) — all original Node and actual-Chromium jobs passed.
 
 **Limitations:** OPFS is a browser-private substitute used only for safe automated testing. Its storage/permission characteristics are not identical to a user-picked external file or folder on Android. Denial is simulated by instrumenting browser handle methods, not an observed Android OS dialog. Permission persistence and re-prompt behaviour must be checked on the user's physical phone. No files, permissions, library data or cache belonging to the user were accessed.
+
+### Actual Chrome Media Session playback/visibility routing
+
+An isolated Chromium smoke context captures the **actual eight Media Session handlers** Onda registers in Chrome, then invokes those callbacks while Chrome's real audio element decodes two synthetic 12-second WAV tracks. It verifies playbackState and metadata; system pause/play; seekto, seekforward and seekbackward; next/previous queue navigation and the corresponding metadata changes. The browser's `visibilitychange` handler is exercised with **simulated** `hidden` and `visible` document states, and the audio must keep advancing.
+
+The test then starts temporary Quick Play from a third synthetic WAV, verifies that the registered system actions control **the temporary audio element** and update preview metadata, and confirms that next/previous do not modify the saved queue or silently import media. Stopping the preview restores permanent-track metadata; the next system Play resumes the saved track.
+
+**Evidence:** [GitHub Actions run #45277569315](https://github.com/cinaedvsstudios/Organon/actions/runs/45277569315) — original Node and actual Chromium integration jobs passed. This is a localhost Chrome callback test, **not physical media buttons, actual browser background scheduling/OS suspension, Android lock screen, headset/Bluetooth controls or production deployment**. All test tracks are generated in memory; only disposable browser contexts are used.
