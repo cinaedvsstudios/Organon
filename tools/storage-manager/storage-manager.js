@@ -9,10 +9,19 @@
     'uiRepositoryBuilderState_v002', 'uiRepositoryUiState_v002', 'uiRepositoryDockState_v002',
     'ui_repo_basket', 'ui_repo_builder', 'ui_repo_ui',
     'ondaCloudSyncConfigV1', 'ondaCloudSyncLastStatusV1', 'ondaCloudSetupDismissedV1',
-    'ondaCloudDeviceIdV1', 'onda-cloud-device-id', 'ondaCloudLastSyncV1'
+    'ondaCloudDeviceIdV1', 'onda-cloud-device-id', 'ondaCloudLastSyncV1',
+    'ondaVisualizerPresetsV1', 'ondaActiveVisualizerStackV1',
+    'ondaActiveWorkspaceTabV1', 'ondaLibraryMobileViewV1',
+    'ondaMobileLibraryIconDisplayV1', 'ondaLastLocalUiSaveV1',
+    'ondaActiveLibraryV1', 'ondaLibraryDrawerHeightV1', 'ondaLibraryDrawerWidthV1',
+    'ondaActiveLibraryBackupV1', 'ondaLastGoodLibraryV1',
+    'ondaLibraryRestoreReportV1', 'ondaLastLibrarySaveStatusV1',
+    'ondaForceDesktopModeV1', 'ondaNowPlayingHideSongInfoV1',
+    'ondaNowPlayingHidePlaylistV1', 'ondaLibraryFuzzySearchV1',
+    'ondaTrackHistoryV1', 'ondaLastPlayedTrackId', 'ondaLastPlayedPlaylistName'
   ]);
   const prefixes = [
-    'organon_', 'organon.', 'organon-', 'onda', 'Onda', 'capsularius.',
+    'organon_', 'organon.', 'organon-', 'capsularius.',
     'ihy-v', 'locadate_', 'orgavox', 'motori-', 'uiRepository'
   ];
   const knownDatabases = new Set([
@@ -65,7 +74,9 @@
       for (const key of keys) {
         const value = storage.getItem(key);
         if (value === null) continue;
-        const owned = owns(key), category = owned ? categoryOf(key) : 'Unclassified / other apps';
+        const owned = owns(key);
+        if (!owned) continue; // Only Organon's known keys: never expose other repositories' values.
+        const category = categoryOf(key);
         entries.push({
           id: type + ':' + key, type, key, value, owned, category,
           size: bytes(key) + bytes(value),
@@ -92,6 +103,7 @@
       for (const db of dbs) {
         if (!db.name) continue;
         const owned = knownDatabases.has(db.name);
+        if (!owned) continue; // Do not inspect other projects' databases.
         entries.push({
           id: 'IndexedDB:' + db.name, type: 'IndexedDB', key: db.name, owned,
           category: owned ? 'Projects & user data' : 'Unclassified / other apps',
@@ -114,6 +126,7 @@
         // Only explicit namespaced caches can be owned: origin-wide service-worker caches
         // can serve multiple repositories and must never be removed by a broad prefix guess.
         const owned = name.startsWith('organon-cache-v') || name.startsWith('organon:cache:');
+        if (!owned) continue;
         entries.push({
           id: 'Cache Storage:' + name, type: 'Cache Storage', key: name, owned,
           category: owned ? 'Cache & previews' : 'Unclassified / other apps',
@@ -148,12 +161,14 @@
     scanBusy = true;
     note('Inspecting browser storage...');
     entries = []; meta = [];
-    addStorage(window.localStorage, 'localStorage');
-    addStorage(window.sessionStorage, 'sessionStorage');
+    try { addStorage(window.localStorage, 'localStorage'); }
+    catch (err) { meta.push('localStorage unavailable in this browser/context'); }
+    try { addStorage(window.sessionStorage, 'sessionStorage'); }
+    catch (err) { meta.push('sessionStorage unavailable in this browser/context'); }
     await Promise.all([scanDatabases(), scanCaches(), scanOther()]);
     scanBusy = false;
     await render();
-    note('Storage scan complete. Unknown and shared entries are never eligible for deletion.');
+    note('Storage scan complete. Only known Organon keys and databases were inspected.');
   }
   function download(filename, body, mime) {
     const blob = new Blob([body], {type: mime || 'application/json'});
@@ -236,7 +251,8 @@
       entry.status = 'Server verified';
       note('Exact published match verified for ' + entry.key + '.');
       await render();
-      const auto = localStorage.getItem('organon_storage_manager_autoclean_v1') === 'true';
+      let auto = false;
+      try {auto = localStorage.getItem('organon_storage_manager_autoclean_v1') === 'true';} catch (_) {}
       if (auto && source.allowAutomaticRemoval === true) await deleteOne(entry, true);
       return true;
     } catch (err) {
@@ -367,7 +383,7 @@
     const owned = entries.filter(e => e.owned);
     const total = owned.reduce((sum, e) => sum + (Number.isFinite(e.size) ? e.size : 0), 0);
     $('osm-summary').textContent = owned.length + ' recognised Organon entries · ' +
-      sizeLabel(total) + ' measurable app data · ' + entries.length + ' origin-wide entries detected';
+      sizeLabel(total) + ' measurable app data (not including unmeasurable databases and caches)';
     const safe = entries.filter(isSafe);
     $('osm-safe').textContent = 'Quick-clean eligible: ' + safe.length + ' (' +
       sizeLabel(safe.reduce((s, e) => s + (e.size || 0), 0)) + ')';
@@ -435,7 +451,8 @@
     }
     if (!visible.length) list.textContent = 'No matching storage entries.';
     const autoBox = $('osm-auto');
-    autoBox.checked = localStorage.getItem('organon_storage_manager_autoclean_v1') === 'true';
+    try { autoBox.checked = localStorage.getItem('organon_storage_manager_autoclean_v1') === 'true'; }
+    catch (_) {autoBox.checked = false;}
     autoBox.disabled = !Object.keys(serverSources).length;
     $('osm-auto-explain').textContent = Object.keys(serverSources).length ?
       'Only exact matches from explicitly configured same-origin data sources can be automatically removed.' :
@@ -484,7 +501,8 @@
       for (const e of eligible) await verify(e);
     });
     $('osm-auto').addEventListener('change', e => {
-      localStorage.setItem('organon_storage_manager_autoclean_v1', e.target.checked ? 'true' : 'false');
+      try {localStorage.setItem('organon_storage_manager_autoclean_v1', e.target.checked ? 'true' : 'false');}
+      catch (_) {e.target.checked=false; return note('Browser persistence is unavailable here.', true);}
       note(e.target.checked ? 'Automatic removal enabled only for explicitly approved, exactly verified duplicates.' : 'Automatic server-verified cleanup disabled.');
     });
     document.addEventListener('keydown', e => {
