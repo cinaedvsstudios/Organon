@@ -1722,3 +1722,25 @@ body.onda-force-mobile-mode #tab-library .onda-current-queue-extra {
   grid-column: 1 / -1;
   font-size: .78rem;
 }
+
+/* Keep long active queues scrollable without pushing Current's song details
+   hundreds of rows down the page. No separate drawer or floating overlay. */
+@media (max-width: 768px) {
+  #tab-library .onda-current-queue-list {
+    box-sizing: border-box;
+    max-height: min(46vh, 430px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 3px;
+  }
+}
+body.onda-force-mobile-mode #tab-library .onda-current-queue-list {
+  box-sizing: border-box;
+  max-height: min(46vh, 430px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
