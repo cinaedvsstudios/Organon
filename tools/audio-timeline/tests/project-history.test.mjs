@@ -357,3 +357,20 @@ test('project history snapshots include immutable cue markers and applied canvas
     assert.equal(legacy.markers,undefined,'Older snapshots must remain compatible');
     assert.equal(legacy.settings,undefined);
 });
+
+
+test('media bin visibility is an Undo/Redo-only flag and does not discard live source references',()=>{
+    const media={id:'file-a',name:'a.mp4',kind:'video',file:rawFile(),hiddenFromBin:true};
+    const snapshot=snapshotProject({
+        files:[media],tracks:[clip()],selectedTrackIds:new Set(['clip-a']),
+        selectedTrackId:'clip-a',selectedFileId:null,currentTime:1.5
+    });
+    assert.equal(snapshot.files.length,1);
+    assert.equal(snapshot.files[0].hiddenFromBin,true);
+    assert.equal(snapshot.tracks[0].sourceFileId,'file-a');
+    assert.equal(snapshot.files[0].file,undefined);
+    const reopened=restoreFileEntries(snapshot.files,new Map([['file-a',media.file]]),{includeMissing:true});
+    assert.equal(reopened[0].hiddenFromBin,true);
+    assert.equal(reopened[0].file,media.file);
+    assert.ok(referencedFileIds(reopened,snapshot.tracks).has('file-a'));
+});
