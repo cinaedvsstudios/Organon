@@ -511,3 +511,11 @@ Extended the actual Chromium smoke suite beyond merely counting saved blobs: [Gi
 This is a significant **browser source-of-truth check** for the v3.13+ cached media fallback and Library restore path, not proof of Android offline cold-start, permissions, phone screen-lock or device battery behaviour. No production runtime version bump and no media storage changes.
 
 - 2026-11-23 — v2.10: commit real Chrome offline after-reload playback regression coverage.
+
+## Missing-media Reconnect browser QA — v3.22 (2026-11-23)
+
+The existing actual-Chromium suite now tests a **missing saved file**, not just the successful cached-file path. [GitHub Actions #45256546568](https://github.com/cinaedvsstudios/Organon/actions/runs/45256546568) passed: a synthetic metadata-only local track survived reload; Library showed **needs relink** and an explicit Reconnect control; trying Play without bytes preserved its entry/notes/playlist and did not import; Chrome's actual filechooser then provided a synthetic WAV under the same track ID; its cache and playback worked; another reload showed the file available without Reconnect.
+
+**Remaining actual Android verification:** file-handle permission persistence and rejection, device reboot, Android picker and storage differences, Bluetooth/headset and screen-lock actions, cold offline startup and measured large-library performance. This change adds only tests and documentation, no Onda runtime change or version increment.
+
+- 2026-11-23 — v2.11: actual Chrome missing audio + explicit Reconnect/reload regression test passed.
