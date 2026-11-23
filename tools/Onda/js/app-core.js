@@ -3259,17 +3259,42 @@
         reconnectFileInput.hidden = true;
         document.body.appendChild(reconnectFileInput);
         let reconnectTargetId = null;
+        const reconnectUsePickerNext = new Set();
         function offerReconnect(trackId) {
             if (!virtualLibrary[trackId]) return;
-            reconnectTargetId = trackId;
+            const id = String(trackId);
+            // Permission requests require the original tap. Previously remembered
+            // handles are loaded into memory on startup to avoid awaiting IDB here.
+            if (!reconnectUsePickerNext.delete(id) && linkedFileTrackIds.has(id) &&
+                window.OndaFileHandles?.requestFile) {
+                try {
+                    const attempt = window.OndaFileHandles.requestFile(id);
+                    if (attempt) {
+                        attempt.then(result => {
+                            if (result?.file) {
+                                applyReconnectedFile(id, result.file, result.handle, result.relativePath)
+                                    .catch(error => console.warn('Could not reconnect remembered audio:', error));
+                            } else {
+                                reconnectUsePickerNext.add(id);
+                                showToast('Chrome did not grant file access. Tap Reconnect again to choose the file.');
+                            }
+                        }).catch(error => {
+                            console.warn('Remembered file could not be opened:', error);
+                            reconnectUsePickerNext.add(id);
+                            showToast('Saved file was unavailable. Tap Reconnect again to choose the file.');
+                        });
+                        return;
+                    }
+                } catch (error) {
+                    console.warn('Remembered permission request failed:', error);
+                }
+            }
+            reconnectTargetId = id;
             reconnectFileInput.value = '';
             reconnectFileInput.click();
         }
-        reconnectFileInput.addEventListener('change', async () => {
-            const trackId = reconnectTargetId;
-            reconnectTargetId = null;
-            const file = reconnectFileInput.files?.[0] || null;
-            reconnectFileInput.value = '';
+
+        async function applyReconnectedFile(trackId, file, handle = null, relativePath = '') {
             const meta = virtualLibrary[trackId];
             if (!file || !meta) return;
             const wantsMidi = meta.sourceType === 'midi';
@@ -3280,28 +3305,48 @@
             }
             if (meta.fileName && file.name.toLowerCase() !== String(meta.fileName).toLowerCase() &&
                 !confirm('This filename differs from the saved track. Connect this file to the existing library entry?')) return;
-            // Preserve ID, playlists, history, tags, notes, and artwork.
+            // Never generate another Library ID or replace saved playlist metadata.
             meta.blobFile = file;
             meta.needsRelink = false;
-            meta.localPath = file.webkitRelativePath || file.name;
+            meta.localPath = relativePath || file.webkitRelativePath || file.name;
             meta.sizeBytes = file.size;
             meta.size = (file.size / (1024 * 1024)).toFixed(2) + ' MB';
+            if (handle?.kind === 'file' && window.OndaFileHandles?.rememberMany) {
+                try {
+                    await window.OndaFileHandles.rememberMany([{
+                        trackId, handle, relativePath: meta.localPath, fileName: file.name
+                    }]);
+                    linkedFileTrackIds.add(String(trackId));
+                    linkedFileIndexState = 'ready';
+                } catch (error) {
+                    console.warn('Browser could not keep linked file reference:', error);
+                }
+            }
             let cached = false;
             try {
-                await idbSetAudioFile(trackId, file, meta); // Same ID; replaces the browser copy, not the Android original.
-                cachedAudioTrackIds.add(trackId);
+                await idbSetAudioFile(trackId, file, meta);
+                cachedAudioTrackIds.add(String(trackId));
                 cached = true;
             } catch (error) {
-                console.warn('Reconnected track is playable this session but could not be cached:', error);
+                console.warn('Reconnected file playable now but not cached:', error);
             }
             playlistTracks = playlistTracks.map(track => getTrackId(track) === trackId
                 ? { ...track, blobFile: file, needsRelink: false } : track);
             saveActiveLibraryState('reconnect-existing-track');
             renderLibraryManager();
-            if (!cached) showToast('Connected for this session; browser storage is unavailable.');
+            if (!cached) showToast('Connected for this session; browser cache could not be saved.');
             const queueIndex = playlistTracks.findIndex(track => getTrackId(track) === trackId);
             if (queueIndex >= 0) switchTrack(queueIndex);
             else addTrackToQueueFromLibrary(trackId, true);
+        }
+
+        reconnectFileInput.addEventListener('change', async () => {
+            const trackId = reconnectTargetId;
+            reconnectTargetId = null;
+            const file = reconnectFileInput.files?.[0] || null;
+            reconnectFileInput.value = '';
+            if (!file || !trackId) return;
+            await applyReconnectedFile(trackId, file);
         });
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
