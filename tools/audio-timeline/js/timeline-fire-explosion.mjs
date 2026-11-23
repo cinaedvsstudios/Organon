@@ -142,24 +142,24 @@ export function renderFireExplosion(ctx,width,height,effect={},seconds=0,strengt
   for(const m of st.smoke){
    if(m.alpha<.004)continue;
    const gray=[m.shade,m.shade+4,m.shade+9];
-   glow(ctx,m.x,m.y,m.r*2.5,
+   glow(ctx,m.x,m.y,m.r*1.52,
     [[0,gray,.40],[.45,gray,.19],[1,gray,0]],m.alpha*alpha*.78);
   }
   ctx.globalCompositeOperation='screen';
   for(const l of st.lobes){
    if(l.hot<.002)continue;
    const flicker=.72+.28*Math.sin(st.time*11+l.phase*20);
-   glow(ctx,l.x,l.y,l.r*(2.3+p.glow*2.2),
+   glow(ctx,l.x,l.y,l.r*(1.45+p.glow*.85),
     [[0,mix(gold,warm,.30),.72],[.17,orange,.57],
      [.46,red,.21],[1,red,0]],alpha*l.hot*flicker);
-   glow(ctx,l.x,l.y,l.r*(.72+p.glow*.28),
+   glow(ctx,l.x,l.y,l.r*(.62+p.glow*.22),
     [[0,mix([255,254,228],warm,.12),.86],
      [.43,gold,.62],[1,orange,0]],alpha*l.hot*(.3+.7*l.highlight));
   }
   // A core flash only at ignition, never an opaque static radial disk.
   if(st.coreIntensity>.001){
    const coreR=Math.max(2,st.radius*.42);
-   glow(ctx,st.center.x,st.center.y,coreR*(2+p.glow),
+   glow(ctx,st.center.x,st.center.y,coreR*(1.4+p.glow*.5),
     [[0,[255,255,246],.92],[.15,warm,.83],
      [.43,orange,.32],[1,red,0]],st.coreIntensity*alpha);
   }
