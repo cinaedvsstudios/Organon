@@ -3697,7 +3697,7 @@
             }, 140);
         }
 
-        function updatedPanel() {
+        function updateNowPlayingPlaylistPanel() {
             const card = document.getElementById('metadata-display-card');
             const panel = document.getElementById('now-playing-playlist-panel');
             const pills = document.getElementById('now-playing-mode-pills');
