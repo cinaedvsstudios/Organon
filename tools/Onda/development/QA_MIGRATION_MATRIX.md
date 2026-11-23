@@ -80,6 +80,10 @@ Legend: PASS, FAIL, NEEDS DEVICE, BLOCKED, NOT RUN. A source finding is not a te
 | DRAW-03 | ONDA-02 | Try short/long tap on track row and ▶ button | Select vs play behaviour matches approved expectation | NEEDS DEVICE |
 | DRAW-04 | ONDA-02 | Search, toggle drawer, reopen, type with Android keyboard | No accidental disappearance/reset of intentionally typed query | NEEDS DEVICE |
 | DRAW-05 | ONDA-02 | Landscape, 320/360/390/420px, accessibility large text | Drawer doesn't cover controls, keyboard doesn't trap focus | NEEDS DEVICE |
+| CURRENT-01 | ONDA-02 | Open Current main screen without Library drawer | Now Playing and Queue are accessible without opening drawer | NEEDS DEVICE |
+| CURRENT-02 | ONDA-02 | Inspect Library drawer views | No Queue drawer tab; browsing/Recents/Playlists/Help preserved | NEEDS DEVICE |
+| CURRENT-03 | ONDA-02 | Add a track to queue from Library drawer | Current main-screen queue updates correctly, no duplicate list in drawer | NEEDS DEVICE |
+| CURRENT-04 | ONDA-02 | Current screen portrait, small font/large font, with player visible | Upcoming playback order remains accessible and doesn't cover transport | NEEDS DEVICE |
 | BG-01 | ONDA-13 | Play MP3, lock screen 5–10min | Audio continues and controls show where supported | NEEDS DEVICE |
 | BG-02 | ONDA-13 | Pause/resume/seek via notifications, Bluetooth/headset | Correct track and state | NEEDS DEVICE |
 | BG-03 | ONDA-13 | Switch apps, receive interruption, return | Onda can resume with correct state without multiple audio elements playing | NEEDS DEVICE |
@@ -156,7 +160,7 @@ Current source after approved icon change:
 ## 8. Open decisions to collect in short conversations
 
 1. When a track is selected on Android, should it behave as it does now (Add to Library), or default to Quick Play? Keep old behaviour unless user requests a change.
-2. Does the user want Queue as a drawer view or as a panel in Current?
+2. **Answered:** Queue / Now Playing must be on the main Current screen; no Queue tab in the drawer.
 3. Should resume positions apply to every track or only longer audio? Proposed technical default: all track IDs with completed-track reset.
 4. Does Android Chrome currently use an installed standalone app, or just a shortcut that opens a browser tab? The icon/status cannot be confirmed from GitHub.
 5. When a music file is deleted from the Library, should its cached browser media be retained until manual cleanup? Safest default: yes.
@@ -182,3 +186,7 @@ For each implemented item, log:
 - Chrome page lifecycle: https://developer.chrome.com/docs/web-platform/page-lifecycle-api
 - Media Session OS transport: https://developer.mozilla.org/en-US/docs/Web/API/Media_Session_API
 - Manifest/app icon guidance: https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/How_to/Define_app_icons
+
+## User placement decision (2026-11-23)
+
+The **Current main workspace** owns Queue and Now Playing; the Library drawer is for library browsing/management. The former mock-up Queue tab has been removed. This is an approved requirement, not an open question. See tests CURRENT-01 through CURRENT-04.
