@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.18" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.17" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
+<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.18" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.19" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
@@ -95,6 +95,22 @@
 <p class="drop-zone-note">
                     Files dropped here are instantly added to your active playlist queue.
                 </p>
+<div class="onda-quick-play-chooser">
+<button type="button" class="btn-pill" id="btn-onda-quick-play" title="Audition a new audio file without adding it to the Library or cache">▶ Quick Play (temporary)</button>
+<input type="file" class="u-hidden" id="onda-quick-play-input" accept="audio/*,.mp3,.wav,.ogg,.oga,.flac,.m4a,.aac,.opus,.webm"/>
+<span class="library-track-meta">Listen without importing. Nothing is saved until you choose Add to Library.</span>
+</div>
+<section class="onda-quick-play-panel" id="onda-quick-play-panel" aria-label="Temporary audio preview" hidden>
+<div class="onda-quick-play-title" id="onda-quick-play-title"></div>
+<p class="library-track-meta">Temporary preview — not in Library, queue, history or browser audio cache. The preview disappears on reload.</p>
+<audio id="onda-quick-play-audio" controls preload="metadata" aria-label="Temporary audio preview controls"></audio>
+<div class="onda-quick-play-actions">
+<button type="button" class="btn-pill" id="btn-onda-quick-replay">Replay preview</button>
+<button type="button" class="btn-pill btn-primary-gold" id="btn-onda-quick-import">Add to Library + Queue</button>
+<button type="button" class="btn-pill btn-muted" id="btn-onda-quick-discard">Discard preview</button>
+</div>
+<div class="library-track-meta" id="onda-quick-play-status" role="status"></div>
+</section>
 </div>
 <!-- Tab 2 View: Listening History -->
 <div class="viewport-content" id="tab-history">
@@ -299,6 +315,7 @@
 <button type="button" class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists" aria-label="Playlists" aria-pressed="false">📜</button>
 <button type="button" class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Mobile icon guide and editor" aria-label="Edit mobile icons" aria-pressed="false">?</button>
 <button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-import-audio" title="Select audio files to add to the library">📥 Add Files</button>
+<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview an unsaved audio file without importing">▶ Quick Play</button>
 <button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="View storage health and cached audio">Storage</button>
 </div>
 <div class="onda-library-status" id="onda-library-status" aria-live="polite"></div>
@@ -704,6 +721,6 @@
 
 
 
-<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/diagnostics.js?v=3.18"></script><script src="js/app-core.js?v=3.18"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
+<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/diagnostics.js?v=3.18"></script><script src="js/app-core.js?v=3.19"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.19"></script><script src="js/quick-play.js?v=3.19"></script>
 </body>
 </html>

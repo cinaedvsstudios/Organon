@@ -13,10 +13,14 @@
     let lastMetadataKey = '';
 
     function getActiveAudioElement() {
+        const temporary = window.OndaQuickPlay?.getActiveAudio?.();
+        if (temporary) return temporary;
         try { return activeAudio || null; } catch (error) { return null; }
     }
 
     function getCurrentTrackMeta() {
+        const temporary = window.OndaQuickPlay?.getMetadata?.();
+        if (temporary) return temporary;
         try {
             if (!currentFile?.name || !virtualLibrary) return null;
             return virtualLibrary[currentFile.name] || null;
@@ -26,6 +30,7 @@
     }
 
     function currentPlaylistName() {
+        if (window.OndaQuickPlay?.getActiveAudio?.()) return 'Quick Play';
         try {
             return typeof getCurrentPlaybackPlaylistName === 'function'
                 ? getCurrentPlaybackPlaylistName()
@@ -138,6 +143,10 @@
     }
 
     function playFromSystem() {
+        if (window.OndaQuickPlay?.getActiveAudio?.()) {
+            window.OndaQuickPlay.play?.();
+            return;
+        }
         try {
             const result = typeof playAudio === 'function' ? playAudio() : getActiveAudioElement()?.play();
             if (result?.catch) result.catch(() => {});
@@ -145,6 +154,10 @@
     }
 
     function pauseFromSystem() {
+        if (window.OndaQuickPlay?.getActiveAudio?.()) {
+            window.OndaQuickPlay.pause?.();
+            return;
+        }
         try {
             if (typeof pauseAudio === 'function') pauseAudio();
             else getActiveAudioElement()?.pause();
@@ -152,12 +165,14 @@
     }
 
     function previousFromSystem() {
+        if (window.OndaQuickPlay?.getActiveAudio?.()) return; // Preview has no queue.
         try {
             if (typeof skipToPreviousTrack === 'function') skipToPreviousTrack();
         } catch (error) {}
     }
 
     function nextFromSystem() {
+        if (window.OndaQuickPlay?.getActiveAudio?.()) return; // Preview has no queue.
         const button = document.getElementById('btn-next');
         if (button) {
             button.click();
@@ -185,6 +200,11 @@
         previoustrack: previousFromSystem,
         nexttrack: nextFromSystem,
         stop: () => {
+            if (window.OndaQuickPlay?.getActiveAudio?.()) {
+                window.OndaQuickPlay.stop?.();
+                bindCurrentAudio();
+                return;
+            }
             pauseFromSystem();
             const audio = getActiveAudioElement();
             if (audio) {

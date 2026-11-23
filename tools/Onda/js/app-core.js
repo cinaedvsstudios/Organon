@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.18';
+        const ONDA_VERSION = 'v3.19';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4015,6 +4015,7 @@
 
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
         function switchWorkspaceTab(tabId) {
+            if (tabId !== 'tab-files') window.OndaQuickPlay?.stopForNavigation?.();
             saveLocalUiStateCheckpoint(`screen-change-before:${tabId}`);
 
             const targetTab = document.getElementById(tabId);
@@ -4066,6 +4067,7 @@
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
         async function playAudio() {
             if (!currentFile) return;
+            window.OndaQuickPlay?.stopForMainPlayback?.();
             const finishPlayResponse = window.OndaDiagnostics?.begin('audio-play');
             const requestedAudio = activeAudio;
             const requestId = trackLoadRequestId;
@@ -6804,6 +6806,23 @@
         } else if (typeof mobileLayoutQuery.addListener === 'function') {
             mobileLayoutQuery.addListener(applySavedLayoutMode);
         }
+
+        // Quick Play's only bridge into the permanent player. It can pause
+        // existing playback or hand off to the *unchanged* import pipeline;
+        // the temporary file itself is never added to app state.
+        window.OndaQuickPlayBridge = Object.freeze({
+            pauseMain: () => {
+                if (currentFile && activeAudio && !activeAudio.paused) pauseAudio();
+            },
+            addToLibrary: file => handleUploadedFiles([file]),
+            notify: message => showToast(String(message || 'Quick Play unavailable.')),
+            onMainPlayback: callback => {
+                if (typeof callback !== 'function') return;
+                [localAudio, streamAudio, window.OndaMidi?.audio].forEach(audio => {
+                    audio?.addEventListener?.('play', callback);
+                });
+            }
+        });
 
         window.OndaLayoutControls = {
             applySavedLayoutMode,

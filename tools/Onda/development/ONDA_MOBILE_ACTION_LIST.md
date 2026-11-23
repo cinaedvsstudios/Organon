@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.18 source development committed; v3.18 adds opt-in, redacted performance measurements for objective startup/render/cache profiling. Android/Netlify deployment and usability verification remain pending.  
+**Status:** v3.11–v3.19 source development committed; v3.19 adds an isolated temporary Quick Play audio preview without importing or caching until explicitly requested. Android/Netlify deployment and usability verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.18** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.19** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md)
 
 ## Agreed product direction
 
@@ -31,7 +31,7 @@
 | ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | **Implemented v3.11; 21 isolated/static checks passed across batch; Android battery QA pending** |
 | ONDA-06 | Closed | Replace existing play symbols | Do not change | Closed — no action |
 | ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | **v3.13: optional remembered file handles added as cache fallback, cache-first retained; device proof pending** |
-| ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **Saved-track Play path improved v3.11; optional new-file Quick Play not yet implemented** |
+| ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **v3.19: temporary one-file audio preview implemented, with explicit Add-to-Library and no cache/queue/history writes beforehand; Android/desktop QA pending** |
 | ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
 | ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.14 adds read-only unlinked/possible-duplicate inventory and preview; no deletion or cleanup commands** |
 | ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.18: opt-in redacted timing records added for startup, restore, search/render, cache writes, playback and sampled visualiser frames; device measurements pending** |
@@ -425,3 +425,19 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Next:** Confirm v3.18 deploy on Android/desktop, export at least one startup and a Library search measurement, then use evidence to determine whether large-library rendering or caching needs further work. Optional ONDA-08 Quick Play for new unsaved files is a separate later change, not a prerequisite for these measurements.
 
 - 2026-11-23 — v2.3: v3.18 developer diagnostics instrumentation committed; runtime performance measurement pending.
+
+## Implementation progress — v3.19 temporary Quick Play (2026-11-23)
+
+[Full release description, privacy constraints and Android/desktop tests](./RELEASE_V3_19.md).
+
+**Source behaviour:** Onda's existing Add workspace now offers **▶ Quick Play (temporary)** with a one-file system picker and its own native audio controls. Mobile Library includes a shortcut to the same picker. A chosen audio file is held in memory and played from a temporary `blob:` URL; it is **not** added to `virtualLibrary`, current playback queue, recents/history, IndexedDB, cloud sync or Library JSON. This means it also needs no automatic cache deletion or TTL. A separate mini panel offers Replay, **Add to Library + Queue**, and Discard. Add explicitly invokes the existing `handleUploadedFiles` importer with no parallel identity/cache implementation. Ordinary Add Files, drag/drop, Remember Folder/Files and already-saved Library Play behaviour remain unchanged. MIDI and video continue through normal Add Files.
+
+**Playback coexistence:** Quick Play pauses the normal saved track; starting normal main playback or navigating away from Add stops the preview and revokes its URL. Its selected File remains available during the same session for Replay or explicit Add. Discard and pagehide release it. Media Session system controls temporarily route to the preview and return to saved playback when it ends/stops; Previous/Next do not mutate the saved queue while previewing.
+
+**Source checks:** 53 consolidated static and isolated tests passed, including blob URL failures, cancellation, repeated replay, explicit importer handoff and Media Session play/pause/seek/stop routing. These are not Android/desktop runtime tests.
+
+**Scope/safety:** No permanent storage, browser-cache migration, automatic deletion, playlist changes or saved-source ID changes before user-directed Add. The temporary module has no localStorage/sessionStorage/IndexedDB/network calls. Original source files are never modified. User-visible filenames use safe textContent. New source is loaded after existing Media Session. Real phone permissions, codecs, lock-screen routing, desktop UI and public Netlify deployment remain unverified.
+
+**Next:** Test v3.19 on the user's actual Android and desktop browser, especially preview playback, native controls, Media Session, saved queue/history unchanged, import after explicit Add and cache persistence on reload. After a successful phone acceptance pass, prioritise observed issues, not speculative feature churn.
+
+- 2026-11-23 — v2.4: v3.19 temporary Quick Play source implemented; real-device QA outstanding.
