@@ -9,6 +9,7 @@ import {isPixelEffect,renderPixelEffect,PIXEL_EFFECT_IDS} from './timeline-pixel
 import {renderPixelScan} from './timeline-pixel-scan.mjs';
 import {renderFlamingDust} from './timeline-ember-dust.mjs';
 import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
+import {renderMistFog} from './timeline-mist-fog.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -19,6 +20,7 @@ import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitc
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
  {id:'hazy-atmosphere',label:'Hazy Atmosphere',group:'effect',category:'Atmospheric',animated:true},
+ {id:'mist-fog-bank',label:'Mist / Fog Bank',group:'effect',category:'Atmospheric',animated:true},
  {id:'rhythmic-flicker',label:'Rhythmic Flicker',group:'effect',category:'Light',animated:true},
  {id:'particle-dust',label:'Floating Dust',group:'effect',category:'Particles/Fire',animated:true},
  {id:'particle-sparks',label:'Electric Sparks',group:'effect',category:'Particles/Fire',animated:true},
@@ -66,21 +68,22 @@ export function normaliseTimelineEffect(effect={}){
  const presetId=ids.has(raw.presetId)?raw.presetId:'light-sweep';
  const swing=['pendulum-swing','rebound-swing'].includes(presetId);
  const shockwave=presetId==='shockwave';
+ const mistFog=presetId==='mist-fog-bank';
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,70),
   speed:clamp(raw.speed,.1,8,1),
-  density:clamp(raw.density,1,120,48),
+  density:clamp(raw.density,1,120,mistFog?73:48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
-  distortion:clamp(raw.distortion,0,100,55),
+  distortion:clamp(raw.distortion,0,100,mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
-  blur:clamp(raw.blur,0,60,24),
+  blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':'#ffd98d'
  };
  if(cameraFrame)return {...base,
   hudScale:clamp(raw.hudScale,60,150,100),
@@ -94,6 +97,11 @@ export function normaliseTimelineEffect(effect={}){
   showBattery:![false,'false',0,'0'].includes(raw.showBattery),
   showCorners:![false,'false',0,'0'].includes(raw.showCorners),
   showReticle:![false,'false',0,'0'].includes(raw.showReticle)
+ };
+ if(mistFog)return {...base,
+  windSpeed:clamp(raw.windSpeed,0,4,1.2),
+  bankHeight:clamp(raw.bankHeight,15,90,64),
+  seed:Math.round(clamp(raw.seed,0,99999,58))
  };
  if(!starburst)return base;
  return {...base,
@@ -287,6 +295,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    ctx.fillStyle=g;ctx.fillRect(-beam,-h*1.6,beam*2,h*3.2);
   }else if(e.presetId==='hazy-atmosphere'){
    renderHazyAtmosphere(ctx,w,h,e,t,strength);
+  }else if(e.presetId==='mist-fog-bank'){
+   renderMistFog(ctx,w,h,e,t,strength);
   }else if(e.presetId==='starburst'){
    renderStarburst(ctx,w,h,e,t,strength);
   }else if(e.presetId==='camera-frame'){
