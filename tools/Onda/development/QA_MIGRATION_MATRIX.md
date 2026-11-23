@@ -435,7 +435,7 @@ Do not treat Actions green as physical-device acceptance. Continue using v3.20's
 | V22-02 Redacted export | `sourceVersion` and `capabilities.loadedVersion` equal the loaded version | SOURCE FIX; NEEDS DEVICE |
 | V22-03 Future-version resilience | Cached older QA module reports a different valid app version, not a false mismatch | SIMULATED; NEEDS BROWSER |
 | V22-04 Malformed version | HTML, long or invalid version values return `unavailable`; never enter export | SIMULATED; NEEDS BROWSER |
-| V22-05 Repeatable test longevity | CI reads the current source version and matching HTML asset query without hard-coded v3.21 | SOURCE FIX; NEEDS CI |
+| V22-05 Repeatable test longevity | CI reads the current source version and matching HTML asset query without hard-coded v3.21 | PASS GitHub Actions Node 22 (run #45229083186) |
 | V22-06 Playback/cache safety | Onda music, IndexedDB, File System Access, Quick Play and Media Session unchanged | CODE SCOPE; NEEDS DEVICE |
 | V22-07 Netlify production | A live browser actually serves v3.22 and both revised JS assets | NEEDS DEPLOY / BROWSER |
 
