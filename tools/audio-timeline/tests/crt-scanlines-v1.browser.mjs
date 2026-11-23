@@ -1,4 +1,4 @@
-/** Actual Chrome acceptance: #60 source-aware analogue horizontal sync failure. */
+/** Actual Chrome acceptance: #61 source-aware analogue horizontal sync failure. */
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright-core';
 import {createServer} from 'node:http';
@@ -33,7 +33,7 @@ try{
   c.fillStyle='#fafafa';c.fillRect(26,113,104,26);
   const source={id:'source',type:'video',sourceName:'example.png',file:{name:'example.png'},
     start:0,clipDuration:3,visible:true,opacity:1,blendMode:'source-over',media:scene,order:2};
-  const overlay={id:'signal',type:'sticker',sourceName:'generated.png',
+  const overlay={id:'crt',type:'sticker',sourceName:'generated.png',
     file:{name:'generated.png'},start:0,clipDuration:3,visible:true,
     opacity:1,blendMode:'source-over',media:scene,order:0};
   const canvas=document.createElement('canvas');canvas.width=W;canvas.height=H;
@@ -77,13 +77,13 @@ try{
     sampledAlpha:Array.from({length:W*H},(_,i)=>signal.data[i*4+3]).every((v,i)=>v===sourcePixels.data[i*4+3]),
     pitch:signal.state.params.pitch,errors};
  });
- console.log('[MotoriClip #60 CRT Scanlines real Chrome PNG] '+proof.png);
- console.log('[MotoriClip #60 recovered video Chrome PNG] '+proof.recoveryPng);
- console.log('[MotoriClip #60 CRT Scanlines Chrome metrics] '+JSON.stringify(
+ console.log('[MotoriClip #61 CRT Scanlines real Chrome PNG] '+proof.png);
+ console.log('[MotoriClip #61 recovered video Chrome PNG] '+proof.recoveryPng);
+ console.log('[MotoriClip #61 CRT Scanlines Chrome metrics] '+JSON.stringify(
     Object.fromEntries(Object.entries(proof).filter(([name])=>!['png','recoveryPng'].includes(name)))));
  assert.deepEqual(pageErrors,[]);
  assert.deepEqual(proof.errors,[]);
- assert.equal(proof.sourceAware,true,'Must deform actual lower-layer video source');
+ assert.equal(proof.sourceAware,true,'Must process the real lower-layer video source');
  assert.ok(proof.changed>1000,'Real image video must display substantial CRT scanline raster');
  assert.ok(proof.highDeviation>20,'CRT raster must create visible fine luminance gaps');
  assert.ok(proof.changedRows>20,'Fine raster lines must affect many rows of actual footage');
@@ -94,7 +94,7 @@ try{
  assert.equal(proof.hidden,proof.baseline,'Hiding the effect must restore clean video');
  assert.equal(proof.pitch,3,'CRT raster pitch must be preserved in real Chrome');
  for(const [name,v] of Object.entries(proof.variants))assert.notEqual(v,proof.hashes[1],name+' setting has no effect on real Chrome pixels');
- console.log('[MotoriClip #60 Chrome compositor] PASS');
+ console.log('[MotoriClip #61 Chrome compositor] PASS');
  const editor=await browser.newPage({viewport:{width:1450,height:900}});
  const crashes=[];editor.on('pageerror',e=>crashes.push(String(e)));
  await editor.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',{waitUntil:'domcontentloaded'});
@@ -112,5 +112,5 @@ try{
  await editor.locator('.timeline-clip.sticker:not(.placeholder)').first().click();
  assert.equal(await slider.inputValue(),'5.5','Native Inspector must retain edited raster pitch');
  assert.deepEqual(crashes,[],'No uncaught errors wiring effect controls into the editor');
- console.log('[MotoriClip #60 native Inspector] PASS');
+ console.log('[MotoriClip #61 native Inspector] PASS');
 }finally{await browser.close();await new Promise(done=>server.close(done));}
