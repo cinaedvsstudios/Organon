@@ -115,9 +115,41 @@ async function desktopSmoke(browser, baseUrl) {
         assert.equal(report.capabilities.secureContext, true);
         assert.equal(report.capabilities.installedAppComponents.quickPlay, true);
         assert.ok(Object.values(report.manualChecks).every(x => x === 'not-tested'));
-        const pendingDownload = page.waitForEvent('download');
+        // Capture diagnostics without changing Onda's actual download logic.
+        await page.evaluate(() => {
+            window.__ondaExportProbe = { blobs: [], linkClicks: [], errors: [] };
+            const originalCreate = URL.createObjectURL.bind(URL);
+            URL.createObjectURL = blob => {
+                const uri = originalCreate(blob);
+                window.__ondaExportProbe.blobs.push({ type: blob.type, size: blob.size });
+                return uri;
+            };
+            const originalClick = HTMLAnchorElement.prototype.click;
+            HTMLAnchorElement.prototype.click = function (...args) {
+                window.__ondaExportProbe.linkClicks.push({
+                    download: this.download, hrefIsBlob: this.href.startsWith('blob:')
+                });
+                return originalClick.apply(this, args);
+            };
+            window.addEventListener('error', error => {
+                window.__ondaExportProbe.errors.push(String(error.message || 'unknown'));
+            });
+        });
+        const pendingDownload = page.waitForEvent('download', { timeout: 9000 });
         await page.locator('#btn-onda-device-qa-export').click();
-        const download = await pendingDownload;
+        let download;
+        try {
+            download = await pendingDownload;
+        } catch (error) {
+            const probe = await page.evaluate(() => ({
+                ...window.__ondaExportProbe,
+                exportDisabled: document.getElementById('btn-onda-device-qa-export').disabled,
+                uaActive: navigator.userActivation?.isActive ?? null,
+                reportAvailable: Boolean(window.OndaDeviceQA?.snapshot?.())
+            }));
+            console.error('desktop QA export diagnostic:', JSON.stringify(probe));
+            throw error;
+        }
         const exported = JSON.parse(await readFile(await download.path(), 'utf8'));
         assert.equal(exported.sourceVersion, version);
         assert.equal(exported.capabilities.loadedVersion, version);
