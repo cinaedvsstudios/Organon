@@ -142,6 +142,7 @@
     function runChecks() {
         lastCapabilities = capabilities();
         displayCapabilities(lastCapabilities);
+        downloadButton.disabled = false;
         return lastCapabilities;
     }
 
