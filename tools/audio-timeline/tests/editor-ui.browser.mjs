@@ -850,6 +850,36 @@ try{
     assert.notEqual(burstStart,burstLater,'Starburst preview must rotate in time');
     assert.equal(burstStart,await sampleEffect(20),'Starburst reverse seek is deterministic');
     await page.locator('#text-preview-close').click();
+    // #59: native snow controls must really appear and operate on selected
+    // TV Static clip, while unrelated colour/scale/angle knobs stay hidden.
+    await page.locator('#effect-category').selectOption('Glitch');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    await page.locator('[data-preset-id="tv-static"]').click();
+    await page.locator('#effect-tv-static-controls').waitFor({state:'visible',timeout:15000});
+    assert.equal(await page.locator('#effect-intensity-label').innerText(),'Snow opacity (%)');
+    assert.equal(await page.locator('#effect-density-label').innerText(),'Static coverage');
+    assert.ok(await page.locator('#effect-color-control').isHidden(),'RGB snow is not a flat tint');
+    assert.ok(await page.locator('#effect-scale-control').isHidden(),'Random per-pixel TV snow has no scale transform');
+    assert.ok(await page.locator('#effect-direction-control').isHidden());
+    assert.ok(await page.locator('#effect-distortion-control').isHidden());
+    await page.locator('#effect-static-mode').selectOption('color');
+    await page.locator('#effect-static-brightness').evaluate(input=>{
+        input.value='34';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-static-variance').evaluate(input=>{
+        input.value='91';input.dispatchEvent(new Event('input',{bubbles:true}));
+    });
+    await page.locator('#effect-static-seed').fill('4312');
+    await page.locator('#effect-static-seed').dispatchEvent('input');
+    assert.equal(await page.locator('#effect-static-mode').inputValue(),'color');
+    assert.equal(await page.locator('#effect-static-brightness').inputValue(),'34');
+    assert.equal(await page.locator('#effect-static-variance').inputValue(),'91');
+    assert.equal(await page.locator('#effect-static-seed').inputValue(),'4312');
+    await page.locator('[data-preset-id="tv-static"]').click({button:'right'});
+    const snowStart=await sampleEffect(20),snowLater=await sampleEffect(170);
+    assert.notEqual(snowStart,snowLater,'TV Static preview must evolve fresh pixels');
+    assert.equal(snowStart,await sampleEffect(20),'TV Static reverse seek must be identical');
+    await page.locator('#text-preview-close').click();
     await page.locator('[data-library-tab="media"]').click();
     assert.deepEqual(crashes,[],'Desktop editor raised uncaught script errors');
     console.log('[MotoriClip UI] PASS compact header, dialogs, track/ruler/transition actions, FPS/canvas/zoom, history and mode switching');
