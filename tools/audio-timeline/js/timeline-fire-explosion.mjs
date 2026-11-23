@@ -86,7 +86,7 @@ export function buildFireExplosionFrame(width,height,effect={},seconds=0){
   smoke.push({x:smokeX,y:smokeY,r:r*(1.35+age*1.4),alpha:smokeAlpha,
    shade:Math.round(24+rand(k,p.seed+11)*33)});
  }
- const sparks=Math.round((18+p.density*.65)*p.ejecta);
+ const sparks=Math.round((12+p.density*.38)*p.ejecta);
  for(let i=0;i<sparks;i++){
   const k=(i*157+generation*5099+p.seed*13)|0;
   const theta=rand(k,p.seed+20)*Math.PI*2;
@@ -98,7 +98,7 @@ export function buildFireExplosionFrame(width,height,effect={},seconds=0){
   const jitter=.035*p.turbulence*size*Math.sin(age*16+theta*5);
   const x=cx+vx*age+windX*age*.85+jitter;
   const y=cy+vy*age+.5*size*.62*age*age-size*.10*age+jitter*.5;
-  const dx=vx*size*.00033,dy=vy*size*.00033+size*.014*age;
+  const dx=vx*size*.00014,dy=vy*size*.00014+size*.007*age;
   const alpha=Math.pow(1-travel,.78)*p.ejecta*(.5+.5*rand(k,p.seed+23));
   ejecta.push({x,y,dx,dy,alpha,
    r:Math.max(.55,(.4+2.3*rand(k,p.seed+24))*p.size),
@@ -108,9 +108,14 @@ export function buildFireExplosionFrame(width,height,effect={},seconds=0){
  const sections=94;
  for(let i=0;i<=sections;i++){
   const angle=Math.PI*2*i/sections;
+  const noisePosition=i/5;
+  const noiseCell=Math.floor(noisePosition);
+  const noiseBlend=smooth(noisePosition-noiseCell);
+  const irregular=(rand(noiseCell+generation*301,p.seed+50)*(1-noiseBlend)+
+   rand(noiseCell+generation*301+1,p.seed+50)*noiseBlend)-.5;
   const warp=Math.sin(angle*5.7+generation)*.16+
    Math.sin(angle*11.3+generation*2)*.08+
-   (rand(i+generation*301,p.seed+50)-.5)*.22*p.turbulence;
+   irregular*.18*p.turbulence;
   const bump=1+warp*p.turbulence;
   const rr=radius*(.92+.14*p.shock)*bump;
   shock.push({x:cx+Math.cos(angle)*rr+windX*age*.5,
@@ -167,7 +172,7 @@ export function renderFireExplosion(ctx,width,height,effect={},seconds=0,strengt
   if(st.shockAlpha>.001){
    ctx.save();
    ctx.strokeStyle=rgba(mix(gold,warm,.32),st.shockAlpha*.55*alpha);
-   ctx.lineWidth=Math.max(.7,st.radius*(.012+.013*p.shock));
+   ctx.lineWidth=Math.max(.7,st.radius*(.010+.009*p.shock));
    ctx.lineCap='round';ctx.lineJoin='round';
    ctx.beginPath();
    let drawing=false;
@@ -181,7 +186,7 @@ export function renderFireExplosion(ctx,width,height,effect={},seconds=0,strengt
   for(const e of st.ejecta){
    if(e.alpha<.01)continue;
    ctx.save();
-   ctx.lineCap='round';ctx.strokeStyle=e.heat>.4?rgba(warm,e.alpha*alpha):rgba(red,e.alpha*alpha*.76);
+   ctx.lineCap='round';ctx.strokeStyle=e.heat>.4?rgba(warm,e.alpha*alpha*.76):rgba(red,e.alpha*alpha*.60);
    ctx.lineWidth=Math.max(.45,e.r*.82);
    ctx.beginPath();
    ctx.moveTo(e.x-e.dx*3,e.y-e.dy*3);ctx.lineTo(e.x,e.y);ctx.stroke();
