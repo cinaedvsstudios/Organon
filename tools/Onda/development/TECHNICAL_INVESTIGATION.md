@@ -98,11 +98,11 @@ Current owner: app-core.js startVisualizer (~5130), drawIdleOrStreamVisualizer (
 6. Ensure overlapping calls to startVisualizer do not create extra loops. Never suspend audioCtx or pause activeAudio as a way of saving canvas CPU. The MIDI adapter must still play with visualiser idle.
 7. Measure RAF callback counts during 30 seconds paused, playing, hidden, and visible; frame count while paused should fall to zero after a settled final frame. Compare actual battery/CPU only through real-device observations, not guessed percentages.
 
-### ONDA-03 — Track / position restore (P1)
+### ONDA-03 — Track / position restore (P3 optional)
 
 Current owner: app-core.js saveLastPlayedTrack (~3657), restoreLastPlayedTrack (~3668), attachAudioEvents (~3050), loadTrack (~3211), handleTrackEnded (~3020), seek input events (~3750+), page lifecycle (~6181); midi adapter ~447–545.
 
-1. Check if current user expectation is all tracks versus longer tracks; proposed default **remember last position for all tracks**, with a completed-track reset, configurable in settings later only if desired.
+1. **New user priority:** resume position P3 optional, only if low effort. Avoid delaying essential battery or storage work.
 2. Store one bounded record per track keyed by stable ID, plus last active track ID. Suggested checkpoint interval 10–15 seconds while audio is playing, on pause, manual seek, track switch and document hidden. Avoid saving a huge catalogue JSON at each timeupdate (~4 times/sec).
 3. Restore in strict order: catalogue finishes restoring; selected track is resolved/loaded; media loadedmetadata or MIDI parse completes; validate finite seconds/duration; seek to clamped position. Use per-load request token to avoid a late seek on the wrong track.
 4. Start playback only on an explicit user gesture when reopening the app; restoring position must not attempt unsolicited autoplay.
@@ -156,7 +156,7 @@ Investigate and test before changing:
 
 Current local input is always handleUploadedFiles: populates virtualLibrary, playlist queue, autosaves and caches. Direct-stream preview (~4510) already demonstrates the idea of play without saving *for URLs*, but local files don't have an equivalent mode.
 
-Proposed: present after selecting a file (or an adjacent action) **Play once / Add to Queue / Add to Library**; keep default unchanged until user approves. Session mode must not invoke permanent import, history registration, cloud save or IndexedDB media cache unless explicitly chosen. Queue mode's survival after restart depends on access; communicate that. Revoke object URLs when truly unused, but not during pause/resume. The MIME extension filter and MIDI detection should be shared, not copied.
+**Library track Play must be immediate:** do not open an add/import chooser for a saved entry. Resolve its File/cache/handle and play. If permission truly unavailable, offer one Reconnect and preserve the record. Present **Play once / Add to Queue / Add to Library** only optionally for newly selected **unsaved** files; ordinary import default unchanged. Session mode must not invoke permanent import, history registration, cloud save or IndexedDB media cache unless explicitly chosen. Queue mode's survival after restart depends on access; communicate that. Revoke object URLs when truly unused, but not during pause/resume. The MIME extension filter and MIDI detection should be shared, not copied.
 
 ### ONDA-13 — Android background playback and Media Session (P1)
 
@@ -181,11 +181,11 @@ Watch for:
   
 Don't add virtualization or a worker until a real mobile library demonstrates noticeable lag. Suggested staged goals: under ~150 ms feedback for small search (goal, not measurement); measure 100/1,000/5,000 track synthetic catalogues on Android/desktop in dev/test context, then choose debounce/windowing/indexing only when needed.
 
-### ONDA-09 — Future online playable library (P3)
+### ONDA-09 — Future GitHub Pages online playable library (P3)
 
 Current cloud-sync.js and Netlify Blobs endpoint synchronize **device-profile JSON backups**, not a shared accessible playable media catalogue. The backend supports a limited shared-key system (including stream-library and metadata-overlay), but it is guarded with one ONDA_SYNC_SECRET. Don't assume this is a suitable public media hosting/authentication solution.
 
-Plan source-aware remote JSON catalogue + authenticated or permitted playable URLs, paginated remote search and lazy artwork. When online, fetch and show source status; on offline/error, local audio continues independently. navigator.onLine can be a hint, not a guarantee remote host reachable; handle actual HTTP/media failures. If offline cache is later requested, it requires explicit byte count and source permission/rights.
+Use the user's selected GitHub Pages public static media host: one JSON catalogue and direct audio file URLs, with optional future search/pagination and lazy artwork. No second host or backend is required. When online, fetch and show source status; on offline/error, local audio continues independently. navigator.onLine can be a hint, not a guarantee remote host reachable; handle actual HTTP/media failures. If offline cache is later requested, it requires explicit byte count and source permission/rights.
 
 Differentiate a true direct audio file/stream that Onda can play in streamAudio from a YouTube/Spotify/Apple Music external/embed reference. Do not attempt unsupported downloads or claim those providers are built-in music files. Hosting/storage/provider choice remains open.
 
@@ -205,7 +205,7 @@ Video is low-use and deferred. Current intake accepts video MIME/extensions but 
 
 **Phase 0: baseline and backup** — record app version/source hashes, export Everything JSON, explain JSON does not contain music; verify representative old cached files. No destructive cleanup. Prepare test seed catalogue without real private music.
 
-**Phase 1: low-risk playback foundation** — adjust app-core.js visualiser scheduler and resume logic, bridge MIDI lifecycle where necessary, add event wiring to media-session.js only if tests indicate. Keep index.html markup/controls stable.
+**Phase 1: low-risk playback foundation** — fix visualiser idle scheduler and guarantee one-tap Library playback with automatic cache/source resolution; preserve Media Session/MIDI and icons. Resume position is optional P3.
 
 **Phase 2: read-only storage instrumentation** — add accurate IndexedDB/StorageManager measurements and track availability statuses into existing Storage Health. Preserve schema v2; no file deletion.
 
@@ -247,7 +247,7 @@ NOT VERIFIED: how Onda renders on user's phone, installed-mode icon update, actu
 
 ## G. Investigation conclusion
 
-The immediate implementation is straightforward enough to specify in advance for visualiser idle lifecycle and playback resume. Storage architecture is also well-defined conceptually, but its choice of *default local-file cache versus remembered direct file handle* needs one real Android handle-persistence experiment and a measured cache inventory. Drawer enhancements and online library hosting remain product decisions; they should not be coded speculatively.
+The immediate implementation is specified for visualiser lifecycle and reliable library playback; resume position is P3 and does not block the critical path. Storage architecture is also well-defined conceptually, but its choice of *default local-file cache versus remembered direct file handle* needs one real Android handle-persistence experiment and a measured cache inventory. Drawer enhancements and online library hosting remain product decisions; they should not be coded speculatively.
 
 This technical file is the source-of-truth implementation blueprint. [QA_MIGRATION_MATRIX.md](./QA_MIGRATION_MATRIX.md) is the test/rollback companion; [ONDA_MOBILE_ACTION_LIST.md](./ONDA_MOBILE_ACTION_LIST.md) is the short decision register.
 
@@ -258,3 +258,13 @@ The user rejected the proposed Queue drawer tab. The correct architecture is: **
 The existing `index.html` already provides `#tab-btn-library` labelled Current, `#metadata-display-card`, `#now-playing-playlist-panel` (initially `hidden`) and `#now-playing-mode-pills` (initially `u-hidden`). The code has `updateNowPlayingPlaylistPanel()`, `setNowPlayingVisibilityToggle()`, and `setNowPlayingMode()`. Before coding, trace exactly what toggles their visibility and which queue type is shown: active playlist, playback queue, or both. Avoid conflating persistent playlists with the ephemeral playback queue.
 
 Implementation acceptance: Current screen presents now-playing context and upcoming playback order with manageable tap targets; transport remains visible; no Queue tab within drawer; existing mobile drawer icon customisation remains intact; adding a track from the Library drawer updates Current without navigating away unless the user chooses to switch. The companion HTML now demonstrates this division.
+
+## I. 2026-11-23 user decisions / exact implementation rules
+
+**Saved Library:** Clicking Play on an existing stored entry should resolve from in-session File, legacy IndexedDB cache or authorised stored file handle and start playback. Do not show Import/Add/Quick Play again, do not create duplicate entries, do not cache duplicate bytes. If the original and cache genuinely are inaccessible, provide one Reconnect action without deleting metadata or playlist membership. Quick Play is optional only for files the user has *not* yet added.
+
+**Resume:** P3 optional low effort only. Avoid introducing new modal prompts; code only if safe and inexpensive after primary performance fixes.
+
+**Online source:** GitHub Pages public media + static JSON catalogue. Example JSON: `{"version":1,"tracks":[{"id":"example-1","title":"Example","path":"audio/example.mp3"}]}`. Resolve media paths relative to verified Pages base, keep IDs distinct from device-local tracks, don't use GitHub blob-view URLs as streams. Onda on Netlify fetches Pages catalogue online only; local library still works offline. Test cross-origin JSON fetch/CORS and streaming playback and seek from mobile, with existing streamAudio Web Audio analyser limitations. Pages content public even for private-source repos where Pages supported; only distribute permitted audio. GitHub Pages published site maximum 1 GB, bandwidth soft 100 GB/month, regular Git file maximum 100 MiB; Git LFS unsupported for Pages. No alternative hosting service recommended absent actual limitations.
+
+References: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage
