@@ -503,3 +503,11 @@ Confirmed in actual Chrome: full Onda page starts and announces v3.22; Storage H
 **Still unverified:** Actual Android Chrome on user's phone, installed shortcut, long-lived permissions/file reconnection, lock-screen/headphone controls, offline behavior, measured battery/large-library performance, and live production Netlify deployment. No real user files, profiles, cache or media data were accessed. The change is tests/CI/docs only; **Onda application version remains v3.22**.
 
 - 2026-11-23 — v2.9: durable actual Chrome smoke test added; real Android acceptance still required.
+
+## v3.22 real browser offline restore/playback proof (2026-11-23)
+
+Extended the actual Chromium smoke suite beyond merely counting saved blobs: [GitHub Actions run #45245006631](https://github.com/cinaedvsstudios/Organon/actions/runs/45245006631) passed the original source suite and the browser test proving that the deliberately imported synthetic WAV reappears as a saved Library entry after reload, has a cached/ready source rather than a Reconnect prompt, and actually decodes and advances playback from IndexedDB while network is disabled after load. Audio cache count remains unchanged during restored playback.
+
+This is a significant **browser source-of-truth check** for the v3.13+ cached media fallback and Library restore path, not proof of Android offline cold-start, permissions, phone screen-lock or device battery behaviour. No production runtime version bump and no media storage changes.
+
+- 2026-11-23 — v2.10: commit real Chrome offline after-reload playback regression coverage.
