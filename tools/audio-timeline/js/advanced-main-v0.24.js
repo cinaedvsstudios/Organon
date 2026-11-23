@@ -102,7 +102,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
         effectDuration:document.getElementById('effect-duration'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection','hudScale','frameRate','timecodeOffset','batteryLevel','jitter','recColor','showRec','showTimecode','showBattery','showCorners','showReticle','windSpeed','bankHeight','seed','staticMode','staticBrightness','staticVariance','staticSeed'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction',hudScale:'effect-hud-scale',frameRate:'effect-frame-rate',timecodeOffset:'effect-timecode-offset',batteryLevel:'effect-battery-level',recColor:'effect-rec-color',showRec:'effect-show-rec',showTimecode:'effect-show-timecode',showBattery:'effect-show-battery',showCorners:'effect-show-corners',showReticle:'effect-show-reticle',windSpeed:'effect-wind-speed',bankHeight:'effect-bank-height',seed:'effect-seed',staticMode:'effect-static-mode',staticBrightness:'effect-static-brightness',staticVariance:'effect-static-variance',staticSeed:'effect-static-seed'})[name]||'effect-'+name)])),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection','hudScale','frameRate','timecodeOffset','batteryLevel','jitter','recColor','showRec','showTimecode','showBattery','showCorners','showReticle','windSpeed','bankHeight','seed','staticMode','staticBrightness','staticVariance','staticSeed','signalLoss','colorBleed','rollRate','signalSeed'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction',hudScale:'effect-hud-scale',frameRate:'effect-frame-rate',timecodeOffset:'effect-timecode-offset',batteryLevel:'effect-battery-level',recColor:'effect-rec-color',showRec:'effect-show-rec',showTimecode:'effect-show-timecode',showBattery:'effect-show-battery',showCorners:'effect-show-corners',showReticle:'effect-show-reticle',windSpeed:'effect-wind-speed',bankHeight:'effect-bank-height',seed:'effect-seed',staticMode:'effect-static-mode',staticBrightness:'effect-static-brightness',staticVariance:'effect-static-variance',staticSeed:'effect-static-seed',signalLoss:'effect-signal-loss',colorBleed:'effect-color-bleed',rollRate:'effect-roll-rate',signalSeed:'effect-signal-seed'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -1600,20 +1600,22 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         const isCameraFrame=track?.effectOverlay?.presetId==='camera-frame';
         const isMistFog=track?.effectOverlay?.presetId==='mist-fog-bank';
         const isTVStatic=track?.effectOverlay?.presetId==='tv-static';
+        const isSignalInterference=track?.effectOverlay?.presetId==='signal-interference';
         document.getElementById('effect-tv-static-controls').hidden=!isTVStatic;
-        document.getElementById('effect-color-control').hidden=isTVStatic;
+        document.getElementById('effect-signal-interference-controls').hidden=!isSignalInterference;
+        document.getElementById('effect-color-control').hidden=isTVStatic||isSignalInterference;
         document.getElementById('effect-mist-fog-controls').hidden=!isMistFog;
         document.getElementById('effect-starburst-controls').hidden=!isStarburst;
         document.getElementById('effect-camera-frame-controls').hidden=!isCameraFrame;
         document.getElementById('effect-density-control').hidden=isStarburst||isCameraFrame;
-        document.getElementById('effect-scale-control').hidden=isStarburst||isCameraFrame||isTVStatic;
-        document.getElementById('effect-direction-control').hidden=isCameraFrame||isTVStatic;
-        document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':isMistFog?'Fog opacity (%)':isTVStatic?'Snow opacity (%)':'Intensity (%)';
+        document.getElementById('effect-scale-control').hidden=isStarburst||isCameraFrame||isTVStatic||isSignalInterference;
+        document.getElementById('effect-direction-control').hidden=isCameraFrame||isTVStatic||isSignalInterference;
+        document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':isMistFog?'Fog opacity (%)':isTVStatic?'Snow opacity (%)':isSignalInterference?'Signal strength (%)':'Intensity (%)';
         document.getElementById('effect-direction-label').textContent=isStarburst?'Starting angle (°)':isMistFog?'Wind direction (°)':'Direction (°)';
         document.getElementById('effect-color-label').textContent=isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':isMistFog?'Mist colour':'Colour';
-        document.getElementById('effect-density-label').textContent=isMistFog?'Fog density':isTVStatic?'Static coverage':'Density';
+        document.getElementById('effect-density-label').textContent=isMistFog?'Fog density':isTVStatic?'Static coverage':isSignalInterference?'Interference frequency':'Density';
         document.getElementById('effect-scale-label').textContent=isMistFog?'Bank spread (%)':'Scale (%)';
-        document.getElementById('effect-distortion-label').textContent=isMistFog?'Rolling turbulence (%)':'Distortion (%)';
+        document.getElementById('effect-distortion-label').textContent=isMistFog?'Rolling turbulence (%)':isSignalInterference?'Horizontal displacement (%)':'Distortion (%)';
         document.getElementById('effect-blur-label').textContent=isMistFog?'Edge feathering (%)':'Blur (px)';
         document.getElementById('effect-origin-controls').hidden=
             !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
