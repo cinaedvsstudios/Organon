@@ -1,11 +1,13 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** Preliminary working backlog + source investigation in progress  
+**Status:** Static source research completed and documented; mobile-device verification and user choices remain before code changes  
 **Created:** 2026-11-23  
 **Application:** Onda Media Player, currently identified as v3.10 in `js/app-core.js`  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** Research and mock-ups first; do **not** change the live player without review.  
-**Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)
+**Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
+**Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
+**QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)
 
 ## Agreed product direction
 
@@ -22,19 +24,19 @@
 | ID | Priority | Item | Decision | Current status |
 |---|---|---|---|---|
 | ONDA-01 | P3 / later | Video playback | Deferred, low use | Backlog |
-| ONDA-02 | P1 | Expand and simplify mobile Library drawer | Preserve existing drawer | Investigation |
-| ONDA-03 | P1 | Resume last track **and position** | Approved | Investigation |
+| ONDA-02 | P1 | Expand and simplify mobile Library drawer | Preserve existing drawer | Fully mapped; static markup gap to verify on phone |
+| ONDA-03 | P1 | Resume last track **and position** | Approved | Detailed implementation path ready; Android/MIDI test pending |
 | ONDA-04 | P3 / scale | Large-library search/render optimisation | Not a present user issue | Monitor until needed |
-| ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | Confirmed code issue |
+| ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | Source issue confirmed; detailed implementation path ready |
 | ONDA-06 | Closed | Replace existing play symbols | Do not change | Closed — no action |
-| ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | Confirmed code issue; design investigation |
-| ONDA-08 | P2 | Quick Play separate from permanent import | Proposed | Investigate |
-| ONDA-09 | P3 / future | Online media library | Connected-only mode; local remains usable offline | Architecture planning |
-| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | Investigation |
-| ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | Investigation |
-| ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | Investigation |
-| ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Investigation |
-| ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | Investigation |
+| ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | Source architecture mapped; Android handle proof pending |
+| ONDA-08 | P2 | Quick Play separate from permanent import | Proposed | Import pathway mapped; behaviour approval pending |
+| ONDA-09 | P3 / future | Online media library | Connected-only mode; local remains usable offline | Current cloud/stream architecture mapped; hosting decision pending |
+| ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | Read-only inventory & cleanup safeguards specified |
+| ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | Specific instrumentation points defined |
+| ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | Source-resolver design ready; actual permission testing pending |
+| ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
+| ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | CSS/API review done; computed style and interaction QA pending |
 | ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Use approved bronze/charcoal/cyan circle; don't change player controls | Implemented in GitHub; Android device check pending |
 
 **Priority legend:** P0 = first technical fix/safeguard; P1 = near term; P2 = useful follow-up; P3 = future/conditional. Priority is not a claim that current user-visible breakage has been reproduced.
@@ -248,3 +250,32 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 **Follow-up:** Verify Netlify deployment and inspect Android Chrome's home-screen appearance, label and launch behaviour. The browser may retain an old icon until the user removes and recreates the shortcut. If Chrome requires an actual 512×512 PNG rather than the SVG entry for a fully installable experience, add a true 512 PNG from the original approved source. A separate maskable/padded icon could be considered only if needed because the user's preferred design has transparent outer space. Do not add a background square.
 
 No service worker or media cache changes were included.
+
+
+## Completed planning investigation — research status (2026-11-23)
+
+The source audit now covers all 6,195 lines of the main app-core.js module, the page markup, audio/MIDI/Media Session interfaces, JSON cloud sync, Netlify endpoint, mobile CSS, storage keys and current PWA files. This means the code-dependent investigation is now consolidated; it does **not** mean every bug is reproduced or that an Android hardware test has happened.
+
+**Files to work from:**
+
+- [TECHNICAL_INVESTIGATION.md](./TECHNICAL_INVESTIGATION.md) — complete implementation blueprint with present behaviour, verified function pointers, suggested data models, rollout dependencies, test limitations and external API verification.
+- [QA_MIGRATION_MATRIX.md](./QA_MIGRATION_MATRIX.md) — Android test cases, data protection, rollback procedures, source migration, icon tests and release gates. All hardware tests correctly marked NOT RUN / NEEDS DEVICE.
+- [mobile-review.html](./mobile-review.html) — interactive visual proposal; existing production UI has not been replaced.
+
+**Important additional findings:**
+1. The mobile CSS and JS reference special icon-view buttons, but the matching .mobile-db-icon-btn elements and mobile icon help panel are not present in the static index.html. Treat this as a UI verification target before adding more tabs, not a confirmed phone complaint.
+2. The MIDI module maintains its own playback scheduler and audio-like adapter (not an HTML audio element). Resume and Media Session changes need an explicit MIDI bridge. It also writes different symbols to the play button; preserve the user's preferred original controls unless they approve a correction.
+3. The library's “Needs relink” status and Check Files use in-memory blobs; they may be wrong for tracks saved in IndexedDB and only hydrated when played.
+4. Deleting a library listing does not delete its IndexedDB media cache record. This can leave orphaned cached bytes. Investigate and offer **manual cleanup**, not implicit deletion.
+5. UI resize/orientation callbacks can trigger full library catalogue autosaves through saveLocalUiStateCheckpoint. Mark batching as a measurable optimisation candidate.
+6. Cloud sync is JSON catalogue/profile sync, not backup of actual music. The future online media library is an entirely separate feature.
+7. Android file handles are supported by recent Chrome, but persistence and reauthorisation must be validated on the user's phone before removing automatic caching as the default.
+8. Icon setup is committed, but a true 512×512 PNG and installed-home-screen verification remain open; current SVG wrapper contains a 192px raster.
+
+**Implementation order after the review:** Visualiser lifecycle and resume → read-only cache/status diagnostics → test saved Android file handles → safe media resolver/migration → drawer & Quick Play → online library later. No current library data should be erased automatically, including on upgrade.
+
+**Changes performed in this investigation:** Research documentation only. No playback, visualiser, import, IndexedDB schema, cloud endpoint or responsive CSS production code was changed.
+
+## Change journal, continued
+
+- 2026-11-23 — v1.3 extensive static audit finished; added detailed technical implementation blueprint and Android QA/migration matrix, linked to companion HTML review. Live player unchanged.
