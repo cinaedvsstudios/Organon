@@ -12,6 +12,7 @@ import {renderHazyAtmosphere} from './timeline-hazy-atmosphere.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
+import {renderGodRays} from './timeline-god-rays.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -96,7 +97,7 @@ function captureCompositeFrame(ctx,w,h){
  context.drawImage(ctx.canvas,0,0,w,h);
  return canvas;
 }
-const SOURCE_EFFECTS=new Set(['pendulum-swing','rebound-swing','vibration-flash',
+const SOURCE_EFFECTS=new Set(['god-rays','pendulum-swing','rebound-swing','vibration-flash',
  'fault-cassette','ripple-distortion','electric-ripple','shockwave',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
@@ -158,6 +159,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     renderPixelEffect(ctx,source,w,h,e,t,amount);
    }else if(isGlitchEffect(e.presetId)){
     renderGlitchEffect(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='god-rays'){
+    renderGodRays(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
     const angle=e.presetId==='pendulum-swing'
      ? Math.sin(t*4+rad)*(.03+e.distortion*.0038)*size
@@ -258,22 +261,6 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    ctx.fillStyle=g;ctx.fillRect(-beam,-h*1.6,beam*2,h*3.2);
   }else if(e.presetId==='hazy-atmosphere'){
    renderHazyAtmosphere(ctx,w,h,e,t,strength);
-  }else if(e.presetId==='god-rays'){
-   const ox=w*e.originX/100,oy=h*e.originY/100;
-   const length=Math.hypot(w,h)*1.25*size;
-   const gradient=ctx.createRadialGradient(ox,oy,0,ox,oy,length);
-   gradient.addColorStop(0,rgba(e.color,.22*strength));
-   gradient.addColorStop(.45,rgba(e.color,.12*strength));
-   gradient.addColorStop(1,rgba(e.color,0));
-   ctx.fillStyle=gradient;
-   for(let i=0;i<9;i++){
-    const angle=rad+(i-4)*.165+Math.sin(t*.7+i*1.6)*.055;
-    const spread=.045+random(i+150)*.06;
-    ctx.beginPath();ctx.moveTo(ox,oy);
-    ctx.lineTo(ox+Math.cos(angle-spread)*length,oy+Math.sin(angle-spread)*length);
-    ctx.lineTo(ox+Math.cos(angle+spread)*length,oy+Math.sin(angle+spread)*length);
-    ctx.closePath();ctx.fill();
-   }
   }else if(e.presetId==='light-leaks'){
     renderLightLeaks(ctx,w,h,e,t,strength);
    }else if(e.presetId==='pixel-scan'){
