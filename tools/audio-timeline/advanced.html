@@ -1142,7 +1142,18 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                             <label class="text-setting-row"><span>Noise seed</span><input id="effect-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="58" title="Repeatable cloud bank variation; the same seed and time regenerate exact pixels"></label>
                         </details>
                     </div>
-                    <div id="effect-signal-interference-controls" hidden>
+                    <div id="effect-crt-scanlines-controls" hidden>
+                         <details open class="text-inspector-group">
+                             <summary>CRT raster and phosphor grid</summary>
+                             <label class="text-setting-row"><span>Scanline pitch (px)</span><input id="effect-line-pitch" class="range-control" type="range" min="1.5" max="12" step="0.5" value="3" title="Distance between fine horizontal CRT beam-blanking lines"></label>
+                             <label class="text-setting-row"><span>Scanline opacity (%)</span><input id="effect-line-opacity" class="range-control" type="range" min="0" max="100" step="1" value="61" title="Strength of fine horizontal raster luminance modulation"></label>
+                             <label class="text-setting-row"><span>Phosphor RGB grid (%)</span><input id="effect-grid-strength" class="range-control" type="range" min="0" max="100" step="1" value="38" title="Subpixel phosphor aperture grille strength"></label>
+                             <label class="text-setting-row"><span>Flicker &amp; interference (%)</span><input id="effect-flicker-strength" class="range-control" type="range" min="0" max="100" step="1" value="35" title="Animated CRT luminance flicker and narrow rolling interference"></label>
+                             <label class="text-setting-row"><span>Beam drift rate (×)</span><input id="effect-crt-roll-rate" class="range-control" type="range" min="0" max="4" step="0.1" value="0.75" title="Slowly drifting raster beam and interference frequency"></label>
+                             <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
+                         </details>
+                     </div>
+                     <div id="effect-signal-interference-controls" hidden>
                          <details open class="text-inspector-group">
                              <summary>Analogue signal interference</summary>
                              <label class="text-setting-row"><span>Signal dropout (%)</span><input id="effect-signal-loss" class="range-control" type="range" min="0" max="100" step="1" value="56" title="Depth of intermittent rolling-band loss and momentary blackouts"></label>
