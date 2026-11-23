@@ -76,7 +76,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.14';
+        const ONDA_VERSION = 'v3.15';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4003,6 +4003,7 @@
 
             if (tabId === "tab-playlists") renderPlaylistsList();
             if (tabId === "tab-history") renderHistoryTab();
+            if (tabId === "tab-library") updateNowPlayingPlaylistPanel();
 
             try {
                 localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, tabId);
