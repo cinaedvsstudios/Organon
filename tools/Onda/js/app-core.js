@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.20';
+        const ONDA_VERSION = 'v3.21';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -291,7 +291,19 @@
                 const layoutOnly = reason === 'screen-resize' ||
                     reason === 'screen-orientation-change' ||
                     reason === 'screen-orientation-change-settled';
-                if (!layoutOnly) {
+                // Drawer visibility, tab navigation and browse-only Library view
+                // changes are UI checkpoints, not catalogue/visualiser edits.
+                // Persist their small UI keys below, but never serialise a large
+                // Library or mirror its audio metadata into IndexedDB for them.
+                const libraryDrawerOnly = reason === 'library-drawer-open' ||
+                    reason === 'library-drawer-close' ||
+                    reason === 'library-drawer-closed' ||
+                    reason === 'library-drawer-resize' ||
+                    reason === 'library-drawer-corner-resize';
+                const navigationOnly = reason.startsWith('screen-change-before:') ||
+                    reason.startsWith('screen-change-after:') ||
+                    reason.startsWith('mobile-library-view:');
+                if (!layoutOnly && !libraryDrawerOnly && !navigationOnly) {
                     syncVisibleVisualizerCardsToState();
                     saveActiveVisualizerStack();
                     if (typeof saveActiveLibraryState === 'function') saveActiveLibraryState(`ui:${reason}`);
@@ -1896,7 +1908,8 @@
             if (!libraryDrawer) return;
             const wasOpen = libraryDrawer.classList.contains('drawer-open');
             const shouldOpen = forceOpen === null ? !wasOpen : !!forceOpen;
-            if (wasOpen && !shouldOpen) saveLocalUiStateCheckpoint('library-drawer-close');
+            // The single checkpoint after toggling below already stores all UI
+            // keys; saving again just before close duplicated that write.
             if (shouldOpen) syncMobileLibraryDrawerBounds();
             libraryDrawer.classList.toggle('drawer-open', shouldOpen);
             libraryDrawer.setAttribute('aria-hidden', shouldOpen ? 'false' : 'true');

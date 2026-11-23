@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.9 for Onda v3.20 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 checks; v3.20: 37 isolated/static device-check privacy and UI tests. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.20 release notes](./RELEASE_V3_20.md).  
+**Version:** QA v2.0 for Onda v3.21 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 checks; v3.19: 53 checks; v3.20: 37 checks; v3.21: 66 isolated/static checkpoint regression checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.21 release notes](./RELEASE_V3_21.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -393,3 +393,24 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | QA20-17 Public deployment | Netlify actually serves v3.20 and the new device-qa.js module | NEEDS DEPLOY / BROWSER |
 
 **Release gate:** 37 source-only tests cannot establish that an Android phone plays sound, retains file access across restart, or exposes reliable lock-screen controls. Use explicit manual verdicts from the user's real phone/desktop before marking those runtime scenarios passed.
+
+## v3.21 UI-only checkpoint efficiency and persistence safety
+
+| Test | Expected | Status |
+|---|---|---|
+| SAVE21-01 Library drawer open/close | No full Library/visualiser save; small UI preferences and after-toggle state kept | PASS isolated; NEEDS BROWSER |
+| SAVE21-02 Drawer resize | Saves user UI dimensions through existing handler; no complete catalogue serialisation triggered | PASS source; NEEDS BROWSER |
+| SAVE21-03 Mobile Library browse views | Changing Results/Recents/Playlists/Help persists current view without full catalogue/visualiser save | PASS isolated; NEEDS DEVICE |
+| SAVE21-04 Workspace tab switch | Pre/post checkpoints keep active-tab UI key but do not serialise full Library | PASS isolated; NEEDS DEVICE |
+| SAVE21-05 Quick Play from mobile Library | Opening temporary preview from drawer does not invoke full catalogue save through navigation | PASS source/isolated; NEEDS DEVICE |
+| SAVE21-06 Visualiser input/blur | Still synchronises visualiser cards and saves full visualiser state and catalogue as before | PASS isolated; NEEDS DEVICE |
+| SAVE21-07 Import/settings/export recovery | Original full-save/recovery semantics retained | PASS isolated; NEEDS DEVICE |
+| SAVE21-08 Pagehide/beforeunload/visibility | Full Library checkpoint and existing IndexedDB flush paths still present | PASS isolated/source; NEEDS DEVICE |
+| SAVE21-09 Lightweight state persists | Workspace, drawer browsing view and UI save metadata are still written for all 14 UI-only reasons | PASS isolated; NEEDS DEVICE |
+| SAVE21-10 Duplicate checkpoint | Extra pre-close drawer UI checkpoint removed; one post-toggle checkpoint remains | PASS source; NEEDS DEVICE |
+| SAVE21-11 Source integrity | v3.21 core compiles, cache-busted asset loaded, Quick Play bridge and transport preserved | PASS source; NEEDS BROWSER |
+| SAVE21-12 Non-destructive preservation | No media files, IndexedDB schema, cache cleanup or playlist-metadata change | PASS source scope; NEEDS DEVICE |
+| SAVE21-13 Measured performance gain | Record speed/storage metrics on actual Android/desktop via optional v3.18 diagnostics | NOT MEASURED |
+| SAVE21-14 Public deployment | Netlify serves v3.21 and all new previous modules | NEEDS DEPLOY / BROWSER |
+
+**Release gate:** 66 isolated assertions are evidence that the checkpoint function calls expensive save methods fewer times for navigation. They do not prove end-to-end device playback, persisted metadata survival, Android background audio, Netlify version or measured milliseconds of improvement.

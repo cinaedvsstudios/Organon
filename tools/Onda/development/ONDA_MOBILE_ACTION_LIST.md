@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.20 source development committed; v3.20 adds a read-only on-device compatibility/QA panel with manual playback verdicts. Android/Netlify deployment and playback verification remain pending.  
+**Status:** v3.11–v3.21 source development committed; v3.21 eliminates redundant full Library/visualiser saves during UI-only navigation. Android/Netlify deployment and playback verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.20** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.21** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md) · [v3.20 device QA](./RELEASE_V3_20.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md) · [v3.20 device QA](./RELEASE_V3_20.md) · [v3.21 save efficiency](./RELEASE_V3_21.md)
 
 ## Agreed product direction
 
@@ -34,7 +34,7 @@
 | ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | **v3.19: temporary one-file audio preview implemented, with explicit Add-to-Library and no cache/queue/history writes beforehand; Android/desktop QA pending** |
 | ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
 | ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | **v3.14 adds read-only unlinked/possible-duplicate inventory and preview; no deletion or cleanup commands** |
-| ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.18: opt-in redacted timing records added for startup, restore, search/render, cache writes, playback and sampled visualiser frames; device measurements pending** |
+| ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | **v3.18: optional timings; v3.21: concrete source fix suppresses redundant full library/visualiser checkpoint saves on UI-only navigation; Android performance measurements pending** |
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | **v3.13: Remember Files/Folder & read-permission Reconnect implemented; actual Android QA pending** |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Existing API mapped; device QA pending |
 | ONDA-14 | P2 | Mobile touch/accessibility checks | Improve narrow-phone Library controls without changing player layout | **v3.17 source fixes: two-column search/filter, 44px drawer targets, accessible Select state; physical Android/desktop QA pending** |
@@ -455,3 +455,19 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Next:** Run QA on actual Android Chrome, installed shortcut (if used) and desktop. Export redacted device QA JSON so failed cases can be fixed with targeted source changes. Do not start speculative new media/storage features before reviewing the resulting evidence.
 
 - 2026-11-23 — v2.5: v3.20 read-only compatibility self-check source implemented; physical device QA pending.
+
+## Implementation progress — v3.21 UI-only checkpoint efficiency (2026-11-23)
+
+[Complete source findings, rollback/safety notes and Android/desktop acceptance checks](./RELEASE_V3_21.md).
+
+**Confirmed issue in v3.20 source:** Opening/closing/resizing the Library drawer, changing its Results/Recents/Playlists/Help view and switching workspaces triggered full visualiser sync and catalogue autosave even though the user had not modified music, metadata or presets. The pre-close drawer checkpoint also duplicated a post-close checkpoint. Mobile Library → Quick Play went through these UI-only save paths despite the selected audio being temporary.
+
+**Correction:** v3.21 classifies the existing layout, drawer and tab browsing checkpoint reasons as UI-only: save the active workspace tab, drawer browse view and UI timestamp, **but do not synchronise visualiser cards, rewrite the full active visualiser stack, serialise the entire Library or schedule an IndexedDB catalogue mirror**. Removed the redundant pre-close drawer checkpoint; post-toggle persistence remains.
+
+**Protection:** Actual imports, edits to visualiser fields, track/playlist mutations, settings/metadata imports, export and recovery actions, pagehide/beforeunload/visibility-hidden continue down existing save/flush paths. Legacy audio cache, file handles, cloud sync, sources, history, media engine, normal Add Files and Quick Play preview logic untouched. This is a source-proven reduction in redundant full-save invocations, **not yet a measured Android speed or battery improvement**.
+
+**Verification:** 66 isolated/static assertions passed: 14 UI-only reasons do not trigger full saves yet persist UI keys, 13 meaningful editing/recovery reasons continue full saves, source syntax/version/assets/critical flush/Quick Play bridge retained. The public Netlify URL still could not be verified with available public-web retrieval; live deployment and Android/desktop runtime performance remain unverified.
+
+**Next:** Confirm deployment/version and use v3.20 QA + v3.18 opt-in timing reports on Android and desktop, then address any observed playback/permission regressions rather than adding further speculative storage or media features.
+
+- 2026-11-23 — v2.6: v3.21 UI-only save corrections; device runtime verification pending.
