@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Onda — Mobile Development Review (concepts only)</title>
+<style>
+:root{--bg:#131712;--card:#292a24;--card2:#34372e;--line:#55574a;--cream:#f5f0db;--mute:#b6b8ac;--gold:#e0a360;--teal:#449e92;--blue:#75b2de;--red:#a84a5b;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--cream);background:var(--bg)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(ellipse at 18% 10%,#263c35 0%,transparent 50%),linear-gradient(155deg,#151a16,#161812 55%,#11151a);min-height:100vh}
+button,input,textarea{font:inherit}button{cursor:pointer}a{color:var(--blue)}
+.app{max-width:1330px;margin:auto;padding:22px clamp(14px,3vw,38px) 45px}
+header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;border-bottom:1px solid #44483e;padding-bottom:18px}
+.eyebrow{text-transform:uppercase;color:var(--gold);font-size:11px;letter-spacing:2px;font-weight:800}
+h1{margin:6px 0;font-size:clamp(24px,3vw,37px);letter-spacing:.3px}h2{font-size:17px;margin:0 0 10px}p{line-height:1.55;margin:8px 0;color:var(--mute)}
+.pill{font-size:11px;border:1px solid var(--line);border-radius:40px;padding:6px 10px;color:var(--gold)}
+.headlinks{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.headlinks a{border:1px solid #555a4d;padding:9px 13px;border-radius:11px;text-decoration:none;color:var(--cream);font-size:13px}
+.notice{margin:16px 0 20px;border-left:3px solid var(--gold);background:#29291f;padding:10px 14px;border-radius:0 10px 10px 0;font-size:13px;color:#d7d5c7}
+.workspace{display:grid;grid-template-columns:minmax(320px,425px) minmax(320px,1fr);gap:28px;align-items:start}
+.phone-shell{max-width:390px;margin:0 auto;width:100%;border:7px solid #44463e;border-radius:40px;background:#11140f;box-shadow:0 10px 48px #0007;overflow:hidden;position:relative}
+.phone-top{height:23px;display:flex;justify-content:center;align-items:center;background:#11140f}
+.camera{height:6px;width:63px;border-radius:99px;background:#34372f}
+.phone{position:relative;height:700px;overflow:hidden;background:linear-gradient(160deg,#1c241e,#222720 50%,#1a1d18);display:flex;flex-direction:column}
+.player{padding:12px 13px 10px;background:linear-gradient(150deg,#32352b,#242922);border-bottom:2px solid #685941;position:relative;overflow:hidden}
+.viz{height:38px;display:flex;gap:3px;justify-content:center;align-items:center;opacity:.72;margin-bottom:5px}
+.viz i{display:block;width:5px;background:linear-gradient(var(--teal),var(--gold));border-radius:2px}
+.player-title{text-align:center;font-size:16px;font-weight:800;margin:3px 0}.player-meta{font-size:11px;color:var(--mute);text-align:center}
+.transport{display:flex;justify-content:center;align-items:center;gap:25px;margin:10px 0 8px}
+.transport button{background:#24251e;color:#fff;border:1px solid #806d4e;border-radius:15px;padding:7px 11px;font-size:26px}
+.transport .eye{font-size:35px;border-color:#b89a66;background:#373525}
+.timeline{display:flex;align-items:center;gap:7px;color:var(--mute);font-size:10px}
+.timeline input{flex:1;min-width:0;accent-color:var(--gold)}
+.utilities{display:flex;gap:8px;justify-content:center;margin-top:6px}
+.utilities span{padding:4px 8px;background:#242820;border-radius:14px;font-size:16px}
+.underplayer{flex:1;min-height:0;overflow:auto;padding:16px 14px 78px}
+.top-label{color:var(--gold);font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase}
+.section-title{font-weight:750;margin:7px 0 12px;font-size:18px}
+.hero-card,.mini-card{background:var(--card);border:1px solid #4c4e44;border-radius:16px;padding:13px;margin:10px 0}
+.hero-card{display:flex;gap:13px;align-items:center}
+.art{background:linear-gradient(140deg,#264f59,#755040,#372743);border:1px solid #88705d;border-radius:10px;width:78px;height:78px;flex-shrink:0;display:grid;place-items:center;font-size:29px}
+.small{font-size:12px;color:var(--mute)}
+.mini-btn{padding:8px 11px;border:1px solid #6b6e60;background:#35372b;color:var(--cream);border-radius:9px;font-size:12px}
+.primary{border:1px solid #b18a55;background:linear-gradient(#665236,#493924);color:#fff9e9}
+.row{display:flex;align-items:center;justify-content:space-between;gap:9px}.row.wrap{flex-wrap:wrap}.g8{gap:8px}.mt10{margin-top:10px}
+.listening{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #41453d}
+.listening:last-child{border:0}.track-icon{width:35px;height:35px;border:1px solid #4d6d67;border-radius:9px;display:grid;place-items:center;background:#263c36;font-size:19px}
+.tracktext{flex:1;min-width:0}.tracktext b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tracktext small{display:block;color:var(--mute);margin-top:3px;font-size:11px}
+.bottom{position:absolute;bottom:0;left:0;right:0;padding:10px 13px 15px;background:#272a22;border-top:1px solid #6e6049;display:flex;gap:10px;justify-content:center}
+.bottom button{background:#363a2d;border:1px solid #85704e;color:var(--cream);padding:10px 13px;border-radius:12px;font-weight:700;font-size:12px}
+.bottom button:first-child{flex:1}
+.mock-layer{position:absolute;inset:0;background:#080a07b9;z-index:4;display:none;align-items:end}.mock-layer.show{display:flex}
+.sheet{background:linear-gradient(#303329,#222720);border:1px solid #8d785a;border-radius:24px 24px 0 0;width:100%;max-height:88%;min-height:58%;overflow:auto;padding:14px 15px 23px;box-shadow:0 -10px 35px #0008}
+.sheet.small-sheet{min-height:0;max-height:71%}
+.handle{height:4px;width:42px;background:#93846c;border-radius:99px;margin:-3px auto 14px}
+.sheet-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.sheet-title strong{font-size:19px}.iconbutton{border:1px solid #656955;background:#2b302a;color:var(--cream);border-radius:50%;width:33px;height:33px}
+.tabs{display:flex;gap:5px;overflow-x:auto;padding:1px 0 8px;scrollbar-width:thin}
+.tab{white-space:nowrap;padding:9px 11px;background:#252b25;border:1px solid #596357;border-radius:11px;color:var(--cream);font-size:12px}.tab.active{border-color:var(--gold);color:#fff2d0;background:#534630}
+.search{width:100%;padding:11px 12px;margin:6px 0 10px;border-radius:12px;border:1px solid #657162;background:#161e1a;color:white;font-size:13px}
+.actionrow{display:flex;gap:7px;margin-bottom:10px;flex-wrap:wrap}.actionrow button{font-size:11px}
+.inline-link{font-size:12px;color:var(--blue)}
+.setting-row{display:flex;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid #4c5145;align-items:center}
+.setting-row b{font-size:13px}.setting-row small{display:block;color:var(--mute);font-size:11px;line-height:1.45;margin-top:5px}
+.switch{appearance:none;position:relative;width:43px;height:24px;border-radius:20px;background:#555d55;flex-shrink:0;cursor:pointer}.switch:checked{background:#358477}
+.switch:before{content:"";position:absolute;top:3px;left:3px;background:#e8eadf;width:18px;height:18px;border-radius:50%;transition:transform .15s}.switch:checked:before{transform:translateX(19px)}
+.meter{height:11px;border-radius:20px;background:#111711;overflow:hidden;border:1px solid #485047;margin:12px 0}.meter span{display:block;height:100%;width:17%;background:linear-gradient(90deg,var(--teal),var(--gold))}
+.right{min-width:0}
+.modebar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:18px}
+.modebar button{padding:11px 14px;border-radius:12px;border:1px solid #4a554b;background:#282f28;color:#f3f1dd}
+.modebar button.active{border-color:#e0a360;background:#4c3e2b}
+.detail{border:1px solid #4b5145;background:#222821d9;border-radius:18px;padding:20px;margin-bottom:17px}
+.detail h2{margin-bottom:6px}.detail ul{margin:10px 0 0;padding-left:19px;color:#c5c9bf;line-height:1.7}.detail li{font-size:14px}
+.status{font-size:11px;color:#dfbb7f;letter-spacing:.4px;text-transform:uppercase}
+.feedback{border:1px solid #59604d;background:#252a22;border-radius:15px;padding:16px}
+.feedback textarea{width:100%;min-height:100px;resize:vertical;border:1px solid #566153;border-radius:10px;background:#151d18;color:white;padding:10px;margin-top:9px;font-size:13px}
+.feedback button{margin-top:9px}.question{font-weight:700;margin-top:10px;color:#f0e0bc}.feedback small{color:var(--mute)}
+.foot{margin-top:14px;color:#aeb4aa;font-size:12px}
+[hidden]{display:none!important}
+@media(max-width:820px){.workspace{grid-template-columns:1fr;gap:22px}.phone-shell{max-width:390px}.right{max-width:650px;margin:auto;width:100%}header{align-items:start}.app{padding:15px 12px 35px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+ <div><div class="eyebrow">Organon / Onda / development review</div><h1>Onda mobile-first concepts</h1><p>Interactive proposals based on Onda v3.10. Review layouts here before changing the actual player.</p></div>
+ <div class="headlinks"><span class="pill">CONCEPT ONLY • v1.0</span><a href="./ONDA_MOBILE_ACTION_LIST.md">Action list</a><a href="../index.html">Current player</a></div>
+</header>
+<div class="notice"><b>Nothing here is connected to your music.</b> Controls simulate possible interfaces only. Your real Onda code, library and settings are not changed by this page.</div>
+<div class="workspace">
+ <div class="phone-shell" aria-label="Mobile mock-up, approximately 390 pixels wide">
+  <div class="phone-top"><div class="camera"></div></div>
+  <div class="phone">
+    <div class="player"><div class="viz" aria-hidden="true" id="viz"><i style="height:8px"></i><i style="height:20px"></i><i style="height:26px"></i><i style="height:13px"></i><i style="height:32px"></i><i style="height:17px"></i><i style="height:9px"></i><i style="height:27px"></i><i style="height:17px"></i><i style="height:36px"></i><i style="height:12px"></i><i style="height:21px"></i><i style="height:28px"></i><i style="height:8px"></i></div><div class="player-title">Onda Media Player</div><div class="player-meta" id="playingLabel">Sample track • Local library</div>
+    <div class="transport"><button aria-label="Previous track">⏮</button><button aria-label="Play or pause" class="eye" id="playButton">🧿</button><button aria-label="Next track">⏭</button></div>
+    <div class="timeline"><span>1:42</span><input aria-label="Mock seek position" type="range" min="0" max="100" value="30"><span>5:38</span></div>
+    <div class="utilities"><span>🔄</span><span>🔂</span><span>🔀</span><span>🎚️</span></div>
+    </div>
+    <main class="underplayer" id="mainContent"></main>
+    <div class="bottom"><button id="openLibrary">📚 Open Library drawer</button><button aria-label="Mobile view toggle">📱</button><button aria-label="Fullscreen toggle">⛶</button></div>
+    <div class="mock-layer" id="overlay" aria-hidden="true"><div class="sheet" id="sheet"></div></div>
+  </div>
+ </div>
+ <div class="right">
+  <div class="modebar" role="tablist" aria-label="Review a concept">
+   <button class="active" data-mode="drawer" role="tab" aria-selected="true">Library drawer</button>
+   <button data-mode="storage" role="tab" aria-selected="false">Storage</button>
+   <button data-mode="quick" role="tab" aria-selected="false">Quick Play</button>
+   <button data-mode="resume" role="tab" aria-selected="false">Resume</button>
+   <button data-mode="online" role="tab" aria-selected="false">Online library</button>
+  </div>
+  <section class="detail" id="detail"><h2>Extend the existing Library drawer</h2><div class="status">ONDA-02 • High priority</div><p>This is an example of adding functionality without abandoning the present Onda drawer, palette, or control icons.</p></section>
+  <div class="feedback">
+   <h2>Review notes</h2>
+   <p id="question" class="question">Would you prefer Queue as a new drawer tab, or within Current?</p>
+   <textarea id="notes" placeholder="Write changes you'd want to this concept. These notes stay in this browser until you copy them."></textarea>
+   <div class="row wrap"><button class="mini-btn primary" id="copyNotes">Copy notes to send in chat</button><small id="copyStatus">No changes are sent automatically.</small></div>
+  </div>
+  <div class="foot">Status: exploratory design, not a reproduction of the production UI. Any Android file picker and background playback change requires real-device testing before implementation.</div>
+ </div>
+</div>
+</div>
+<script>
+(function(){
+'use strict';
+var mode='drawer', libraryView='Library', online=true, playing=false, overlay=document.getElementById('overlay');
+var detail=document.getElementById('detail'), main=document.getElementById('mainContent'), sheet=document.getElementById('sheet');
+var descriptions={
+drawer:{title:'Extend the existing Library drawer',id:'ONDA-02 • P1',intro:'Keep the upward-opening drawer, user-defined icon system, and original playback controls. The mock-up adds Queue and fast actions in the drawer rather than replacing the entire navigation.',steps:['Existing Results, Recents, Playlists and Help views are preserved.','Add a Queue section and quick import actions without duplicating what Onda already does.','Keep advanced batch tools in the drawer settings/action area.'],question:'Would you prefer Queue as a new drawer tab, or within Current?'},
+storage:{title:'Mobile storage management',id:'ONDA-07 / 10 / 12 • P0–P1',intro:'Show cache use and protect your saved music. A 48-hour expiry would apply only to temporary Quick Play data, never to imported library files or explicit offline media.',steps:['Retain legacy IndexedDB media during migration.','Use Android file/folder handles where reliably supported; otherwise reselect or explicitly cache.','Show clear separation between original files, metadata, temporary media and offline copies.'],question:'Should Onda prompt before caching imported files, or keep automatic cache as the fallback only when direct reopening is unreliable?'},
+quick:{title:'Quick Play without importing',id:'ONDA-08 • P2',intro:'A phone-friendly action sheet lets you audition files without growing a permanent library or duplicating everything into the cache.',steps:['Play once, Add to Queue, or Add to Library.','Temporary data stays in memory by default where practical.','Protect current import behaviour until you choose the new default.'],question:'When you select a file, should the default be Play once or Add to Library?'},
+resume:{title:'Remember listening position',id:'ONDA-03 • P1',intro:'Restore the last track and seek position on the next visit, without automatically starting audio when the browser blocks autoplay.',steps:['Checkpoint progress periodically and on pause.','Wait for metadata before seeking, handle missing file with a relink prompt.','Set finished tracks back to the beginning; long-form audio may use a different reset rule.'],question:'Do you want position saved for every track, or only for longer recordings/podcasts?'},
+online:{title:'Connected online library',id:'ONDA-09 • Future',intro:'Online tracks appear alongside local tracks but cannot block the player when there is no connection. This is a proposal for a future source-aware library, not a cloud provider integration.',steps:['Keep local library usable offline.','Only load remote catalogue and artwork when online.','Never imply YouTube, Spotify, or Apple Music embed links are native audio files.'],question:'Where do you envisage your online audio files being hosted: personal cloud drive, direct URLs, or another service?'}
+};
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function row(title,subtitle,icon,tail){return '<div class="listening"><div class="track-icon">'+icon+'</div><div class="tracktext"><b>'+title+'</b><small>'+subtitle+'</small></div><span class="small">'+(tail||'⋮')+'</span></div>'}
+function setOverlay(html,short){sheet.className='sheet'+(short?' small-sheet':'');sheet.innerHTML='<div class="handle"></div><div class="sheet-title"><strong>'+descriptions[mode].title.replace('Extend the existing ','')+'</strong><button class="iconbutton" id="closeSheet" aria-label="Close">×</button></div>'+html;overlay.classList.add('show');overlay.setAttribute('aria-hidden','false');document.getElementById('closeSheet').onclick=closeOverlay}
+function closeOverlay(){overlay.classList.remove('show');overlay.setAttribute('aria-hidden','true')}
+function renderMain(){
+var title={drawer:'Now Playing',storage:'Storage Health',quick:'Add audio',resume:'Welcome back',online:'Your Library'}[mode];
+main.innerHTML='<div class="top-label">Mobile preview • '+mode+'</div><div class="section-title">'+title+'</div>';
+if(mode==='drawer')main.innerHTML+='<div class="hero-card"><div class="art">🎵</div><div><b>Sample recording</b><p class="small">Example artwork & metadata</p><button class="mini-btn" id="mainDrawer">Explore Library</button></div></div><div class="mini-card"><div class="row"><span class="small">Current playlist</span><b>12 tracks</b></div><p class="small">The existing top player and drawer remain. We can add more actions without adding another permanent navigation bar.</p></div>';
+if(mode==='storage')main.innerHTML+='<div class="hero-card"><div class="art">💾</div><div><b>Manage Onda storage</b><p class="small">Catalogue safe • 3 example cache items</p><button class="mini-btn" id="mainDrawer">Open Storage Health</button></div></div><div class="mini-card"><div class="small">Example usage • demonstration only</div><div class="meter"><span></span></div><b>Cache controls in the drawer / Settings</b></div>';
+if(mode==='quick')main.innerHTML+='<div class="hero-card"><div class="art">📥</div><div><b>Choose files from phone</b><p class="small">Decide what happens to each selection</p><button class="mini-btn primary" id="mainDrawer">Choose action</button></div></div><div class="mini-card"><p class="small">This preview does not open the phone file picker or store media.</p></div>';
+if(mode==='resume')main.innerHTML+='<div class="hero-card"><div class="art">↩</div><div><b>Continue sample track?</b><p class="small">Last heard at 18:24 of 42:10</p><button class="mini-btn primary" id="mainDrawer">Review resume</button></div></div><div class="mini-card"><p class="small">Playback begins only after you press play. Missing files offer to reconnect.</p></div>';
+if(mode==='online')main.innerHTML+='<div class="mini-card"><div class="row"><b>Connection</b><span id="onlineStatus">'+(online?'● Online':'● Offline')+'</span></div><div class="setting-row"><div><b>Simulate offline mode</b><small>See what would remain available without a connection</small></div><input class="switch" aria-label="Online mode" type="checkbox" id="connSwitch" '+(online?'checked':'')+'></div></div>'+row('Local recording','On your phone • Available offline','📱','▶')+row('Remote demo track',online?'Remote stream • Tap to play':'Offline • Not available','☁️',online?'▶':'🔒');
+var b=document.getElementById('mainDrawer');if(b)b.onclick=openCurrent;
+var sw=document.getElementById('connSwitch');if(sw)sw.onchange=function(){online=sw.checked;renderMain();openCurrent()}
+}
+function drawer(){
+var names=['Library','Queue','Recents','Playlists','Help'];var nav='<div class="tabs">'+names.map(function(n){return '<button class="tab '+(n===libraryView?'active':'')+'" data-library-view="'+n+'">'+n+'</button>'}).join('')+'</div>';
+var body='';
+if(libraryView==='Library')body='<input class="search" aria-label="Search demo library" placeholder="Search music, tags, playlists…"><div class="actionrow"><button class="mini-btn primary" data-action="quick">＋ Play / Import</button><button class="mini-btn" data-action="storage">💾 Storage</button><button class="mini-btn" data-action="online">🌐 Online</button></div>'+row('Sample local track','Local file · available','🎵','▶')+row('Favourite mix','Playlist · 12 tracks','🎧','▶')+row('Long recording','Local audio · 42 min','🎤','▶');
+if(libraryView==='Queue')body='<div class="actionrow"><button class="mini-btn primary" data-action="quick">＋ Add to queue</button><button class="mini-btn">Clear played</button></div>'+row('Now playing','Track 1 of 3','🧿','▶')+row('Next track','Track 2 of 3','🎵','⋮')+row('Later','Track 3 of 3','🎶','⋮');
+if(libraryView==='Recents')body=row('Last opened track','A few moments ago','🕘','▶')+row('Previous listening session','Earlier','🎧','▶');
+if(libraryView==='Playlists')body=row('Favourites','12 tracks','📚','›')+row('Long-form audio','4 tracks','📚','›');
+if(libraryView==='Help')body='<div class="mini-card"><b>Existing mobile icon customisation stays</b><p class="small">Icon editing and the current Help view are preserved rather than replaced by the mock-up.</p></div>';
+setOverlay(nav+body,false);sheet.querySelectorAll('[data-library-view]').forEach(function(b){b.onclick=function(){libraryView=b.getAttribute('data-library-view');drawer()}});sheet.querySelectorAll('[data-action]').forEach(function(b){b.onclick=function(){mode=b.getAttribute('data-action');activateMode(mode)}})
+}
+function storage(){
+setOverlay('<div class="small">Illustrative figures — not reading device storage</div><div class="mini-card"><div class="row"><b>Onda media cache</b><span>Example: 126 MB</span></div><div class="meter"><span></span></div><div class="small">Catalogue 0.8 MB • Temporary 24 MB • Saved offline 102 MB</div></div><div class="setting-row"><div><b>Prefer direct file access</b><small>Use file/folder permissions when supported; relink if needed</small></div><input type="checkbox" checked class="switch" aria-label="Prefer direct file access"></div><div class="setting-row"><div><b>Auto-clean temporary Quick Play</b><small>Eligible after 48 hours of inactivity; never saved offline files</small></div><input type="checkbox" checked class="switch" aria-label="Auto clean temporary files"></div><div class="setting-row"><div><b>Save media for offline playback</b><small>Explicit action, not automatic duplication of every import</small></div><input type="checkbox" class="switch" aria-label="Save offline media"></div><div class="actionrow mt10"><button class="mini-btn">Review temporary cache</button><button class="mini-btn primary">Reconnect files</button></div><p class="small">No buttons in this mock-up delete files.</p>',false);
+}
+function quick(){
+setOverlay('<div class="mini-card"><b>🎵 Example file selected</b><p class="small">Sample-Track.mp3 • 5.2 MB</p></div><button class="mini-btn primary" style="width:100%;text-align:left;margin:5px 0;padding:13px" data-choice="Play once">▶ Play once <span class="small">— no permanent import</span></button><button class="mini-btn" style="width:100%;text-align:left;margin:5px 0;padding:13px" data-choice="Add to Queue">＋ Add to Queue</button><button class="mini-btn" style="width:100%;text-align:left;margin:5px 0;padding:13px" data-choice="Add to Library">📚 Add to Library</button><p class="small" id="choiceStatus">Choose an action to see the proposed feedback. No real audio file is handled.</p>',true);
+sheet.querySelectorAll('[data-choice]').forEach(function(b){b.onclick=function(){document.getElementById('choiceStatus').textContent='Mock action selected: '+b.getAttribute('data-choice')+'. No music was imported.'}})
+}
+function resume(){
+setOverlay('<div class="hero-card"><div class="art">🎤</div><div><b>Sample long recording</b><p class="small">Previously stopped at 18:24 / 42:10</p></div></div><div class="actionrow"><button class="mini-btn primary" id="resumeNow">▶ Resume at 18:24</button><button class="mini-btn" id="startOver">↩ Start from 0:00</button></div><p class="small" id="resumeStatus">Would not autoplay on page load.</p>',true);
+document.getElementById('resumeNow').onclick=function(){document.getElementById('resumeStatus').textContent='Preview: resume command issued. Browser permission and a real track would still be needed.'};
+document.getElementById('startOver').onclick=function(){document.getElementById('resumeStatus').textContent='Preview: start from beginning.'};
+}
+function onlineDrawer(){
+setOverlay('<div class="row"><b>Local + Online</b><span class="small">'+(online?'Online':'Offline')+'</span></div><div class="mini-card"><label class="row"><span>Simulate connection</span><input class="switch" type="checkbox" id="sheetConn" '+(online?'checked':'')+'></label></div>'+row('Phone storage','Always available','📱','▶')+row('Remote library item',online?'Stream on demand':'Unavailable until connected','☁️',online?'▶':'🔒')+'<p class="small">Remote items do not download automatically and do not affect local playback.</p>',true);
+document.getElementById('sheetConn').onchange=function(){online=this.checked;renderMain();onlineDrawer()};
+}
+function openCurrent(){if(mode==='drawer')drawer();else if(mode==='storage')storage();else if(mode==='quick')quick();else if(mode==='resume')resume();else onlineDrawer()}
+function activateMode(next){
+mode=next;closeOverlay();document.querySelectorAll('.modebar button').forEach(function(b){var active=b.getAttribute('data-mode')===mode;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});
+var d=descriptions[mode];detail.innerHTML='<h2>'+d.title+'</h2><div class="status">'+d.id+'</div><p>'+d.intro+'</p><ul>'+d.steps.map(function(s){return '<li>'+s+'</li>'}).join('')+'</ul><div style="margin-top:17px"><button class="mini-btn primary" id="showPanel">Try this mock-up</button></div>';
+document.getElementById('showPanel').onclick=openCurrent;document.getElementById('question').textContent=d.question;
+renderMain();openCurrent();
+}
+document.querySelectorAll('.modebar button').forEach(function(b){b.onclick=function(){activateMode(b.getAttribute('data-mode'))}});
+document.getElementById('openLibrary').onclick=function(){libraryView='Library';mode='drawer';activateMode(mode)};
+document.getElementById('playButton').onclick=function(){playing=!playing;document.getElementById('playingLabel').textContent=playing?'Sample track • Playing (mock)':'Sample track • Paused (mock)';document.getElementById('viz').style.opacity=playing?'1':'.45'};
+overlay.addEventListener('click',function(e){if(e.target===overlay)closeOverlay()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeOverlay()});
+document.getElementById('copyNotes').onclick=function(){
+var text='Onda mobile concept review — '+descriptions[mode].title+' ('+mode+')\n'+descriptions[mode].question+'\n\n'+(document.getElementById('notes').value||'[no additional notes]');
+var label=document.getElementById('copyStatus');if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){label.textContent='Copied! Paste into the chat.'},function(){label.textContent='Copy failed. Select the notes and copy manually.'})}else{label.textContent='Clipboard not available here; select the notes and copy manually.'}
+};
+activateMode('drawer');
+})();
+</script>
+</body>
+</html>
