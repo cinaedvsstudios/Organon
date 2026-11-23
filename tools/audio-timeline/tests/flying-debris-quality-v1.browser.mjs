@@ -107,7 +107,7 @@ try{
  editor.on('pageerror',e=>errors.push(String(e)));
  await editor.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',{waitUntil:'domcontentloaded'});
  await editor.locator('[data-library-tab="effects"]').click();
- await editor.locator('#effects-library-grid [data-preset-id="particle-sparks"]').click();
+ await editor.locator('#effects-library-grid [data-preset-id="particle-debris"]').click();
  await editor.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:12000});
  await editor.locator('.timeline-clip.sticker:not(.placeholder)').first().click();
  assert.equal(await editor.locator('#effect-flying-debris-controls').isVisible(),true);
