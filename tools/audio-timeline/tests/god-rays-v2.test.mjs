@@ -46,9 +46,18 @@ test('Organic scattering rays have independently changing reach, direction and l
   frames=times.map(t=>image(e,t));
  assert.equal(new Set(frames.map(f=>fingerprint(f.data))).size,4);
  assert.deepEqual(frames[1],image(e,times[1]),'Reverse seeks are byte-identical');
- const a=sampleGodRay(scene(),W,H,e,.2*e.speed,55,42);
- const b=sampleGodRay(scene(),W,H,e,1.2*e.speed,55,42);
- assert.notEqual(a.shaft,b.shaft,'Internal dust/ray contours evolve without moving a static card');
+ const input=scene();
+ let lit=0,changed=0;
+ for(let y=8;y<H;y+=4)for(let x=10;x<W;x+=6){
+  const a=sampleGodRay(input,W,H,e,.2*e.speed,x,y);
+  const b=sampleGodRay(input,W,H,e,1.2*e.speed,x,y);
+  if(a.alpha>.001||b.alpha>.001){
+   lit++;
+   if(Math.abs(a.shaft-b.shaft)>.01||Math.abs(a.alpha-b.alpha)>.002)changed++;
+  }
+ }
+ assert.ok(lit>25&&changed>20,
+  'Separate luminous shaft regions must deform independently, not move as a rigid card');
  const alpha0=Array.from({length:W*H},(_,i)=>frames[0].data[4*i+3]);
  const alpha1=Array.from({length:W*H},(_,i)=>frames[3].data[4*i+3]);
  assert.ok(alpha0.filter((v,i)=>Math.abs(v-alpha1[i])>=6).length>100,
