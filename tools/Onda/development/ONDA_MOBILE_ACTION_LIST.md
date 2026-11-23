@@ -390,7 +390,7 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 
 **Safety and scope:** No change to the playback symbols, Current-screen queue, audio persistence, file IDs, caches, IndexedDB, original files, stored playlists, visualiser or cloud sync. No online library, cleanup or automatic deletion introduced. The mobile navigation and view panels are mobile-only.
 
-**Verification:** 24 source/static and isolated mobile-tab checks passed, including JavaScript syntax, version/cache references, view bindings, preserved search logic, a real extracted tab-switcher run, accessible pressed states and desktop/mobile CSS scoping. Physical Android touch/viewport/font/rotation checks, audio playback, permission tests, Netlify deployment and desktop regressions remain pending. Confirm on the real phone before calling the UX fully verified.
+**Verification:** 26 source/static and isolated mobile-tab checks passed, including JavaScript syntax, version/cache references, view bindings, preserved search logic, a real extracted tab-switcher run, accessible pressed states and desktop/mobile CSS scoping. Physical Android touch/viewport/font/rotation checks, audio playback, permission tests, Netlify deployment and desktop regressions remain pending. Confirm on the real phone before calling the UX fully verified.
 
 **Next:** Android and desktop smoke test v3.16, correct any layout/playback issues, then reconsider the lower-priority Quick Play for *new unsaved* files, online GitHub Pages library and optional playback position only after the mobile basics are verified.
 
