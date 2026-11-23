@@ -72,10 +72,10 @@
     try {
       const keys = Object.keys(storage).sort();
       for (const key of keys) {
+        const owned = owns(key);
+        if (!owned) continue; // Do not even read values belonging to other repositories.
         const value = storage.getItem(key);
         if (value === null) continue;
-        const owned = owns(key);
-        if (!owned) continue; // Only Organon's known keys: never expose other repositories' values.
         const category = categoryOf(key);
         entries.push({
           id: type + ':' + key, type, key, value, owned, category,
