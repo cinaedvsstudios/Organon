@@ -628,3 +628,12 @@
 .now-playing-queue-row .library-row-buttons {
   justify-self: end;
 }
+
+/* v3.16: New Library controls are mobile-only; preserve desktop drawer layout. */
+.onda-mobile-library-nav,
+.onda-library-status,
+.mobile-icon-help-panel,
+.library-sidebar #db-recent-list,
+.library-sidebar #db-playlist-list {
+  display: none;
+}
