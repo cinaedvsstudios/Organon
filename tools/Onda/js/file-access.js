@@ -158,7 +158,7 @@
             ? handle.requestPermission({ mode: 'read' })
             : Promise.resolve('granted');
         return Promise.resolve(permission).then(status =>
-            status === 'granted' ? handle.getFile().then(file => ({ file, handle })) : null
+            status === 'granted' ? handle.getFile().then(file => ({ file, handle, relativePath: saved.relativePath || file.name })) : null
         );
     }
 
