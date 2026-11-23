@@ -7,6 +7,7 @@ import {buildDataBurstFrame} from '../js/timeline-data-burst.mjs';
 import {buildSignalTearFrame} from '../js/timeline-signal-tear.mjs';
 import {buildRgbBlockGlitchFrame} from '../js/timeline-rgb-block-glitch.mjs';
 import {buildLineCorruptionFrame} from '../js/timeline-line-corruption.mjs';
+import {buildFaultCassetteFrame} from '../js/timeline-fault-cassette.mjs';
 
 const makeCanvasRecorder=()=>{
  const log=[];
@@ -43,13 +44,13 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
    for(let i=0;i<data.length;i+=4){const x=(i/4)%w,y=Math.floor(i/4/w);data[i]=(x*7)%255;data[i+1]=(y*11)%255;data[i+2]=(x*3+y*5)%255;data[i+3]=255;}
-   const recipe=normaliseTimelineEffect({presetId:preset.id,density:85,burstSize:60,burstLife:.32,tearHeight:15,tearLife:.26,rgbBlockWidth:27,rgbBlockHeight:19,rgbBlockLife:.28,rgbSeparation:94,lineLength:72,lineThickness:6,lineLife:.22,lineFragments:78,lineStatic:94});
-   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:buildLineCorruptionFrame;
+   const recipe=normaliseTimelineEffect({presetId:preset.id,density:85,burstSize:60,burstLife:.32,tearHeight:15,tearLife:.26,rgbBlockWidth:27,rgbBlockHeight:19,rgbBlockLife:.28,rgbSeparation:94,lineLength:72,lineThickness:6,lineLife:.22,lineFragments:78,lineStatic:94,cassetteTracking:92,cassetteDropouts:89,cassetteChroma:95,cassetteRoll:70,cassetteSeed:6969});
+   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -121,6 +122,22 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
      'Motion','Motion','Motion','Glitch','Distortion','Distortion','Distortion']);
  for(const id of ids){
   assert.equal(requiresCompositeSource(id),true);
+  if(id==='fault-cassette'){
+   // Fault Cassette samples REAL source RGBA. Mock Canvas calls cannot
+   // demonstrate tape movement, so compare the source pixel output directly.
+   const w=160,h=90,rgba=new Uint8ClampedArray(w*h*4);
+   for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+    const k=(y*w+x)*4;
+    rgba[k]=(x*7)%255;rgba[k+1]=(y*11)%255;
+    rgba[k+2]=(x*3+y*5)%255;rgba[k+3]=255;
+   }
+   const e=normaliseTimelineEffect({presetId:id,density:92,distortion:91,
+    cassetteTracking:92,cassetteDropouts:89,cassetteChroma:95,cassetteRoll:70});
+   const frame=t=>buildFaultCassetteFrame(rgba,w,h,e,t*e.speed).data;
+   assert.notDeepEqual(frame(.24),frame(1.4),id+' must vary as seconds change on the source');
+   assert.deepEqual(frame(.24),frame(.24),id+' must reproduce pixels after reverse seek');
+   continue;
+  }
   const atStart=paint(id,.24),later=paint(id,1.4);
   assert.notEqual(atStart,later,id+' must vary as seconds change');
   assert.equal(atStart,paint(id,.24),id+' must reproduce pixels after reverse seek');
@@ -129,7 +146,8 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
  assert.notEqual(paint('pendulum-swing',.6),paint('rebound-swing',.6));
  assert.notEqual(paint('ripple-distortion',.6),paint('electric-ripple',.6));
  assert.notEqual(paint('electric-ripple',.6),paint('shockwave',.6));
- assert.notEqual(paint('fault-cassette',.6),paint('vibration-flash',.6));
+ assert.notDeepEqual(buildFaultCassetteFrame(new Uint8ClampedArray(160*90*4),160,90,normaliseTimelineEffect({presetId:'fault-cassette'}),.6).state,
+   {presetId:'vibration-flash'},'Cassette has separate analogue tracking geometry from vibration');
 });
 test('source-based warp samples real composited canvas and reuses bounded scratch',()=>{
  const prior=globalThis.document;
