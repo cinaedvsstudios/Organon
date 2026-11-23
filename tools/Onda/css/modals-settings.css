@@ -260,3 +260,58 @@
 #settings-popup .control-row.settings-card.active {
   display: flex;
 }
+
+/* Onda v3.14 — review-only cached-media audit, same charcoal/bronze palette. */
+.onda-storage-audit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+.onda-storage-audit-actions .library-help { flex: 1 1 185px; }
+.onda-storage-audit-report[hidden] { display: none !important; }
+.onda-storage-audit-report {
+  border: 1px solid rgba(192, 158, 98, .43);
+  border-radius: 10px;
+  background: rgba(16, 19, 26, .55);
+  padding: 12px;
+  margin-bottom: 14px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.onda-storage-audit-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(115px, 1fr));
+  gap: 8px;
+  margin: 10px 0;
+}
+.onda-storage-audit-metric {
+  border: 1px solid rgba(191, 157, 97, .24);
+  background: rgba(255, 255, 255, .035);
+  border-radius: 8px;
+  padding: 9px;
+}
+.onda-storage-audit-metric strong { display: block; font-size: 1.02rem; color: var(--white-accent); }
+.onda-storage-audit-metric small { display: block; font-size: .73rem; opacity: .85; }
+.onda-storage-audit-report details {
+  margin-top: 10px;
+  border: 1px solid rgba(191, 157, 97, .22);
+  border-radius: 7px;
+  padding: 8px;
+}
+.onda-storage-audit-report summary { cursor: pointer; font-weight: 700; }
+.onda-storage-audit-items {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  max-height: 280px;
+  overflow: auto;
+}
+.onda-storage-audit-items li {
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, .09);
+  font-size: .81rem;
+}
+.onda-storage-audit-items li:last-child { border-bottom: 0; }
+.onda-storage-audit-note { margin-top: 9px; font-size: .79rem; opacity: .9; line-height: 1.45; }
