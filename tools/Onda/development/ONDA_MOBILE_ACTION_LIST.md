@@ -35,7 +35,7 @@
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | Investigation |
 | ONDA-13 | P1 | Screen-lock/background playback reliability | Keep existing Media Session; test and fix regressions | Investigation |
 | ONDA-14 | P2 | Mobile touch/accessibility checks | Proposal | Investigation |
-| ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Fix wrong or generic shortcut icon; preserve intended Onda logo | Confirmed config missing; blocked pending actual icon artwork |
+| ONDA-15 | P1 | Android Chrome home-screen icon / web app manifest | Use approved bronze/charcoal/cyan circle; don't change player controls | Implemented in GitHub; Android device check pending |
 
 **Priority legend:** P0 = first technical fix/safeguard; P1 = near term; P2 = useful follow-up; P3 = future/conditional. Priority is not a claim that current user-visible breakage has been reproduced.
 
@@ -233,3 +233,18 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 ## Change journal, continued
 
 - 2026-11-23 — v1.2 added ONDA-15 (home-screen icon/PWA identity) after user confirmed Android home-screen shortcut usage. Verified missing favicon/manifest/icon in repo. Awaiting official icon asset; player unchanged.
+
+## ONDA-15 implementation update — 2026-11-23
+
+**Approved:** User selected the weathered circular bronze ring with north/south/east/west tabs, dark charcoal inner circle, and cyan/blue/green signal arcs, with everything beyond the ring transparent.
+
+**Committed on main (\`eb7f42e19e6207ef848a50f085ad97cd5416b2d9\`):**
+- \`icons/onda-icon-192.png\`: transparent 192×192 downscaled PNG of the approved design.
+- \`icons/onda-icon.svg\`: 512×512-format SVG containing the approved 192×192 PNG as a self-contained data URI; enlarges that image without introducing a new design. This is **not** a fully vectorised source image or a true high-resolution 512×512 PNG.
+- \`manifest.webmanifest\`: Onda name, short name, standalone display, relative launch/scope, theme colors and 192 PNG + scalable-format SVG icon entries.
+- \`index.html\`: manifest, favicon, SVG icon, Apple touch icon, theme color tags. No playback/layout JavaScript changed.
+- \`icons/README.md\`: source/size notes and shortcut cache advice.
+
+**Follow-up:** Verify Netlify deployment and inspect Android Chrome's home-screen appearance, label and launch behaviour. The browser may retain an old icon until the user removes and recreates the shortcut. If Chrome requires an actual 512×512 PNG rather than the SVG entry for a fully installable experience, add a true 512 PNG from the original approved source. A separate maskable/padded icon could be considered only if needed because the user's preferred design has transparent outer space. Do not add a background square.
+
+No service worker or media cache changes were included.
