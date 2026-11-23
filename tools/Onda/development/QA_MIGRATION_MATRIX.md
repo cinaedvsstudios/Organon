@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.6 for Onda v3.17 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.17 release notes](./RELEASE_V3_17.md).  
+**Version:** QA v1.7 for Onda v3.18 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 checks; v3.15: 32 checks; v3.16: 26 checks; v3.17: 28 checks; v3.18: 62 isolated/static privacy and source checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.18 release notes](./RELEASE_V3_18.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -322,3 +322,25 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | LIB-14 Android media regression | MP3, saved cache, Reconnect, Media Session screen lock/background and playback unchanged | NEEDS DEVICE |
 
 **Release gate:** 28 v3.17 source checks are not runtime tests. Do not mark ONDA-14 finished until Android tab/installed shortcut and desktop computed-layout, touch/accessibility and audio playback checks are performed. No destructive cache or music-file tests against the user's primary storage.
+
+## v3.18 Optional performance diagnostics — validation matrix
+
+| Test | Expected | Status |
+|---|---|---|
+| PERF-01 First normal page load | No timing samples collected; no hidden networking; player unaffected | PASS source/isolated; NEEDS BROWSER |
+| PERF-02 Start/Stop recording | Only explicitly enabled session records; stopped session stops growth | PASS isolated; NEEDS BROWSER |
+| PERF-03 One-use startup reload | Deliberate reload arms startup timings once and clears sessionStorage flag | PASS isolated; NEEDS BROWSER |
+| PERF-04 Snapshot privacy | Only whitelisted event names, durations, counts, viewport and UTC capture timestamp | PASS isolated; NEEDS BROWSER |
+| PERF-05 Sensitive source labels | Filename, path, ID, URL, credential, arbitrary metric names rejected | PASS isolated |
+| PERF-06 200-sample cap | Oldest samples dropped; memory buffer bounded | PASS isolated |
+| PERF-07 Redacted export | Manual local JSON download only; no cloud sync/upload and no music bytes | PASS source; NEEDS BROWSER |
+| PERF-08 LocalStorage catalogue restore | Records restore duration without changing saved music/metadata | PASS source; NEEDS DEVICE |
+| PERF-09 IndexedDB restore/cache inventory | Records durations and counts, no media extraction/deletion | PASS source; NEEDS DEVICE |
+| PERF-10 Search and Library rendering | Records slow/fast timings with counts; input and results unchanged | PASS source; NEEDS DEVICE |
+| PERF-11 File import and audio batch | Measures preparation and cache writes separately with saved/skipped/failed counts | PASS source; NEEDS DEVICE |
+| PERF-12 Play/track resolution | Measures successful track resolution and play response without private metadata | PASS source; NEEDS DEVICE |
+| PERF-13 Visualiser frame sampling | Approx one of 60 frames timed when enabled, no full-frame logging when disabled | PASS source; NEEDS DEVICE |
+| PERF-14 Full mobile/desktop regression | No changed transport symbols, lock-screen audio, storage permissions or Library persistence | PASS source scope; NEEDS DEVICE |
+| PERF-15 Netlify deployment | Public code is v3.18 and new diagnostics module successfully loaded | NEEDS DEPLOY / BROWSER |
+
+**Release gate:** These are *instrumentation* source checks, not actual performance benchmarks. Any future code optimization should use real, opt-in Android/desktop timings; a static source check cannot establish response time, battery use or lock-screen playback reliability.

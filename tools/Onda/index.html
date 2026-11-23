@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.14" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.17" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
+<head><link href="css/tokens.css" rel="stylesheet"/><link href="css/base.css" rel="stylesheet"/><link href="css/layout.css?v=3.10" rel="stylesheet"/><link href="css/player.css" rel="stylesheet"/><link href="css/controls.css" rel="stylesheet"/><link href="css/library.css?v=3.16" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.15" rel="stylesheet"/><link href="css/modals-settings.css?v=3.18" rel="stylesheet"/><link href="css/visualizer-tools.css" rel="stylesheet"/><link href="css/streaming.css" rel="stylesheet"/><link href="css/responsive.css?v=3.17" rel="stylesheet"/><link href="css/cloud-sync.css" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
@@ -409,6 +409,17 @@
 <span class="library-help">Preview only. No music or browser cache can be deleted from this report.</span>
 </div>
 <div class="onda-storage-audit-report" id="storage-audit-report" aria-live="polite" hidden></div>
+<details class="onda-diagnostics-panel" id="onda-diagnostics-panel">
+<summary>Developer performance diagnostics (opt-in)</summary>
+<p class="library-help">Off by default. Records anonymous timing and count metrics only in memory, never music names, paths, URLs or cloud secrets. Export is manual and local. No network upload.</p>
+<div class="onda-diagnostics-actions">
+<button type="button" class="btn-pill" id="btn-onda-diagnostics-toggle" aria-pressed="false">Start recording</button>
+<button type="button" class="btn-pill" id="btn-onda-diagnostics-reload" title="Reload Onda once to capture startup timings (does not clear music or library storage)">Reload &amp; record startup</button>
+<button type="button" class="btn-pill" id="btn-onda-diagnostics-export">Export redacted JSON</button>
+<button type="button" class="btn-pill btn-muted" id="btn-onda-diagnostics-clear">Clear recorded timings</button>
+</div>
+<div class="library-track-meta" id="onda-diagnostics-status" role="status">Not recording. No data leaves this device.</div>
+</details>
 <div class="library-action-grid">
 <button class="btn-pill" id="btn-export-everything-json" title="Export every saved thing in the app: library catalogue, playlists, history, settings, visualisers and mobile labels">Export Everything</button>
 <button class="btn-pill" id="btn-save-local-now" title="Force-save the current library catalogue to browser storage now">Save Local Now</button>
@@ -693,6 +704,6 @@
 
 
 
-<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/app-core.js?v=3.17"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
+<script src="js/file-access.js?v=3.13"></script><script src="js/storage-audit.js?v=3.14"></script><script src="js/diagnostics.js?v=3.18"></script><script src="js/app-core.js?v=3.18"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
 </body>
 </html>

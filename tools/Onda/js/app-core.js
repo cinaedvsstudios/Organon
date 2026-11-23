@@ -1,4 +1,5 @@
 // --- CORE DUAL AUDIO ENGINE SETUP ---
+        const finishOndaCoreInit = window.OndaDiagnostics?.begin('core-init');
         // Using two elements solves WebAudio Context blocking CORS streams while preserving local file visualizers
         const localAudio = new Audio();
         const streamAudio = new Audio();
@@ -76,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.17';
+        const ONDA_VERSION = 'v3.18';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1623,6 +1624,7 @@
 
         function renderLibraryManager() {
             if (!dbLibraryResults) return;
+            const finishLibraryRender = window.OndaDiagnostics?.begin('library-render');
             ensureVirtualLibraryRecordsFromPlaylists();
             syncAllTrackPlaylistMetadata();
             updateBulkActionUI();
@@ -1693,6 +1695,7 @@
                 });
             }
             renderHistoryTab();
+            finishLibraryRender?.({ trackCount: Object.keys(virtualLibrary).length, visibleCount: entries.length });
         }
 
         function getLibraryDrawerSavedHeight() {
@@ -2528,6 +2531,7 @@
         // Inspect cache metadata only, without reading music bytes or mutating existing data.
         async function refreshAudioCacheIndex() {
             if (audioCacheScanPromise) return audioCacheScanPromise;
+            const finishCacheInventory = window.OndaDiagnostics?.begin('cache-inventory');
             audioCacheScanPromise = (async () => {
                 const db = await openOndaIndexedDb();
                 return new Promise((resolve, reject) => {
@@ -2564,7 +2568,10 @@
                 audioCacheIndexState = 'unavailable';
                 console.warn('Onda audio cache status unavailable:', error);
                 return false;
-            }).finally(() => { audioCacheScanPromise = null; });
+            }).finally(() => {
+                audioCacheScanPromise = null;
+                finishCacheInventory?.({ cachedCount: cachedAudioTrackIds.size });
+            });
             return audioCacheScanPromise;
         }
 
@@ -2665,6 +2672,7 @@
         }
 
         async function persistLocalAudioFilesToIndexedDb(tracks) {
+            const finishCacheWrites = window.OndaDiagnostics?.begin('cache-write-batch');
             const localTracks = (tracks || []).filter(track => track && track.blobFile && (track.sourceType || 'local') !== 'stream');
             if (!localTracks.length) return { saved: 0, skipped: 0, failed: 0 };
             let saved = 0;
@@ -2682,6 +2690,7 @@
                     console.warn('Could not persist audio file to IndexedDB:', track.fileName || trackId, err);
                 }
             }
+            finishCacheWrites?.({ trackCount: localTracks.length, savedCount: saved, skippedCount: skipped, failedCount: failed });
             return { saved, skipped, failed };
         }
 
@@ -2863,6 +2872,7 @@
         }
 
         function restoreActiveLibraryState() {
+            const finishLocalRestore = window.OndaDiagnostics?.begin('restore-local');
             try {
                 const best = findBestLocalStorageLibraryCandidate();
                 if (!best) return false;
@@ -2876,10 +2886,13 @@
             } catch (err) {
                 console.warn('Could not restore autosaved library catalogue from localStorage:', err);
                 return false;
+            } finally {
+                finishLocalRestore?.({ trackCount: getCurrentTrackCountForStorage() });
             }
         }
 
         async function restoreActiveLibraryStateFromIndexedDb() {
+            const finishIdbRestore = window.OndaDiagnostics?.begin('restore-indexeddb');
             try {
                 const saved = await idbGetState(ONDA_IDB_ACTIVE_LIBRARY_KEY);
                 if (!saved) return false;
@@ -2902,6 +2915,8 @@
             } catch (err) {
                 console.warn('Could not restore autosaved library catalogue from IndexedDB:', err);
                 return false;
+            } finally {
+                finishIdbRestore?.({ trackCount: getCurrentTrackCountForStorage() });
             }
         }
 
@@ -2967,6 +2982,7 @@
         }
 
         async function initialisePersistentLibraryStorage() {
+            const finishStorageRestore = window.OndaDiagnostics?.begin('restore-total');
             libraryRestorePending = true;
             const restoredFromLocal = restoreActiveLibraryState();
             const restoredFromIdb = await restoreActiveLibraryStateFromIndexedDb();
@@ -2986,6 +3002,7 @@
             } else if (shouldShowStartupRecovery(restoredFromLocal, restoredFromIdb)) {
                 setTimeout(() => openStartupRecoveryModal(), 350);
             }
+            finishStorageRestore?.({ trackCount: getCurrentTrackCountForStorage() });
         }
 
         async function refreshLinkedFileIndex() {
@@ -3411,6 +3428,7 @@
         }
 
         async function handleUploadedFiles(files, options = {}) {
+            const finishImportPrepare = window.OndaDiagnostics?.begin('import-prepare');
             const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
                 return Boolean(window.OndaMidi?.isMidiFile(file)) || file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm|mid|midi)$/i);
@@ -3418,6 +3436,7 @@
 
             if (playableFiles.length === 0) {
                 showToast("No playable media files detected.");
+                finishImportPrepare?.({ trackCount: 0 });
                 return;
             }
 
@@ -3495,6 +3514,7 @@
             // Keep this immediate save before awaiting any large audio writes.
             saveActiveLibraryState('add-local-files');
             showToast(summary);
+            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: queueDuplicates });
 
             if (linkedRecords.length && window.OndaFileHandles?.rememberMany) {
                 // The handle index is additive: never remove or bypass existing cache.
@@ -3526,6 +3546,7 @@
         }
 
         async function loadTrack(file) {
+            const finishTrackResolve = window.OndaDiagnostics?.begin('track-resolve');
             const requestId = ++trackLoadRequestId;
             currentFile = file;
             if (localAudio.src && localAudio.src.startsWith('blob:')) URL.revokeObjectURL(localAudio.src);
@@ -3630,6 +3651,7 @@
             activeAudio.playbackRate = parseFloat(speedSlider.value);
             updateMetadataUI();
             startVisualizer();
+            finishTrackResolve?.({ trackCount: 1 });
             playAudio();
         }
 
@@ -4044,6 +4066,7 @@
         // --- 4. PLAYBACK TRANSPORT DECKS CONTROLS ---
         async function playAudio() {
             if (!currentFile) return;
+            const finishPlayResponse = window.OndaDiagnostics?.begin('audio-play');
             const requestedAudio = activeAudio;
             const requestId = trackLoadRequestId;
             // Start AudioContext resume and media.play() in the same gesture.
@@ -4058,6 +4081,7 @@
                 btnPlay.textContent = '🧿';
                 btnPlay.classList.add('active-state');
                 startVisualizer();
+                finishPlayResponse?.({ trackCount: 1 });
             } catch (err) {
                 if (requestedAudio !== activeAudio || requestId !== trackLoadRequestId || err?.name === 'AbortError') return;
                 isPlaying = false;
@@ -4065,6 +4089,7 @@
                 btnPlay.classList.remove('active-state');
                 startVisualizer();
                 console.warn('Playback failed:', err);
+                finishPlayResponse?.({ failedCount: 1 });
                 showToast('Playback was blocked by the browser. Tap Play to retry.');
             }
         }
@@ -4844,9 +4869,11 @@
         if (playlistImageUrlInput) playlistImageUrlInput.addEventListener('input', () => updatePlaylistImagePreview(playlistImageUrlInput.value.trim()));
         if (dbLibrarySearch) {
             dbLibrarySearch.addEventListener('input', () => {
+                const finishSearch = window.OndaDiagnostics?.begin('search-render');
                 userTypedLibrarySearch = true;
                 if (isMobileLayoutActive() && libraryDrawer?.dataset.mobileView !== 'results') setMobileLibraryView('results');
                 renderLibraryManager();
+                finishSearch?.({ trackCount: Object.keys(virtualLibrary).length, visibleCount: visibleLibraryIds.length });
             });
         }
         if (dbLibraryFilter) dbLibraryFilter.addEventListener('change', renderLibraryManager);
@@ -5720,6 +5747,7 @@
             visualizerRunning = false;
         }
 
+        let ondaDiagnosticFrameCount = 0;
         function startVisualizer() {
             if (document.visibilityState === 'hidden') {
                 stopVisualizerFrames();
@@ -5729,7 +5757,16 @@
             visualizerRunning = true;
             visualizerFrameId = requestAnimationFrame(() => {
                 visualizerFrameId = 0;
-                drawVisualizer();
+                // Sampling only one in 60 frames avoids adding diagnostic cost
+                // to each animation while capturing real draw-time examples.
+                const sampleDraw = window.OndaDiagnostics?.isEnabled() &&
+                    (++ondaDiagnosticFrameCount % 60 === 0);
+                const finishDraw = sampleDraw ? window.OndaDiagnostics.begin('visualizer-frame') : null;
+                try {
+                    drawVisualizer();
+                } finally {
+                    finishDraw?.();
+                }
                 if (visualizerShouldAnimate()) startVisualizer();
                 else visualizerRunning = false;
             });
@@ -6803,3 +6840,4 @@
                 startVisualizer();
             }
         });
+        finishOndaCoreInit?.({ trackCount: Object.keys(virtualLibrary).length });

@@ -315,3 +315,36 @@
 }
 .onda-storage-audit-items li:last-child { border-bottom: 0; }
 .onda-storage-audit-note { margin-top: 9px; font-size: .79rem; opacity: .9; line-height: 1.45; }
+
+/* v3.18 — optional developer-only, local performance diagnostics controls. */
+.onda-diagnostics-panel {
+  border: 1px solid rgba(117, 178, 222, .28);
+  border-radius: 12px;
+  margin: 12px 0;
+  padding: 10px 12px;
+}
+.onda-diagnostics-panel > summary {
+  color: var(--water-spray);
+  cursor: pointer;
+  font-size: .82rem;
+  font-weight: 750;
+  padding: 4px 0;
+}
+.onda-diagnostics-panel .library-help {
+  line-height: 1.45;
+  margin: 9px 0;
+}
+.onda-diagnostics-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 9px 0;
+}
+.onda-diagnostics-actions .btn-pill {
+  min-height: 40px;
+}
+@media (max-width: 768px) {
+  .onda-diagnostics-actions .btn-pill {
+    min-height: 44px;
+  }
+}
