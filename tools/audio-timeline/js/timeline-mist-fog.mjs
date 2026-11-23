@@ -86,7 +86,7 @@ function sampleLayers(u,v,o,t){
   const internal=.62+.38*body+.14*Math.sin(t*.41+d+px*.79);
   // Fog never paints an opaque sky/whole-frame wash: upper air remains
   // transparent even when a seeded crest briefly branches above the horizon.
-  const clearSky=smooth(.10,.30,v);
+  const clearSky=smooth(.30,.43,v);
   const alpha=clamp(
    ((bank*(.35+.75*densityMask)+fingers)
     *(.43+.38*o.density)*internal*o.opacity*clearSky),0,.62);
