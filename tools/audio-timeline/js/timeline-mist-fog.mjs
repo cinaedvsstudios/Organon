@@ -47,8 +47,7 @@ function settings(effect={}){
  };
 }
 /** One point in the volume: three separate moving noise/mist depths. */
-export function sampleMistFogLayers(nx,ny,effect={},seconds=0){
- const o=settings(effect),u=clamp(nx,0,1),v=clamp(ny,0,1),t=Math.max(0,Number(seconds)||0);
+function sampleLayers(u,v,o,t){
  const layers=[];
  for(let d=0;d<3;d++){
   const wind=t*o.windSpeed*(.038+d*.021);
@@ -69,7 +68,7 @@ export function sampleMistFogLayers(nx,ny,effect={},seconds=0){
   const body=.50*broad+.34*detail+.16*fine;
   // Banks sit lower than the haze (#49); lobes and branching wisps rise
   // above an irregular feathered crest. The background stays truly clear.
-  const crest=o.bankHeight+(.13-d*.06)
+  const crest=o.bankHeight+(.045-d*.045)
    -(.33+o.turbulence*.12)*(broad-.4)
    -.12*(detail-.45)
    -.035*Math.sin(px*2.1+t*.34+d);
@@ -81,11 +80,15 @@ export function sampleMistFogLayers(nx,ny,effect={},seconds=0){
   const densityMask=smooth(.28-o.density*.10,.70-o.density*.06,body);
   const internal=.6+.4*body+.12*Math.sin(t*.41+d+px*.79);
   const alpha=clamp(
-   ((bank*(.48+.52*densityMask)+fingers)
-    *(.14+.18*o.density)*internal*o.opacity),0,.46);
+   ((bank*(.56+.44*densityMask)+fingers)
+    *(.19+.20*o.density)*internal*o.opacity),0,.46);
   layers.push({depth:d,alpha,body,crest,bank,fingers,wind});
  }
  return layers;
+}
+export function sampleMistFogLayers(nx,ny,effect={},seconds=0){
+ return sampleLayers(clamp(nx,0,1),clamp(ny,0,1),settings(effect),
+  Math.max(0,Number(seconds)||0));
 }
 /** Alpha-only fog: source video is never drawn or cleared by this module. */
 export function buildMistFogFrame(width,height,effect={},seconds=0,reuse){
@@ -93,7 +96,7 @@ export function buildMistFogFrame(width,height,effect={},seconds=0,reuse){
  const data=reuse?.length===w*h*4?reuse:new Uint8ClampedArray(w*h*4);
  const o=settings(effect),t=Math.max(0,Number(seconds)||0);
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
-  const layers=sampleMistFogLayers((x+.5)/w,(y+.5)/h,effect,t);
+  const layers=sampleLayers((x+.5)/w,(y+.5)/h,o,t);
   let alpha=0,r=0,g=0,b=0;
   for(const layer of layers){
    const a=layer.alpha*(1-alpha);
