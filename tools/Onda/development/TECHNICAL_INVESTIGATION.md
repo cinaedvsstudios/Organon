@@ -1,7 +1,7 @@
 # Onda v3.10 — Mobile-First Technical Investigation and Implementation Blueprint
 
 **Review date:** 2026-11-23  
-**Status:** v3.11 player fixes, v3.12 storage-write optimisation and v3.13 optional persistent file handles committed; real Android verification pending. See [v3.13](./RELEASE_V3_13.md) for current implementation.  
+**Status:** v3.11–v3.14 updates committed; v3.14 adds read-only cache inspection without cleanup. Real Android/Netlify validation is pending. See [v3.14](./RELEASE_V3_14.md).  
 **Primary target:** Android Chrome, including Chrome home-screen shortcut / standalone installed mode. Secondary: desktop Chrome.  
 **Companion:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Interactive concept page](./mobile-review.html) · [QA and migration matrix](./QA_MIGRATION_MATRIX.md)
 
@@ -309,3 +309,16 @@ This **postdates** the baseline blueprint in sections A–I. Full code review an
 **Permission caveat:** A stored handle is not a permanent permission grant. `queryPermission` can return `prompt` after Chrome restart, so an ordinary Play never opens an unexpected permission modal. Clicking Reconnect attempts `requestPermission({mode:'read'})` using a startup-restored in-memory handle. If refused, the next Reconnect tap opens the original picker.
 
 **QA:** 13 isolated module tests and 18 extracted-core/static integration checks passed. Real device tests and Netlify deployment are pending; see release notes. The earlier architecture discussion of an optional v3 schema upgrade should now be treated as **not implemented and unnecessary for this first experimental handle feature**. Future schema changes require an explicit migration/rollback plan.
+
+
+## M. Read-only browser cache audit — Onda v3.14
+
+This update supersedes the baseline's *proposed* cache-inventory phase for read-only reporting only. See [RELEASE_V3_14.md](./RELEASE_V3_14.md) for the source map, report semantics, limitations, tests and rollback.
+
+**New `js/storage-audit.js`:** A standalone module with `scanAudioRecords(db)` and pure `analyse(records, protectedIds)`. The first uses `db.transaction('audioFiles','readonly')` and an `openCursor()` to extract only File/Blob metadata without reading audio bytes, writing, migrating or deleting anything. The scanner closes the DB on completion and declines to show a partial report if the 20,000-record safety limit is exceeded.
+
+**Integration:** `js/app-core.js` collects a conservative protection set from the current Library, playlists, queue, current track, history and saved primary/backup/last-good JSON references. The user presses **Review Cached Audio** in the existing Storage Health card. The results display unlinked candidates, possible duplicate groups, invalid records, separate byte totals and an explicit warning that no savings are guaranteed. UI values are HTML-escaped. `css/modals-settings.css` adds compact mobile styles. All controls remain on the Storage screen; the Library drawer and Current-screen Queue are unchanged.
+
+**Important definitions:** 'Unlinked' means not referenced by the inspected active/backup IDs, *not* safe to delete. 'Possible duplicates' require exact name/size/mtime/type matches but can have different content, and the estimated surplus can overlap orphan bytes. Never present the two categories as additive. Existing `navigator.storage.estimate()` remains a separate origin-wide approximation, not exact audio bytes.
+
+**Test evidence:** 18 isolated analysis/readonly-cursor/protected-reference checks and 12 renderer/browser-mock checks passed. Actual Android IndexedDB performance, site deployment, the user's cache inventory and post-restart playback are not yet confirmed. The further cleanup gate remains completely **unimplemented and requires explicit approval**.
