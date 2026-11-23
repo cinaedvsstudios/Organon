@@ -75,7 +75,7 @@ test('41 selected transitions are individually accepted in order, with independe
 test('no false bulk acceptance hides remaining overlay, editor, mobile and performance work',async()=>{
  const markdown=await read('MOTORICLIP_VISUAL_REBUILD_REQUIREMENTS.md');
  const rows=markdown.split('\n').filter(x=>/^-\s+\[[ x]\]\s+\*\*\d+\./.test(x));
- assert.equal(rows.length,83,'All original 83 requirements must remain in one tracker');
+ assert.equal(rows.length,87,'All 87 requirements, including four November UI additions, must remain in one tracker');
  for(const row of rows){
   const m=row.match(/^-\s+\[([ x])\]\s+\*\*(\d+)\./);
   const n=Number(m[2]);
