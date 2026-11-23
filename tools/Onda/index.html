@@ -332,6 +332,8 @@
 <h3>Settings</h3>
 <div class="library-settings-actions">
 <button class="btn-pill" id="btn-db-add-folder">Add Folder</button>
+<button class="btn-pill" id="btn-db-link-files" type="button" title="Choose files using Chrome's read-only file handles. Original audio stays in place and Onda keeps its existing cache.">Remember Files</button>
+<button class="btn-pill" id="btn-db-link-folder" type="button" title="Choose a folder with read-only access. Onda remembers individual file handles if Chrome supports it, while retaining cached audio.">Remember Folder</button>
 <button class="btn-pill" id="btn-db-import-json">Import JSON</button>
 <button class="btn-pill" id="btn-db-export-everything">Export Everything</button>
 <button class="btn-pill" id="btn-db-export-library">Export Full</button>
@@ -671,6 +673,6 @@
 
 
 
-<script src="js/app-core.js?v=3.12"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
+<script src="js/file-access.js?v=3.13"></script><script src="js/app-core.js?v=3.12"></script><script src="js/cloud-sync.js"></script><script src="js/media-session.js?v=3.10"></script>
 </body>
 </html>
