@@ -476,7 +476,7 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 
 The one-off v3.11–v3.21 source checks now have a committed follow-up: a dependency-free [Node regression suite](../tests/onda-regression.test.mjs), invoked by `cd tools/Onda && npm test`, and an [Onda-only GitHub Actions workflow](../../../.github/workflows/onda-regression.yml). It will run on Onda-related PRs, main pushes, and manual dispatch without installing Netlify packages or accessing music storage.
 
-Coverage: script syntax/asset ordering; navigation vs meaningful save checkpoints; temporary Quick Play's explicit import and blob lifecycle; Media Session preview/system action routing; and read-only device QA's redacted reporting. All **five top-level tests passed in an equivalent isolated source harness**; GitHub-hosted Node/Actions status remains pending until a workflow result is observed.
+Coverage: script syntax/asset ordering; navigation vs meaningful save checkpoints; temporary Quick Play's explicit import and blob lifecycle; Media Session preview/system action routing; and read-only device QA's redacted reporting. All **five top-level tests passed in the isolated harness and in actual GitHub Actions Node.js 22** in [run #45216940426](https://github.com/cinaedvsstudios/Organon/actions/runs/45216940426) for PR #185. This source CI does not replace Android testing.
 
 These are source/mock tests, **not** Android playback validation. Continue with physical Android Chrome + desktop acceptance; never clear or automatically migrate the user's existing music cache just to force a test.
 
