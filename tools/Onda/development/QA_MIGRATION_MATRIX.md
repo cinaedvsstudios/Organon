@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.2 for Onda v3.12 · 2026-11-23  
-**Status:** v3.11: 21 isolated/static checks passed; v3.12: 22 isolated/static checks passed. All physical Android, deployment, quota and real audio tests **remain unverified**. See [v3.11](./RELEASE_V3_11.md) and [v3.12](./RELEASE_V3_12.md).  
+**Version:** QA v1.3 for Onda v3.13 · 2026-11-23  
+**Status:** v3.11: 21 checks, v3.12: 22 checks, v3.13: 31 isolated/static checks passed. Android device, real IndexedDB/permission persistence and public Netlify deployment remain **unverified**. See [v3.13 release notes](./RELEASE_V3_13.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -230,3 +230,29 @@ These are new tests for the v3.12 code path; they do not imply prior Android tes
 | CACHE-14 | ONDA-07 | Simulate cache write/quota error in a disposable test profile | Failed write is counted; no false success | PASS isolated; browser pending |
 
 **No cleanup operation has been added.** Never clear site data, delete old audio cache records or upgrade IndexedDB merely to execute these tests. Use a disposable sample song for repeated import/modified-file checks.
+
+
+## v3.13 optional Android file handles — tests and release gate
+
+The module is implemented, but **test on actual Android Chrome** before relying on persistent access to users' original files.
+
+| Test ID | Action | Expected | Status |
+|---|---|---|---|
+| FH-01 | Use Remember Files on Chrome Android | User selects new audio; normal catalogue/caching preserved and one handle saved | NEEDS DEVICE |
+| FH-02 | Use Remember Folder (nested folder) | Relative file paths and track IDs preserved; playable content imported | NEEDS DEVICE |
+| FH-03 | Reopen Chrome app after closing all tabs | Browser-stored handle persists; permission status checked without unexpected autoplay/modal | NEEDS DEVICE |
+| FH-04 | Play with both handle and cached audio | Cached audio used first, no permission prompt | PASS isolated; device pending |
+| FH-05 | Remove cache in **disposable test profile** while handle still authorised | Direct file handle supplies audio | PASS isolated; device pending |
+| FH-06 | Revoke handle read permission then tap Play | Cache fallback or clear Reconnect; no unprompted read permission dialog | PASS isolated; device pending |
+| FH-07 | Tap Reconnect when permission prompt is required | Explicit read permission requested from user tap; previous library ID remains | PASS isolated; device pending |
+| FH-08 | Deny permission then tap Reconnect again | Manual file picker is available; no media erased | NEEDS DEVICE |
+| FH-09 | Unsupported/insecure browser | Remember Files/Folder hidden, existing native file input still works | PASS isolated; browser pending |
+| FH-10 | Folder with 3,501+ supported media files or excessive nesting | Clear error, no partial hidden import or deletion | NEEDS BROWSER |
+| FH-11 | Select previously imported song from same relative path | Existing stable ID reused, no unrequested new library entry | NEEDS DEVICE |
+| FH-12 | Select same-named file under different folder | No silent false match; separate IDs unless manually reconnected | NEEDS DEVICE |
+| FH-13 | Check JSON/Netlify backup | No device-bound FileSystemFileHandle leaked to cloud or exported | PASS static; integration pending |
+| FH-14 | Inspect old v2 music DB after linked import | Schema unchanged, all existing cached audio still playable | PASS static; device pending |
+| FH-15 | Reconnect an original MIDI file | Original track ID, playlist and MIDI playback remain intact | NEEDS DEVICE |
+| FH-16 | After Netlify release load Onda | Source version v3.13, new handle module loaded before core | PASS static; deployment pending |
+
+**Release gate:** confirm FH-01/02/03/04/06/07/08/09/11/14 with disposable media on the user's actual Android phone. Retain cache-first as default; do not implement automatic cache reduction, deletion or v2 schema migration based on static tests alone. Source references and manual test details are in [RELEASE_V3_13.md](./RELEASE_V3_13.md).
