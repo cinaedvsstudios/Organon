@@ -2586,24 +2586,68 @@
             });
         }
 
+        // Prevent re-importing an identical file from rewriting its entire browser cache.
+        // This is an identity check, not a content hash: if any metadata is uncertain,
+        // write the file as before rather than risk reusing stale audio.
+        function isIdenticalCachedAudio(record, file, meta = {}) {
+            const savedFile = record?.file || record?.blob || null;
+            if (!savedFile || typeof savedFile.arrayBuffer !== 'function' || !file ||
+                !Number.isFinite(savedFile.size) || !Number.isFinite(file.size)) return false;
+            const oldModified = Number(record.lastModified || savedFile.lastModified || 0);
+            const newModified = Number(file.lastModified || 0);
+            if (!oldModified || !newModified || oldModified !== newModified) return false;
+            const oldName = String(record.fileName || savedFile.name || '');
+            const newName = String(file.name || '');
+            const oldPath = String(record.localPath || '');
+            const newPath = String(meta.localPath || file.webkitRelativePath || file.name || '');
+            // The path and exact filename must agree, including the containing folder.
+            if (!oldName || !newName || oldName !== newName ||
+                !oldPath || !newPath || oldPath !== newPath) return false;
+            if (savedFile.size !== file.size) return false;
+            const oldType = String(record.type || savedFile.type || '');
+            const newType = String(file.type || '');
+            return oldType === newType;
+        }
+
+        // Serialise concurrent cache writes for the same track; avoid two imports
+        // both concluding that a record is missing and writing duplicate blobs.
+        const pendingAudioCacheWrites = new Map();
+        function saveAudioFileOnlyIfChanged(trackId, file, meta = {}) {
+            const id = String(trackId);
+            const previous = pendingAudioCacheWrites.get(id) || Promise.resolve();
+            const operation = previous.catch(() => {}).then(async () => {
+                const shouldCheckExisting = audioCacheIndexState !== 'ready' || cachedAudioTrackIds.has(id);
+                const existing = shouldCheckExisting ? await idbGetAudioFile(id) : null;
+                if (isIdenticalCachedAudio(existing, file, meta)) return 'skipped';
+                await idbSetAudioFile(id, file, meta);
+                cachedAudioTrackIds.add(id);
+                return 'saved';
+            });
+            pendingAudioCacheWrites.set(id, operation);
+            return operation.finally(() => {
+                if (pendingAudioCacheWrites.get(id) === operation) pendingAudioCacheWrites.delete(id);
+            });
+        }
+
         async function persistLocalAudioFilesToIndexedDb(tracks) {
             const localTracks = (tracks || []).filter(track => track && track.blobFile && (track.sourceType || 'local') !== 'stream');
-            if (!localTracks.length) return { saved: 0, failed: 0 };
+            if (!localTracks.length) return { saved: 0, skipped: 0, failed: 0 };
             let saved = 0;
+            let skipped = 0;
             let failed = 0;
             for (const track of localTracks) {
                 const trackId = getTrackId(track);
                 const meta = virtualLibrary[trackId] || track;
                 try {
-                    await idbSetAudioFile(trackId, track.blobFile, meta);
-                    cachedAudioTrackIds.add(String(trackId));
-                    saved += 1;
+                    const result = await saveAudioFileOnlyIfChanged(trackId, track.blobFile, meta);
+                    if (result === 'skipped') skipped += 1;
+                    else saved += 1;
                 } catch (err) {
                     failed += 1;
                     console.warn('Could not persist audio file to IndexedDB:', track.fileName || trackId, err);
                 }
             }
-            return { saved, failed };
+            return { saved, skipped, failed };
         }
 
         async function hydrateLocalAudioBlob(trackId) {
