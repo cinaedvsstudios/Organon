@@ -76,7 +76,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.15';
+        const ONDA_VERSION = 'v3.16';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -964,19 +964,6 @@
             return true;
         }
 
-        function prepareLibrarySearchForDrawerOpen() {
-            if (!dbLibrarySearch) return;
-            userTypedLibrarySearch = false;
-            clearLibrarySearchValue('drawer-open');
-            [80, 350, 900].forEach(delay => {
-                setTimeout(() => {
-                    if (libraryDrawer?.classList.contains('drawer-open') && clearLibrarySearchValue(`drawer-open-autofill-${delay}`)) {
-                        renderLibraryManager();
-                    }
-                }, delay);
-            });
-        }
-
         function getTrackPlaylistNames(trackId) {
             return Object.entries(playlists)
                 .filter(([, tracks]) => Array.isArray(tracks) && tracks.some(track => getTrackId(track) === trackId))
@@ -1605,7 +1592,9 @@
             const safeView = ['results', 'recents', 'playlists', 'help'].includes(view) ? view : 'results';
             libraryDrawer.dataset.mobileView = safeView;
             document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
-                btn.classList.toggle('active-mobile-view', btn.dataset.mobileView === safeView);
+                const active = btn.dataset.mobileView === safeView;
+                btn.classList.toggle('active-mobile-view', active);
+                btn.setAttribute('aria-pressed', String(active));
             });
             try {
                 localStorage.setItem(LIBRARY_MOBILE_VIEW_KEY, safeView);
@@ -1657,11 +1646,12 @@
                 })
                 .sort((a, b) => getDisplayTitle(a[1]).localeCompare(getDisplayTitle(b[1])));
 
-            if (!entries.length && search && Object.keys(virtualLibrary).length && !userTypedLibrarySearch) {
-                clearLibrarySearchValue('empty-results-autofill-guard');
-                return renderLibraryManager();
+            const mobileStatus = document.getElementById('onda-library-status');
+            if (mobileStatus) {
+                const allTracks = Object.values(virtualLibrary);
+                const streams = allTracks.filter(meta => meta.sourceType === 'stream' || !!meta.streamUrl).length;
+                mobileStatus.textContent = `${entries.length} shown · ${allTracks.length} tracks · ${streams} streams`;
             }
-
             visibleLibraryIds = entries.map(([id]) => id);
             selectedLibraryIds = new Set(Array.from(selectedLibraryIds).filter(id => virtualLibrary[id]));
             if (dbSelectionSummary) dbSelectionSummary.textContent = `${selectedLibraryIds.size} selected`;
@@ -1682,7 +1672,20 @@
                 });
             }
 
-            if (dbPlaylistList) dbPlaylistList.innerHTML = '';
+            if (dbPlaylistList) {
+                dbPlaylistList.innerHTML = '';
+                const names = Object.keys(playlists).sort((a, b) => a.localeCompare(b));
+                if (!names.length) {
+                    dbPlaylistList.innerHTML = '<div class="library-track-meta">No saved playlists yet.</div>';
+                }
+                names.forEach(name => {
+                    const row = document.createElement('div');
+                    row.className = 'library-mini-row onda-drawer-playlist-row';
+                    row.dataset.playlistName = name;
+                    row.innerHTML = `<div class="library-track-text-wrap"><div class="library-track-title">${escapeHtml(name)}</div><div class="library-track-meta">${normalisePlaylistToIds(playlists[name] || []).length} tracks</div></div><button type="button" class="btn-pill btn-db-edit-playlist" data-playlist-name="${escapeHtml(name)}" aria-label="Edit ${escapeHtml(name)} playlist">Edit</button>`;
+                    dbPlaylistList.appendChild(row);
+                });
+            }
             renderHistoryTab();
         }
 
@@ -1896,8 +1899,7 @@
                     if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
                     if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
                 }
-                setMobileLibraryView(isMobileLayoutActive() ? 'results' : (libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results'));
-                prepareLibrarySearchForDrawerOpen();
+                setMobileLibraryView(libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results');
                 renderLibraryManager();
             }
             saveLocalUiStateCheckpoint(shouldOpen ? 'library-drawer-open' : 'library-drawer-closed');
@@ -4708,6 +4710,16 @@
         window.addEventListener('pointerup', endLibraryDrawerCornerResize);
         window.addEventListener('pointercancel', endLibraryDrawerCornerResize);
         safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
+        safeBind('btn-mobile-import-audio', 'click', () => {
+            if (fileInput) fileInput.click();
+        });
+        safeBind('btn-mobile-storage-health', 'click', () => {
+            toggleLibraryDrawer(false);
+            setSettingsTab('storage');
+            if (advancedControls && !advancedControls.classList.contains('is-open')) {
+                btnToggleAdvanced.click();
+            }
+        });
 
         safeBind('btn-db-clear-search', 'click', () => {
             if (!dbLibrarySearch) return;
@@ -4759,7 +4771,7 @@
         }
         safeBind('btn-db-select-mode', 'click', () => toggleLibrarySelectMode());
         safeBind('btn-db-settings-mode', 'click', () => setLibraryActionPanel('settings'));
-        safeBind('btn-mobile-select-mode', 'click', () => setLibraryActionPanel('select'));
+        safeBind('btn-mobile-select-mode', 'click', () => toggleLibrarySelectMode());
         safeBind('btn-mobile-settings-mode', 'click', () => setLibraryActionPanel('settings'));
         setLibraryActionPanel(localStorage.getItem('ondaLibraryActionPanel') || 'select');
         safeBind('btn-db-select-visible', 'click', () => {
@@ -4827,6 +4839,7 @@
         if (dbLibrarySearch) {
             dbLibrarySearch.addEventListener('input', () => {
                 userTypedLibrarySearch = true;
+                if (isMobileLayoutActive() && libraryDrawer?.dataset.mobileView !== 'results') setMobileLibraryView('results');
                 renderLibraryManager();
             });
         }
