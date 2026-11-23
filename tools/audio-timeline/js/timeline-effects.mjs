@@ -19,6 +19,7 @@ import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
 import {renderLineCorruption} from './timeline-line-corruption.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
+import {renderFlyingDebris} from './timeline-flying-debris.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
@@ -95,6 +96,7 @@ export function normaliseTimelineEffect(effect={}){
  const starburst=presetId==='starburst';
  const cameraFrame=presetId==='camera-frame';
  const electricSparks=presetId==='particle-sparks';
+ const flyingDebris=presetId==='particle-debris';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
@@ -105,9 +107,16 @@ export function normaliseTimelineEffect(effect={}){
   distortion:clamp(raw.distortion,0,100,lineCorruption?71:rgbBlockGlitch?76:signalTear?72:signalInterference?70:mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,mistFog?34:24),
-  originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||['halo-blur','fire-explosion'].includes(presetId))?50:20),
-  originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':'#ffd98d'
+  originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
+  originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':'#ffd98d'
+ };
+ if(flyingDebris)return {...base,
+  debrisGravity:clamp(raw.debrisGravity,0,100,72),
+  debrisTumble:clamp(raw.debrisTumble,0,100,68),
+  debrisSpread:clamp(raw.debrisSpread,0,100,67),
+  debrisLife:clamp(raw.debrisLife,.35,4,2.15),
+  debrisSeed:Math.round(clamp(raw.debrisSeed,0,99999,6767))
  };
  if(electricSparks)return {...base,
   sparkForks:Math.round(clamp(raw.sparkForks,0,4,2)),
@@ -433,34 +442,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
   }else if(e.presetId==='particle-sparks'){
    renderElectricSparks(ctx,w,h,e,t,strength);
   }else if(e.presetId==='particle-debris'){
-   // The old shared path still uses the sparks/debris flags for size and drift.
-   // The dedicated Electric Sparks painter above never enters this branch.
-   const sparks=false,debris=true;
-   const count=Math.min(120,Math.max(1,Math.round(e.density)));
-   const clipAlpha=ctx.globalAlpha;
-   const dx=Math.cos(rad),dy=Math.sin(rad);
-   for(let i=0;i<count;i++){
-    const life=wrap(random(i*13+2)+t/(sparks?1.4:debris?3.1:7.5));
-    const baseX=random(i*13+3)*w,baseY=random(i*13+5)*h;
-    const travel=(sparks?Math.min(w,h)*.7:debris?Math.min(w,h)*.28:h*.15)*size;
-    const x=wrap((baseX+dx*travel*life+Math.sin(i*2.6+t)*w*.012)/w)*w;
-    const y=wrap((baseY+dy*travel*life-(sparks?0:life*h*.15))/h)*h;
-    const fade=Math.min(1,life*6,(1-life)*6)*strength;
-    const r=(sparks?1.4:debris?3.2:1.7)*size*(.6+random(i*13+8));
-    ctx.globalAlpha=clipAlpha*fade;
-    ctx.fillStyle=sparks?'#ffffff':e.color;
-    ctx.strokeStyle=sparks?e.color:ctx.fillStyle;
-    if(sparks){
-     ctx.lineWidth=Math.max(1,r*.8);ctx.beginPath();ctx.moveTo(x,y);
-     ctx.lineTo(x-dx*r*5,y-dy*r*5);ctx.stroke();
-    }else if(debris){
-     ctx.save();ctx.translate(x,y);ctx.rotate(rad+life*4+random(i+91));
-     ctx.fillRect(-r/2,-r/2,r*2,r);ctx.restore();
-    }else{
-     ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
-    }
-   }
-   ctx.globalAlpha=clipAlpha;
+   renderFlyingDebris(ctx,w,h,e,t,strength);
   }
  }finally{ctx.restore();}
  return true;
