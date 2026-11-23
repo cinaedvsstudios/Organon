@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-fire-explosion-controls" hidden>
+                     <div id="effect-fault-cassette-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Fault Cassette — analogue tracking damage</summary>
+                          <label class="text-setting-row"><span>Head tracking instability (%)</span><input id="effect-cassette-tracking" class="range-control" type="range" min="0" max="100" step="1" value="79" title="Moving head-sync distortion that rolls through actual source footage"></label>
+                          <label class="text-setting-row"><span>Dropout severity (%)</span><input id="effect-cassette-dropouts" class="range-control" type="range" min="0" max="100" step="1" value="62" title="Interrupted analogue tape loss, not a static digital packet effect"></label>
+                          <label class="text-setting-row"><span>Chroma misregistration (%)</span><input id="effect-cassette-chroma" class="range-control" type="range" min="0" max="100" step="1" value="64" title="Independent horizontal colour drift within unstable tracking bands"></label>
+                          <label class="text-setting-row"><span>Head-sync roll speed (%)</span><input id="effect-cassette-roll" class="range-control" type="range" min="0" max="100" step="1" value="48" title="Moving tape tracking line sweep rate"></label>
+                          <label class="text-setting-row"><span>Tape pattern seed</span><input id="effect-cassette-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6969" title="Replayable independent tape fault events for reverse seeking and encoded exports"></label>
+                      </details>
+                  </div>
+                  <div id="effect-fire-explosion-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Rolling Fire Explosion — blast stages</summary>
                           <label class="text-setting-row"><span>Shock-front strength (%)</span><input id="effect-explosion-shock" class="range-control" type="range" min="0" max="100" step="1" value="83" title="Irregular broken shock crown expanding through hot gases"></label>
