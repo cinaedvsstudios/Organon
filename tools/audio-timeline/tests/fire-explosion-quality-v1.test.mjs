@@ -13,7 +13,7 @@ const recipe=(other={})=>normaliseTimelineEffect({
  explosionSeed:6868,...other
 });
 const frame=(other={},time=.72)=>{const fx=recipe(other);return buildFireExplosionFrame(W,H,fx,time*fx.speed);};
-const signature=s=>JSON.stringify([s.generation,s.age,s.coreIntensity,s.radius,s.lobes,s.smoke,s.ejecta,s.shock,s.shockAlpha]);
+const signature=s=>JSON.stringify([s.generation,s.age,s.coreIntensity,s.radius,s.lobes,s.smoke,s.ejecta,s.shock,s.shockAlpha,s.params.hotColor,s.params.glow]);
 test('same preset ID and independent bounded blast controls, without affecting Fire Flames/Embers',()=>{
  assert.equal(TIMELINE_EFFECTS.filter(e=>e.id==='fire-explosion').length,1);
  const d=normaliseTimelineEffect({presetId:'fire-explosion'});
