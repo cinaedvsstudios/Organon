@@ -79,7 +79,7 @@ export function buildLightSweepFrame(source,width,height,effect={},seconds=0,reu
   const irregular=hash(cellX*59+cellY,19);
   const pulse=.55+.45*Math.sin(state.time*(9+irregular*7)+irregular*11);
   const sparkle=Math.max(0,irregular-(.90-.25*p.detail))*2.2*pulse;
-  const content=.04+.57*Math.pow(lum,1.25)+.62*edge;
+  const content=.005+.87*Math.pow(lum,2.3)+.65*edge;
   const light=core*(.62+.38*p.glow)+halo*.16*p.glow;
   const glint=core*edge*sparkle*.85;
   const boost=clamp(p.strength*(light*content+glint),0,.95);
