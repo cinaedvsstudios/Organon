@@ -22,6 +22,7 @@ import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
 import {renderSciFiScan} from './timeline-sci-fi-scan.mjs';
 import {renderFireFlames} from './timeline-fire-flames.mjs';
+import {renderFireExplosion} from './timeline-fire-explosion.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
 import {renderGodRays} from './timeline-god-rays.mjs';
 import {renderStarburst} from './timeline-starburst.mjs';
@@ -97,19 +98,28 @@ export function normaliseTimelineEffect(effect={}){
  const cameraFrame=presetId==='camera-frame';
  const electricSparks=presetId==='particle-sparks';
  const flyingDebris=presetId==='particle-debris';
+ const fireExplosion=presetId==='fire-explosion';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
   speed:clamp(raw.speed,.1,8,1),
-  density:clamp(raw.density,1,120,lineCorruption?81:rgbBlockGlitch?63:signalTear?72:dataBurst?46:signalInterference?68:tvStatic?88:mistFog?73:48),
+  density:clamp(raw.density,1,120,fireExplosion?62:lineCorruption?81:rgbBlockGlitch?63:signalTear?72:dataBurst?46:signalInterference?68:tvStatic?88:mistFog?73:48),
   scale:clamp(raw.scale,10,300,100),
   direction:clamp(raw.direction,-180,180,0),
-  distortion:clamp(raw.distortion,0,100,lineCorruption?71:rgbBlockGlitch?76:signalTear?72:signalInterference?70:mistFog?65:55),
+  distortion:clamp(raw.distortion,0,100,fireExplosion?68:lineCorruption?71:rgbBlockGlitch?76:signalTear?72:signalInterference?70:mistFog?65:55),
   glow:clamp(raw.glow,0,100,64),
   blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':'#ffd98d'
+ };
+ if(fireExplosion)return {...base,
+  glow:clamp(raw.glow,0,100,78),
+  explosionShock:clamp(raw.explosionShock,0,100,83),
+  explosionSmoke:clamp(raw.explosionSmoke,0,100,53),
+  explosionEjecta:clamp(raw.explosionEjecta,0,100,84),
+  explosionLife:clamp(raw.explosionLife,1.2,6,3.2),
+  explosionSeed:Math.round(clamp(raw.explosionSeed,0,99999,6868))
  };
  if(flyingDebris)return {...base,
   debrisGravity:clamp(raw.debrisGravity,0,100,72),
@@ -404,30 +414,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
   }else if(e.presetId==='fire-embers'){
    renderFlamingDust(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-explosion'){
-   // Radial burst with a decaying shock crown and distributed fiery projectiles.
-   const p=wrap(t*.33),cx=w*e.originX/100,cy=h*e.originY/100;
-   const radius=Math.min(w,h)*(.06+p*.57)*size;
-   const count=Math.min(120,Math.max(14,Math.round(e.density)));
-   const clip=ctx.globalAlpha;
-   const pulse=Math.pow(1-p,1.7)*strength;
-   const g=ctx.createRadialGradient(cx,cy,0,cx,cy,radius);
-   g.addColorStop(0,'rgba(255,248,180,'+(.8*pulse)+')');
-   g.addColorStop(.3,'rgba(255,112,27,'+(.6*pulse)+')');
-   g.addColorStop(1,'rgba(170,20,9,0)');
-   ctx.fillStyle=g;ctx.fillRect(cx-radius,cy-radius,radius*2,radius*2);
-   for(let i=0;i<count;i++){
-    const angle=i*Math.PI*2/count+random(i+34)*.25+rad;
-    const distance=radius*(.36+.7*random(i+60));
-    const x=cx+Math.cos(angle)*distance;
-    const y=cy+Math.sin(angle)*distance;
-    const span=Math.max(1,(1-p)*Math.min(w,h)*.065*size);
-    ctx.globalAlpha=clip*pulse*(.35+.65*random(i+91));
-    ctx.strokeStyle=i%3===0?e.color:i%2===0?'#ff581e':'#ffd477';
-    ctx.lineWidth=Math.max(1,2.6*size);
-    ctx.beginPath();ctx.moveTo(x,y);
-    ctx.lineTo(x-Math.cos(angle)*span,y-Math.sin(angle)*span);ctx.stroke();
-   }
-   ctx.globalAlpha=clip;
+   renderFireExplosion(ctx,w,h,e,t,strength);
   }else if(e.presetId==='rhythmic-flicker'){
    // Rhythm and seeded discontinuities are absolute-time calculations.
    const beat=Math.max(0,Math.sin(t*Math.PI*5));
