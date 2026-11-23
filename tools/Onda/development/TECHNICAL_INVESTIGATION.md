@@ -1,11 +1,11 @@
 # Onda v3.10 — Mobile-First Technical Investigation and Implementation Blueprint
 
 **Review date:** 2026-11-23  
-**Status:** Source audit substantially complete; no new production player changes authorised by this document.  
+**Status:** Source audit complete; user authorised implementation and first v3.11 fixes committed. Android device validation remains open. See [release notes](./RELEASE_V3_11.md).  
 **Primary target:** Android Chrome, including Chrome home-screen shortcut / standalone installed mode. Secondary: desktop Chrome.  
 **Companion:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Interactive concept page](./mobile-review.html) · [QA and migration matrix](./QA_MIGRATION_MATRIX.md)
 
-> IMPORTANT: This is a **static source review** of Onda as checked into cinaedvsstudios/Organon on 2026-11-23. It does not claim a device-level runtime benchmark or that every identified risk manifests for the user. Items are classified as CONFIRMED SOURCE BEHAVIOUR, STATIC RISK, or DEVICE/USER TEST REQUIRED.
+> IMPORTANT: The architecture/baseline findings below describe the original **v3.10 source**. A first implementation batch has since shipped in **v3.11** and is documented in [RELEASE_V3_11.md](./RELEASE_V3_11.md). No device-level benchmark or Android compatibility success is claimed; source behaviour and actual phone behaviour remain different evidence levels.
 
 ## A. Baseline, scope and architectural map
 
@@ -268,3 +268,13 @@ Implementation acceptance: Current screen presents now-playing context and upcom
 **Online source:** GitHub Pages public media + static JSON catalogue. Example JSON: `{"version":1,"tracks":[{"id":"example-1","title":"Example","path":"audio/example.mp3"}]}`. Resolve media paths relative to verified Pages base, keep IDs distinct from device-local tracks, don't use GitHub blob-view URLs as streams. Onda on Netlify fetches Pages catalogue online only; local library still works offline. Test cross-origin JSON fetch/CORS and streaming playback and seek from mobile, with existing streamAudio Web Audio analyser limitations. Pages content public even for private-source repos where Pages supported; only distribute permitted audio. GitHub Pages published site maximum 1 GB, bandwidth soft 100 GB/month, regular Git file maximum 100 MiB; Git LFS unsupported for Pages. No alternative hosting service recommended absent actual limitations.
 
 References: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage
+
+## J. Post-investigation implementation record — v3.11
+
+**Production files changed:** `js/app-core.js`, `onda-midi.js`, `index.html`. Commits and rollback details are tracked in [RELEASE_V3_11.md](./RELEASE_V3_11.md). User approved starting with playback/visualiser/storage changes on 2026-11-23.
+
+**Implemented:** `startVisualizer()` now coalesces RAF work and only continues during visible playback; `drawVisualizer()` no longer unconditionally self-schedules. MIDI `updatePlayingButton()` asks for refresh; `visibilitychange` cancels frames without pausing music. Last-track restore avoids duplicate early play(); `playAudio()` starts browser media playback while the original tap activation may still be valid. `refreshAudioCacheIndex()` reads IndexedDB media records in read-only mode and identifies actual File/Blob audio, allowing `sourceStatus()`, Missing filter, Check Files and Storage Health to distinguish cached vs genuinely absent. Storage Health also shows saved media bytes and whole-site quota usage estimate without deleting anything. Missing cached media may be reconnected via a separate file picker to the same stable ID, avoiding reimport and preserving metadata.
+
+**What remains:** Real Android Chrome and standalone shortcut playback/lock-screen testing; persistent file handle proof before any v3 storage/schema migration; Current queue mobile layout; optional new-file Quick Play; optional position resume; GitHub Pages hosted online media. The original static findings for v3.10 are kept as evidence of why these fixes were made, not as descriptions of current v3.11 defects.
+
+**Test evidence:** 21 V8 static/isolated checks passed (syntax, original icon/version, cache status cases, visualiser RAF scheduling states). These are not a browser integration test and are not a battery benchmark. See [Android QA matrix](./QA_MIGRATION_MATRIX.md).
