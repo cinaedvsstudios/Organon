@@ -361,6 +361,10 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/starburst-v1.browser.mjs
+      - name: Verify Mist-Fog Bank transparent billows, controls and project history
+        run: node --test tools/audio-timeline/tests/mist-fog-bank-v1.test.mjs
+      - name: Inspect actual Chrome Mist-Fog Bank PNG, transparency, wind and reverse seek
+        run: node tools/audio-timeline/tests/mist-fog-bank-v1.browser.mjs
       - name: Verify Camera Frame timecode, per-part switches, deterministic HUD and saved project state
         run: node --test tools/audio-timeline/tests/camera-frame-v1.test.mjs
       - name: Inspect real Chrome Camera Frame transparent pixels, REC blink, controls and rewind
