@@ -434,6 +434,8 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 
 **Playback coexistence:** Quick Play pauses the normal saved track; starting normal main playback or navigating away from Add stops the preview and revokes its URL. Its selected File remains available during the same session for Replay or explicit Add. Discard and pagehide release it. Media Session system controls temporarily route to the preview and return to saved playback when it ends/stops; Previous/Next do not mutate the saved queue while previewing.
 
+**Source checks:** 53 consolidated static and isolated tests passed, including blob URL failures, cancellation, repeated replay, explicit importer handoff and Media Session play/pause/seek/stop routing. These are not Android/desktop runtime tests.
+
 **Scope/safety:** No permanent storage, browser-cache migration, automatic deletion, playlist changes or saved-source ID changes before user-directed Add. The temporary module has no localStorage/sessionStorage/IndexedDB/network calls. Original source files are never modified. User-visible filenames use safe textContent. New source is loaded after existing Media Session. Real phone permissions, codecs, lock-screen routing, desktop UI and public Netlify deployment remain unverified.
 
 **Next:** Test v3.19 on the user's actual Android and desktop browser, especially preview playback, native controls, Media Session, saved queue/history unchanged, import after explicit Add and cache persistence on reload. After a successful phone acceptance pass, prioritise observed issues, not speculative feature churn.
