@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
 **Version:** QA v1.4 for Onda v3.14 · 2026-11-23  
-**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 30 isolated/static checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.14 release notes](./RELEASE_V3_14.md).  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 39 isolated/static checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.14 release notes](./RELEASE_V3_14.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -272,7 +272,7 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | AUDIT-08 | Some cache entries have no actual File/Blob | Shown under unreadable/metadata-only; unknown bytes not treated as recoverable | PASS isolated |
 | AUDIT-09 | Filename/path includes HTML special characters | Safely escaped in report; no script execution or injected controls | PASS isolated |
 | AUDIT-10 | Press Review twice or after library change | New snapshot generated; disabled button guards concurrent runs | PASS isolated; browser pending |
-| AUDIT-11 | IndexedDB access denied, failed or larger than 20,000 records | Informative error; no misleading partial totals or deletion | NEEDS BROWSER |
+| AUDIT-11 | IndexedDB access denied, failed or larger than 20,000 records | Informative error; no misleading partial totals or deletion | PASS isolated; browser pending |
 | AUDIT-12 | Compare unlinked bytes with potential-duplicate surplus | Values separately labelled, never combined as guaranteed savings | PASS isolated |
 | AUDIT-13 | Open on mobile portrait/landscape and desktop | Expandable details readable; main player and Current Queue unaffected | NEEDS DEVICE |
 | AUDIT-14 | Inspect rendered report for controls | No delete, remove, archive, clear or automatic cleanup action | PASS static |
