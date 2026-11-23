@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-flying-debris-controls" hidden>
+                     <div id="effect-fire-explosion-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Rolling Fire Explosion — blast stages</summary>
+                          <label class="text-setting-row"><span>Shock-front strength (%)</span><input id="effect-explosion-shock" class="range-control" type="range" min="0" max="100" step="1" value="83" title="Irregular broken shock crown expanding through hot gases"></label>
+                          <label class="text-setting-row"><span>Cooling smoke (%)</span><input id="effect-explosion-smoke" class="range-control" type="range" min="0" max="100" step="1" value="53" title="Separately rising dark smoky plumes that follow the fireball"></label>
+                          <label class="text-setting-row"><span>Flying hot ejecta (%)</span><input id="effect-explosion-ejecta" class="range-control" type="range" min="0" max="100" step="1" value="84" title="Independent sparks and cooling fragments with curved ballistic paths"></label>
+                          <label class="text-setting-row"><span>Blast cycle (s)</span><input id="effect-explosion-life" class="range-control" type="range" min="1.2" max="6" step="0.1" value="3.2" title="Time between independently re-seeded explosive bursts"></label>
+                          <label class="text-setting-row"><span>Blast pattern seed</span><input id="effect-explosion-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6868" title="Reproducible smoke shapes, shock front lobes and ejecta trajectories"></label>
+                      </details>
+                  </div>
+                  <div id="effect-flying-debris-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Flying debris — ballistic shards</summary>
                           <label class="text-setting-row"><span>Gravity (%)</span><input id="effect-debris-gravity" class="range-control" type="range" min="0" max="100" step="1" value="72" title="Acceleration of individual airborne shards as they fall, separate from wind direction"></label>
