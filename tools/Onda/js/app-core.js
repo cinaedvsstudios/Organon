@@ -1123,7 +1123,12 @@
             } else if (playNow) {
                 switchTrack(existingIndex);
             }
-            if (!playNow) showToast(`Queued: ${getDisplayTitle(meta)}`);
+            if (!playNow) {
+                updateNowPlayingPlaylistPanel();
+                if (existingIndex === -1) saveActiveLibraryState('add-to-active-queue');
+                showToast(existingIndex === -1
+                    ? `Queued: ${getDisplayTitle(meta)}` : 'Already in the current queue.');
+            }
         }
 
         function buildTrackRow(trackId, compact = false) {
@@ -2998,6 +3003,7 @@
         persistentLibraryReady.then(async () => {
             await Promise.all([refreshAudioCacheIndex(), refreshLinkedFileIndex()]);
             renderLibraryManager();
+            updateNowPlayingPlaylistPanel();
             if (typeof renderHistoryTab === 'function') renderHistoryTab();
         }).catch(error => console.warn('Audio source inventory unavailable:', error));
 
@@ -6729,6 +6735,7 @@
         initLayoutControls();
         setSettingsTab(document.querySelector('.settings-tab-btn.active')?.dataset.settingsTab || 'audio');
         installMobileMarqueeObserver();
+        updateNowPlayingPlaylistPanel(); // Show empty/up-next queue on Current at startup.
         announceOndaVersion();
         document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
         safeBind('btn-open-cloud-setup-from-settings', 'click', () => { if (typeof openOndaCloudSetup === 'function') openOndaCloudSetup(false); else document.getElementById('onda-cloud-setup-modal')?.classList.add('open'); });
