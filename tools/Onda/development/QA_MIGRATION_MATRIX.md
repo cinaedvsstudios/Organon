@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.3 for Onda v3.13 · 2026-11-23  
-**Status:** v3.11: 21 checks, v3.12: 22 checks, v3.13: 31 isolated/static checks passed. Android device, real IndexedDB/permission persistence and public Netlify deployment remain **unverified**. See [v3.13 release notes](./RELEASE_V3_13.md).  
+**Version:** QA v1.4 for Onda v3.14 · 2026-11-23  
+**Status:** v3.11: 21 checks; v3.12: 22 checks; v3.13: 31 checks; v3.14: 30 isolated/static checks. All Android device, real storage benchmarks, live Netlify deployment and permission persistence remain **unverified**. See [v3.14 release notes](./RELEASE_V3_14.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -256,3 +256,27 @@ The module is implemented, but **test on actual Android Chrome** before relying 
 | FH-16 | After Netlify release load Onda | Source version v3.13, new handle module loaded before core | PASS static; deployment pending |
 
 **Release gate:** confirm FH-01/02/03/04/06/07/08/09/11/14 with disposable media on the user's actual Android phone. Retain cache-first as default; do not implement automatic cache reduction, deletion or v2 schema migration based on static tests alone. Source references and manual test details are in [RELEASE_V3_13.md](./RELEASE_V3_13.md).
+
+
+## v3.14 read-only cache review — acceptance and release gate
+
+| Test ID | Action / preparation | Expected | Status |
+|---|---|---|---|
+| AUDIT-01 | Open Settings → Storage and press Review Cached Audio | On-demand report shows total cached count/bytes without touching any music | PASS isolated; browser pending |
+| AUDIT-02 | Scan test IndexedDB with several saved Files | Only `readonly` cursor used; Blob metadata accessed without reading audio bytes | PASS isolated |
+| AUDIT-03 | Remove a disposable Library listing and inspect | Cache no longer linked to currently loaded listing **unless backed up or otherwise referenced** | NEEDS DEVICE |
+| AUDIT-04 | A track exists only in current queue/history/playlist | Not considered unlinked | PASS isolated |
+| AUDIT-05 | Track ID appears in old Library backup or last-good JSON | Protected from being called unlinked | PASS isolated |
+| AUDIT-06 | Two test files share name,size,mtime,MIME but have different IDs | Candidate group shown; never labelled verified identical | PASS isolated |
+| AUDIT-07 | Same filename with differing timestamp, size or MIME | Does not group as possible duplicate | PASS isolated |
+| AUDIT-08 | Some cache entries have no actual File/Blob | Shown under unreadable/metadata-only; unknown bytes not treated as recoverable | PASS isolated |
+| AUDIT-09 | Filename/path includes HTML special characters | Safely escaped in report; no script execution or injected controls | PASS isolated |
+| AUDIT-10 | Press Review twice or after library change | New snapshot generated; disabled button guards concurrent runs | PASS isolated; browser pending |
+| AUDIT-11 | IndexedDB access denied, failed or larger than 20,000 records | Informative error; no misleading partial totals or deletion | NEEDS BROWSER |
+| AUDIT-12 | Compare unlinked bytes with potential-duplicate surplus | Values separately labelled, never combined as guaranteed savings | PASS isolated |
+| AUDIT-13 | Open on mobile portrait/landscape and desktop | Expandable details readable; main player and Current Queue unaffected | NEEDS DEVICE |
+| AUDIT-14 | Inspect rendered report for controls | No delete, remove, archive, clear or automatic cleanup action | PASS static |
+| AUDIT-15 | Reload v3.14 from actual public URL | New JS and CSS load; saved audio continues playing | NEEDS DEVICE / DEPLOY |
+| AUDIT-16 | Verify privacy of real file paths | Only presented locally; no network upload of report or music | PASS static; network inspection pending |
+
+**Release gate:** read-only review can be tested without destructive operations, but **cleanup must not be implemented** until the user has reviewed real Android findings, source availability and backup implications. Never clear actual Onda site storage or manually delete entries to force a test on the user's only copy. Refer to [RELEASE_V3_14.md](./RELEASE_V3_14.md).
