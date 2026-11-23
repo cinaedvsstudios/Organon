@@ -35,6 +35,10 @@ const browser=await chromium.launch({executablePath:chrome,headless:true,
 try {
     const context=await browser.newContext({viewport:{width:1440,height:900},acceptDownloads:true});
     const page=await context.newPage();
+    const chooseReset=async target=>{
+        await page.locator('#btn-reset-menu').click();
+        await page.locator(target).click();
+    };
     const errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
     await page.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',
@@ -110,7 +114,7 @@ try {
     console.log('[MotoriClip portable] PASS Save Project downloads compact JSON with all three clips and generated recipes');
 
     await page.locator('[data-library-tab="media"]').click();
-    await page.locator('#btn-clear').click();
+    await chooseReset('#btn-clear');
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
@@ -216,7 +220,7 @@ try {
     // Reimport its original media before clicking Undo: the stable saved ID
     // must be reconnected, not accidentally replaced by a new bin-file ID.
     await page.locator('[data-library-tab="media"]').click();
-    await page.locator('#btn-clear').click();
+    await chooseReset('#btn-clear');
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);

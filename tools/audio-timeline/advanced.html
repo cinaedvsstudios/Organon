@@ -489,7 +489,25 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
         .spiral-settings-grid input,.spiral-settings-grid select { width:100%; min-width:0; color:var(--alabaster-paper); background:#0c1012; border:1px solid var(--chiseled-bronze); border-radius:6px; padding:4px; }
         .spiral-settings-grid .spiral-smoothness { grid-column:1/-1; }
         .spiral-settings-grid input[type=range] { padding:0; accent-color:#e3b75c; }
-    </style>
+    
+/* Media bin shows no more than eight standard-height file rows before scrolling. */
+.project-column .file-list-card { min-height:0; max-height:none; }
+.project-column .file-list { min-height:0; max-height:calc(8 * 62px + 7 * 7px + 18px); overflow-y:auto; overscroll-behavior:contain; }
+.project-column .file-row { min-height:62px; flex:0 0 62px; box-sizing:border-box; }
+.project-action-buttons .reset-menu-wrap { position:relative; min-width:0; }
+.project-action-buttons .reset-menu-wrap > .btn { width:100%; }
+.reset-menu { position:absolute; top:calc(100% + 5px); right:0; z-index:55; display:grid; gap:5px; width:max(100%,176px); padding:7px; border:1px solid var(--chiseled-bronze); border-radius:12px; background:#171814; box-shadow:0 12px 26px #000c; }
+.reset-menu[hidden] { display:none; }
+.reset-menu .btn { min-height:35px; width:100%; padding:7px 9px; font-size:.6rem; text-align:left; }
+.reset-menu .btn:focus-visible,#btn-reset-menu:focus-visible { outline:2px solid var(--water-spray); outline-offset:2px; }
+/* The first row is sized by the viewer; the Inspector receives that precise
+   outer height from ResizeObserver and scrolls independently. */
+.right-column { min-height:0; overflow:hidden; }
+.right-column .inspector-scroll { min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
+@media (max-width:1120px) { .right-column { height:auto; max-height:min(48vh,440px); } }
+@media (max-width:760px) { .right-column { max-height:min(55vh,480px); } }
+
+</style>
 </head>
 <body>
 <div class="advanced-app" id="advanced-app">
@@ -521,7 +539,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <button type="button" class="btn" id="btn-relink" title="Reconnect previously permitted files without reimporting; you may need to grant access again">↻ Relink</button>
                         <button type="button" class="btn project-cog-btn" id="btn-project-settings" title="Project Settings: canvas dimensions and frame rate" aria-label="Project Settings">⚙</button>
                     </div>
-                    <div class="project-action-buttons"><button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button><button type="button" class="btn btn-danger" id="btn-reset-timeline" title="Empty the entire timeline: remove every track, clip and cue marker. Imported media remains in the bin; Undo can restore the timeline.">↺ Reset</button></div>
+                    <div class="project-action-buttons">
+                        <button type="button" class="btn btn-primary" id="btn-project-export" title="Open video export settings">🎞 Export</button>
+                        <div class="reset-menu-wrap" id="reset-menu-wrap">
+                            <button type="button" class="btn btn-danger" id="btn-reset-menu" aria-controls="reset-menu" aria-expanded="false" title="Choose what to reset: the whole project, timeline or imported media list">↺ Reset ▾</button>
+                            <div class="reset-menu" id="reset-menu" role="group" aria-label="Project reset actions" hidden>
+                                <button type="button" class="btn btn-danger" id="btn-clear" title="Reset the timeline and media list together. Undo can restore the project.">Reset Everything</button>
+                                <button type="button" class="btn" id="btn-reset-timeline" title="Remove all clips and cue markers, but retain imported media. Undo is available.">Reset Timeline</button>
+                                <button type="button" class="btn" id="btn-reset-media-list" title="Empty the Media list without removing clips already on the timeline. Undo is available.">Reset Media List</button>
+                            </div>
+                        </div>
+                    </div>
                 </section>
                 <nav class="asset-library-tabs" role="tablist" aria-label="Project asset library">
                     <button type="button" class="asset-tab active" data-library-tab="media" role="tab" aria-selected="true" aria-controls="project-drop-zone" title="Imported project files">📁 Media</button>
@@ -530,7 +558,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                 </nav>
                 <div class="file-list-card" id="project-drop-zone" tabindex="0" aria-label="Project media bin. Click to import or drop supported media files here.">
                     <div class="file-list" id="file-list" aria-live="polite"></div>
-                    <div class="file-list-footer"><span id="media-remember-note" title="File names, sizes and dates are kept in localStorage. File handles (when supported) are kept in IndexedDB, not file contents; access may need permission again.">Local media index</span><button type="button" class="btn btn-danger" id="btn-clear" title="Clear the active project; Undo can restore it while its history remains">🗑 Clear all</button></div>
+                    <div class="file-list-footer"><span id="media-remember-note" title="File names, sizes and dates are kept in localStorage. File handles (when supported) are kept in IndexedDB, not file contents; access may need permission again.">Local media index</span></div>
                 </div>
                 <section class="asset-library-panel" id="effects-library-panel" hidden role="tabpanel" aria-label="Visual overlay effects">
                     <p class="asset-library-help">Animated effects respond to the clip's own timeline time, including seeking and export. Existing still overlays remain available. For A/B transitions, use Transitions.</p>

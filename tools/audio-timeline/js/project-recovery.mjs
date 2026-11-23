@@ -33,6 +33,7 @@ export function createRecoveryRecord({files=[],tracks=[],selectedTrackId=null,se
             id:file.id,
             name:file.name.slice(0,400),
             kind:file.kind,
+            hiddenFromBin:Boolean(file.hiddenFromBin),
             size:limited(file.file?.size??file.size,0,Number.MAX_SAFE_INTEGER,0),
             lastModified:limited(file.file?.lastModified??file.lastModified,0,Number.MAX_SAFE_INTEGER,0),
             ...(file.generated&&['text','effect'].includes(file.generated.group)

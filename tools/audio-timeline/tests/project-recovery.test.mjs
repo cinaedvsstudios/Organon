@@ -265,3 +265,19 @@ test('reject invalid project settings inside Undo even when current project is v
     record.history.undo[0].snapshot.settings.fps=123;
     assert.throws(()=>parseRecoveryRecord(JSON.stringify(record)),/settings/);
 });
+
+
+test('media-list-only reset remains hidden through portable Save/Open without losing timeline metadata',()=>{
+    const source={...file(),hiddenFromBin:true};
+    const record=createRecoveryRecord({
+        files:[source],tracks:[clip()],selectedTrackId:'clip-1',
+        selectedTrackIds:['clip-1'],selectedFileId:null,currentTime:4,
+        history:{undo:[],redo:[]}
+    });
+    const restored=parseRecoveryRecord(serializeRecoveryRecord(record));
+    assert.equal(restored.files.length,1,'Source reference remains in project backup');
+    assert.equal(restored.files[0].hiddenFromBin,true,'Media bin stays cleared after reopen');
+    assert.equal(restored.files[0].file,undefined,'Binary source content must not be serialized');
+    assert.equal(restored.tracks.length,1,'Timeline is not reset when the bin is hidden');
+    assert.equal(restored.tracks[0].sourceFileId,'f1','Clip retains original file ID for relinking');
+});

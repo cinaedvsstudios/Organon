@@ -79,7 +79,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         btnProjectSettings: document.getElementById('btn-project-settings'), btnProjectExport: document.getElementById('btn-project-export'),
         btnSaveProject: document.getElementById('btn-save-project'), btnOpenProject: document.getElementById('btn-open-project'), projectOpenInput: document.getElementById('project-open-input'),
         projectSettingsModal: document.getElementById('project-settings-modal'), projectExportModal: document.getElementById('project-export-modal'),
-        btnResetTimeline:document.getElementById('btn-reset-timeline'),
+        btnResetTimeline:document.getElementById('btn-reset-timeline'), btnResetMenu:document.getElementById('btn-reset-menu'), resetMenu:document.getElementById('reset-menu'), btnResetMediaList:document.getElementById('btn-reset-media-list'),
         laneMenu:document.getElementById('timeline-lane-context-menu'),laneMenuTitle:document.getElementById('lane-menu-title'),
         laneRename:document.getElementById('lane-rename'),laneChangeColour:document.getElementById('lane-change-colour'),laneResetColour:document.getElementById('lane-reset-colour'),laneDelete:document.getElementById('lane-delete'),
         clipChangeColour:document.getElementById('context-change-colour'),clipResetColour:document.getElementById('context-reset-colour'),
@@ -921,7 +921,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 id:entry.id,name:entry.name,kind:entry.kind,
                 size:entry.file?.size ?? entry.size ?? 0,
                 lastModified:entry.file?.lastModified ?? entry.lastModified ?? 0,
-                relativePath:entry.file?.webkitRelativePath || entry.relativePath || ''
+                relativePath:entry.file?.webkitRelativePath || entry.relativePath || '',
+                hiddenFromBin:Boolean(entry.hiddenFromBin)
             }));
             localStorage.setItem(MEDIA_INDEX_KEY,JSON.stringify(records));
         } catch(error) { console.warn('Media index cannot be persisted:',error); }
@@ -934,22 +935,25 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 &&['video','audio','sticker','background'].includes(e.kind))
                 .map(e=>({id:e.id,name:e.name,kind:e.kind,file:null,
                     size:Number(e.size)||0,lastModified:Number(e.lastModified)||0,
-                    relativePath:String(e.relativePath||''),needsRelink:true}));
+                    relativePath:String(e.relativePath||''),hiddenFromBin:Boolean(e.hiddenFromBin),needsRelink:true}));
         } catch(error) { console.warn('Could not restore media index:',error); }
     }
     function renderFiles() {
         elements.fileList.innerHTML = '';
-        elements.fileCount.textContent = `${state.files.length} media`;
-        const unlinked=state.files.filter(entry=>!entry.file).length;
+        const visibleFiles=state.files.filter(entry=>!entry.hiddenFromBin);
+        elements.fileCount.textContent = `${visibleFiles.length} media`;
+        const unlinked=visibleFiles.filter(entry=>!entry.file).length;
         elements.mediaRememberNote.textContent = unlinked
             ? `${unlinked} remembered · reconnect or reimport` : state.savedFileHandles.size
                 ? `${state.savedFileHandles.size} local file handle${state.savedFileHandles.size===1?'':'s'} saved` : 'File names saved · use Import/Browse to remember access';
         persistMediaIndex();
-        if (!state.files.length) {
-            elements.fileList.innerHTML = '<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
+        if (!visibleFiles.length) {
+            elements.fileList.innerHTML = state.tracks.length
+                ? '<div class="empty-file-list">Media list empty.<br>Timeline sources remain available; import to add files to the bin.</div>'
+                : '<div class="empty-file-list">No project files yet.<br>Import or drop media here first.</div>';
             return;
         }
-        for (const entry of state.files) {
+        for (const entry of visibleFiles) {
             const row = document.createElement('div');
             row.className = `file-row kind-${entry.kind}${entry.id === state.selectedFileId ? ' active' : ''}${!entry.file ? ' is-unlinked' : ''}`;
             // Native HTML drag was unreliable after the v0.17 lane update in some Chromium builds.
@@ -1118,7 +1122,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
     async function addFiles(files,handles=[]) {
-        const usable=[],relinked=[],handleUpdates=[],historicalLinks=[];
+        const usable=[],relinked=[],handleUpdates=[],historicalLinks=[],revealed=[];
         const claimedHistoricalIds=new Set();
         for(const [index,file] of Array.from(files||[]).entries()){
             const kind=getKind(file);
@@ -1134,12 +1138,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             const duplicate=state.files.find(entry=>entry.file && entry.file.name===file.name
                 && entry.file.size===file.size && entry.file.lastModified===file.lastModified);
             if(duplicate){
+                if(duplicate.hiddenFromBin)revealed.push(duplicate);
                 if(fileHandle)handleUpdates.push({entry:duplicate,handle:fileHandle});
                 continue;
             }
             const missing=state.files.find(entry=>!entry.file && entry.name===file.name
                 && entry.kind===kind && (!entry.size || entry.size===file.size));
-            if(missing) relinked.push({entry:missing,file,handle:fileHandle});
+            if(missing){ if(missing.hiddenFromBin)revealed.push(missing); relinked.push({entry:missing,file,handle:fileHandle}); }
             else if(!historicalIds.length) usable.push({entry:{
                 id:`file-${Date.now()}-${++state.serial}`,file,
                 name:file.name,kind,size:file.size,lastModified:file.lastModified
@@ -1147,11 +1152,12 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             // A history-only media import is not a new project-bin edit:
             // retain existing Undo and Redo stacks and their stable IDs.
         }
-        if(!usable.length&&!relinked.length&&!handleUpdates.length&&!historicalLinks.length){
+        if(!usable.length&&!relinked.length&&!handleUpdates.length&&!historicalLinks.length&&!revealed.length){
             elements.previewState.textContent='No new or matching media files found.';
             return;
         }
-        if(usable.length||relinked.length)recordHistory(`Import/relink ${usable.length+relinked.length} project media file(s)`);
+        if(usable.length||relinked.length||revealed.length)recordHistory(`Import/relink ${usable.length+relinked.length+revealed.length} project media file(s)`);
+        for(const entry of revealed)entry.hiddenFromBin=false;
         for(const {entry,file,handle} of relinked){
             restoreRememberedFileEntry(entry,file);
             if(handle)handleUpdates.push({entry,handle});
@@ -1179,7 +1185,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         renderFiles();
         await loadRecoveredMediaTracks();
         elements.previewState.textContent=`Media ready: ${usable.length} new, ${relinked.length} relinked, ${historicalCount} history references reconnected`;
-        showToast(`${usable.length} imported · ${relinked.length} relinked · ${historicalCount} history references${savedHandles?' · '+savedHandles+' remembered handles':''}`);
+        showToast(`${usable.length} imported · ${relinked.length} relinked · ${revealed.length} restored to bin · ${historicalCount} history references${savedHandles?' · '+savedHandles+' remembered handles':''}`);
     }
 
     function setLibraryView(view) {
@@ -4828,6 +4834,27 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     });
     elements.btnProjectSettings.addEventListener('click', () => openEditorModal(elements.projectSettingsModal));
     elements.btnProjectExport.addEventListener('click', () => openEditorModal(elements.projectExportModal));
+    function closeResetMenu(){
+        elements.resetMenu.hidden=true;
+        elements.btnResetMenu.setAttribute('aria-expanded','false');
+    }
+    elements.btnResetMenu.addEventListener('click',()=>{
+        const open=elements.resetMenu.hidden;
+        elements.resetMenu.hidden=!open;
+        elements.btnResetMenu.setAttribute('aria-expanded',String(open));
+    });
+    elements.resetMenu.addEventListener('click',event=>{
+        if(event.target.closest('button'))closeResetMenu();
+    });
+    document.addEventListener('pointerdown',event=>{
+        if(!event.target.closest('#reset-menu-wrap'))closeResetMenu();
+    });
+    document.addEventListener('keydown',event=>{
+        if(event.key==='Escape'&&!elements.resetMenu.hidden){
+            closeResetMenu();
+            elements.btnResetMenu.focus();
+        }
+    });
     elements.btnResetTimeline.addEventListener('click',async()=>{
         const count=state.tracks.length,markers=state.timelineMarkers.length;
         if(!count&&!markers){
@@ -4857,6 +4884,23 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         pruneSourceRegistry();
         saveProjectRecovery();
         showToast('Timeline reset · '+count+' clip'+(count===1?'':'s')+' removed · Undo available');
+    });
+    elements.btnResetMediaList.addEventListener('click',async()=>{
+        const visible=state.files.filter(entry=>!entry.hiddenFromBin);
+        if(!visible.length){showToast('The media list is already empty');return;}
+        const accepted=await requestEditorAction({
+            kind:'confirm',title:'Reset media list?',
+            description:`Remove ${visible.length} file${visible.length===1?'':'s'} from the visible Media list? Existing timeline clips, playback sources and file permissions will be preserved. Undo restores the list.`,
+            apply:'Reset media list',danger:true
+        });
+        if(!accepted)return;
+        recordHistory('Reset media list');
+        for(const entry of visible)entry.hiddenFromBin=true;
+        state.selectedFileId=null;
+        renderFiles();
+        refreshAll();
+        saveProjectRecovery();
+        showToast(`Media list reset · ${visible.length} hidden · Timeline preserved · Undo available`);
     });
     elements.btnOpenTransitions.addEventListener('click', () => { refreshTransitionModal(); openEditorModal(elements.transitionModal); });
     elements.btnApplyTransitionModal.addEventListener('click', applyTransitionFromModal);
@@ -5288,6 +5332,30 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         const control=event.target?.closest?.('button,input,select,summary,[role="tab"],.timeline-clip,.file-row,.lane-name');
         if(control)ensureControlTooltip(control);
     });
+    function setupInspectorHeightLock(){
+        const viewer=document.querySelector('.master-column');
+        const inspector=document.querySelector('.right-column');
+        if(!viewer||!inspector)return;
+        let appliedHeight=0;
+        const sync=()=>{
+            if(window.matchMedia('(min-width:1121px)').matches){
+                const height=Math.ceil(viewer.getBoundingClientRect().height);
+                if(height>0&&height!==appliedHeight){
+                    appliedHeight=height;
+                    inspector.style.height=`${height}px`;
+                    inspector.style.maxHeight=`${height}px`;
+                }
+            }else{
+                appliedHeight=0;
+                inspector.style.removeProperty('height');
+                inspector.style.removeProperty('max-height');
+            }
+        };
+        if(typeof ResizeObserver!=='undefined')new ResizeObserver(sync).observe(viewer);
+        window.addEventListener('resize',sync,{passive:true});
+        requestAnimationFrame(sync);
+    }
+    setupInspectorHeightLock();
     restoreMediaIndex();
     const recovered=restoreSavedProjectMetadata();
     initAssetLibrary();
