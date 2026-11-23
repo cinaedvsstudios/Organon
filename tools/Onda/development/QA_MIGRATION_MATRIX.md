@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
 **Version:** QA v1.2 for Onda v3.12 · 2026-11-23  
-**Status:** v3.11: 21 isolated/static checks passed; v3.12: 18 isolated/static checks passed. All physical Android, deployment, quota and real audio tests **remain unverified**. See [v3.11](./RELEASE_V3_11.md) and [v3.12](./RELEASE_V3_12.md).  
+**Status:** v3.11: 21 isolated/static checks passed; v3.12: 22 isolated/static checks passed. All physical Android, deployment, quota and real audio tests **remain unverified**. See [v3.11](./RELEASE_V3_11.md) and [v3.12](./RELEASE_V3_12.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -226,5 +226,7 @@ These are new tests for the v3.12 code path; they do not imply prior Android tes
 | CACHE-10 | ONDA-07/10 | Reopen old v2 IndexedDB cache with real Android media | All prior cached media, playlist entries and status preserved | NEEDS DEVICE |
 | CACHE-11 | ONDA-07 | Trigger browser quota error on disposable test origin | Metadata survives; no false cache-success signal | NOT RUN |
 | CACHE-12 | ONDA-07 | Inspect cache bytes after same-file reimport | Bytes stay stable; no claim that old unrelated duplicates were removed | NEEDS DEVICE |
+| CACHE-13 | ONDA-07 | Simulate optional saved-record read failure while writes still work | Fallback writes selected file normally | PASS isolated; browser pending |
+| CACHE-14 | ONDA-07 | Simulate cache write/quota error in a disposable test profile | Failed write is counted; no false success | PASS isolated; browser pending |
 
 **No cleanup operation has been added.** Never clear site data, delete old audio cache records or upgrade IndexedDB merely to execute these tests. Use a disposable sample song for repeated import/modified-file checks.
