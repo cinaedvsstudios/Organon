@@ -25,13 +25,13 @@
 |---|---|---|---|---|
 | ONDA-01 | P3 / later | Video playback | Deferred, low use | Backlog |
 | ONDA-02 | P1 | Expand and simplify mobile Library drawer | Preserve existing drawer | Fully mapped; static markup gap to verify on phone |
-| ONDA-03 | P1 | Resume last track **and position** | Approved | Detailed implementation path ready; Android/MIDI test pending |
+| ONDA-03 | P3 / optional | Remember playback position | Nice-to-have, if low effort only | Deferred behind main mobile work |
 | ONDA-04 | P3 / scale | Large-library search/render optimisation | Not a present user issue | Monitor until needed |
 | ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | Source issue confirmed; detailed implementation path ready |
 | ONDA-06 | Closed | Replace existing play symbols | Do not change | Closed — no action |
 | ONDA-07 | P0 | Media storage/cache architecture | Reduce unnecessary copies, safeguard existing library | Source architecture mapped; Android handle proof pending |
-| ONDA-08 | P2 | Quick Play separate from permanent import | Proposed | Import pathway mapped; behaviour approval pending |
-| ONDA-09 | P3 / future | Online media library | Connected-only mode; local remains usable offline | Current cloud/stream architecture mapped; hosting decision pending |
+| ONDA-08 | P2 / optional | Quick Play for *new unsaved files* | Existing Library tracks play immediately without reimport | User rule approved; optional audition later |
+| ONDA-09 | P3 / future | GitHub Pages online library | JSON catalogue and publicly playable audio on GitHub; local stays offline-ready | Host preference decided, CORS/limits pending |
 | ONDA-10 | P1 | Mobile storage settings, usage report and safe cleanup | Proposed | Read-only inventory & cleanup safeguards specified |
 | ONDA-11 | P2 | Startup/loading diagnostics and responsiveness | Measure before optimising | Specific instrumentation points defined |
 | ONDA-12 | P1 | Android file/folder selection and relinking | Preserve access where supported, honest permission handling | Source-resolver design ready; actual permission testing pending |
@@ -82,7 +82,7 @@
 ### ONDA-09 — online library (future design only)
 - Existing `Cloud Sync` functionality is distinct from a remote playable media catalogue. The streaming tab already has direct audio URL support; third-party embeds/references must not be mistaken for native file playback.
 - Proposed future model: source-aware track list; stream on demand while connected; show Offline status/disabled remote actions when not connected; support deliberately saved offline copies only.
-- **Question:** Where will remote media actually live (cloud drive, personal server, direct URLs, another provider)? Do not implement a backend until this is agreed.
+- **Decided:** start with GitHub Pages hosting a public JSON catalogue and audio files. No other host is needed unless actual size, privacy or bandwidth limits require it. Test remote media loading from Onda's Netlify origin.
 
 ### ONDA-10 — storage settings and 48-hour cleanup proposal
 - Show measured site storage usage/quota via `navigator.storage.estimate()` and separately total bytes/count of Onda audio blobs by scanning the app's audio object store.
@@ -92,7 +92,7 @@
 
 ### ONDA-08 — Quick Play
 - Current file import adds to the library and queue, saves state and copies local audio to IndexedDB.
-- Proposal: user-selectable **Play once**, **Add to Queue**, **Add to Library** with the least intrusive mobile default decided by user. Temporary items should not pollute permanent history/library without a deliberate choice.
+- **Rule:** When an already saved library track is tapped, Play means immediate playback with no reimport, source picker or add-to-library action. Resolve cached or authorised files automatically. If file bytes truly cannot be accessed, show one clear Reconnect action and preserve metadata. Quick Play options are for **new unsaved files** only; keep today's new-file import default unchanged.
 - **Acceptance:** Can audition a local file once without a lasting large cache copy.
 
 ### ONDA-01 / ONDA-06
@@ -106,7 +106,7 @@
 3. Establish whether 'resume playback' means music, podcasts/long recordings, or all audio; use sensible completed-track reset rules.
 4. Design non-destructive cache migration with an inventory, permission/relink test and explicit user action before any bulk cleanup.
 5. Profile current visualiser frame count/CPU/energy while playing, paused and hidden; then implement a scheduler without changing its appearance.
-6. For future online library, identify where audio files will be hosted and how Onda authenticates; stay local-first while offline.
+6. **Settled:** use public GitHub Pages media and JSON; no extra provider or private authentication. Preserve offline local playback.
 7. Add screen-reader labels, safe-area inset checks and 44px-or-greater comfortable touch targets where they are actually undersized.
 
 ## Tests to run before claiming fixes
@@ -192,18 +192,18 @@ The page contains **no production Onda scripts, no network calls, and no actual 
 ### Decisions to ask the user after showing the page
 
 1. **Answered:** Queue / Now Playing belongs on the **main Current screen**; do not add a drawer tab for it.
-2. When a file is selected from Android, what should the default action be: **Play once**, **Add to queue**, or **Add to Library**, while keeping a choice for the others?
-3. Should saved playback position apply to **all audio**, or only long recordings?
+2. **Settled for saved tracks:** tap Play to play, with no reimport. Optional Quick Play applies solely to new unsaved files; keep current new-file import default.
+3. **Deprioritised:** resume position is optional P3; implement only if safe and easy.
 4. Is Onda normally used through **Chrome tab, home-screen shortcut / installed app, or another browser**? This strongly affects how local file permissions and background playback should be verified.
 5. Where should the **future online playable media** actually be hosted?
 
 ### Next technical implementation batch (subject to review)
 
-**Batch A — safe low-risk improvement:** visualiser idle scheduler + position checkpoint/restore; protect Media Session behaviours and existing icons.  
+**Batch A — safe low-risk improvement:** visualiser idle scheduler and reliable one-tap playback; preserve Media Session/icons. Position resume is low-priority optional P3.  
 **Batch B — storage groundwork:** read-only cache inventory and accurate source/status labels, before changing any caching default.  
 **Batch C — media source architecture:** Android capability tests, relink flow, explicit offline cache, temporary Quick Play mode; migrate only after compatibility validation.  
 **Batch D — main Current screen + drawer enhancements:** retain Queue / Now Playing on-screen; add only approved browsing and compact storage/source entry points to the Library drawer.  
-**Batch E — online library and scaling:** after hosting decisions and measurable library growth.
+**Batch E — online library:** use GitHub Pages and public JSON/media URLs, with real cross-origin and size/bandwidth tests.
 
 ## Change journal, continued
 
@@ -272,7 +272,7 @@ The source audit now covers all 6,195 lines of the main app-core.js module, the 
 7. Android file handles are supported by recent Chrome, but persistence and reauthorisation must be validated on the user's phone before removing automatic caching as the default.
 8. Icon setup is committed, but a true 512×512 PNG and installed-home-screen verification remain open; current SVG wrapper contains a 192px raster.
 
-**Implementation order after the review:** Visualiser lifecycle and resume → read-only cache/status diagnostics → test saved Android file handles → safe media resolver/migration → drawer & Quick Play → online library later. No current library data should be erased automatically, including on upgrade.
+**Implementation order after review:** Visualiser lifecycle → cache diagnostics → Android source resolver and one-tap saved-library playback → drawer and optional new-file Quick Play → GitHub Pages online library. Resume is low priority. No current library data should be erased automatically, including on upgrade.
 
 **Changes performed in this investigation:** Research documentation only. No playback, visualiser, import, IndexedDB schema, cloud endpoint or responsive CSS production code was changed.
 
@@ -293,3 +293,15 @@ The source audit now covers all 6,195 lines of the main app-core.js module, the 
 **Updated preview:** [mobile-review.html](./mobile-review.html) now places an illustrative current/next track list on the main screen and removes Queue from the drawer tabs.
 
 - 2026-11-23 — v1.4 user-approved placement recorded; proposal and mock-up corrected; no production code changed.
+
+## Decision record — 2026-11-23: saved tracks, resume, GitHub
+
+**One-tap Library Play is mandatory:** A track already in Onda's Library must simply play when tapped; never request Add to Library or repeat importing. Load it from session File, saved IndexedDB cache or valid file handle automatically. If access genuinely cannot be restored, offer one simple Reconnect and leave the library record intact. **Quick Play is only an optional mode for a file not already in the Library.** Keep existing new-file import defaults for now.
+
+**Resume position is P3 optional:** Not particularly important to user; do it only if trivial and safe. Avoid a new resume prompt. Don't schedule it ahead of battery, storage or playback reliability work.
+
+**Online library host selected:** public static GitHub Pages with a `library.json` catalogue and playable `audio/*.mp3` files. No additional hosting service is necessary for a small public library. Onda is served from Netlify, so verify cross-origin JSON fetch, actual streaming/audio seeking and existing analyser limitations. Local music must work offline. GitHub Pages content is public and must be lawful to distribute, even if Pages publishes from a private repo. Published site max 1 GB, source recommended 1 GB, soft bandwidth 100 GB/month; regular Git files max 100 MiB, and Git LFS is not available for Pages. A separate **GitHub** media repository is optional for cleanliness, not mandatory.
+
+GitHub Docs: https://docs.github.com/en/pages/getting-started-with-github-pages/github-pages-limits ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-large-files-on-github ; https://docs.github.com/en/repositories/working-with-files/managing-large-files/about-git-large-file-storage ; https://docs.github.com/en/pages/getting-started-with-github-pages/configuring-a-publishing-source-for-your-github-pages-site
+
+- 2026-11-23 — v1.5 decisions entered; older Quick Play, resume and online hosting questions superseded. Production Onda unchanged.
