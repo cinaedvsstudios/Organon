@@ -18,6 +18,7 @@ import {renderSignalTear} from './timeline-signal-tear.mjs';
 import {renderRgbBlockGlitch} from './timeline-rgb-block-glitch.mjs';
 import {renderLineCorruption} from './timeline-line-corruption.mjs';
 import {renderFaultCassette} from './timeline-fault-cassette.mjs';
+import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
@@ -101,6 +102,7 @@ export function normaliseTimelineEffect(effect={}){
  const flyingDebris=presetId==='particle-debris';
  const fireExplosion=presetId==='fire-explosion';
  const faultCassette=presetId==='fault-cassette';
+ const rippleDistortion=presetId==='ripple-distortion';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,lineCorruption?86:rgbBlockGlitch?91:signalTear?88:dataBurst?84:crtScanlines?85:signalInterference?76:tvStatic?72:70),
@@ -113,7 +115,17 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,mistFog?34:24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':'#ffd98d'
+ };
+ if(rippleDistortion)return {...base,
+  density:clamp(raw.density,1,120,48),
+  originX:clamp(raw.originX,0,100,50),
+  originY:clamp(raw.originY,0,100,50),
+  rippleRings:Math.round(clamp(raw.rippleRings,1,6,3)),
+  rippleWidth:clamp(raw.rippleWidth,2,24,8),
+  rippleFalloff:clamp(raw.rippleFalloff,0,100,58),
+  rippleHighlights:clamp(raw.rippleHighlights,0,100,42),
+  rippleSeed:Math.round(clamp(raw.rippleSeed,0,99999,6262))
  };
  if(faultCassette)return {...base,
   density:clamp(raw.density,1,120,62),
@@ -342,8 +354,10 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     }
    }else if(e.presetId==='fault-cassette'){
     renderFaultCassette(ctx,source,w,h,e,t,amount);
-   }else if(e.presetId==='ripple-distortion'||e.presetId==='electric-ripple'){
-    const electric=e.presetId==='electric-ripple';
+   }else if(e.presetId==='ripple-distortion'){
+    renderRippleDistortion(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='electric-ripple'){
+    const electric=true;
     const rows=36;
     for(let i=0;i<rows;i++){
      const y=i*h/rows,bh=Math.ceil(h/rows)+1;
