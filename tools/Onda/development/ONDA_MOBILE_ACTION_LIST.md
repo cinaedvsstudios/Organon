@@ -362,7 +362,7 @@ In **Settings → Storage → 🔎 Review Cached Audio**, Onda can now explicitl
 
 **Safety:** This release contains **NO delete button, no `delete` transaction, no cleanup, no automatic TTL, no media byte inspection, no original file writes and no database migration.** Filenames and local paths stay on the device and are escaped before display; no report is uploaded. The existing cache remains the default for playback.
 
-**Verification:** 18 static/data/readonly-cursor tests plus 12 UI/escape/binding tests passed. Real Android cache sizes, permission persistence and the Netlify deployment remain unverified. A future manual cleanup requires the user's explicit approval of exact records and a confirmed remaining playable source.
+**Verification:** 18 static/data/readonly-cursor checks, 12 UI/escape/binding checks and 9 additional scan-error/20,000-record-limit checks passed (39 isolated/static checks total). Real Android cache sizes, permission persistence and the Netlify deployment remain unverified. A future manual cleanup requires the user's explicit approval of exact records and a confirmed remaining playable source.
 
 **Next development (after phone smoke test):** Current-screen Queue / Now Playing refinements (never a Queue tab in the Library drawer), then mobile Library browsing. Optional Quick Play for new unsaved files and public GitHub Pages streaming remain later work.
 
