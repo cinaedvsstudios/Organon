@@ -2,8 +2,9 @@
 // This is NOT an Android hardware/lock-screen test, and never touches user music.
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
-import { dirname, extname, resolve, sep } from 'node:path';
+import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
+import { dirname, extname, join, resolve, sep } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright-core';
 
@@ -719,6 +720,140 @@ async function mediaSessionSmoke(browser, baseUrl) {
     }
 }
 
+async function offlineColdStartSmoke(baseUrl) {
+    // This is a real Chrome process restart using a dedicated disposable
+    // user-data directory. Existing Onda music or browser profiles are never
+    // accessed, and the profile is cleaned up when the test completes.
+    const profile = await mkdtemp(join(tmpdir(), 'onda-offline-shell-'));
+    const options = {
+        executablePath: process.env.CHROME_BIN || '/usr/bin/google-chrome',
+        headless: true,
+        args: ['--no-sandbox', '--disable-dev-shm-usage', '--autoplay-policy=no-user-gesture-required'],
+        viewport: { width: 1280, height: 800 },
+        serviceWorkers: 'allow'
+    };
+    let context;
+    let onlineCacheCount = 0;
+    try {
+        context = await chromium.launchPersistentContext(profile, options);
+        const page = context.pages()[0] || await context.newPage();
+        const version = await expectLoaded(page, baseUrl);
+        assert.equal(version, 'v3.23', 'offline shell test must use the current app build');
+        await chooseFreshLocalSession(page);
+        await page.waitForFunction(async () => {
+            const reg = await navigator.serviceWorker.getRegistration();
+            return reg?.active?.state === 'activated' &&
+                Boolean(navigator.serviceWorker.controller);
+        }, undefined, { timeout: 25000 });
+        const shell = await page.evaluate(async () => {
+            const names = await caches.keys();
+            const cache = await caches.open('onda-static-shell-v3.23');
+            const stored = await cache.keys();
+            return {
+                names, stored: stored.map(request => request.url),
+                controller: navigator.serviceWorker.controller?.scriptURL || ''
+            };
+        });
+        assert.equal(shell.names.filter(name => name.startsWith('onda-static-shell-')).length, 1);
+        assert.ok(shell.stored.some(url => url.endsWith('/index.html')));
+        assert.ok(shell.stored.some(url => /\/js\/app-core\.js\?v=3\.23$/.test(url)));
+        assert.ok(shell.stored.some(url => /\/css\/responsive\.css\?v=3\.19$/.test(url)));
+        assert.ok(shell.stored.some(url => url.endsWith('/onda-midi.js')));
+        assert.ok(shell.stored.length >= 25, 'the entire static app shell must be cached');
+        assert.ok(shell.controller.endsWith('/onda-sw.js'));
+        assert.ok(shell.stored.every(url => !/audioFiles|\.wav|netlify\/functions|library\.json/i.test(url)),
+            'the shell cache must never contain music, profiles or cloud responses');
+        console.log('offline cold start: online install cached the exact app shell, no user/media data');
+
+        await page.locator('#onda-quick-play-input').setInputFiles({
+            name: 'onda-offline-restart.wav',
+            mimeType: 'audio/wav',
+            buffer: wavTone(12)
+        });
+        await page.waitForFunction(() => Boolean(window.OndaQuickPlay?.getActiveAudio()));
+        await page.locator('#btn-onda-quick-import').click();
+        await page.waitForFunction(async () => {
+            if (!(await indexedDB.databases()).some(db => db.name === 'OndaMediaPlayerPersistentDB')) return false;
+            const req = indexedDB.open('OndaMediaPlayerPersistentDB');
+            const db = await new Promise((resolve, reject) => {
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+            try {
+                const count = db.transaction('audioFiles', 'readonly').objectStore('audioFiles').count();
+                return await new Promise((resolve, reject) => {
+                    count.onsuccess = () => resolve(count.result > 0);
+                    count.onerror = () => reject(count.error);
+                });
+            } finally { db.close(); }
+        }, undefined, { timeout: 15000 });
+        onlineCacheCount = await cachedAudioCount(page);
+        assert.ok(onlineCacheCount >= 1);
+        // Ensure asynchronous Library metadata mirroring has completed as well.
+        await page.waitForFunction(() => {
+            const payload = JSON.parse(localStorage.getItem('ondaActiveLibraryV1') || '{}');
+            const tracks = (payload.library || payload).tracks || {};
+            return Object.values(tracks).some(track => track.fileName === 'onda-offline-restart.wav');
+        }, undefined, { timeout: 15000 });
+
+        // Close the entire Chromium process. Reopen this SAME isolated
+        // browser profile, disconnect the network BEFORE opening Onda again.
+        await context.close();
+        context = null;
+        context = await chromium.launchPersistentContext(profile, options);
+        await context.setOffline(true);
+        const offlinePage = context.pages()[0] || await context.newPage();
+        await offlinePage.goto(baseUrl, { waitUntil: 'load', timeout: 20000 });
+        await offlinePage.waitForFunction(() =>
+            document.documentElement.dataset.ondaVersion === 'v3.23' &&
+            Boolean(window.OndaQuickPlay?.getActiveAudio) &&
+            Boolean(window.OndaFileHandles?.readFile),
+        undefined, { timeout: 18000 });
+        assert.ok((await offlinePage.evaluate(() => navigator.serviceWorker.controller?.scriptURL || ''))
+            .endsWith('/onda-sw.js'), 'offline app startup must be service-worker controlled');
+        assert.equal(await cachedAudioCount(offlinePage), onlineCacheCount);
+        await offlinePage.locator('#btn-database-engine').click();
+        const saved = offlinePage.locator('#db-library-results .library-result-row')
+            .filter({ hasText: 'onda-offline-restart.wav' });
+        await saved.waitFor({ state: 'visible', timeout: 15000 });
+        await offlinePage.waitForFunction(() => {
+            const rows = [...document.querySelectorAll('#db-library-results .library-result-row')];
+            const row = rows.find(el => el.textContent.includes('onda-offline-restart.wav'));
+            return row && /cached|ready/.test(row.querySelector('.library-file-line')?.textContent || '');
+        }, undefined, { timeout: 15000 });
+        assert.equal(await saved.locator('.btn-db-reconnect-track').count(), 0);
+        await saved.locator('.btn-db-play-track').click();
+        await offlinePage.waitForFunction(() => {
+            const audio = document.querySelector('audio.onda-hidden-audio');
+            return audio?.src.startsWith('blob:') &&
+                !audio.paused && audio.duration >= 10 && audio.currentTime > 0.15;
+        }, undefined, { timeout: 15000 });
+        assert.equal(await cachedAudioCount(offlinePage), onlineCacheCount,
+            'offline restart playback must not write or duplicate music cache');
+
+        // Explicitly make sure unknown/cloud routes never get an HTML fallback.
+        const unsupported = await offlinePage.evaluate(async () => {
+            try {
+                const response = await fetch('./__onda_not_in_app_shell.json');
+                return { loaded: true, contentType: response.headers.get('content-type') };
+            } catch (_) {
+                return { loaded: false };
+            }
+        });
+        assert.equal(unsupported.loaded, false,
+            'offline service worker must never fabricate a response for unknown JSON/cloud requests');
+        const after = await offlinePage.evaluate(async () => {
+            const cache = await caches.open('onda-static-shell-v3.23');
+            return (await cache.keys()).map(request => request.url);
+        });
+        assert.deepEqual(after, shell.stored, 'offline playback must not add media to static shell cache');
+        console.log('offline cold start: restarted real Chrome with network OFF BEFORE page open; UI + cached WAV played');
+    } finally {
+        await context?.close();
+        await rm(profile, { recursive: true, force: true });
+    }
+}
+
 async function mobileSmoke(browser, baseUrl) {
     // Browser device emulation does not establish actual Android lock-screen results.
     const context = await browser.newContext({
@@ -757,6 +892,7 @@ try {
     await missingMediaReconnectSmoke(browser, baseUrl);
     await rememberedHandlePermissionSmoke(browser, baseUrl);
     await mediaSessionSmoke(browser, baseUrl);
+    await offlineColdStartSmoke(baseUrl);
     await mobileSmoke(browser, baseUrl);
     console.log('PASS: actual Chrome desktop + mobile-emulated Onda smoke tests');
 } finally {
