@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.14 development committed, including v3.14 read-only cache review; Android/Netlify verification and any cleanup approvals remain pending  
+**Status:** v3.11–v3.15 source development committed; v3.15 improves main-screen Current queue. Android/Netlify deployment and usability verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.14** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.15** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 read-only cache review](./RELEASE_V3_14.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md)
 
 ## Agreed product direction
 
@@ -25,7 +25,7 @@
 | ID | Priority | Item | Decision | Current status |
 |---|---|---|---|---|
 | ONDA-01 | P3 / later | Video playback | Deferred, low use | Backlog |
-| ONDA-02 | P1 | Expand and simplify mobile Library drawer | Preserve existing drawer | Fully mapped; static markup gap to verify on phone |
+| ONDA-02 | P1 | Current-screen Queue and mobile Library drawer | Queue remains on Current, never drawer | **v3.15 Current-screen queue implemented; drawer improvements remain** |
 | ONDA-03 | P3 / optional | Remember playback position | Nice-to-have, if low effort only | Deferred behind main mobile work |
 | ONDA-04 | P3 / scale | Large-library search/render optimisation | Not a present user issue | Monitor until needed |
 | ONDA-05 | P0 | Idle / hidden visualiser CPU and battery work | Fix | **Implemented v3.11; 21 isolated/static checks passed across batch; Android battery QA pending** |
@@ -367,3 +367,15 @@ In **Settings → Storage → 🔎 Review Cached Audio**, Onda can now explicitl
 **Next development (after phone smoke test):** Current-screen Queue / Now Playing refinements (never a Queue tab in the Library drawer), then mobile Library browsing. Optional Quick Play for new unsaved files and public GitHub Pages streaming remain later work.
 
 - 2026-11-23 — v1.9 v3.14 read-only audit committed; no deletion capability implemented.
+
+## Implementation progress — v3.15 Main Current queue (2026-11-23)
+
+[Full v3.15 release notes and QA plan](./RELEASE_V3_15.md).
+
+The existing `#now-playing-playlist-panel` now displays the **actual active `playlistTracks` playback queue** on the main **Current** screen, even for ad-hoc imports or tracks started from Library without a named saved playlist. If a saved playlist is active, its artwork/title/edit action remain contextual, while actual queued rows (not the saved list alone) are displayed. Current/up-next labels and count are shown; shuffle does not promise a fixed next song.
+
+Actions: direct queue-row Play, inline Info without changing the current audio's `currentFile`, existing Add to Playlist, and Remove from Queue for non-playing items only. Removal adjusts the active index and saves the queue but **does not delete anything from Library, a saved playlist, browser cache or original files**. A queue add without playing updates Current. On mobile the list appears below Now Playing and before long metadata, with bounded scrolling; forced desktop mode stays distinct. Queue is **not** in the drawer.
+
+**Source tests:** 19 queue-interaction + 13 named/empty/shuffle/accessibility/escaping checks passed (32 isolated/static checks). Netlify deployment, Android real touch/audio and layout remain unverified. Next: improve existing mobile Library browsing without adding a queue tab.
+
+- 2026-11-23 — v2.0: v3.15 Current Queue committed, phone QA pending.
