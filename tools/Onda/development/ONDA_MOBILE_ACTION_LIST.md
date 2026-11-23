@@ -1,14 +1,14 @@
 # Onda — Mobile-First Development / Debug Action List
 
-**Status:** v3.11–v3.19 source development committed; v3.19 adds an isolated temporary Quick Play audio preview without importing or caching until explicitly requested. Android/Netlify deployment and usability verification remain pending.  
+**Status:** v3.11–v3.20 source development committed; v3.20 adds a read-only on-device compatibility/QA panel with manual playback verdicts. Android/Netlify deployment and playback verification remain pending.  
 **Created:** 2026-11-23  
-**Application:** Onda Media Player, source version **v3.19** (investigation baseline v3.10)  
+**Application:** Onda Media Player, source version **v3.20** (investigation baseline v3.10)  
 **Primary usage:** Android phone / mobile web. Desktop compatibility remains required.  
 **Implementation policy:** User approved starting changes. Make isolated, non-destructive commits, verify the code, and complete Android device tests before declaring features finished.  
 **Companion mock-up:** [Open interactive mobile proposal](./mobile-review.html)  
 **Technical investigation:** [Function-by-function blueprint](./TECHNICAL_INVESTIGATION.md)  
 **QA & migration:** [Android test matrix and release gates](./QA_MIGRATION_MATRIX.md)  
-**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md)
+**Production releases:** [v3.11 playback](./RELEASE_V3_11.md) · [v3.12 storage](./RELEASE_V3_12.md) · [v3.13 file access](./RELEASE_V3_13.md) · [v3.14 cache review](./RELEASE_V3_14.md) · [v3.15 Current queue](./RELEASE_V3_15.md) · [v3.16 mobile Library](./RELEASE_V3_16.md) · [v3.17 touch/accessibility](./RELEASE_V3_17.md) · [v3.18 diagnostics](./RELEASE_V3_18.md) · [v3.19 Quick Play](./RELEASE_V3_19.md) · [v3.20 device QA](./RELEASE_V3_20.md)
 
 ## Agreed product direction
 
@@ -441,3 +441,17 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Next:** Test v3.19 on the user's actual Android and desktop browser, especially preview playback, native controls, Media Session, saved queue/history unchanged, import after explicit Add and cache persistence on reload. After a successful phone acceptance pass, prioritise observed issues, not speculative feature churn.
 
 - 2026-11-23 — v2.4: v3.19 temporary Quick Play source implemented; real-device QA outstanding.
+
+## Implementation progress — v3.20 on-device release QA (2026-11-23)
+
+[Release notes and Android/desktop test procedure](./RELEASE_V3_20.md).
+
+**Source update:** Added a collapsed, opt-in **Device compatibility and playback QA (read-only)** section under existing Storage Health. **Run device checks** reports the loaded source version, browser secure/standalone status, coarse viewport dimensions, capability presence for File System Access picker APIs and Media Session, Storage Estimate availability, Onda's Quick Play/Library/diagnostics module presence and browser `canPlayType` codec hints. Nothing is opened or played by the checker, and an API being exposed is not treated as a successful end-to-end test.
+
+**Manual QA:** Eight playback, file reconnect, Quick Play, queue/cache protection, Library UX, lock-screen and normal import cases can be marked Not tested / Pass / Fail / Blocked. A redacted JSON export saves only fixed capability fields and status values locally. The QA module neither reads nor writes localStorage, IndexedDB, file handles, music or cloud data and performs no fetch/upload. Actual device testing still requires the user to play music on their own phone/desktop.
+
+**Verification:** 37 source/static and mock-DOM checks passed, including complete export field allowlists and no file access, playback, storage or networking. No GitHub CI/status results were reported for the v3.19 merge, and the public Netlify domain could not be directly accessed with the verification browser. Thus **deployed v3.20 and Android/desktop runtime remain unverified**.
+
+**Next:** Run QA on actual Android Chrome, installed shortcut (if used) and desktop. Export redacted device QA JSON so failed cases can be fixed with targeted source changes. Do not start speculative new media/storage features before reviewing the resulting evidence.
+
+- 2026-11-23 — v2.5: v3.20 read-only compatibility self-check source implemented; physical device QA pending.
