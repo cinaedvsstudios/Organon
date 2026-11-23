@@ -34,12 +34,21 @@ const browser=await chromium.launch({executablePath:chrome,headless:true,
 try{
     const context=await browser.newContext({viewport:{width:1450,height:900},acceptDownloads:true});
     const page=await context.newPage();
+    const chooseReset=async target=>{
+        await page.locator('#btn-reset-menu').click();
+        await page.locator(target).click();
+    };
     const crashes=[];
     page.on('pageerror',error=>crashes.push(String(error)));
     await page.goto(url+'index.html',{waitUntil:'domcontentloaded'});
     await page.waitForURL(/advanced\.html/,{timeout:20000});
     assert.equal(await page.locator('#motori-header').getAttribute('class'),'top-panel is-collapsed');
     assert.equal(await page.locator('#project-export-modal').isVisible(),false);
+    await page.waitForFunction(()=>{
+        const viewer=document.querySelector('.master-column')?.getBoundingClientRect();
+        const inspector=document.querySelector('.right-column')?.getBoundingClientRect();
+        return viewer&&inspector&&Math.abs(viewer.height-inspector.height)<3;
+    });
     const layout=await page.evaluate(()=>{
         const box=selector=>{const r=document.querySelector(selector).getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width};};
         const tops=selector=>[...document.querySelectorAll(selector)].map(el=>Math.round(el.getBoundingClientRect().top));
@@ -67,9 +76,49 @@ try{
     assert.equal(new Set(layout.editWidths).size,1,'All secondary action buttons should have the same width');
     assert.ok(layout.timelineInner>=layout.timelineViewport-2,'Ruler and lanes should span the full timeline viewport');
     assert.equal(layout.inspectorOverflow,'auto','Inspector must scroll vertically instead of expanding the editor');
+    assert.ok(Math.abs(layout.timeline.top-layout.preview.bottom)<=18,
+        'Timeline must begin immediately after the viewer, without an Inspector-induced gap');
     assert.deepEqual(layout.allControls,[],'Interactive editor controls should have native mouseover titles');
     assert.equal(await page.locator('#btn-duplicate-selection').count(),0);
     assert.equal(await page.locator('#btn-delete-selection').count(),0);
+
+    // The media bin stops growing after eight rows while retaining every item.
+    const capContext=await browser.newContext({viewport:{width:1450,height:900}});
+    try {
+        const capPage=await capContext.newPage();
+        await capPage.goto(url+'advanced.html',{waitUntil:'domcontentloaded'});
+        const imageBytes=readFileSync(file);
+        await capPage.locator('#file-input').setInputFiles(Array.from({length:9},(_,i)=>({
+            name:'cap-'+i+'.jpg',mimeType:'image/jpeg',buffer:imageBytes
+        })));
+        await capPage.waitForFunction(()=>document.querySelectorAll('.file-row').length===9);
+        const bounds=await capPage.locator('#file-list').evaluate(el=>({
+            height:el.clientHeight,scrollHeight:el.scrollHeight,count:el.children.length,
+            rowHeight:el.querySelector('.file-row').getBoundingClientRect().height
+        }));
+        assert.equal(bounds.count,9);
+        assert.ok(bounds.scrollHeight>bounds.height,'Nine media entries must cause internal bin scroll');
+        assert.ok(bounds.height<=8*bounds.rowHeight+8*7+20,
+            'Media bin may display at most eight full file rows');
+        await capPage.locator('#btn-reset-menu').click();
+        await capPage.locator('#btn-reset-media-list').click();
+        await capPage.locator('#timeline-action-apply').click();
+        assert.match(await capPage.locator('#file-count').innerText(),/0 media/i);
+        await capPage.waitForFunction(()=>{
+            const value=JSON.parse(localStorage.getItem('motori-advanced-project-recovery-v1')||'null');
+            return value?.files?.length===9&&value.files.every(entry=>entry.hiddenFromBin===true);
+        },null,{timeout:10000});
+        await capPage.reload({waitUntil:'domcontentloaded'});
+        await capPage.waitForFunction(()=>document.querySelector('#file-count')?.textContent==='0 media');
+        assert.equal(await capPage.locator('.file-row').count(),0,
+            'Reset Media List remains empty after page reload');
+        await capPage.locator('#file-input').setInputFiles({
+            name:'cap-0.jpg',mimeType:'image/jpeg',buffer:imageBytes
+        });
+        await capPage.locator('.file-row').first().waitFor({state:'visible'});
+        assert.match(await capPage.locator('#file-count').innerText(),/1 media/i,
+            'Reimporting a hidden media file must restore its bin entry');
+    } finally { await capContext.close(); }
 
     // Keep the shared timeline usable at compact desktop and single-column
     // widths. Only the timeline's own scroll area may overflow horizontally;
@@ -140,7 +189,7 @@ try{
     await page.locator('.file-row').waitFor({state:'visible',timeout:10000});
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     assert.ok(!(await page.locator('#btn-undo').isDisabled()),'Import should create undo history');
-    await page.locator('#btn-clear').click();
+    await chooseReset('#btn-clear');
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
     assert.match(await page.locator('#file-count').innerText(),/0 media/i);
@@ -272,13 +321,13 @@ try{
     // Reset must empty the whole timeline (all clips/lanes), not export options.
     // Clearing the source media belongs to a *different* Clear All button.
     const oldCount=await page.locator('.timeline-clip:not(.placeholder)').count();
-    await page.locator('#btn-reset-timeline').click();
+    await chooseReset('#btn-reset-timeline');
     assert.match(await page.locator('#timeline-action-title').innerText(),/reset timeline/i);
     assert.match(await page.locator('#timeline-action-description').innerText(),/Imported media stays/i);
     await page.locator('#timeline-action-cancel').click();
     assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
         'Cancelled Reset must not alter the timeline');
-    await page.locator('#btn-reset-timeline').click();
+    await chooseReset('#btn-reset-timeline');
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip:not(.placeholder)').length===0);
     assert.equal(await page.locator('.timeline-lane').count(),0,
@@ -293,6 +342,20 @@ try{
         'Undo must fully restore the previous timeline');
     assert.match(await page.locator('#file-count').innerText(),/1 media/i);
     console.log('[Stage2 reset] PASS confirmation/cancel, full timeline deletion, media preservation and Undo');
+    // Reset Media List is independent of the timeline and fully undoable.
+    await chooseReset('#btn-reset-media-list');
+    assert.match(await page.locator('#timeline-action-description').innerText(),/Existing timeline clips/i);
+    await page.locator('#timeline-action-apply').click();
+    assert.equal(await page.locator('.file-row').count(),0,'Media list reset must hide imported files');
+    assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
+        'Media list reset must preserve the entire timeline');
+    assert.match(await page.locator('#file-count').innerText(),/0 media/i);
+    await page.locator('#btn-undo').click();
+    await page.locator('.file-row').first().waitFor({state:'visible'});
+    assert.equal(await page.locator('.timeline-clip:not(.placeholder)').count(),oldCount,
+        'Undo Media List reset must not rebuild or delete clips');
+    console.log('[Stage2 media reset] PASS retained clips and Undo restores bin');
+
     await page.locator('.timeline-clip.background').first().click({button:'right'});
     assert.equal(await page.locator('#context-duplicate').isVisible(),true,
         'Duplicate should be available from a clip right-click, not the toolbar');
@@ -342,7 +405,7 @@ try{
     const beforeReset=await page.locator('.timeline-clip:not(.placeholder)').count();
     assert.ok(beforeReset>=4,'Fixture should contain multiple clips across two media-type lanes');
     const sourceCountBefore=await page.locator('#file-count').innerText();
-    await page.locator('#btn-reset-timeline').click();
+    await chooseReset('#btn-reset-timeline');
     assert.match(await page.locator('#timeline-action-description').innerText(),/Undo restores/i);
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip:not(.placeholder)').length===0);
@@ -359,7 +422,7 @@ try{
     assert.equal(await page.locator('#file-count').innerText(),sourceCountBefore);
     console.log('[Stage2 reset] PASS multi-lane Reset, markers, preserved bin and exact Undo');
     await page.locator('[data-library-tab="media"]').click();
-    await page.locator('#btn-clear').click();
+    await chooseReset('#btn-clear');
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
@@ -641,7 +704,7 @@ try{
 
     await page.locator('[data-library-tab="media"]').click();
     assert.ok(await page.locator('#project-drop-zone').isVisible());
-    await page.locator('#btn-clear').click();
+    await chooseReset('#btn-clear');
     await page.locator('#timeline-action-modal').waitFor({state:'visible'});
     await page.locator('#timeline-action-apply').click();
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
