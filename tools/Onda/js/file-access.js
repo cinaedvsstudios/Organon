@@ -11,6 +11,9 @@
     const AUDIO_EXTENSION = /\.(mp3|wav|ogg|oga|flac|m4a|aac|opus|aiff|aif|mid|midi|mp4|webm)$/i;
     const MAX_DIRECTORY_FILES = 3500;
     const MAX_DIRECTORY_DEPTH = 12;
+    // An in-memory index lets the Reconnect button request permissions in the
+    // original user gesture; IndexedDB handles are restored during startup.
+    const rememberedHandles = new Map();
 
     function supportsFilePicker() {
         return !!(window.isSecureContext && typeof window.showOpenFilePicker === 'function');
@@ -50,7 +53,14 @@
                 settled = true;
                 db.close();
                 if (error) reject(error);
-                else resolve(valid.length);
+                else {
+                    valid.forEach(item => rememberedHandles.set(item.trackId, {
+                        handle: item.handle,
+                        name: item.fileName || item.handle.name || '',
+                        relativePath: item.relativePath || item.fileName || ''
+                    }));
+                    resolve(valid.length);
+                }
             };
             try {
                 const tx = db.transaction(FILES, 'readwrite');
@@ -74,6 +84,8 @@
 
     async function getLinkedRecord(trackId) {
         if (!trackId) return null;
+        const id = String(trackId);
+        if (rememberedHandles.has(id)) return rememberedHandles.get(id);
         const db = await openDatabase();
         return new Promise((resolve, reject) => {
             let settled = false;
@@ -82,7 +94,10 @@
                 settled = true;
                 db.close();
                 if (error) reject(error);
-                else resolve(data);
+                else {
+                    if (data) rememberedHandles.set(id, data);
+                    resolve(data);
+                }
             };
             try {
                 const tx = db.transaction(FILES, 'readonly');
@@ -101,24 +116,50 @@
         const db = await openDatabase();
         return new Promise((resolve, reject) => {
             let settled = false;
-            const finish = (error, keys = []) => {
+            const finish = (error, keys = [], values = []) => {
                 if (settled) return;
                 settled = true;
                 db.close();
                 if (error) reject(error);
-                else resolve(keys.map(String));
+                else {
+                    keys.forEach((key, index) => {
+                        if (values[index]?.handle?.kind === 'file') {
+                            rememberedHandles.set(String(key), values[index]);
+                        }
+                    });
+                    resolve(keys.map(String));
+                }
             };
             try {
                 const tx = db.transaction(FILES, 'readonly');
-                const request = tx.objectStore(FILES).getAllKeys();
-                request.onsuccess = () => finish(null, request.result || []);
-                request.onerror = () => finish(request.error || new Error('Handle inventory failed.'));
+                const store = tx.objectStore(FILES);
+                const keysRequest = store.getAllKeys();
+                const valuesRequest = store.getAll();
+                let keys = [];
+                let values = [];
+                keysRequest.onsuccess = () => { keys = keysRequest.result || []; };
+                valuesRequest.onsuccess = () => { values = valuesRequest.result || []; };
+                tx.oncomplete = () => finish(null, keys, values);
+                tx.onerror = () => finish(tx.error || new Error('Handle inventory failed.'));
                 tx.onabort = () => finish(tx.error || new Error('Handle inventory aborted.'));
-                tx.oncomplete = () => { if (!settled) finish(null, []); };
             } catch (error) {
                 finish(error);
             }
         });
+    }
+
+    // Invoke *synchronously from a Reconnect button click*. requestPermission()
+    // requires transient user activation, so do not await an IDB lookup first.
+    function requestFile(trackId) {
+        const saved = rememberedHandles.get(String(trackId));
+        const handle = saved?.handle;
+        if (!handle || handle.kind !== 'file' || typeof handle.getFile !== 'function') return null;
+        const permission = typeof handle.requestPermission === 'function'
+            ? handle.requestPermission({ mode: 'read' })
+            : Promise.resolve('granted');
+        return Promise.resolve(permission).then(status =>
+            status === 'granted' ? handle.getFile().then(file => ({ file, handle })) : null
+        );
     }
 
     // Silent access only. A saved handle may exist while browser permissions
@@ -178,6 +219,7 @@
         rememberMany,
         listTrackIds,
         readFile,
+        requestFile,
         getLinkedRecord
     });
 })();
