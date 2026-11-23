@@ -129,8 +129,25 @@ function scratchFor(ctx,width,height){
  return pair;
 }
 function drawFallback(ctx,source,w,h,s,alpha){
- // Source-aware Canvas fallback, not a fabricated full-frame random texture.
- if(!source)return false;
+ // Real source-video warping is the preferred path. When no source can be
+ // sampled (e.g. a headless Canvas recorder), expose only a moving sync-band
+ // diagnostic, never invent RGB pixels for a nonexistent video frame.
+ if(!source){
+  ctx.save();
+  try{
+   ctx.globalAlpha=alpha;
+   for(const band of s.bands){
+    if(!band.active)continue;
+    const y=Math.max(0,band.center-band.radius);
+    const bandHeight=Math.max(1,Math.min(h-y,band.radius*2));
+    ctx.fillStyle='rgba(165,206,227,'+Math.min(.35,.12+band.darkness*.20).toFixed(4)+')';
+    ctx.fillRect(band.shift,y,w,bandHeight);
+   }
+   ctx.fillStyle='rgba(0,0,0,'+Math.min(.85,s.lost*s.params.strength).toFixed(4)+')';
+   ctx.fillRect(0,0,w,h);
+  }finally{ctx.restore();}
+  return true;
+ }
  ctx.save();
  try{
   ctx.globalAlpha=alpha;
