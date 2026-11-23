@@ -102,7 +102,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
         effectDuration:document.getElementById('effect-duration'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction'})[name]||'effect-'+name)])),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection','hudScale','frameRate','timecodeOffset','batteryLevel','jitter','recColor','showRec','showTimecode','showBattery','showCorners','showReticle'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction',hudScale:'effect-hud-scale',frameRate:'effect-frame-rate',timecodeOffset:'effect-timecode-offset',batteryLevel:'effect-battery-level',recColor:'effect-rec-color',showRec:'effect-show-rec',showTimecode:'effect-show-timecode',showBattery:'effect-show-battery',showCorners:'effect-show-corners',showReticle:'effect-show-reticle'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -1398,7 +1398,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         input.addEventListener('input',()=>{
             const track=getTrack();
             if(!track?.effectOverlay||state.selectedTrackIds.size!==1)return;
-            track.effectOverlay=normaliseTimelineEffect({...track.effectOverlay,[name]:input.value});
+            track.effectOverlay=normaliseTimelineEffect({...track.effectOverlay,[name]:input.type==='checkbox'?input.checked:input.value});
             engine.renderFrame();
         });
     }
@@ -1597,12 +1597,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
         const isStarburst=track?.effectOverlay?.presetId==='starburst';
+        const isCameraFrame=track?.effectOverlay?.presetId==='camera-frame';
         document.getElementById('effect-starburst-controls').hidden=!isStarburst;
-        document.getElementById('effect-density-control').hidden=isStarburst;
-        document.getElementById('effect-scale-control').hidden=isStarburst;
-        document.getElementById('effect-intensity-label').textContent=isStarburst?'Opacity (%)':'Intensity (%)';
+        document.getElementById('effect-camera-frame-controls').hidden=!isCameraFrame;
+        document.getElementById('effect-density-control').hidden=isStarburst||isCameraFrame;
+        document.getElementById('effect-scale-control').hidden=isStarburst||isCameraFrame;
+        document.getElementById('effect-direction-control').hidden=isCameraFrame;
+        document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':'Intensity (%)';
         document.getElementById('effect-direction-label').textContent=isStarburst?'Starting angle (°)':'Direction (°)';
-        document.getElementById('effect-color-label').textContent=isStarburst?'Primary ray colour':'Colour';
+        document.getElementById('effect-color-label').textContent=isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':'Colour';
         document.getElementById('effect-origin-controls').hidden=
             !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=

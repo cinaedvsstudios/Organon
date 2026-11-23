@@ -14,6 +14,7 @@ import {renderFireFlames} from './timeline-fire-flames.mjs';
 import {renderLightLeaks} from './timeline-light-leaks.mjs';
 import {renderGodRays} from './timeline-god-rays.mjs';
 import {renderStarburst} from './timeline-starburst.mjs';
+import {renderCameraFrame} from './timeline-camera-frame.mjs';
 import {GLITCH_PRESETS,isGlitchEffect,renderGlitchEffect} from './timeline-glitch-effects.mjs';
 export const TIMELINE_EFFECTS=Object.freeze([
  {id:'light-sweep',label:'Light Sweep',group:'effect',category:'Light',animated:true},
@@ -24,6 +25,7 @@ export const TIMELINE_EFFECTS=Object.freeze([
  {id:'particle-debris',label:'Flying Debris',group:'effect',category:'Particles/Fire',animated:true},
  {id:'god-rays',label:'God Rays',group:'effect',category:'Light',animated:true},
  {id:'starburst',label:'Rotating Starburst',group:'effect',category:'Light',animated:true},
+ {id:'camera-frame',label:'Camcorder Frame / REC HUD',group:'effect',category:'Scanning',animated:true},
  {id:'light-leaks',label:'Organic Light Leaks',group:'effect',category:'Light',animated:true},
  {id:'pixel-scan',label:'Pixel Scan',group:'effect',category:'Scanning',animated:true},
  {id:'sci-fi-scan',label:'Sci-Fi Scan',group:'effect',category:'Scanning',animated:true},
@@ -65,6 +67,7 @@ export function normaliseTimelineEffect(effect={}){
  const swing=['pendulum-swing','rebound-swing'].includes(presetId);
  const shockwave=presetId==='shockwave';
  const starburst=presetId==='starburst';
+ const cameraFrame=presetId==='camera-frame';
  const base={
   presetId,
   intensity:clamp(raw.intensity,0,100,70),
@@ -77,7 +80,20 @@ export function normaliseTimelineEffect(effect={}){
   blur:clamp(raw.blur,0,60,24),
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:swing?10:12),
-  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':'#ffd98d'
+  color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':'#ffd98d'
+ };
+ if(cameraFrame)return {...base,
+  hudScale:clamp(raw.hudScale,60,150,100),
+  frameRate:[24,25,30,60].includes(Number(raw.frameRate))?Number(raw.frameRate):30,
+  timecodeOffset:clamp(raw.timecodeOffset,0,3600,0),
+  batteryLevel:Math.round(clamp(raw.batteryLevel,0,100,78)),
+  jitter:clamp(raw.jitter,0,100,0),
+  recColor:/^#[0-9a-f]{6}$/i.test(String(raw.recColor))?String(raw.recColor).toLowerCase():'#ff364c',
+  showRec:![false,'false',0,'0'].includes(raw.showRec),
+  showTimecode:![false,'false',0,'0'].includes(raw.showTimecode),
+  showBattery:![false,'false',0,'0'].includes(raw.showBattery),
+  showCorners:![false,'false',0,'0'].includes(raw.showCorners),
+  showReticle:![false,'false',0,'0'].includes(raw.showReticle)
  };
  if(!starburst)return base;
  return {...base,
@@ -273,6 +289,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    renderHazyAtmosphere(ctx,w,h,e,t,strength);
   }else if(e.presetId==='starburst'){
    renderStarburst(ctx,w,h,e,t,strength);
+  }else if(e.presetId==='camera-frame'){
+   renderCameraFrame(ctx,w,h,e,clamp(seconds,0,Math.max(0,Number(duration)||3),0),strength);
   }else if(e.presetId==='light-leaks'){
     renderLightLeaks(ctx,w,h,e,t,strength);
    }else if(e.presetId==='pixel-scan'){

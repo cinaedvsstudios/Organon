@@ -361,6 +361,13 @@ jobs:
         env:
           CHROME_BIN: /usr/bin/google-chrome
         run: node tools/audio-timeline/tests/starburst-v1.browser.mjs
+      - name: Verify Camera Frame timecode, per-part switches, deterministic HUD and saved project state
+        run: node --test tools/audio-timeline/tests/camera-frame-v1.test.mjs
+      - name: Inspect real Chrome Camera Frame transparent pixels, REC blink, controls and rewind
+        timeout-minutes: 10
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/camera-frame-v1.browser.mjs
       - name: Confirm original PaperTear source SHA, seven controls and history
         run: node --test tools/audio-timeline/tests/papertear-source.test.mjs
       - name: Verify ApertureWipe original GLSL blob SHA, native options and history

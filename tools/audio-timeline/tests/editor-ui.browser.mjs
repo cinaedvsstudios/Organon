@@ -365,8 +365,8 @@ try{
     await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip').length===0);
     // Functional overlay asset library: template click makes an actual PNG clip.
     await page.locator('[data-library-tab="effects"]').click();
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),46,
-        'Keep twelve classic overlays plus thirty-four independently animated procedural effects');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card').count(),47,
+        'Keep twelve classic overlays plus thirty-five independently animated procedural effects');
     assert.ok(await page.locator('#effects-library-panel').isVisible());
     await page.locator('#effects-library-grid [data-preset-id="vignette"]').click();
     await page.locator('.timeline-clip.sticker:not(.placeholder)').first().waitFor({timeout:15000});
@@ -708,8 +708,8 @@ try{
     });
     assert.equal(await page.locator('#effect-intensity').inputValue(),'32');
     await page.locator('#effect-category').selectOption('Scanning');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2,
-        'Pixel Scan and Sci-Fi Scan are separate time-based scanning templates');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3,
+        'Pixel Scan, Sci-Fi Scan and Camera Frame must be separate animated Scanning effects');
     await page.locator('#effect-category').selectOption('Light');
     await page.locator('[data-preset-id="god-rays"]').click();
     await page.locator('#effect-origin-controls').waitFor({state:'visible',timeout:15000});

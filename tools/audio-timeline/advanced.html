@@ -1097,7 +1097,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                     <label class="text-setting-row"><span>Speed (×)</span><input id="effect-speed" class="range-control" type="range" min="0.1" max="8" step="0.1" value="1" title="Timeline animation speed"></label>
                     <label class="text-setting-row" id="effect-density-control"><span>Density</span><input id="effect-density" class="range-control" type="range" min="1" max="120" step="1" value="48" title="Number of particles; used for particle effects"></label>
                     <label class="text-setting-row" id="effect-scale-control"><span>Scale (%)</span><input id="effect-scale" class="range-control" type="range" min="10" max="300" step="5" value="100" title="Beam/fog/particle scale"></label>
-                    <label class="text-setting-row"><span id="effect-direction-label">Direction (°)</span><input id="effect-direction" class="range-control" type="range" min="-180" max="180" step="5" value="0" title="Angle of motion or light sweep"></label>
+                    <label class="text-setting-row" id="effect-direction-control"><span id="effect-direction-label">Direction (°)</span><input id="effect-direction" class="range-control" type="range" min="-180" max="180" step="5" value="0" title="Angle of motion or light sweep"></label>
                     <label class="text-setting-row" id="effect-glow-control" hidden><span>Glow (%)</span><input id="effect-glow" class="range-control" type="range" min="0" max="100" step="1" value="64" title="Glow brightness or halo size"></label>
                     <label class="text-setting-row" id="effect-blur-control" hidden><span>Blur (px)</span><input id="effect-blur" class="range-control" type="range" min="0" max="60" step="1" value="24" title="Radius of bloom and soft-focus blur"></label>
                     <label class="text-setting-row" id="effect-distortion-control" hidden><span>Distortion (%)</span><input id="effect-distortion" class="range-control" type="range" min="0" max="100" step="1" value="55" title="Strength of swinging, shake, tape displacement or wave refraction"></label>
@@ -1106,6 +1106,22 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                         <label class="text-setting-row"><span>Origin / pivot Y (%)</span><input id="effect-origin-y" class="range-control" type="range" min="0" max="100" step="1" value="12" title="Vertical origin of God Rays or pivot point for Swing/Shockwave"></label>
                     </div>
                     <label class="text-setting-row"><span id="effect-color-label">Colour</span><input id="effect-color" type="color" value="#ffd98d" title="Primary effect colour"></label>
+                    <div id="effect-camera-frame-controls" hidden>
+                        <details open class="text-inspector-group">
+                            <summary>Camera HUD components</summary>
+                            <label class="text-setting-row"><span>REC indicator</span><select id="effect-show-rec" class="compact-select" title="Blinking recording dot and REC label"><option value="true">On</option><option value="false">Off</option></select></label>
+                            <label class="text-setting-row"><span>Timecode</span><select id="effect-show-timecode" class="compact-select"><option value="true">On</option><option value="false">Off</option></select></label>
+                            <label class="text-setting-row"><span>Battery indicator</span><select id="effect-show-battery" class="compact-select"><option value="true">On</option><option value="false">Off</option></select></label>
+                            <label class="text-setting-row"><span>Frame corners</span><select id="effect-show-corners" class="compact-select"><option value="true">On</option><option value="false">Off</option></select></label>
+                            <label class="text-setting-row"><span>Targeting reticle</span><select id="effect-show-reticle" class="compact-select"><option value="true">On</option><option value="false">Off</option></select></label>
+                            <label class="text-setting-row"><span>REC dot colour</span><input id="effect-rec-color" type="color" value="#ff364c"></label>
+                            <label class="text-setting-row"><span>Battery level (%)</span><input id="effect-battery-level" class="range-control" type="range" min="0" max="100" value="78"></label>
+                            <label class="text-setting-row"><span>HUD size (%)</span><input id="effect-hud-scale" class="range-control" type="range" min="60" max="150" value="100"></label>
+                            <label class="text-setting-row"><span>Jitter (%)</span><input id="effect-jitter" class="range-control" type="range" min="0" max="100" value="0"></label>
+                            <label class="text-setting-row"><span>Timecode FPS</span><select id="effect-frame-rate" class="compact-select"><option value="24">24</option><option value="25">25</option><option value="30" selected>30</option><option value="60">60</option></select></label>
+                            <label class="text-setting-row"><span>Timecode start offset (s)</span><input id="effect-timecode-offset" class="compact-input" type="number" min="0" max="3600" step="1" value="0"></label>
+                        </details>
+                    </div>
                     <div id="effect-starburst-controls" hidden>
                         <label class="text-setting-row"><span>Secondary ray colour</span><input id="effect-secondary-color" type="color" value="#ffffff" title="Alternate colour of the rotating rays"></label>
                         <label class="text-setting-row"><span>Ray pairs</span><input id="effect-ray-count" class="range-control" type="range" min="4" max="64" step="1" value="18" title="Number of yellow/white ray pairs"></label>

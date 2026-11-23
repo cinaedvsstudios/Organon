@@ -68,7 +68,7 @@ try{
  const pageErrors=[];
  page.on('pageerror',err=>pageErrors.push(String(err)));
  await page.goto('http://127.0.0.1:'+port+'/tools/audio-timeline/tests/browser-harness.html');
- for(const preset of ['light-sweep','glitch-flux','pixel-scan','fire-embers','particle-dust','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays','starburst']){
+ for(const preset of ['light-sweep','glitch-flux','pixel-scan','fire-embers','particle-dust','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays','starburst','camera-frame']){
   const downloadPromise=page.waitForEvent('download',{timeout:180000});
   const preview=await page.evaluate(async({preset,W,H})=>{
    const [{AdvancedMediaEngine},{AdvancedOfflineExporter}]=await Promise.all([
@@ -147,7 +147,11 @@ try{
   const rewind=Buffer.from(preview.frames.rewind,'base64');
   assert.deepEqual(original,rewind,preset+': reverse seeking must restore exact preview pixels');
   const previewMotion=meanAbs(original,different);
-  assert.ok(previewMotion>0.25,preset+': preview effect pixels did not animate ('+previewMotion+')');
+  // A transparent recording HUD deliberately updates only tiny text/REC pixels.
+  // Compare actual decoded MP4 frames as strictly as for full-frame overlays,
+  // but use a sparse-geometry motion floor instead of the global 0.25 mean.
+  const motionFloor=preset==='camera-frame'?0.05:0.25;
+  assert.ok(previewMotion>motionFloor,preset+': preview effect pixels did not animate ('+previewMotion+')');
   const download=await downloadPromise;
   const output=join(temp,'effect-'+preset+'.mp4');
   await download.saveAs(output);
