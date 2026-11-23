@@ -1,7 +1,7 @@
 # Onda v3.16 — Mobile Library Browsing and Search
 
 **Implemented:** 2026-11-23  
-**Status:** Source implemented on GitHub, 24 isolated/source checks passed. **Real Android, desktop, and public Netlify deployment are not yet verified.**  
+**Status:** Source implemented on GitHub, 26 isolated/source checks passed. **Real Android, desktop, and public Netlify deployment are not yet verified.**  
 **Live app:** https://ondaplayer.netlify.app/  
 **Version:** `ONDA_VERSION = 'v3.16'`; `js/app-core.js`, `css/library.css`, and `css/responsive.css` have versioned `v=3.16` references.
 
@@ -33,7 +33,7 @@ The Recents view now shows the existing recent-track rows, and the Playlists vie
 
 ## Code/source verification performed
 
-24 assertions passed in the isolated source pass, including parseable JS, correct script/CSS cache versions, navigation and shortcut existence, existing binding/selector connections, absence of search auto-clear logic, scoped mobile-vs-desktop styles and execution of the extracted real `setMobileLibraryView()` function with a mock DOM. The isolated view-switch test confirmed a single active tab, correct `aria-pressed` values and invalid-view fallback.
+26 assertions passed in the isolated source pass, including parseable JS, correct script/CSS cache versions, navigation and shortcut existence, existing binding/selector connections, absence of search auto-clear logic, scoped mobile-vs-desktop styles and execution of the extracted real `setMobileLibraryView()` function with a mock DOM. The isolated view-switch test confirmed a single active tab, correct `aria-pressed` values and invalid-view fallback.
 
 These checks do not test actual Android DOM layout, Chrome file permissions, lock-screen playback, battery impact or browser deployment.
 
