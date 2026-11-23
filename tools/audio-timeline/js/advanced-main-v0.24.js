@@ -102,7 +102,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         effectsLibraryGrid: document.getElementById('effects-library-grid'), effectCategory:document.getElementById('effect-category'), textLibraryGrid: document.getElementById('text-library-grid'),
         effectInspector:document.getElementById('inspector-timeline-effect'),
         effectDuration:document.getElementById('effect-duration'),
-        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection','hudScale','frameRate','timecodeOffset','batteryLevel','jitter','recColor','showRec','showTimecode','showBattery','showCorners','showReticle'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction',hudScale:'effect-hud-scale',frameRate:'effect-frame-rate',timecodeOffset:'effect-timecode-offset',batteryLevel:'effect-battery-level',recColor:'effect-rec-color',showRec:'effect-show-rec',showTimecode:'effect-show-timecode',showBattery:'effect-show-battery',showCorners:'effect-show-corners',showReticle:'effect-show-reticle'})[name]||'effect-'+name)])),
+        effectInspectorInputs:Object.fromEntries(['intensity','speed','density','scale','direction','originX','originY','distortion','glow','blur','color','secondaryColor','rayCount','rayThickness','spinDirection','hudScale','frameRate','timecodeOffset','batteryLevel','jitter','recColor','showRec','showTimecode','showBattery','showCorners','showReticle','windSpeed','bankHeight','seed'].map(name=>[name,document.getElementById(({originX:'effect-origin-x',originY:'effect-origin-y',secondaryColor:'effect-secondary-color',rayCount:'effect-ray-count',rayThickness:'effect-ray-thickness',spinDirection:'effect-spin-direction',hudScale:'effect-hud-scale',frameRate:'effect-frame-rate',timecodeOffset:'effect-timecode-offset',batteryLevel:'effect-battery-level',recColor:'effect-rec-color',showRec:'effect-show-rec',showTimecode:'effect-show-timecode',showBattery:'effect-show-battery',showCorners:'effect-show-corners',showReticle:'effect-show-reticle',windSpeed:'effect-wind-speed',bankHeight:'effect-bank-height',seed:'effect-seed'})[name]||'effect-'+name)])),
         textOverlayValue: document.getElementById('text-overlay-value'),
         textInspector:document.getElementById('inspector-text-template'),
         textSelectedDesign:document.getElementById('text-selected-design'),
@@ -1598,24 +1598,30 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
         const isStarburst=track?.effectOverlay?.presetId==='starburst';
         const isCameraFrame=track?.effectOverlay?.presetId==='camera-frame';
+        const isMistFog=track?.effectOverlay?.presetId==='mist-fog-bank';
+        document.getElementById('effect-mist-fog-controls').hidden=!isMistFog;
         document.getElementById('effect-starburst-controls').hidden=!isStarburst;
         document.getElementById('effect-camera-frame-controls').hidden=!isCameraFrame;
         document.getElementById('effect-density-control').hidden=isStarburst||isCameraFrame;
         document.getElementById('effect-scale-control').hidden=isStarburst||isCameraFrame;
         document.getElementById('effect-direction-control').hidden=isCameraFrame;
-        document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':'Intensity (%)';
-        document.getElementById('effect-direction-label').textContent=isStarburst?'Starting angle (°)':'Direction (°)';
-        document.getElementById('effect-color-label').textContent=isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':'Colour';
+        document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':isMistFog?'Fog opacity (%)':'Intensity (%)';
+        document.getElementById('effect-direction-label').textContent=isStarburst?'Starting angle (°)':isMistFog?'Wind direction (°)':'Direction (°)';
+        document.getElementById('effect-color-label').textContent=isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':isMistFog?'Mist colour':'Colour';
+        document.getElementById('effect-density-label').textContent=isMistFog?'Fog density':'Density';
+        document.getElementById('effect-scale-label').textContent=isMistFog?'Bank spread (%)':'Scale (%)';
+        document.getElementById('effect-distortion-label').textContent=isMistFog?'Rolling turbulence (%)':'Distortion (%)';
+        document.getElementById('effect-blur-label').textContent=isMistFog?'Edge feathering (%)':'Blur (px)';
         document.getElementById('effect-origin-controls').hidden=
             !['god-rays','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-distortion-control').hidden=
             !(['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
-              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId)
+              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','mist-fog-bank','sci-fi-scan','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId)
               || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
         document.getElementById('effect-glow-control').hidden=
             !['glow','edge-glow','halo-blur','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst'].includes(track?.effectOverlay?.presetId);
         document.getElementById('effect-blur-control').hidden=
-            !['glow','edge-glow','halo-blur','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
+            !['glow','edge-glow','halo-blur','mist-fog-bank','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
