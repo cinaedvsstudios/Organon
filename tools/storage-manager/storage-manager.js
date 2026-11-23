@@ -420,11 +420,13 @@
     previewed = entry.id;
     const box = $('osm-inspector');
     if (!box) return;
-    const canEdit = entry.owned && entry.editable;
+    const tooLarge = typeof entry.value === 'string' && entry.value.length > 100000;
+    const canEdit = entry.owned && entry.editable && !tooLarge;
     box.hidden = false;
     $('osm-inspector-title').textContent = entry.key + ' · ' + entry.type +
-      (entry.owned ? ' · Organon-owned' : ' · Shared/unknown: read only');
-    $('osm-value').value = entry.value === undefined ? 'No generic editor is available for this storage type.' : formatValue(entry.value);
+      (tooLarge ? ' · Large record: preview only, export for editing' : ' · Organon-owned');
+    $('osm-value').value = entry.value === undefined ? 'No generic editor is available for this storage type.' :
+      (tooLarge ? entry.value.slice(0, 100000) + '\n\n[Preview truncated; inline saving disabled to protect original data.]' : formatValue(entry.value));
     if (entry.dbRecord) {
       $('osm-value').value = 'Reading selected IndexedDB record...';
       try { $('osm-value').value = await readDatabaseRecord(entry); }
