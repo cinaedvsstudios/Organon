@@ -4368,6 +4368,148 @@
                 escapeHtml(label) + '</div><div class="settings-health-value">' +
                 escapeHtml(value) + '</div></div>').join('');
         }
+
+        // Read-only protection set. A cached recording is not an 'unlinked'
+        // candidate if any active queue, playlist, history, or local backup
+        // still refers to its original ID.
+        function collectStorageAuditProtectedIds() {
+            const ids = new Set(Object.keys(virtualLibrary || {}));
+            const add = value => {
+                if (typeof value === 'string' && value) ids.add(value);
+            };
+            const addMany = value => {
+                if (Array.isArray(value)) value.forEach(item => add(getTrackId(item)));
+            };
+            Object.values(playlists || {}).forEach(value => {
+                addMany(normalisePlaylistToIds(value));
+            });
+            addMany(playlistTracks);
+            addMany(recentTrackIds);
+            add(getTrackId(currentFile));
+            [LIBRARY_AUTOSAVE_KEY, LIBRARY_AUTOSAVE_BACKUP_KEY, LIBRARY_LAST_GOOD_KEY].forEach(key => {
+                const backup = safeGetLocalStorageJson(key);
+                const library = backup?.library || backup;
+                if (library?.tracks && typeof library.tracks === 'object') {
+                    Object.keys(library.tracks).forEach(add);
+                }
+                if (library?.playlists && typeof library.playlists === 'object') {
+                    Object.values(library.playlists).forEach(value => addMany(normalisePlaylistToIds(value)));
+                }
+                addMany(backup?.queueIds);
+                addMany(backup?.recentTrackIds);
+            });
+            return ids;
+        }
+
+        function renderAudioCacheReview(result) {
+            const panel = document.getElementById('storage-audit-report');
+            if (!panel) return;
+            const metric = (name, value) =>
+                '<div class="onda-storage-audit-metric"><strong>' +
+                escapeHtml(String(value)) + '</strong><small>' + escapeHtml(name) + '</small></div>';
+            const cacheItem = row =>
+                '<li><strong>' + escapeHtml(row.fileName || 'Unnamed cached file') +
+                '</strong> · ' + escapeHtml(formatBytes(row.sizeBytes)) +
+                '<div class="library-track-meta">' +
+                escapeHtml(row.relativePath || 'No original folder recorded') +
+                ' · ID ' + escapeHtml(String(row.id)) + '</div></li>';
+            const list = (rows, limit = 80) =>
+                '<ul class="onda-storage-audit-items">' +
+                rows.slice(0, limit).map(cacheItem).join('') +
+                (rows.length > limit
+                    ? '<li>Only the first ' + limit + ' of ' + rows.length +
+                    ' records are shown. All entries were counted.</li>' : '') +
+                '</ul>';
+
+            let html = '<strong>Local browser audio cache — read-only review</strong>';
+            html += '<div class="onda-storage-audit-metrics">' +
+                metric('Saved audio records', result.scanned) +
+                metric('Playable cache bytes', formatBytes(result.cachedBytes)) +
+                metric('Unlinked to active/backup lists', result.unlinked.length) +
+                metric('Unlinked cache bytes (NOT safe to delete)', formatBytes(result.unlinkedBytes)) +
+                metric('Possible duplicate groups', result.potentialDuplicates.length) +
+                metric('Unverified duplicate surplus', formatBytes(result.potentialDuplicateBytes)) +
+                '</div>';
+
+            html += '<details><summary>Unlinked cache records (' +
+                result.unlinked.length + ' · ' + escapeHtml(formatBytes(result.unlinkedBytes)) +
+                ')</summary>' +
+                (result.unlinked.length ? list(result.unlinked) :
+                    '<p class="onda-storage-audit-note">No unlinked playable audio records detected.</p>') +
+                '<p class="onda-storage-audit-note">These entries are not referenced by the currently loaded Library, playlists, queue, history or known local backup IDs. They may still be the only copy of a recording. No deletion is offered.</p></details>';
+
+            const duplicateGroups = result.potentialDuplicates;
+            html += '<details><summary>Possible duplicate recordings (' +
+                duplicateGroups.length + ' groups)</summary>';
+            if (!duplicateGroups.length) {
+                html += '<p class="onda-storage-audit-note">No files with the same name, size, timestamp and media type were found under different cache IDs.</p>';
+            } else {
+                html += '<p class="onda-storage-audit-note">These are metadata matches, NOT verified identical audio. Folder paths may differ. Group bytes are hypothetical and may overlap with unlinked cache bytes.</p>';
+                html += '<ul class="onda-storage-audit-items">' +
+                    duplicateGroups.slice(0, 60).map(group =>
+                        '<li><strong>' + escapeHtml(group.fileName) + '</strong> · ' +
+                        group.entries.length + ' copies · possible extra ' +
+                        escapeHtml(formatBytes(group.hypotheticalExtraBytes)) +
+                        '<div class="library-track-meta">' +
+                        group.entries.slice(0, 12).map(row =>
+                            escapeHtml(row.relativePath || row.fileName || 'Unknown path') +
+                            ' [' + escapeHtml(String(row.id)) + ']' +
+                            (row.protected ? ' (referenced)' : ' (unlinked)')
+                        ).join('; ') +
+                        (group.entries.length > 12 ? '; and more' : '') +
+                        '</div></li>'
+                    ).join('') +
+                    (duplicateGroups.length > 60
+                        ? '<li>First 60 groups shown; all groups included in totals.</li>' : '') +
+                    '</ul>';
+            }
+            html += '</details>';
+
+            if (result.damaged) {
+                html += '<details><summary>Unreadable or metadata-only cache records (' +
+                    result.damaged + ')</summary>' +
+                    '<p class="onda-storage-audit-note">No playable File/Blob was detected for these records. Their true storage footprint cannot be calculated from the available metadata.</p>' +
+                    list(result.damagedEntries, 70) + '</details>';
+            }
+            html += '<p class="onda-storage-audit-note"><strong>Cleanup preview only:</strong> the unlinked and potential-duplicate amounts are separate, unverified candidates — never add them together as guaranteed savings. There are no delete controls in v3.14. Browser site-wide storage may include additional non-audio data, and JSON exports do not back up actual music.</p>';
+            html += '<p class="onda-storage-audit-note">Snapshot: ' +
+                escapeHtml(new Date(result.evaluatedAt).toLocaleString()) +
+                '. Use Review Cached Audio again after importing or changing the Library.</p>';
+            panel.innerHTML = html;
+        }
+
+        let audioCacheReviewBusy = false;
+        async function runAudioCacheReview() {
+            const panel = document.getElementById('storage-audit-report');
+            const button = document.getElementById('btn-review-audio-cache');
+            if (!panel || audioCacheReviewBusy) return;
+            audioCacheReviewBusy = true;
+            if (button) button.disabled = true;
+            panel.hidden = false;
+            panel.textContent = 'Checking saved audio records… nothing will be changed.';
+            try {
+                await persistentLibraryReady;
+                if (libraryRestorePending) throw new Error('The Library is still restoring. Please retry.');
+                if (!window.OndaStorageAudit?.scanAudioRecords || !window.OndaStorageAudit?.analyse) {
+                    throw new Error('The storage-review module did not load.');
+                }
+                const db = await openOndaIndexedDb();
+                const records = await window.OndaStorageAudit.scanAudioRecords(db);
+                const report = window.OndaStorageAudit.analyse(records, collectStorageAuditProtectedIds());
+                renderAudioCacheReview(report);
+            } catch (error) {
+                console.warn('Onda read-only cache review failed:', error);
+                panel.textContent = 'Could not review browser audio cache: ' +
+                    (error?.message || 'Storage access unavailable') +
+                    '. No files were changed.';
+            } finally {
+                audioCacheReviewBusy = false;
+                if (button) button.disabled = false;
+            }
+        }
+
+        safeBind('btn-review-audio-cache', 'click', runAudioCacheReview);
+
         function exportMissingInfoJson() { const data = buildMissingInfoExport(); downloadJsonFile(`onda-missing-info-${new Date().toISOString().slice(0,10)}.json`, data); showToast(`Exported ${data.tracks.length} tracks with missing info.`); }
         safeBind('btn-export-missing-info','click',exportMissingInfoJson);
         safeBind('btn-db-export-missing-info','click',exportMissingInfoJson);
