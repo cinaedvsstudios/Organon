@@ -68,20 +68,25 @@ function sampleLayers(u,v,o,t){
   const body=.50*broad+.34*detail+.16*fine;
   // Banks sit lower than the haze (#49); lobes and branching wisps rise
   // above an irregular feathered crest. The background stays truly clear.
-  const crest=o.bankHeight+(.045-d*.045)
-   -(.33+o.turbulence*.12)*(broad-.4)
-   -.12*(detail-.45)
-   -.035*Math.sin(px*2.1+t*.34+d);
-  const edge=.035+.16*o.feather;
+  // Asymmetric feathered crests and raised cloud lobes create a recognisable
+  // fog BANK rather than a horizontal colour wash. The volume rises with
+  // density; separate layers have visibly different irregular silhouettes.
+  const lobe=Math.pow(Math.max(0,Math.sin(px*1.65+t*.23+d*1.72)),2);
+  const crest=o.bankHeight-.10-d*.065
+   -(.40+o.turbulence*.16)*(broad-.45)
+   -.18*(detail-.49)-.09*lobe
+   -.065*Math.sin(px*2.1+t*.34+d);
+  const edge=.018+.10*o.feather;
   const bank=smooth(crest-edge,crest+edge,v);
-  const wispy=1-smooth(.035,.18+o.feather*.07,Math.abs(v-(crest-.105-.05*(fine-.5))));
-  const fingers=wispy*smooth(.46-o.density*.15,.76-o.density*.05,body)
-    *(.28+.37*d/2);
-  const densityMask=smooth(.28-o.density*.10,.70-o.density*.06,body);
-  const internal=.6+.4*body+.12*Math.sin(t*.41+d+px*.79);
+  const plumeCenter=crest-.09-.075*(fine-.5);
+  const plume=1-smooth(.035,.13+o.feather*.075,Math.abs(v-plumeCenter));
+  const fingers=plume*smooth(.42-o.density*.16,.70-o.density*.05,body)
+    *(.48+.42*d/2);
+  const densityMask=smooth(.27-o.density*.12,.63-o.density*.04,body);
+  const internal=.62+.38*body+.14*Math.sin(t*.41+d+px*.79);
   const alpha=clamp(
-   ((bank*(.56+.44*densityMask)+fingers)
-    *(.19+.20*o.density)*internal*o.opacity),0,.46);
+   ((bank*(.35+.75*densityMask)+fingers)
+    *(.43+.38*o.density)*internal*o.opacity),0,.62);
   layers.push({depth:d,alpha,body,crest,bank,fingers,wind});
  }
  return layers;
