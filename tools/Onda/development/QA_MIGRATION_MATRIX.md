@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** QA v1.1 for Onda v3.11 · 2026-11-23  
-**Status:** 21 static/isolated code checks passed; all physical Android, live deployment and true audio tests **remain unverified**. See [v3.11 release note](./RELEASE_V3_11.md).  
+**Version:** QA v1.2 for Onda v3.12 · 2026-11-23  
+**Status:** v3.11: 21 isolated/static checks passed; v3.12: 18 isolated/static checks passed. All physical Android, deployment, quota and real audio tests **remain unverified**. See [v3.11](./RELEASE_V3_11.md) and [v3.12](./RELEASE_V3_12.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -206,3 +206,25 @@ Saved Library Play must be a one-tap action. Quick Play applies only to new file
 The production code implementing ONDA-05 (visualiser gating), part of ONDA-07 (cache awareness/one-tap playback), ONDA-10 (read-only cache stats) and ONDA-12 (direct Reconnect) is committed. **Do not mark visualiser battery savings, Android background playback, cached music persistence, or the new file picker as PASS until physically tested.** The existing IDB schema is still version 2 and no auto-cleanup or data migration has occurred. The 21 isolated checks passed on 2026-11-23, including actual extracted canvas scheduler and source-status functions; this does not execute Chrome, IndexedDB on the user's phone, or Media Session runtime.
 
 For the first Android smoke pass, prioritise PLAY-01/02/03, VIZ-01/02/03/05/06, ST-01/02/03 and BG-01/02, then inspect app version v3.11. Report whether the shortcut has actually installed or is a browser tab. Test Reconnect on an expendable example file only; never delete the user's primary library to simulate an error. [See release notes](./RELEASE_V3_11.md) for implementation and rollback.
+
+
+## Storage optimisation v3.12 — additional QA coverage
+
+These are new tests for the v3.12 code path; they do not imply prior Android tests have passed.
+
+| Test ID | Action | Steps | Expected | Status |
+|---|---|---|---|---|
+| CACHE-01 | ONDA-07 | Import a new test MP3 | One File is stored using its stable ID and library metadata is saved | PASS isolated; needs browser |
+| CACHE-02 | ONDA-07 | Reimport the identical file/ID | No second IndexedDB Blob put; track remains playable | PASS isolated; needs browser |
+| CACHE-03 | ONDA-07 | Reimport changed timestamp, size or path | Cache record is replaced safely | PASS isolated; needs browser |
+| CACHE-04 | ONDA-07 | Reimport file with missing/unreliable lastModified | Conservatively rewrites, never assumes match | PASS isolated |
+| CACHE-05 | ONDA-07 | Corrupt the cached Blob in a disposable test DB | Reimport replaces malformed cache | PASS isolated; needs browser |
+| CACHE-06 | ONDA-07 | Two import batches hit same ID concurrently | Writes are serialised, identical second file skipped | PASS isolated; needs browser |
+| CACHE-07 | ONDA-11 | Import 10/100 mock files | Full library catalogue save only once before asynchronous caching | PASS static; browser timing pending |
+| CACHE-08 | ONDA-11 | Rotate phone and open/close keyboard | Heavy library/preset save skipped on pure viewport resize, light UI checkpoint remains | PASS isolated; needs device |
+| CACHE-09 | ONDA-11 | Hide or close tab after playlist edit | Normal meaningful save remains active | PASS isolated; needs device |
+| CACHE-10 | ONDA-07/10 | Reopen old v2 IndexedDB cache with real Android media | All prior cached media, playlist entries and status preserved | NEEDS DEVICE |
+| CACHE-11 | ONDA-07 | Trigger browser quota error on disposable test origin | Metadata survives; no false cache-success signal | NOT RUN |
+| CACHE-12 | ONDA-07 | Inspect cache bytes after same-file reimport | Bytes stay stable; no claim that old unrelated duplicates were removed | NEEDS DEVICE |
+
+**No cleanup operation has been added.** Never clear site data, delete old audio cache records or upgrade IndexedDB merely to execute these tests. Use a disposable sample song for repeated import/modified-file checks.
