@@ -471,3 +471,13 @@ Actions: direct queue-row Play, inline Info without changing the current audio's
 **Next:** Confirm deployment/version and use v3.20 QA + v3.18 opt-in timing reports on Android and desktop, then address any observed playback/permission regressions rather than adding further speculative storage or media features.
 
 - 2026-11-23 — v2.6: v3.21 UI-only save corrections; device runtime verification pending.
+
+## Repeatable regression testing — source CI added (2026-11-23)
+
+The one-off v3.11–v3.21 source checks now have a committed follow-up: a dependency-free [Node regression suite](../tests/onda-regression.test.mjs), invoked by `cd tools/Onda && npm test`, and an [Onda-only GitHub Actions workflow](../../../.github/workflows/onda-regression.yml). It will run on Onda-related PRs, main pushes, and manual dispatch without installing Netlify packages or accessing music storage.
+
+Coverage: script syntax/asset ordering; navigation vs meaningful save checkpoints; temporary Quick Play's explicit import and blob lifecycle; Media Session preview/system action routing; and read-only device QA's redacted reporting. All **five top-level tests passed in an equivalent isolated source harness**; GitHub-hosted Node/Actions status remains pending until a workflow result is observed.
+
+These are source/mock tests, **not** Android playback validation. Continue with physical Android Chrome + desktop acceptance; never clear or automatically migrate the user's existing music cache just to force a test.
+
+- 2026-11-23 — v2.7: committed source test suite/CI infrastructure; no Onda runtime version bump or media behaviour changes.
