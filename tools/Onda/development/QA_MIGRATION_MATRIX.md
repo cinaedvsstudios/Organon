@@ -1,7 +1,7 @@
 # Onda — Android QA, Migration Safeguards and Release Checklist
 
-**Version:** Preliminary research v1.0 · 2026-11-23  
-**Status:** Checklist prepared; **not yet executed** on a physical Android device.  
+**Version:** QA v1.1 for Onda v3.11 · 2026-11-23  
+**Status:** 21 static/isolated code checks passed; all physical Android, live deployment and true audio tests **remain unverified**. See [v3.11 release note](./RELEASE_V3_11.md).  
 **Scope:** Mobile-first updates to Onda v3.10 in cinaedvsstudios/Organon.  
 **Related:** [Action list](./ONDA_MOBILE_ACTION_LIST.md) · [Technical blueprint](./TECHNICAL_INVESTIGATION.md) · [Concepts](./mobile-review.html)
 
@@ -200,3 +200,9 @@ The **Current main workspace** owns Queue and Now Playing; the Library drawer is
 ## Decisions confirmed 2026-11-23
 
 Saved Library Play must be a one-tap action. Quick Play applies only to new files. Resume position is P3 optional. GitHub Pages is the chosen public media host (static JSON + audio); no other provider needed unless limits require it. See PLAY-01/02/03 and NET-00/04/05.
+
+## v3.11 implementation and verification checkpoint
+
+The production code implementing ONDA-05 (visualiser gating), part of ONDA-07 (cache awareness/one-tap playback), ONDA-10 (read-only cache stats) and ONDA-12 (direct Reconnect) is committed. **Do not mark visualiser battery savings, Android background playback, cached music persistence, or the new file picker as PASS until physically tested.** The existing IDB schema is still version 2 and no auto-cleanup or data migration has occurred. The 21 isolated checks passed on 2026-11-23, including actual extracted canvas scheduler and source-status functions; this does not execute Chrome, IndexedDB on the user's phone, or Media Session runtime.
+
+For the first Android smoke pass, prioritise PLAY-01/02/03, VIZ-01/02/03/05/06, ST-01/02/03 and BG-01/02, then inspect app version v3.11. Report whether the shortcut has actually installed or is a browser tab. Test Reconnect on an expendable example file only; never delete the user's primary library to simulate an error. [See release notes](./RELEASE_V3_11.md) for implementation and rollback.
