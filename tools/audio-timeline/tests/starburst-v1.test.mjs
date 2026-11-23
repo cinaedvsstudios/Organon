@@ -82,8 +82,10 @@ test('Canvas2D draws new antialiased coloured sectors in deterministic shared pr
  assert.equal(renderStarburst(a.ctx,320,180,e,.5*e.speed,e.intensity/100),true);
  renderStarburst(b.ctx,320,180,e,.5*e.speed,e.intensity/100);
  renderStarburst(c.ctx,320,180,e,1.35*e.speed,e.intensity/100);
- assert.deepEqual(a.ops,b.ops);
- assert.notDeepEqual(a.ops,c.ops);
+ assert.equal(JSON.stringify(a.ops),JSON.stringify(b.ops),
+  'Identical timeline seconds must replay the exact Canvas sector commands');
+ assert.notEqual(JSON.stringify(a.ops),JSON.stringify(c.ops),
+  'Different timeline seconds must rotate real sector boundaries');
  assert.equal(a.ops.filter(x=>x[0]==='arc').length,e.rayCount*2+1);
  assert.ok(a.ops.some(x=>x[0]==='set'&&x[1]==='fillStyle'&&x[2]===e.color));
  assert.ok(a.ops.some(x=>x[0]==='set'&&x[1]==='fillStyle'&&x[2]===e.secondaryColor));
