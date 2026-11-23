@@ -708,8 +708,8 @@ try{
     });
     assert.equal(await page.locator('#effect-intensity').inputValue(),'32');
     await page.locator('#effect-category').selectOption('Scanning');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),2,
-        'Pixel Scan and Sci-Fi Scan are separate time-based scanning templates');
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3,
+        'Pixel Scan, Sci-Fi Scan and Camera Frame must be separate animated Scanning effects');
     await page.locator('#effect-category').selectOption('Light');
     await page.locator('[data-preset-id="god-rays"]').click();
     await page.locator('#effect-origin-controls').waitFor({state:'visible',timeout:15000});
