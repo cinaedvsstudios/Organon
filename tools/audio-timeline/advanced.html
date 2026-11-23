@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-signal-tear-controls" hidden>
+                     <div id="effect-rgb-block-glitch-controls" hidden>
+                          <details open class="text-inspector-group">
+                              <summary>Independent RGB block misregistration</summary>
+                              <label class="text-setting-row"><span>Block width (%)</span><input id="effect-rgb-block-width" class="range-control" type="range" min="2" max="45" step="1" value="21" title="Horizontal size of independent rectangular RGB glitch islands"></label>
+                              <label class="text-setting-row"><span>Block height (%)</span><input id="effect-rgb-block-height" class="range-control" type="range" min="2" max="45" step="1" value="15" title="Vertical size of the displaced source image blocks"></label>
+                              <label class="text-setting-row"><span>RGB separation (%)</span><input id="effect-rgb-separation" class="range-control" type="range" min="0" max="100" step="1" value="78" title="Distinct red, green and blue image-sample offsets within each rectangle"></label>
+                              <label class="text-setting-row"><span>Burst lifetime (s)</span><input id="effect-rgb-block-life" class="range-control" type="range" min="0.06" max="0.6" step="0.01" value="0.23" title="How long independently misregistered blocks persist before recovering"></label>
+                              <label class="text-setting-row"><span>Pattern seed</span><input id="effect-rgb-block-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6464" title="Repeatable random block locations and chroma shifts for exact reverse seeking and export"></label>
+                          </details>
+                      </div>
+                      <div id="effect-signal-tear-controls" hidden>
                           <details open class="text-inspector-group">
                               <summary>Discontinuous video tearing</summary>
                               <label class="text-setting-row"><span>Tear slice height (%)</span><input id="effect-tear-height" class="range-control" type="range" min="1" max="30" step="1" value="9" title="Vertical thickness of each abruptly displaced image slice"></label>
