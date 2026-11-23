@@ -527,3 +527,11 @@ The existing actual-Chromium suite now tests a **missing saved file**, not just 
 The source/player/storage schema are unchanged. This is safe automated browser coverage only: **OPFS is not an externally picked Android file handle**, and permission denial was simulated. Physical Android permission persistence after phone/browser restart, actual OS denial dialogs, Bluetooth and background audio still require on-device testing.
 
 - 2026-11-23 — v2.12: added real-browser remembered-handle, simulated denial and explicit reconnect regression.
+
+## Real Chrome Media Session callback and simulated visibility proof — v3.22 (2026-11-23)
+
+Added actual Chromium integration coverage for Onda's **registered system playback handlers**. [GitHub Actions #45277569315](https://github.com/cinaedvsstudios/Organon/actions/runs/45277569315) passed: synthetic native WAV play/pause/seekto/offset seek, next/previous track metadata handoff, explicit simulated hidden/visible `visibilitychange` without interrupting playback; Quick Play temporarily controls media keys/metadata, leaves main queue/cache unchanged, and system Stop/Play returns cleanly to the saved track.
+
+**Not yet validated on Android hardware:** actual lock-screen controls and notifications, Bluetooth/headphone media buttons, Chrome suspension when app is backgrounded, device power management and long-run battery, notification artwork, MP3-specific or real media collection behaviour. The callback test is not an OS-level test; the synthetic visibility event does not duplicate real background scheduling. No runtime source or Onda version changes.
+
+- 2026-11-23 — v2.13: added real Chromium Media Session routing + simulated visibility playback regression.
