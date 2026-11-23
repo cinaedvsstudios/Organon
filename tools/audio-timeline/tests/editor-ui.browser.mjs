@@ -806,7 +806,12 @@ try{
     assert.equal(rippleStart,await sampleEffect(15));
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Glitch');
-    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),11);
+    const expectedGlitchCount=await page.evaluate(async()=>{
+        const {TIMELINE_EFFECTS}=await import('./js/timeline-effects.mjs');
+        return TIMELINE_EFFECTS.filter(effect=>effect.category==='Glitch').length;
+    });
+    assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount,
+        'Glitch library must display all registered procedural effects');
     await page.locator('[data-preset-id="fault-cassette"]').click();
     await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-distortion').evaluate(input=>{
