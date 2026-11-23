@@ -72,7 +72,10 @@ Legend: PASS, FAIL, NEEDS DEVICE, BLOCKED, NOT RUN. A source finding is not a te
 | FILE-05 | ONDA-12 | Import directory via existing webkitdirectory fallback | Original folder import continues working | NEEDS DEVICE |
 | FILE-06 | ONDA-12 | Choose same media from 2 folders with identical filenames | Disambiguation without attaching wrong track | NEEDS DEVICE |
 | FILE-07 | ONDA-12 | Old v2 media cache after new resolver deployed | Still playable, even when source handle denied | NOT RUN |
-| QP-01 | ONDA-08 | Select Play once for a 100MB test audio file | Does not grow permanent library or audioFiles records | NOT RUN |
+| PLAY-01 | ONDA-07/08 | Tap Play on saved library track | No reimport/add; starts playback from cache/file/handle | NEEDS DEVICE |
+| PLAY-02 | ONDA-07/08 | Reopen Chrome and play a cached saved song | Plays with one tap without new import | NEEDS DEVICE |
+| PLAY-03 | ONDA-07/08 | Deliberately revoke file and clear test cache | Single Reconnect, metadata retained | NOT RUN |
+| QP-01 | ONDA-08 | Select Play once for a new 100MB unsaved test audio file | Does not grow permanent library or audioFiles records | NOT RUN |
 | QP-02 | ONDA-08 | Upgrade temporary item to Library | Stable metadata and source persist after refresh, with clear caching status | NOT RUN |
 | QP-03 | ONDA-08 | Add to Queue without Library | Shows that its session playback access may not survive app restart | NOT RUN |
 | DRAW-01 | ONDA-02 | Open existing drawer; browse Results, Recents, Playlists, Help | Current user functions still work; existing icon mapping preserved | NEEDS DEVICE |
@@ -92,7 +95,10 @@ Legend: PASS, FAIL, NEEDS DEVICE, BLOCKED, NOT RUN. A source finding is not a te
 | PERF-02 | ONDA-11 | Import 50/200/1000 mock tracks on disposable test profile | Count renders/saves and measure latency; zero data loss | NOT RUN |
 | PERF-03 | ONDA-04 | Search with 50/500/5000 seeded metadata tracks | Performance evidence before deciding on virtualization | NOT RUN |
 | PERF-04 | ONDA-11 | Rotate device 10 times / resize quickly | UI checkpoint writes batched; no corrupted library | NEEDS DEVICE |
+| NET-00 | ONDA-09 | Netlify Onda fetches GitHub Pages library.json | CORS succeeds; valid public JSON, correct file base | NOT RUN |
 | NET-01 | ONDA-09 | Remote direct stream online/offline | Error status independent of local library; retry works | NOT RUN |
+| NET-04 | ONDA-09 | Tap GitHub Pages-hosted track in Onda on Android | Direct playback with no reimport; seek works | NEEDS DEVICE |
+| NET-05 | ONDA-09 | GitHub Pages content/limits audit | Publicly distributable audio, site <=1 GB, no LFS | NOT RUN |
 | NET-02 | ONDA-09 | navigator.onLine true but remote host unreachable | Treat as remote failure, not proof of connectivity | NOT RUN |
 | NET-03 | ONDA-09 | Spotify/YouTube/Apple reference | Not falsely presented as directly playable file | NOT RUN |
 | CLOUD-01 | existing cloud | Export backup JSON and inspect | Contains metadata but no local music files | NOT RUN |
@@ -145,7 +151,7 @@ Current source after approved icon change:
 
 **Gate A — documentation reviewed:** action list + blueprint + mock-up agreed, old backups understood. No code changes.
 
-**Gate B — performance + resume feature:** visualiser no runaway loop; old player works; pause/seek/resume validated; screen-lock/audio unaffected; MIDI checked. Only then mark ONDA-03/05 complete.
+**Gate B — visualiser and immediate playback:** visualiser no runaway idle loop; saved Library items Play without importing again; lock-screen/audio and MIDI unaffected. Resume position P3 does not block this gate.
 
 **Gate C — read-only storage inspection:** measured cache total and statuses correct with old v2 records, no deletion. Mark ONDA-10 diagnostics complete but cleanup still planned.
 
@@ -159,12 +165,12 @@ Current source after approved icon change:
 
 ## 8. Open decisions to collect in short conversations
 
-1. When a track is selected on Android, should it behave as it does now (Add to Library), or default to Quick Play? Keep old behaviour unless user requests a change.
+1. **Decided:** saved Library tracks must Play immediately; optional Quick Play only for new files. Keep current new-file import default.
 2. **Answered:** Queue / Now Playing must be on the main Current screen; no Queue tab in the drawer.
-3. Should resume positions apply to every track or only longer audio? Proposed technical default: all track IDs with completed-track reset.
+3. **Deprioritised:** resume position is optional P3; no need to choose scope now.
 4. Does Android Chrome currently use an installed standalone app, or just a shortcut that opens a browser tab? The icon/status cannot be confirmed from GitHub.
 5. When a music file is deleted from the Library, should its cached browser media be retained until manual cleanup? Safest default: yes.
-6. Future online library: what provider/storage controls the actual audio, and is it private or shareable?
+6. **Decided:** GitHub Pages public JSON catalogue and media; confirm only publicly distributable files are used.
 
 ## 9. Engineering sign-off format
 
@@ -190,3 +196,7 @@ For each implemented item, log:
 ## User placement decision (2026-11-23)
 
 The **Current main workspace** owns Queue and Now Playing; the Library drawer is for library browsing/management. The former mock-up Queue tab has been removed. This is an approved requirement, not an open question. See tests CURRENT-01 through CURRENT-04.
+
+## Decisions confirmed 2026-11-23
+
+Saved Library Play must be a one-tap action. Quick Play applies only to new files. Resume position is P3 optional. GitHub Pages is the chosen public media host (static JSON + audio); no other provider needed unless limits require it. See PLAY-01/02/03 and NET-00/04/05.
