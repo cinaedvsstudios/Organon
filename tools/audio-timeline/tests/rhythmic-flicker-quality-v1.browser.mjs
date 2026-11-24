@@ -52,13 +52,16 @@ try{
   const times=[.14,.18,.48,1.25],samples=times.map(frame);
   const exact=frame(.18).every((v,i)=>v===samples[1][i]);
   frame(.18);const png=canvas.toDataURL('image/png');
-  frame(1.25);const nextPng=canvas.toDataURL('image/png');
-  let changed=0,alphaChanged=0,strong=0,rows=new Set(),cols=new Set();
+  frame(.48);const nextPng=canvas.toDataURL('image/png');
+  let changed=0,alphaChanged=0,strong=0,brightened=0,darkened=0,rows=new Set(),cols=new Set();
   for(let y=0;y<H;y++)for(let x=0;x<W;x++){
    const i=(y*W+x)*4,d=Math.abs(samples[1][i]-baseline[i])
     +Math.abs(samples[1][i+1]-baseline[i+1])+Math.abs(samples[1][i+2]-baseline[i+2]);
    if(d>35){changed++;rows.add(y);cols.add(x);}
    if(d>140)strong++;
+   const sum=(a)=>a[i]+a[i+1]+a[i+2];
+   if(sum(samples[1])>sum(baseline)+10)brightened++;
+   if(sum(samples[2])<sum(baseline)-10)darkened++;
    if(samples[1][i+3]!==baseline[i+3])alphaChanged++;
   }
   const variants={};
@@ -79,7 +82,7 @@ try{
    colourDetails.add((samples[1][i]<<16)|(samples[1][i+1]<<8)|samples[1][i+2]);
   engine.clearAll();
   return {png,nextPng,baseline:hash(baseline),hidden,hashes:samples.map(hash),
-   changed,changedRows:rows.size,changedCols:cols.size,strong,alphaChanged,
+   changed,brightened,darkened,changedRows:rows.size,changedCols:cols.size,strong,alphaChanged,
    exact,sourceAware:requiresCompositeSource('rhythmic-flicker'),sourceAlpha,swingAngle,pivotX,pivotY,sourceColours:colourDetails.size,variants,renderErrors};
  });
  console.log('[MotoriClip #66 Rhythmic Flicker real Chrome PNG] '+proof.png);
@@ -89,14 +92,14 @@ try{
  assert.deepEqual(pageErrors,[]);
  assert.deepEqual(proof.renderErrors,[]);
  assert.equal(proof.sourceAware,true);
- assert.ok(proof.changed>90,'Elastic pivot swing must move real source RGB pixels');
- assert.ok(proof.sourceColours>50,'Swing keeps the recognisable source image, not an opaque geometric placeholder');
- assert.ok(proof.changedRows>20&&proof.changedCols>20,'Pivoted source geometry must change in both axes');
- assert.ok(proof.strong>=0,'Swing amplitude must visibly displace high-contrast scene geometry');
+ assert.ok(proof.changed>90,'Exposure pulse must change real source RGB pixels');
+ assert.ok(proof.sourceColours>50,'Exposure keeps the recognisable source image, not an opaque geometric placeholder');
+ assert.ok(proof.changedRows>20&&proof.changedCols>20,'Exposure must reach multiple rows and columns');
+ assert.ok(proof.brightened>1000&&proof.darkened>1000,'Bright and dark beat phases must modulate the real source luminance in opposite directions');
  assert.equal(proof.alphaChanged,0);
  assert.equal(proof.sourceAlpha,true);
  assert.equal(proof.exact,true);
- assert.equal(new Set(proof.hashes).size,4,'Rebound must change over absolute time without frame counters');
+ assert.equal(new Set(proof.hashes).size,4,'Flicker must change over absolute time without frame counters');
  assert.equal(proof.hidden,proof.baseline,'Hiding Rhythmic Flicker restores unmodified source');
  assert.ok(proof.swingAngle>0,'Exposure pulse should brighten source');
  for(const [key,hashValue] of Object.entries(proof.variants))
