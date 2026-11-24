@@ -12,6 +12,7 @@ import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
 import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
+import {buildChromaticQuirkFrame} from '../js/timeline-chromatic-quirk.mjs';
 import {buildEdgeGlowFrame} from '../js/timeline-edge-glow.mjs';
 import {buildGlowFrame} from '../js/timeline-glow.mjs';
 import {buildRhythmicFlickerFrame,rhythmicFlickerState} from '../js/timeline-rhythmic-flicker.mjs';
@@ -53,7 +54,7 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
@@ -62,7 +63,7 @@ test('each procedural recipe is deterministic, time-varying, seek-reversible and
    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
    vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181,
     pendulumPeriod:2.6,pendulumDamping:18,pendulumShutter:65,pendulumFlex:40});
-   const painter=preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
+   const painter=preset.id==='chromatic-quirk'?buildChromaticQuirkFrame:preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -228,7 +229,7 @@ test('phase 3D source pixel effects include independent RGB and bright/edge algo
  for(const id of PIXEL_EFFECT_IDS){
   assert.equal(requiresCompositeSource(id),true);
   assert.equal(isPixelEffect(id),true);
-  if(id==='glow'||id==='edge-glow')continue; // evaluated against actual RGBA in dedicated tests
+  if(id==='glow'||id==='edge-glow'||id==='chromatic-quirk')continue; // evaluated against actual RGBA in dedicated tests
   assert.notEqual(paint(id,.25),paint(id,1.44),id+' changes over local time');
   assert.equal(paint(id,.25),paint(id,.25),id+' works with reverse scrubbing');
  }
@@ -327,4 +328,21 @@ test('Edge Glow illuminates contours rather than flat highlights and preserves a
  for(let i=3;i<a.length;i+=4)assert.equal(a[i],src[i]);
  for(const [k,v] of Object.entries({edgeThreshold:90,edgeWidth:1,edgeChroma:0,edgePulse:0,glow:30,blur:4,color:'#3388ff'}))assert.notDeepEqual(a,frame(.25,{[k]:v}),k);
  assert.deepEqual(snapshotClip({id:'edge',type:'sticker',effectOverlay:e}).effectOverlay,e);
+});
+
+test('Chromatic Quirk separates real wavelengths with radial and directional geometry, preserving alpha',()=>{
+ const w=160,h=90,src=new Uint8ClampedArray(w*h*4);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,v=(Math.floor(x/10)+Math.floor(y/10))%2?220:25;src.set([v,v,v,x<4?0:x<8?120:255],i);}
+ const e=normaliseTimelineEffect({presetId:'chromatic-quirk',distortion:90,scale:140,direction:20,chromaRadial:60,chromaDrift:70});
+ const frame=(t,opts={})=>buildChromaticQuirkFrame(src,w,h,{...e,...opts},t).data;
+ const a=frame(.25);assert.deepEqual(frame(.25,{distortion:0}),src);
+ assert.notDeepEqual(a,src);assert.notDeepEqual(a,frame(1.2));assert.deepEqual(a,frame(.25));
+ let fringe=0;for(let i=0;i<a.length;i+=4){assert.equal(a[i+3],src[i+3]);if(a[i+3]&&Math.abs(a[i]-a[i+2])>20)fringe++;}
+ assert.ok(fringe>200,'achromatic source must acquire optical red/blue fringes');
+ for(const [k,v] of Object.entries({chromaRadial:0,chromaDrift:0,chromaBalance:80,chromaGreen:80,originX:15,originY:85,direction:100,scale:50,distortion:20}))assert.notDeepEqual(a,frame(.25,{[k]:v}),k);
+ assert.deepEqual(snapshotClip({id:'chroma',type:'sticker',effectOverlay:e}).effectOverlay,e);
+ // Hidden RGB in transparent input must not contaminate visible output.
+ const contaminated=src.slice();for(let i=0;i<contaminated.length;i+=4)if(!contaminated[i+3])contaminated.set([255,0,255,0],i);
+ const b=buildChromaticQuirkFrame(contaminated,w,h,e,.25).data;
+ for(let i=0;i<a.length;i+=4)if(a[i+3])assert.deepEqual(a.slice(i,i+4),b.slice(i,i+4));
 });

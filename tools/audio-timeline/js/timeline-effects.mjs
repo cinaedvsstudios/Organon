@@ -22,6 +22,7 @@ import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderElectricRipple} from './timeline-electric-ripple.mjs';
 import {renderShockwave} from './timeline-shockwave.mjs';
 import {renderVibrationFlash} from './timeline-vibration-flash.mjs';
+import {renderChromaticQuirk} from './timeline-chromatic-quirk.mjs';
 import {renderEdgeGlow} from './timeline-edge-glow.mjs';
 import {renderGlow} from './timeline-glow.mjs';
 import {renderRhythmicFlicker} from './timeline-rhythmic-flicker.mjs';
@@ -128,6 +129,7 @@ export function normaliseTimelineEffect(effect={}){
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
  };
+ if(presetId==='chromatic-quirk')return {...base,originX:clamp(raw.originX,0,100,50),originY:clamp(raw.originY,0,100,50),chromaRadial:clamp(raw.chromaRadial,0,100,65),chromaDrift:clamp(raw.chromaDrift,0,100,45),chromaBalance:clamp(raw.chromaBalance,-100,100,0),chromaGreen:clamp(raw.chromaGreen,-100,100,0)};
  if(presetId==='edge-glow')return {...base,edgeThreshold:clamp(raw.edgeThreshold,0,100,15),edgeWidth:clamp(raw.edgeWidth,1,12,3),edgeChroma:clamp(raw.edgeChroma,0,100,50),edgePulse:clamp(raw.edgePulse,0,100,30)};
  if(presetId==='glow')return {...base,glowThreshold:clamp(raw.glowThreshold,0,100,55),glowKnee:clamp(raw.glowKnee,0,100,35),glowBreath:clamp(raw.glowBreath,0,100,25)};
  if(presetId==='rhythmic-flicker')return {...base,
@@ -374,6 +376,8 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     renderRhythmicFlicker(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='light-sweep'){
     renderLightSweep(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='chromatic-quirk'){
+    renderChromaticQuirk(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='edge-glow'){
     renderEdgeGlow(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='glow'){
