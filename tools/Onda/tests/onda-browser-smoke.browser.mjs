@@ -1031,9 +1031,9 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             const reg = await navigator.serviceWorker.getRegistration();
             const names = await caches.keys();
             if (reg?.waiting?.state !== 'installed' ||
-                !names.includes('onda-static-shell-v3.24') ||
+                !names.includes('onda-staged-shell-v3.24') ||
                 !names.includes('onda-static-shell-v3.23')) return false;
-            const cache = await caches.open('onda-static-shell-v3.24');
+            const cache = await caches.open('onda-staged-shell-v3.24');
             const entries = (await cache.keys()).map(request => request.url);
             return entries.length >= 25 &&
                 entries.some(url => /\/js\/app-core\.js\?v=3\.24$/.test(url));
@@ -1041,17 +1041,19 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         const stagedUpgrade = await page.evaluate(async () => {
             const userCache = await caches.open('onda-unrelated-user-test-cache');
             const original = await userCache.match('./personal-protected-example.txt');
-            const shell = await caches.open('onda-static-shell-v3.24');
+            const stage = await caches.open('onda-staged-shell-v3.24');
             return {
                 names: await caches.keys(),
                 protectedText: original ? await original.text() : '',
-                shellUrls: (await shell.keys()).map(request => request.url)
+                shellUrls: (await stage.keys()).map(request => request.url)
             };
         });
         console.log('upgrade diagnostic: staged cache ' + JSON.stringify(stagedUpgrade));
         assert.equal(stagedUpgrade.protectedText, 'keep this data intact');
         assert.ok(stagedUpgrade.names.includes('onda-static-shell-v3.23'));
-        assert.ok(stagedUpgrade.names.includes('onda-static-shell-v3.24'));
+        assert.ok(stagedUpgrade.names.includes('onda-staged-shell-v3.24'));
+        assert.ok(!stagedUpgrade.names.includes('onda-static-shell-v3.24'),
+            'active v3.24 cache must not be published until the old tab is closed');
         assert.ok(stagedUpgrade.shellUrls.some(url => /\/js\/app-core\.js\?v=3\.24$/.test(url)));
         assert.ok(stagedUpgrade.shellUrls.every(url =>
             !url.endsWith('.wav') && !url.includes('netlify/functions')));
@@ -1105,6 +1107,8 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         });
         assert.deepEqual(offline.names.filter(name => name.startsWith('onda-static-shell-')),
             ['onda-static-shell-v3.24']);
+        assert.ok(!offline.names.includes('onda-staged-shell-v3.24'),
+            'fully promoted upgrade must discard its staging cache');
         assert.equal(offline.protectedText, 'keep this data intact');
         await offlinePage.locator('#btn-database-engine').click();
         const row = offlinePage.locator('#db-library-results .library-result-row')
