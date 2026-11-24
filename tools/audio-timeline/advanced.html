@@ -1162,6 +1162,15 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                           <label class="text-setting-row"><span>Suspension flexibility (%)</span><input id="effect-pendulum-flex" class="range-control" type="range" min="0" max="100" step="1" value="14" title="Subtle delayed elastic motion furthest from the fixed pivot"></label>
                       </details>
                   </div>
+<div id="effect-rebound-swing-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Rebound Swing — spring, damping and shutter</summary>
+                          <label class="text-setting-row"><span>Recoil period (seconds)</span><input id="effect-rebound-period" class="range-control" type="range" min="0.2" max="2" step="0.05" value="0.65" title="Duration of the spring oscillation"></label>
+                          <label class="text-setting-row"><span>Recoil damping (%)</span><input id="effect-rebound-damping" class="range-control" type="range" min="0" max="100" step="1" value="55" title="Slowly reduces the swing amplitude as energy is lost over time"></label>
+                          <label class="text-setting-row"><span>Motion shutter (%)</span><input id="effect-rebound-shutter" class="range-control" type="range" min="0" max="100" step="1" value="45" title="Capture multiple sampled positions along the actual swing, with stronger trails at mid-arc"></label>
+                          <label class="text-setting-row"><span>Elastic deformation (%)</span><input id="effect-rebound-flex" class="range-control" type="range" min="0" max="100" step="1" value="35" title="Subtle delayed elastic motion furthest from the fixed pivot"></label>
+                      </details>
+                  </div>
                   <div id="effect-vibration-flash-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Vibration Flash — optical camera shake</summary>
