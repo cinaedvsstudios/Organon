@@ -992,8 +992,9 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             script: navigator.serviceWorker.controller?.scriptURL || ''
         }));
         assert.ok(failedInstallState.caches.includes('onda-static-shell-v3.23'));
-        assert.ok(!failedInstallState.caches.includes('onda-static-shell-v3.24'),
-            'failed v3.24 install must remove only its incomplete shell cache');
+        // An incomplete candidate cache may remain, but a failed worker must
+        // NOT activate or remove the previous usable offline shell. Retry
+        // fills the candidate rather than deleting any concurrent installer.
         assert.ok(failedInstallState.caches.includes('onda-unrelated-user-test-cache'));
         assert.ok(failedInstallState.script.endsWith('/onda-sw.js'));
         console.log('upgrade: new worker installation failed safely; previous v3.23 app shell remained');
@@ -1029,9 +1030,13 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         await page.waitForFunction(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
             const names = await caches.keys();
-            return reg?.waiting?.state === 'installed' &&
-                names.includes('onda-static-shell-v3.24') &&
-                names.includes('onda-static-shell-v3.23');
+            if (reg?.waiting?.state !== 'installed' ||
+                !names.includes('onda-static-shell-v3.24') ||
+                !names.includes('onda-static-shell-v3.23')) return false;
+            const cache = await caches.open('onda-static-shell-v3.24');
+            const entries = (await cache.keys()).map(request => request.url);
+            return entries.length >= 25 &&
+                entries.some(url => /\/js\/app-core\.js\?v=3\.24$/.test(url));
         }, undefined, { timeout: 25000 });
         const stagedUpgrade = await page.evaluate(async () => {
             const userCache = await caches.open('onda-unrelated-user-test-cache');
