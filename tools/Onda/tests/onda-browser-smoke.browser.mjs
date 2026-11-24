@@ -954,6 +954,12 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         }, undefined, { timeout: 15000 });
         const mediaCount = await cachedAudioCount(page);
         assert.ok(mediaCount > 0);
+        const previousEntry = await page.evaluate(async () => {
+            const response = await (await caches.open('onda-static-shell-v3.23')).match('./index.html');
+            return response ? await response.text() : '';
+        });
+        assert.match(previousEntry, /js\/app-core\.js\?v=3\.23/,
+            'pinned old worker must cache old HTML with matching old asset query strings');
 
         // Simulate a partial deployment: the UPDATED v3.24 worker is available,
         // but one REQUIRED new asset is a 503. Installation must fail without
@@ -985,31 +991,29 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         assert.ok(failedInstallState.script.endsWith('/onda-sw.js'));
         console.log('upgrade: new worker installation failed safely; previous v3.23 app shell remained');
 
-        // Recover the OLD version with no network after the simulated bad deploy.
+        // Recover the OLD version with NO NETWORK after the bad deployment.
+        // Restart the whole Chromium process first. Playwright's offline mode
+        // on an ALREADY running service worker may not block worker fetches.
+        await context.close();
+        context = null;
+        context = await chromium.launchPersistentContext(profile, options);
         await context.setOffline(true);
-        await page.reload({ waitUntil: 'load', timeout: 20000 });
-        const recoveredDebug = await page.evaluate(async () => ({
-            version: document.documentElement.dataset.ondaVersion || 'missing',
-            hasQuickPlay: Boolean(window.OndaQuickPlay?.getActiveAudio),
-            controlled: navigator.serviceWorker.controller?.scriptURL || '',
-            scripts: [...document.querySelectorAll('script[src]')].map(el => el.src).slice(-10),
-            registered: (await navigator.serviceWorker.getRegistration())?.active?.state || '',
-            cacheNames: await caches.keys(),
-            htmlStart: document.documentElement.outerHTML.slice(0, 100)
-        }));
-        console.log('upgrade diagnostic: offline page state ' + JSON.stringify(recoveredDebug));
-        await page.waitForFunction(() =>
+        simulatedRelease = 'test-origin-outage';
+        const recoveredPage = context.pages()[0] || await context.newPage();
+        await recoveredPage.goto(baseUrl, { waitUntil: 'load', timeout: 20000 });
+        await recoveredPage.waitForFunction(() =>
             document.documentElement.dataset.ondaVersion === 'v3.23' &&
             Boolean(window.OndaQuickPlay?.getActiveAudio),
         undefined, { timeout: 15000 });
-        assert.equal(await cachedAudioCount(page), mediaCount);
-        console.log('upgrade: v3.23 and original saved audio survived failed update offline');
+        assert.equal(await cachedAudioCount(recoveredPage), mediaCount);
+        console.log('upgrade: old v3.23 and saved media survived failed update in a NEW offline Chrome process');
 
         // The server deployment is now complete. Registration UPDATE to the
         // real new v3.24 worker must activate, replace ONLY the old Onda
         // shell cache, and preserve both stored audio and unrelated caches.
         await context.setOffline(false);
         simulatedRelease = 'v3.24';
+        const page = recoveredPage;
         await page.evaluate(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
             await reg.update();
