@@ -22,6 +22,7 @@ import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderElectricRipple} from './timeline-electric-ripple.mjs';
 import {renderShockwave} from './timeline-shockwave.mjs';
 import {renderVibrationFlash} from './timeline-vibration-flash.mjs';
+import {renderRhythmicFlicker} from './timeline-rhythmic-flicker.mjs';
 import {renderReboundSwing} from './timeline-rebound-swing.mjs';
 import {renderPendulumSwing} from './timeline-pendulum-swing.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
@@ -124,6 +125,11 @@ export function normaliseTimelineEffect(effect={}){
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
+ };
+ if(presetId==='rhythmic-flicker')return {...base,
+  flickerBpm:clamp(raw.flickerBpm,30,180,96),flickerDuty:clamp(raw.flickerDuty,15,85,42),
+  flickerExposure:clamp(raw.flickerExposure,0,100,60),flickerWarmth:clamp(raw.flickerWarmth,0,100,25),
+  flickerVariation:clamp(raw.flickerVariation,0,100,20),flickerSeed:Math.round(clamp(raw.flickerSeed,0,99999,907))
  };
  if(presetId==='rebound-swing')return {...base,
   reboundPeriod:clamp(raw.reboundPeriod,.2,2,.65),
@@ -302,7 +308,7 @@ function captureCompositeFrame(ctx,w,h){
  context.drawImage(ctx.canvas,0,0,w,h);
  return canvas;
 }
-const SOURCE_EFFECTS=new Set(['god-rays','pendulum-swing','rebound-swing','vibration-flash',
+const SOURCE_EFFECTS=new Set(['rhythmic-flicker','god-rays','pendulum-swing','rebound-swing','vibration-flash',
  'fault-cassette','ripple-distortion','electric-ripple','shockwave','light-sweep','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch','line-corruption',...PIXEL_EFFECT_IDS,...GLITCH_PRESETS.map(x=>x.id)]);
 export function requiresCompositeSource(presetId){return SOURCE_EFFECTS.has(presetId);}
 /** A neutral illustrated scene supplies geometry for moving/distorting previews.
@@ -360,7 +366,9 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
     ctx.drawImage(source,0,0,w,h);
     ctx.globalAlpha=amount;
    }
-   if(e.presetId==='light-sweep'){
+   if(e.presetId==='rhythmic-flicker'){
+    renderRhythmicFlicker(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='light-sweep'){
     renderLightSweep(ctx,source,w,h,e,t,amount);
    }else if(isPixelEffect(e.presetId)){
     renderPixelEffect(ctx,source,w,h,e,t,amount);
@@ -421,15 +429,6 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    renderFlamingDust(ctx,w,h,e,t,strength);
   }else if(e.presetId==='fire-explosion'){
    renderFireExplosion(ctx,w,h,e,t,strength);
-  }else if(e.presetId==='rhythmic-flicker'){
-   // Rhythm and seeded discontinuities are absolute-time calculations.
-   const beat=Math.max(0,Math.sin(t*Math.PI*5));
-   const jitter=random(Math.floor(t*23)+907);
-   const flash=beat*.6+jitter*.4;
-   const dark=flash>.53;
-   ctx.fillStyle=dark?'rgba(0,0,0,'+(.42*strength*(flash-.2))+')'
-                     :rgba(e.color,.13*strength*(1-flash));
-   ctx.fillRect(0,0,w,h);
   }else if(e.presetId==='particle-dust'){
    renderFlamingDust(ctx,w,h,e,t,strength);
   }else if(e.presetId==='particle-sparks'){
