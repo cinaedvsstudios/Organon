@@ -12,6 +12,7 @@ import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
 import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
+import {buildPendulumSwingFrame} from '../js/timeline-pendulum-swing.mjs';
 
 const makeCanvasRecorder=()=>{
  const log=[];
@@ -48,15 +49,16 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
    for(let i=0;i<data.length;i+=4){const x=(i/4)%w,y=Math.floor(i/4/w);data[i]=(x*7)%255;data[i+1]=(y*11)%255;data[i+2]=(x*3+y*5)%255;data[i+3]=255;}
    const recipe=normaliseTimelineEffect({presetId:preset.id,density:85,burstSize:60,burstLife:.32,tearHeight:15,tearLife:.26,rgbBlockWidth:27,rgbBlockHeight:19,rgbBlockLife:.28,rgbSeparation:94,lineLength:72,lineThickness:6,lineLife:.22,lineFragments:78,lineStatic:94,cassetteTracking:92,cassetteDropouts:89,cassetteChroma:95,cassetteRoll:70,cassetteSeed:6969,rippleRings:4,rippleWidth:10,rippleFalloff:55,rippleHighlights:80,rippleSeed:6262,
    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
-   vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181});
-   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:buildLineCorruptionFrame;
+   vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181,
+    pendulumPeriod:2.6,pendulumDamping:18,pendulumShutter:65,pendulumFlex:40});
+   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -128,7 +130,7 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
      'Motion','Motion','Motion','Glitch','Distortion','Distortion','Distortion']);
  for(const id of ids){
   assert.equal(requiresCompositeSource(id),true);
-  if(id==='fault-cassette'||id==='ripple-distortion'||id==='electric-ripple'||id==='shockwave'||id==='vibration-flash'){
+  if(id==='fault-cassette'||id==='ripple-distortion'||id==='electric-ripple'||id==='shockwave'||id==='vibration-flash'||id==='pendulum-swing'){
    // Fault Cassette samples REAL source RGBA. Mock Canvas calls cannot
    // demonstrate tape movement, so compare the source pixel output directly.
    const w=160,h=90,rgba=new Uint8ClampedArray(w*h*4);
@@ -141,8 +143,9 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
     cassetteTracking:92,cassetteDropouts:89,cassetteChroma:95,cassetteRoll:70,
     rippleRings:4,rippleHighlights:80,rippleWidth:10,
     electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,shockWidth:8,shockCompression:90,shockTurbulence:65,
-    vibrationFrequency:18,vibrationEcho:75,vibrationFlash:90});
-   const pixelRenderer=id==='fault-cassette'?buildFaultCassetteFrame:id==='ripple-distortion'?buildRippleDistortionFrame:id==='electric-ripple'?buildElectricRippleFrame:id==='shockwave'?buildShockwaveFrame:buildVibrationFlashFrame;
+    vibrationFrequency:18,vibrationEcho:75,vibrationFlash:90,
+    pendulumPeriod:2.6,pendulumShutter:65,pendulumFlex:40});
+   const pixelRenderer=id==='fault-cassette'?buildFaultCassetteFrame:id==='ripple-distortion'?buildRippleDistortionFrame:id==='electric-ripple'?buildElectricRippleFrame:id==='shockwave'?buildShockwaveFrame:id==='vibration-flash'?buildVibrationFlashFrame:buildPendulumSwingFrame;
    const frame=t=>pixelRenderer(rgba,w,h,e,t*e.speed).data;
    assert.notDeepEqual(frame(.24),frame(1.4),id+' must vary as seconds change on the source');
    assert.deepEqual(frame(.24),frame(.24),id+' must reproduce pixels after reverse seek');
@@ -183,18 +186,18 @@ test('source-based warp samples real composited canvas and reuses bounded scratc
  try{
   const ctx=makeCanvasRecorder();
   ctx.canvas={width:640,height:360};
-  const effect={presetId:'pendulum-swing',intensity:100};
+  const effect={presetId:'rebound-swing',intensity:100};
   assert.equal(paintTimelineEffect(ctx,640,360,effect,.4,3),true);
   assert.equal(paintTimelineEffect(ctx,640,360,effect,1.4,3),true);
   assert.equal(allocated,1,'reuse one scratch canvas per output context');
   assert.ok(scratch.log.some(event=>event[0]==='drawImage'&&event[1]===ctx.canvas),
    'copy the actual composed video frame before warp');
   assert.ok(ctx.log.filter(event=>event[0]==='drawImage').length>=2,
-   'project the composed source frame under the source-dependent pendulum');
+   'project the composed source frame under the separate Rebound Swing transform');
   const before=ctx.log.length;
-  paintTimelineEffect(ctx,640,360,{presetId:'pendulum-swing',originX:60,originY:35},1.2,3);
+  paintTimelineEffect(ctx,640,360,{presetId:'rebound-swing',originX:60,originY:35},1.2,3);
   assert.ok(ctx.log.slice(before).some(event=>event[0]==='translate'||event[0]==='rotate'),
-   'source-based pendulum still applies a real Canvas transform');
+   'Rebound Swing still applies an independent Canvas rotation');
  }finally{
   if(prior===undefined)delete globalThis.document;else globalThis.document=prior;
  }
@@ -202,8 +205,15 @@ test('source-based warp samples real composited canvas and reuses bounded scratc
 test('swing pivot, warp severity and preview scene are real editable parameters',()=>{
  const normal=normaliseTimelineEffect({presetId:'pendulum-swing',distortion:150,originX:120,originY:-20});
  assert.equal(normal.distortion,100);assert.equal(normal.originX,100);assert.equal(normal.originY,0);
- assert.notEqual(paint('pendulum-swing',.8,{originX:20,originY:10}),
-   paint('pendulum-swing',.8,{originX:80,originY:80}));
+ const source=new Uint8ClampedArray(160*90*4);
+ for(let y=0;y<90;y++)for(let x=0;x<160;x++){
+  const i=(y*160+x)*4;source[i]=(x*7)%255;source[i+1]=(y*13)%255;
+  source[i+2]=(x+y*3)%255;source[i+3]=255;
+ }
+ const swing=(x,y)=>buildPendulumSwingFrame(source,160,90,
+  normaliseTimelineEffect({presetId:'pendulum-swing',originX:x,originY:y}),.8).data;
+ assert.notDeepEqual(swing(20,10),swing(80,80),
+  'Pendulum origin must change actual source-pixel rotation around its anchor');
  const w=160,h=90,scene=new Uint8ClampedArray(w*h*4);
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   const k=(y*w+x)*4;scene[k]=(x*7)%255;scene[k+1]=(y*13)%255;

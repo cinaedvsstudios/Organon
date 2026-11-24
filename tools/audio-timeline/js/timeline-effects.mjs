@@ -22,6 +22,7 @@ import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderElectricRipple} from './timeline-electric-ripple.mjs';
 import {renderShockwave} from './timeline-shockwave.mjs';
 import {renderVibrationFlash} from './timeline-vibration-flash.mjs';
+import {renderPendulumSwing} from './timeline-pendulum-swing.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
@@ -90,6 +91,7 @@ export function normaliseTimelineEffect(effect={}){
  const raw=effect&&typeof effect==='object'?effect:{};
  const presetId=ids.has(raw.presetId)?raw.presetId:'light-sweep';
  const swing=['pendulum-swing','rebound-swing'].includes(presetId);
+ const pendulumSwing=presetId==='pendulum-swing';
  const shockwave=presetId==='shockwave';
  const vibrationFlash=presetId==='vibration-flash';
  const mistFog=presetId==='mist-fog-bank';
@@ -121,6 +123,12 @@ export function normaliseTimelineEffect(effect={}){
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
+ };
+ if(pendulumSwing)return {...base,
+  pendulumPeriod:clamp(raw.pendulumPeriod,.6,6,2.6),
+  pendulumDamping:clamp(raw.pendulumDamping,0,100,18),
+  pendulumShutter:clamp(raw.pendulumShutter,0,100,45),
+  pendulumFlex:clamp(raw.pendulumFlex,0,100,14)
  };
  if(vibrationFlash)return {...base,
   density:clamp(raw.density,1,120,66),
@@ -365,10 +373,10 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
      renderLineCorruption(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='god-rays'){
     renderGodRays(ctx,source,w,h,e,t,amount);
-   }else if(e.presetId==='pendulum-swing'||e.presetId==='rebound-swing'){
-    const angle=e.presetId==='pendulum-swing'
-     ? Math.sin(t*4+rad)*(.03+e.distortion*.0038)*size
-     : Math.sin(t*13+rad)*Math.exp(-t*1.7)*(.12+e.distortion*.0047)*size;
+   }else if(e.presetId==='pendulum-swing'){
+    renderPendulumSwing(ctx,source,w,h,e,t,amount);
+   }else if(e.presetId==='rebound-swing'){
+    const angle=Math.sin(t*13+rad)*Math.exp(-t*1.7)*(.12+e.distortion*.0047)*size;
     const px=w*e.originX/100,py=h*e.originY/100;
     ctx.translate(px,py);ctx.rotate(angle);
     if(source)ctx.drawImage(source,-px,-py,w,h);
