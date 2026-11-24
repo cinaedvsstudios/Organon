@@ -12,6 +12,7 @@ import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
 import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
+import {buildEdgeGlowFrame} from '../js/timeline-edge-glow.mjs';
 import {buildGlowFrame} from '../js/timeline-glow.mjs';
 import {buildRhythmicFlickerFrame,rhythmicFlickerState} from '../js/timeline-rhythmic-flicker.mjs';
 import {buildReboundSwingFrame,reboundSwingFrameState} from '../js/timeline-rebound-swing.mjs';
@@ -52,7 +53,7 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
@@ -61,7 +62,7 @@ test('each procedural recipe is deterministic, time-varying, seek-reversible and
    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
    vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181,
     pendulumPeriod:2.6,pendulumDamping:18,pendulumShutter:65,pendulumFlex:40});
-   const painter=preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
+   const painter=preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -227,7 +228,7 @@ test('phase 3D source pixel effects include independent RGB and bright/edge algo
  for(const id of PIXEL_EFFECT_IDS){
   assert.equal(requiresCompositeSource(id),true);
   assert.equal(isPixelEffect(id),true);
-  if(id==='glow')continue; // evaluated against actual RGBA in dedicated tests
+  if(id==='glow'||id==='edge-glow')continue; // evaluated against actual RGBA in dedicated tests
   assert.notEqual(paint(id,.25),paint(id,1.44),id+' changes over local time');
   assert.equal(paint(id,.25),paint(id,.25),id+' works with reverse scrubbing');
  }
@@ -309,4 +310,21 @@ test('Glow blooms from bright regions with soft knee and preserves alpha',()=>{
  for(let i=3;i<a.length;i+=4)assert.equal(a[i],src[i]);
  for(const [k,v] of Object.entries({glowThreshold:80,glowKnee:0,glowBreath:0,glow:30,blur:5,color:'#3388ff'}))assert.notDeepEqual(a,frame(.25,{[k]:v}),k);
  const saved=snapshotClip({id:'glow',type:'sticker',effectOverlay:e});assert.deepEqual(saved.effectOverlay,e);
+});
+
+test('Edge Glow illuminates contours rather than flat highlights and preserves alpha',()=>{
+ const w=160,h=90,src=new Uint8ClampedArray(w*h*4);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4;
+ const rgb=x>=45&&x<105?[190,190,190]:x>=120?[15,100,180]:[30,30,30];
+ src.set([...rgb,x<4?0:255],i);}
+ const e=normaliseTimelineEffect({presetId:'edge-glow',glow:95,blur:20,edgeThreshold:10,edgeWidth:8,edgeChroma:60,edgePulse:60});
+ const frame=(t,opts={})=>buildEdgeGlowFrame(src,w,h,{...e,...opts},t).data;
+ const a=frame(.25),i=(45*w+44)*4;
+ assert.ok(a[i]>src[i],'contour emits light');
+ assert.equal(a[(45*w+75)*4],190,'flat bright region does not emit');
+ assert.deepEqual(frame(.25,{glow:0}),src);
+ assert.notDeepEqual(a,frame(1.2));assert.deepEqual(a,frame(.25));
+ for(let i=3;i<a.length;i+=4)assert.equal(a[i],src[i]);
+ for(const [k,v] of Object.entries({edgeThreshold:90,edgeWidth:1,edgeChroma:0,edgePulse:0,glow:30,blur:4,color:'#3388ff'}))assert.notDeepEqual(a,frame(.25,{[k]:v}),k);
+ assert.deepEqual(snapshotClip({id:'edge',type:'sticker',effectOverlay:e}).effectOverlay,e);
 });
