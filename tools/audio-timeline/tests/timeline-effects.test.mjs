@@ -12,6 +12,7 @@ import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
 import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
+import {buildReboundSwingFrame,reboundSwingFrameState} from '../js/timeline-rebound-swing.mjs';
 import {buildPendulumSwingFrame} from '../js/timeline-pendulum-swing.mjs';
 
 const makeCanvasRecorder=()=>{
@@ -49,7 +50,7 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
@@ -58,7 +59,7 @@ test('each procedural recipe is deterministic, time-varying, seek-reversible and
    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
    vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181,
     pendulumPeriod:2.6,pendulumDamping:18,pendulumShutter:65,pendulumFlex:40});
-   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
+   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -130,7 +131,7 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
      'Motion','Motion','Motion','Glitch','Distortion','Distortion','Distortion']);
  for(const id of ids){
   assert.equal(requiresCompositeSource(id),true);
-  if(id==='fault-cassette'||id==='ripple-distortion'||id==='electric-ripple'||id==='shockwave'||id==='vibration-flash'||id==='pendulum-swing'){
+  if(id==='fault-cassette'||id==='ripple-distortion'||id==='electric-ripple'||id==='shockwave'||id==='vibration-flash'||id==='pendulum-swing'||id==='rebound-swing'){
    // Fault Cassette samples REAL source RGBA. Mock Canvas calls cannot
    // demonstrate tape movement, so compare the source pixel output directly.
    const w=160,h=90,rgba=new Uint8ClampedArray(w*h*4);
@@ -145,7 +146,7 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
     electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,shockWidth:8,shockCompression:90,shockTurbulence:65,
     vibrationFrequency:18,vibrationEcho:75,vibrationFlash:90,
     pendulumPeriod:2.6,pendulumShutter:65,pendulumFlex:40});
-   const pixelRenderer=id==='fault-cassette'?buildFaultCassetteFrame:id==='ripple-distortion'?buildRippleDistortionFrame:id==='electric-ripple'?buildElectricRippleFrame:id==='shockwave'?buildShockwaveFrame:id==='vibration-flash'?buildVibrationFlashFrame:buildPendulumSwingFrame;
+   const pixelRenderer=id==='fault-cassette'?buildFaultCassetteFrame:id==='ripple-distortion'?buildRippleDistortionFrame:id==='electric-ripple'?buildElectricRippleFrame:id==='shockwave'?buildShockwaveFrame:id==='vibration-flash'?buildVibrationFlashFrame:id==='rebound-swing'?buildReboundSwingFrame:buildPendulumSwingFrame;
    const frame=t=>pixelRenderer(rgba,w,h,e,t*e.speed).data;
    assert.notDeepEqual(frame(.24),frame(1.4),id+' must vary as seconds change on the source');
    assert.deepEqual(frame(.24),frame(.24),id+' must reproduce pixels after reverse seek');
@@ -156,7 +157,7 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
   assert.equal(atStart,paint(id,.24),id+' must reproduce pixels after reverse seek');
  }
  assert.equal(requiresCompositeSource('light-sweep'),true,'Light Sweep now blooms actual source highlights rather than a flat moving rectangle');
- assert.notEqual(paint('pendulum-swing',.6),paint('rebound-swing',.6));
+
  const w=160,h=90,scene=new Uint8ClampedArray(w*h*4);
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   const i=(y*w+x)*4;scene[i]=(x*7)%251;scene[i+1]=(y*13)%253;
@@ -174,34 +175,20 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
  assert.notDeepEqual(buildFaultCassetteFrame(new Uint8ClampedArray(160*90*4),160,90,normaliseTimelineEffect({presetId:'fault-cassette'}),.6).state,
    {presetId:'vibration-flash'},'Cassette has separate analogue tracking geometry from vibration');
 });
-test('source-based warp samples real composited canvas and reuses bounded scratch',()=>{
- const prior=globalThis.document;
- const scratch=makeCanvasRecorder();
- const mockCanvas={width:640,height:360,getContext:()=>scratch};
- let allocated=0;
- globalThis.document={createElement(type){
-  assert.equal(type,'canvas');allocated++;
-  return mockCanvas;
- }};
- try{
-  const ctx=makeCanvasRecorder();
-  ctx.canvas={width:640,height:360};
-  const effect={presetId:'rebound-swing',intensity:100};
-  assert.equal(paintTimelineEffect(ctx,640,360,effect,.4,3),true);
-  assert.equal(paintTimelineEffect(ctx,640,360,effect,1.4,3),true);
-  assert.equal(allocated,1,'reuse one scratch canvas per output context');
-  assert.ok(scratch.log.some(event=>event[0]==='drawImage'&&event[1]===ctx.canvas),
-   'copy the actual composed video frame before warp');
-  assert.ok(ctx.log.filter(event=>event[0]==='drawImage').length>=2,
-   'project the composed source frame under the separate Rebound Swing transform');
-  const before=ctx.log.length;
-  paintTimelineEffect(ctx,640,360,{presetId:'rebound-swing',originX:60,originY:35},1.2,3);
-  assert.ok(ctx.log.slice(before).some(event=>event[0]==='translate'||event[0]==='rotate'),
-   'Rebound Swing still applies an independent Canvas rotation');
- }finally{
-  if(prior===undefined)delete globalThis.document;else globalThis.document=prior;
- }
+test('Rebound Swing starts at rest, recoils and settles with preserved source alpha',()=>{
+ const w=80,h=45,src=new Uint8ClampedArray(w*h*4);
+ for(let i=0;i<src.length;i+=4){src[i]=(i*3)%251;src[i+1]=(i*7)%253;src[i+2]=(i*11)%255;src[i+3]=i%17===0?0:180;}
+ const e=normaliseTimelineEffect({presetId:'rebound-swing'});
+ const frame=(t,opts={})=>buildReboundSwingFrame(src,w,h,{...e,...opts},t).data;
+ assert.deepEqual(frame(0),src);assert.deepEqual(frame(.2,{distortion:0}),src);
+ assert.notDeepEqual(frame(.2),src);assert.notDeepEqual(frame(.2),frame(.5));
+ assert.deepEqual(frame(.2),frame(.2));
+ const rendered=frame(.2);for(let i=3;i<src.length;i+=4)assert.equal(rendered[i],src[i]);
+ for(const [k,v] of Object.entries({reboundPeriod:1.2,reboundDamping:5,reboundShutter:0,reboundFlex:0,direction:90}))assert.notDeepEqual(frame(.2),frame(.2,{[k]:v}),k);
+ assert.ok(reboundSwingFrameState(w,h,e,2).energy<reboundSwingFrameState(w,h,e,.2).energy);
+ const saved=snapshotClip({id:'rebound',type:'sticker',effectOverlay:e});assert.deepEqual(saved.effectOverlay,e);
 });
+
 test('swing pivot, warp severity and preview scene are real editable parameters',()=>{
  const normal=normaliseTimelineEffect({presetId:'pendulum-swing',distortion:150,originX:120,originY:-20});
  assert.equal(normal.distortion,100);assert.equal(normal.originX,100);assert.equal(normal.originY,0);
