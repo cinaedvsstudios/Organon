@@ -988,6 +988,16 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         // Recover the OLD version with no network after the simulated bad deploy.
         await context.setOffline(true);
         await page.reload({ waitUntil: 'load', timeout: 20000 });
+        const recoveredDebug = await page.evaluate(async () => ({
+            version: document.documentElement.dataset.ondaVersion || 'missing',
+            hasQuickPlay: Boolean(window.OndaQuickPlay?.getActiveAudio),
+            controlled: navigator.serviceWorker.controller?.scriptURL || '',
+            scripts: [...document.querySelectorAll('script[src]')].map(el => el.src).slice(-10),
+            registered: (await navigator.serviceWorker.getRegistration())?.active?.state || '',
+            cacheNames: await caches.keys(),
+            htmlStart: document.documentElement.outerHTML.slice(0, 100)
+        }));
+        console.log('upgrade diagnostic: offline page state ' + JSON.stringify(recoveredDebug));
         await page.waitForFunction(() =>
             document.documentElement.dataset.ondaVersion === 'v3.23' &&
             Boolean(window.OndaQuickPlay?.getActiveAudio),
