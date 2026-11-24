@@ -40,6 +40,13 @@ function handler(request, response) {
         return;
     }
     (async () => {
+        // Simulate the origin being unavailable while the previous app shell
+        // recovers from its cache, independent of Chrome's offline flags.
+        if (simulatedRelease === 'test-origin-outage') {
+            response.writeHead(503, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' })
+                .end('Test-only origin outage');
+            return;
+        }
         let finalPath = path;
         if ((await stat(finalPath).catch(() => null))?.isDirectory()) {
             finalPath = resolve(finalPath, 'index.html');
@@ -915,7 +922,7 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
     simulatedRelease = 'v3.23';
     try {
         context = await chromium.launchPersistentContext(profile, options);
-        const page = context.pages()[0] || await context.newPage();
+        let page = context.pages()[0] || await context.newPage();
         assert.equal(await expectLoaded(page, baseUrl), 'v3.23');
         await chooseFreshLocalSession(page);
         await page.waitForFunction(async () => {
@@ -1013,7 +1020,7 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         // shell cache, and preserve both stored audio and unrelated caches.
         await context.setOffline(false);
         simulatedRelease = 'v3.24';
-        const page = recoveredPage;
+        page = recoveredPage;
         await page.evaluate(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
             await reg.update();
