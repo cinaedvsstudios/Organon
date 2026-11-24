@@ -19,7 +19,7 @@ const options=(e={})=>({
  shutter:clamp(e.pendulumShutter,0,100,45)/100,
  flex:clamp(e.pendulumFlex,0,100,14)/100,
  phase:clamp(e.direction,-180,180,0)*Math.PI/180,
- amplitude:Math.min(.85,(.035+.42*clamp(e.distortion,0,100,55)/100)*
+ amplitude:Math.min(.85,.48*clamp(e.distortion,0,100,55)/100*
              clamp(e.scale,10,300,100)/100),
  pivotX:clamp(e.originX,0,100,50)/100,
  pivotY:clamp(e.originY,0,100,10)/100
