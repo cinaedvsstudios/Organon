@@ -42,7 +42,9 @@ test('independent directional micro-shakes, decaying motion, and genuine timed e
 test('real source image is sampled, flat flash never replaces the footage and original alpha is untouched',()=>{
  const out=frame().data,n=different(out,source);
  assert.ok(n>120,'Optical camera shake and shutter must visibly change source detail');
- assert.ok(n<W*H*.95,'Source remains recognisable, not replaced by a full-colour rectangle');
+ const detail=new Set();
+ for(let i=0;i<out.length;i+=4)detail.add((out[i]<<16)|(out[i+1]<<8)|out[i+2]);
+ assert.ok(detail.size>500,'Actual image colour/detail survives; a flat exposure rectangle would collapse source variation');
  for(let i=3;i<source.length;i+=4)assert.equal(out[i],source[i],'Every original source alpha remains identical');
  const second=new Uint8ClampedArray(source.length);
  for(let i=0;i<second.length;i+=4){second[i]=44;second[i+1]=151;second[i+2]=199;second[i+3]=source[i+3];}
