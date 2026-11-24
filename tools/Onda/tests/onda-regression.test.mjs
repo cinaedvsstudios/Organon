@@ -393,6 +393,8 @@ test('Offline app shell precaches exact current UI assets, excludes music and cl
         'all static resources must have the same release query to avoid old worker cache mixing');
     assert.match(sw, /await caches\.delete\(SHELL_CACHE\);/,
         'failed installer must clean only the partial new shell before rethrowing');
+    assert.match(sw, /if \(!self\.registration\.active\) await self\.skipWaiting\(\);/,
+        'new shell must not force activation over an existing media-playing tab');
     const previousWorker = readFileSync(new URL('./fixtures/onda-sw-v3.23.js', import.meta.url), 'utf8');
     assert.match(previousWorker, /SHELL_CACHE_PREFIX \+ 'v3\.23'/,
         'actual shipped previous worker must be pinned for upgrade tests');
