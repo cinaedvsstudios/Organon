@@ -1043,6 +1043,7 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
                 shellUrls: (await shell.keys()).map(request => request.url)
             };
         });
+        console.log('upgrade diagnostic: staged cache ' + JSON.stringify(stagedUpgrade));
         assert.equal(stagedUpgrade.protectedText, 'keep this data intact');
         assert.ok(stagedUpgrade.names.includes('onda-static-shell-v3.23'));
         assert.ok(stagedUpgrade.names.includes('onda-static-shell-v3.24'));
