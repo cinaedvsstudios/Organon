@@ -119,7 +119,7 @@ try{
     return btoa(parts.join(''));
    };
    const frames={};
-   for(const time of [.4,1.4,.4]){
+   for(const time of (preset==='edge-glow'?[.4,.92,1.4,.4]:[.4,1.4,.4])){
      const seekOK=await engine.seek(time,{resume:false});
      if(seekOK===false)throw Error('Could not seek video preview to '+time);
      engine.renderFrame();
@@ -149,7 +149,9 @@ try{
   const different=Buffer.from(preview.frames['1.4'],'base64');
   const rewind=Buffer.from(preview.frames.rewind,'base64');
   assert.deepEqual(original,rewind,preset+': reverse seeking must restore exact preview pixels');
-  const previewMotion=meanAbs(original,different);
+  // Edge Glow has a symmetric pulse: 0.4 and 1.4 seconds can land at nearly equal luminance.
+  // Include the trough at frame 23, retaining the existing motion threshold and both original parity frames.
+  const previewMotion=preset==='edge-glow'?Math.max(meanAbs(original,different),meanAbs(original,Buffer.from(preview.frames['0.92'],'base64')),meanAbs(different,Buffer.from(preview.frames['0.92'],'base64'))):meanAbs(original,different);
   // A transparent recording HUD deliberately updates only tiny text/REC pixels.
   // Compare actual decoded MP4 frames as strictly as for full-frame overlays,
   // but use a sparse-geometry motion floor instead of the global 0.25 mean.
@@ -166,7 +168,7 @@ try{
   assert.equal(Number(stream?.height),H);
   console.log('[MotoriClip parity duration]',preset,JSON.stringify({encoded:info.format.duration,expected:DURATION,previewTimeline:preview.timelineDuration,clips:preview.clipLengths}));
   assert.ok(Math.abs(Number(info.format.duration)-DURATION)<.16,preset+' encoded duration '+info.format.duration+' differs from '+DURATION+'s timeline');
-  for(const [time,index] of [[.4,10],[1.4,35]]){
+  for(const [time,index] of (preset==='edge-glow'?[[.4,10],[.92,23],[1.4,35]]:[[.4,10],[1.4,35]])){
    const expected=Buffer.from(preview.frames[String(time)],'base64');
    const actual=decodeRgb(output,index);
    const error=meanAbs(expected,actual);
@@ -176,7 +178,7 @@ try{
   }
   assert.equal(pageErrors.length,0,preset+' browser errors: '+pageErrors.join('; '));
   console.log('[MotoriClip overlay parity] PASS',preset,'preview motion',previewMotion.toFixed(3),
-   'encoded MP4 frames 10 and 35 match decoded preview within codec tolerance');
+   preset==='edge-glow'?'encoded MP4 frames 10, 23 and 35 match decoded preview within codec tolerance':'encoded MP4 frames 10 and 35 match decoded preview within codec tolerance');
  }
 }finally{
  await browser.close();
