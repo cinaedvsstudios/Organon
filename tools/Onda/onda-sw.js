@@ -8,6 +8,9 @@
 
 const SHELL_CACHE_PREFIX = 'onda-static-shell-';
 const SHELL_CACHE = SHELL_CACHE_PREFIX + 'v3.24';
+// Kept outside SHELL_CACHE_PREFIX: the shipped v3.23 worker deletes old
+// active-shell caches during activation and must never delete a pending upgrade.
+const STAGED_SHELL_CACHE = 'onda-staged-shell-v3.24';
 const SHELL_FILES = [
     './index.html',
     './css/tokens.css?v=3.24',
@@ -44,12 +47,11 @@ const SHELL_URLS = new Set(SHELL_FILES.map(file =>
 
 self.addEventListener('install', event => {
     event.waitUntil((async () => {
-        const cache = await caches.open(SHELL_CACHE);
-        // A failed install must leave the PREVIOUS active shell untouched.
-        // Do not delete this version's cache on failure: simultaneous retry
-        // installers may share its name, and deleting could erase a complete
-        // successful install. A retry repopulates the exact allowlisted assets.
-        await cache.addAll(SHELL_FILES.map(file =>
+        // Stage first. This name is deliberately INVISIBLE to the older
+        // v3.23 worker's active-shell cleanup, even if that worker finishes
+        // its own activation while an update is being downloaded.
+        const stage = await caches.open(STAGED_SHELL_CACHE);
+        await stage.addAll(SHELL_FILES.map(file =>
             new Request(new URL(file, self.registration.scope).href, { cache: 'reload' })
         ));
         // First install: take control immediately. Upgrades: leave the new
@@ -61,11 +63,30 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
     event.waitUntil((async () => {
+        // Promote a fully installed staging cache only AFTER old playback
+        // tabs are closed. A missing staged file must never trigger deletion
+        // of the previously usable offline shell or any user data.
+        const stage = await caches.open(STAGED_SHELL_CACHE);
+        const urls = SHELL_FILES.map(file => new URL(file, self.registration.scope).href);
+        const staged = [];
+        for (const url of urls) {
+            const response = await stage.match(url);
+            if (!response || !response.ok) {
+                throw new Error('Onda offline upgrade missing staged shell asset: ' + url);
+            }
+            staged.push([url, response]);
+        }
+        const shell = await caches.open(SHELL_CACHE);
+        for (const [url, response] of staged) {
+            await shell.put(url, response);
+        }
+        // Only after the new complete shell is in place, delete previous
+        // Onda active-shell generations and this release's staging cache.
         const names = await caches.keys();
-        // Only previous Onda APP SHELL caches; never music/user/data caches.
         await Promise.all(names.filter(name =>
             name.startsWith(SHELL_CACHE_PREFIX) && name !== SHELL_CACHE
         ).map(name => caches.delete(name)));
+        await caches.delete(STAGED_SHELL_CACHE);
         await self.clients.claim();
     })());
 });
