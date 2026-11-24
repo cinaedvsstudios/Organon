@@ -56,7 +56,10 @@ self.addEventListener('install', event => {
             await caches.delete(SHELL_CACHE);
             throw error;
         }
-        await self.skipWaiting();
+        // First install: take control immediately. Upgrades: leave the new
+        // worker waiting while older Onda tabs still exist. Do NOT take over
+        // an existing player session or delete its live shell prematurely.
+        if (!self.registration.active) await self.skipWaiting();
     })());
 });
 
