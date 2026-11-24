@@ -90,3 +90,13 @@ The browser suite now includes a separate **persistent Chrome profile** isolated
 [Passing GitHub Actions run #45280311658](https://github.com/cinaedvsstudios/Organon/actions/runs/45280311658). The offline restart is a true second Chrome process, not merely disconnecting an already-loaded page. **The first visit must be online** for service worker installation. This checks Chromium localhost persistence, not Android/Netlify production, phone airplane-mode behaviour after reboot, or guarantees about browser storage eviction. The temporary synthetic Chrome profile is deleted after the test; user media and profiles are never accessed.
 
 The static worker has an explicit, source-checked asset allowlist and only intercepts its own same-origin Onda directory. It never caches user songs, cloud requests or playlist JSON. See [v3.23 release notes](../development/RELEASE_V3_23.md).
+
+### v3.24 staged upgrade from shipped v3.23 — actual Chromium
+
+The real browser suite now includes a **separate disposable Chrome profile** and pinned `tests/fixtures/onda-sw-v3.23.js` copied from the shipped v3.23 worker. Its local HTTP test server can simulate an old deployment, an incomplete v3.24 deployment (one required new CSS asset responds **503**), an unavailable origin, and a complete new deployment. The test imports a generated WAV through Onda's actual Library/IndexedDB pipeline, and adds an unrelated browser cache entry to catch accidental deletion.
+
+It verifies the failed new worker leaves the old shell usable after a complete Chrome shutdown and an offline restart. After a complete new deploy, the v3.24 worker precaches all exact-version assets into a **protected staging cache** (not the v3.23 `onda-static-shell-` prefix), waits rather than forcibly replacing an open player, and promotes its complete staged files when old clients close. A final **full offline Chrome restart** must run v3.24, play the original WAV without adding duplicate audio, remove only superseded Onda shell/staging caches, and retain unrelated Cache Storage.
+
+**Passing real-Chrome evidence:** [GitHub Actions #45336933380](https://github.com/cinaedvsstudios/Organon/actions/runs/45336933380). The source suite also asserts that all HTML-linked static resources have the *same* release query, the staging name is protected from the old worker, and all staged assets are promoted before old caches can be deleted.
+
+The initial Onda visit/update still needs internet. Browser process restart tests are **not** actual Android OS lock-screen/permission or live Netlify checks. All audio is synthesized, profiles are isolated/temporary and no user music or browser data is touched. Full technical notes: [v3.24 release](../development/RELEASE_V3_24.md).
