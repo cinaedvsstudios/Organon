@@ -45,17 +45,13 @@ const SHELL_URLS = new Set(SHELL_FILES.map(file =>
 self.addEventListener('install', event => {
     event.waitUntil((async () => {
         const cache = await caches.open(SHELL_CACHE);
-        // All required assets must install before activation. On failure,
-        // remove ONLY this incomplete new shell, keeping the active old shell
-        // and every unrelated/user cache untouched.
-        try {
-            await cache.addAll(SHELL_FILES.map(file =>
-                new Request(new URL(file, self.registration.scope).href, { cache: 'reload' })
-            ));
-        } catch (error) {
-            await caches.delete(SHELL_CACHE);
-            throw error;
-        }
+        // A failed install must leave the PREVIOUS active shell untouched.
+        // Do not delete this version's cache on failure: simultaneous retry
+        // installers may share its name, and deleting could erase a complete
+        // successful install. A retry repopulates the exact allowlisted assets.
+        await cache.addAll(SHELL_FILES.map(file =>
+            new Request(new URL(file, self.registration.scope).href, { cache: 'reload' })
+        ));
         // First install: take control immediately. Upgrades: leave the new
         // worker waiting while older Onda tabs still exist. Do NOT take over
         // an existing player session or delete its live shell prematurely.
