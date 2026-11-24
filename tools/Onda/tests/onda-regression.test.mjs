@@ -380,6 +380,15 @@ test('Offline app shell precaches exact current UI assets, excludes music and cl
     assert.ok(sw.includes("const SHELL_CACHE = SHELL_CACHE_PREFIX + '" + sourceVersion[1] + "';"),
         'offline cache version must match the actual runtime');
     const shellRevision = sourceVersion[1].slice(1);
+    assert.ok(sw.includes("const STAGED_SHELL_CACHE = 'onda-staged-shell-" + sourceVersion[1] + "';"),
+        'new staging cache must use a name outside older worker cleanup prefix');
+    assert.match(sw, /const stage = await caches\.open\(STAGED_SHELL_CACHE\);/,
+        'worker must install into a separately protected stage');
+    assert.match(sw, /await caches\.delete\(STAGED_SHELL_CACHE\);/,
+        'activation must dispose of only the promoted temporary stage');
+    assert.ok(sw.indexOf('await shell.put(url, response)') <
+        sw.indexOf('name.startsWith(SHELL_CACHE_PREFIX) && name !== SHELL_CACHE'),
+        'promote all staged assets before deleting any old active shell');
     assert.match(sw, /if \(request\.method !== 'GET'\) return;/);
     assert.match(sw, /if \(url\.origin !== self\.location\.origin\) return;/);
     assert.match(sw, /if \(!SHELL_URLS\.has\(url\.href\)\) return;/);
