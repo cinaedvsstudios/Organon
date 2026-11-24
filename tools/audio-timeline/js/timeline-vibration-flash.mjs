@@ -80,7 +80,7 @@ export function buildVibrationFlashFrame(source,width,height,effect={},seconds=0
   }
   const luminance=(values[0]*.2126+values[1]*.7152+values[2]*.0722)/255;
   // Camera sensor overexposure lifts photographed highlights, not the empty canvas.
-  const gain=flash*(.18+.82*Math.sqrt(luminance));
+  const gain=flash*(.08+.50*Math.sqrt(luminance));
   for(let c=0;c<3;c++){
    const captured=values[c];
    const hot=captured+(255-captured)*gain;
