@@ -1,4 +1,4 @@
-/* Onda v3.23 — offline APP SHELL only.
+/* Onda v3.24 — offline APP SHELL only.
  * Never cache user audio, IndexedDB content, cloud responses, JSON libraries,
  * remote streams, or any other request not explicitly listed below.
  * First visit/update requires an internet connection. Subsequent startups may
@@ -7,33 +7,33 @@
 'use strict';
 
 const SHELL_CACHE_PREFIX = 'onda-static-shell-';
-const SHELL_CACHE = SHELL_CACHE_PREFIX + 'v3.23';
+const SHELL_CACHE = SHELL_CACHE_PREFIX + 'v3.24';
 const SHELL_FILES = [
     './index.html',
-    './manifest.webmanifest?v=1',
-    './icons/onda-icon.svg?v=1',
-    './icons/onda-icon-192.png?v=1',
-    './css/tokens.css',
-    './css/base.css',
-    './css/layout.css?v=3.10',
-    './css/player.css',
-    './css/controls.css',
-    './css/library.css?v=3.16',
-    './css/playlists-now-playing.css?v=3.15',
-    './css/modals-settings.css?v=3.20',
-    './css/visualizer-tools.css',
-    './css/streaming.css',
-    './css/responsive.css?v=3.19',
-    './css/cloud-sync.css',
-    './onda-midi.js',
-    './js/file-access.js?v=3.13',
-    './js/storage-audit.js?v=3.14',
-    './js/diagnostics.js?v=3.18',
-    './js/app-core.js?v=3.23',
-    './js/cloud-sync.js',
-    './js/media-session.js?v=3.19',
-    './js/quick-play.js?v=3.19',
-    './js/device-qa.js?v=3.22'
+    './css/tokens.css?v=3.24',
+    './css/base.css?v=3.24',
+    './css/layout.css?v=3.24',
+    './css/player.css?v=3.24',
+    './css/controls.css?v=3.24',
+    './css/library.css?v=3.24',
+    './css/playlists-now-playing.css?v=3.24',
+    './css/modals-settings.css?v=3.24',
+    './css/visualizer-tools.css?v=3.24',
+    './css/streaming.css?v=3.24',
+    './css/responsive.css?v=3.24',
+    './css/cloud-sync.css?v=3.24',
+    './icons/onda-icon-192.png?v=3.24',
+    './icons/onda-icon.svg?v=3.24',
+    './manifest.webmanifest?v=3.24',
+    './onda-midi.js?v=3.24',
+    './js/file-access.js?v=3.24',
+    './js/storage-audit.js?v=3.24',
+    './js/diagnostics.js?v=3.24',
+    './js/app-core.js?v=3.24',
+    './js/cloud-sync.js?v=3.24',
+    './js/media-session.js?v=3.24',
+    './js/quick-play.js?v=3.24',
+    './js/device-qa.js?v=3.24'
 ];
 
 const ROOT_URL = new URL('./', self.registration.scope);
@@ -45,11 +45,17 @@ const SHELL_URLS = new Set(SHELL_FILES.map(file =>
 self.addEventListener('install', event => {
     event.waitUntil((async () => {
         const cache = await caches.open(SHELL_CACHE);
-        // Atomic installation: if any essential file is missing, the browser
-        // retains its previous worker rather than activating an incomplete shell.
-        await cache.addAll(SHELL_FILES.map(file =>
-            new Request(new URL(file, self.registration.scope).href, { cache: 'reload' })
-        ));
+        // All required assets must install before activation. On failure,
+        // remove ONLY this incomplete new shell, keeping the active old shell
+        // and every unrelated/user cache untouched.
+        try {
+            await cache.addAll(SHELL_FILES.map(file =>
+                new Request(new URL(file, self.registration.scope).href, { cache: 'reload' })
+            ));
+        } catch (error) {
+            await caches.delete(SHELL_CACHE);
+            throw error;
+        }
         await self.skipWaiting();
     })());
 });
