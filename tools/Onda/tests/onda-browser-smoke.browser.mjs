@@ -774,7 +774,7 @@ async function offlineColdStartSmoke(baseUrl) {
         context = await chromium.launchPersistentContext(profile, options);
         const page = context.pages()[0] || await context.newPage();
         const version = await expectLoaded(page, baseUrl);
-        assert.equal(version, 'v3.23', 'offline shell test must use the current app build');
+        assert.equal(version, 'v3.24', 'offline shell test must use the current app build');
         await chooseFreshLocalSession(page);
         await page.waitForFunction(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
@@ -783,7 +783,7 @@ async function offlineColdStartSmoke(baseUrl) {
         }, undefined, { timeout: 25000 });
         const shell = await page.evaluate(async () => {
             const names = await caches.keys();
-            const cache = await caches.open('onda-static-shell-v3.23');
+            const cache = await caches.open('onda-static-shell-v3.24');
             const stored = await cache.keys();
             return {
                 names, stored: stored.map(request => request.url),
@@ -792,9 +792,9 @@ async function offlineColdStartSmoke(baseUrl) {
         });
         assert.equal(shell.names.filter(name => name.startsWith('onda-static-shell-')).length, 1);
         assert.ok(shell.stored.some(url => url.endsWith('/index.html')));
-        assert.ok(shell.stored.some(url => /\/js\/app-core\.js\?v=3\.23$/.test(url)));
-        assert.ok(shell.stored.some(url => /\/css\/responsive\.css\?v=3\.19$/.test(url)));
-        assert.ok(shell.stored.some(url => url.endsWith('/onda-midi.js')));
+        assert.ok(shell.stored.some(url => /\/js\/app-core\.js\?v=3\.24$/.test(url)));
+        assert.ok(shell.stored.some(url => /\/css\/responsive\.css\?v=3\.24$/.test(url)));
+        assert.ok(shell.stored.some(url => url.endsWith('/onda-midi.js?v=3.24')));
         assert.ok(shell.stored.length >= 25, 'the entire static app shell must be cached');
         assert.ok(shell.controller.endsWith('/onda-sw.js'));
         assert.ok(shell.stored.every(url => !/audioFiles|\.wav|netlify\/functions|library\.json/i.test(url)),
@@ -841,7 +841,7 @@ async function offlineColdStartSmoke(baseUrl) {
         const offlinePage = context.pages()[0] || await context.newPage();
         await offlinePage.goto(baseUrl, { waitUntil: 'load', timeout: 20000 });
         await offlinePage.waitForFunction(() =>
-            document.documentElement.dataset.ondaVersion === 'v3.23' &&
+            document.documentElement.dataset.ondaVersion === 'v3.24' &&
             Boolean(window.OndaQuickPlay?.getActiveAudio) &&
             Boolean(window.OndaFileHandles?.readFile),
         undefined, { timeout: 18000 });
@@ -879,7 +879,7 @@ async function offlineColdStartSmoke(baseUrl) {
         assert.equal(unsupported.loaded, false,
             'offline service worker must never fabricate a response for unknown JSON/cloud requests');
         const after = await offlinePage.evaluate(async () => {
-            const cache = await caches.open('onda-static-shell-v3.23');
+            const cache = await caches.open('onda-static-shell-v3.24');
             return (await cache.keys()).map(request => request.url);
         });
         assert.deepEqual(after, shell.stored, 'offline playback must not add media to static shell cache');
