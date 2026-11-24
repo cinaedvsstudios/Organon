@@ -1015,9 +1015,10 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         assert.equal(await cachedAudioCount(recoveredPage), mediaCount);
         console.log('upgrade: old v3.23 and saved media survived failed update in a NEW offline Chrome process');
 
-        // The server deployment is now complete. Registration UPDATE to the
-        // real new v3.24 worker must activate, replace ONLY the old Onda
-        // shell cache, and preserve both stored audio and unrelated caches.
+        // The server deployment is now complete. The real new worker must
+        // INSTALL but WAIT while the v3.23 page still exists. Keep both shell
+        // generations until that playback tab closes; never force takeover.
+        // After the browser exits, new v3.24 activates and removes only v3.23.
         await context.setOffline(false);
         simulatedRelease = 'v3.24';
         page = recoveredPage;
@@ -1026,11 +1027,13 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             await reg.update();
         });
         await page.waitForFunction(async () => {
+            const reg = await navigator.serviceWorker.getRegistration();
             const names = await caches.keys();
-            return names.includes('onda-static-shell-v3.24') &&
-                !names.includes('onda-static-shell-v3.23');
+            return reg?.waiting?.state === 'installed' &&
+                names.includes('onda-static-shell-v3.24') &&
+                names.includes('onda-static-shell-v3.23');
         }, undefined, { timeout: 25000 });
-        const afterUpgrade = await page.evaluate(async () => {
+        const stagedUpgrade = await page.evaluate(async () => {
             const userCache = await caches.open('onda-unrelated-user-test-cache');
             const original = await userCache.match('./personal-protected-example.txt');
             const shell = await caches.open('onda-static-shell-v3.24');
@@ -1040,12 +1043,14 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
                 shellUrls: (await shell.keys()).map(request => request.url)
             };
         });
-        assert.equal(afterUpgrade.protectedText, 'keep this data intact');
-        assert.equal(afterUpgrade.names.filter(name => name.startsWith('onda-static-shell-')).length, 1);
-        assert.ok(afterUpgrade.shellUrls.some(url => /\/js\/app-core\.js\?v=3\.24$/.test(url)));
-        assert.ok(afterUpgrade.shellUrls.every(url =>
+        assert.equal(stagedUpgrade.protectedText, 'keep this data intact');
+        assert.ok(stagedUpgrade.names.includes('onda-static-shell-v3.23'));
+        assert.ok(stagedUpgrade.names.includes('onda-static-shell-v3.24'));
+        assert.ok(stagedUpgrade.shellUrls.some(url => /\/js\/app-core\.js\?v=3\.24$/.test(url)));
+        assert.ok(stagedUpgrade.shellUrls.every(url =>
             !url.endsWith('.wav') && !url.includes('netlify/functions')));
         assert.equal(await cachedAudioCount(page), mediaCount);
+        console.log('upgrade: v3.24 worker staged safely; v3.23 playback tab retains its active shell');
 
         await page.reload({ waitUntil: 'load' });
         await page.waitForFunction(() =>
@@ -1068,7 +1073,7 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             return audio?.src.startsWith('blob:') && !audio.paused && audio.currentTime > 0.12;
         }, undefined, { timeout: 15000 });
         assert.equal(await cachedAudioCount(page), mediaCount);
-        console.log('upgrade: completed v3.24 update uses new versioned CSS and plays preserved audio');
+        console.log('upgrade: online v3.24 HTML uses new versioned CSS while old worker is waiting');
 
         // One final real browser PROCESS restart while offline on v3.24.
         await context.close();
@@ -1077,9 +1082,14 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         await context.setOffline(true);
         const offlinePage = context.pages()[0] || await context.newPage();
         await offlinePage.goto(baseUrl, { waitUntil: 'load', timeout: 20000 });
-        await offlinePage.waitForFunction(() =>
-            document.documentElement.dataset.ondaVersion === 'v3.24',
-        undefined, { timeout: 16000 });
+        await offlinePage.waitForFunction(async () => {
+            const reg = await navigator.serviceWorker.getRegistration();
+            const names = await caches.keys();
+            return document.documentElement.dataset.ondaVersion === 'v3.24' &&
+                reg?.active?.state === 'activated' &&
+                names.includes('onda-static-shell-v3.24') &&
+                !names.includes('onda-static-shell-v3.23');
+        }, undefined, { timeout: 25000 });
         assert.equal(await cachedAudioCount(offlinePage), mediaCount);
         const offline = await offlinePage.evaluate(async () => {
             const names = await caches.keys();
