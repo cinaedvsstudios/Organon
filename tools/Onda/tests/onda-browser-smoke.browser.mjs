@@ -16,6 +16,18 @@ const mime = {
     '.png': 'image/png', '.ico': 'image/x-icon', '.woff': 'font/woff',
     '.woff2': 'font/woff2'
 };
+// Only the dedicated version-upgrade browser scenario switches this local test
+// server. All earlier scenarios use normal on-disk Onda files as before.
+let simulatedRelease = null; // null | 'v3.23' | 'v3.24-failing' | 'v3.24'
+let previousWorkerSource = '';
+let previousAssetLinks = new Map();
+function servePreviousIndex(html) {
+    return html.replace(/(src|href)="([^"]+)"/g, (match, attr, target) => {
+        const url = new URL(target, 'http://127.0.0.1/');
+        const previous = previousAssetLinks.get(url.pathname);
+        return previous ? attr + '="' + previous + '"' : match;
+    });
+}
 function handler(request, response) {
     let url;
     try { url = new URL(request.url, 'http://127.0.0.1'); }
@@ -32,7 +44,31 @@ function handler(request, response) {
         if ((await stat(finalPath).catch(() => null))?.isDirectory()) {
             finalPath = resolve(finalPath, 'index.html');
         }
-        const bytes = await readFile(finalPath);
+        // Explicitly simulate a failed NEW worker installation by serving an
+        // unavailable new-version shell file. Never use this on live Netlify.
+        if (simulatedRelease === 'v3.24-failing' &&
+            url.pathname === '/css/tokens.css' && url.search === '?v=3.24') {
+            response.writeHead(503, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' })
+                .end('Test-only transient deployment failure');
+            return;
+        }
+        let bytes = await readFile(finalPath);
+        if (simulatedRelease === 'v3.23') {
+            if (url.pathname === '/onda-sw.js') {
+                bytes = Buffer.from(previousWorkerSource);
+            } else if (url.pathname === '/' || url.pathname === '/index.html') {
+                bytes = Buffer.from(servePreviousIndex(bytes.toString('utf8')));
+            } else if (url.pathname === '/js/app-core.js') {
+                bytes = Buffer.from(bytes.toString('utf8')
+                    .replace("const ONDA_VERSION = 'v3.24';", "const ONDA_VERSION = 'v3.23';"));
+            } else if (url.pathname === '/manifest.webmanifest') {
+                bytes = Buffer.from(bytes.toString('utf8').replace(/\\?v=3\\.24/g, '?v=1'));
+            }
+        }
+        if (simulatedRelease && url.pathname === '/css/tokens.css') {
+            const tag = simulatedRelease === 'v3.23' ? 'v3.23' : 'v3.24';
+            bytes = Buffer.concat([bytes, Buffer.from('\\n/* __onda_test_deployed_asset_' + tag + '__ */')]);
+        }
         response.writeHead(200, {
             'Content-Type': mime[extname(finalPath)] || 'application/octet-stream',
             'Cache-Control': 'no-store',
