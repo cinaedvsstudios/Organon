@@ -536,3 +536,20 @@ These tests make no changes to Onda's real runtime, browser storage scheme or pl
 | ANDROID-OFFLINE | First online PWA install on user's actual phone, then airplane mode / phone restart / app shortcut; storage eviction and remote streaming exclusions | NEEDS PHYSICAL DEVICE |
 
 **Safe scope:** User audio is stored only via Onda's existing IndexedDB import, **not the new Cache Storage app shell**. Service worker only claims its Onda directory and deletes caches with its own `onda-static-shell-` prefix during updates. No changes to Library/IndexedDB schema, source files, file handles, cloud sync or player engine. Test Chrome profile is generated in a temporary folder and destroyed afterward. This does **not** prove cold first-ever offline installation, Android OS background process or live Netlify deployment.
+
+## v3.24 safe offline shell upgrade across browser restarts (2026-11-24)
+
+[Successful GitHub Actions run #45336933380](https://github.com/cinaedvsstudios/Organon/actions/runs/45336933380): source regression and real Chromium tests green. The test profile is isolated; the source worker under test is a pinned copy of the **actual shipped v3.23** worker, not an invented stub. A synthetic WAV and unrelated cache entry are the only test data.
+
+| ID | Actual Chromium condition | Status |
+|---|---|---|
+| BROWSER-39 | v3.23 worker/source installed; WAV imported into IndexedDB; unrelated cache stored | PASS Chromium |
+| BROWSER-40 | New v3.24 worker available but one required asset returns HTTP 503; update fails without activating or deleting old active shell | PASS Chromium |
+| BROWSER-41 | Chrome process fully closed/reopened with origin unavailable and network offline; v3.23 app and saved audio survive failed update | PASS Chromium |
+| BROWSER-42 | All linked static JS/CSS/icons/manifest/MIDI are release-versioned as `?v=3.24`; older worker cannot match them to v3.23 shell cache | PASS source + Chromium |
+| BROWSER-43 | New static files are installed under protected `onda-staged-shell-v3.24` and don't require forcibly interrupting existing Onda clients | PASS source + Chromium |
+| BROWSER-44 | Upgraded app uses v3.24 CSS with previous audio/Library still intact | PASS Chromium |
+| BROWSER-45 | After entire browser closes and reopens offline, v3.24 is active, saved WAV plays, old active shell and temporary stage are gone, unrelated cache survives | PASS Chromium |
+| ANDROID-UPGRADE | Netlify production live release, Android Chrome/PWA worker lifecycle, real phone offline/reboot, system media keys and device storage | NEEDS DEVICE / DEPLOY |
+
+**Safety:** Failed installs may retain unactivated temporary staged assets for retry, but never publish them as a working app. On activation, the worker verifies and promotes all required staged assets before deleting **only** old `onda-static-shell-` caches. No user's audio/IndexedDB, file handles, playlists, original media or cloud data are removed. The actual music player/library engine is unchanged; Onda source version **v3.24**. See [RELEASE_V3_24.md](./RELEASE_V3_24.md).

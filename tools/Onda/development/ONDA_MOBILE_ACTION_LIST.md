@@ -545,3 +545,15 @@ Onda v3.22 had no registered service worker: its stored audio would play offline
 **Release acceptance still needs real-device check:** after Netlify v3.23 is verified live, open Onda once while online, close it, enable airplane mode, reopen same installed shortcut in Android Chrome, and play previously cached music. Repeat after phone restart and verify browser storage is still retained; do not clear site data because that may delete saved audio. Test Android media keys, lock screen and background playback separately. See [RELEASE_V3_23.md](./RELEASE_V3_23.md).
 
 - 2026-11-23 — v2.14: safe v3.23 offline app-shell startup implementation and actual cold Chrome restart regression.
+
+## Onda v3.24 — safe worker update/failed-install rollback (2026-11-24)
+
+**Confirmed source issue:** v3.23 had mixed versioned and unversioned static asset URLs, allowing older cached JS/CSS to be served with newer HTML during a rollout. The previous worker also deletes active shell caches whose names begin with `onda-static-shell-`; a new candidate cache stored under that prefix could be removed while an upgrade was in flight.
+
+**Implemented:** all v3.24 static HTML-linked resources (CSS, JS, MIDI, manifest and icons) use `?v=3.24`. The new worker precaches those exact assets in a separate `onda-staged-shell-v3.24` cache protected from v3.23 cleanup. Updates wait while older playback tabs remain open, rather than forcibly taking over. When the previous clients are closed, the worker verifies the complete staged shell and only then promotes it, removes old Onda *shell* caches and deletes its temporary stage. Existing audio cache, original music, playlists, cloud and unrelated Cache Storage are unaffected.
+
+**Browser acceptance passed:** [GitHub Actions #45336933380](https://github.com/cinaedvsstudios/Organon/actions/runs/45336933380) reproduced a failed v3.24 install (HTTP 503 on a required asset) and verified a saved synthetic track still opened in an offline restarted v3.23 profile. Following a complete v3.24 deploy, the browser loaded newly versioned CSS, then a second complete offline Chrome restart ran v3.24 and played the preserved WAV. Non-Onda cache entry survived both transitions. All earlier browser/regression tests also passed.
+
+**Remaining:** confirm production Netlify serves v3.24 and that Android PWA/Chrome really transitions after closing Onda, including airplane-mode reboot, Bluetooth/lockscreen and data persistence. Never clear site data to force an update when it contains personal offline music. See [RELEASE_V3_24.md](./RELEASE_V3_24.md).
+
+- 2026-11-24 — v2.15: protected two-stage v3.24 offline shell upgrade and failed-deployment recovery verified in actual Chromium.

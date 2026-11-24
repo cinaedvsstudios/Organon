@@ -375,7 +375,20 @@ test('Offline app shell precaches exact current UI assets, excludes music and cl
     assert.doesNotThrow(() => new Script(sw, { filename: 'onda-sw.js' }));
     assert.match(markup, /serviceWorker\.register\('\.\/onda-sw\.js'/);
     assert.match(markup, /updateViaCache: 'none'/);
-    assert.match(sw, /const SHELL_CACHE = SHELL_CACHE_PREFIX \+ 'v3\.23';/);
+    const sourceVersion = source('app-core.js').match(/const ONDA_VERSION = '(v[0-9]+\.[0-9]+)';/);
+    assert.ok(sourceVersion, 'Onda must have a concrete runtime version');
+    assert.ok(sw.includes("const SHELL_CACHE = SHELL_CACHE_PREFIX + '" + sourceVersion[1] + "';"),
+        'offline cache version must match the actual runtime');
+    const shellRevision = sourceVersion[1].slice(1);
+    assert.ok(sw.includes("const STAGED_SHELL_CACHE = 'onda-staged-shell-" + sourceVersion[1] + "';"),
+        'new staging cache must use a name outside older worker cleanup prefix');
+    assert.match(sw, /const stage = await caches\.open\(STAGED_SHELL_CACHE\);/,
+        'worker must install into a separately protected stage');
+    assert.match(sw, /await caches\.delete\(STAGED_SHELL_CACHE\);/,
+        'activation must dispose of only the promoted temporary stage');
+    assert.ok(sw.indexOf('await shell.put(url, response)') <
+        sw.indexOf('name.startsWith(SHELL_CACHE_PREFIX) && name !== SHELL_CACHE'),
+        'promote all staged assets before deleting any old active shell');
     assert.match(sw, /if \(request\.method !== 'GET'\) return;/);
     assert.match(sw, /if \(url\.origin !== self\.location\.origin\) return;/);
     assert.match(sw, /if \(!SHELL_URLS\.has\(url\.href\)\) return;/);
@@ -384,6 +397,19 @@ test('Offline app shell precaches exact current UI assets, excludes music and cl
     const files = [...list[1].matchAll(/'([^']+)'/g)].map(match => match[1]);
     assert.ok(files.includes('./index.html'));
     assert.equal(new Set(files).size, files.length, 'precache list must not contain duplicates');
+    assert.ok(files.every(file => file === './index.html' ||
+        file.endsWith('?v=' + shellRevision)),
+        'all static resources must have the same release query to avoid old worker cache mixing');
+    const installSection = sw.slice(sw.indexOf("self.addEventListener('install'"),
+        sw.indexOf("self.addEventListener('activate'"));
+    assert.ok(!installSection.includes('caches.delete('),
+        'failed installer must never delete the shared new cache while a second attempt may complete');
+    assert.match(sw, /if \(!self\.registration\.active\) await self\.skipWaiting\(\);/,
+        'new shell must not force activation over an existing media-playing tab');
+    const previousWorker = readFileSync(new URL('./fixtures/onda-sw-v3.23.js', import.meta.url), 'utf8');
+    assert.match(previousWorker, /SHELL_CACHE_PREFIX \+ 'v3\.23'/,
+        'actual shipped previous worker must be pinned for upgrade tests');
+    assert.notEqual(previousWorker, sw);
     // Ensure ALL linked scripts, CSS, icons and manifest used by index.html
     // have an exactly matching versioned cache key for an offline cold start.
     const linked = [...markup.matchAll(/(?:src|href)="([^"]+)"/g)]
