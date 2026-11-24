@@ -62,12 +62,12 @@ function handler(request, response) {
                 bytes = Buffer.from(bytes.toString('utf8')
                     .replace("const ONDA_VERSION = 'v3.24';", "const ONDA_VERSION = 'v3.23';"));
             } else if (url.pathname === '/manifest.webmanifest') {
-                bytes = Buffer.from(bytes.toString('utf8').replace(/\\?v=3\\.24/g, '?v=1'));
+                bytes = Buffer.from(bytes.toString('utf8').replaceAll('?v=3.24', '?v=1'));
             }
         }
         if (simulatedRelease && url.pathname === '/css/tokens.css') {
             const tag = simulatedRelease === 'v3.23' ? 'v3.23' : 'v3.24';
-            bytes = Buffer.concat([bytes, Buffer.from('\\n/* __onda_test_deployed_asset_' + tag + '__ */')]);
+            bytes = Buffer.concat([bytes, Buffer.from('\n/* __onda_test_deployed_asset_' + tag + '__ */')]);
         }
         response.writeHead(200, {
             'Content-Type': mime[extname(finalPath)] || 'application/octet-stream',
