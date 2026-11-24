@@ -18,12 +18,12 @@ export function buildRhythmicFlickerFrame(source,w,h,e={},seconds=0,reuse,amount
  const tint=/^#[0-9a-f]{6}$/i.test(e.color||'')?e.color:'#ffd98d';
  const rgb=[1,3,5].map(i=>parseInt(tint.slice(i,i+2),16)/255);
  const warmth=clamp(e.flickerWarmth,0,100,25)/100*state.pulse;
+ const lut=rgb.map((channel)=>Uint8ClampedArray.from({length:256},(_,v)=>{
+  const lit=Math.min(1,(v/255)**2.2*gain*(1+warmth*(channel-.5)*.55));
+  return v+(255*lit**(1/2.2)-v)*alpha;
+ }));
  for(let i=0;i<src.length;i+=4){if(!src[i+3])continue;
-  for(let c=0;c<3;c++){
-   const v=src[i+c]/255,linear=v**2.2;
-   const lit=Math.min(1,linear*gain*(1+warmth*(rgb[c]-.5)*.55));
-   data[i+c]=src[i+c]+(255*lit**(1/2.2)-src[i+c])*alpha;
-  }
+  data[i]=lut[0][src[i]];data[i+1]=lut[1][src[i+1]];data[i+2]=lut[2][src[i+2]];
  }
  return {data,state,width:w,height:h};
 }
