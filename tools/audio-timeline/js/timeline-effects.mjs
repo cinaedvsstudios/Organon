@@ -21,6 +21,7 @@ import {renderFaultCassette} from './timeline-fault-cassette.mjs';
 import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderElectricRipple} from './timeline-electric-ripple.mjs';
 import {renderShockwave} from './timeline-shockwave.mjs';
+import {renderVibrationFlash} from './timeline-vibration-flash.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
 import {renderFlyingDebris} from './timeline-flying-debris.mjs';
@@ -90,6 +91,7 @@ export function normaliseTimelineEffect(effect={}){
  const presetId=ids.has(raw.presetId)?raw.presetId:'light-sweep';
  const swing=['pendulum-swing','rebound-swing'].includes(presetId);
  const shockwave=presetId==='shockwave';
+ const vibrationFlash=presetId==='vibration-flash';
  const mistFog=presetId==='mist-fog-bank';
  const tvStatic=presetId==='tv-static';
  const signalInterference=presetId==='signal-interference';
@@ -119,6 +121,15 @@ export function normaliseTimelineEffect(effect={}){
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
+ };
+ if(vibrationFlash)return {...base,
+  density:clamp(raw.density,1,120,66),
+  distortion:clamp(raw.distortion,0,100,72),
+  vibrationFrequency:clamp(raw.vibrationFrequency,2,40,18),
+  vibrationDecay:clamp(raw.vibrationDecay,0,100,28),
+  vibrationEcho:clamp(raw.vibrationEcho,0,100,42),
+  vibrationFlash:clamp(raw.vibrationFlash,0,100,65),
+  vibrationSeed:Math.round(clamp(raw.vibrationSeed,0,99999,8181))
  };
  if(shockwave)return {...base,
   distortion:clamp(raw.distortion,0,100,65),
@@ -366,16 +377,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
      ctx.fillRect(-w*.17,-h*.2,w*.35,h*.4);
     }
    }else if(e.presetId==='vibration-flash'){
-    const tick=Math.floor(t*26),amplitude=(1+e.distortion*.2)*size;
-    const dx=(random(tick*2+70)*2-1)*amplitude;
-    const dy=(random(tick*2+71)*2-1)*amplitude;
-    if(source)ctx.drawImage(source,dx,dy,w,h);
-    else{ctx.fillStyle=rgba(e.color,.25);ctx.fillRect(dx,dy,w*.6,h*.6);}
-    ctx.globalAlpha=amount;
-    if(random(tick+37)>.73){
-     ctx.fillStyle=rgba(e.color,.14+.30*random(tick+73));
-     ctx.fillRect(0,0,w,h);
-    }
+    renderVibrationFlash(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='fault-cassette'){
     renderFaultCassette(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='ripple-distortion'){

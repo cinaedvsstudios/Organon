@@ -11,6 +11,7 @@ import {buildFaultCassetteFrame} from '../js/timeline-fault-cassette.mjs';
 import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
+import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
 
 const makeCanvasRecorder=()=>{
  const log=[];
@@ -47,14 +48,15 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
    for(let i=0;i<data.length;i+=4){const x=(i/4)%w,y=Math.floor(i/4/w);data[i]=(x*7)%255;data[i+1]=(y*11)%255;data[i+2]=(x*3+y*5)%255;data[i+3]=255;}
    const recipe=normaliseTimelineEffect({presetId:preset.id,density:85,burstSize:60,burstLife:.32,tearHeight:15,tearLife:.26,rgbBlockWidth:27,rgbBlockHeight:19,rgbBlockLife:.28,rgbSeparation:94,lineLength:72,lineThickness:6,lineLife:.22,lineFragments:78,lineStatic:94,cassetteTracking:92,cassetteDropouts:89,cassetteChroma:95,cassetteRoll:70,cassetteSeed:6969,rippleRings:4,rippleWidth:10,rippleFalloff:55,rippleHighlights:80,rippleSeed:6262,
-   electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45});
-   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:buildLineCorruptionFrame;
+   electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
+   vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181});
+   const painter=preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -126,7 +128,7 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
      'Motion','Motion','Motion','Glitch','Distortion','Distortion','Distortion']);
  for(const id of ids){
   assert.equal(requiresCompositeSource(id),true);
-  if(id==='fault-cassette'||id==='ripple-distortion'||id==='electric-ripple'||id==='shockwave'){
+  if(id==='fault-cassette'||id==='ripple-distortion'||id==='electric-ripple'||id==='shockwave'||id==='vibration-flash'){
    // Fault Cassette samples REAL source RGBA. Mock Canvas calls cannot
    // demonstrate tape movement, so compare the source pixel output directly.
    const w=160,h=90,rgba=new Uint8ClampedArray(w*h*4);
@@ -138,8 +140,9 @@ test('seven Phase 3C recipes are genuinely different Motion, Distortion and Glit
    const e=normaliseTimelineEffect({presetId:id,density:92,distortion:91,
     cassetteTracking:92,cassetteDropouts:89,cassetteChroma:95,cassetteRoll:70,
     rippleRings:4,rippleHighlights:80,rippleWidth:10,
-    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,shockWidth:8,shockCompression:90,shockTurbulence:65});
-   const pixelRenderer=id==='fault-cassette'?buildFaultCassetteFrame:id==='ripple-distortion'?buildRippleDistortionFrame:id==='electric-ripple'?buildElectricRippleFrame:buildShockwaveFrame;
+    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,shockWidth:8,shockCompression:90,shockTurbulence:65,
+    vibrationFrequency:18,vibrationEcho:75,vibrationFlash:90});
+   const pixelRenderer=id==='fault-cassette'?buildFaultCassetteFrame:id==='ripple-distortion'?buildRippleDistortionFrame:id==='electric-ripple'?buildElectricRippleFrame:id==='shockwave'?buildShockwaveFrame:buildVibrationFlashFrame;
    const frame=t=>pixelRenderer(rgba,w,h,e,t*e.speed).data;
    assert.notDeepEqual(frame(.24),frame(1.4),id+' must vary as seconds change on the source');
    assert.deepEqual(frame(.24),frame(.24),id+' must reproduce pixels after reverse seek');

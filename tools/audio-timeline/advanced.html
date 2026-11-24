@@ -1153,7 +1153,17 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                              <label class="text-setting-row"><span>Phosphor seed</span><input id="effect-scan-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="6161" title="Repeatable raster and flicker phases for exact seeking and export"></label>
                          </details>
                      </div>
-                     <div id="effect-shockwave-controls" hidden>
+                     <div id="effect-vibration-flash-controls" hidden>
+                      <details open class="text-inspector-group">
+                          <summary>Vibration Flash — optical camera shake</summary>
+                          <label class="text-setting-row"><span>Mechanical oscillation (Hz)</span><input id="effect-vibration-frequency" class="range-control" type="range" min="2" max="40" step="1" value="18" title="Rapid mechanical camera shake rate"></label>
+                          <label class="text-setting-row"><span>Oscillation decay (%)</span><input id="effect-vibration-decay" class="range-control" type="range" min="0" max="100" step="1" value="28" title="Rate at which the impact's vibration loses momentum"></label>
+                          <label class="text-setting-row"><span>Shutter motion echo (%)</span><input id="effect-vibration-echo" class="range-control" type="range" min="0" max="100" step="1" value="42" title="Trails of actual image detail sampled around the mechanical shake direction"></label>
+                          <label class="text-setting-row"><span>Sensor exposure flash (%)</span><input id="effect-vibration-flash" class="range-control" type="range" min="0" max="100" step="1" value="65" title="Seeded momentary overexposure weighted to the recorded scene's luminance"></label>
+                          <label class="text-setting-row"><span>Vibration pattern seed</span><input id="effect-vibration-seed" class="compact-input" type="number" min="0" max="99999" step="1" value="8181" title="Exactly repeat mechanical shake and light pulses after reverse seeking or exporting"></label>
+                      </details>
+                  </div>
+                  <div id="effect-shockwave-controls" hidden>
                       <details open class="text-inspector-group">
                           <summary>Shockwave — pressure front and rarefaction</summary>
                           <label class="text-setting-row"><span>Pressure shell width (%)</span><input id="effect-shock-width" class="range-control" type="range" min="1" max="16" step="1" value="6" title="Radial thickness of the outward shock compression front"></label>
