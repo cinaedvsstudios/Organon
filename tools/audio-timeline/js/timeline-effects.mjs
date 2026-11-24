@@ -22,6 +22,7 @@ import {renderRippleDistortion} from './timeline-ripple-distortion.mjs';
 import {renderElectricRipple} from './timeline-electric-ripple.mjs';
 import {renderShockwave} from './timeline-shockwave.mjs';
 import {renderVibrationFlash} from './timeline-vibration-flash.mjs';
+import {renderReboundSwing} from './timeline-rebound-swing.mjs';
 import {renderPendulumSwing} from './timeline-pendulum-swing.mjs';
 import {renderLightSweep} from './timeline-light-sweep.mjs';
 import {renderElectricSparks} from './timeline-electric-sparks.mjs';
@@ -123,6 +124,12 @@ export function normaliseTimelineEffect(effect={}){
   originX:clamp(raw.originX,0,100,(starburst||swing||shockwave||electricSparks||flyingDebris||['halo-blur','fire-explosion'].includes(presetId))?50:20),
   originY:clamp(raw.originY,0,100,(starburst||shockwave||['halo-blur','fire-explosion'].includes(presetId))?50:electricSparks?62:flyingDebris?42:swing?10:12),
   color:/^#[0-9a-f]{6}$/i.test(String(raw.color))?String(raw.color).toLowerCase():mistFog?'#dce5ec':presetId==='hazy-atmosphere'?'#d6e0e9':presetId==='sci-fi-scan'?'#63ebff':presetId==='retro-glitch'?'#b8c5d0':presetId==='light-leaks'?'#ed75c8':starburst?'#ffdf00':cameraFrame?'#f0f6ff':lineCorruption?'#5feeff':electricSparks?'#63dcff':flyingDebris?'#aab1bc':rippleDistortion?'#a5dfff':electricRipple?'#83dcff':'#ffd98d'
+ };
+ if(presetId==='rebound-swing')return {...base,
+  reboundPeriod:clamp(raw.reboundPeriod,.2,2,.65),
+  reboundDamping:clamp(raw.reboundDamping,0,100,55),
+  reboundShutter:clamp(raw.reboundShutter,0,100,45),
+  reboundFlex:clamp(raw.reboundFlex,0,100,35)
  };
  if(pendulumSwing)return {...base,
   pendulumPeriod:clamp(raw.pendulumPeriod,.6,6,2.6),
@@ -376,14 +383,7 @@ export function paintTimelineEffect(ctx,width,height,effect,seconds,duration=3){
    }else if(e.presetId==='pendulum-swing'){
     renderPendulumSwing(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='rebound-swing'){
-    const angle=Math.sin(t*13+rad)*Math.exp(-t*1.7)*(.12+e.distortion*.0047)*size;
-    const px=w*e.originX/100,py=h*e.originY/100;
-    ctx.translate(px,py);ctx.rotate(angle);
-    if(source)ctx.drawImage(source,-px,-py,w,h);
-    else{
-     ctx.fillStyle=rgba(e.color,.38);
-     ctx.fillRect(-w*.17,-h*.2,w*.35,h*.4);
-    }
+    renderReboundSwing(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='vibration-flash'){
     renderVibrationFlash(ctx,source,w,h,e,t,amount);
    }else if(e.presetId==='fault-cassette'){
