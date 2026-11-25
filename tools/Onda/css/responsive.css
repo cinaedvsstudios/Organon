@@ -2040,3 +2040,52 @@ body.onda-force-mobile-mode #db-library-results button.selection-indicator {
   outline: 2px solid currentColor;
   outline-offset: 2px;
 }
+
+/* Short mobile landscape: use horizontal space without shrinking touch targets. */
+@media (orientation: landscape) and (max-height: 500px) {
+  body.onda-force-mobile-mode #organon-top-panel {
+    padding: 6px 10px;
+  }
+  body.onda-force-mobile-mode .primary-controls {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  body.onda-force-mobile-mode .seek-container {
+    flex: 1 1 140px;
+    min-width: 0;
+    margin: 0;
+  }
+  body.onda-force-mobile-mode #organon-middle-panel {
+    padding: 6px 10px 80px;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer {
+    top: max(var(--mobile-library-drawer-top, 8px), env(safe-area-inset-top, 0px));
+    height: auto;
+    max-height: none;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer .library-drawer-header {
+    padding: 4px 8px;
+    gap: 4px;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer .library-manager-toolbar {
+    padding: 4px 8px;
+    gap: 5px;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer .onda-mobile-library-nav {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer .onda-mobile-library-nav button {
+    flex-shrink: 0;
+    min-height: 44px;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer #db-library-search,
+  body.onda-force-mobile-mode #library-manager-drawer #db-library-filter {
+    min-height: 44px;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer.onda-keyboard-open .library-manager-content {
+    min-height: 0;
+  }
+}
