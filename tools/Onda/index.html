@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css?v=3.28" rel="stylesheet"/><link href="css/base.css?v=3.28" rel="stylesheet"/><link href="css/layout.css?v=3.28" rel="stylesheet"/><link href="css/player.css?v=3.28" rel="stylesheet"/><link href="css/controls.css?v=3.28" rel="stylesheet"/><link href="css/library.css?v=3.28" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.28" rel="stylesheet"/><link href="css/modals-settings.css?v=3.28" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.28" rel="stylesheet"/><link href="css/streaming.css?v=3.28" rel="stylesheet"/><link href="css/responsive.css?v=3.28" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.28" rel="stylesheet"/>
+<head><link href="css/tokens.css?v=3.29" rel="stylesheet"/><link href="css/base.css?v=3.29" rel="stylesheet"/><link href="css/layout.css?v=3.29" rel="stylesheet"/><link href="css/player.css?v=3.29" rel="stylesheet"/><link href="css/controls.css?v=3.29" rel="stylesheet"/><link href="css/library.css?v=3.29" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.29" rel="stylesheet"/><link href="css/modals-settings.css?v=3.29" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.29" rel="stylesheet"/><link href="css/streaming.css?v=3.29" rel="stylesheet"/><link href="css/responsive.css?v=3.29" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.29" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
 <meta name="theme-color" content="#1e201c"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.28"/>
-<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.28"/>
-<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.28"/>
-<link rel="manifest" href="manifest.webmanifest?v=3.28"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.29"/>
+<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.29"/>
+<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.29"/>
+<link rel="manifest" href="manifest.webmanifest?v=3.29"/>
 <title>Onda Media Player - Engine</title>
 
 
@@ -318,6 +318,7 @@
 <button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview an unsaved audio file without importing">▶ Quick Play</button>
 <button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="View storage health and cached audio">Storage</button>
 </div>
+<div class="onda-mobile-library-workspaces"><button type="button" class="btn-pill" id="btn-mobile-open-add">📥 Add workspace</button><button type="button" class="btn-pill" id="btn-mobile-open-history">🕘 Full History</button><button type="button" class="btn-pill" id="btn-mobile-open-playlists">📚 Full Playlists</button></div>
 <div class="onda-library-status" id="onda-library-status" aria-live="polite"></div>
 <div class="library-manager-toolbar">
 <div class="search-input-wrap">
@@ -396,7 +397,7 @@
 <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
 <div class="draggable-popup" id="settings-popup">
 <div class="popup-drag-handle" id="settings-drag-handle">
-<span>☷ Settings &amp; Extras · v3.28</span>
+<span>☷ Settings &amp; Extras · v3.29</span>
 <span class="popup-close" id="btn-close-settings">×</span>
 </div>
 <div class="popup-body">
@@ -411,6 +412,11 @@
 <div class="control-row settings-card active" data-settings-card="audio">
 <label class="help-text">Volume Boost: <span id="vol-readout">100%</span></label>
 <input class="u-full-width" id="vol-slider" max="2" min="0" step="0.05" type="range" value="1"/>
+</div>
+<div class="control-row settings-card active" data-settings-card="audio">
+<label class="help-text" for="onda-interface-zoom">Interface Zoom: <span id="onda-zoom-readout">100%</span></label>
+<input class="u-full-width" id="onda-interface-zoom" min="70" max="130" step="5" type="range" value="100"/>
+<button class="btn-pill" id="onda-reset-zoom" type="button">Reset to 100%</button>
 </div>
 <input id="speed-slider" type="hidden" value="1"/>
 <span class="u-hidden" id="speed-readout">1.0x</span>
@@ -685,7 +691,7 @@
 <!-- Toast popup notices -->
 <div class="organon-toast" id="toast-notice">Action Confirmed!</div>
 
-<script src="./onda-midi.js?v=3.28"></script>
+<script src="./onda-midi.js?v=3.29"></script>
 <!-- Onda Cloud Sync + Setup Wizard (Netlify Blobs) -->
 
 <div class="onda-cloud-modal-overlay" id="onda-cloud-modal-overlay"></div>
@@ -733,7 +739,7 @@
 
 
 
-<script src="js/file-access.js?v=3.28"></script><script src="js/storage-audit.js?v=3.28"></script><script src="js/diagnostics.js?v=3.28"></script><script src="js/app-core.js?v=3.28"></script><script src="js/cloud-sync.js?v=3.28"></script><script src="js/media-session.js?v=3.28"></script><script src="js/quick-play.js?v=3.28"></script><script src="js/device-qa.js?v=3.28"></script>
+<script src="js/file-access.js?v=3.29"></script><script src="js/storage-audit.js?v=3.29"></script><script src="js/diagnostics.js?v=3.29"></script><script src="js/app-core.js?v=3.29"></script><script src="js/cloud-sync.js?v=3.29"></script><script src="js/media-session.js?v=3.29"></script><script src="js/quick-play.js?v=3.29"></script><script src="js/device-qa.js?v=3.29"></script>
 <!-- The offline shell stores only this app's static UI assets, never music or profiles. -->
 <script>
 if ('serviceWorker' in navigator && window.isSecureContext) {

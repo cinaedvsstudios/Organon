@@ -2089,3 +2089,19 @@ body.onda-force-mobile-mode #db-library-results button.selection-indicator {
     min-height: 0;
   }
 }
+
+/* Mobile workspace shortcuts replace duplicate main navigation, not the workspaces. */
+.onda-mobile-library-workspaces { display: none; }
+body.onda-force-mobile-mode #tab-btn-files,
+body.onda-force-mobile-mode #tab-btn-history,
+body.onda-force-mobile-mode #tab-btn-playlists { display: none !important; }
+body.onda-force-mobile-mode .onda-mobile-library-workspaces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 4px 8px;
+}
+body.onda-force-mobile-mode .onda-mobile-library-workspaces .btn-pill {
+  flex: 1 1 auto;
+  min-height: 44px;
+}
