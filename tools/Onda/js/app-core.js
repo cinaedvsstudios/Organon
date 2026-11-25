@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.30';
+        const ONDA_VERSION = 'v3.31';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4779,6 +4779,7 @@
         function applyInterfaceZoom(value, persist = true) {
             const zoom = Math.max(70, Math.min(130, Number(value) || 100));
             document.documentElement.style.zoom = String(zoom / 100);
+            document.documentElement.style.setProperty('--onda-inverse-zoom', String(100 / zoom));
             if (interfaceZoom) interfaceZoom.value = String(zoom);
             const readout = document.getElementById('onda-zoom-readout');
             if (readout) readout.textContent = zoom + '%';

@@ -2105,3 +2105,14 @@ body.onda-force-mobile-mode .onda-mobile-library-workspaces .btn-pill {
   flex: 1 1 auto;
   min-height: 44px;
 }
+
+/* Compensate viewport-sized layout for root zoom so the middle flex panel fills the screen. */
+body {
+  height: calc(100vh * var(--onda-inverse-zoom, 1));
+  height: calc(100dvh * var(--onda-inverse-zoom, 1));
+}
+#organon-middle-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  box-sizing: border-box;
+}
