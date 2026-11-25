@@ -1982,3 +1982,39 @@ body.onda-force-mobile-mode #library-manager-drawer #db-library-results .btn-db-
     flex: 1 1 180px;
   }
 }
+
+/* Mobile UI refinement: safe edges and usable controls in portrait and landscape.
+   Keep the existing drawer and Current queue; desktop mode is untouched. */
+body.onda-force-mobile-mode #organon-bottom-panel {
+  padding-bottom: max(10px, env(safe-area-inset-bottom, 0px));
+  left: max(8px, env(safe-area-inset-left, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
+}
+body.onda-force-mobile-mode #library-manager-drawer {
+  left: max(8px, env(safe-area-inset-left, 0px));
+  right: max(8px, env(safe-area-inset-right, 0px));
+  bottom: max(var(--mobile-library-drawer-bottom, 62px), env(safe-area-inset-bottom, 0px));
+}
+body.onda-force-mobile-mode #library-manager-drawer .library-row-buttons .btn-pill,
+body.onda-force-mobile-mode #tab-library .onda-current-queue-tools .btn-pill,
+body.onda-force-mobile-mode #tab-library .onda-current-queue-list .library-row-buttons .btn-pill {
+  min-width: 44px;
+  min-height: 44px;
+}
+body.onda-force-mobile-mode #library-manager-drawer .library-row-buttons {
+  flex-wrap: wrap;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  body.onda-force-mobile-mode #library-manager-drawer.drawer-open .library-drawer-inner {
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer .library-manager-content {
+    flex: 1 0 auto;
+    min-height: 120px;
+  }
+  body.onda-force-mobile-mode #library-manager-drawer .onda-mobile-library-nav {
+    flex-shrink: 0;
+  }
+}
