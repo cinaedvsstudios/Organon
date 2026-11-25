@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.25';
+        const ONDA_VERSION = 'v3.26';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1829,7 +1829,12 @@
             libraryDrawer.classList.remove('drawer-custom-width');
             document.documentElement.style.removeProperty('--library-drawer-width');
             document.documentElement.style.setProperty('--mobile-library-drawer-top', '8px');
-            document.documentElement.style.setProperty('--mobile-library-drawer-bottom', `${getLibraryDrawerBottomOffset()}px`);
+            const viewport = window.visualViewport;
+            const keyboardInset = viewport && viewport.scale === 1
+                ? Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop) : 0;
+            const keyboardOpen = keyboardInset > 100;
+            libraryDrawer.classList.toggle('onda-keyboard-open', keyboardOpen);
+            document.documentElement.style.setProperty('--mobile-library-drawer-bottom', `${keyboardOpen ? keyboardInset + 8 : getLibraryDrawerBottomOffset()}px`);
         }
 
         function startLibraryDrawerResize(e) {
@@ -6754,7 +6759,13 @@
                 window.clearTimeout(marqueeResizeTimer);
                 marqueeResizeTimer = window.setTimeout(scheduleMobileMarqueeRefresh, 120);
             });
-            window.addEventListener('orientationchange', () => {
+            window.visualViewport?.addEventListener('resize', () => {
+            if (libraryDrawer?.classList.contains('drawer-open') && isMobileLayoutMode()) syncMobileLibraryDrawerBounds();
+        });
+        window.visualViewport?.addEventListener('scroll', () => {
+            if (libraryDrawer?.classList.contains('drawer-open') && isMobileLayoutMode()) syncMobileLibraryDrawerBounds();
+        });
+        window.addEventListener('orientationchange', () => {
                 window.setTimeout(scheduleMobileMarqueeRefresh, 180);
             });
             if (typeof reducedMotionQuery.addEventListener === 'function') {

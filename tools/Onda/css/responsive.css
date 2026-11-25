@@ -2018,3 +2018,13 @@ body.onda-force-mobile-mode #library-manager-drawer .library-row-buttons {
     flex-shrink: 0;
   }
 }
+
+/* Keep Library search results above the on-screen keyboard. */
+#library-manager-drawer.onda-keyboard-open .library-drawer-inner {
+  min-height: 0;
+  overflow-y: auto;
+}
+#library-manager-drawer.onda-keyboard-open .library-manager-content {
+  min-height: 0;
+  overflow-y: auto;
+}
