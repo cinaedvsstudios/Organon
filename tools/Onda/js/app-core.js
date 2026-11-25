@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.26';
+        const ONDA_VERSION = 'v3.27';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1141,7 +1141,7 @@
             const playlistsForTrack = getTrackPlaylistNames(trackId);
             const tags = Array.isArray(meta.tags) ? meta.tags.slice(0, compact ? 2 : 6) : [];
             const selectIndicator = (!compact)
-                ? `<span class="selection-indicator">${selectedLibraryIds.has(trackId) ? '✓' : ''}</span>`
+                ? `<button type="button" class="selection-indicator" aria-label="Select ${escapeHtml(getDisplayTitle(meta))}" aria-pressed="${selectedLibraryIds.has(trackId)}">${selectedLibraryIds.has(trackId) ? '✓' : ''}</button>`
                 : '';
             row.innerHTML = `
                 <div class="library-row-main">
@@ -4933,6 +4933,7 @@
                     return;
                 }
 
+                if (e.target.closest('button') && !e.target.closest('.selection-indicator')) return;
                 toggleSelectedTrack(trackId);
             });
         }

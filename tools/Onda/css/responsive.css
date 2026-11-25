@@ -2028,3 +2028,15 @@ body.onda-force-mobile-mode #library-manager-drawer .library-row-buttons {
   min-height: 0;
   overflow-y: auto;
 }
+
+/* Explicit, accessible selection control; playback remains a separate action. */
+body.onda-force-mobile-mode #db-library-results button.selection-indicator {
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  touch-action: manipulation;
+}
+#db-library-results button.selection-indicator:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}

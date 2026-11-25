@@ -1,4 +1,4 @@
-/* Onda v3.26 — offline APP SHELL only.
+/* Onda v3.27 — offline APP SHELL only.
  * Never cache user audio, IndexedDB content, cloud responses, JSON libraries,
  * remote streams, or any other request not explicitly listed below.
  * First visit/update requires an internet connection. Subsequent startups may
@@ -7,36 +7,36 @@
 'use strict';
 
 const SHELL_CACHE_PREFIX = 'onda-static-shell-';
-const SHELL_CACHE = SHELL_CACHE_PREFIX + 'v3.26';
+const SHELL_CACHE = SHELL_CACHE_PREFIX + 'v3.27';
 // Kept outside SHELL_CACHE_PREFIX: the shipped v3.23 worker deletes old
 // active-shell caches during activation and must never delete a pending upgrade.
-const STAGED_SHELL_CACHE = 'onda-staged-shell-v3.26';
+const STAGED_SHELL_CACHE = 'onda-staged-shell-v3.27';
 const SHELL_FILES = [
     './index.html',
-    './css/tokens.css?v=3.26',
-    './css/base.css?v=3.26',
-    './css/layout.css?v=3.26',
-    './css/player.css?v=3.26',
-    './css/controls.css?v=3.26',
-    './css/library.css?v=3.26',
-    './css/playlists-now-playing.css?v=3.26',
-    './css/modals-settings.css?v=3.26',
-    './css/visualizer-tools.css?v=3.26',
-    './css/streaming.css?v=3.26',
-    './css/responsive.css?v=3.26',
-    './css/cloud-sync.css?v=3.26',
-    './icons/onda-icon-192.png?v=3.26',
-    './icons/onda-icon.svg?v=3.26',
-    './manifest.webmanifest?v=3.26',
-    './onda-midi.js?v=3.26',
-    './js/file-access.js?v=3.26',
-    './js/storage-audit.js?v=3.26',
-    './js/diagnostics.js?v=3.26',
-    './js/app-core.js?v=3.26',
-    './js/cloud-sync.js?v=3.26',
-    './js/media-session.js?v=3.26',
-    './js/quick-play.js?v=3.26',
-    './js/device-qa.js?v=3.26'
+    './css/tokens.css?v=3.27',
+    './css/base.css?v=3.27',
+    './css/layout.css?v=3.27',
+    './css/player.css?v=3.27',
+    './css/controls.css?v=3.27',
+    './css/library.css?v=3.27',
+    './css/playlists-now-playing.css?v=3.27',
+    './css/modals-settings.css?v=3.27',
+    './css/visualizer-tools.css?v=3.27',
+    './css/streaming.css?v=3.27',
+    './css/responsive.css?v=3.27',
+    './css/cloud-sync.css?v=3.27',
+    './icons/onda-icon-192.png?v=3.27',
+    './icons/onda-icon.svg?v=3.27',
+    './manifest.webmanifest?v=3.27',
+    './onda-midi.js?v=3.27',
+    './js/file-access.js?v=3.27',
+    './js/storage-audit.js?v=3.27',
+    './js/diagnostics.js?v=3.27',
+    './js/app-core.js?v=3.27',
+    './js/cloud-sync.js?v=3.27',
+    './js/media-session.js?v=3.27',
+    './js/quick-play.js?v=3.27',
+    './js/device-qa.js?v=3.27'
 ];
 
 const ROOT_URL = new URL('./', self.registration.scope);
