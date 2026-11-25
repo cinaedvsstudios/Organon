@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.29';
+        const ONDA_VERSION = 'v3.30';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4259,9 +4259,13 @@
             document.documentElement.style.setProperty('--settings-popup-height', 'auto');
         }
 
+        function settingsPopupZoom() { return Number(document.documentElement.style.zoom) || 1; }
+
         function setSettingsPopupPosition(x, y) {
-            const maxX = Math.max(8, window.innerWidth - advancedControls.offsetWidth - 8);
-            const maxY = Math.max(8, window.innerHeight - 48);
+            const scale = settingsPopupZoom();
+            x /= scale; y /= scale;
+            const maxX = Math.max(8, window.innerWidth / scale - advancedControls.offsetWidth - 8);
+            const maxY = Math.max(8, window.innerHeight / scale - 48);
             const safeX = Math.min(Math.max(8, x), maxX);
             const safeY = Math.min(Math.max(8, y), maxY);
             document.documentElement.style.setProperty('--settings-popup-left', `${safeX}px`);
@@ -4270,16 +4274,18 @@
         }
 
         function setSettingsPopupSize(width, height) {
-            const safeWidth = Math.min(Math.max(360, width), Math.max(360, window.innerWidth - 24));
-            const safeHeight = Math.min(Math.max(360, height), Math.max(360, window.innerHeight - 24));
+            const scale = settingsPopupZoom();
+            width /= scale; height /= scale;
+            const safeWidth = Math.min(Math.max(360, width), Math.max(360, window.innerWidth / scale - 24));
+            const safeHeight = Math.min(Math.max(360, height), Math.max(360, window.innerHeight / scale - 24));
             document.documentElement.style.setProperty('--settings-popup-width', `${safeWidth}px`);
             document.documentElement.style.setProperty('--settings-popup-height', `${safeHeight}px`);
         }
 
         function beginSettingsPopupDrag(clientX, clientY) {
             const rect = advancedControls.getBoundingClientRect();
-            document.documentElement.style.setProperty('--settings-popup-left', `${rect.left}px`);
-            document.documentElement.style.setProperty('--settings-popup-top', `${rect.top}px`);
+            document.documentElement.style.setProperty('--settings-popup-left', `${rect.left / settingsPopupZoom()}px`);
+            document.documentElement.style.setProperty('--settings-popup-top', `${rect.top / settingsPopupZoom()}px`);
             document.documentElement.style.setProperty('--settings-popup-transform', 'none');
             isDraggingPopup = true;
             dragStartX = clientX - rect.left;
@@ -4294,6 +4300,9 @@
         });
 
         btnCloseSettings.addEventListener('click', () => {
+            onPopupDragEnd();
+            onPopupTouchEnd();
+            onSettingsResizeEnd();
             advancedControls.classList.remove('is-open');
             btnToggleAdvanced.classList.remove('active-state');
             saveLocalUiStateCheckpoint('settings-popup-close');
@@ -4301,6 +4310,7 @@
         });
 
         dragHandle.addEventListener('mousedown', (e) => {
+            if (e.button !== 0 || e.target.closest('button, input, select, textarea, a, [role="button"]')) return;
             e.preventDefault();
             beginSettingsPopupDrag(e.clientX, e.clientY);
             document.addEventListener('mousemove', onPopupDragMove);
@@ -4319,6 +4329,7 @@
         }
 
         dragHandle.addEventListener('touchstart', (e) => {
+            if (e.target.closest('button, input, select, textarea, a, [role="button"]')) return;
             if (!e.touches || !e.touches.length) return;
             const touch = e.touches[0];
             beginSettingsPopupDrag(touch.clientX, touch.clientY);
