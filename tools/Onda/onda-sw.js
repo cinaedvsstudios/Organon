@@ -107,7 +107,7 @@ self.addEventListener('fetch', event => {
     if (appNavigation) {
         event.respondWith((async () => {
             try {
-                const response = await fetch(request);
+                const response = await fetch(request, { cache: 'no-store' });
                 if (response.ok) return response;
                 throw new Error('App entry unavailable');
             } catch (_) {

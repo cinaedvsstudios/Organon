@@ -78,8 +78,6 @@
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
         const ONDA_VERSION = 'v3.25';
-        const settingsVersionLabel = document.getElementById('onda-settings-version');
-        if (settingsVersionLabel) settingsVersionLabel.textContent = ONDA_VERSION;
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
