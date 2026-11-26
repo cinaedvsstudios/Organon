@@ -139,7 +139,7 @@ function drawEffect(ctx,canvas,preset) {
             // phosphor gap rather than discontinuously sized rectangles.
             const img=ctx.createImageData(w,h),period=h/90;
             for(let y=0;y<h;y++){
-                const wave=.5+.5*Math.cos((y+.5)/period*Math.PI*2);
+                const wave=.5+.5*Math.cos(y/period*Math.PI*2);
                 const alpha=Math.round(111*Math.pow(wave,2.5));
                 for(let x=0;x<w;x++)img.data[(y*w+x)*4+3]=alpha;
             }
