@@ -1291,6 +1291,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         else paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input,
             phasedAnimation:true},textPreviewTime,3);
         elements.textPreviewProgress.value=String(Math.round(textPreviewTime*100));
+        elements.textPreviewProgress.setAttribute('aria-valuetext',textPreviewTime.toFixed(2)+' seconds of 3');
+        elements.textPreviewCanvas.dataset.previewSeconds=String(textPreviewTime);
     }
     function advanceTextPreview(now){
         if(!textPreviewPlaying)return;
@@ -1318,7 +1320,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.textPreviewPlay.addEventListener('click',()=>{
         if(!textPreviewPreset)return;
         if(textPreviewPlaying){stopTextPreview();return;}
-        if(textPreviewTime>=3)textPreviewTime=0;
+        if(textPreviewTime>=3){textPreviewTime=0;drawTextPresetPreview();}
         textPreviewPlaying=true;textPreviewTimestamp=performance.now();
         elements.textPreviewPlay.textContent='⏸ Pause';
         textPreviewFrame=requestAnimationFrame(advanceTextPreview);
