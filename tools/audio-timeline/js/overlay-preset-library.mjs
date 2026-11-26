@@ -24,7 +24,7 @@ export const LEGACY_TEXT_PRESETS = Object.freeze([
     {id:'classical-gold',label:'Classical',group:'text',color:'#ffe7ab',accent:'#705127'}
 ]);
 export const EFFECT_OVERLAYS = Object.freeze([
-    {id:'vignette',label:'Vignette',group:'effect'},
+    {id:'vignette',label:'Vignette (still)',group:'effect'},
     {id:'cinema-bars',label:'Cinema bars',group:'effect'},
     {id:'sunset-leak',label:'Warm light leak',group:'effect'},
     {id:'blue-leak',label:'Blue light leak',group:'effect'},
@@ -74,10 +74,16 @@ function drawEffect(ctx,canvas,preset) {
     const w=canvas.width,h=canvas.height,u=w/640;
     let g;
     switch(preset.id){
-        case 'vignette':
-            g=ctx.createRadialGradient(w/2,h/2,h*.12,w/2,h/2,w*.67);
-            g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.88)');
-            ctx.fillStyle=g;ctx.fillRect(0,0,w,h);break;
+        case 'vignette': {
+            // Normalized elliptical optical falloff, independent of output aspect ratio.
+            // A protected clear centre and multiple soft stops avoid a visible hard ring.
+            ctx.save();
+            ctx.translate(w/2,h/2);ctx.scale(w/2,h/2);
+            g=ctx.createRadialGradient(0,0,0,0,0,Math.SQRT2);
+            for(const [r,alpha] of [[0,0],[.23,0],[.42,.035],[.58,.14],[.72,.33],[.86,.59],[1,.82]])
+                g.addColorStop(r,'rgba(0,0,0,'+alpha+')');
+            ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();break;
+        }
         case 'cinema-bars':
         case 'letterbox-gold':{
             const band=h*.115;
