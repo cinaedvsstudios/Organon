@@ -1,3 +1,4 @@
+import {renderNegativeChaos} from './timeline-negative-chaos.mjs';
 import {renderGlitchStorm} from './timeline-glitch-storm.mjs';
 import {renderGlassGlitch} from './timeline-glass-glitch.mjs';
 import {renderRetroGlitch} from './timeline-retro-glitch.mjs';
@@ -50,15 +51,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   }else if(e.presetId==='glitch-storm'){
    return renderGlitchStorm(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='negative-chaos'){
-   // Invert only changing window-shaped pieces; leave unaffected pixels normal.
-   for(let i=0;i<Math.max(6,Math.round(count*.36));i++){
-    const x=seeded(tick*19+i*31)*w,y=seeded(tick*37+i*13)*h;
-    const bw=w*(.05+seeded(i+23)*.35),bh=h*(.04+seeded(i+91)*.22);
-    ctx.save();ctx.beginPath();ctx.rect(x,y,bw,bh);ctx.clip();
-    ctx.filter='invert(1) contrast(1.35)';
-    draw(ctx,source,0,0,w,h,0,0,w,h);
-    ctx.filter='none';ctx.restore();
-   }
+   return renderNegativeChaos(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='warning-glitch'){
    // Alert-color hazard rails + angled stripes + jumping source tears.
    ctx.strokeStyle='#ff4b32';ctx.lineWidth=Math.max(3,w*.012*size);
