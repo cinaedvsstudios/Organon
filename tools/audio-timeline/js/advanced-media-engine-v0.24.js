@@ -65,6 +65,8 @@ export class AdvancedMediaEngine {
         this.previewGain = null;
         this.outputWidth = Math.max(64, Math.round(Number(canvas.width) || 1280));
         this.outputHeight = Math.max(64, Math.round(Number(canvas.height) || 720));
+        this.previewQuality = 'normal';
+        this.fullResolutionUsers = 0;
         this.stickerWorkCanvas = document.createElement('canvas');
         this.stickerWorkContext = this.stickerWorkCanvas.getContext('2d', { willReadFrequently:true });
         this.analysisContext = null;
@@ -105,10 +107,6 @@ export class AdvancedMediaEngine {
     setCanvasResolution(width, height) {
         this.outputWidth = clamp(Math.round(Number(width) || 1280), 64, 7680);
         this.outputHeight = clamp(Math.round(Number(height) || 720), 64, 7680);
-        if (this.canvas.width !== this.outputWidth || this.canvas.height !== this.outputHeight) {
-            this.canvas.width = this.outputWidth;
-            this.canvas.height = this.outputHeight;
-        }
         this.renderFrame();
         return { width:this.outputWidth, height:this.outputHeight };
     }
@@ -779,11 +777,54 @@ export class AdvancedMediaEngine {
         this.visualStackCache = stack;
         return stack;
     }
+    setPreviewQuality(quality) {
+        this.previewQuality = ['low','fast','normal'].includes(quality) ? quality : 'normal';
+        this.renderFrame();
+        return this.previewQuality;
+    }
+
+    getPreviewResolution() {
+        const scale = this.fullResolutionUsers > 0 ? 1 : ({low:.25,fast:.5,normal:1}[this.previewQuality] || 1);
+        return {width:Math.max(1,Math.round(this.outputWidth*scale)),height:Math.max(1,Math.round(this.outputHeight*scale))};
+    }
+
+    // Live MediaRecorder must keep the same full-size canvas for its whole
+    // capture lifetime. Nested users cannot restore preview size prematurely.
+    beginFullResolutionRendering() {
+        this.fullResolutionUsers++;
+        this.renderFrame();
+        let released=false;
+        return ()=>{
+            if(released)return;
+            released=true;
+            this.fullResolutionUsers=Math.max(0,this.fullResolutionUsers-1);
+            this.renderFrame();
+        };
+    }
+
     ensureCanvasSize() {
-        if (this.canvas.width !== this.outputWidth || this.canvas.height !== this.outputHeight) {
-            this.canvas.width = this.outputWidth;
-            this.canvas.height = this.outputHeight;
+        const {width,height}=this.getPreviewResolution();
+        if (this.canvas.width !== width) this.canvas.width=width;
+        if (this.canvas.height !== height) this.canvas.height=height;
+    }
+
+    // Snapshot rendering is synchronous into a separate full-sized target;
+    // the asynchronously encoded blob cannot observe later preview changes.
+    renderFullResolutionFrame() {
+        const previewCanvas=this.canvas, previewContext=this.context;
+        const target=document.createElement('canvas');
+        target.width=this.outputWidth;target.height=this.outputHeight;
+        const context=target.getContext('2d',{willReadFrequently:true});
+        if(!context)throw new Error('Full-resolution frame canvas unavailable.');
+        this.fullResolutionUsers++;
+        try{
+            this.canvas=target;this.context=context;
+            this.renderFrame();
+        }finally{
+            this.canvas=previewCanvas;this.context=previewContext;
+            this.fullResolutionUsers--;
         }
+        return target;
     }
 
     renderFrame() {
@@ -968,7 +1009,8 @@ export class AdvancedMediaEngine {
         }
         if (!this.isPlaying) await this.seek(this.currentTime, { resume: false });
         else this.renderFrame();
-        const blob=await new Promise(resolve=>this.canvas.toBlob(resolve,option.mime,option.quality));
+        const frame=this.renderFullResolutionFrame();
+        const blob=await new Promise(resolve=>frame.toBlob(resolve,option.mime,option.quality));
         if(!blob || blob.type!==option.mime)
             throw new Error(`${option.extension.toUpperCase()} snapshot could not be encoded in this browser.`);
         const url=URL.createObjectURL(blob),link=document.createElement('a');
@@ -979,7 +1021,7 @@ export class AdvancedMediaEngine {
         link.remove();
         // Some browsers begin an anchor download asynchronously.
         setTimeout(()=>URL.revokeObjectURL(url),30000);
-        return {type:blob.type,size:blob.size,width:this.canvas.width,height:this.canvas.height};
+        return {type:blob.type,size:blob.size,width:frame.width,height:frame.height};
     }
     emitTime() { this.onTimeChange?.({ currentTime:this.currentTime, duration:this.getTimelineDuration() }); }
     emitDuration() { this.onDurationChange?.(this.getTimelineDuration()); }

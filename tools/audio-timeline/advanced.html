@@ -103,6 +103,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 .file-name { display:block; overflow:hidden; color:var(--alabaster-paper); font-size:.7rem; text-overflow:ellipsis; white-space:nowrap; }
 .file-meta { display:block; margin-top:2px; color:rgba(245,240,219,.58); font:.56rem var(--font-mono); }
 .preview-card { padding:12px; }
+.preview-quality-row { display:flex;justify-content:flex-end;align-items:center;gap:6px;margin:0 0 6px;color:var(--water-spray);font:.62rem var(--font-mono); }
+.preview-quality-row select { width:auto;min-height:28px;max-width:100%; }
 .preview-stage { --preview-zoom:1; position:relative; display:grid; width:640px; max-width:100%; min-width:300px; min-height:169px; margin:0 auto; aspect-ratio:16/9; overflow:hidden; border:1px solid rgba(224,163,96,.75); border-radius:14px; background:#000; box-shadow:inset 0 0 22px rgba(0,0,0,.78); }
 .preview-stage.is-resizing { user-select:none; }
 #advanced-canvas { display:block; width:100%; height:100%; background:#000; transform:scale(var(--preview-zoom)); transform-origin:center center; will-change:transform; }
@@ -588,6 +590,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 
         <section class="column-card master-column">
             <div class="preview-card">
+                <label class="preview-quality-row"><span>Preview quality</span><select class="compact-select" id="preview-quality" aria-label="Preview quality" title="Preview processing resolution only; all exports retain project resolution"><option value="low">Low · 25%</option><option value="fast">Fast · 50%</option><option value="normal" selected>Normal · 100%</option></select></label>
                 <div class="preview-stage" id="preview-stage">
                     <canvas id="advanced-canvas" width="1280" height="720"></canvas>
                     <div class="preview-zoom-controls" aria-label="Preview zoom">

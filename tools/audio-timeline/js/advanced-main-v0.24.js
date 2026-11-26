@@ -188,6 +188,20 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         onRenderError: (error) => { elements.previewState.textContent = `Preview error: ${error.message}`; }
     });
 
+    const previewQualitySelect=document.getElementById('preview-quality');
+    const previewQualityKey='motoriclip.preview-quality.v1';
+    function applyPreviewQuality(quality,remember=false){
+        const selected=engine.setPreviewQuality(quality);
+        previewQualitySelect.value=selected;
+        if(remember){try{localStorage.setItem(previewQualityKey,selected);}catch(_){}}
+    }
+    let storedPreviewQuality='normal';
+    try{storedPreviewQuality=localStorage.getItem(previewQualityKey)||'normal';}catch(_){}
+    // Initial render is deferred until normal editor setup has finished.
+    engine.previewQuality=['low','fast','normal'].includes(storedPreviewQuality)?storedPreviewQuality:'normal';
+    previewQualitySelect.value=engine.previewQuality;
+    previewQualitySelect.addEventListener('change',()=>applyPreviewQuality(previewQualitySelect.value,true));
+
     const timeline = new AdvancedTimeline({
         lanesElement: document.getElementById('timeline-lanes'),
         rulerElement: document.getElementById('timeline-ruler'),
@@ -402,7 +416,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function applyCanvasResolution({ announce = false, remember = false } = {}) {
         const width = clamp(Math.round(Number(elements.canvasWidth.value) || 1280), 64, 7680);
         const height = clamp(Math.round(Number(elements.canvasHeight.value) || 720), 64, 7680);
-        if(remember && (elements.canvas.width!==width || elements.canvas.height!==height))
+        if(remember && (engine.outputWidth!==width || engine.outputHeight!==height))
             recordHistory('Change canvas resolution');
         elements.canvasWidth.value = String(width); elements.canvasHeight.value = String(height);
         engine.setCanvasResolution(width, height);
@@ -491,7 +505,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             // Source of truth is the applied canvas, not an input the user has
             // typed into but has not yet applied.
             settings:{
-                canvasWidth:elements.canvas.width,canvasHeight:elements.canvas.height,
+                canvasWidth:engine.outputWidth,canvasHeight:engine.outputHeight,
                 fps:engine.projectFps,previewZoom:state.previewZoom
             }
         });
@@ -507,8 +521,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             // Persist the settings actually applied to the render engine.
             // A user may still be typing a new width/height into the dialog:
             // saving those uncommitted inputs corrupts recovery on refresh.
-            canvasWidth:elements.canvas.width,
-            canvasHeight:elements.canvas.height,
+            canvasWidth:engine.outputWidth,
+            canvasHeight:engine.outputHeight,
             fps:engine.projectFps,
             previewZoom:state.previewZoom,
             markers:state.timelineMarkers,
