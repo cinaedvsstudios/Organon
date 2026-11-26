@@ -2090,22 +2090,6 @@ body.onda-force-mobile-mode #db-library-results button.selection-indicator {
   }
 }
 
-/* Mobile workspace shortcuts replace duplicate main navigation, not the workspaces. */
-.onda-mobile-library-workspaces { display: none; }
-body.onda-force-mobile-mode #tab-btn-files,
-body.onda-force-mobile-mode #tab-btn-history,
-body.onda-force-mobile-mode #tab-btn-playlists { display: none !important; }
-body.onda-force-mobile-mode .onda-mobile-library-workspaces {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  padding: 4px 8px;
-}
-body.onda-force-mobile-mode .onda-mobile-library-workspaces .btn-pill {
-  flex: 1 1 auto;
-  min-height: 44px;
-}
-
 /* Compensate viewport-sized layout for root zoom so the middle flex panel fills the screen. */
 body {
   height: calc(100vh * var(--onda-inverse-zoom, 1));
@@ -2162,3 +2146,9 @@ body {
  body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill{min-width:44px;min-height:44px}
  body.onda-force-mobile-mode .playlist-detail-track-row .library-row-buttons{flex-wrap:wrap}
 }
+
+/* Workspace navigation lives in the drawer on every layout. */
+.onda-drawer-workspaces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;padding:8px;flex:0 0 auto;border-bottom:1px solid rgba(117,178,222,.2)}
+.onda-drawer-workspaces .mode-tab-btn{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:44px;white-space:normal;padding:6px 8px}
+.onda-drawer-workspaces .mode-tab-label,.workspace-mode-bar #tab-btn-library .mode-tab-label{display:inline}
+.workspace-mode-bar #tab-btn-library{flex:0 1 auto;min-width:110px;min-height:36px}

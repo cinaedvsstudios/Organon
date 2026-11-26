@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.40';
+        const ONDA_VERSION = 'v3.41';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -331,7 +331,7 @@
 
                 const savedTab = localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY);
                 if (savedTab && document.getElementById(savedTab)) {
-                    switchWorkspaceTab(savedTab);
+                    switchWorkspaceTab(savedTab === 'tab-youtube' ? 'tab-library' : savedTab);
                 }
             } catch (err) {
                 console.warn('Could not restore local UI screen:', err);
@@ -4777,9 +4777,6 @@
         window.addEventListener('pointerup', endLibraryDrawerCornerResize);
         window.addEventListener('pointercancel', endLibraryDrawerCornerResize);
         safeBind('btn-close-library-manager', 'click', () => toggleLibraryDrawer(false));
-        safeBind('btn-mobile-open-add', 'click', () => switchWorkspaceTab('tab-files'));
-        safeBind('btn-mobile-open-history', 'click', () => switchWorkspaceTab('tab-history'));
-        safeBind('btn-mobile-open-playlists', 'click', () => switchWorkspaceTab('tab-playlists'));
         const interfaceZoom = document.getElementById('onda-interface-zoom');
         function applyInterfaceZoom(value, persist = true) {
             const zoom = Math.max(70, Math.min(130, Number(value) || 100));

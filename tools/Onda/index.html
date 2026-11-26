@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css?v=3.40" rel="stylesheet"/><link href="css/base.css?v=3.40" rel="stylesheet"/><link href="css/layout.css?v=3.40" rel="stylesheet"/><link href="css/player.css?v=3.40" rel="stylesheet"/><link href="css/controls.css?v=3.40" rel="stylesheet"/><link href="css/library.css?v=3.40" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.40" rel="stylesheet"/><link href="css/modals-settings.css?v=3.40" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.40" rel="stylesheet"/><link href="css/streaming.css?v=3.40" rel="stylesheet"/><link href="css/responsive.css?v=3.40" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.40" rel="stylesheet"/>
+<head><link href="css/tokens.css?v=3.41" rel="stylesheet"/><link href="css/base.css?v=3.41" rel="stylesheet"/><link href="css/layout.css?v=3.41" rel="stylesheet"/><link href="css/player.css?v=3.41" rel="stylesheet"/><link href="css/controls.css?v=3.41" rel="stylesheet"/><link href="css/library.css?v=3.41" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.41" rel="stylesheet"/><link href="css/modals-settings.css?v=3.41" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.41" rel="stylesheet"/><link href="css/streaming.css?v=3.41" rel="stylesheet"/><link href="css/responsive.css?v=3.41" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.41" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
 <meta name="theme-color" content="#1e201c"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.40"/>
-<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.40"/>
-<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.40"/>
-<link rel="manifest" href="manifest.webmanifest?v=3.40"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.41"/>
+<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.41"/>
+<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.41"/>
+<link rel="manifest" href="manifest.webmanifest?v=3.41"/>
 <title>Onda Media Player - Engine</title>
 
 
@@ -77,16 +77,16 @@
 <div id="organon-middle-panel">
 <!-- Workspace Mode Selection Tabs Bar -->
 <div class="workspace-mode-bar">
-<button class="mode-tab-btn tab-active" data-workspace-tab="tab-files" id="tab-btn-files" type="button"><span class="mode-tab-icon">📥</span><span class="mode-tab-label">Add</span></button>
-<button class="mode-tab-btn" data-workspace-tab="tab-history" id="tab-btn-history" type="button"><span class="mode-tab-icon">🕘</span><span class="mode-tab-label">History</span></button>
-<button class="mode-tab-btn" data-workspace-tab="tab-playlists" id="tab-btn-playlists" type="button"><span class="mode-tab-icon">📚</span><span class="mode-tab-label">Playlists</span></button>
-<button class="mode-tab-btn" data-workspace-tab="tab-library" id="tab-btn-library" type="button"><span class="mode-tab-icon">🧿</span><span class="mode-tab-label">Current</span></button>
-<button class="mode-tab-btn" data-workspace-tab="tab-youtube" id="tab-btn-youtube" type="button"><span class="mode-tab-icon">🌐</span><span class="mode-tab-label">Stream</span></button>
+
+
+
+<button class="mode-tab-btn tab-active" data-workspace-tab="tab-library" id="tab-btn-library" type="button"><span class="mode-tab-icon">🧿</span><span class="mode-tab-label">Current</span></button>
+
 </div>
 <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
 <div class="organon-card workspace-card-shell" id="workspace-viewport">
 <!-- Tab 1 View: Pure Drag and Drop Zone -->
-<div class="viewport-content active-content" id="tab-files">
+<div class="viewport-content" id="tab-files">
 <div class="drop-zone-panel" id="drop-zone">
 <div class="drop-zone-title">DRAG &amp; DROP AUDIO, VIDEO OR MIDI FILES HERE</div>
 <span class="drop-zone-subtitle">(Or click to browse Hard Drive)</span>
@@ -142,7 +142,7 @@
 <div class="playlist-detail-panel u-hidden" id="playlist-detail-panel"></div>
 </div>
 <!-- Tab 5 View: Now Playing / Active Track File Info -->
-<div class="viewport-content" id="tab-library">
+<div class="viewport-content active-content" id="tab-library">
 <div id="metadata-display-card">
 <div class="card-header card-header-loose">
 <div class="inline-wrap-row">
@@ -292,7 +292,7 @@
 </div>
 <!-- PANEL 3: Bottom Sticky -->
 <div class="sticky-panel onda-bottom-bar-v3" id="organon-bottom-panel">
-<button class="btn-pill" id="btn-database-engine">📚 Library</button>
+<button class="btn-pill" id="btn-database-engine">☰ Menu / Library</button>
 <button class="btn-pill onda-bottom-mini-pill" id="btn-toggle-layout-mode" title="Toggle mobile / desktop layout" type="button">📱</button>
 <button class="btn-pill onda-bottom-mini-pill" id="btn-toggle-fullscreen" title="Toggle fullscreen" type="button">⛶</button>
 </div>
@@ -301,7 +301,7 @@
 <div class="library-drawer-inner">
 <div class="library-drawer-header">
 <div class="library-drawer-title-row">
-<div class="library-drawer-title">Library</div>
+<div class="library-drawer-title">Menu / Library</div>
 <div aria-label="Library quick actions" class="mobile-library-header-actions">
 <button class="tiny-icon-btn" data-library-action-panel="select" id="btn-mobile-select-mode" title="Select" aria-label="Select multiple tracks" aria-pressed="false" type="button">☝️</button>
 <button class="tiny-icon-btn" data-library-action-panel="settings" id="btn-mobile-settings-mode" title="Settings" aria-label="Library settings" type="button">⚙️</button>
@@ -318,7 +318,9 @@
 <button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview an unsaved audio file without importing">▶ Quick Play</button>
 <button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="View storage health and cached audio">Storage</button>
 </div>
-<div class="onda-mobile-library-workspaces"><button type="button" class="btn-pill" id="btn-mobile-open-add">📥 Add workspace</button><button type="button" class="btn-pill" id="btn-mobile-open-history">🕘 Full History</button><button type="button" class="btn-pill" id="btn-mobile-open-playlists">📚 Full Playlists</button></div>
+<nav class="onda-drawer-workspaces" aria-label="Onda workspaces"><button class="mode-tab-btn" data-workspace-tab="tab-files" id="tab-btn-files" type="button"><span class="mode-tab-icon">📥</span><span class="mode-tab-label">Add</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-history" id="tab-btn-history" type="button"><span class="mode-tab-icon">🕘</span><span class="mode-tab-label">History</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-playlists" id="tab-btn-playlists" type="button"><span class="mode-tab-icon">📚</span><span class="mode-tab-label">Playlists</span></button></nav>
 <div class="onda-library-status" id="onda-library-status" aria-live="polite"></div>
 <div class="library-manager-toolbar">
 <div class="search-input-wrap">
@@ -400,7 +402,7 @@
 <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
 <div class="draggable-popup" id="settings-popup">
 <div class="popup-drag-handle" id="settings-drag-handle">
-<span>☷ Settings &amp; Extras · v3.40</span>
+<span>☷ Settings &amp; Extras · v3.41</span>
 <span class="popup-close" id="btn-close-settings">×</span>
 </div>
 <div class="popup-body">
@@ -694,7 +696,7 @@
 <!-- Toast popup notices -->
 <div class="organon-toast" id="toast-notice">Action Confirmed!</div>
 
-<script src="./onda-midi.js?v=3.40"></script>
+<script src="./onda-midi.js?v=3.41"></script>
 <!-- Onda Cloud Sync + Setup Wizard (Netlify Blobs) -->
 
 <div class="onda-cloud-modal-overlay" id="onda-cloud-modal-overlay"></div>
@@ -742,7 +744,7 @@
 
 
 
-<script src="js/file-access.js?v=3.40"></script><script src="js/storage-audit.js?v=3.40"></script><script src="js/diagnostics.js?v=3.40"></script><script src="js/app-core.js?v=3.40"></script><script src="js/cloud-sync.js?v=3.40"></script><script src="js/media-session.js?v=3.40"></script><script src="js/quick-play.js?v=3.40"></script><script src="js/device-qa.js?v=3.40"></script>
+<script src="js/file-access.js?v=3.41"></script><script src="js/storage-audit.js?v=3.41"></script><script src="js/diagnostics.js?v=3.41"></script><script src="js/app-core.js?v=3.41"></script><script src="js/cloud-sync.js?v=3.41"></script><script src="js/media-session.js?v=3.41"></script><script src="js/quick-play.js?v=3.41"></script><script src="js/device-qa.js?v=3.41"></script>
 <!-- The offline shell stores only this app's static UI assets, never music or profiles. -->
 <script>
 if ('serviceWorker' in navigator && window.isSecureContext) {
