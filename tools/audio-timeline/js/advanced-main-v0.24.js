@@ -1608,6 +1608,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
+        // Identify the selected effect even when the Inspector stays open.
+        elements.effectInspector.dataset.presetId=multiple?'':(track?.effectOverlay?.presetId||'');
+        elements.effectInspector.dataset.clipId=multiple?'':(track?.effectOverlay?track.id:'');
+        if(!elements.effectInspector.hidden){
+            const preset=TIMELINE_EFFECTS.find(item=>item.id===track.effectOverlay.presetId);
+            elements.effectInspector.querySelector('h3').textContent=preset?.label||'Procedural effect';
+        }
         const isStarburst=track?.effectOverlay?.presetId==='starburst';
         const isLightSweep=track?.effectOverlay?.presetId==='light-sweep';
         const isCameraFrame=track?.effectOverlay?.presetId==='camera-frame';
