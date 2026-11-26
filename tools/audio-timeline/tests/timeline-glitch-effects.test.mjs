@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {buildNoirGlitchFrame} from '../js/timeline-noir-glitch.mjs';
 import {buildMisalignmentFrame} from '../js/timeline-misalignment.mjs';
 import {buildWarningGlitchFrame} from '../js/timeline-warning-glitch.mjs';
 import {buildNegativeChaosFrame} from '../js/timeline-negative-chaos.mjs';
@@ -50,6 +51,7 @@ test('nine genuinely different source-aware glitch IDs populate the existing Gli
 test('nine glitches render distinct structures and reproducible frames under backwards seeking',()=>{
  const signatures=new Set();
  for(const {id} of GLITCH_PRESETS){
+  if(id==='noir-glitch'){const a=noirFrame(.24),b=noirFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,noirFrame(.24).data);signatures.add('source-pixel noir film');continue;}
   if(id==='misalignment'){const a=misalignFrame(.24),b=misalignFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,misalignFrame(.24).data);signatures.add('source-pixel registration ghosts');continue;}
   if(id==='warning-glitch'){const a=warningFrame(.24),b=warningFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,warningFrame(.24).data);signatures.add('source-pixel warning telemetry');continue;}
   if(id==='negative-chaos'){const a=negativeFrame(.24),b=negativeFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,negativeFrame(.24).data);signatures.add('source-pixel negative regions');continue;}
@@ -72,7 +74,7 @@ test('effect algorithms use different geometry, filters and colour operations',(
  assert.ok(new Set(negativeFrame(.43).regions.map(r=>r.shape)).size>=2,'Negative Chaos uses independent irregular inversion regions');
  assert.ok(warningFrame(.43).state.rail>0&&warningFrame(.43).state.bands.length>2,'Warning Glitch combines hazard rails and source dropouts');
  assert.equal(misalignFrame(.43).state.ghosts.length,2,'Misalignment creates two independently registered images');
- assert.ok(sample['noir-glitch'].includes('grayscale'),'Noir Glitch uses monochrome contrast');
+ assert.ok(noirFrame(.43).state.bands.length===3&&noirFrame(.43).state.scratches.length>2,'Noir Glitch combines shutter faults and scratches');
  assert.ok(sample['glitch-flux'].includes('"drawImage"')||sample['glitch-flux'].includes('"fillRect"'));
  assert.ok(sample['engine-heat'].includes('"fillRect"')&&!sample['engine-heat'].includes('"bezierCurveTo"'),
   'Engine Heat should not draw fake vertical heat tendrils');
@@ -82,6 +84,7 @@ test('effect algorithms use different geometry, filters and colour operations',(
 test('source-aware effects reproject underlying frame pixels, not a static preset PNG',()=>{
  const frame={width:640,height:360};
  for(const {id} of GLITCH_PRESETS){
+  if(id==='noir-glitch'){assert.notDeepEqual(noirFrame(.55).data,negativeSource());continue;}
   if(id==='misalignment'){assert.notDeepEqual(misalignFrame(.55).data,glassSource());continue;}
   if(id==='warning-glitch'){assert.notDeepEqual(warningFrame(.55,{warningOpacity:0}).data,glassSource());continue;}
   if(id==='negative-chaos'){assert.notDeepEqual(negativeFrame(.55).data,negativeSource());continue;}
@@ -247,5 +250,24 @@ test('Misalignment independently registers two complete source-image ghosts',()=
  assert.deepEqual(snapshotClip({id:'misalign',type:'sticker',effectOverlay:e}).effectOverlay,e);
  const contaminated=src.slice();for(let i=0;i<src.length;i+=4)if(!src[i+3])contaminated.set([255,0,255,0],i);
  const clean=misalignFrame(.24,{},contaminated).data;
+ for(let i=0;i<src.length;i+=4)if(src[i+3])assert.deepEqual(a.data.slice(i,i+4),clean.slice(i,i+4));
+});
+
+function noirFrame(t,opts={},src=negativeSource(),amount=1){
+ const e=normaliseTimelineEffect({presetId:'noir-glitch',distortion:90,density:85,scale:100,direction:25,noirContrast:65,noirGrain:65,noirWeave:90,noirShutter:80,noirScratches:75,noirVignette:60,noirSeed:1946,...opts});
+ return buildNoirGlitchFrame(src,GW,GH,e,t,undefined,amount);
+}
+test('Noir Glitch renders monochrome film response and independent deterministic interference',()=>{
+ const src=negativeSource(),a=noirFrame(.24),b=noirFrame(1.34);
+ assert.deepEqual(noirFrame(.24,{},src,0).data,src);
+ assert.notDeepEqual(a.data,src);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,noirFrame(.24).data);
+ let changed=0;for(let i=0;i<src.length;i+=4){assert.equal(a.data[i+3],src[i+3]);if(src[i+3]){assert.equal(a.data[i],a.data[i+1]);assert.equal(a.data[i],a.data[i+2]);if(a.data[i]!==src[i])changed++;}}
+ assert.ok(changed>100);
+ for(const [k,v] of Object.entries({noirContrast:0,noirGrain:0,noirWeave:0,noirShutter:0,noirScratches:0,noirVignette:0,noirSeed:42,density:12,scale:180,direction:100,distortion:20}))
+ assert.notDeepEqual(a.data,noirFrame(.24,{[k]:v}).data,k);
+ const e=normaliseTimelineEffect({presetId:'noir-glitch',noirSeed:42,noirShutter:13,noirGrain:80});
+ assert.deepEqual(snapshotClip({id:'noir',type:'sticker',effectOverlay:e}).effectOverlay,e);
+ const contaminated=src.slice();for(let i=0;i<src.length;i+=4)if(!src[i+3])contaminated.set([255,0,255,0],i);
+ const clean=noirFrame(.24,{},contaminated).data;
  for(let i=0;i<src.length;i+=4)if(src[i+3])assert.deepEqual(a.data.slice(i,i+4),clean.slice(i,i+4));
 });
