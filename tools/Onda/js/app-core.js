@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.39';
+        const ONDA_VERSION = 'v3.40';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -2999,18 +2999,11 @@
 
         function shouldShowStartupRecovery(restoredFromLocal, restoredFromIdb) {
             if (getCurrentTrackCountForStorage() > 0) return false;
-            const hasSomeSettings = [
-                VISUALIZER_STORAGE_KEY,
-                VISUALIZER_ACTIVE_STACK_KEY,
-                ACTIVE_WORKSPACE_TAB_KEY,
-                LIBRARY_MOBILE_VIEW_KEY,
-                MOBILE_DB_ICON_STORAGE_KEY,
-                LOCAL_UI_SAVE_EVENT_KEY,
-                ONDA_LAST_LIBRARY_SAVE_KEY
-            ].some(key => {
-                try { return !!localStorage.getItem(key); } catch (err) { return false; }
-            });
-            return !(restoredFromLocal || restoredFromIdb) || !hasSomeSettings;
+            const state = describeStartupStorageState();
+            const previous = safeGetLocalStorageJson(ONDA_LAST_LIBRARY_SAVE_KEY);
+            // An empty/new browser is a valid local session, not a recovery failure.
+            return Math.max(state.localStoragePrimaryTracks, state.localStorageBackupTracks,
+                state.localStorageLastGoodTracks, Number(previous?.trackCount) || 0) > 0;
         }
 
         async function initialisePersistentLibraryStorage() {
@@ -3032,7 +3025,7 @@
             if ((restoredFromLocal || restoredFromIdb) && getCurrentTrackCountForStorage() > 0) {
                 saveActiveLibraryState('post-restore-confirmation');
             } else if (shouldShowStartupRecovery(restoredFromLocal, restoredFromIdb)) {
-                setTimeout(() => openStartupRecoveryModal(), 350);
+                setTimeout(() => { if (!getCurrentTrackCountForStorage()) openStartupRecoveryModal('A previously saved library appears to be missing. Restore a backup if needed.'); }, 350);
             }
             finishStorageRestore?.({ trackCount: getCurrentTrackCountForStorage() });
         }
@@ -4677,10 +4670,8 @@
 
         safeBind('btn-startup-upload-backup', 'click', () => document.getElementById('startup-backup-file-input')?.click());
         safeBind('btn-startup-use-online', 'click', () => importOndaJsonFromUrl(document.getElementById('startup-online-library-url')?.value || ''));
-        safeBind('btn-startup-continue-empty', 'click', () => {
-            closeStartupRecoveryModal();
-            saveActiveLibraryState('startup-continue-empty');
-        });
+        safeBind('btn-db-recovery', 'click', () => openStartupRecoveryModal());
+        safeBind('btn-startup-continue-empty', 'click', closeStartupRecoveryModal);
         safeBind('btn-startup-recovery-close', 'click', closeStartupRecoveryModal);
 
         document.getElementById('startup-backup-file-input')?.addEventListener('change', async (e) => {
