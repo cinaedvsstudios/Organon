@@ -91,7 +91,8 @@ try{
     await page.goto('http://127.0.0.1:'+server.address().port+
         '/tools/audio-timeline/tests/browser-harness.html');
     const cdp=await context.newCDPSession(page);
-    await page.evaluate(async()=>{
+    const stacked=process.env.MOTORICLIP_STACKED_REPEAT==='1';
+    await page.evaluate(async stacked=>{
         const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
             import('../js/advanced-offline-export.mjs'),
             import('../js/advanced-media-engine-v0.24.js')
@@ -129,11 +130,30 @@ try{
             onTimeChange(){},onDurationChange(){},onPlaybackChange(){},
             onRenderError(error){throw error}
         });
-        engine.tracks=[background,...clips];
+        const tracks=[background,...clips];
+        if(stacked){
+            const blank=document.createElement('canvas');blank.width=4;blank.height=4;
+            const blob=await new Promise(done=>blank.toBlob(done,'image/png'));
+            const file=new File([blob],'repeat-procedural.png',{type:'image/png'});
+            const media=new Image(),src=URL.createObjectURL(file);
+            try{await new Promise((done,fail)=>{media.onload=done;media.onerror=fail;media.src=src;});}
+            finally{URL.revokeObjectURL(src);}
+            for(const [index,presetId] of ['starburst','camera-frame'].entries()){
+                tracks.push({id:presetId,type:'sticker',file,media,sourceName:file.name,
+                    start:0,sourceOffset:0,sourceDuration:8,clipDuration:8,order:index+3,
+                    visible:true,opacity:.8,blendMode:'source-over',transparency:{mode:'native'},
+                    effectOverlay:{presetId,intensity:65,glow:45,scale:100,color:'#ffe09c',
+                        speed:1,density:50,seed:79}});
+            }
+        }
+        engine.tracks=tracks;
         const state={engine,canvas,run:0,downloads:0,progress:[],phases:[]};
         state.exporter=new AdvancedOfflineExporter({
             engine,
-            onProgress:({percent})=>state.progress.push(percent),
+            onProgress:({percent})=>{
+                state.progress.push(percent);
+                if(state.cancelAtFive&&percent>=5){state.cancelAtFive=false;void state.exporter.cancel();}
+            },
             onState:({phase})=>state.phases.push(phase),
             onDownload:({blob,extension})=>{
                 state.downloads++;
@@ -146,7 +166,20 @@ try{
             }
         });
         window.__motoriRecovery=state;
-    });
+    },stacked);
+    if(stacked){
+        const cancelled=await page.evaluate(async()=>{
+            const state=window.__motoriRecovery;state.cancelAtFive=true;
+            const result=await state.exporter.start({format:'webm',fps:25,bitrateKbps:3000});
+            return {result,busy:state.exporter.busy,inputs:state.exporter.inputs.size,output:state.exporter.output,
+                downloads:state.downloads,phases:state.phases,clips:state.engine.tracks.length};
+        });
+        assert.equal(cancelled.result,false);assert.equal(cancelled.busy,false);
+        assert.equal(cancelled.inputs,0);assert.equal(cancelled.output,null);
+        assert.equal(cancelled.downloads,0);assert.equal(cancelled.clips,5);
+        assert.ok(cancelled.phases.includes('cancelled'));
+        console.log('[MotoriClip 79] PASS stacked cancellation and cleanup; retry follows');
+    }
     await cdp.send('HeapProfiler.collectGarbage');
     await page.waitForTimeout(900);
     const initial=processMemory(process.pid);
@@ -187,7 +220,7 @@ try{
             assert.equal(result.remainingInputs,0);
             assert.equal(result.pendingOutput,null);
             assert.equal(result.playhead,0);
-            assert.equal(result.clipCount,3);
+            assert.equal(result.clipCount,stacked?5:3);
             assert.equal(result.downloads,cycle);
             assert.equal(result.progress,100);
             assert.ok(result.phases.includes('complete'));
@@ -220,6 +253,7 @@ try{
             const summary={
                 cycle,renderMs:result.elapsedMs,wallMs:Date.now()-started,
                 frames:200,container:'webm',duration:Number(media.format.duration),
+                proceduralEffects:stacked?2:0,encodedFramesPerSecond:Number((200000/result.elapsedMs).toFixed(2)),
                 chromeBaselineMiB:before.pssMiB,
                 chromePeakMiB:peak,
                 chromeAfterIdleGcMiB:after.pssMiB,
