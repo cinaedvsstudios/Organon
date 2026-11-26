@@ -2135,3 +2135,30 @@ body {
 .onda-travel-check{width:min(90vw,650px)}.onda-travel-check summary{cursor:pointer;padding:10px;border-bottom:1px solid #514237;color:#d6ad78}.onda-travel-check li{padding:3px;overflow-wrap:anywhere}.onda-travel-check p{margin:4px 0}
 
 .onda-reorder-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid #514237;padding:6px}.onda-reorder-row span{flex:1;overflow-wrap:anywhere}.onda-reorder-row button{min-width:44px;min-height:44px}.onda-reorder-row button:disabled{opacity:.35}
+
+/* v3.36: shared dialog and playlist presentation; no playback changes. */
+.onda-bulk-grid{width:min(calc(94vw * var(--onda-inverse-zoom,1)),1200px);max-height:calc(88dvh * var(--onda-inverse-zoom,1));padding:clamp(10px,2vw,20px);box-shadow:0 16px 48px #0008}
+.onda-bulk-grid header{color:var(--stone-ochre,#d6ad78);font-weight:700;font-size:1.05rem;padding-bottom:10px;border-bottom:1px solid #80603b}
+.onda-bulk-grid footer{justify-content:flex-end;padding-top:10px;border-top:1px solid #514237}
+.onda-bulk-grid button{min-height:40px;cursor:pointer;font:inherit}
+.onda-bulk-grid button:hover:not(:disabled){border-color:#d6ad78;background:#42362c}
+.onda-bulk-grid button:focus-visible,.onda-bulk-grid input:focus-visible,.onda-bulk-grid summary:focus-visible{outline:2px solid #75b2de;outline-offset:2px}
+.onda-bulk-grid button[data-save]{background:#59442d;border-color:#c39b65}
+.onda-bulk-grid .bulk-tools input[type=search]{flex:1 1 160px;min-width:0}
+.onda-bulk-grid tbody tr:nth-child(even){background:#ffffff05}
+.onda-bulk-grid .bulk-scroll{overscroll-behavior:contain;scrollbar-color:#80603b #211f22}
+.onda-travel-check{width:min(calc(90vw * var(--onda-inverse-zoom,1)),650px)}
+.onda-travel-check details{background:#ffffff04;border-radius:6px;margin-bottom:5px}
+.onda-travel-check summary{min-height:24px;overflow-wrap:anywhere}
+.playlist-detail-title,.playlist-row-title{overflow-wrap:anywhere;min-width:0}
+.playlist-detail-header .playlist-row-tools{flex-wrap:wrap;gap:6px}
+.playlist-detail-track-row .onda-track-text-wrap{min-width:0}
+@media (max-width:768px){
+ .onda-bulk-grid button,.onda-bulk-grid .bulk-tools summary{min-height:44px}
+ .onda-bulk-grid .bulk-tools summary{display:flex;align-items:center}
+ .onda-bulk-grid .bulk-tools{gap:6px}
+ .onda-bulk-grid footer span{flex:1 0 100%}
+ .onda-bulk-grid td input{font-size:16px;min-height:36px}
+ body.onda-force-mobile-mode .playlist-detail-header .playlist-row-tools .btn-pill{min-width:44px;min-height:44px}
+ body.onda-force-mobile-mode .playlist-detail-track-row .library-row-buttons{flex-wrap:wrap}
+}
