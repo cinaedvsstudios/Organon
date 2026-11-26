@@ -1,3 +1,4 @@
+import {renderMisalignment} from './timeline-misalignment.mjs';
 import {renderWarningGlitch} from './timeline-warning-glitch.mjs';
 import {renderNegativeChaos} from './timeline-negative-chaos.mjs';
 import {renderGlitchStorm} from './timeline-glitch-storm.mjs';
@@ -56,16 +57,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   }else if(e.presetId==='warning-glitch'){
    return renderWarningGlitch(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='misalignment'){
-   // Offset semitransparent source ghosts; not horizontal strip tearing.
-   const dx=(4+amp*2)*Math.sin(t*4+rad);
-   const dy=(3+amp)*Math.cos(t*3+rad);
-   ctx.save();ctx.globalCompositeOperation='screen';
-   ctx.globalAlpha=amount*.3;
-   ctx.filter='sepia(1) hue-rotate(155deg) saturate(4)';
-   draw(ctx,source,0,0,w,h,dx,dy,w,h);
-   ctx.filter='sepia(1) hue-rotate(305deg) saturate(4)';
-   draw(ctx,source,0,0,w,h,-dx,-dy,w,h);
-   ctx.restore();
+   return renderMisalignment(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='noir-glitch'){
    // High-contrast black-and-white vision interrupted by noir shutters.
    ctx.filter='grayscale(1) contrast(2.1)';
