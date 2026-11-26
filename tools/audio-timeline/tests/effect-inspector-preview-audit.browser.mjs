@@ -57,7 +57,7 @@ try{
  await page.locator('#text-preview-play').click();const stopped=await capture();await page.waitForTimeout(120);assert.deepEqual(await capture(),stopped);
  await page.keyboard.press('Escape');assert.equal(await modal.isHidden(),true);
  console.log('[MotoriClip #68 play pause loop restart stop] PASS');
- for(const id of ['pixel-scan','particle-dust','fire-embers','god-rays','halo-blur','rhythmic-flicker','camera-frame']){
+ for(const {id} of catalog){
   const entry=catalog.find(p=>p.id===id);await page.locator('#effects-library-grid [data-preset-id="'+id+'"]').click();
   // Generated file insertion is asynchronous; wait for the new selection.
   await page.locator('#inspector-timeline-effect[data-selected-preset-id="'+id+'"]').waitFor({state:'visible'});
@@ -75,4 +75,42 @@ try{
   console.log('[MotoriClip #67 native common groups] PASS',id,entry.groups.join(','));
  }
  assert.deepEqual(errors,[]);
+ // Independent native editor: modify a visible recipe, verify history and portable project persistence.
+ const ui=await browser.newPage({acceptDownloads:true,viewport:{width:1450,height:900}}),uiErrors=[];
+ ui.on('pageerror',e=>uiErrors.push(String(e)));
+ await ui.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',{waitUntil:'domcontentloaded'});
+ await ui.locator('[data-library-tab="effects"]').click();
+ await ui.locator('#effects-library-grid [data-preset-id="starburst"]').click();
+ await ui.locator('#inspector-timeline-effect[data-selected-preset-id="starburst"]').waitFor({state:'visible'});
+ const set=async(id,value)=>ui.locator('#'+id).evaluate((el,v)=>{el.focus();el.value=String(v);el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));el.blur();},value);
+ const seek=async t=>ui.evaluate(async t=>{const el=document.getElementById('preview-seek');el.value=String(t);el.dispatchEvent(new Event('input',{bubbles:true}));await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));return document.getElementById('advanced-canvas').toDataURL();},t);
+ const original=await seek(.7);
+ for(const [id,value] of Object.entries({'effect-speed':2.3,'effect-glow':38,'effect-origin-x':66,'effect-origin-y':24,'effect-color':'#36c9fa','effect-ray-count':27}))await set(id,value);
+ const changed=await seek(.7);assert.notEqual(changed,original,'Recipe edits visibly affect preview');
+ const beforeDuration=await ui.locator('#effect-duration').inputValue();
+ await set('effect-duration',4.5);assert.equal(await ui.locator('#effect-duration').inputValue(),'4.5');
+ await ui.locator('#btn-undo').click();assert.equal(await ui.locator('#effect-duration').inputValue(),beforeDuration);
+ assert.equal(await seek(.7),changed,'Duration undo preserves changed recipe pixels');
+ await ui.locator('#btn-redo').click();assert.equal(await ui.locator('#effect-duration').inputValue(),'4.5');
+ await seek(.7);
+ // Clip visual keyframes must coexist with the effect recipe and survive serialization.
+ const diamond=ui.locator('[data-keyframe="transform.opacity"]');
+ await diamond.evaluate(b=>b.click());
+ await set('visual-transform-opacity',61);
+ const savedPixels=await seek(.7);
+ const pending=ui.waitForEvent('download',{timeout:20000});
+ await ui.locator('#btn-save-project').click();
+ const download=await pending,bytes=readFileSync(await download.path()),saved=JSON.parse(bytes.toString());
+ const clip=saved.tracks.find(t=>t.effectOverlay?.presetId==='starburst');assert.ok(clip);
+ assert.equal(clip.clipDuration,4.5);assert.equal(clip.effectOverlay.speed,2.3);
+ assert.equal(clip.effectOverlay.glow,38);assert.equal(clip.effectOverlay.originX,66);assert.equal(clip.effectOverlay.originY,24);
+ assert.equal(clip.effectOverlay.color,'#36c9fa');assert.equal(clip.effectOverlay.rayCount,27);
+ assert.ok(clip.keyframes?.['transform.opacity']?.length,'Visual keyframe must persist alongside recipe');
+ await ui.locator('#project-open-input').setInputFiles({name:download.suggestedFilename(),mimeType:'application/json',buffer:bytes});
+ await ui.locator('#timeline-action-modal').waitFor({state:'visible'});await ui.locator('#timeline-action-apply').click();
+ await ui.locator('#timeline-action-modal').waitFor({state:'hidden'});
+ await ui.locator('.timeline-clip.sticker:not(.placeholder)').waitFor({state:'visible'});
+ assert.equal(await seek(.7),savedPixels,'Portable Open restores recipe and keyframe preview');
+ assert.deepEqual(uiErrors,[]);await ui.close();
+ console.log('[MotoriClip #67] PASS native recipe edit, duration undo/redo, visual keyframe and portable Save/Open');
 }finally{await browser.close();await new Promise(done=>server.close(done));}
