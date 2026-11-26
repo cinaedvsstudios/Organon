@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css?v=3.50" rel="stylesheet"/><link href="css/base.css?v=3.50" rel="stylesheet"/><link href="css/layout.css?v=3.50" rel="stylesheet"/><link href="css/player.css?v=3.50" rel="stylesheet"/><link href="css/controls.css?v=3.50" rel="stylesheet"/><link href="css/library.css?v=3.50" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.50" rel="stylesheet"/><link href="css/modals-settings.css?v=3.50" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.50" rel="stylesheet"/><link href="css/streaming.css?v=3.50" rel="stylesheet"/><link href="css/responsive.css?v=3.50" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.50" rel="stylesheet"/>
+<head><link href="css/tokens.css?v=3.54" rel="stylesheet"/><link href="css/base.css?v=3.54" rel="stylesheet"/><link href="css/layout.css?v=3.54" rel="stylesheet"/><link href="css/player.css?v=3.54" rel="stylesheet"/><link href="css/controls.css?v=3.54" rel="stylesheet"/><link href="css/library.css?v=3.54" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.54" rel="stylesheet"/><link href="css/modals-settings.css?v=3.54" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.54" rel="stylesheet"/><link href="css/streaming.css?v=3.54" rel="stylesheet"/><link href="css/responsive.css?v=3.54" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.54" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
 <meta name="theme-color" content="#1e201c"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.50"/>
-<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.50"/>
-<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.50"/>
-<link rel="manifest" href="manifest.webmanifest?v=3.50"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.54"/>
+<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.54"/>
+<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.54"/>
+<link rel="manifest" href="manifest.webmanifest?v=3.54"/>
 <title>Onda Media Player - Engine</title>
 
 
@@ -297,31 +297,32 @@
 <h3>Library tools</h3>
 <div class="onda-drawer-extra-tools" role="group" aria-label="Library sections and shortcuts">
 
-<button type="button" class="mobile-db-icon-btn" data-mobile-view="recents" data-mobile-icon-key="recents" title="Recents" aria-label="Recents" aria-pressed="false"><span class="onda-nav-icon">🕘</span><span>Recent tracks</span></button>
-<button type="button" class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists" aria-label="Playlists" aria-pressed="false"><span class="onda-nav-icon">📜</span><span>Playlist shortcuts</span></button>
-<button type="button" class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Mobile icon guide and editor" aria-label="Edit mobile icons" aria-pressed="false"><span class="onda-nav-icon">?</span><span>Custom icons</span></button>
-<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-import-audio" title="Select audio files to add to the library">📥 Add Files</button>
-<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview one or more audio files without importing">▶ Quick Play</button>
-<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="View storage health and cached audio">Storage</button>
+<button hidden data-onda-retired-shortcut="true" type="button" class="mobile-db-icon-btn" data-mobile-view="recents" data-mobile-icon-key="recents" title="Recents" aria-label="Recents" aria-pressed="false"><span class="onda-nav-icon">🕘</span><span>Recent tracks</span></button>
+<button hidden data-onda-retired-shortcut="true" type="button" class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists" aria-label="Playlists" aria-pressed="false"><span class="onda-nav-icon">📜</span><span>Playlist shortcuts</span></button>
+<button hidden data-onda-retired-shortcut="true" type="button" class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Mobile icon guide and editor" aria-label="Edit mobile icons" aria-pressed="false"><span class="onda-nav-icon">?</span><span>Custom icons</span></button>
+<button hidden data-onda-retired-shortcut="true" type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-import-audio" title="Select audio files to add to the library">📥 Add Files</button>
+<button hidden data-onda-retired-shortcut="true" type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview one or more audio files without importing">▶ Quick Play</button>
+<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="Open Settings and Storage Health">⚙ Settings / Storage</button>
 </div>
 <div class="library-settings-actions">
-<button class="btn-pill" id="btn-db-add-folder">Add Folder</button>
-<button class="btn-pill" id="btn-db-link-files" type="button" title="Choose files using Chrome's read-only file handles. Original audio stays in place and Onda keeps its existing cache.">Remember Files</button>
-<button class="btn-pill" id="btn-db-link-folder" type="button" title="Choose a folder with read-only access. Onda remembers individual file handles if Chrome supports it, while retaining cached audio.">Remember Folder</button>
-<button class="btn-pill" id="btn-db-import-json">Import JSON</button>
-<button class="btn-pill" id="btn-db-recovery" type="button">Restore / Online Library</button>
+
+
+
+<button class="btn-pill" id="btn-db-import-json">Import Library JSON</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-recovery" type="button">Restore / Online Library</button>
 <button class="btn-pill" id="btn-db-travel-check" type="button">🧳 Travel Check</button>
+<button class="btn-pill" id="btn-db-deduplicate" type="button">Remove Duplicates</button>
 <button class="btn-pill" id="btn-db-spreadsheet" type="button">▦ Bulk Edit</button>
-<button class="btn-pill" id="btn-db-export-everything">Export Everything</button>
-<button class="btn-pill" id="btn-db-export-library">Export Full</button>
-<button class="btn-pill" id="btn-db-export-streams">Export Streams</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-export-everything">Export Everything</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-export-library">Export Full</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-export-streams">Export Streams</button>
 <button class="btn-pill" id="btn-db-export-playlist">Export Playlist</button>
-<button class="btn-pill" id="btn-db-export-missing-info">Export Missing Info</button>
-<button class="btn-pill" id="btn-db-save-local-now">Save Local</button>
-<button class="btn-pill" id="btn-db-save-cloud">Save Device to Cloud</button>
-<button class="btn-pill" id="btn-db-load-cloud">Load Device from Cloud</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-export-missing-info">Export Missing Info</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-save-local-now">Save Local</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-save-cloud">Save Device to Cloud</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-load-cloud">Load Device from Cloud</button>
 <button class="btn-pill" id="btn-db-check-library">Check Files</button>
-<button class="btn-pill" id="btn-db-import-metadata-overlay">Import Metadata Overlay</button>
+<button hidden data-onda-retired-shortcut="true" class="btn-pill" id="btn-db-import-metadata-overlay">Import Metadata Overlay</button>
 </div>
 </section>
 </div>
@@ -350,6 +351,9 @@
 <p class="drop-zone-note">
                     Files dropped here are instantly added to your active playlist queue.
                 </p>
+<div class="onda-add-source-actions" aria-label="Additional local import methods"><button class="btn-pill" id="btn-db-add-folder">Add Folder</button>
+<button class="btn-pill" id="btn-db-link-files" type="button" title="Choose files using Chrome's read-only file handles. Original audio stays in place and Onda keeps its existing cache.">Remember Files</button>
+<button class="btn-pill" id="btn-db-link-folder" type="button" title="Choose a folder with read-only access. Onda remembers individual file handles if Chrome supports it, while retaining cached audio.">Remember Folder</button></div>
 <div class="onda-quick-play-chooser">
 <button type="button" class="btn-pill" id="btn-onda-quick-play" title="Audition one or more audio files without adding them to the Library or cache">▶ Quick Play (temporary)</button>
 <input type="file" class="u-hidden" id="onda-quick-play-input" multiple accept="audio/*,.mp3,.wav,.ogg,.oga,.flac,.m4a,.aac,.opus,.webm"/>
@@ -405,7 +409,7 @@
 <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
 <div class="draggable-popup" id="settings-popup">
 <div class="popup-drag-handle" id="settings-drag-handle">
-<span>☷ Settings &amp; Extras · v3.50</span>
+<span>☷ Settings &amp; Extras · v3.54</span>
 <span class="popup-close" id="btn-close-settings">×</span>
 </div>
 <div class="popup-body">
@@ -422,6 +426,11 @@
 <input class="u-full-width" id="vol-slider" max="2" min="0" step="0.05" type="range" value="1"/>
 </div>
 <div class="control-row settings-card active" data-settings-card="audio">
+<label class="help-text" for="onda-background-mode">Playback engine</label>
+<select id="onda-background-mode" class="u-full-width"><option value="auto">Automatic (native on phones)</option><option value="native">Background-friendly native audio</option><option value="visual">Full audio-reactive visualiser</option></select>
+<span id="onda-background-mode-status" class="library-track-meta"></span>
+<span class="library-track-meta">Native audio prioritises background playback. Full visualiser and volume boost above 100% require the full engine. Reopen Onda after changing engine.</span>
+</div><div class="control-row settings-card active" data-settings-card="audio">
 <label class="help-text" for="onda-interface-zoom">Interface Zoom: <span id="onda-zoom-readout">100%</span></label>
 <input class="u-full-width" id="onda-interface-zoom" min="70" max="130" step="5" type="range" value="100"/>
 <button class="btn-pill" id="onda-reset-zoom" type="button">Reset to 100%</button>
@@ -660,6 +669,25 @@
 <button class="btn-pill" id="btn-apply-bulk-attributes">Apply Changes</button>
 </div>
 </div>
+<div class="organon-modal" id="modal-track-actions" role="dialog" aria-label="Track actions">
+<div class="modal-header"><span id="onda-track-action-title">Track actions</span><span class="modal-close" onclick="closeModal('modal-track-actions')">×</span></div>
+<div class="modal-body"><div id="onda-track-action-list" class="onda-track-menu"></div></div></div>
+<div class="organon-modal modal-wide" id="modal-track-info-shared" role="dialog" aria-label="Track information"><div class="modal-header"><span>Track information</span><span class="modal-close" onclick="closeModal('modal-track-info-shared')">×</span></div><div class="modal-body" id="onda-track-info-content"></div></div>
+<div class="organon-modal modal-wide" id="modal-duplicate-review" role="dialog" aria-label="Remove duplicate tracks">
+<div class="modal-header"><span>Remove Duplicates</span><span class="modal-close" onclick="closeModal('modal-duplicate-review')">×</span></div>
+<div class="modal-body">
+<p>Scan saved music for identical files. Only byte-for-byte matches are eligible. Different recordings and unverified files stay in your library.</p>
+<div id="onda-duplicate-status" role="status" aria-live="polite"></div>
+<div id="onda-duplicate-results"></div>
+<p class="library-track-meta">The retained copy keeps combined tags and playlist memberships. Conflicting metadata stays in the pre-cleanup backup. Original files and all cached audio are retained.</p>
+</div>
+<div class="modal-actions onda-duplicate-actions">
+<button class="btn-pill" id="btn-duplicate-rescan">Scan Again</button>
+<button class="btn-pill" id="btn-duplicate-backup">Download Backup</button>
+<button class="btn-pill btn-primary-gold" id="btn-duplicate-merge" disabled>Merge Selected</button>
+<button class="btn-pill btn-muted" onclick="closeModal('modal-duplicate-review')">Close</button>
+</div>
+</div>
 <!-- Library Check Report Modal -->
 <div class="organon-modal modal-report" id="modal-library-report">
 <div class="modal-header">
@@ -699,7 +727,7 @@
 <!-- Toast popup notices -->
 <div class="organon-toast" id="toast-notice">Action Confirmed!</div>
 
-<script src="./onda-midi.js?v=3.50"></script>
+<script src="./onda-midi.js?v=3.54"></script>
 <!-- Onda Cloud Sync + Setup Wizard (Netlify Blobs) -->
 
 <div class="onda-cloud-modal-overlay" id="onda-cloud-modal-overlay"></div>
@@ -747,7 +775,7 @@
 
 
 
-<script src="js/file-access.js?v=3.50"></script><script src="js/storage-audit.js?v=3.50"></script><script src="js/diagnostics.js?v=3.50"></script><script src="js/app-core.js?v=3.50"></script><script src="js/cloud-sync.js?v=3.50"></script><script src="js/media-session.js?v=3.50"></script><script src="js/quick-play.js?v=3.50"></script><script src="js/device-qa.js?v=3.50"></script>
+<script src="js/file-access.js?v=3.54"></script><script src="js/storage-audit.js?v=3.54"></script><script src="js/diagnostics.js?v=3.54"></script><script src="js/app-core.js?v=3.54"></script><script src="js/cloud-sync.js?v=3.54"></script><script src="js/media-session.js?v=3.54"></script><script src="js/quick-play.js?v=3.54"></script><script src="js/device-qa.js?v=3.54"></script>
 <!-- The offline shell stores only this app's static UI assets, never music or profiles. -->
 <script>
 if ('serviceWorker' in navigator && window.isSecureContext) {

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
- TEXT_DESIGNS,TEXT_ANIMATIONS,getTextDesign,normaliseTextOverlay,textAnimationState
+ TEXT_DESIGNS,TEXT_ANIMATIONS,TEXT_OUT_ANIMATIONS,getTextDesign,normaliseTextOverlay,textAnimationState
 } from '../js/text-template-renderer.mjs';
 import {snapshotClip,applyClipData} from '../js/project-history.mjs';
 
@@ -276,7 +276,7 @@ test('phased title settings persist in Undo and reject incompatible animation ch
  assert.equal(clip.textOverlay.inAnimation,'typewriter');
  assert.deepEqual(clip.textOverlay,saved.textOverlay);
  const invalid=normaliseTextOverlay({phasedAnimation:'yes',inAnimation:'hacked',
-   outAnimation:'wave',outDuration:900,loopAnimation:'title-wipe',loopDuration:-20});
+   outAnimation:'not-a-real-animation',outDuration:900,loopAnimation:'title-wipe',loopDuration:-20});
  assert.equal(invalid.phasedAnimation,false);
  assert.equal(invalid.outAnimation,'none');
  assert.equal(invalid.loopAnimation,'none');
@@ -290,4 +290,37 @@ test('looping ticker restarts each cycle instead of disappearing off-screen',()=
  assert.equal(one.phase,'loop');assert.equal(two.phase,'loop');
  assert.ok(Math.abs(one.tickerX-two.tickerX)<.00001,
    'Each one-second ticker cycle must return to the same position');
+});
+
+test('one shared animation catalog for custom Out and default Reverse In for new phased titles',()=>{
+ assert.deepEqual(TEXT_OUT_ANIMATIONS.slice(1),TEXT_ANIMATIONS);
+ assert.deepEqual(TEXT_OUT_ANIMATIONS[0],['reverse-in','Reverse In']);
+ assert.equal(normaliseTextOverlay({phasedAnimation:true}).outAnimation,'reverse-in');
+ assert.equal(normaliseTextOverlay({phasedAnimation:true,outAnimation:'none'}).outAnimation,'none');
+ assert.equal(normaliseTextOverlay({phasedAnimation:true,outAnimation:'wave'}).outAnimation,'wave');
+ assert.equal(normaliseTextOverlay({animation:'fade'}).outAnimation,'none');
+ assert.equal(textAnimationState({phasedAnimation:true,inAnimation:'none'},2.9,3).phase,'hold');
+});
+test('Reverse In samples all entrance motion and easing in reverse, with independently adjustable Out duration',()=>{
+ for(const [animation] of TEXT_ANIMATIONS.filter(([id])=>id!=='none')){
+  for(const easing of ['linear','ease-in','ease-out','ease-in-out']){
+   const cfg={presetId:'tech-hud',value:'TEST',phasedAnimation:true,inAnimation:animation,
+    inDuration:1,outDuration:2,animationEasing:easing,animationSpeed:1.5};
+   const renderFields=({phase,phaseTime,inEnd,outStart,...rest})=>rest;
+   for(const t of [0,.125,.25,.5,.75,.875]){
+    const entrance=textAnimationState(cfg,t,4);
+    const exit=textAnimationState(cfg,4-2*t,4);
+    assert.equal(exit.phase,'out',animation);
+    assert.deepEqual(renderFields(exit),renderFields(entrance),animation+' / '+easing+' / '+t);
+   }
+  }
+ }
+});
+test('Reverse In survives normalization and history without altering old explicit Out choices',()=>{
+ const cfg=normaliseTextOverlay({presetId:'news-lower-third',phasedAnimation:true,inAnimation:'box-reveal',outDuration:.8});
+ const clip={id:'reverse-title',type:'sticker',sourceFileId:'source',clipDuration:4,start:0,sourceOffset:0,sourceName:'title.png',textOverlay:cfg};
+ const saved=snapshotClip(clip);clip.textOverlay.outAnimation='none';applyClipData(clip,saved);
+ assert.equal(clip.textOverlay.outAnimation,'reverse-in');
+ assert.deepEqual(normaliseTextOverlay(JSON.parse(JSON.stringify(cfg))),cfg);
+ assert.equal(normaliseTextOverlay({...cfg,outAnimation:'slide'}).outAnimation,'slide');
 });

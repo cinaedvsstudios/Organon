@@ -1,0 +1,21 @@
+name: MotoriClip effect thumbnail QA
+on:
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/js/effect-library-preview.mjs'
+      - 'tools/audio-timeline/tests/effect-library-preview.browser.mjs'
+      - '.github/workflows/motoriclip-effect-thumbnails.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  effect-thumbnail-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core@1.56.1
+      - run: node tools/audio-timeline/tests/effect-library-preview.browser.mjs

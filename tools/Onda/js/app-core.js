@@ -1,6 +1,10 @@
 // --- CORE DUAL AUDIO ENGINE SETUP ---
         const finishOndaCoreInit = window.OndaDiagnostics?.begin('core-init');
         // Using two elements solves WebAudio Context blocking CORS streams while preserving local file visualizers
+        const PLAYBACK_ENGINE_KEY='ondaPlaybackEngineModeV1';
+        function readPlaybackEnginePreference(){try{const v=localStorage.getItem(PLAYBACK_ENGINE_KEY);return ['native','visual'].includes(v)?v:'auto';}catch(_){return 'auto';}}
+        const initialPlaybackEngine=readPlaybackEnginePreference();
+        const nativeLocalPlayback=initialPlaybackEngine==='native'||(initialPlaybackEngine==='auto'&&(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||matchMedia('(pointer: coarse)').matches));
         const localAudio = new Audio();
         const streamAudio = new Audio();
 
@@ -79,7 +83,7 @@
         const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.50';
+        const ONDA_VERSION = 'v3.54';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -112,6 +116,10 @@
         let nowPlayingHidePlaylist = localStorage.getItem(NOW_PLAYING_HIDE_PLAYLIST_KEY) === "1";
         let editingPlaylistName = null;
         let virtualLibrary = {};
+        let duplicateCleanupAt = 0;
+        let duplicateCleanupRemovedIds = [];
+        let duplicateReviewGroups = [];
+        let duplicateReviewBusy = false;
         let nowPlayingEditMode = false;
         let isLibrarySelectMode = false;
         let selectedLibraryIds = new Set();
@@ -1141,6 +1149,51 @@
             }
         }
 
+        function showSharedTrackInfo(id){
+            const meta=virtualLibrary[id];if(!meta)return;
+            const body=document.getElementById('onda-track-info-content');body.replaceChildren();
+            const title=document.createElement('h3');title.textContent=getDisplayTitle(meta);body.append(title);
+            for(const [label,value] of [['File',meta.fileName],['Artist',meta.artist],['Album',meta.album],['Duration',queueDurationLabel(meta)],['Source',sourceStatus(meta)],['Location',meta.localPath],['Playlists',getTrackPlaylistNames(id).join(', ')],['Tags',(meta.tags||[]).join(', ')]]){if(value){const line=document.createElement('p');line.textContent=label+': '+value;body.append(line);}}
+            showModal('modal-track-info-shared');
+        }
+        function repositionTrackInQueue(id,next){
+            if(!virtualLibrary[id]||id===currentFile?.name)return;
+            const prior=playlistTracks.slice(),current=prior[currentTrackIndex];
+            if(isShuffle&&shuffleSignature!==getPlaylistSignature())resetShuffleQueue(currentTrackIndex);
+            const upcoming=isShuffle?shuffleQueue.map(i=>prior[i]).filter(Boolean):[];
+            const item=prior.find(t=>getTrackId(t)===id)||createPlayableTrackFromMeta(virtualLibrary[id]);
+            playlistTracks=prior.filter(t=>getTrackId(t)!==id);
+            currentTrackIndex=current?playlistTracks.indexOf(current):-1;
+            if(currentTrackIndex<0&&currentFile)currentTrackIndex=playlistTracks.findIndex(t=>getTrackId(t)===currentFile.name);
+            if(next)playlistTracks.splice(currentTrackIndex+1,0,item);else playlistTracks.push(item);
+            if(isShuffle){const rest=upcoming.filter(t=>getTrackId(t)!==id&&playlistTracks.includes(t));shuffleQueue=(next?[item,...rest]:[...rest,item]).map(t=>playlistTracks.indexOf(t)).filter(i=>i>=0&&i!==currentTrackIndex);shuffleSignature=getPlaylistSignature();}
+            saveActiveLibraryState(next?'manual-play-next':'manual-queue-end');updateNowPlayingPlaylistPanel();showToast(next?'Scheduled to play next.':'Moved to end of queue.');
+        }
+        function removeTrackFromActiveQueue(id){
+            const i=playlistTracks.findIndex(t=>getTrackId(t)===id);
+            if(i<0||i===currentTrackIndex||id===currentFile?.name)return;
+            const upcoming=isShuffle?shuffleQueue.map(i=>playlistTracks[i]).filter(Boolean):[];
+            playlistTracks.splice(i,1);if(i<currentTrackIndex)currentTrackIndex--;
+            if(isShuffle){shuffleQueue=upcoming.map(t=>playlistTracks.indexOf(t)).filter(i=>i>=0&&i!==currentTrackIndex);shuffleSignature=getPlaylistSignature();}
+            saveActiveLibraryState('remove-from-active-queue');updateNowPlayingPlaylistPanel();showToast('Removed from queue. Library and playlists unchanged.');
+        }
+        async function downloadSavedTrack(id){
+            const meta=virtualLibrary[id];if(!meta)return;let blob=meta.blobFile;
+            if(!blob){try{const record=await idbGetAudioFile(id);blob=record?.file||record?.blob;}catch(_){}}
+            if(!blob){showToast('No cached audio available to export.');return;}
+            const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=meta.fileName||'onda-track';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+        }
+        function openTrackActions(id){
+            const meta=virtualLibrary[id];if(!meta)return;
+            document.getElementById('onda-track-action-title').textContent=getDisplayTitle(meta);
+            const list=document.getElementById('onda-track-action-list');list.replaceChildren();
+            const current=id===currentFile?.name,queued=playlistTracks.some(t=>getTrackId(t)===id);
+            for(const [symbol,label,handler,disabled] of [['⏭','Play next',()=>repositionTrackInQueue(id,true),current],['☷','Move to end of queue',()=>repositionTrackInQueue(id,false),current],['↓','Export audio file',()=>downloadSavedTrack(id),meta.sourceType==='stream'||meta.sourceType==='reference'],['×','Remove from queue',()=>removeTrackFromActiveQueue(id),current||!queued]]){
+                const b=document.createElement('button');b.type='button';b.className='btn-pill onda-track-menu-action';b.disabled=!!disabled;
+                const icon=document.createElement('span');icon.textContent=symbol;icon.setAttribute('aria-hidden','true');const text=document.createElement('span');text.textContent=label;b.append(icon,text);
+                b.addEventListener('click',()=>{closeModal('modal-track-actions');handler();});list.append(b);
+            }showModal('modal-track-actions');
+        }
         function buildTrackRow(trackId, compact = false, syncedMembership = false) {
             const meta = virtualLibrary[trackId];
             if (!meta) return null;
@@ -1161,7 +1214,7 @@
                         <div class="library-track-meta library-file-line">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
                         ${compact ? '' : `<div class="library-track-meta library-playlist-line">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
                     </div>
-                    ${compact ? '' : `<div class="library-row-buttons"><button aria-label="Play" data-onda-action="play" class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>${sourceStatus(meta) === 'needs relink' ? `<button aria-label="Reconnect saved track" data-onda-action="reconnect" type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 8l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></svg></button>` : ''}<button aria-label="Track information" data-onda-action="info" class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button><button aria-label="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></div>`}
+                    ${compact ? '' : `<div class="library-row-buttons"><button aria-label="Play" data-onda-action="play" class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>${sourceStatus(meta) === 'needs relink' ? `<button aria-label="Reconnect saved track" data-onda-action="reconnect" type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 8l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></svg></button>` : ''}<button aria-label="Track information" data-onda-action="info" class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button><button aria-label="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>`}
                 </div>
                 ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             `;
@@ -1215,7 +1268,7 @@
                 <div class="library-row-buttons">
                     <button aria-label="Play" title="Play" data-onda-action="play" class="btn-pill btn-history-play btn-onda-row-play" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
                     <button aria-label="Track information" title="Track information" data-onda-action="info" class="btn-pill btn-history-info" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
-                    <button aria-label="Add to playlist" title="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+                    <button aria-label="Add to playlist" title="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
                 </div>
             `;
             return row;
@@ -1485,6 +1538,169 @@
             renderLibraryManager();
             renderHistoryTab();
             showToast('Selected library listing(s) removed.');
+        }
+
+        function duplicateStatus(message) {
+            const el = document.getElementById('onda-duplicate-status');
+            if (el) el.textContent = message;
+        }
+        function duplicateMetadataScore(meta) {
+            return ['nickname','artist','album','genre','year','bpm','key','lyrics','notes','imageData','imageUrl','duration']
+                .reduce((score,key)=>score+(meta[key]?1:0),0) + (meta.tags?.length||0);
+        }
+        async function findExactDuplicateGroups() {
+            const byName = new Map();
+            for (const meta of Object.values(virtualLibrary)) {
+                if (!meta?.id || !meta.fileName || meta.streamUrl || ['stream','reference'].includes(meta.sourceType)) continue;
+                const key = meta.fileName;
+                if (!byName.has(key)) byName.set(key,[]);
+                byName.get(key).push(meta);
+            }
+            const groups = [];
+            let unverified = 0;
+            for (const candidates of byName.values()) {
+                if (candidates.length<2) continue;
+                const clusters=[];
+                for (const meta of candidates) {
+                    let cached = null;
+                    try { const record=await idbGetAudioFile(meta.id); cached=record?.file||record?.blob||null; } catch (_) {}
+                    const blob = cached || meta.blobFile;
+                    if (!blob || typeof blob.slice!=='function') { unverified++; continue; }
+                    let match=null;
+                    for (const cluster of clusters) {
+                        try { if(await equalImportBytes(blob,cluster[0].blob)) {match=cluster;break;} } catch (_) {}
+                    }
+                    const entry={meta,blob,cached:Boolean(cached)};
+                    if(match) match.push(entry); else clusters.push([entry]);
+                }
+                for(const cluster of clusters) {
+                    if(cluster.length<2) continue;
+                    const active=cluster.find(entry=>entry.meta.id===currentFile?.name);
+                    const eligible=cluster.filter(entry=>entry.cached);
+                    if(!eligible.length || (active && !active.cached)) { unverified+=cluster.length;continue; }
+                    const keep=active || eligible.sort((a,b)=>duplicateMetadataScore(b.meta)-duplicateMetadataScore(a.meta))[0];
+                    groups.push({keep:keep.meta.id,remove:cluster.filter(entry=>entry!==keep).map(entry=>entry.meta.id),name:keep.meta.fileName,paths:[...new Set(cluster.map(entry=>entry.meta.localPath||entry.meta.fileName))]});
+                }
+            }
+            return {groups,unverified};
+        }
+        function renderDuplicateReview(groups) {
+            const list=document.getElementById('onda-duplicate-results');
+            list.replaceChildren();
+            groups.forEach((group,index)=>{
+                const label=document.createElement('label');
+                label.className='onda-duplicate-group';
+                const check=document.createElement('input');
+                check.type='checkbox';check.checked=true;check.dataset.duplicateGroup=String(index);
+                const detail=document.createElement('div');
+                const title=document.createElement('strong');title.textContent=group.name;
+                const desc=document.createElement('small');desc.textContent=(group.remove.length+1)+' identical copies · keep 1, merge '+group.remove.length;
+                const paths=document.createElement('small');paths.textContent=group.paths.join(' | ');
+                detail.append(title,desc,paths);label.append(check,detail);list.append(label);
+                check.addEventListener('change',syncDuplicateMergeButton);
+            });
+            syncDuplicateMergeButton();
+        }
+        function syncDuplicateMergeButton() {
+            const selected=[...document.querySelectorAll('#onda-duplicate-results input:checked')].map(el=>duplicateReviewGroups[Number(el.dataset.duplicateGroup)]).filter(Boolean);
+            const count=selected.reduce((n,g)=>n+g.remove.length,0);
+            const button=document.getElementById('btn-duplicate-merge');
+            button.disabled=duplicateReviewBusy||!count;
+            button.textContent=count?'Merge '+count+' Duplicate'+(count===1?'':'s'):'Merge Selected';
+        }
+        async function scanDuplicateLibrary() {
+            if(duplicateReviewBusy) return;
+            duplicateReviewBusy=true;duplicateReviewGroups=[];renderDuplicateReview([]);
+            duplicateStatus('Checking saved file contents…');
+            try {
+                await localImportChain;
+                const result=await findExactDuplicateGroups();
+                duplicateReviewGroups=result.groups;
+                const count=result.groups.reduce((n,g)=>n+g.remove.length,0);
+                duplicateStatus(count+' confirmed duplicate listing(s) in '+result.groups.length+' group(s).'+(result.unverified?' '+result.unverified+' candidate(s) could not be verified and will be kept.':''));
+                renderDuplicateReview(result.groups);
+            } catch(err) { duplicateStatus('Scan failed. No records changed.'); console.warn(err); }
+            finally {duplicateReviewBusy=false;syncDuplicateMergeButton();}
+        }
+        function remapDuplicateIds(ids,aliases) {
+            const seen=new Set();
+            const targets=new Set(aliases.values());
+            return ids.map(id=>aliases.get(id)||id).filter(id=>{
+                if(!targets.has(id)) return true;
+                if(seen.has(id)) return false;
+                seen.add(id);return true;
+            });
+        }
+        async function mergeReviewedDuplicates(groups) {
+            // Re-scan to ensure the review still matches actual bytes and current playback.
+            const fresh=(await findExactDuplicateGroups()).groups;
+            const aliases=new Map();
+            for(const group of groups) {
+                const match=fresh.find(g=>g.keep===group.keep && g.remove.length===group.remove.length && group.remove.every(id=>g.remove.includes(id)));
+                if(!match) throw Error('Library changed. Scan again before merging.');
+                group.remove.forEach(id=>aliases.set(id,group.keep));
+            }
+            if(!aliases.size)return;
+            const backup=buildActiveLibraryAutosavePayload('before-duplicate-cleanup');
+            // Persist a separate, non-autorecoverable pre-merge copy before
+            // modifying catalogue records. Audio and file handles are untouched.
+            const key='duplicate-cleanup-backup-'+Date.now();
+            await idbSetState(key,backup);
+            await idbSetState('last-duplicate-cleanup-backup',key);
+            if(currentFile && aliases.has(currentFile.name)) throw Error('Playing track changed. Scan again.');
+            if(pendingActiveLibrarySaveTimer) {clearTimeout(pendingActiveLibrarySaveTimer);pendingActiveLibrarySaveTimer=null;}
+            for(const [id,keepId] of aliases) {
+                const from=virtualLibrary[id], keep=virtualLibrary[keepId];
+                if(!from||!keep) throw Error('Library changed. Scan again.');
+                for(const [field,value] of Object.entries(from)) {
+                    if(['id','blobFile','fileName','localPath','phonePath','desktopPath','needsRelink','tags','playlists'].includes(field))continue;
+                    if((keep[field]===undefined||keep[field]===null||keep[field]==='') && value!=null) keep[field]=value;
+                }
+                keep.tags=[...new Set([...(Array.isArray(keep.tags)?keep.tags:[]),...(Array.isArray(from.tags)?from.tags:[])])];
+                keep.needsRelink=false;
+            }
+            for(const id of aliases.keys()) delete virtualLibrary[id];
+            for(const [name,tracks] of Object.entries(playlists)) {
+                playlists[name]=playlistIdsToTrackObjects(remapDuplicateIds(normalisePlaylistToIds(tracks),aliases));
+            }
+            const oldQueue=playlistTracks, oldCurrent= currentFile;
+            const oldIndex=currentTrackIndex;
+            const targets=new Set(aliases.values()), seen=new Set();
+            playlistTracks=[];
+            oldQueue.forEach((track,index)=>{
+                const oldId=getTrackId(track),id=aliases.get(oldId)||oldId;
+                if(targets.has(id)) {
+                    if(id===oldCurrent?.name && oldIndex>=0 && index!==oldIndex) return;
+                    if(seen.has(id)) return;
+                    seen.add(id);
+                }
+                playlistTracks.push(aliases.has(oldId)?createPlayableTrackFromMeta(virtualLibrary[id]):track);
+            });
+            currentTrackIndex=oldCurrent?playlistTracks.findIndex(track=>track===oldCurrent):-1;
+            if(currentTrackIndex<0&&oldCurrent)currentTrackIndex=playlistTracks.findIndex(track=>getTrackId(track)===oldCurrent.name);
+            recentTrackIds=[...new Set(recentTrackIds.map(id=>aliases.get(id)||id))].slice(0,50);
+            selectedLibraryIds=new Set([...selectedLibraryIds].map(id=>aliases.get(id)||id));
+            duplicateCleanupAt=Date.now();
+            duplicateCleanupRemovedIds=[...new Set([...duplicateCleanupRemovedIds,...aliases.keys()])];
+            syncAllTrackPlaylistMetadata();
+            if(isShuffle)resetShuffleQueue(currentTrackIndex);
+            saveRecentTrackIds();
+            saveActiveLibraryState('manual-duplicate-cleanup');
+            await flushActiveLibraryState('manual-duplicate-cleanup');
+            renderPlaylistsList();renderLibraryManager();renderHistoryTab();updateNowPlayingPlaylistPanel();
+            duplicateReviewGroups=[];renderDuplicateReview([]);
+            duplicateStatus('Merged '+aliases.size+' duplicate listing(s). '+Object.keys(virtualLibrary).length+' tracks remain. Cached audio and backup retained.');
+            showToast('Merged '+aliases.size+' duplicate listings.');
+        }
+        function applyDuplicateReview() {
+            if(duplicateReviewBusy)return;
+            const groups=[...document.querySelectorAll('#onda-duplicate-results input:checked')].map(el=>duplicateReviewGroups[Number(el.dataset.duplicateGroup)]).filter(Boolean);
+            if(!groups.length)return;
+            duplicateReviewBusy=true;syncDuplicateMergeButton();
+            duplicateStatus('Rechecking and saving pre-cleanup backup…');
+            const operation=localImportChain.then(()=>mergeReviewedDuplicates(groups));
+            localImportChain=operation.catch(()=>{});
+            operation.catch(err=>{duplicateStatus(err.message||'Merge could not finish. Check backup and scan again.');console.warn(err);}).finally(()=>{duplicateReviewBusy=false;syncDuplicateMergeButton();});
         }
 
         function levenshteinDistance(a, b, limit = 2) {
@@ -2127,6 +2343,7 @@
             const settings = {
                 libraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
                 volumeBoost: parseFloat(volSlider?.value || '1') || 1,
+                playbackEngine:readPlaybackEnginePreference(),
                 playbackSpeed: parseFloat(speedSlider?.value || activeAudio?.playbackRate || '1') || 1,
                 activeWorkspaceTab: document.querySelector('.viewport-content.active-content')?.id || localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY) || 'tab-files',
                 mobileLibraryView: libraryDrawer?.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results',
@@ -2206,11 +2423,13 @@
             const settings = data.settings || {};
             if (settings.libraryName && libraryNameInput) libraryNameInput.value = settings.libraryName;
 
+            if(['auto','native','visual'].includes(settings.playbackEngine)){try{localStorage.setItem(PLAYBACK_ENGINE_KEY,settings.playbackEngine);}catch(_){}refreshPlaybackEngineSetting();}
             if (typeof settings.volumeBoost !== 'undefined' && volSlider) {
                 const val = Math.max(0, Math.min(2, parseFloat(settings.volumeBoost) || 1));
                 volSlider.value = String(val);
                 if (gainNode) gainNode.gain.value = val;
                 streamAudio.volume = Math.min(1, Math.max(0, val));
+                if(nativeLocalPlayback)localAudio.volume=Math.min(1,Math.max(0,val));
                 const volReadout = document.getElementById('vol-readout');
                 if (volReadout) volReadout.innerText = Math.round(val * 100) + '%';
             }
@@ -2497,7 +2716,9 @@
                 console.warn('Could not scan localStorage for Onda library candidates:', err);
             }
 
+            const cleanupCutoff = Math.max(0,...candidates.map(item => Number(item.payload.duplicateCleanupAt)||0));
             const withTracks = candidates
+                .filter(item => !cleanupCutoff || getPayloadSavedAtMs(item.payload) >= cleanupCutoff)
                 .map(item => ({ ...item, trackCount: getPayloadTrackCount(item.payload), savedAt: getPayloadSavedAtMs(item.payload) }))
                 .filter(item => item.trackCount > 0)
                 .sort((a, b) => (b.trackCount - a.trackCount) || (b.savedAt - a.savedAt) || (b.priority - a.priority));
@@ -2778,6 +2999,8 @@
                 version: 2,
                 savedAt: new Date().toISOString(),
                 reason,
+                duplicateCleanupAt,
+                duplicateCleanupRemovedIds: duplicateCleanupRemovedIds.slice(),
                 library: buildLibraryExport({ streamingOnly: false }),
                 queueIds: playlistTracks.map(getTrackId).filter(Boolean),
                 currentTrackId: currentFile?.name || null,
@@ -2843,6 +3066,13 @@
             const data = saved?.library || saved;
             if (!data || data.type !== 'onda-library') return false;
 
+            if (Number(saved?.duplicateCleanupAt) >= duplicateCleanupAt && Number(saved?.duplicateCleanupAt)>0) {
+                duplicateCleanupAt = Number(saved.duplicateCleanupAt);
+                duplicateCleanupRemovedIds = Array.isArray(saved.duplicateCleanupRemovedIds) ? saved.duplicateCleanupRemovedIds.filter(id=>typeof id==='string') : [];
+                // Only an explicitly confirmed cleanup may suppress an old copy
+                // resurrected by a stale local/IDB autosave.
+                duplicateCleanupRemovedIds.forEach(id=>{ if (!data.tracks?.[id]) delete virtualLibrary[id]; });
+            }
             if (data.libraryName && libraryNameInput) libraryNameInput.value = data.libraryName;
 
             Object.entries(data.tracks || {}).forEach(([key, rawMeta]) => {
@@ -3123,6 +3353,7 @@
                 return null;
             }
 
+            if(nativeLocalPlayback)return null;
             if (!audioCtx) {
                 audioCtx = new AudioContext();
                 gainNode = audioCtx.createGain();
@@ -3431,6 +3662,7 @@
         });
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleUploadedFiles(e.target.files);
+            e.target.value = '';
         });
         if (folderInput) {
             folderInput.addEventListener('change', (e) => {
@@ -3469,7 +3701,83 @@
             }
         }
 
-        async function handleUploadedFiles(files, options = {}) {
+        // File picker calls can overlap while metadata is being read. Serialize
+        // imports so the second selection sees records created by the first.
+        let localImportChain = Promise.resolve();
+        function handleUploadedFiles(files, options = {}) {
+            const selected = Array.from(files || []);
+            const pending = localImportChain.then(() => importUniqueLocalFiles(selected, options));
+            localImportChain = pending.catch(() => {});
+            return pending;
+        }
+
+        function normaliseImportPath(path) {
+            return String(path || '').replace(/\\/g,'/').replace(/^\.\//,'').replace(/\/+/g,'/');
+        }
+
+        function compatibleImportPath(a,b) {
+            a = normaliseImportPath(a); b = normaliseImportPath(b);
+            // Android/normal file input often exposes only a basename.
+            // When both paths are known, do not conflate different locations.
+            return !a.includes('/') || !b.includes('/') || a === b;
+        }
+
+        async function equalImportBytes(a,b) {
+            if (!a || !b || typeof a.slice !== 'function' || typeof b.slice !== 'function') return null;
+            if (a.size !== b.size) return false;
+            // Bounded memory even for very large audio files.
+            const chunkSize = 1024 * 1024;
+            for (let offset=0; offset<a.size; offset+=chunkSize) {
+                const [left,right] = await Promise.all([a.slice(offset,offset+chunkSize).arrayBuffer(),b.slice(offset,offset+chunkSize).arrayBuffer()]);
+                const x=new Uint8Array(left), y=new Uint8Array(right);
+                for(let i=0;i<x.length;i++) if(x[i]!==y[i]) return false;
+            }
+            return true;
+        }
+
+        async function matchLocalImport(file, path, candidates, nextId, legacyId) {
+            let duration = null;
+            let probed = false;
+            const isMidi = /\\.(mid|midi)$/i.test(file.name || '');
+            const getDuration = async () => {
+                if (!probed) {
+                    probed = true;
+                    if (!isMidi) {
+                        try { duration = await probeQueueDuration(file); } catch (_) {}
+                    }
+                }
+                return duration;
+            };
+            for (const meta of candidates || []) {
+                if (!compatibleImportPath(path,meta.localPath || meta.fileName)) continue;
+                const storedSize = Number(meta.sizeBytes);
+                if (storedSize > 0 && storedSize !== file.size) continue;
+                const identityMatch = meta.id === nextId || meta.id === legacyId;
+                let existingBlob = meta.blobFile || null;
+                if (!existingBlob) {
+                    try { const record = await idbGetAudioFile(meta.id); existingBlob = record?.file || record?.blob || null; } catch (_) {}
+                }
+                let sameBytes = null;
+                try { sameBytes = await equalImportBytes(file,existingBlob); } catch (_) {}
+                if (sameBytes === false) continue;
+                const incomingDuration = await getDuration();
+                let oldDuration = Number(meta.duration) || null;
+                if (!oldDuration && existingBlob && !isMidi) {
+                    try { oldDuration = await probeQueueDuration(existingBlob); } catch (_) {}
+                }
+                const durationMatch = incomingDuration > 0 && oldDuration > 0 && Math.abs(incomingDuration-oldDuration) <= .15;
+                if (incomingDuration > 0 && oldDuration > 0 && !durationMatch && sameBytes !== true) continue;
+                // Prefer exact byte comparison. If saved media is unavailable,
+                // a known identity or matching path/name/size/duration may relink
+                // the existing metadata record, not create a second one.
+                if (sameBytes === true || (sameBytes === null && (identityMatch || (storedSize === file.size && durationMatch)))) {
+                    return {meta, duration:incomingDuration || oldDuration, existingBlob};
+                }
+            }
+            return {meta:null,duration};
+        }
+
+        async function importUniqueLocalFiles(files, options = {}) {
             const finishImportPrepare = window.OndaDiagnostics?.begin('import-prepare');
             const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
@@ -3485,8 +3793,16 @@
             const newTracks = [];
             const refreshedTracks = [];
             let queueDuplicates = 0;
+            let skippedDuplicates = 0;
+            const candidateIndex = new Map();
+            for (const meta of Object.values(virtualLibrary)) {
+                if (!meta?.fileName || meta.streamUrl || ['stream','reference'].includes(meta.sourceType)) continue;
+                const name = meta.fileName;
+                if (!candidateIndex.has(name)) candidateIndex.set(name,[]);
+                candidateIndex.get(name).push(meta);
+            }
 
-            playableFiles.forEach(file => {
+            for (const file of playableFiles) {
                 const isMidi = Boolean(window.OndaMidi?.isMidiFile(file)) || /\.(mid|midi)$/i.test(file.name || '');
                 const localSourceType = isMidi ? 'midi' : 'local';
                 const defaultLocalTag = isMidi ? 'MIDI File' : 'Local File';
@@ -3494,9 +3810,21 @@
                 const handle = options.fileHandles?.get(file) || null;
                 const nextId = createTrackIdFromParts(['local', relativePath, file.name, file.size, file.lastModified || '']);
                 const legacyId = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
-                const id = virtualLibrary[nextId] ? nextId : (virtualLibrary[legacyId] ? legacyId : nextId);
-                const alreadyInLibrary = Boolean(virtualLibrary[id]);
-                const existing = virtualLibrary[id] || {};
+                const match = await matchLocalImport(file, relativePath, candidateIndex.get(file.name), nextId, legacyId);
+                const alreadyInLibrary = Boolean(match.meta);
+                let id = match.meta?.id || nextId;
+                if (!alreadyInLibrary) {
+                    // A distinct file can share old identity inputs. Never overwrite it.
+                    let suffix=1;
+                    while (virtualLibrary[id]) id = nextId+'_'+suffix++;
+                }
+                const existing = match.meta || {};
+                if (alreadyInLibrary && match.existingBlob) {
+                    skippedDuplicates += 1;
+                    if (match.duration > 0 && !(Number(existing.duration)>0)) existing.duration = match.duration;
+                    if (handle?.kind === 'file') linkedRecords.push({trackId:id,handle,relativePath,fileName:file.name});
+                    continue;
+                }
 
                 const track = {
                     name: id,
@@ -3519,9 +3847,9 @@
                     playlists: Array.isArray(existing.playlists) ? existing.playlists : [],
                     size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
                     sizeBytes: file.size,
-                    duration: existing.duration || null,
+                    duration: match.duration || existing.duration || null,
                     sourceType: localSourceType,
-                    localPath: relativePath || existing.localPath || file.name,
+                    localPath: (alreadyInLibrary && existing.localPath) || relativePath || file.name,
                     streamUrl: null,
                     blobFile: file
                 };
@@ -3529,15 +3857,23 @@
                 if (handle?.kind === 'file') linkedRecords.push({
                     trackId: id, handle, relativePath, fileName: file.name
                 });
-                if (alreadyInLibrary) refreshedTracks.push(track);
-                else newTracks.push(track);
-            });
+                if (alreadyInLibrary) {
+                    refreshedTracks.push(track);
+                    const candidates = candidateIndex.get(file.name);
+                    const candidatePosition = candidates?.findIndex(meta => meta.id === id) ?? -1;
+                    if (candidatePosition >= 0) candidates[candidatePosition] = virtualLibrary[id];
+                } else {
+                    newTracks.push(track);
+                    if (!candidateIndex.has(file.name)) candidateIndex.set(file.name,[]);
+                    candidateIndex.get(file.name).push(virtualLibrary[id]);
+                }
+            }
 
             const wasEmpty = playlistTracks.length === 0;
             const allIncomingTracks = [...newTracks, ...refreshedTracks];
             const queuedIds = new Set(playlistTracks.map(getTrackId).filter(Boolean));
             const tracksToQueue = [];
-            allIncomingTracks.forEach(track => {
+            newTracks.forEach(track => {
                 const trackId = getTrackId(track);
                 if (queuedIds.has(trackId)) {
                     queueDuplicates += 1;
@@ -3548,7 +3884,7 @@
             });
             playlistTracks = [...playlistTracks, ...tracksToQueue];
 
-            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${refreshedTracks.length} refreshed${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
+            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${skippedDuplicates} duplicate${skippedDuplicates === 1 ? '' : 's'} skipped${refreshedTracks.length ? ` · ${refreshedTracks.length} reconnected` : ''}${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
             if (wasEmpty && playlistTracks.length) switchTrack(0);
             updateNowPlayingPlaylistPanel();
             renderLibraryManager();
@@ -3557,7 +3893,7 @@
             // Keep this immediate save before awaiting any large audio writes.
             saveActiveLibraryState('add-local-files');
             showToast(summary);
-            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: queueDuplicates });
+            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: skippedDuplicates + queueDuplicates });
 
             if (linkedRecords.length && window.OndaFileHandles?.rememberMany) {
                 // The handle index is additive: never remove or bypass existing cache.
@@ -3689,7 +4025,7 @@
                     URL.revokeObjectURL(activeAudio.src);
                 }
                 activeAudio.src = URL.createObjectURL(blob);
-                initAudioEngine();
+                if(nativeLocalPlayback)localAudio.volume=Math.min(1,Math.max(0,Number(volSlider.value)||0));else initAudioEngine();
             }
 
             activeAudio.playbackRate = parseFloat(speedSlider.value);
@@ -3975,8 +4311,7 @@
                             <span class="onda-queue-duration" aria-label="Track duration">${escapeHtml(queueDurationLabel(meta))}</span>
                             ${hasRecord ? `<button data-onda-action="play" type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
                             <button data-onda-action="info" type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
-                            <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
-                            ${!active ? '<button data-onda-action="remove" type="button" class="btn-pill btn-now-remove-from-queue" title="Remove from current queue only" aria-label="Remove from current queue only"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>' : ''}
+                            <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>` : ''}
                         </div>`;
                     list.appendChild(row);
                 });
@@ -4220,11 +4555,13 @@
             const requestId = trackLoadRequestId;
             // Start AudioContext resume and media.play() in the same gesture.
             // Waiting for AudioContext first can make Chrome discard tap activation.
-            const engineReady = requestedAudio === localAudio ? initAudioEngine() : Promise.resolve();
+            const engineReady = requestedAudio === localAudio && !nativeLocalPlayback ? initAudioEngine() : Promise.resolve();
+            window.OndaMediaSession?.refresh?.();
 
             try {
                 const playbackStarted = requestedAudio.play();
                 await Promise.all([engineReady, playbackStarted]);
+                window.OndaMediaSession?.refresh?.();
                 if (requestedAudio !== activeAudio || requestId !== trackLoadRequestId || requestedAudio.paused) return;
                 isPlaying = true;
                 btnPlay.textContent = '🧿';
@@ -4518,6 +4855,7 @@
             if (gainNode) gainNode.gain.value = val;
             // Streams are not routed through WebAudio by default, so boost is capped to normal HTMLAudio volume.
             streamAudio.volume = Math.min(1, Math.max(0, val));
+                if(nativeLocalPlayback)localAudio.volume=Math.min(1,Math.max(0,val));
             document.getElementById('vol-readout').innerText = Math.round(val * 100) + "%";
         });
 
@@ -5089,6 +5427,16 @@
         safeBind('btn-db-bulk-attributes', 'click', openBulkAttributesModal);
         safeBind('btn-db-bulk-export', 'click', exportSelectedLibraryJson);
         safeBind('btn-db-bulk-delete', 'click', deleteSelectedFromLibrary);
+        safeBind('btn-db-deduplicate','click',()=>{showModal('modal-duplicate-review');scanDuplicateLibrary();});
+        safeBind('btn-duplicate-rescan','click',scanDuplicateLibrary);
+        safeBind('btn-duplicate-merge','click',applyDuplicateReview);
+        safeBind('btn-duplicate-backup','click',async()=>{
+            try {
+                const key=await idbGetState('last-duplicate-cleanup-backup');
+                const backup=key?await idbGetState(key):null;
+                downloadJsonFile('onda-before-duplicate-cleanup.json',backup?.library||buildLibraryExport({streamingOnly:false}));
+            }catch(err){duplicateStatus('Backup download unavailable: '+err.message);}
+        });
         safeBind('btn-apply-bulk-playlists', 'click', applyBulkPlaylistAdd);
         safeBind('btn-apply-bulk-attributes', 'click', applyBulkAttributes);
         safeBind('btn-save-playlist-edit', 'click', savePlaylistEdit);
@@ -5661,7 +6009,7 @@
                             <div class="library-row-buttons">
                                 ${track ? `<button aria-label="Play" data-onda-action="play" type="button" class="btn-pill btn-detail-play-track" data-track-id="${escapeHtml(id)}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>` : ''}
                                 <button aria-label="Track information" data-onda-action="info" type="button" class="btn-pill btn-detail-info-track" data-track-id="${escapeHtml(id)}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
-                                ${track ? `<button aria-label="Add to playlist" data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
+                                ${track ? `<button aria-label="Add to playlist" data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>` : ''}
                             </div>
                         </div>`;
                     }).join('') : '<div class="library-track-meta">This playlist has no tracks yet.</div>'}
@@ -6023,7 +6371,7 @@
 
         // Schedule only visible canvas frames; never pause the audio engine for battery savings.
         function visualizerShouldAnimate() {
-            return document.visibilityState !== 'hidden' && isPlaying && activeAudio && !activeAudio.paused;
+            return document.visibilityState !== 'hidden' && isPlaying && activeAudio && !activeAudio.paused && !(nativeLocalPlayback&&activeAudio===localAudio);
         }
 
         function stopVisualizerFrames() {
@@ -6754,6 +7102,7 @@
                 return;
             }
 
+            if(nativeLocalPlayback&&activeAudio===localAudio){drawIdleOrStreamVisualizer(isPlaying?'BACKGROUND PLAYBACK':'READY');return;}
             if (!analyser) {
                 drawIdleOrStreamVisualizer('READY');
                 return;
@@ -6794,6 +7143,11 @@
         visualizerPresetSelect?.addEventListener('change', startVisualizer);
 
         // --- 8B. SETTINGS, LAYOUT MODE, FULLSCREEN, AND CURRENT-TRACK MARQUEE ---
+        function refreshPlaybackEngineSetting(){
+            const select=document.getElementById('onda-background-mode'),status=document.getElementById('onda-background-mode-status');
+            if(select)select.value=readPlaybackEnginePreference();
+            if(status)status.textContent=(nativeLocalPlayback?'Active: native audio.':'Active: full visualiser engine.')+(readPlaybackEnginePreference()!==initialPlaybackEngine?' Reopen Onda to apply.':'');
+        }
         function setSettingsTab(tab = 'audio') {
             const tabs = Array.from(document.querySelectorAll('.settings-tab-btn[data-settings-tab]'));
             const cards = Array.from(document.querySelectorAll('.settings-card[data-settings-card]'));
@@ -7085,8 +7439,20 @@
         installMobileMarqueeObserver();
         updateNowPlayingPlaylistPanel(); // Show empty/up-next queue on Current at startup.
         announceOndaVersion();
+        document.documentElement.dataset.ondaPlaybackEngine=nativeLocalPlayback?'native':'visual';
+        refreshPlaybackEngineSetting();
+        safeBind('onda-background-mode','change',e=>{if(['auto','native','visual'].includes(e.target.value)){try{localStorage.setItem(PLAYBACK_ENGINE_KEY,e.target.value);refreshPlaybackEngineSetting();showToast('Engine saved. Reopen Onda to apply.');}catch(_){refreshPlaybackEngineSetting();}}});
         document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
 
+        document.addEventListener('click',event=>{
+            const button=event.target.closest?.('.btn-onda-track-more,[data-onda-action="info"]');
+            if(!button)return;
+            const row=button.closest('[data-track-id],[data-history-track-id]');
+            const id=button.dataset.trackId||row?.dataset.trackId||row?.dataset.historyTrackId;
+            if(!id||!virtualLibrary[id])return;
+            event.preventDefault();event.stopImmediatePropagation();
+            if(button.classList.contains('btn-onda-track-more'))openTrackActions(id);else showSharedTrackInfo(id);
+        },true);
         document.addEventListener('fullscreenchange', updateFullscreenButton);
         if (typeof mobileLayoutQuery.addEventListener === 'function') {
             mobileLayoutQuery.addEventListener('change', applySavedLayoutMode);
@@ -7141,6 +7507,7 @@
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 stopVisualizerFrames(); // Audio and lock-screen controls continue.
+                window.OndaMediaSession?.refresh?.();
                 saveLocalUiStateCheckpoint('visibility-hidden');
                 flushActiveLibraryState('visibility-hidden-flush');
             } else {
