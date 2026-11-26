@@ -41,8 +41,8 @@ export function exportBitrate(kilobits) {
 export class AdvancedLiveExporter {
     constructor({ engine, canvas, Recorder = globalThis.MediaRecorder,
         Stream = globalThis.MediaStream, visibilityTarget = globalThis.document,
-        requestFrame = globalThis.requestAnimationFrame,
-        cancelFrame = globalThis.cancelAnimationFrame,
+        requestFrame = callback => globalThis.requestAnimationFrame(callback),
+        cancelFrame = id => globalThis.cancelAnimationFrame(id),
         onProgress = () => {}, onState = () => {}, onDownload = () => {} }) {
         this.engine = engine;
         this.canvas = canvas;
