@@ -2116,3 +2116,16 @@ body {
   min-height: 0;
   box-sizing: border-box;
 }
+
+.onda-bulk-grid{color:#eee7dc;background:#211f22;border:1px solid #a98050;border-radius:12px;width:min(94vw,1200px);max-height:88vh;padding:12px;box-sizing:border-box}
+.onda-bulk-grid[open]{display:flex;flex-direction:column;gap:10px}
+.onda-bulk-grid::backdrop{background:#0009}
+.onda-bulk-grid header,.onda-bulk-grid footer,.onda-bulk-grid .bulk-tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.onda-bulk-grid header strong,.onda-bulk-grid footer span{flex:1}
+.onda-bulk-grid button,.onda-bulk-grid input{background:#302b2b;color:inherit;border:1px solid #80603b;padding:8px;border-radius:4px}
+.onda-bulk-grid .bulk-scroll{overflow:auto;min-height:0;flex:1}
+.onda-bulk-grid table{border-collapse:collapse;width:100%}
+.onda-bulk-grid th{position:sticky;top:0;background:#352b24;color:#d6ad78;z-index:1;text-align:left}
+.onda-bulk-grid td,.onda-bulk-grid th{border:1px solid #514237;padding:4px;white-space:nowrap}
+.onda-bulk-grid td input{width:140px;box-sizing:border-box;border:0;background:transparent}
+.onda-bulk-grid td.bulk-selected{background:#25454c;outline:1px solid #60bac7;outline-offset:-1px}

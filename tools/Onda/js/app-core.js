@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.31';
+        const ONDA_VERSION = 'v3.32';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4789,6 +4789,57 @@
         try { applyInterfaceZoom(localStorage.getItem('onda-interface-zoom'), false); } catch {}
         interfaceZoom?.addEventListener('input', () => applyInterfaceZoom(interfaceZoom.value));
         safeBind('onda-reset-zoom', 'click', () => applyInterfaceZoom(100));
+
+        // Bulk metadata editor: stage changes by stable track ID, never touch audio.
+        safeBind('btn-db-spreadsheet', 'click', () => {
+            const fields = ['nickname','artist','album','genre','year','bpm','key','tags','playlists'];
+            const labels = ['Display name','Artist','Album','Genre','Year','BPM','Key','Tags','Playlists'];
+            const rows = Object.entries(virtualLibrary).filter(([,m])=>m).map(([id,m])=>({id,fileName:m.fileName||id,values:fields.map(f=>f==='playlists'?getTrackPlaylistNames(id).join('; '):Array.isArray(m[f])?m[f].join('; '):String(m[f]??''))}));
+            const original = new Map(rows.map(r=>[r.id,r.values.slice()]));
+            const dialog = document.createElement('dialog');
+            dialog.className='onda-bulk-grid';
+            dialog.innerHTML='<header><strong>▦ Bulk Library Editor</strong><button type="button" data-close>✕</button></header><div class="bulk-tools"><input type="search" placeholder="Search tracks..." aria-label="Search tracks"><button data-undo>Undo</button><button data-redo>Redo</button><button data-fill>↓ Fill down</button><span>Separate tags and playlists with semicolons</span></div><div class="bulk-scroll"><table><thead><tr><th>Filename 🔒</th>'+labels.map(l=>'<th>'+l+'</th>').join('')+'</tr></thead><tbody></tbody></table></div><footer><span data-status></span><button data-close>Cancel</button><button data-save>Save changes</button></footer>';
+            document.body.append(dialog);
+            const tbody=dialog.querySelector('tbody'), search=dialog.querySelector('input'), status=dialog.querySelector('[data-status]');
+            let visible=rows, anchor=null, end=null, undo=[], redo=[], dragging=false;
+            const snapshot=()=>rows.map(r=>r.values.slice());
+            const checkpoint=()=>{undo.push(snapshot());if(undo.length>30)undo.shift();redo=[];};
+            const changed=()=>rows.filter(r=>r.values.some((v,i)=>v!==original.get(r.id)[i]));
+            const update=()=>{status.textContent=changed().length+' changed tracks · '+rows.length+' total';};
+            const restore=s=>{rows.forEach((r,i)=>r.values=s[i].slice());render();};
+            const paint=()=>{tbody.querySelectorAll('td[data-r]').forEach(td=>{const r=+td.dataset.r,c=+td.dataset.c;td.classList.toggle('bulk-selected',!!anchor&&!!end&&r>=Math.min(anchor.r,end.r)&&r<=Math.max(anchor.r,end.r)&&c>=Math.min(anchor.c,end.c)&&c<=Math.max(anchor.c,end.c));});};
+            function render(){
+                visible=rows.filter(r=>[r.fileName,...r.values].join(' ').toLowerCase().includes(search.value.toLowerCase()));
+                tbody.replaceChildren();anchor=end=null;
+                const frag=document.createDocumentFragment();
+                visible.forEach((row,r)=>{const tr=document.createElement('tr');const name=document.createElement('td');name.textContent=row.fileName;tr.append(name);
+                    row.values.forEach((value,c)=>{const td=document.createElement('td');td.dataset.r=r;td.dataset.c=c;const input=document.createElement('input');input.value=value;input.setAttribute('aria-label',labels[c]+' '+row.fileName);input.addEventListener('change',()=>{if(row.values[c]!==input.value){checkpoint();row.values[c]=input.value;update();}});td.append(input);tr.append(td);});frag.append(tr);});
+                tbody.append(frag);update();
+            }
+            const cell=e=>{const td=e.target.closest('td[data-r]');return td?{r:+td.dataset.r,c:+td.dataset.c}:null;};
+            tbody.addEventListener('pointerdown',e=>{const p=cell(e);if(!p)return;if(!e.shiftKey||!anchor)anchor=p;end=p;dragging=true;paint();});
+            tbody.addEventListener('pointerover',e=>{if(!dragging||!e.buttons)return;const p=cell(e);if(p){end=p;paint();}});
+            dialog.addEventListener('pointerup',()=>dragging=false);
+            search.addEventListener('input',render);
+            dialog.querySelector('[data-undo]').onclick=()=>{if(undo.length){redo.push(snapshot());restore(undo.pop());}};
+            dialog.querySelector('[data-redo]').onclick=()=>{if(redo.length){undo.push(snapshot());restore(redo.pop());}};
+            dialog.querySelector('[data-fill]').onclick=()=>{if(!anchor||!end)return;checkpoint();for(let c=Math.min(anchor.c,end.c);c<=Math.max(anchor.c,end.c);c++){const first=Math.min(anchor.r,end.r);for(let r=first+1;r<=Math.max(anchor.r,end.r);r++)visible[r].values[c]=visible[first].values[c];}render();};
+            dialog.addEventListener('paste',e=>{if(!anchor||!tbody.contains(e.target))return;const t=e.clipboardData.getData('text/plain');if(!t.includes('\t')&&!t.includes('\n'))return;e.preventDefault();checkpoint();t.replace(/\r/g,'').replace(/\n$/,'').split('\n').forEach((line,i)=>line.split('\t').forEach((v,j)=>{if(visible[anchor.r+i]&&anchor.c+j<fields.length)visible[anchor.r+i].values[anchor.c+j]=v;}));render();});
+            dialog.addEventListener('copy',e=>{if(!anchor||!end||!tbody.contains(e.target)||(anchor.r===end.r&&anchor.c===end.c))return;e.preventDefault();const lines=[];for(let r=Math.min(anchor.r,end.r);r<=Math.max(anchor.r,end.r);r++)lines.push(visible[r].values.slice(Math.min(anchor.c,end.c),Math.max(anchor.c,end.c)+1).join('\t'));e.clipboardData.setData('text/plain',lines.join('\n'));});
+            const close=()=>{if(changed().length&&!confirm('Discard unsaved bulk edits?'))return;dialog.close();dialog.remove();};
+            dialog.querySelectorAll('[data-close]').forEach(b=>b.onclick=close);
+            dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
+            dialog.querySelector('[data-save]').onclick=async()=>{
+                const edits=changed();const split=v=>[...new Set(v.split(';').map(s=>s.trim()).filter(Boolean))];
+                for(const r of edits){if(!virtualLibrary[r.id]){alert('A track changed outside the editor. Reopen the editor.');return;}if(r.values[8]!==original.get(r.id)[8]&&split(r.values[8]).some(n=>!Object.prototype.hasOwnProperty.call(playlists,n))){alert('Unknown playlist. Create it first: '+split(r.values[8]).filter(n=>!Object.prototype.hasOwnProperty.call(playlists,n)).join(', '));return;}}
+                if(!edits.length){dialog.close();dialog.remove();return;}
+                if(!confirm('Save metadata changes to '+edits.length+' tracks?'))return;
+                for(const r of edits){const m=virtualLibrary[r.id];fields.forEach((f,i)=>{if(r.values[i]===original.get(r.id)[i])return;if(f==='playlists'){const wanted=split(r.values[i]);Object.keys(playlists).forEach(n=>{if(!wanted.includes(n))playlists[n]=playlists[n].filter(t=>getTrackId(t)!==r.id);});wanted.forEach(n=>addTrackIdToPlaylist(r.id,n));syncTrackPlaylistMetadata(r.id);}else m[f]=f==='tags'?split(r.values[i]):r.values[i];});m.updatedAt=new Date().toISOString();}
+                renderLibraryManager();renderPlaylistsList();saveActiveLibraryState('bulk-grid-edit');await flushActiveLibraryState('bulk-grid-edit');dialog.close();dialog.remove();showToast('Bulk metadata saved for '+edits.length+' tracks.');
+            };
+            render();dialog.showModal();
+        });
+
         safeBind('btn-mobile-import-audio', 'click', () => {
             if (fileInput) fileInput.click();
         });
