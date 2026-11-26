@@ -54,6 +54,7 @@ import { normaliseFilmStripOptions } from './gl-transitions/FilmStrip.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { commonEffectControls, EFFECT_COMMON_CONTROL_GROUPS } from './effect-inspector-controls.mjs';
 import { TIMELINE_EFFECTS, normaliseTimelineEffect, paintTimelineEffect, requiresCompositeSource, paintEffectPreviewScene } from './timeline-effects.mjs';
 import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
@@ -1664,13 +1665,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-misalignment-controls').hidden=!isMisalignment;
         document.getElementById('effect-noir-glitch-controls').hidden=!isNoirGlitch;
         document.getElementById('effect-glitch-flux-controls').hidden=!isGlitchFlux;
-        document.getElementById('effect-color-control').hidden=isNoirGlitch||isNegativeChaos||isHaloBlur||isChromaticQuirk||isReboundSwing||isPendulumSwing||isTVStatic||isSignalInterference||isCRTScanlines||isDataBurst||isSignalTear||isRGBBlockGlitch;
         document.getElementById('effect-mist-fog-controls').hidden=!isMistFog;
         document.getElementById('effect-starburst-controls').hidden=!isStarburst;
         document.getElementById('effect-camera-frame-controls').hidden=!isCameraFrame;
-        document.getElementById('effect-density-control').hidden=isMisalignment||isHaloBlur||isChromaticQuirk||isEdgeGlowQuality||isGlowQuality||isRhythmicFlicker||isReboundSwing||isPendulumSwing||isStarburst||isCameraFrame||isCRTScanlines;
-        document.getElementById('effect-scale-control').hidden=isHaloBlur||isEdgeGlowQuality||isGlowQuality||isRhythmicFlicker||isStarburst||isCameraFrame||isTVStatic||isSignalInterference||isCRTScanlines||isDataBurst||isSignalTear||isRGBBlockGlitch||isLineCorruption;
-        document.getElementById('effect-direction-control').hidden=isHaloBlur||isEdgeGlowQuality||isGlowQuality||isRhythmicFlicker||isCameraFrame||isTVStatic||isSignalInterference||isCRTScanlines||isDataBurst||isSignalTear||isRGBBlockGlitch||isLineCorruption;
         document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':isMistFog?'Fog opacity (%)':isTVStatic?'Snow opacity (%)':isSignalInterference?'Signal strength (%)':isCRTScanlines?'Raster strength (%)':isDataBurst?'Packet corruption (%)':isFaultCassette?'Tape tracking intensity (%)':isLineCorruption?'Line damage strength (%)':isRGBBlockGlitch?'RGB block strength (%)':isSignalTear?'Tear intensity (%)':'Intensity (%)';
         document.getElementById('effect-direction-label').textContent=isReboundSwing?'Recoil shear axis (°)':isPendulumSwing?'Release angle phase (°)':isVibrationFlash?'Camera vibration axis (°)':isShockwave?'Shock front drift (°)':isElectricRipple?'Electrical wave drift (°)':isRippleDistortion?'Water ripple drift direction (°)':isFaultCassette?'Tracking drift direction (°)':isFireExplosion?'Blast wind direction (°)':isFlyingDebris?'Wind direction (°)':isElectricSparks?'Arc direction (°)':isStarburst?'Starting angle (°)':isMistFog?'Wind direction (°)':'Direction (°)';
         document.getElementById('effect-color-label').textContent=isVibrationFlash?'Exposure flash tint':isShockwave?'Compression front tint':isElectricRipple?'Electrical discharge colour':isRippleDistortion?'Water crest highlight colour':isFaultCassette?'Tape dropout tint':isFireExplosion?'Hot core colour':isFlyingDebris?'Debris material colour':isElectricSparks?'Arc glow colour':isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':isLineCorruption?'Primary streak colour':isMistFog?'Mist colour':'Colour';
@@ -1678,21 +1675,19 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-scale-label').textContent=isReboundSwing?'Recoil scale (%)':isPendulumSwing?'Swing arc scale (%)':isVibrationFlash?'Camera displacement scale (%)':isShockwave?'Shockwave reach (%)':isElectricRipple?'Electrical front reach (%)':isRippleDistortion?'Ripple expansion scale (%)':isFaultCassette?'Tracking band size (%)':isFireExplosion?'Blast size (%)':isFlyingDebris?'Shard size (%)':isElectricSparks?'Spark reach (%)':isLightSweep?'Beam width (%)':isMistFog?'Bank spread (%)':'Scale (%)';
         document.getElementById('effect-distortion-label').textContent=isReboundSwing?'Recoil amplitude (%)':isPendulumSwing?'Swing arc amplitude (%)':isVibrationFlash?'Vibration amplitude (%)':isShockwave?'Source refraction (%)':isElectricRipple?'Electrical displacement (%)':isRippleDistortion?'Water refraction (%)':isFaultCassette?'Tape displacement (%)':isFireExplosion?'Fireball turbulence (%)':isFlyingDebris?'Air turbulence (%)':isElectricSparks?'Arc jaggedness (%)':isMistFog?'Rolling turbulence (%)':isSignalInterference?'Horizontal displacement (%)':isLineCorruption?'Source line displacement (%)':isRGBBlockGlitch?'Block displacement (%)':isSignalTear?'Horizontal tear shift (%)':'Distortion (%)';
         document.getElementById('effect-blur-label').textContent=isLightSweep?'Beam softness (px)':isMistFog?'Edge feathering (%)':'Blur (px)';
-        document.getElementById('effect-origin-controls').hidden=
-            !['chromatic-quirk','god-rays','ripple-distortion','electric-ripple','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','particle-sparks','particle-debris','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst','particle-sparks','fire-explosion','electric-ripple'].includes(track?.effectOverlay?.presetId);
-        document.getElementById('effect-distortion-control').hidden=
-            isTVStatic||isCRTScanlines||isDataBurst||!(['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
-              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','mist-fog-bank','sci-fi-scan','fire-flames','engine-heat','light-leaks','god-rays','particle-sparks','particle-debris','fire-explosion'].includes(track?.effectOverlay?.presetId)
-              || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
-        document.getElementById('effect-glow-control').hidden=
-            !['glow','edge-glow','halo-blur','light-sweep','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst','particle-sparks','fire-explosion','electric-ripple'].includes(track?.effectOverlay?.presetId);
-        document.getElementById('effect-blur-control').hidden=
-            !['glow','edge-glow','halo-blur','light-sweep','mist-fog-bank','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
+        const activeCommon=commonEffectControls(track?.effectOverlay?.presetId);
+        for(const name of EFFECT_COMMON_CONTROL_GROUPS){
+            const id=name==='origin'?'effect-origin-controls':'effect-'+name+'-control';
+            document.getElementById(id).hidden=!activeCommon.includes(name);
+        }
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
             for(const [name,input] of Object.entries(elements.effectInspectorInputs)){
-                if(effect[name]!==undefined)input.value=String(effect[name]);
+                if(effect[name]!==undefined){
+                    if(input.type==='checkbox')input.checked=Boolean(effect[name]);
+                    else input.value=String(effect[name]);
+                }
             }
         }
         if(!multiple&&track?.textOverlay){
