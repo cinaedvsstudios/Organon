@@ -1,0 +1,24 @@
+name: MotoriClip shared title animation QA
+on:
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/js/text-template-renderer.mjs'
+      - 'tools/audio-timeline/advanced.html'
+      - 'tools/audio-timeline/tests/text-template-renderer.test.mjs'
+      - 'tools/audio-timeline/tests/shared-title-animation.browser.mjs'
+      - '.github/workflows/motoriclip-shared-title-animation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  title-animation-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core@1.56.1
+      - run: node --test tools/audio-timeline/tests/text-template-renderer.test.mjs
+      - run: node tools/audio-timeline/tests/shared-title-animation.browser.mjs
