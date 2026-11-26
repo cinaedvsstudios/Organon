@@ -2131,3 +2131,5 @@ body {
 .onda-bulk-grid td.bulk-selected{background:#25454c;outline:1px solid #60bac7;outline-offset:-1px}
 
 .onda-bulk-grid th{cursor:pointer}.onda-bulk-grid [hidden]{display:none!important}.onda-bulk-grid .bulk-columns label{display:flex;align-items:center;gap:5px}.onda-bulk-grid .bulk-columns summary{cursor:pointer;color:#d6ad78}
+
+.onda-travel-check{width:min(90vw,650px)}.onda-travel-check summary{cursor:pointer;padding:10px;border-bottom:1px solid #514237;color:#d6ad78}.onda-travel-check li{padding:3px;overflow-wrap:anywhere}.onda-travel-check p{margin:4px 0}

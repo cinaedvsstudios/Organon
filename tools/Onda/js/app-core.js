@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.33';
+        const ONDA_VERSION = 'v3.34';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1670,7 +1670,9 @@
             if (mobileStatus) {
                 const allTracks = Object.values(virtualLibrary);
                 const streams = allTracks.filter(meta => meta.sourceType === 'stream' || !!meta.streamUrl).length;
-                mobileStatus.textContent = `${entries.length} shown · ${allTracks.length} tracks · ${streams} streams`;
+                const cached = allTracks.filter(m => /cached$/.test(sourceStatus(m))).length;
+                const relink = allTracks.filter(m => sourceStatus(m)==='needs relink').length;
+                mobileStatus.textContent = `${entries.length} shown · ${cached} cached · ${streams} streams · ${relink} relink`;
             }
             visibleLibraryIds = entries.map(([id]) => id);
             selectedLibraryIds = new Set(Array.from(selectedLibraryIds).filter(id => virtualLibrary[id]));
@@ -4791,6 +4793,25 @@
         safeBind('onda-reset-zoom', 'click', () => applyInterfaceZoom(100));
 
         // Bulk metadata editor: stage changes by stable track ID, never touch audio.
+        safeBind('btn-db-travel-check', 'click', () => {
+            const groups = [
+                ['Cached audio (offline candidate)',s=>/cached$/.test(s)],
+                ['Loaded in memory (not confirmed saved)',s=>/ready$/.test(s)],
+                ['Linked files (permission may be needed)',s=>/linked$/.test(s)],
+                ['Needs reconnection',s=>s==='needs relink'],
+                ['Internet-dependent streams',s=>s==='stream'],
+                ['External references',s=>s==='external reference'],
+                ['Not verified',s=>!(/cached$|ready$|linked$/.test(s)||['needs relink','stream','external reference'].includes(s))]
+            ];
+            const dialog=document.createElement('dialog');dialog.className='onda-bulk-grid onda-travel-check';
+            const heading=document.createElement('header');heading.textContent='🧳 Travel Check';dialog.append(heading);
+            const note=document.createElement('p');note.textContent='Library inventory only. Cached audio is not a guarantee of offline playback. Test in airplane mode after closing and reopening Onda. Do not clear site data.';dialog.append(note);
+            const summary=document.createElement('p');summary.textContent='Network hint: '+(navigator.onLine?'online':'offline')+' · Service worker: '+(navigator.serviceWorker?.controller?'controlling this page':'not controlling this page')+' · Offline startup and background playback: manual test required.';dialog.append(summary);
+            const scroll=document.createElement('div');scroll.className='bulk-scroll';dialog.append(scroll);
+            const records=Object.values(virtualLibrary).filter(Boolean);
+            groups.forEach(([label,test])=>{const matches=records.filter(m=>test(sourceStatus(m)));const details=document.createElement('details');const title=document.createElement('summary');title.textContent=label+' — '+matches.length;details.append(title);const list=document.createElement('ul');matches.forEach(m=>{const li=document.createElement('li');li.textContent=getDisplayTitle(m);list.append(li);});details.append(list);scroll.append(details);});
+            const close=document.createElement('button');close.textContent='Close';close.onclick=()=>dialog.close();dialog.append(close);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);dialog.showModal();
+        });
         safeBind('btn-db-spreadsheet', 'click', () => {
             const fields = ['nickname','artist','album','genre','year','bpm','key','tags','playlists'];
             const labels = ['Display name','Artist','Album','Genre','Year','BPM','Key','Tags','Playlists'];
