@@ -12,6 +12,7 @@ import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
 import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
+import {buildHaloBlurFrame} from '../js/timeline-halo-blur.mjs';
 import {buildChromaticQuirkFrame} from '../js/timeline-chromatic-quirk.mjs';
 import {buildEdgeGlowFrame} from '../js/timeline-edge-glow.mjs';
 import {buildGlowFrame} from '../js/timeline-glow.mjs';
@@ -54,7 +55,7 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk','halo-blur'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
@@ -63,7 +64,7 @@ test('each procedural recipe is deterministic, time-varying, seek-reversible and
    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
    vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181,
     pendulumPeriod:2.6,pendulumDamping:18,pendulumShutter:65,pendulumFlex:40});
-   const painter=preset.id==='chromatic-quirk'?buildChromaticQuirkFrame:preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
+   const painter=preset.id==='halo-blur'?buildHaloBlurFrame:preset.id==='chromatic-quirk'?buildChromaticQuirkFrame:preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
@@ -229,7 +230,7 @@ test('phase 3D source pixel effects include independent RGB and bright/edge algo
  for(const id of PIXEL_EFFECT_IDS){
   assert.equal(requiresCompositeSource(id),true);
   assert.equal(isPixelEffect(id),true);
-  if(id==='glow'||id==='edge-glow'||id==='chromatic-quirk')continue; // evaluated against actual RGBA in dedicated tests
+  if(id==='glow'||id==='edge-glow'||id==='chromatic-quirk'||id==='halo-blur')continue; // evaluated against actual RGBA in dedicated tests
   assert.notEqual(paint(id,.25),paint(id,1.44),id+' changes over local time');
   assert.equal(paint(id,.25),paint(id,.25),id+' works with reverse scrubbing');
  }
@@ -344,5 +345,23 @@ test('Chromatic Quirk separates real wavelengths with radial and directional geo
  // Hidden RGB in transparent input must not contaminate visible output.
  const contaminated=src.slice();for(let i=0;i<contaminated.length;i+=4)if(!contaminated[i+3])contaminated.set([255,0,255,0],i);
  const b=buildChromaticQuirkFrame(contaminated,w,h,e,.25).data;
+ for(let i=0;i<a.length;i+=4)if(a[i+3])assert.deepEqual(a.slice(i,i+4),b.slice(i,i+4));
+});
+
+test('Halo Blur keeps a sharp focal core, diffuses the periphery and preserves alpha',()=>{
+ const w=160,h=90,src=new Uint8ClampedArray(w*h*4);
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=(y*w+x)*4,v=(Math.floor(x/4)+Math.floor(y/4))%2?245:15;src.set([v,v,v,x<4?0:x<8?120:255],i);}
+ const e=normaliseTimelineEffect({presetId:'halo-blur',blur:40,glow:70,haloFocus:30,haloFeather:40,haloAspect:130,haloBreath:80});
+ const frame=(t,opts={})=>buildHaloBlurFrame(src,w,h,{...e,...opts},t).data;
+ const a=frame(.25);assert.deepEqual(frame(.25,{blur:0}),src);
+ for(let y=40;y<50;y++)for(let x=75;x<85;x++){const i=(y*w+x)*4;assert.deepEqual(a.slice(i,i+4),src.slice(i,i+4));}
+ const contrast=(p,y,x)=>Math.abs(p[(y*w+x)*4]-p[(y*w+x+4)*4]);
+ assert.ok(contrast(a,12,12)<contrast(src,12,12)*.4,'peripheral detail must soften');
+ assert.notDeepEqual(a,frame(1.8));assert.deepEqual(a,frame(.25));
+ for(let i=3;i<a.length;i+=4)assert.equal(a[i],src[i]);
+ for(const [k,v] of Object.entries({haloFocus:60,haloFeather:10,haloAspect:60,haloBreath:0,originX:15,originY:85,glow:0,blur:5}))assert.notDeepEqual(a,frame(.25,{[k]:v}),k);
+ assert.deepEqual(snapshotClip({id:'halo',type:'sticker',effectOverlay:e}).effectOverlay,e);
+ const contaminated=src.slice();for(let i=0;i<contaminated.length;i+=4)if(!contaminated[i+3])contaminated.set([255,0,255,0],i);
+ const b=buildHaloBlurFrame(contaminated,w,h,e,.25).data;
  for(let i=0;i<a.length;i+=4)if(a[i+3])assert.deepEqual(a.slice(i,i+4),b.slice(i,i+4));
 });

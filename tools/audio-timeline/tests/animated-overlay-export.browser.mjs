@@ -68,7 +68,7 @@ try{
  const pageErrors=[];
  page.on('pageerror',err=>pageErrors.push(String(err)));
  await page.goto('http://127.0.0.1:'+port+'/tools/audio-timeline/tests/browser-harness.html');
- const presets=['light-sweep','glitch-flux','pixel-scan','fire-embers','fire-explosion','particle-dust','particle-debris','particle-sparks','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays','starburst','camera-frame','mist-fog-bank','tv-static','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk'];
+ const presets=['light-sweep','glitch-flux','pixel-scan','fire-embers','fire-explosion','particle-dust','particle-debris','particle-sparks','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','god-rays','starburst','camera-frame','mist-fog-bank','tv-static','signal-interference','crt-scanlines','data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk','halo-blur'];
  const selectedPreset=process.env.MOTORICLIP_EFFECT_PRESET;
  if(selectedPreset)assert.ok(presets.includes(selectedPreset),'Requested acceptance preset is not in the effect list');
  for(const preset of selectedPreset?[selectedPreset]:presets){
