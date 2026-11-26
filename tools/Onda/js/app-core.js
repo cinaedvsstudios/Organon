@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.38';
+        const ONDA_VERSION = 'v3.39';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -6962,8 +6962,6 @@
         updateNowPlayingPlaylistPanel(); // Show empty/up-next queue on Current at startup.
         announceOndaVersion();
         document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
-        safeBind('btn-open-cloud-setup-from-settings', 'click', () => { if (typeof openOndaCloudSetup === 'function') openOndaCloudSetup(false); else document.getElementById('onda-cloud-setup-modal')?.classList.add('open'); });
-        safeBind('btn-settings-cloud-save', 'click', () => { const btn = document.getElementById('onda-cloud-save-current'); if (btn) btn.click(); else showToast('Cloud setup is not ready yet.'); });
 
         document.addEventListener('fullscreenchange', updateFullscreenButton);
         if (typeof mobileLayoutQuery.addEventListener === 'function') {

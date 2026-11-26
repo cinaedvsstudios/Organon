@@ -359,19 +359,6 @@
         } catch (error) { setStatus(error.message || String(error), true); }
     }
 
-    function maybePromptOnStartup() {
-        const current = config();
-        const dismissedAt = Date.parse(localStorage.getItem(DISMISSED_KEY) || '');
-        const dismissedRecently = Number.isFinite(dismissedAt) && (Date.now() - dismissedAt < 18 * 60 * 60 * 1000);
-        if (!current.deviceId && !dismissedRecently) {
-            openSetupWizard('First setup: choose this browser device profile and enter the sync secret. Onda uploads JSON library data only; audio stays local.');
-        } else if (current.deviceId && !hasLocalState() && !dismissedRecently) {
-            openSetupWizard('No local Onda library/settings were found in this browser. Load the selected cloud profile or continue empty.');
-        } else if (current.deviceId && libraryTrackCount() === 0 && !dismissedRecently) {
-            openSetupWizard('This browser currently has 0 library tracks. You can load the selected device profile from cloud before continuing.');
-        }
-    }
-
     function bindEvents() {
         $('onda-cloud-close-setup')?.addEventListener('click', closeSetupWizard);
         $('onda-cloud-modal-overlay')?.addEventListener('click', closeSetupWizard);
@@ -400,7 +387,7 @@
         bindEvents();
         updateStatusSummary();
         renderDevices([]);
-        window.setTimeout(maybePromptOnStartup, 1400);
+        // Local-first startup. Cloud setup opens only on explicit user action.
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
