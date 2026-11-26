@@ -28,7 +28,7 @@ try{
   engine.outputWidth=W;engine.outputHeight=H;
   const under={id:'base',type:'background',media:bg,sourceName:'base.png',start:0,clipDuration:20,order:10,visible:true,opacity:1};
   const original={id:'overlay',type:'sticker',media,sourceName:'effect.png',start:2,sourceOffset:0,sourceDuration:300,clipDuration:4,order:0,visible:true,opacity:1};
-  const pixels=(track,time)=>{engine.tracks=[under,track];engine.currentTime=time;engine.renderFrame();return new Uint8Array(output.getContext('2d').getImageData(0,0,W,H).data);};
+  const pixels=(track,time)=>{engine.tracks=[under,track];engine.visualStackCache=null;engine.visualStackCacheKey='';engine.currentTime=time;engine.renderFrame();return new Uint8Array(output.getContext('2d').getImageData(0,0,W,H).data);};
   const equal=(a,b)=>a.length===b.length&&a.every((v,i)=>v===b[i]);
   let cases=0;
   for(const preset of TIMELINE_EFFECTS)for(const speed of [.5,2]){
