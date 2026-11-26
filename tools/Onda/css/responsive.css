@@ -2345,8 +2345,11 @@ body.onda-force-mobile-mode .workspace-mode-bar #tab-btn-queue { flex:1 1 0; min
 }
 
 /* v3.45: Queue owns one scrolling surface, not a stack of bordered cards. */
+/* Preserve the original outer bronze workspace frame; only the nested queue
+   panels are flattened. Small padding leaves the list maximum usable width. */
 #workspace-viewport:has(#tab-library[data-playback-view="queue"]) {
-  background:transparent; border:0; box-shadow:none; padding:0;
+  background-color:var(--bg-card); border:1.5px solid var(--chiseled-bronze);
+  border-radius:12px; padding:8px; box-sizing:border-box;
 }
 #tab-library[data-playback-view="queue"] { padding:0 2px 8px; overflow-y:auto; }
 #tab-library[data-playback-view="queue"] #metadata-display-card,
