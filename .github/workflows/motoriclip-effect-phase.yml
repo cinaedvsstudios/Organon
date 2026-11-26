@@ -1,0 +1,17 @@
+name: MotoriClip effect phase continuity
+on:
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/**'
+      - '.github/workflows/motoriclip-effect-phase.yml'
+jobs:
+  effect-phase-proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core
+      - run: node tools/audio-timeline/tests/effect-phase-continuity.browser.mjs
