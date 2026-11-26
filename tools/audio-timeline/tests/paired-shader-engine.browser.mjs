@@ -183,6 +183,43 @@ try{
       engine.fadeWebGL.canvas.height]};
     // Exercise all 41 effects on one long-lived engine, not a fresh
     // context per effect. Returning to Fade must reproduce identical pixels.
+    // Prove the real WebGL upload path allocates once per size, refreshes
+    // mutable source pixels even at the same time, and reallocates on resize.
+    const gl=engine.fadeWebGL.canvas.getContext('webgl');
+    const nativeImage=gl.texImage2D.bind(gl),nativeSub=gl.texSubImage2D.bind(gl);
+    const uploads={allocate:0,update:0};
+    gl.texImage2D=(...args)=>{uploads.allocate++;return nativeImage(...args);};
+    gl.texSubImage2D=(...args)=>{uploads.update++;return nativeSub(...args);};
+    const previous=snapshot(.5);
+    const portraitCtx=portrait.getContext('2d');
+    const originalPixels=portraitCtx.getImageData(0,0,portrait.width,portrait.height);
+    portraitCtx.fillStyle='#fbef12';portraitCtx.fillRect(0,0,portrait.width,portrait.height);
+    const changed=snapshot(.5);
+    const sourceChanged=previous.some((v,i)=>v!==changed[i]);
+    portraitCtx.putImageData(originalPixels,0,0);
+    snapshot(.5);
+    const sameSize={...uploads};
+    engine.outputWidth=160;engine.outputHeight=96;snapshot(.5);
+    const resizedUploads={...uploads};
+    engine.outputWidth=192;engine.outputHeight=108;snapshot(.5);
+    gl.texImage2D=nativeImage;gl.texSubImage2D=nativeSub;
+    // An unavailable WebGL implementation must surface an error, not
+    // substitute another effect. Exercise the exact engine dispatcher.
+    const originalGetContext=HTMLCanvasElement.prototype.getContext;
+    let fallbackError='';
+    const denied=new AdvancedMediaEngine({canvas:make(W,H,()=>{}),mediaBin:document.createElement('div'),
+      onRenderError:e=>{fallbackError=String(e);}});
+    denied.outputWidth=W;denied.outputHeight=H;
+    denied.tracks=[under,a,b];
+    denied.currentTime=1.5;
+    try{
+      HTMLCanvasElement.prototype.getContext=function(type,...args){
+        return type==='webgl'?null:originalGetContext.call(this,type,...args);
+      };
+      denied.renderFrame();
+    }finally{HTMLCanvasElement.prototype.getContext=originalGetContext;}
+    denied.clearAll();
+    const textureProof={sourceChanged,sameSize,resizedUploads,fallbackError};
     const beforeCache=snapshot(.5);
     const countGpu=()=>Object.keys(engine).filter(key=>key.endsWith('WebGL')&&engine[key]).length;
     const countScratch=()=>Object.keys(engine).filter(key=>/(From|To)Scratch$/.test(key)&&engine[key]).length;
@@ -202,7 +239,7 @@ try{
     const cacheReused=engine.fadeWebGL===retained;
     engine.clearAll();
     const cache={maxContexts,maxSourceCanvases,fadeEvicted,cacheStable,cacheReused,cleared:countGpu()===0&&countScratch()===0};
-    return {cache,fade,letterbox,sticker,multiply,cover,resized,dimensions,gpuUsed,
+    return {textureProof,cache,fade,letterbox,sticker,multiply,cover,resized,dimensions,gpuUsed,
       reverseStable,isolated,backgroundOnly:Array.from(backgroundOnly),
       catalog,cleanup:engine.fadeWebGL===null&&engine.pairedBlendScratch===null
         &&engine.fadeFromScratch===null&&engine.fadeToScratch===null,
@@ -223,6 +260,11 @@ try{
   assert.equal(result.catalog.lastFour,true);
   assert.equal(result.gpuUsed,true);
   assert.equal(result.cleanup,true);
+  assert.equal(result.textureProof.sourceChanged,true);
+  assert.deepEqual(result.textureProof.sameSize,{allocate:0,update:6});
+  assert.deepEqual(result.textureProof.resizedUploads,{allocate:2,update:6});
+  assert.match(result.textureProof.fallbackError,/requires WebGL/);
+  console.log('[MotoriClip #75 texture and failure proof] '+JSON.stringify(result.textureProof));
   assert.ok(result.cache.maxContexts<=4,JSON.stringify(result.cache));
   assert.ok(result.cache.maxSourceCanvases<=8,JSON.stringify(result.cache));
   for(const key of ['fadeEvicted','cacheStable','cacheReused','cleared'])assert.equal(result.cache[key],true,key);
