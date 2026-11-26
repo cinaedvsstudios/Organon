@@ -59,14 +59,17 @@ try{
  console.log('[MotoriClip #68 play pause loop restart stop] PASS');
  for(const id of ['pixel-scan','particle-dust','fire-embers','god-rays','halo-blur','rhythmic-flicker','camera-frame']){
   const entry=catalog.find(p=>p.id===id);await page.locator('#effects-library-grid [data-preset-id="'+id+'"]').click();
-  await page.locator('#inspector-timeline-effect').waitFor({state:'visible'});
+  // Generated file insertion is asynchronous; wait for the new selection.
+  await page.locator('#inspector-timeline-effect[data-preset-id="'+id+'"]').waitFor({state:'visible'});
   for(const name of ['density','scale','direction','distortion','glow','blur','origin','color']){
    const selector='#effect-'+name+(name==='origin'?'-controls':'-control');
    assert.equal(await page.locator(selector).isVisible(),entry.groups.includes(name),id+' '+name+' visibility');
   }
   if(id==='camera-frame'){
    const rec=page.locator('#effect-show-rec');await rec.selectOption('false');
+   const oldClip=await page.locator('#inspector-timeline-effect').getAttribute('data-clip-id');
    await page.locator('#effects-library-grid [data-preset-id="camera-frame"]').click();
+   await page.waitForFunction(previous=>{const panel=document.getElementById('inspector-timeline-effect');return panel.dataset.presetId==='camera-frame'&&panel.dataset.clipId!==previous;},oldClip);
    assert.equal(await rec.inputValue(),'true','New camera HUD must not inherit previous clip REC setting');
   }
   console.log('[MotoriClip #67 native common groups] PASS',id,entry.groups.join(','));
