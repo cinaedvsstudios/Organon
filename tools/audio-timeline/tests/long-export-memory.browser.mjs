@@ -93,21 +93,30 @@ const chrome=process.env.CHROME_BIN||['/usr/bin/google-chrome','/usr/bin/chromiu
 assert.ok(chrome,'Chrome unavailable');
 const browser=await chromium.launch({executablePath:chrome,headless:true,
     args:['--no-sandbox','--disable-dev-shm-usage','--enable-features=WebCodecs',
-        ...((process.env.MOTORICLIP_LONGFORM==='1'||process.env.MOTORICLIP_FULLHD120==='1')?['--js-flags=--expose-gc']:[])]});
+        ...((process.env.MOTORICLIP_LONGFORM==='1'||process.env.MOTORICLIP_FULLHD120==='1'||process.env.MOTORICLIP_STACKED_ENDURANCE)?['--js-flags=--expose-gc']:[])]});
 try{
     const context=await browser.newContext({acceptDownloads:true});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
+    page.on('crash',()=>console.error('[MotoriClip browser] renderer crashed'));
+    browser.on('disconnected',()=>console.log('[MotoriClip browser] disconnected'));
     page.on('console',message=>{
         const value=message.text();
-        if(value.startsWith('[MotoriClip 6L progress]'))console.log(value);
+        if(value.startsWith('[MotoriClip 6L progress]')||value.startsWith('[MotoriClip 79 progress]'))console.log(value);
     });
     await page.goto('http://127.0.0.1:'+server.address().port+
         '/tools/audio-timeline/tests/browser-harness.html');
+    const stacked=process.env.MOTORICLIP_STACKED_ENDURANCE||'';
     const fullHd120=process.env.MOTORICLIP_FULLHD120==='1';
-    const longform=process.env.MOTORICLIP_LONGFORM==='1'||fullHd120;
-    const phase=fullHd120?'6L':longform?'6K':'6G';
-    const scenarios=fullHd120 ? [
+    const longform=process.env.MOTORICLIP_LONGFORM==='1'||fullHd120||Boolean(stacked);
+    const phase=stacked?'79':fullHd120?'6L':longform?'6K':'6G';
+    const scenarios=stacked ? [stacked==='4k' ? {
+        name:'4k-60s-stacked-8clips',format:'mp4',width:3840,height:2160,
+        duration:60,fps:24,bitrateKbps:18000,clipCount:8,clipStep:7.3,clipDuration:8.4,stacked:true
+    } : {
+        name:'1080p-120s-stacked-16clips',format:'mp4',width:1920,height:1080,
+        duration:120,fps:30,bitrateKbps:6000,clipCount:16,clipStep:7.35,clipDuration:8.4,stacked:true
+    }] : fullHd120 ? [
         {
             // 16 staggered 8.4s clips from two 10s H.264/AAC camera-like sources;
             // last clip ends at 118.65s, leaving a testable silent tail.
@@ -143,11 +152,16 @@ try{
         console.log('[MotoriClip '+phase+'] START',cfg.name);
         const base=chromeMemory(process.pid);
         const samples=[base];
+        let lastReport=Date.now();
         const timer=setInterval(()=>{
-            try{samples.push(chromeMemory(process.pid))}catch(error){
-                console.warn('Memory sample failed: '+String(error));
-            }
-        },400);
+            try{
+                const sample=chromeMemory(process.pid);samples.push(sample);
+                if(stacked&&Date.now()-lastReport>=60000){
+                    lastReport=Date.now();
+                    console.log('[MotoriClip 79 memory] '+cfg.name+' '+JSON.stringify(sample));
+                }
+            }catch(error){console.warn('Memory sample failed: '+String(error));}
+        },stacked?2000:400);
         const started=Date.now();
         try{
             // A 60s 1080p WebCodecs render takes ~5 minutes in hosted CI.
@@ -155,7 +169,9 @@ try{
             // download timeout without a decoder crash or memory exhaustion.
             // Allow up to 17 minutes for the 120s stress scenario only.
             const downloadPromise=page.waitForEvent('download',{
-                timeout:fullHd120 ? 1020000 : 420000
+                // Software-rendered stacked exports measured ~11/18 min per 10%.
+                // Preserve every frame and effect; allow realistic CI time, not a shorter test.
+                timeout:stacked ? (stacked==='4k'?240:180)*60000 : fullHd120 ? 1020000 : 420000
             });
             const renderPromise=page.evaluate(async scenario=>{
                 const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
@@ -220,6 +236,21 @@ try{
                     blendMode:'source-over',order:1,
                     transparency:{mode:'native'}
                 });
+                if(scenario.stacked){
+                    // Transparent placeholder only supplies native file/decoder metadata.
+                    // The procedural painters are executed by the production compositor.
+                    const blank=document.createElement('canvas');blank.width=4;blank.height=4;
+                    const blob=await new Promise(done=>blank.toBlob(done,'image/png'));
+                    const file=new File([blob],'endurance-procedural.png',{type:'image/png'});
+                    const media=await readImage(file);
+                    for(const [index,presetId] of ['starburst','camera-frame'].entries()){
+                        tracks.push({id:'effect-'+presetId,type:'sticker',file,media,sourceName:file.name,
+                            start:0,sourceOffset:0,sourceDuration:scenario.duration,clipDuration:scenario.duration,
+                            visible:true,opacity:.8,order:scenario.clipCount+index+2,blendMode:'source-over',
+                            transparency:{mode:'native'},effectOverlay:{presetId,intensity:65,glow:45,
+                                scale:100,color:'#ffe09c',speed:1,density:50,seed:79}});
+                    }
+                }
                 const canvas=document.createElement('canvas');
                 canvas.width=scenario.width;canvas.height=scenario.height;
                 document.body.appendChild(canvas);
@@ -236,11 +267,11 @@ try{
                     engine,onState:s=>phases.push(s.phase),
                     onProgress:s=>{
                         percentages.push(s.percent);
-                        if(scenario.duration===120&&scenario.width===1920){
+                        if(scenario.stacked||(scenario.duration===120&&scenario.width===1920)){
                             const next=Math.floor(s.percent/10);
                             if(next>milestone){
                                 milestone=next;
-                                console.info('[MotoriClip 6L progress] '
+                                console.info('[MotoriClip '+(scenario.stacked?'79':'6L')+' progress] '
                                     +scenario.name+' '+Math.round(s.percent)+'%');
                             }
                         }
@@ -270,21 +301,22 @@ try{
                     canvas.remove();
                 }
             },cfg);
-            const download=await downloadPromise;
-            const result=await renderPromise;
+            // Observe both promises immediately so a download timeout cannot hide
+            // the original error behind a secondary page-close rejection.
+            const [download,result]=await Promise.all([downloadPromise,renderPromise]);
             assert.equal(result.ok,true);
             assert.equal(result.busy,false);
             assert.equal(result.retainedInputs,0);
             assert.equal(result.unchangedPlayhead,true);
             assert.equal(result.downloadCount,1);
-            assert.equal(result.clipCount,cfg.clipCount+2);
+            assert.equal(result.clipCount,cfg.clipCount+2+(cfg.stacked?2:0));
             assert.equal(result.progressLast,100);
             assert.ok(result.phases.includes('complete'));
             const file=join(temp,cfg.name+'.'+cfg.format);
             await download.saveAs(file);
             const metadata=JSON.parse(command('ffprobe',['-v','error','-count_frames',
                 '-show_entries','stream=codec_type,codec_name,width,height,nb_read_frames',
-                '-show_entries','format=duration,size','-of','json',file]));
+                '-show_entries','format=duration,size','-of','json',file],{timeout:stacked?600000:120000}));
             const video=metadata.streams.find(x=>x.codec_type==='video');
             const audio=metadata.streams.find(x=>x.codec_type==='audio');
             assert.ok(video&&audio,'Output must contain both video and audio');
@@ -337,6 +369,8 @@ try{
                 width:cfg.width,height:cfg.height,duration:Number(metadata.format.duration),
                 sizeMB:Number((Number(metadata.format.size)/1048576).toFixed(2)),
                 wallMs:Date.now()-started,browserRenderMs:result.renderMs,
+                encodedFramesPerSecond:Number((Number(video.nb_read_frames)*1000/result.renderMs).toFixed(2)),
+                proceduralEffects:cfg.stacked?2:0,
                 chromePssBaselineMiB:baselinePssMiB,chromePssPeakMiB:peakPssMiB,
                 chromePssLastMiB:endPssMiB,chromeProcessCountPeak:Math.max(...samples.map(x=>x.processCount)),
                 memorySamples:measurements.length,audioRms:Number(audioRms.toFixed(4)),
@@ -348,12 +382,18 @@ try{
             };
             records.push(record);
             console.log('[MotoriClip '+phase+'] PASS '+cfg.name+' '+JSON.stringify(record));
+        }catch(error){
+            if(stacked){
+                const valid=samples.filter(s=>s.pssKiB!==null);
+                console.error('[MotoriClip 79 FAIL] '+cfg.name+' '+JSON.stringify({message:String(error),elapsedMs:Date.now()-started,baseline:base,last:valid.at(-1),peakPssKiB:Math.max(0,...valid.map(s=>s.pssKiB)),samples:valid.length}));
+            }
+            throw error;
         }finally{
             clearInterval(timer);
         }
     }
     assert.deepEqual(errors,[],'Browser uncaught errors');
-    if(fullHd120){
+    if(fullHd120||stacked){
         // A second observation after closing the Playwright context, because
         // GC within a still-open tab does not necessarily reclaim native media.
         const beforeContextClose=chromeMemory(process.pid);
