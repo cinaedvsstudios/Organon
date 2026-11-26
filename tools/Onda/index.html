@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css?v=3.43" rel="stylesheet"/><link href="css/base.css?v=3.43" rel="stylesheet"/><link href="css/layout.css?v=3.43" rel="stylesheet"/><link href="css/player.css?v=3.43" rel="stylesheet"/><link href="css/controls.css?v=3.43" rel="stylesheet"/><link href="css/library.css?v=3.43" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.43" rel="stylesheet"/><link href="css/modals-settings.css?v=3.43" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.43" rel="stylesheet"/><link href="css/streaming.css?v=3.43" rel="stylesheet"/><link href="css/responsive.css?v=3.43" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.43" rel="stylesheet"/>
+<head><link href="css/tokens.css?v=3.44" rel="stylesheet"/><link href="css/base.css?v=3.44" rel="stylesheet"/><link href="css/layout.css?v=3.44" rel="stylesheet"/><link href="css/player.css?v=3.44" rel="stylesheet"/><link href="css/controls.css?v=3.44" rel="stylesheet"/><link href="css/library.css?v=3.44" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.44" rel="stylesheet"/><link href="css/modals-settings.css?v=3.44" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.44" rel="stylesheet"/><link href="css/streaming.css?v=3.44" rel="stylesheet"/><link href="css/responsive.css?v=3.44" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.44" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
 <meta name="theme-color" content="#1e201c"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.43"/>
-<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.43"/>
-<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.43"/>
-<link rel="manifest" href="manifest.webmanifest?v=3.43"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.44"/>
+<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.44"/>
+<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.44"/>
+<link rel="manifest" href="manifest.webmanifest?v=3.44"/>
 <title>Onda Media Player - Engine</title>
 
 
@@ -80,69 +80,14 @@
 
 
 
-<button class="mode-tab-btn tab-active" data-workspace-tab="tab-library" id="tab-btn-library" type="button"><span class="mode-tab-icon">🧿</span><span class="mode-tab-label">Current</span></button>
+<button class="mode-tab-btn tab-active" data-workspace-tab="tab-library" id="tab-btn-library" type="button"><span class="mode-tab-icon">🧿</span><span class="mode-tab-label">Now Playing</span></button>
+<button class="mode-tab-btn" data-workspace-tab="tab-queue" id="tab-btn-queue" type="button"><span class="mode-tab-icon">☷</span><span class="mode-tab-label">Queue</span></button>
 
 </div>
 <!-- VIEW AREA ROUNDED CARD (Content Area updates dynamically) -->
 <div class="organon-card workspace-card-shell" id="workspace-viewport">
-<!-- Tab 1 View: Pure Drag and Drop Zone -->
-<div class="viewport-content" id="tab-files">
-<div class="drop-zone-panel" id="drop-zone">
-<div class="drop-zone-title">DRAG &amp; DROP AUDIO, VIDEO OR MIDI FILES HERE</div>
-<span class="drop-zone-subtitle">(Or click to browse Hard Drive)</span>
-<input accept="audio/*,video/*,.mid,.midi,audio/midi,audio/x-midi" class="u-hidden" id="file-input" multiple="" type="file"/>
-</div>
-<p class="drop-zone-note">
-                    Files dropped here are instantly added to your active playlist queue.
-                </p>
-<div class="onda-quick-play-chooser">
-<button type="button" class="btn-pill" id="btn-onda-quick-play" title="Audition a new audio file without adding it to the Library or cache">▶ Quick Play (temporary)</button>
-<input type="file" class="u-hidden" id="onda-quick-play-input" accept="audio/*,.mp3,.wav,.ogg,.oga,.flac,.m4a,.aac,.opus,.webm"/>
-<span class="library-track-meta">Listen without importing. Nothing is saved until you choose Add to Library.</span>
-</div>
-<section class="onda-quick-play-panel" id="onda-quick-play-panel" aria-label="Temporary audio preview" hidden>
-<div class="onda-quick-play-title" id="onda-quick-play-title"></div>
-<p class="library-track-meta">Temporary preview — not in Library, queue, history or browser audio cache. The preview disappears on reload.</p>
-<audio id="onda-quick-play-audio" controls preload="metadata" aria-label="Temporary audio preview controls"></audio>
-<div class="onda-quick-play-actions">
-<button type="button" class="btn-pill" id="btn-onda-quick-replay">Replay preview</button>
-<button type="button" class="btn-pill btn-primary-gold" id="btn-onda-quick-import">Add to Library + Queue</button>
-<button type="button" class="btn-pill btn-muted" id="btn-onda-quick-discard">Discard preview</button>
-</div>
-<div class="library-track-meta" id="onda-quick-play-status" role="status"></div>
-</section>
-</div>
-<!-- Tab 2 View: Listening History -->
-<div class="viewport-content" id="tab-history">
-<div class="history-panel-shell">
-<div class="card-header">
-<span class="card-title">◷ Listening History</span>
-<span class="section-note-strong">Last 50 tracks</span>
-</div>
-<p class="help-text-inline">One chronological list of the last 50 tracks played from files, URLs, playlists, or the library manager.</p>
-<div>
-<p class="library-section-label">Last 50</p>
-<div class="history-list-panel history-list-long" id="history-list"></div>
-</div>
-</div>
-</div>
-<!-- Tab 4 View: Playlists Manager Workspace -->
-<div class="viewport-content" id="tab-playlists">
-<div class="card-header">
-<span class="card-title">🗂️ Playlist Management</span>
-<div class="inline-button-row">
-<button class="btn-pill btn-compact" id="btn-create-playlist-trigger">＋ Create New</button>
-<button class="btn-pill btn-compact-danger" id="btn-delete-playlist-trigger">× Delete Selected</button>
-</div>
-</div>
-<p class="help-text">Assign loaded tracks to custom folders. Switch view below to play target playlists:</p>
-<div class="playlist-explorer-list" id="playlists-explorer-group">
-<!-- Playlists categories list dynamically rendered -->
-</div>
-<div class="playlist-detail-panel u-hidden" id="playlist-detail-panel"></div>
-</div>
 <!-- Tab 5 View: Now Playing / Active Track File Info -->
-<div class="viewport-content active-content" id="tab-library">
+<div class="viewport-content active-content" id="tab-library" data-playback-view="now">
 <div id="metadata-display-card">
 <div class="card-header card-header-loose">
 <div class="inline-wrap-row">
@@ -297,7 +242,7 @@
 <button class="btn-pill onda-bottom-mini-pill" id="btn-toggle-fullscreen" title="Toggle fullscreen" type="button">⛶</button>
 </div>
 <!-- UPWARD LIBRARY / PLAYLIST MANAGER DRAWER -->
-<div aria-hidden="true" data-mobile-view="results" id="library-manager-drawer" class="onda-clean-drawer" data-drawer-action="none">
+<div aria-hidden="true" data-mobile-view="results" id="library-manager-drawer" class="onda-clean-drawer" data-drawer-action="none" data-drawer-workspace="library">
 <div class="library-drawer-inner">
 <div class="library-drawer-header">
 <div class="library-drawer-title-row">
@@ -395,6 +340,63 @@
 <button type="button" class="btn-pill" id="btn-reset-mobile-icons">Restore Default Icons</button>
 </section>
 </div>
+<div class="onda-drawer-workspace-content"><!-- Tab 1 View: Pure Drag and Drop Zone -->
+<div class="viewport-content onda-drawer-pane" id="tab-files">
+<div class="drop-zone-panel" id="drop-zone">
+<div class="drop-zone-title">DRAG &amp; DROP AUDIO, VIDEO OR MIDI FILES HERE</div>
+<span class="drop-zone-subtitle">(Or click to browse Hard Drive)</span>
+<input accept="audio/*,video/*,.mid,.midi,audio/midi,audio/x-midi" class="u-hidden" id="file-input" multiple="" type="file"/>
+</div>
+<p class="drop-zone-note">
+                    Files dropped here are instantly added to your active playlist queue.
+                </p>
+<div class="onda-quick-play-chooser">
+<button type="button" class="btn-pill" id="btn-onda-quick-play" title="Audition a new audio file without adding it to the Library or cache">▶ Quick Play (temporary)</button>
+<input type="file" class="u-hidden" id="onda-quick-play-input" accept="audio/*,.mp3,.wav,.ogg,.oga,.flac,.m4a,.aac,.opus,.webm"/>
+<span class="library-track-meta">Listen without importing. Nothing is saved until you choose Add to Library.</span>
+</div>
+<section class="onda-quick-play-panel" id="onda-quick-play-panel" aria-label="Temporary audio preview" hidden>
+<div class="onda-quick-play-title" id="onda-quick-play-title"></div>
+<p class="library-track-meta">Temporary preview — not in Library, queue, history or browser audio cache. The preview disappears on reload.</p>
+<audio id="onda-quick-play-audio" controls preload="metadata" aria-label="Temporary audio preview controls"></audio>
+<div class="onda-quick-play-actions">
+<button type="button" class="btn-pill" id="btn-onda-quick-replay">Replay preview</button>
+<button type="button" class="btn-pill btn-primary-gold" id="btn-onda-quick-import">Add to Library + Queue</button>
+<button type="button" class="btn-pill btn-muted" id="btn-onda-quick-discard">Discard preview</button>
+</div>
+<div class="library-track-meta" id="onda-quick-play-status" role="status"></div>
+</section>
+</div>
+<!-- Tab 2 View: Listening History -->
+<div class="viewport-content onda-drawer-pane" id="tab-history">
+<div class="history-panel-shell">
+<div class="card-header">
+<span class="card-title">◷ Listening History</span>
+<span class="section-note-strong">Last 50 tracks</span>
+</div>
+<p class="help-text-inline">One chronological list of the last 50 tracks played from files, URLs, playlists, or the library manager.</p>
+<div>
+<p class="library-section-label">Last 50</p>
+<div class="history-list-panel history-list-long" id="history-list"></div>
+</div>
+</div>
+</div>
+<!-- Tab 4 View: Playlists Manager Workspace -->
+<div class="viewport-content onda-drawer-pane" id="tab-playlists">
+<div class="card-header">
+<span class="card-title">🗂️ Playlist Management</span>
+<div class="inline-button-row">
+<button class="btn-pill btn-compact" id="btn-create-playlist-trigger">＋ Create New</button>
+<button class="btn-pill btn-compact-danger" id="btn-delete-playlist-trigger">× Delete Selected</button>
+</div>
+</div>
+<p class="help-text">Assign loaded tracks to custom folders. Switch view below to play target playlists:</p>
+<div class="playlist-explorer-list" id="playlists-explorer-group">
+<!-- Playlists categories list dynamically rendered -->
+</div>
+<div class="playlist-detail-panel u-hidden" id="playlist-detail-panel"></div>
+</div>
+</div>
 <input accept="audio/*,video/*,.mid,.midi,audio/midi,audio/x-midi" class="u-hidden" directory="" id="folder-input" multiple="" type="file" webkitdirectory=""/>
 <input accept=".json,application/json" class="u-hidden" id="metadata-overlay-file-input" type="file"/>
 </div>
@@ -402,7 +404,7 @@
 <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
 <div class="draggable-popup" id="settings-popup">
 <div class="popup-drag-handle" id="settings-drag-handle">
-<span>☷ Settings &amp; Extras · v3.43</span>
+<span>☷ Settings &amp; Extras · v3.44</span>
 <span class="popup-close" id="btn-close-settings">×</span>
 </div>
 <div class="popup-body">
@@ -696,7 +698,7 @@
 <!-- Toast popup notices -->
 <div class="organon-toast" id="toast-notice">Action Confirmed!</div>
 
-<script src="./onda-midi.js?v=3.43"></script>
+<script src="./onda-midi.js?v=3.44"></script>
 <!-- Onda Cloud Sync + Setup Wizard (Netlify Blobs) -->
 
 <div class="onda-cloud-modal-overlay" id="onda-cloud-modal-overlay"></div>
@@ -744,7 +746,7 @@
 
 
 
-<script src="js/file-access.js?v=3.43"></script><script src="js/storage-audit.js?v=3.43"></script><script src="js/diagnostics.js?v=3.43"></script><script src="js/app-core.js?v=3.43"></script><script src="js/cloud-sync.js?v=3.43"></script><script src="js/media-session.js?v=3.43"></script><script src="js/quick-play.js?v=3.43"></script><script src="js/device-qa.js?v=3.43"></script>
+<script src="js/file-access.js?v=3.44"></script><script src="js/storage-audit.js?v=3.44"></script><script src="js/diagnostics.js?v=3.44"></script><script src="js/app-core.js?v=3.44"></script><script src="js/cloud-sync.js?v=3.44"></script><script src="js/media-session.js?v=3.44"></script><script src="js/quick-play.js?v=3.44"></script><script src="js/device-qa.js?v=3.44"></script>
 <!-- The offline shell stores only this app's static UI assets, never music or profiles. -->
 <script>
 if ('serviceWorker' in navigator && window.isSecureContext) {

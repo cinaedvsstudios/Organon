@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.43';
+        const ONDA_VERSION = 'v3.44';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -330,8 +330,8 @@
                 }
 
                 const savedTab = localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY);
-                if (savedTab && document.getElementById(savedTab)) {
-                    switchWorkspaceTab(savedTab === 'tab-youtube' ? 'tab-library' : savedTab);
+                if (savedTab || localStorage.getItem('ondaMainPlaybackViewV1')) {
+                    switchWorkspaceTab(localStorage.getItem('ondaMainPlaybackViewV1') === 'queue' ? 'tab-queue' : 'tab-library');
                 }
             } catch (err) {
                 console.warn('Could not restore local UI screen:', err);
@@ -1623,6 +1623,10 @@
             if (!libraryDrawer) return;
             const safeView = ['results', 'recents', 'playlists', 'help'].includes(view) ? view : 'results';
             libraryDrawer.dataset.mobileView = safeView;
+            libraryDrawer.dataset.drawerWorkspace = 'library';
+            libraryDrawer.querySelectorAll('.onda-drawer-pane').forEach(pane => pane.classList.remove('drawer-active'));
+            libraryDrawer.querySelectorAll('.onda-drawer-workspaces .mode-tab-btn').forEach(btn => { btn.classList.remove('tab-active'); btn.setAttribute('aria-pressed', 'false'); });
+            if (safeView === 'results') { const lib = libraryDrawer.querySelector('.onda-drawer-workspaces [data-mobile-view="results"]'); lib?.classList.add('active-mobile-view'); }
             if (safeView !== 'results') setLibraryActionPanel('none');
             document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
                 const active = btn.dataset.mobileView === safeView;
@@ -3766,8 +3770,7 @@
         
             card.classList.remove('now-playing-song-only','now-playing-playlist-only','now-playing-basic',
                 'lyrics-collapsed','now-playing-hide-song-info','now-playing-hide-playlist','now-playing-no-playlist');
-            card.classList.toggle('now-playing-hide-song-info', nowPlayingHideSongInfo);
-            card.classList.toggle('now-playing-hide-playlist', nowPlayingHidePlaylist);
+            // Main tabs, not the legacy hide flags, determine the visible panel.
             if (!name) card.classList.add('now-playing-no-playlist');
             card.classList.add('lyrics-collapsed');
         
@@ -3800,7 +3803,7 @@
                 }
             }
         
-            panel.hidden = nowPlayingHidePlaylist;
+            panel.hidden = false;
             panel.replaceChildren();
         
             const header = document.createElement('div');
@@ -4046,33 +4049,46 @@
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
         function switchWorkspaceTab(tabId) {
             if (tabId === 'tab-youtube') tabId = 'tab-library';
-            if (tabId !== 'tab-files') window.OndaQuickPlay?.stopForNavigation?.();
-            saveLocalUiStateCheckpoint(`screen-change-before:${tabId}`);
-
-            const targetTab = document.getElementById(tabId);
-            if (!targetTab) return;
-
-            if (libraryDrawer && libraryDrawer.classList.contains('drawer-open')) {
-                toggleLibraryDrawer(false);
+            const drawerTabs = ['tab-files','tab-history','tab-playlists'];
+            if (drawerTabs.includes(tabId)) {
+                const targetTab = document.getElementById(tabId);
+                if (!targetTab || !libraryDrawer) return;
+                if (tabId !== 'tab-files') window.OndaQuickPlay?.stopForNavigation?.();
+                if (!libraryDrawer.classList.contains('drawer-open')) toggleLibraryDrawer(true);
+                setMobileLibraryView('results');
+                setLibraryActionPanel('none');
+                libraryDrawer.dataset.drawerWorkspace = tabId;
+                libraryDrawer.querySelectorAll('.onda-drawer-workspaces .mobile-db-icon-btn').forEach(btn => {
+                    btn.classList.remove('active-mobile-view'); btn.setAttribute('aria-pressed','false');
+                });
+                const btn = document.getElementById('tab-btn-' + tabId.slice(4));
+                btn?.classList.add('tab-active'); btn?.setAttribute('aria-pressed','true');
+                targetTab.classList.add('drawer-active');
+                if (tabId === 'tab-playlists') renderPlaylistsList();
+                if (tabId === 'tab-history') renderHistoryTab();
+                saveLocalUiStateCheckpoint('screen-change-after:' + tabId);
+                return;
             }
 
-            document.querySelectorAll('.mode-tab-btn').forEach(btn => btn.classList.remove('tab-active'));
-            const btnEl = document.getElementById(`tab-btn-${tabId.replace('tab-', '')}`);
-            if (btnEl) btnEl.classList.add('tab-active');
-
-            document.querySelectorAll('.viewport-content').forEach(card => card.classList.remove('active-content'));
-            targetTab.classList.add('active-content');
-
-            if (tabId === "tab-playlists") renderPlaylistsList();
-            if (tabId === "tab-history") renderHistoryTab();
-            if (tabId === "tab-library") updateNowPlayingPlaylistPanel();
-
+            if (tabId !== 'tab-library' && tabId !== 'tab-queue') return;
+            const main = document.getElementById('tab-library');
+            if (!main) return;
+            const queueView = tabId === 'tab-queue';
+            window.OndaQuickPlay?.stopForNavigation?.();
+            if (libraryDrawer?.classList.contains('drawer-open')) toggleLibraryDrawer(false);
+            main.dataset.playbackView = queueView ? 'queue' : 'now';
+            document.querySelectorAll('.workspace-mode-bar .mode-tab-btn').forEach(btn => {
+                const active = btn.id === (queueView ? 'tab-btn-queue' : 'tab-btn-library');
+                btn.classList.toggle('tab-active',active);
+                btn.setAttribute('aria-pressed',String(active));
+            });
+            main.classList.add('active-content');
+            updateNowPlayingPlaylistPanel();
             try {
-                localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY, tabId);
-            } catch (err) {
-                console.warn('Could not save active workspace tab:', err);
-            }
-            saveLocalUiStateCheckpoint(`screen-change-after:${tabId}`);
+                localStorage.setItem(ACTIVE_WORKSPACE_TAB_KEY,'tab-library');
+                localStorage.setItem('ondaMainPlaybackViewV1',queueView ? 'queue' : 'now');
+            } catch (err) {}
+            saveLocalUiStateCheckpoint('screen-change-after:' + tabId);
         }
 
         window.switchWorkspaceTab = switchWorkspaceTab;
@@ -6935,7 +6951,7 @@
                 const tabId = btn.dataset.workspaceTab || ('tab-' + btn.id.replace(/^tab-btn-/, ''));
                 let lastPointerActivation = 0;
                 const activate = (event) => {
-                    if (!document.getElementById(tabId)) return;
+                    if (tabId !== 'tab-queue' && !document.getElementById(tabId)) return;
                     event.preventDefault();
                     event.stopPropagation();
                     lastPointerActivation = Date.now();
