@@ -2482,3 +2482,30 @@ body button[data-onda-action] > svg.onda-action-glyph {
 }
 body button[data-onda-action] > svg.onda-action-glyph * { pointer-events:none !important; }
 body button[data-onda-action] { gap:0 !important; }
+
+/* v3.50: sticky queue header, a single themed scrollbar and compact durations. */
+#workspace-viewport:has(#tab-library[data-playback-view="queue"]) { padding:12px; }
+body #workspace-viewport #tab-library[data-playback-view="queue"] {
+  padding:0 7px 8px 0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain;
+  scrollbar-width:thin; scrollbar-color:#8b704f #252722; scrollbar-gutter:stable;
+  scroll-padding-top:108px;
+}
+body #tab-library[data-playback-view="queue"] #metadata-display-card,
+body #tab-library[data-playback-view="queue"] #now-playing-playlist-panel { overflow:visible; width:100%; max-width:100%; min-width:0; }
+#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-header {
+  position:sticky; top:0; z-index:5; background:var(--bg-card);
+  padding:8px 6px 10px; margin-bottom:3px; box-shadow:0 4px 6px rgba(0,0,0,.15);
+}
+#tab-library[data-playback-view="queue"] .onda-queue-duration {
+  display:inline-block; font-size:.83rem; color:var(--stone-ochre);
+  font-variant-numeric:tabular-nums; white-space:nowrap; min-width:38px;
+  text-align:center; margin-right:4px;
+}
+body.onda-force-mobile-mode #tab-library[data-playback-view="queue"] .now-playing-queue-row .library-row-buttons {
+  justify-content:flex-end; gap:4px;
+}
+body.onda-force-mobile-mode #tab-library[data-playback-view="queue"] .onda-queue-duration { margin-right:auto; }
+@media(max-width:420px) {
+  #workspace-viewport:has(#tab-library[data-playback-view="queue"]) { padding:8px; }
+  body #workspace-viewport #tab-library[data-playback-view="queue"] { padding-right:3px; }
+}

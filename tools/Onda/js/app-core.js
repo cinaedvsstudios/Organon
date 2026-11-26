@@ -75,9 +75,11 @@
         let isShuffle = false;
         let shuffleQueue = [];
         let shuffleSignature = '';
+        let durationScanRunning = false;
+        const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.49';
+        const ONDA_VERSION = 'v3.50';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -3218,6 +3220,7 @@
             isRepeatOne = nextMode === 'one';
             isRepeatAll = nextMode === 'all';
             syncPlaybackModeButtons();
+            updateNowPlayingPlaylistPanel();
         }
 
         function setShuffleEnabled(enabled, { rebuild = true } = {}) {
@@ -3228,6 +3231,7 @@
                 shuffleSignature = '';
             }
             syncPlaybackModeButtons();
+            updateNowPlayingPlaylistPanel();
         }
 
         function restartCurrentTrack(audioObject) {
@@ -3276,6 +3280,12 @@
                 if (e.target !== activeAudio) return;
                 seekBar.max = audioObj.duration;
                 timeTotal.innerText = formatTime(audioObj.duration);
+                const meta = virtualLibrary[currentFile?.name];
+                if (meta && Number.isFinite(audioObj.duration) && audioObj.duration > 0 && Math.abs((Number(meta.duration)||0)-audioObj.duration) > .1) {
+                    meta.duration = audioObj.duration;
+                    refreshQueueDurationLabels();
+                    saveActiveLibraryState('track-duration-read');
+                }
             });
 
             audioObj.addEventListener('timeupdate', (e) => {
@@ -3540,6 +3550,7 @@
 
             const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${refreshedTracks.length} refreshed${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
             if (wasEmpty && playlistTracks.length) switchTrack(0);
+            updateNowPlayingPlaylistPanel();
             renderLibraryManager();
             // The queue and current track are now set. Save their metadata once;
             // caching only changes IndexedDB audio bytes, not the catalogue JSON.
@@ -3574,6 +3585,7 @@
         function switchTrack(index) {
             if (index < 0 || index >= playlistTracks.length) return;
             currentTrackIndex = index;
+            if (isShuffle && shuffleSignature === getPlaylistSignature()) shuffleQueue = shuffleQueue.filter(item => item !== index);
             loadTrack(playlistTracks[currentTrackIndex]);
         }
 
@@ -3733,7 +3745,14 @@
                     if (!row || row.offsetParent === null) return;
                     row.classList.add('jump-focus-pulse');
 
-                    if (isMobileLayoutMode()) {
+                    const queueScroller = row.closest('#tab-library[data-playback-view="queue"]');
+                    if (queueScroller) {
+                        const headerHeight = queueScroller.querySelector('.onda-current-queue-header')?.getBoundingClientRect().height || 0;
+                        const rowRect = row.getBoundingClientRect(), viewRect = queueScroller.getBoundingClientRect();
+                        const top = queueScroller.scrollTop + rowRect.top - viewRect.top - headerHeight
+                            - Math.max(0, (queueScroller.clientHeight - headerHeight - rowRect.height) / 2);
+                        queueScroller.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+                    } else if (isMobileLayoutMode()) {
                         const scroller = row.closest('#now-playing-playlist-track-list, #playlist-detail-track-list, .now-playing-queue-list, .playlist-detail-track-list');
                         if (scroller && scroller.scrollHeight > scroller.clientHeight) {
                             const rowRect = row.getBoundingClientRect();
@@ -3759,6 +3778,74 @@
             }, 140);
         }
 
+        function queueDurationLabel(meta) {
+            const value = Number(meta?.duration);
+            return Number.isFinite(value) && value > 0 ? formatTime(value) : '—';
+        }
+
+        function refreshQueueDurationLabels() {
+            document.querySelectorAll('#now-playing-playlist-track-list [data-track-id]').forEach(row => {
+                const label = row.querySelector('.onda-queue-duration');
+                if (label) label.textContent = queueDurationLabel(virtualLibrary[row.dataset.trackId]);
+            });
+        }
+
+        // Metadata-only, one local file at a time. No network, playback,
+        // permission requests or user audio/cache writes.
+        function probeQueueDuration(blob) {
+            return new Promise(resolve => {
+                const audio = document.createElement('audio');
+                const url = URL.createObjectURL(blob);
+                let timer, done = false;
+                const finish = () => {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timer);
+                    const duration = Number(audio.duration);
+                    audio.removeAttribute('src');
+                    audio.load();
+                    URL.revokeObjectURL(url);
+                    resolve(Number.isFinite(duration) && duration > 0 ? duration : null);
+                };
+                audio.preload = 'metadata';
+                audio.addEventListener('loadedmetadata',finish,{once:true});
+                audio.addEventListener('error',finish,{once:true});
+                timer = setTimeout(finish,4500);
+                audio.src = url;
+            });
+        }
+
+        function scheduleQueueDurationScan() {
+            const visible = () => !document.hidden && document.getElementById('tab-library')?.dataset.playbackView === 'queue';
+            if (durationScanRunning || !visible()) return;
+            durationScanRunning = true;
+            setTimeout(async () => {
+                let changed = false;
+                try {
+                    for (const track of playlistTracks.slice()) {
+                        if (!visible()) break;
+                        const id = getTrackId(track), meta = virtualLibrary[id];
+                        if (!meta || Number(meta.duration) > 0 || durationScanAttempted.has(meta) ||
+                            meta.streamUrl || meta.sourceType === 'stream' || meta.sourceType === 'reference' ||
+                            meta.sourceType === 'midi' || /\\.(mid|midi)$/i.test(meta.fileName || '')) continue;
+                        try {
+                            let blob = track.blobFile || meta.blobFile;
+                            if (!blob) { const record = await idbGetAudioFile(id); blob = record?.file || record?.blob; }
+                            if (!blob || !visible()) continue;
+                            durationScanAttempted.add(meta);
+                            const duration = await probeQueueDuration(blob);
+                            if (duration && virtualLibrary[id] === meta && !(Number(meta.duration)>0)) {
+                                meta.duration = duration; changed = true; refreshQueueDurationLabels();
+                            }
+                        } catch (err) { console.warn('Queue duration unavailable', err); }
+                    }
+                } finally {
+                    durationScanRunning = false;
+                    if (changed) saveActiveLibraryState('queue-duration-metadata');
+                }
+            },150);
+        }
+
         function updateNowPlayingPlaylistPanel() {
             const card = document.getElementById('metadata-display-card');
             const panel = document.getElementById('now-playing-playlist-panel');
@@ -3778,8 +3865,17 @@
                 currentTrackIndex >= 0 && currentTrackIndex < ids.length &&
                 ids[currentTrackIndex] === currentFile?.name
                 ? currentTrackIndex : ids.indexOf(currentFile?.name);
-            const nextIndex = selectedIndex >= 0 && selectedIndex + 1 < ids.length
-                ? selectedIndex + 1 : (selectedIndex >= 0 && isRepeatAll && ids.length > 1 ? 0 : -1);
+            const originalOrder = ids.map((_, index) => index);
+            if (isShuffle && shuffleSignature !== getPlaylistSignature()) resetShuffleQueue(selectedIndex);
+            const upcoming = isShuffle ? shuffleQueue.filter(index => index !== selectedIndex && index >= 0 && index < ids.length) : [];
+            const shownOrder = isShuffle
+                ? [...(selectedIndex >= 0 ? [selectedIndex] : []), ...upcoming,
+                    ...originalOrder.filter(index => index !== selectedIndex && !upcoming.includes(index))]
+                : originalOrder;
+            const nextIndex = isRepeatOne && selectedIndex >= 0 ? selectedIndex
+                : isShuffle ? (upcoming[0] ?? -1)
+                : selectedIndex < 0 ? (ids.length ? 0 : -1)
+                : selectedIndex + 1 < ids.length ? selectedIndex + 1 : (isRepeatAll && ids.length > 1 ? 0 : -1);
             const nextMeta = nextIndex >= 0 ? (virtualLibrary[ids[nextIndex]] || queue[nextIndex]) : null;
         
             if (pills) {
@@ -3807,12 +3903,10 @@
             const header = document.createElement('div');
             header.className = 'playlist-detail-header now-playing-queue-header onda-current-queue-header' + (name ? ' onda-current-queue-has-playlist' : '');
             const playlistArt = name ? getPlaylistArtwork(name) : '';
-            const currentLabel = selectedIndex >= 0 ? 'Playing ' + (selectedIndex + 1) + ' of ' + ids.length
+            const currentLabel = selectedIndex >= 0 ? 'Playing ' + (shownOrder.indexOf(selectedIndex) + 1) + ' of ' + ids.length
                 : ids.length + ' in queue';
-            const nextLabel = isShuffle
-                ? 'Shuffle enabled — upcoming order may vary'
-                : nextMeta ? 'Up next: ' + getDisplayTitle(nextMeta)
-                    : (ids.length ? 'End of queue' : 'Add music using Add or Library');
+            const nextLabel = nextMeta ? (isRepeatOne ? 'Repeating: ' : 'Up next: ') + getDisplayTitle(nextMeta)
+                : (ids.length ? (isShuffle && isRepeatAll ? 'Shuffle repeats after queue ends' : 'End of queue') : 'Add music using Add or Library');
             header.innerHTML = `
                 ${name ? `<div class="playlist-detail-art">${imageHtmlOrFallback(playlistArt || getDefaultArtworkSrc(), name + ' artwork')}</div>` : ''}
                 <div class="playlist-detail-title-block">
@@ -3821,16 +3915,22 @@
                     <div class="onda-current-queue-next" title="${escapeHtml(nextLabel)}">${escapeHtml(nextLabel)}</div>
                 </div>
                 <div class="playlist-row-tools onda-current-queue-tools">
+                    <button data-onda-action="shuffle" type="button" class="btn-pill btn-now-reshuffle" title="Reshuffle upcoming tracks" aria-label="Reshuffle upcoming tracks" ${ids.length < 2 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 3-2 5-5M14 8c1-2 2-2 4-2h3M17 2l4 4-4 4"/></svg></button>
                     <button data-onda-action="jump" type="button" class="btn-pill btn-now-jump-current" title="Find current track in queue" aria-label="Find current track in queue" ${selectedIndex < 0 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
                     ${name ? '<button data-onda-action="edit" type="button" class="btn-pill btn-now-edit-source-playlist" title="Edit the source playlist" aria-label="Edit the source playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-.8L20 7l-3-3L5 16zM14 7l3 3"/></svg></button>' : ''}
                 </div>
                 <div class="playlist-detail-meta-row onda-current-queue-summary">
                     <span class="mini-tag">${escapeHtml(currentLabel)}</span>
-                    <span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'} in active queue</span>
+                    ${selectedIndex >= 0 ? `<span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'}</span>` : ''}
+                    ${isShuffle ? '<span class="mini-tag">Shuffle on</span>' : ''}
                 </div>
             `;
             panel.appendChild(header);
         
+            header.querySelector('.btn-now-reshuffle')?.addEventListener('click', () => {
+                setShuffleEnabled(true);
+                showToast('Upcoming tracks reshuffled.');
+            });
             header.querySelector('.btn-now-jump-current')?.addEventListener('click', () => {
                 scrollCurrentTrackRowsIntoView('manual-queue-jump');
             });
@@ -3847,12 +3947,13 @@
                 empty.textContent = 'Nothing queued yet. Add a file or press Play on a Library track.';
                 list.appendChild(empty);
             } else {
-                queue.forEach((item, idx) => {
+                shownOrder.forEach((idx, displayIndex) => {
+                    const item = queue[idx];
                     const id = ids[idx];
                     const meta = virtualLibrary[id] || item;
                     const hasRecord = Boolean(meta);
                     const active = idx === selectedIndex;
-                    const upNext = !isShuffle && idx === nextIndex && !active;
+                    const upNext = idx === nextIndex && !active;
                     const row = document.createElement('div');
                     row.className = 'now-playing-queue-row library-result-row' +
                         (active ? ' active-track now-playing-current-track' : '') +
@@ -3860,9 +3961,9 @@
                     row.dataset.trackId = id || '';
                     row.dataset.queueIndex = String(idx);
                     if (active) row.setAttribute('aria-current', 'true');
-                    const statusLabel = active ? 'Now playing' : upNext ? 'Up next' : 'Queued';
+                    const statusLabel = active ? 'Now playing' : upNext ? 'Up next' : isShuffle && !upcoming.includes(idx) ? 'Outside upcoming order' : 'Queued';
                     row.innerHTML = `
-                        <div class="history-list-number">${idx + 1}</div>
+                        <div class="history-list-number">${displayIndex + 1}</div>
                         <div class="onda-track-text-wrap">
                             <div class="library-track-title">${active ? '▶ ' : ''}${escapeHtml(getDisplayTitle(meta))}</div>
                             <div class="library-track-meta library-file-line">
@@ -3871,6 +3972,7 @@
                             </div>
                         </div>
                         <div class="library-row-buttons">
+                            <span class="onda-queue-duration" aria-label="Track duration">${escapeHtml(queueDurationLabel(meta))}</span>
                             ${hasRecord ? `<button data-onda-action="play" type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
                             <button data-onda-action="info" type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
                             <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
@@ -3945,7 +4047,7 @@
                 renderedRows: list.querySelectorAll('[data-queue-index]').length,
                 activeTrack: currentFile?.name || null
             };
-            if (selectedIndex >= 0) scrollCurrentTrackRowsIntoView('now-playing-queue-render');
+            scheduleQueueDurationScan();
         }
 
         function setNowPlayingEditMode(on) {
@@ -4237,6 +4339,12 @@
         btnNext.addEventListener('click', skipToNextTrack);
 
         function skipToNextTrack() {
+            if (!playlistTracks.length) return;
+            if (currentTrackIndex < 0) {
+                if (isShuffle) { const next = takeNextShuffleIndex(isRepeatAll); switchTrack(next >= 0 ? next : 0); }
+                else switchTrack(0);
+                return;
+            }
             if (playlistTracks.length <= 1) return;
 
             if (isShuffle) {
@@ -5565,8 +5673,8 @@
             if (shuffleBtn) shuffleBtn.addEventListener('click', () => {
                 setShuffleEnabled(true, { rebuild: false });
                 loadPlaylistQueue(name);
-                resetShuffleQueue(currentTrackIndex);
                 syncPlaybackModeButtons();
+                updateNowPlayingPlaylistPanel();
                 showToast(`Shuffle play: ${name}`);
             });
             const editBtn = document.getElementById('btn-detail-edit-playlist');
@@ -5621,6 +5729,7 @@
             activePlaylistView = playlistName;
             currentPlaybackPlaylistName = playlistName;
             playlistTracks = tracksInPl;
+            if (isShuffle) resetShuffleQueue(0);
             switchTrack(0);
             renderPlaylistDetailPanel();
             showToast(`Loaded ${playlistName} playlist queue.`);
