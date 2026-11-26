@@ -28,7 +28,7 @@ try{
   return {hash,time:Number(c.dataset.previewSeconds),slider:document.getElementById('text-preview-progress').value};});
  const independent=id=>page.evaluate(async id=>{
   const {paintTimelineEffect,requiresCompositeSource,paintEffectPreviewScene}=await import('./js/timeline-effects.mjs');
-  const c=document.createElement('canvas');c.width=640;c.height=360;const ctx=c.getContext('2d');
+  const c=document.createElement('canvas');c.width=640;c.height=360;const ctx=c.getContext('2d',{willReadFrequently:true});
   ctx.fillStyle='#0c1722';ctx.fillRect(0,0,640,360);ctx.strokeStyle='rgba(117,178,222,.08)';
   for(let x=0;x<640;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,360);ctx.stroke();}
   if(requiresCompositeSource(id))paintEffectPreviewScene(ctx,640,360);
