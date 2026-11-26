@@ -41,8 +41,8 @@ export function exportBitrate(kilobits) {
 export class AdvancedLiveExporter {
     constructor({ engine, canvas, Recorder = globalThis.MediaRecorder,
         Stream = globalThis.MediaStream, visibilityTarget = globalThis.document,
-        requestFrame = globalThis.requestAnimationFrame,
-        cancelFrame = globalThis.cancelAnimationFrame,
+        requestFrame = callback => globalThis.requestAnimationFrame(callback),
+        cancelFrame = id => globalThis.cancelAnimationFrame(id),
         onProgress = () => {}, onState = () => {}, onDownload = () => {} }) {
         this.engine = engine;
         this.canvas = canvas;
@@ -69,6 +69,7 @@ export class AdvancedLiveExporter {
         this.recordingError = null;
         this.savedTime = 0;
         this.savedPreviewGain = null;
+        this.releaseFullResolution = null;
         this.totalDuration = 0;
         this.recordedChunks = [];
         this.recordedStop = null;
@@ -117,6 +118,7 @@ export class AdvancedLiveExporter {
         if (this.phase !== 'preparing') return;
         if (this.engine.audioContext.state === 'suspended') await this.engine.audioContext.resume();
         if (this.phase !== 'preparing') return;
+        this.releaseFullResolution=this.engine.beginFullResolutionRendering?.()||null;
         const seeked = await this.engine.seek(0, { resume:false });
         if (this.phase !== 'preparing') return;
         if (!seeked) throw new Error('The first composition frame could not be decoded.');
@@ -273,6 +275,7 @@ export class AdvancedLiveExporter {
             this.engine.applyPreviewGain();
         }
         this.savedPreviewGain=null;
+        try{this.releaseFullResolution?.();}finally{this.releaseFullResolution=null;}
         this.busy=false;
         this.phase='idle';
         this.finishPromise=null;

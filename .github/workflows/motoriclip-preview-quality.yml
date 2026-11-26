@@ -1,0 +1,36 @@
+name: MotoriClip preview resolution isolation QA
+on:
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/js/advanced-media-engine-v0.24.js'
+      - 'tools/audio-timeline/js/advanced-live-export.mjs'
+      - 'tools/audio-timeline/js/advanced-main-v0.24.js'
+      - 'tools/audio-timeline/advanced.html'
+      - 'tools/audio-timeline/tests/preview-quality.browser.mjs'
+      - '.github/workflows/motoriclip-preview-quality.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview-quality-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core@1.56.1
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: node tools/audio-timeline/tests/preview-quality.browser.mjs
+  low-preview-fixed-export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core@1.56.1
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - run: MOTORICLIP_PREVIEW_QUALITY=low node tools/audio-timeline/tests/real-export.browser.mjs
