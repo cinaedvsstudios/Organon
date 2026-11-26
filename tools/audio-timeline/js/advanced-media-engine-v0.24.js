@@ -859,9 +859,13 @@ export class AdvancedMediaEngine {
                                 else if (track.type === 'video') drawContained(this.context, track.media, width, height);
                                 else if (track.type === 'sticker') {
                                     if(track.effectOverlay){
-                                        // Identical absolute clip time for preview and video export.
+                                        // Procedural overlays use source-relative phase, not a new
+                                        // clock after a split or left trim. Recipe speed remains
+                                        // the independent animation-rate control.
+                                        const phaseOffset=Math.max(0,Number(track.sourceOffset)||0);
+                                        const local=Math.max(0,this.currentTime-(Number(track.start)||0));
                                         paintTimelineEffect(this.context,width,height,track.effectOverlay,
-                                            Math.max(0,this.currentTime-(Number(track.start)||0)),track.clipDuration);
+                                            phaseOffset+local,phaseOffset+Math.max(0,Number(track.clipDuration)||0));
                                     } else if(track.textOverlay){
                                         // Live and fixed-frame exporters both use renderFrame().
                                         // Text is drawn at the exact clip-relative timestamp,
