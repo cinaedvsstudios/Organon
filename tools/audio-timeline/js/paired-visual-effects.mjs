@@ -498,12 +498,85 @@ function scratchCanvas(renderer,key,width,height) {
  * renderContained(ctx,media,width,height) is injected from the media engine
  * to maintain the editor's existing letterboxing/cropping behaviour.
  */
+// Each original shader owns its own context, two textures and two source
+// canvases. Keep a small LRU of those resources rather than retaining 41
+// contexts (which can trigger browser-driven context loss). The pixel budget
+// allows four 1080p entries or one 4K entry; it is not a GPU byte measurement.
+const pairCachePrefixes = Object.freeze({
+  "fade": "fade",
+  "pixelize": "pixelize",
+  "random-squares": "randomSquares",
+  "glitch-flicker": "glitchFlicker",
+  "ripple": "ripple",
+  "tv-turn-off": "tvTurnOff",
+  "aperture-wipe": "apertureWipe",
+  "spiral-wipe": "spiralWipe",
+  "rings-wipe": "ringsWipe",
+  "color-panel-wipe": "colorPanelWipe",
+  "block-cover": "blockCover",
+  "cross-hatch": "crosshatch",
+  "film-strip": "filmStrip",
+  "card-swipe": "cardSwipe",
+  "camera-shake": "cameraShake",
+  "vhs-tracking": "vhsTracking",
+  "whipspin": "whipSpin",
+  "cube": "cube",
+  "cross-warp": "crossWarp",
+  "paper-tear": "paperTear",
+  "ink-bleed": "inkBleed",
+  "splatter-wipe": "splatterWipe",
+  "cell-dissolve": "cellDissolve",
+  "bloom-dissolve": "bloomDissolve",
+  "smoke-dissolve": "smokeDissolve",
+  "vortex": "vortex",
+  "heat-haze": "heatHaze",
+  "refraction": "refraction",
+  "liquid-fill": "liquidFill",
+  "disintegrate": "disintegrate",
+  "light-rays": "lightRays",
+  "ascii": "ascii",
+  "colorcoords": "colorCoords",
+  "prisms": "prisms",
+  "spiralblockwipe": "spiralBlock",
+  "hologram": "hologram",
+  "crumple": "crumple",
+  "sphere": "sphere",
+  "snapshot": "snapshot",
+  "gallery": "gallery",
+  "bokeh-dissolve": "bokehDissolve"
+});
+const pairCacheUse = new WeakMap();
+const MAX_PAIR_CONTEXTS = 4;
+const PAIR_PIXEL_BUDGET = 4 * 1920 * 1080;
+function reservePairResources(renderer,id,width,height) {
+    const prefix=pairCachePrefixes[id];
+    if(!prefix)return;
+    let recent=pairCacheUse.get(renderer);
+    if(!recent){recent=new Map();pairCacheUse.set(renderer,recent);}
+    // clearAll() releases the underlying resources independently.
+    for(const key of recent.keys())if(!renderer[key+'WebGL'])recent.delete(key);
+    recent.delete(prefix);
+    recent.set(prefix,Math.max(1,width*height));
+    const pixels=()=>Array.from(recent.values()).reduce((sum,n)=>sum+n,0);
+    while(recent.size>1&&(recent.size>MAX_PAIR_CONTEXTS||pixels()>PAIR_PIXEL_BUDGET)){
+        const oldest=recent.keys().next().value;
+        recent.delete(oldest);
+        const gpuKey=oldest+'WebGL';
+        if(renderer[gpuKey]){renderer[gpuKey].dispose();renderer[gpuKey]=null;}
+        for(const suffix of ['FromScratch','ToScratch']){
+            const key=oldest+suffix,canvas=renderer[key];
+            if(canvas){canvas.width=0;canvas.height=0;renderer[key]=null;}
+        }
+    }
+}
+
 export function paintPairedEffect(renderer,context,track,width,height,time,renderContained) {
     const id=normalizeTransitionEffectId(track.transitionEffectId);
     if(!isAvailablePairEffect(id))return false;
     const progress=pairedEffectProgress(track,time);
     if(progress<=0)return true; // Keep A entirely visible at the boundary.
     if(progress>=1)return false; // Let normal renderer draw a pristine B.
+    reservePairResources(renderer,id,width,height);
     if(id==='fade')
         return paintFade(renderer,context,track,width,height,time,renderContained,progress);
     if(id==='glitch-flicker')

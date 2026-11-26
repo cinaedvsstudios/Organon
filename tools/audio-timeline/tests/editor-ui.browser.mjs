@@ -771,7 +771,18 @@ try{
     await page.locator('#text-preview-close').click();
     await page.locator('#effect-category').selectOption('Particles/Fire');
     assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),6);
-    await page.locator('[data-preset-id="particle-sparks"]').click();
+    // Generated procedural clips are inserted asynchronously. Shared Inspector
+    // groups can stay visible from the previous selection; wait for the actual
+    // new timeline clip before editing any recipe fields.
+    async function insertProceduralEffect(id){
+        const before=await page.locator('.timeline-clip.sticker.selected').evaluateAll(els=>els.map(el=>el.dataset.trackId));
+        await page.locator('#effects-library-grid [data-preset-id="'+id+'"]').click();
+        await page.waitForFunction(previous=>{
+            const clip=document.querySelector('.timeline-clip.sticker.selected:not(.placeholder)');
+            return Boolean(clip?.dataset.trackId&&!previous.includes(clip.dataset.trackId));
+        },before,{timeout:15000});
+    }
+    await insertProceduralEffect('particle-sparks');
     await page.locator('#inspector-timeline-effect').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-intensity').evaluate(input=>{
         input.value='32';input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -781,7 +792,7 @@ try{
     assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),3,
         'Pixel Scan, Sci-Fi Scan and Camera Frame must be separate animated Scanning effects');
     await page.locator('#effect-category').selectOption('Light');
-    await page.locator('[data-preset-id="god-rays"]').click();
+    await insertProceduralEffect('god-rays');
     await page.locator('#effect-origin-controls').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-origin-x').evaluate(input=>{
         input.value='78';input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -812,7 +823,7 @@ try{
     });
     assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount,
         'Glitch library must display all registered procedural effects');
-    await page.locator('[data-preset-id="fault-cassette"]').click();
+    await insertProceduralEffect('fault-cassette');
     await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-distortion').evaluate(input=>{
         input.value='88';input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -826,7 +837,7 @@ try{
     assert.notEqual(glowFirst,glowNext,'Source brightness glow must animate, not use a static PNG');
     assert.equal(glowFirst,await sampleEffect(10),'Glow is deterministic when rewinding');
     await page.locator('#text-preview-close').click();
-    await page.locator('[data-preset-id="edge-glow"]').click();
+    await insertProceduralEffect('edge-glow');
     await page.locator('#effect-glow-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-blur-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-glow').evaluate(el=>{el.value='87';el.dispatchEvent(new Event('input',{bubbles:true}));});
@@ -867,7 +878,7 @@ try{
       await page.locator('#text-preview-close').click();
     }
     assert.equal(variants.size,9,'Glitch styles must be visually different');
-    await page.locator('#effects-library-grid [data-preset-id="glass-glitch"]').click();
+    await insertProceduralEffect('glass-glitch');
     await page.locator('#effect-distortion-control').waitFor({state:'visible',timeout:15000});
     await page.locator('#effect-distortion').evaluate(input=>{
        input.value='73';input.dispatchEvent(new Event('input',{bubbles:true}));
@@ -902,7 +913,7 @@ try{
     assert.ok(await page.locator('#text-preview-modal').isHidden(),'Escape closes themed preview');
     // #56: actual new Starburst Inspector widgets and preview, not dummy fields.
     await page.locator('#effect-category').selectOption('Light');
-    await page.locator('[data-preset-id="starburst"]').click();
+    await insertProceduralEffect('starburst');
     await page.locator('#effect-starburst-controls').waitFor({state:'visible',timeout:15000});
     assert.equal(await page.locator('#effect-intensity-label').innerText(),'Opacity (%)');
     assert.equal(await page.locator('#effect-color-label').innerText(),'Primary ray colour');
@@ -929,7 +940,7 @@ try{
     // TV Static clip, while unrelated colour/scale/angle knobs stay hidden.
     await page.locator('#effect-category').selectOption('Glitch');
     assert.equal(await page.locator('#effects-library-grid .asset-preset-card:visible').count(),expectedGlitchCount);
-    await page.locator('[data-preset-id="tv-static"]').click();
+    await insertProceduralEffect('tv-static');
     await page.locator('#effect-tv-static-controls').waitFor({state:'visible',timeout:15000});
     assert.equal(await page.locator('#effect-intensity-label').innerText(),'Snow opacity (%)');
     assert.equal(await page.locator('#effect-density-label').innerText(),'Static coverage');

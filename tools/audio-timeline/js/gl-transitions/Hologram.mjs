@@ -1,3 +1,4 @@
+import { uploadTransitionTexture } from './texture-upload.mjs';
 /**
  * Pinned upstream original GLSL git blob 284e495b81dabf03070eb1c24ad41583a7ed5ee4; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * Hologram (#02 of 41) — GL Transitions original shader, Author gre, MIT.
@@ -177,7 +178,7 @@ export function createHologramWebGLRenderer(){
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-                gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+                uploadTransitionTexture(gl,textures[index],source);
             }
             gl.uniform1i(loc.from,0);gl.uniform1i(loc.to,1);
             gl.uniform1f(loc.progress,Math.min(1,Math.max(0,Number(position)||0)));

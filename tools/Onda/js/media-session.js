@@ -66,7 +66,10 @@
 
     function syncMetadata(force = false) {
         const meta = getCurrentTrackMeta();
-        if (!meta) return;
+        if (!meta) {
+            if(lastMetadataKey){lastMetadataKey='';try{navigator.mediaSession.metadata=null;navigator.mediaSession.setPositionState?.();}catch(_){}}
+            return;
+        }
         const key = metadataKey(meta);
         if (!force && key === lastMetadataKey) return;
         lastMetadataKey = key;

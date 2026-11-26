@@ -73,7 +73,7 @@ function fixture() {
     };
     globalThis.document = {
         createElement(type) {
-            if (type === 'canvas') return { getContext: () => ctx };
+            if (type === 'canvas') return { width:300,height:150,getContext: () => ctx, toBlob:canvas.toBlob };
             if (type === 'a') return { href: '', download: '', click() {}, remove() {} };
             throw Error('Unexpected element ' + type);
         },

@@ -11,7 +11,7 @@ permissions:
 jobs:
   stacked-export-endurance:
     runs-on: ubuntu-24.04
-    timeout-minutes: 65
+    timeout-minutes: ${{ matrix.scenario == '4k' && 255 || matrix.scenario == '1080p' && 195 || 65 }}
     strategy:
       fail-fast: false
       matrix:

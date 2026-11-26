@@ -1,3 +1,4 @@
+import { uploadTransitionTexture } from './texture-upload.mjs';
 /**
  * Pinned upstream original GLSL git blob dd0b3f76a8ec3e941e9db79d4f6282a75c3282bd; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * #04 Vortex: unmodified original gre/MIT GL Transitions shader.
@@ -194,7 +195,7 @@ export function createVortexWebGLRenderer(){
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-                gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+                uploadTransitionTexture(gl,textures[index],source);
             }
             gl.uniform1i(locations.fromTexture,0);
             gl.uniform1i(locations.toTexture,1);

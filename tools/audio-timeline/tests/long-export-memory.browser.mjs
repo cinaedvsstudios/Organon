@@ -98,6 +98,8 @@ try{
     const context=await browser.newContext({acceptDownloads:true});
     const page=await context.newPage(),errors=[];
     page.on('pageerror',error=>errors.push(String(error)));
+    page.on('crash',()=>console.error('[MotoriClip browser] renderer crashed'));
+    browser.on('disconnected',()=>console.log('[MotoriClip browser] disconnected'));
     page.on('console',message=>{
         const value=message.text();
         if(value.startsWith('[MotoriClip 6L progress]')||value.startsWith('[MotoriClip 79 progress]'))console.log(value);
@@ -150,11 +152,16 @@ try{
         console.log('[MotoriClip '+phase+'] START',cfg.name);
         const base=chromeMemory(process.pid);
         const samples=[base];
+        let lastReport=Date.now();
         const timer=setInterval(()=>{
-            try{samples.push(chromeMemory(process.pid))}catch(error){
-                console.warn('Memory sample failed: '+String(error));
-            }
-        },400);
+            try{
+                const sample=chromeMemory(process.pid);samples.push(sample);
+                if(stacked&&Date.now()-lastReport>=60000){
+                    lastReport=Date.now();
+                    console.log('[MotoriClip 79 memory] '+cfg.name+' '+JSON.stringify(sample));
+                }
+            }catch(error){console.warn('Memory sample failed: '+String(error));}
+        },stacked?2000:400);
         const started=Date.now();
         try{
             // A 60s 1080p WebCodecs render takes ~5 minutes in hosted CI.
@@ -162,7 +169,9 @@ try{
             // download timeout without a decoder crash or memory exhaustion.
             // Allow up to 17 minutes for the 120s stress scenario only.
             const downloadPromise=page.waitForEvent('download',{
-                timeout:stacked ? 3300000 : fullHd120 ? 1020000 : 420000
+                // Software-rendered stacked exports measured ~11/18 min per 10%.
+                // Preserve every frame and effect; allow realistic CI time, not a shorter test.
+                timeout:stacked ? (stacked==='4k'?240:180)*60000 : fullHd120 ? 1020000 : 420000
             });
             const renderPromise=page.evaluate(async scenario=>{
                 const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
@@ -292,8 +301,9 @@ try{
                     canvas.remove();
                 }
             },cfg);
-            const download=await downloadPromise;
-            const result=await renderPromise;
+            // Observe both promises immediately so a download timeout cannot hide
+            // the original error behind a secondary page-close rejection.
+            const [download,result]=await Promise.all([downloadPromise,renderPromise]);
             assert.equal(result.ok,true);
             assert.equal(result.busy,false);
             assert.equal(result.retainedInputs,0);
@@ -306,7 +316,7 @@ try{
             await download.saveAs(file);
             const metadata=JSON.parse(command('ffprobe',['-v','error','-count_frames',
                 '-show_entries','stream=codec_type,codec_name,width,height,nb_read_frames',
-                '-show_entries','format=duration,size','-of','json',file]));
+                '-show_entries','format=duration,size','-of','json',file],{timeout:stacked?600000:120000}));
             const video=metadata.streams.find(x=>x.codec_type==='video');
             const audio=metadata.streams.find(x=>x.codec_type==='audio');
             assert.ok(video&&audio,'Output must contain both video and audio');
@@ -372,6 +382,12 @@ try{
             };
             records.push(record);
             console.log('[MotoriClip '+phase+'] PASS '+cfg.name+' '+JSON.stringify(record));
+        }catch(error){
+            if(stacked){
+                const valid=samples.filter(s=>s.pssKiB!==null);
+                console.error('[MotoriClip 79 FAIL] '+cfg.name+' '+JSON.stringify({message:String(error),elapsedMs:Date.now()-started,baseline:base,last:valid.at(-1),peakPssKiB:Math.max(0,...valid.map(s=>s.pssKiB)),samples:valid.length}));
+            }
+            throw error;
         }finally{
             clearInterval(timer);
         }
