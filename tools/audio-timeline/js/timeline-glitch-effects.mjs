@@ -1,3 +1,4 @@
+import {renderGlitchStorm} from './timeline-glitch-storm.mjs';
 import {renderGlassGlitch} from './timeline-glass-glitch.mjs';
 import {renderRetroGlitch} from './timeline-retro-glitch.mjs';
 import {renderEngineHeat} from './timeline-engine-heat.mjs';
@@ -47,17 +48,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   if(e.presetId==='glass-glitch'){
    return renderGlassGlitch(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='glitch-storm'){
-   // High-frequency discontinuous horizontal tearing plus digital block snow.
-   const bands=Math.min(38,count);
-   for(let i=0;i<bands;i++){
-    const y=i*h/bands,bh=Math.ceil(h/bands)+1;
-    const jump=(seeded(tick*109+i*17)-.5)*amp*3;
-    draw(ctx,source,0,y,w,bh,jump,y,w,bh);
-    if(seeded(tick+i*23)>.73){
-     ctx.fillStyle=i%2?'rgba(255,40,109,.44)':'rgba(29,232,239,.35)';
-     ctx.fillRect(seeded(i*7+tick)*w,y,w*(.04+seeded(i*19)*.25),bh);
-    }
-   }
+   return renderGlitchStorm(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='negative-chaos'){
    // Invert only changing window-shaped pieces; leave unaffected pixels normal.
    for(let i=0;i<Math.max(6,Math.round(count*.36));i++){
