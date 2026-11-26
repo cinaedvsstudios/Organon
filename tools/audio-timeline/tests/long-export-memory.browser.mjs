@@ -100,7 +100,7 @@ try{
     page.on('pageerror',error=>errors.push(String(error)));
     page.on('console',message=>{
         const value=message.text();
-        if(value.startsWith('[MotoriClip 6L progress]'))console.log(value);
+        if(value.startsWith('[MotoriClip 6L progress]')||value.startsWith('[MotoriClip 79 progress]'))console.log(value);
     });
     await page.goto('http://127.0.0.1:'+server.address().port+
         '/tools/audio-timeline/tests/browser-harness.html');
@@ -110,7 +110,7 @@ try{
     const phase=stacked?'79':fullHd120?'6L':longform?'6K':'6G';
     const scenarios=stacked ? [stacked==='4k' ? {
         name:'4k-60s-stacked-8clips',format:'mp4',width:3840,height:2160,
-        duration:60,fps:24,bitrateKbps:18000,clipCount:8,clipStep:7.35,clipDuration:8.4,stacked:true
+        duration:60,fps:24,bitrateKbps:18000,clipCount:8,clipStep:7.3,clipDuration:8.4,stacked:true
     } : {
         name:'1080p-120s-stacked-16clips',format:'mp4',width:1920,height:1080,
         duration:120,fps:30,bitrateKbps:6000,clipCount:16,clipStep:7.35,clipDuration:8.4,stacked:true
@@ -262,7 +262,7 @@ try{
                             const next=Math.floor(s.percent/10);
                             if(next>milestone){
                                 milestone=next;
-                                console.info('[MotoriClip 6L progress] '
+                                console.info('[MotoriClip '+(scenario.stacked?'79':'6L')+' progress] '
                                     +scenario.name+' '+Math.round(s.percent)+'%');
                             }
                         }
