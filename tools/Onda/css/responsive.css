@@ -2509,3 +2509,12 @@ body.onda-force-mobile-mode #tab-library[data-playback-view="queue"] .onda-queue
   #workspace-viewport:has(#tab-library[data-playback-view="queue"]) { padding:8px; }
   body #workspace-viewport #tab-library[data-playback-view="queue"] { padding-right:3px; }
 }
+
+/* v3.51: one visible location for repeated drawer shortcuts. */
+#library-manager-drawer [data-onda-retired-shortcut] { display:none !important; }
+#library-manager-drawer .onda-add-source-actions {
+  display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:7px; padding:4px 0;
+}
+#library-manager-drawer .onda-add-source-actions .btn-pill {
+  min-height:44px; white-space:normal; font-size:.8rem;
+}

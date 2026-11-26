@@ -79,7 +79,7 @@
         const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.50';
+        const ONDA_VERSION = 'v3.51';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -3431,6 +3431,7 @@
         });
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleUploadedFiles(e.target.files);
+            e.target.value = '';
         });
         if (folderInput) {
             folderInput.addEventListener('change', (e) => {
@@ -3469,7 +3470,83 @@
             }
         }
 
-        async function handleUploadedFiles(files, options = {}) {
+        // File picker calls can overlap while metadata is being read. Serialize
+        // imports so the second selection sees records created by the first.
+        let localImportChain = Promise.resolve();
+        function handleUploadedFiles(files, options = {}) {
+            const selected = Array.from(files || []);
+            const pending = localImportChain.then(() => importUniqueLocalFiles(selected, options));
+            localImportChain = pending.catch(() => {});
+            return pending;
+        }
+
+        function normaliseImportPath(path) {
+            return String(path || '').replace(/\\\\/g,'/').replace(/^\.\//,'').replace(/\/+/g,'/');
+        }
+
+        function compatibleImportPath(a,b) {
+            a = normaliseImportPath(a); b = normaliseImportPath(b);
+            // Android/normal file input often exposes only a basename.
+            // When both paths are known, do not conflate different locations.
+            return !a.includes('/') || !b.includes('/') || a === b;
+        }
+
+        async function equalImportBytes(a,b) {
+            if (!a || !b || typeof a.slice !== 'function' || typeof b.slice !== 'function') return null;
+            if (a.size !== b.size) return false;
+            // Bounded memory even for very large audio files.
+            const chunkSize = 1024 * 1024;
+            for (let offset=0; offset<a.size; offset+=chunkSize) {
+                const [left,right] = await Promise.all([a.slice(offset,offset+chunkSize).arrayBuffer(),b.slice(offset,offset+chunkSize).arrayBuffer()]);
+                const x=new Uint8Array(left), y=new Uint8Array(right);
+                for(let i=0;i<x.length;i++) if(x[i]!==y[i]) return false;
+            }
+            return true;
+        }
+
+        async function matchLocalImport(file, path, candidates, nextId, legacyId) {
+            let duration = null;
+            let probed = false;
+            const isMidi = /\\.(mid|midi)$/i.test(file.name || '');
+            const getDuration = async () => {
+                if (!probed) {
+                    probed = true;
+                    if (!isMidi) {
+                        try { duration = await probeQueueDuration(file); } catch (_) {}
+                    }
+                }
+                return duration;
+            };
+            for (const meta of candidates || []) {
+                if (!compatibleImportPath(path,meta.localPath || meta.fileName)) continue;
+                const storedSize = Number(meta.sizeBytes);
+                if (storedSize > 0 && storedSize !== file.size) continue;
+                const identityMatch = meta.id === nextId || meta.id === legacyId;
+                let existingBlob = meta.blobFile || null;
+                if (!existingBlob) {
+                    try { const record = await idbGetAudioFile(meta.id); existingBlob = record?.file || record?.blob || null; } catch (_) {}
+                }
+                let sameBytes = null;
+                try { sameBytes = await equalImportBytes(file,existingBlob); } catch (_) {}
+                if (sameBytes === false) continue;
+                const incomingDuration = await getDuration();
+                let oldDuration = Number(meta.duration) || null;
+                if (!oldDuration && existingBlob && !isMidi) {
+                    try { oldDuration = await probeQueueDuration(existingBlob); } catch (_) {}
+                }
+                const durationMatch = incomingDuration > 0 && oldDuration > 0 && Math.abs(incomingDuration-oldDuration) <= .15;
+                if (incomingDuration > 0 && oldDuration > 0 && !durationMatch && sameBytes !== true) continue;
+                // Prefer exact byte comparison. If saved media is unavailable,
+                // a known identity or matching path/name/size/duration may relink
+                // the existing metadata record, not create a second one.
+                if (sameBytes === true || (sameBytes === null && (identityMatch || (storedSize === file.size && durationMatch)))) {
+                    return {meta, duration:incomingDuration || oldDuration, existingBlob};
+                }
+            }
+            return {meta:null,duration};
+        }
+
+        async function importUniqueLocalFiles(files, options = {}) {
             const finishImportPrepare = window.OndaDiagnostics?.begin('import-prepare');
             const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
@@ -3485,8 +3562,16 @@
             const newTracks = [];
             const refreshedTracks = [];
             let queueDuplicates = 0;
+            let skippedDuplicates = 0;
+            const candidateIndex = new Map();
+            for (const meta of Object.values(virtualLibrary)) {
+                if (!meta?.fileName || meta.streamUrl || ['stream','reference'].includes(meta.sourceType)) continue;
+                const name = meta.fileName;
+                if (!candidateIndex.has(name)) candidateIndex.set(name,[]);
+                candidateIndex.get(name).push(meta);
+            }
 
-            playableFiles.forEach(file => {
+            for (const file of playableFiles) {
                 const isMidi = Boolean(window.OndaMidi?.isMidiFile(file)) || /\.(mid|midi)$/i.test(file.name || '');
                 const localSourceType = isMidi ? 'midi' : 'local';
                 const defaultLocalTag = isMidi ? 'MIDI File' : 'Local File';
@@ -3494,9 +3579,21 @@
                 const handle = options.fileHandles?.get(file) || null;
                 const nextId = createTrackIdFromParts(['local', relativePath, file.name, file.size, file.lastModified || '']);
                 const legacyId = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
-                const id = virtualLibrary[nextId] ? nextId : (virtualLibrary[legacyId] ? legacyId : nextId);
-                const alreadyInLibrary = Boolean(virtualLibrary[id]);
-                const existing = virtualLibrary[id] || {};
+                const match = await matchLocalImport(file, relativePath, candidateIndex.get(file.name), nextId, legacyId);
+                const alreadyInLibrary = Boolean(match.meta);
+                let id = match.meta?.id || nextId;
+                if (!alreadyInLibrary) {
+                    // A distinct file can share old identity inputs. Never overwrite it.
+                    let suffix=1;
+                    while (virtualLibrary[id]) id = nextId+'_'+suffix++;
+                }
+                const existing = match.meta || {};
+                if (alreadyInLibrary && match.existingBlob) {
+                    skippedDuplicates += 1;
+                    if (match.duration > 0 && !(Number(existing.duration)>0)) existing.duration = match.duration;
+                    if (handle?.kind === 'file') linkedRecords.push({trackId:id,handle,relativePath,fileName:file.name});
+                    continue;
+                }
 
                 const track = {
                     name: id,
@@ -3519,9 +3616,9 @@
                     playlists: Array.isArray(existing.playlists) ? existing.playlists : [],
                     size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
                     sizeBytes: file.size,
-                    duration: existing.duration || null,
+                    duration: match.duration || existing.duration || null,
                     sourceType: localSourceType,
-                    localPath: relativePath || existing.localPath || file.name,
+                    localPath: (alreadyInLibrary && existing.localPath) || relativePath || file.name,
                     streamUrl: null,
                     blobFile: file
                 };
@@ -3530,14 +3627,18 @@
                     trackId: id, handle, relativePath, fileName: file.name
                 });
                 if (alreadyInLibrary) refreshedTracks.push(track);
-                else newTracks.push(track);
-            });
+                else {
+                    newTracks.push(track);
+                    if (!candidateIndex.has(file.name)) candidateIndex.set(file.name,[]);
+                    candidateIndex.get(file.name).push(virtualLibrary[id]);
+                }
+            }
 
             const wasEmpty = playlistTracks.length === 0;
             const allIncomingTracks = [...newTracks, ...refreshedTracks];
             const queuedIds = new Set(playlistTracks.map(getTrackId).filter(Boolean));
             const tracksToQueue = [];
-            allIncomingTracks.forEach(track => {
+            newTracks.forEach(track => {
                 const trackId = getTrackId(track);
                 if (queuedIds.has(trackId)) {
                     queueDuplicates += 1;
@@ -3548,7 +3649,7 @@
             });
             playlistTracks = [...playlistTracks, ...tracksToQueue];
 
-            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${refreshedTracks.length} refreshed${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
+            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${skippedDuplicates} duplicate${skippedDuplicates === 1 ? '' : 's'} skipped${refreshedTracks.length ? ` · ${refreshedTracks.length} reconnected` : ''}${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
             if (wasEmpty && playlistTracks.length) switchTrack(0);
             updateNowPlayingPlaylistPanel();
             renderLibraryManager();
@@ -3557,7 +3658,7 @@
             // Keep this immediate save before awaiting any large audio writes.
             saveActiveLibraryState('add-local-files');
             showToast(summary);
-            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: queueDuplicates });
+            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: skippedDuplicates + queueDuplicates });
 
             if (linkedRecords.length && window.OndaFileHandles?.rememberMany) {
                 // The handle index is additive: never remove or bypass existing cache.
