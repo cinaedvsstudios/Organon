@@ -65,9 +65,9 @@ try{
    assert.equal(await page.locator(selector).isVisible(),entry.groups.includes(name),id+' '+name+' visibility');
   }
   if(id==='camera-frame'){
-   const checkbox=page.locator('#effect-show-rec');await checkbox.uncheck();
+   const rec=page.locator('#effect-show-rec');await rec.selectOption('false');
    await page.locator('#effects-library-grid [data-preset-id="camera-frame"]').click();
-   assert.equal(await checkbox.isChecked(),true,'New camera HUD must not inherit previous clip checkbox');
+   assert.equal(await rec.inputValue(),'true','New camera HUD must not inherit previous clip REC setting');
   }
   console.log('[MotoriClip #67 native common groups] PASS',id,entry.groups.join(','));
  }
