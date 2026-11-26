@@ -1,3 +1,4 @@
+import { uploadTransitionTexture } from './texture-upload.mjs';
 /**
  * #33 ColorCoords — exact original haiyoucuv/MIT colour-channel UV displacement.
  * https://github.com/gl-transitions/gl-transitions/blob/7f48be1e2c09a54f74cfdd927bb0f512a652c051/transitions/ColorCoords.glsl
@@ -94,7 +95,7 @@ export function createColorCoordsWebGLRenderer(){
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-                gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+                uploadTransitionTexture(gl,textures[index],source);
             }
             gl.uniform1i(uniforms.fromTexture,0);
             gl.uniform1i(uniforms.toTexture,1);

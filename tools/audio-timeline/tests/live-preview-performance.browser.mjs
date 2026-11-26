@@ -69,9 +69,12 @@ try{
      }
      const playback=[];
      // Keep the project resolution fixed if the new preview-quality API is present.
-     const modes=typeof engine.setPreviewQuality==='function'?['normal','fast','low']:['native'];
+     if(typeof engine.setPreviewQuality!=='function')throw Error('Merged preview quality API required for combined benchmark');
+     const modes=['normal','fast','low'];
      for(const mode of modes){
-      if(mode!=='native')engine.setPreviewQuality(mode);
+      engine.setPreviewQuality(mode);
+      const scale={normal:1,fast:.5,low:.25}[mode];
+      if(canvas.width!==Math.round(cfg.width*scale)||canvas.height!==Math.round(cfg.height*scale))throw Error('Incorrect backing resolution for '+mode+': '+canvas.width+'x'+canvas.height);
       await engine.seek(1.25,{resume:false});
       const startPixels=capture(),frames=[],times=[];
       const render=engine.renderFrame.bind(engine);
@@ -96,7 +99,10 @@ try{
    },cfg);
    assert.deepEqual(errors,[]);assert.deepEqual(result.renderErrors,[]);
    for(const [id,value] of Object.entries(result.contributions))assert.ok(value>.005,id+' must visibly contribute to stacked composition: '+value);
+   assert.deepEqual(result.playback.map(m=>m.mode),['normal','fast','low']);
    for(const m of result.playback){
+    const scale={normal:1,fast:.5,low:.25}[m.mode];
+    assert.deepEqual(m.canvas,[Math.round(cfg.width*scale),Math.round(cfg.height*scale)]);
     assert.ok(m.renderCalls>=2,m.mode+' playback did not render repeatedly');
     assert.ok(m.timelineSeconds>1,m.mode+' playback clock did not advance');
     assert.ok(m.pixelChange>.01,m.mode+' actual pixels did not change');

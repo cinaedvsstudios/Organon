@@ -89,7 +89,7 @@ try {
         const downloadPromise=browserName==='webkit'
             ? page.waitForEvent('download',{timeout:4000}).then(()=>true).catch(()=>false)
             : page.waitForEvent('download',{timeout:180000});
-        const exportPromise=page.evaluate(async ({fmt,debugMix})=>{
+        const exportPromise=page.evaluate(async ({fmt,debugMix,previewQuality})=>{
             const [{AdvancedOfflineExporter},{AdvancedMediaEngine}]=await Promise.all([
                 import('../js/advanced-offline-export.mjs'),
                 import('../js/advanced-media-engine-v0.24.js'),
@@ -136,6 +136,7 @@ try {
             const engine=new AdvancedMediaEngine({canvas,mediaBin:document.createElement('div'),
                 onTimeChange(){},onDurationChange(){},onPlaybackChange(){},onRenderError(error){throw error}});
             engine.tracks=tracks;
+            engine.setPreviewQuality(previewQuality);
             const messages=[];
             let outputBlob=null;
             const exporter=new AdvancedOfflineExporter({
@@ -179,8 +180,8 @@ try {
                 }catch(error){independentAudioDecodeError=String(error.message||error)}
             }
             return {messages,previewTime:engine.currentTime,trackCount:engine.tracks.length,
-                mixEnergy,exportError,independentAudioRms,independentAudioDecodeError};
-        },{fmt:format,debugMix:browserName==='webkit'});
+                mixEnergy,exportError,independentAudioRms,independentAudioDecodeError,previewSize:[canvas.width,canvas.height]};
+        },{fmt:format,debugMix:browserName==='webkit',previewQuality:process.env.MOTORICLIP_PREVIEW_QUALITY||'normal'});
         const outcome=await exportPromise;
         if(browserName==='webkit'){
             console.log('[MotoriClip WebKit independent audio diagnosis]',JSON.stringify(outcome));
@@ -194,6 +195,8 @@ try {
         const download=await downloadPromise;
         assert.equal(outcome.exportError,null,'Export unexpectedly failed: '+outcome.exportError);
         assert.equal(outcome.trackCount,4);
+        const scale=({low:.25,fast:.5,normal:1})[process.env.MOTORICLIP_PREVIEW_QUALITY||'normal'];
+        assert.deepEqual(outcome.previewSize,[Math.round(320*scale),Math.round(180*scale)]);
         assert.equal(download.suggestedFilename(),`motoriclip-e2e.${format}`);
         const file=join(temp,`motori-${format}.${format}`);
         await download.saveAs(file);

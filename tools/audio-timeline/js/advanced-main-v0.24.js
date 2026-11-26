@@ -54,6 +54,7 @@ import { normaliseFilmStripOptions } from './gl-transitions/FilmStrip.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { commonEffectControls, EFFECT_COMMON_CONTROL_GROUPS } from './effect-inspector-controls.mjs';
 import { paintEffectThumbnail, createEffectThumbnailHover } from './effect-library-preview.mjs';
 import { TIMELINE_EFFECTS, normaliseTimelineEffect, paintTimelineEffect, requiresCompositeSource, paintEffectPreviewScene } from './timeline-effects.mjs';
 import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
@@ -188,6 +189,20 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         onPlaybackChange: setPlayButton,
         onRenderError: (error) => { elements.previewState.textContent = `Preview error: ${error.message}`; }
     });
+
+    const previewQualitySelect=document.getElementById('preview-quality');
+    const previewQualityKey='motoriclip.preview-quality.v1';
+    function applyPreviewQuality(quality,remember=false){
+        const selected=engine.setPreviewQuality(quality);
+        previewQualitySelect.value=selected;
+        if(remember){try{localStorage.setItem(previewQualityKey,selected);}catch(_){}}
+    }
+    let storedPreviewQuality='normal';
+    try{storedPreviewQuality=localStorage.getItem(previewQualityKey)||'normal';}catch(_){}
+    // Initial render is deferred until normal editor setup has finished.
+    engine.previewQuality=['low','fast','normal'].includes(storedPreviewQuality)?storedPreviewQuality:'normal';
+    previewQualitySelect.value=engine.previewQuality;
+    previewQualitySelect.addEventListener('change',()=>applyPreviewQuality(previewQualitySelect.value,true));
 
     const timeline = new AdvancedTimeline({
         lanesElement: document.getElementById('timeline-lanes'),
@@ -403,7 +418,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function applyCanvasResolution({ announce = false, remember = false } = {}) {
         const width = clamp(Math.round(Number(elements.canvasWidth.value) || 1280), 64, 7680);
         const height = clamp(Math.round(Number(elements.canvasHeight.value) || 720), 64, 7680);
-        if(remember && (elements.canvas.width!==width || elements.canvas.height!==height))
+        if(remember && (engine.outputWidth!==width || engine.outputHeight!==height))
             recordHistory('Change canvas resolution');
         elements.canvasWidth.value = String(width); elements.canvasHeight.value = String(height);
         engine.setCanvasResolution(width, height);
@@ -492,7 +507,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             // Source of truth is the applied canvas, not an input the user has
             // typed into but has not yet applied.
             settings:{
-                canvasWidth:elements.canvas.width,canvasHeight:elements.canvas.height,
+                canvasWidth:engine.outputWidth,canvasHeight:engine.outputHeight,
                 fps:engine.projectFps,previewZoom:state.previewZoom
             }
         });
@@ -508,8 +523,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
             // Persist the settings actually applied to the render engine.
             // A user may still be typing a new width/height into the dialog:
             // saving those uncommitted inputs corrupts recovery on refresh.
-            canvasWidth:elements.canvas.width,
-            canvasHeight:elements.canvas.height,
+            canvasWidth:engine.outputWidth,
+            canvasHeight:engine.outputHeight,
             fps:engine.projectFps,
             previewZoom:state.previewZoom,
             markers:state.timelineMarkers,
@@ -1279,7 +1294,10 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
     function drawTextPresetPreview(){
         if(!textPreviewPreset)return;
-        const canvas=elements.textPreviewCanvas,ctx=canvas.getContext('2d');
+        const canvas=elements.textPreviewCanvas,ctx=canvas.getContext('2d',{willReadFrequently:true});
+        if(typeof ctx.reset==='function')ctx.reset();
+        else {ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.filter='none';ctx.shadowBlur=0;ctx.lineWidth=1;ctx.imageSmoothingEnabled=true;}
+        ctx.direction='ltr';ctx.textAlign='left';ctx.textBaseline='alphabetic';
         ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle='#0c1722';ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.strokeStyle='rgba(117,178,222,.08)';
@@ -1293,6 +1311,8 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         else paintTimelineText(ctx,640,360,{presetId:textPreviewPreset.id,value:input,
             phasedAnimation:true},textPreviewTime,3);
         elements.textPreviewProgress.value=String(Math.round(textPreviewTime*100));
+        elements.textPreviewProgress.setAttribute('aria-valuetext',textPreviewTime.toFixed(2)+' seconds of 3');
+        elements.textPreviewCanvas.dataset.previewSeconds=String(textPreviewTime);
     }
     function advanceTextPreview(now){
         if(!textPreviewPlaying)return;
@@ -1320,7 +1340,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     elements.textPreviewPlay.addEventListener('click',()=>{
         if(!textPreviewPreset)return;
         if(textPreviewPlaying){stopTextPreview();return;}
-        if(textPreviewTime>=3)textPreviewTime=0;
+        if(textPreviewTime>=3){textPreviewTime=0;drawTextPresetPreview();}
         textPreviewPlaying=true;textPreviewTimestamp=performance.now();
         elements.textPreviewPlay.textContent='⏸ Pause';
         textPreviewFrame=requestAnimationFrame(advanceTextPreview);
@@ -1607,6 +1627,13 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.inspectorSticker.hidden = multiple || track?.type !== 'sticker';
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
+        // Identify the selected effect even when the Inspector stays open.
+        elements.effectInspector.dataset.selectedPresetId=multiple?'':(track?.effectOverlay?.presetId||'');
+        elements.effectInspector.dataset.clipId=multiple?'':(track?.effectOverlay?track.id:'');
+        if(!elements.effectInspector.hidden){
+            const preset=TIMELINE_EFFECTS.find(item=>item.id===track.effectOverlay.presetId);
+            elements.effectInspector.querySelector('h3').textContent=preset?.label||'Procedural effect';
+        }
         const isStarburst=track?.effectOverlay?.presetId==='starburst';
         const isLightSweep=track?.effectOverlay?.presetId==='light-sweep';
         const isCameraFrame=track?.effectOverlay?.presetId==='camera-frame';
@@ -1669,13 +1696,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-misalignment-controls').hidden=!isMisalignment;
         document.getElementById('effect-noir-glitch-controls').hidden=!isNoirGlitch;
         document.getElementById('effect-glitch-flux-controls').hidden=!isGlitchFlux;
-        document.getElementById('effect-color-control').hidden=isNoirGlitch||isNegativeChaos||isHaloBlur||isChromaticQuirk||isReboundSwing||isPendulumSwing||isTVStatic||isSignalInterference||isCRTScanlines||isDataBurst||isSignalTear||isRGBBlockGlitch;
         document.getElementById('effect-mist-fog-controls').hidden=!isMistFog;
         document.getElementById('effect-starburst-controls').hidden=!isStarburst;
         document.getElementById('effect-camera-frame-controls').hidden=!isCameraFrame;
-        document.getElementById('effect-density-control').hidden=isMisalignment||isHaloBlur||isChromaticQuirk||isEdgeGlowQuality||isGlowQuality||isRhythmicFlicker||isReboundSwing||isPendulumSwing||isStarburst||isCameraFrame||isCRTScanlines;
-        document.getElementById('effect-scale-control').hidden=isHaloBlur||isEdgeGlowQuality||isGlowQuality||isRhythmicFlicker||isStarburst||isCameraFrame||isTVStatic||isSignalInterference||isCRTScanlines||isDataBurst||isSignalTear||isRGBBlockGlitch||isLineCorruption;
-        document.getElementById('effect-direction-control').hidden=isHaloBlur||isEdgeGlowQuality||isGlowQuality||isRhythmicFlicker||isCameraFrame||isTVStatic||isSignalInterference||isCRTScanlines||isDataBurst||isSignalTear||isRGBBlockGlitch||isLineCorruption;
         document.getElementById('effect-intensity-label').textContent=isCameraFrame?'HUD opacity (%)':isStarburst?'Opacity (%)':isMistFog?'Fog opacity (%)':isTVStatic?'Snow opacity (%)':isSignalInterference?'Signal strength (%)':isCRTScanlines?'Raster strength (%)':isDataBurst?'Packet corruption (%)':isFaultCassette?'Tape tracking intensity (%)':isLineCorruption?'Line damage strength (%)':isRGBBlockGlitch?'RGB block strength (%)':isSignalTear?'Tear intensity (%)':'Intensity (%)';
         document.getElementById('effect-direction-label').textContent=isReboundSwing?'Recoil shear axis (°)':isPendulumSwing?'Release angle phase (°)':isVibrationFlash?'Camera vibration axis (°)':isShockwave?'Shock front drift (°)':isElectricRipple?'Electrical wave drift (°)':isRippleDistortion?'Water ripple drift direction (°)':isFaultCassette?'Tracking drift direction (°)':isFireExplosion?'Blast wind direction (°)':isFlyingDebris?'Wind direction (°)':isElectricSparks?'Arc direction (°)':isStarburst?'Starting angle (°)':isMistFog?'Wind direction (°)':'Direction (°)';
         document.getElementById('effect-color-label').textContent=isVibrationFlash?'Exposure flash tint':isShockwave?'Compression front tint':isElectricRipple?'Electrical discharge colour':isRippleDistortion?'Water crest highlight colour':isFaultCassette?'Tape dropout tint':isFireExplosion?'Hot core colour':isFlyingDebris?'Debris material colour':isElectricSparks?'Arc glow colour':isCameraFrame?'HUD line colour':isStarburst?'Primary ray colour':isLineCorruption?'Primary streak colour':isMistFog?'Mist colour':'Colour';
@@ -1683,21 +1706,19 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         document.getElementById('effect-scale-label').textContent=isReboundSwing?'Recoil scale (%)':isPendulumSwing?'Swing arc scale (%)':isVibrationFlash?'Camera displacement scale (%)':isShockwave?'Shockwave reach (%)':isElectricRipple?'Electrical front reach (%)':isRippleDistortion?'Ripple expansion scale (%)':isFaultCassette?'Tracking band size (%)':isFireExplosion?'Blast size (%)':isFlyingDebris?'Shard size (%)':isElectricSparks?'Spark reach (%)':isLightSweep?'Beam width (%)':isMistFog?'Bank spread (%)':'Scale (%)';
         document.getElementById('effect-distortion-label').textContent=isReboundSwing?'Recoil amplitude (%)':isPendulumSwing?'Swing arc amplitude (%)':isVibrationFlash?'Vibration amplitude (%)':isShockwave?'Source refraction (%)':isElectricRipple?'Electrical displacement (%)':isRippleDistortion?'Water refraction (%)':isFaultCassette?'Tape displacement (%)':isFireExplosion?'Fireball turbulence (%)':isFlyingDebris?'Air turbulence (%)':isElectricSparks?'Arc jaggedness (%)':isMistFog?'Rolling turbulence (%)':isSignalInterference?'Horizontal displacement (%)':isLineCorruption?'Source line displacement (%)':isRGBBlockGlitch?'Block displacement (%)':isSignalTear?'Horizontal tear shift (%)':'Distortion (%)';
         document.getElementById('effect-blur-label').textContent=isLightSweep?'Beam softness (px)':isMistFog?'Edge feathering (%)':'Blur (px)';
-        document.getElementById('effect-origin-controls').hidden=
-            !['chromatic-quirk','god-rays','ripple-distortion','electric-ripple','pendulum-swing','rebound-swing','shockwave','halo-blur','fire-explosion','particle-sparks','particle-debris','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst','particle-sparks','fire-explosion','electric-ripple'].includes(track?.effectOverlay?.presetId);
-        document.getElementById('effect-distortion-control').hidden=
-            isTVStatic||isCRTScanlines||isDataBurst||!(['pendulum-swing','rebound-swing','vibration-flash','fault-cassette',
-              'ripple-distortion','electric-ripple','shockwave','chromatic-quirk','hazy-atmosphere','mist-fog-bank','sci-fi-scan','fire-flames','engine-heat','light-leaks','god-rays','particle-sparks','particle-debris','fire-explosion'].includes(track?.effectOverlay?.presetId)
-              || TIMELINE_EFFECTS.some(item=>item.id===track?.effectOverlay?.presetId&&item.category==='Glitch'));
-        document.getElementById('effect-glow-control').hidden=
-            !['glow','edge-glow','halo-blur','light-sweep','hazy-atmosphere','sci-fi-scan','fire-flames','engine-heat','retro-glitch','light-leaks','starburst','particle-sparks','fire-explosion','electric-ripple'].includes(track?.effectOverlay?.presetId);
-        document.getElementById('effect-blur-control').hidden=
-            !['glow','edge-glow','halo-blur','light-sweep','mist-fog-bank','fire-flames','engine-heat','light-leaks','god-rays'].includes(track?.effectOverlay?.presetId);
+        const activeCommon=commonEffectControls(track?.effectOverlay?.presetId);
+        for(const name of EFFECT_COMMON_CONTROL_GROUPS){
+            const id=name==='origin'?'effect-origin-controls':'effect-'+name+'-control';
+            document.getElementById(id).hidden=!activeCommon.includes(name);
+        }
         if(!multiple&&track?.effectOverlay){
             elements.effectDuration.value=String(track.clipDuration||3);
             const effect=normaliseTimelineEffect(track.effectOverlay);
             for(const [name,input] of Object.entries(elements.effectInspectorInputs)){
-                if(effect[name]!==undefined)input.value=String(effect[name]);
+                if(effect[name]!==undefined){
+                    if(input.type==='checkbox')input.checked=Boolean(effect[name]);
+                    else input.value=String(effect[name]);
+                }
             }
         }
         if(!multiple&&track?.textOverlay){

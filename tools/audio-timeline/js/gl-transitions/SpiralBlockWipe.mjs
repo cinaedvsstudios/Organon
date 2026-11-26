@@ -1,3 +1,4 @@
+import { uploadTransitionTexture } from './texture-upload.mjs';
 /**
  * Pinned upstream original GLSL git blob e98d9e749d398d84ec927da9286af13843da722e; source commit deeebdee7581cdfe924ed9cf104ea2fd10e63155.
  * Verified source for GL Transitions SpiralBlockWipe.
@@ -148,7 +149,7 @@ export function createSpiralBlockWebGLRenderer() {
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-                gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,source);
+                uploadTransitionTexture(gl,textures[index],source);
             }
             gl.uniform1i(locations.from,0);gl.uniform1i(locations.to,1);
             gl.uniform1f(locations.progress,Math.min(1,Math.max(0,Number(position)||0)));
