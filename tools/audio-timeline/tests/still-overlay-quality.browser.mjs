@@ -188,7 +188,7 @@ try{
     assert.equal(m.topRows,expected);assert.equal(m.bottomRows,expected);
     assert.equal(m.centre,0);
     if(preset==='cinema-bars')assert.deepEqual(m.topPixel,[0,0,0,255]);
-    else{assert.ok(m.trim[0]>190&&m.trim[0]>m.trim[2]+55&&m.trim[0]>m.topPixel[0]+100,'Gold trim must be brighter than satin matte');assert.deepEqual(m.trim,m.trimMirror,'Gold aperture trim must mirror');}
+    else{assert.ok(m.trim[0]>190&&m.trim[0]>m.trim[2]+55&&m.trim[0]>m.topPixel[0]+100,'Gold trim must be brighter than satin matte');assert.ok(m.trim.length===4&&m.trimMirror.length===4&&m.trim.every((v,i)=>Math.abs(v-m.trimMirror[i])<=2),'Gold aperture trim must mirror within Canvas gradient quantization');}
     assert.ok(Math.abs(m.width/(m.height-2*expected)-2.39)<.08,'Scope aperture should match 2.39:1 to nearest pixel');
    }else if(preset==='sunset-leak'||preset==='blue-leak'){
     const warm=preset==='sunset-leak',entry=warm?m.warmEntry:m.coolEntry,far=warm?m.warmFar:m.coolFar;
