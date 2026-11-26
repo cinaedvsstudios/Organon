@@ -2152,3 +2152,68 @@ body {
 .onda-drawer-workspaces .mode-tab-btn{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:44px;white-space:normal;padding:6px 8px}
 .onda-drawer-workspaces .mode-tab-label,.workspace-mode-bar #tab-btn-library .mode-tab-label{display:inline}
 .workspace-mode-bar #tab-btn-library{flex:0 1 auto;min-width:110px;min-height:36px}
+
+/* v3.42: keep the mobile footer inside the flex viewport instead of a
+   fixed-position box that can drift under browser/root zoom. */
+body.onda-force-mobile-mode {
+  padding-inline: 8px;
+}
+body.onda-force-mobile-mode #organon-top-panel {
+  margin-top: 8px;
+  padding: 12px 12px;
+  min-width: 0;
+}
+body.onda-force-mobile-mode .player-control-square {
+  height: 118px;
+  min-height: 118px;
+}
+body.onda-force-mobile-mode .player-control-square #start-controls-pill {
+  padding: 8px 10px;
+  gap: 8px;
+  grid-template-columns: minmax(44px,1fr) minmax(64px,1.2fr) minmax(44px,1fr);
+}
+body.onda-force-mobile-mode #organon-middle-panel {
+  padding: 10px 4px 8px;
+  gap: 8px;
+  min-width: 0;
+}
+body.onda-force-mobile-mode .viewport-content.active-content {
+  padding-bottom: 12px;
+}
+body.onda-force-mobile-mode #organon-bottom-panel.onda-bottom-bar-v3 {
+  position: relative;
+  inset: auto;
+  transform: none;
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  grid-template-columns: minmax(0,1fr) auto auto;
+  gap: 6px;
+  padding: 8px 8px max(8px, env(safe-area-inset-bottom, 0px));
+}
+body.onda-force-mobile-mode #organon-bottom-panel .btn-pill {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+body.onda-force-mobile-mode #organon-bottom-panel.onda-bottom-bar-v3 #btn-database-engine {
+  padding: 6px 8px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body.onda-force-mobile-mode .workspace-mode-bar #tab-btn-library {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+body.onda-force-mobile-mode .workspace-mode-bar #tab-btn-library .mode-tab-label {
+  display: inline;
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  body.onda-force-mobile-mode #organon-top-panel { padding: 5px 10px; }
+  body.onda-force-mobile-mode .player-control-square { height: 90px; min-height: 90px; }
+  body.onda-force-mobile-mode .player-control-square #start-controls-pill #btn-play {
+    width: 68px; height: 68px; min-width: 68px; min-height: 68px;
+  }
+}

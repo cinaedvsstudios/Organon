@@ -62,3 +62,5 @@ No new user-reported defects have been supplied in this continuation. Record eac
 ## Change log
 
 - 2026-11-26: established v3.41 baseline from source commit and actual GitHub Actions results. Manual feedback pending. No application files changed.
+
+- 2026-11-26 — UAT-001 (tests 3, 5, 6): user Android screenshot shows cropped bottom navigation, excessive player height and old globe navigation. Screenshot may be from older cached UI; exact loaded version unknown. v3.42 makes mobile footer an in-flow flex child, reduces player/side padding, restores visible Current label, guards legacy Stream routing and adds geometry checks at 70/100/130% zoom. Status: source fix; CI, deployment and physical Android retest pending. No storage changes.

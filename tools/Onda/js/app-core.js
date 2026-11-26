@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.41';
+        const ONDA_VERSION = 'v3.42';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4040,6 +4040,7 @@
 
         // --- 3. WORKSPACE VIEWPORT TABS ROUTER ---
         function switchWorkspaceTab(tabId) {
+            if (tabId === 'tab-youtube') tabId = 'tab-library';
             if (tabId !== 'tab-files') window.OndaQuickPlay?.stopForNavigation?.();
             saveLocalUiStateCheckpoint(`screen-change-before:${tabId}`);
 
