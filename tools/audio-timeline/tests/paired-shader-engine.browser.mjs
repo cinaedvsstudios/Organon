@@ -210,7 +210,7 @@ try{
     const denied=new AdvancedMediaEngine({canvas:make(W,H,()=>{}),mediaBin:document.createElement('div'),
       onRenderError:e=>{fallbackError=String(e);}});
     denied.outputWidth=W;denied.outputHeight=H;
-    denied.tracks=[under,a,b];
+    denied.tracks=[under,a,b].map(track=>({...track}));
     denied.currentTime=1.5;
     try{
       HTMLCanvasElement.prototype.getContext=function(type,...args){
