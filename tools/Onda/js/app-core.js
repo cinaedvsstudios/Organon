@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.48';
+        const ONDA_VERSION = 'v3.49';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1159,7 +1159,7 @@
                         <div class="library-track-meta library-file-line">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
                         ${compact ? '' : `<div class="library-track-meta library-playlist-line">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
                     </div>
-                    ${compact ? '' : `<div class="library-row-buttons"><button aria-label="Play" data-onda-action="play" class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play">▶</button>${sourceStatus(meta) === 'needs relink' ? `<button aria-label="Reconnect saved track" data-onda-action="reconnect" type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track">🔗</button>` : ''}<button aria-label="Track information" data-onda-action="info" class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info">ℹ</button><button aria-label="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist">＋</button></div>`}
+                    ${compact ? '' : `<div class="library-row-buttons"><button aria-label="Play" data-onda-action="play" class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>${sourceStatus(meta) === 'needs relink' ? `<button aria-label="Reconnect saved track" data-onda-action="reconnect" type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 8l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></svg></button>` : ''}<button aria-label="Track information" data-onda-action="info" class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button><button aria-label="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></div>`}
                 </div>
                 ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             `;
@@ -1211,9 +1211,9 @@
                     ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
                 </div>
                 <div class="library-row-buttons">
-                    <button aria-label="Play" title="Play" data-onda-action="play" class="btn-pill btn-history-play btn-onda-row-play" data-track-id="${trackId}">▶</button>
-                    <button aria-label="Track information" title="Track information" data-onda-action="info" class="btn-pill btn-history-info" data-track-id="${trackId}">ℹ</button>
-                    <button aria-label="Add to playlist" title="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}">＋</button>
+                    <button aria-label="Play" title="Play" data-onda-action="play" class="btn-pill btn-history-play btn-onda-row-play" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
+                    <button aria-label="Track information" title="Track information" data-onda-action="info" class="btn-pill btn-history-info" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
+                    <button aria-label="Add to playlist" title="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
                 </div>
             `;
             return row;
@@ -1722,7 +1722,7 @@
                     const row = document.createElement('div');
                     row.className = 'library-mini-row onda-drawer-playlist-row';
                     row.dataset.playlistName = name;
-                    row.innerHTML = `<div class="library-track-text-wrap"><div class="library-track-title">${escapeHtml(name)}</div><div class="library-track-meta">${normalisePlaylistToIds(playlists[name] || []).length} tracks</div></div><button title="Edit playlist" data-onda-action="edit" type="button" class="btn-pill btn-db-edit-playlist" data-playlist-name="${escapeHtml(name)}" aria-label="Edit ${escapeHtml(name)} playlist">✎</button>`;
+                    row.innerHTML = `<div class="library-track-text-wrap"><div class="library-track-title">${escapeHtml(name)}</div><div class="library-track-meta">${normalisePlaylistToIds(playlists[name] || []).length} tracks</div></div><button title="Edit playlist" data-onda-action="edit" type="button" class="btn-pill btn-db-edit-playlist" data-playlist-name="${escapeHtml(name)}" aria-label="Edit ${escapeHtml(name)} playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-.8L20 7l-3-3L5 16zM14 7l3 3"/></svg></button>`;
                     dbPlaylistList.appendChild(row);
                 });
             }
@@ -3821,8 +3821,8 @@
                     <div class="onda-current-queue-next" title="${escapeHtml(nextLabel)}">${escapeHtml(nextLabel)}</div>
                 </div>
                 <div class="playlist-row-tools onda-current-queue-tools">
-                    <button data-onda-action="jump" type="button" class="btn-pill btn-now-jump-current" title="Find current track in queue" aria-label="Find current track in queue" ${selectedIndex < 0 ? 'disabled' : ''}>🎯</button>
-                    ${name ? '<button data-onda-action="edit" type="button" class="btn-pill btn-now-edit-source-playlist" title="Edit the source playlist" aria-label="Edit the source playlist">✎</button>' : ''}
+                    <button data-onda-action="jump" type="button" class="btn-pill btn-now-jump-current" title="Find current track in queue" aria-label="Find current track in queue" ${selectedIndex < 0 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
+                    ${name ? '<button data-onda-action="edit" type="button" class="btn-pill btn-now-edit-source-playlist" title="Edit the source playlist" aria-label="Edit the source playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-.8L20 7l-3-3L5 16zM14 7l3 3"/></svg></button>' : ''}
                 </div>
                 <div class="playlist-detail-meta-row onda-current-queue-summary">
                     <span class="mini-tag">${escapeHtml(currentLabel)}</span>
@@ -3871,10 +3871,10 @@
                             </div>
                         </div>
                         <div class="library-row-buttons">
-                            ${hasRecord ? `<button data-onda-action="play" type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}">▶</button>
-                            <button data-onda-action="info" type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information">ℹ</button>
-                            <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist">＋</button>` : ''}
-                            ${!active ? '<button data-onda-action="remove" type="button" class="btn-pill btn-now-remove-from-queue" title="Remove from current queue only" aria-label="Remove from current queue only">×</button>' : ''}
+                            ${hasRecord ? `<button data-onda-action="play" type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
+                            <button data-onda-action="info" type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
+                            <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
+                            ${!active ? '<button data-onda-action="remove" type="button" class="btn-pill btn-now-remove-from-queue" title="Remove from current queue only" aria-label="Remove from current queue only"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>' : ''}
                         </div>`;
                     list.appendChild(row);
                 });
@@ -5354,8 +5354,8 @@
                                 <div class="library-track-meta library-file-line">${escapeHtml(meta?.fileName || 'Missing library record')} · ${escapeHtml(meta ? sourceStatus(meta) : 'missing')}</div>
                             </div>
                         <div class="library-row-buttons">
-                            ${meta ? `<button aria-label="Play" title="Play" data-onda-action="play" type="button" class="btn-pill btn-playlist-edit-play" data-track-id="${escapeHtml(trackId)}">▶</button>` : ''}
-                            <button aria-label="Remove track" title="Remove track" data-onda-action="remove" type="button" class="btn-pill btn-playlist-edit-remove btn-danger" data-track-id="${escapeHtml(trackId)}">×</button>
+                            ${meta ? `<button aria-label="Play" title="Play" data-onda-action="play" type="button" class="btn-pill btn-playlist-edit-play" data-track-id="${escapeHtml(trackId)}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>` : ''}
+                            <button aria-label="Remove track" title="Remove track" data-onda-action="remove" type="button" class="btn-pill btn-playlist-edit-remove btn-danger" data-track-id="${escapeHtml(trackId)}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
                         </div>`;
                 list.appendChild(row);
             });
@@ -5528,9 +5528,9 @@
                         <div class="playlist-detail-title">${escapeHtml(name)}</div>
                     </div>
                     <div class="playlist-row-tools">
-                        <button aria-label="Play" data-onda-action="play" type="button" class="btn-pill btn-play-playlist" id="btn-detail-play-playlist" title="Play playlist">▶</button>
-                        <button aria-label="Shuffle playlist" data-onda-action="shuffle" type="button" class="btn-pill btn-shuffle-playlist" id="btn-detail-shuffle-playlist" title="Shuffle playlist">🔀</button>
-                        <button aria-label="Edit playlist" data-onda-action="edit" type="button" class="btn-pill btn-edit-playlist" id="btn-detail-edit-playlist" title="Edit playlist">✎</button><button data-onda-action="duplicate" type="button" class="btn-pill" id="btn-detail-duplicate-playlist" title="Duplicate playlist" aria-label="Duplicate playlist">⧉</button><button aria-label="Reorder tracks" data-onda-action="reorder" type="button" class="btn-pill" id="btn-detail-reorder-playlist" title="Reorder tracks">↕</button>
+                        <button aria-label="Play" data-onda-action="play" type="button" class="btn-pill btn-play-playlist" id="btn-detail-play-playlist" title="Play playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
+                        <button aria-label="Shuffle playlist" data-onda-action="shuffle" type="button" class="btn-pill btn-shuffle-playlist" id="btn-detail-shuffle-playlist" title="Shuffle playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 3-2 5-5M14 8c1-2 2-2 4-2h3M17 2l4 4-4 4"/></svg></button>
+                        <button aria-label="Edit playlist" data-onda-action="edit" type="button" class="btn-pill btn-edit-playlist" id="btn-detail-edit-playlist" title="Edit playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-.8L20 7l-3-3L5 16zM14 7l3 3"/></svg></button><button data-onda-action="duplicate" type="button" class="btn-pill" id="btn-detail-duplicate-playlist" title="Duplicate playlist" aria-label="Duplicate playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg></button><button aria-label="Reorder tracks" data-onda-action="reorder" type="button" class="btn-pill" id="btn-detail-reorder-playlist" title="Reorder tracks"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 20V4M4 8l4-4 4 4M16 4v16M12 16l4 4 4-4"/></svg></button>
                     </div>
                     <div class="playlist-detail-meta-row">
                         <span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'}</span>
@@ -5551,9 +5551,9 @@
                                 <div class="library-track-meta library-file-line">${escapeHtml(track?.fileName || 'Missing library record')} · ${escapeHtml(track ? sourceStatus(track) : 'missing')}</div>
                             </div>
                             <div class="library-row-buttons">
-                                ${track ? `<button aria-label="Play" data-onda-action="play" type="button" class="btn-pill btn-detail-play-track" data-track-id="${escapeHtml(id)}" title="Play">▶</button>` : ''}
-                                <button aria-label="Track information" data-onda-action="info" type="button" class="btn-pill btn-detail-info-track" data-track-id="${escapeHtml(id)}" title="Info">ℹ</button>
-                                ${track ? `<button aria-label="Add to playlist" data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist">＋</button>` : ''}
+                                ${track ? `<button aria-label="Play" data-onda-action="play" type="button" class="btn-pill btn-detail-play-track" data-track-id="${escapeHtml(id)}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>` : ''}
+                                <button aria-label="Track information" data-onda-action="info" type="button" class="btn-pill btn-detail-info-track" data-track-id="${escapeHtml(id)}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
+                                ${track ? `<button aria-label="Add to playlist" data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
                             </div>
                         </div>`;
                     }).join('') : '<div class="library-track-meta">This playlist has no tracks yet.</div>'}

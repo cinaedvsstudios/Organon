@@ -2471,3 +2471,14 @@ body button[data-onda-action]:disabled { opacity:.42; cursor:default; }
 body.onda-force-mobile-mode button[data-onda-action] {
   width:44px !important; height:44px !important; min-width:44px !important; min-height:44px !important; flex:0 0 44px !important;
 }
+
+/* v3.49: draw action symbols as identical vector paths, independent of
+   Android emoji fallback, inherited font styles and platform font selection. */
+body button[data-onda-action] > svg.onda-action-glyph {
+  display:block !important; width:21px !important; height:21px !important;
+  flex:0 0 21px !important; min-width:21px; min-height:21px;
+  color:inherit !important; pointer-events:none !important;
+  margin:0 !important; padding:0 !important; overflow:visible;
+}
+body button[data-onda-action] > svg.onda-action-glyph * { pointer-events:none !important; }
+body button[data-onda-action] { gap:0 !important; }
