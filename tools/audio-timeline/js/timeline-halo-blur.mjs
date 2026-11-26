@@ -27,11 +27,12 @@ export function buildHaloBlurFrame(source,w,h,e={},seconds=0,reuse,amount=1,work
  const p=haloBlurState(w,h,e,seconds),mix=clamp(amount,0,1,1),glow=clamp(e.glow,0,100,64)/100;
  if(!mix||!p.radius)return {data,width:w,height:h,state:p};
  const arr=k=>workspace[k]?.length===src.length?workspace[k]:(workspace[k]=new Float32Array(src.length));
- const work=arr('work'),temp=arr('temp'),diffuse=arr('diffuse');
+ const work=arr('work'),temp=arr('temp');
  for(let i=0;i<src.length;i+=4){const a=src[i+3]/255;work[i+3]=a;for(let c=0;c<3;c++)work[i+c]=linear[src[i+c]]*a;}
  const r=Math.max(1,Math.round(p.radius*.65));
- box(work,temp,w,h,r,false);box(temp,diffuse,w,h,r,true);
- box(diffuse,temp,w,h,r,false);box(temp,diffuse,w,h,r,true);
+ box(work,temp,w,h,r,false);box(temp,work,w,h,r,true);
+ box(work,temp,w,h,r,false);box(temp,work,w,h,r,true);
+ const diffuse=work;
  const unit=Math.max(1,Math.min(w,h)*.5);
  for(let y=0;y<h;y++)for(let x=0;x<w;x++){
   const i=(y*w+x)*4;if(!src[i+3]||diffuse[i+3]<1e-6)continue;
