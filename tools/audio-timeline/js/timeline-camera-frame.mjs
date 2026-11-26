@@ -71,7 +71,7 @@ export function renderCameraFrame(ctx,width,height,effect={},seconds=0,amount){
    stroke([x2-corner,y2,x2,y2,x2,y2-corner]);
   }
   const fontSize=Math.max(8,Math.min(w,h)*.069*g.size);
-  ctx.font='600 '+fontSize.toFixed(2)+'px "Geist Mono", monospace';
+  ctx.font='600 '+fontSize.toFixed(2)+'px monospace';
   ctx.textBaseline='middle';
   if(g.showRec){
    const top=y+fontSize*.65,circleX=x+fontSize*.55;
@@ -93,7 +93,7 @@ export function renderCameraFrame(ctx,width,height,effect={},seconds=0,amount){
    for(let i=0;i<active;i++){
     ctx.fillRect(rx+padding+i*(segment+gap),ry+padding,segment,bh-2*padding);
    }
-   ctx.font='500 '+(fontSize*.63).toFixed(2)+'px "Geist Mono", monospace';
+   ctx.font='500 '+(fontSize*.63).toFixed(2)+'px monospace';
    ctx.textAlign='right';ctx.fillText(g.batteryLevel+'%',x2,ry+bh+fontSize*.52);
    ctx.textAlign='left';
   }
@@ -109,7 +109,7 @@ export function renderCameraFrame(ctx,width,height,effect={},seconds=0,amount){
    ctx.fillRect(cx-unit*.75,cy-unit*.75,unit*1.5,unit*1.5);
   }
   if(g.showTimecode){
-   ctx.font='600 '+(fontSize*.83).toFixed(2)+'px "Geist Mono", monospace';
+   ctx.font='600 '+(fontSize*.83).toFixed(2)+'px monospace';
    ctx.textBaseline='alphabetic';
    ctx.fillText('TC '+g.timecode,x+fontSize*.45,y2-fontSize*.45);
   }
