@@ -356,7 +356,7 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 /* Full-width two-row timeline workspace and compact preview/scrolling inspector.
    The timeline deliberately sits outside the preview card and spans the centre
    and right grid columns; unrelated Project Files stay in the left column. */
-.advanced-grid { grid-template-rows:auto auto; }
+.advanced-grid { grid-template-rows:max-content minmax(0,1fr); }
 .project-column { grid-column:1; grid-row:1 / span 2; }
 .master-column { grid-column:2; grid-row:1; }
 .right-column { grid-column:3; grid-row:1; display:flex; flex-direction:column; max-height:min(74vh,740px); min-height:0; }
@@ -376,9 +376,9 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     .advanced-grid { grid-template-rows:auto auto auto; }
     .project-column { grid-column:1; grid-row:1; }
     .master-column { grid-column:2; grid-row:1; }
-    .right-column { grid-column:1 / -1; grid-row:2; max-height:min(48vh,440px); }
+    .right-column { grid-column:1 / -1; grid-row:3; max-height:min(48vh,440px); }
     .right-column .inspector-scroll { display:flex; flex-direction:column; max-height:none; }
-    .advanced-grid > .timeline-panel { grid-column:1 / -1; grid-row:3; }
+    .advanced-grid > .timeline-panel { grid-column:1 / -1; grid-row:2; }
 }
 /* A compact but still single-line layout in narrower desktop windows. */
 @media (min-width:881px) and (max-width:1020px) {
@@ -393,8 +393,8 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
     .advanced-grid { grid-template-rows:auto auto auto auto; }
     .project-column { grid-column:1; grid-row:1; }
     .master-column { grid-column:1; grid-row:2; }
-    .right-column { grid-column:1; grid-row:3; max-height:min(55vh,480px); }
-    .advanced-grid > .timeline-panel { grid-column:1; grid-row:4; }
+    .right-column { grid-column:1; grid-row:4; max-height:min(55vh,480px); }
+    .advanced-grid > .timeline-panel { grid-column:1; grid-row:3; }
     .timeline-toolbar-row > .timeline-tool { flex-basis:90px; width:90px; min-width:90px; }
     .timeline-toolbar-row > .snap-options-toggle { flex-basis:30px; min-width:30px; }
 }
@@ -505,6 +505,11 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
 /* The first row is sized by the viewer; the Inspector receives that precise
    outer height from ResizeObserver and scrolls independently. */
 .right-column { min-height:0; overflow:hidden; }
+.right-column > .column-heading { flex:0 0 auto; min-height:40px; padding:8px 12px; }
+.right-column .inspector-scroll { padding:8px; gap:7px; }
+.right-column .control-card { min-width:0; }
+.right-column .control-card > h3 { overflow-wrap:anywhere; }
+@media (pointer:coarse) { .preview-resize-handle { width:40px;height:40px; } .transport-icon { min-height:40px; } .timeline-toolbar-row > .timeline-tool { min-height:40px; } .right-column .text-inspector-group summary { min-height:40px; } }
 .right-column .inspector-scroll { min-height:0; overflow-x:hidden; overflow-y:auto; overscroll-behavior:contain; }
 @media (max-width:1120px) { .right-column { height:auto; max-height:min(48vh,440px); } }
 @media (max-width:760px) { .right-column { max-height:min(55vh,480px); } }
