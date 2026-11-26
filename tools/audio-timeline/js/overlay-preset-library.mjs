@@ -25,9 +25,9 @@ export const LEGACY_TEXT_PRESETS = Object.freeze([
 ]);
 export const EFFECT_OVERLAYS = Object.freeze([
     {id:'vignette',label:'Vignette (still)',group:'effect'},
-    {id:'cinema-bars',label:'Cinema bars',group:'effect'},
-    {id:'sunset-leak',label:'Warm light leak',group:'effect'},
-    {id:'blue-leak',label:'Blue light leak',group:'effect'},
+    {id:'cinema-bars',label:'Cinema bars (still)',group:'effect'},
+    {id:'sunset-leak',label:'Warm light leak (still)',group:'effect'},
+    {id:'blue-leak',label:'Blue light leak (still)',group:'effect'},
     {id:'film-grain',label:'Film grain',group:'effect'},
     {id:'scanlines',label:'Scanlines',group:'effect'},
     {id:'edge-neon',label:'Neon frame',group:'effect'},
@@ -84,7 +84,13 @@ function drawEffect(ctx,canvas,preset) {
                 g.addColorStop(r,'rgba(0,0,0,'+alpha+')');
             ctx.fillStyle=g;ctx.fillRect(-1,-1,2,2);ctx.restore();break;
         }
-        case 'cinema-bars':
+        case 'cinema-bars': {
+            // True 2.39:1 scope aperture at the artwork's own aspect ratio.
+            const band=Math.max(0,Math.round((h-w/2.39)/2));
+            ctx.fillStyle='#000000';
+            ctx.fillRect(0,0,w,band);ctx.fillRect(0,h-band,w,band);
+            break;
+        }
         case 'letterbox-gold':{
             const band=h*.115;
             ctx.fillStyle=preset.id==='cinema-bars'?'#050505':'#33210d';
@@ -94,7 +100,24 @@ function drawEffect(ctx,canvas,preset) {
             }
             break;
         }
-        case 'sunset-leak':case 'blue-leak':case 'cyan-gradient':case 'ruby-gradient':{
+        case 'sunset-leak':
+        case 'blue-leak': {
+            // Deliberately static photographic edge leaks. Each palette has
+            // a different entry edge and layered optical falloff; these
+            // are not aliases for the decorative gradient artwork.
+            const warm=preset.id==='sunset-leak';
+            const x=warm?-.12*w:1.10*w,y=warm?.07*h:.89*h;
+            const r=Math.max(w,h)*.83;
+            g=ctx.createRadialGradient(x,y,0,x,y,r);
+            for(const [p,c] of (warm?[[0,'rgba(255,238,174,.96)'],[.17,'rgba(255,170,64,.78)'],[.40,'rgba(255,75,31,.40)'],[.68,'rgba(215,26,48,.09)'],[1,'rgba(205,16,54,0)']]:[[0,'rgba(172,244,255,.95)'],[.17,'rgba(56,180,255,.74)'],[.40,'rgba(37,84,242,.40)'],[.68,'rgba(99,35,211,.09)'],[1,'rgba(100,30,210,0)']]))g.addColorStop(p,c);
+            ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+            // Secondary narrow, softly tapered film-edge flare.
+            g=ctx.createLinearGradient(warm?0:w,0,warm?w*.32:w*.68,0);
+            const stops=warm?[[0,'rgba(255,205,116,.25)'],[.25,'rgba(255,96,31,.17)'],[.58,'rgba(240,56,42,.07)'],[1,'rgba(240,56,42,0)']]:[[0,'rgba(122,218,255,.26)'],[.23,'rgba(84,101,255,.20)'],[.56,'rgba(126,55,237,.07)'],[1,'rgba(126,55,237,0)']];
+            for(const [p,c] of stops)g.addColorStop(p,c);
+            ctx.fillStyle=g;ctx.fillRect(0,0,w,h);break;
+        }
+        case 'cyan-gradient':case 'ruby-gradient':{
             const warm=['sunset-leak','ruby-gradient'].includes(preset.id);
             g=ctx.createRadialGradient(w*.12,h*.1,0,w*.12,h*.1,w*.85);
             g.addColorStop(0,warm?'rgba(255,90,28,.7)':'rgba(33,190,255,.67)');
