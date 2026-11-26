@@ -241,12 +241,7 @@
 
     document.addEventListener('visibilitychange', () => {
         // Deliberately do not pause when hidden. On return, refresh WebAudio if Chrome suspended it.
-        if (!document.hidden) {
-            try {
-                const audio = getActiveAudioElement();
-                if (audio && !audio.paused && audioCtx?.state === 'suspended') audioCtx.resume().catch(() => {});
-            } catch (error) {}
-        }
+        try { const audio=getActiveAudioElement(); if(audio&&!audio.paused&&audioCtx&&['suspended','interrupted'].includes(audioCtx.state))audioCtx.resume().catch(()=>{}); } catch(error) {}
         bindCurrentAudio();
     });
 

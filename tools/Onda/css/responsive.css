@@ -2528,3 +2528,12 @@ body.onda-force-mobile-mode #tab-library[data-playback-view="queue"] .onda-queue
 .onda-duplicate-group small { color:var(--stone-ochre); }
 .onda-duplicate-actions { flex-wrap:wrap; }
 .onda-duplicate-actions button { min-height:40px; }
+
+/* v3.54 */
+body button[data-onda-action="more"]{--onda-action-color:#e0a360;--onda-action-bg:#493924;}
+.onda-track-menu{display:grid;gap:8px;}
+.onda-track-menu .onda-track-menu-action{display:flex;justify-content:flex-start;gap:12px;min-height:44px;text-align:left;padding:8px 14px;}
+.onda-track-menu-action span:first-child{width:22px;text-align:center;color:var(--water-spray);}
+.onda-track-menu-action:disabled{opacity:.45;}
+#onda-track-action-title,#onda-track-info-content{overflow-wrap:anywhere;}
+#onda-background-mode{min-height:40px;}
