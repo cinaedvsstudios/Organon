@@ -1,3 +1,4 @@
+import {renderNoirGlitch} from './timeline-noir-glitch.mjs';
 import {renderMisalignment} from './timeline-misalignment.mjs';
 import {renderWarningGlitch} from './timeline-warning-glitch.mjs';
 import {renderNegativeChaos} from './timeline-negative-chaos.mjs';
@@ -59,18 +60,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   }else if(e.presetId==='misalignment'){
    return renderMisalignment(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='noir-glitch'){
-   // High-contrast black-and-white vision interrupted by noir shutters.
-   ctx.filter='grayscale(1) contrast(2.1)';
-   draw(ctx,source,0,0,w,h,0,0,w,h);
-   ctx.filter='none';
-   for(let i=0;i<10;i++){
-    const y=wrap(seeded(i*19+3)+t*(.11+.015*i))*h;
-    ctx.fillStyle='rgba(0,0,0,'+(.25+.4*seeded(i+tick*7))+')';
-    ctx.fillRect(0,y,w,Math.max(2,h*.014*size));
-   }
-   ctx.strokeStyle='rgba(242,242,230,.45)';
-   ctx.lineWidth=Math.max(1,size);
-   ctx.beginPath();ctx.moveTo(w*.05,0);ctx.lineTo(w*.05,h);ctx.stroke();
+   return renderNoirGlitch(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='glitch-flux'){
    // Sinusoidally warp *vertical columns* (orthogonal to tape/ripple bands).
    const strips=22;
