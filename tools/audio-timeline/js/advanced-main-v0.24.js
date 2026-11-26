@@ -1609,7 +1609,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         elements.textInspector.hidden=multiple||!track?.textOverlay;
         elements.effectInspector.hidden=multiple||!track?.effectOverlay;
         // Identify the selected effect even when the Inspector stays open.
-        elements.effectInspector.dataset.presetId=multiple?'':(track?.effectOverlay?.presetId||'');
+        elements.effectInspector.dataset.selectedPresetId=multiple?'':(track?.effectOverlay?.presetId||'');
         elements.effectInspector.dataset.clipId=multiple?'':(track?.effectOverlay?track.id:'');
         if(!elements.effectInspector.hidden){
             const preset=TIMELINE_EFFECTS.find(item=>item.id===track.effectOverlay.presetId);
