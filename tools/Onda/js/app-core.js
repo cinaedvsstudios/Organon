@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.42';
+        const ONDA_VERSION = 'v3.43';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1254,7 +1254,7 @@
         }
 
         function updateBulkActionUI() {
-            if (btnDbSelectMode) btnDbSelectMode.textContent = isLibrarySelectMode ? 'Exit Select' : 'Select Multiple';
+            if (btnDbSelectMode) { btnDbSelectMode.textContent = isLibrarySelectMode ? 'Done' : 'Select'; btnDbSelectMode.setAttribute('aria-pressed', String(isLibrarySelectMode)); }
             const mobileSelectButton = document.getElementById('btn-mobile-select-mode');
             if (mobileSelectButton) {
                 mobileSelectButton.setAttribute('aria-pressed', String(isLibrarySelectMode));
@@ -1300,13 +1300,16 @@
             const next = typeof force === 'boolean' ? force : !isLibrarySelectMode;
             isLibrarySelectMode = next;
             if (!next) selectedLibraryIds.clear();
-            setLibraryActionPanel('select');
+            if (next) setMobileLibraryView('results');
+            setLibraryActionPanel(next ? 'select' : 'none');
             updateBulkActionUI();
             renderLibraryManager();
         }
 
-        function setLibraryActionPanel(action = 'select') {
-            const safeAction = action === 'settings' ? 'settings' : 'select';
+        function setLibraryActionPanel(action = 'none') {
+            const safeAction = ['settings','select'].includes(action) ? action : 'none';
+            if (libraryDrawer) libraryDrawer.dataset.drawerAction = safeAction;
+            document.getElementById('btn-db-settings-mode')?.setAttribute('aria-expanded', String(safeAction === 'settings'));
             document.querySelectorAll('[data-library-action-panel]').forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.libraryActionPanel === safeAction);
             });
@@ -1571,7 +1574,7 @@
             MOBILE_DB_ICON_DEFINITIONS.forEach(def => {
                 const btn = document.querySelector(`.mobile-db-icon-btn[data-mobile-icon-key="${def.key}"]`);
                 if (!btn) return;
-                btn.textContent = normalizeMobileIconValue(settings[def.key], def.icon);
+                (btn.querySelector('.onda-nav-icon') || btn).textContent = normalizeMobileIconValue(settings[def.key], def.icon);
                 btn.title = `${def.label}: ${def.description}`;
             });
             renderMobileIconHelpPanel(settings);
@@ -1620,6 +1623,7 @@
             if (!libraryDrawer) return;
             const safeView = ['results', 'recents', 'playlists', 'help'].includes(view) ? view : 'results';
             libraryDrawer.dataset.mobileView = safeView;
+            if (safeView !== 'results') setLibraryActionPanel('none');
             document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
                 const active = btn.dataset.mobileView === safeView;
                 btn.classList.toggle('active-mobile-view', active);
@@ -1940,7 +1944,8 @@
                     if (savedWidth) applyLibraryDrawerWidth(savedWidth, { persist: false });
                     if (savedHeight) applyLibraryDrawerHeight(savedHeight, { persist: false });
                 }
-                setMobileLibraryView(libraryDrawer.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results');
+                setMobileLibraryView('results');
+                setLibraryActionPanel(isLibrarySelectMode ? 'select' : 'none');
                 renderLibraryManager();
             }
             saveLocalUiStateCheckpoint(shouldOpen ? 'library-drawer-open' : 'library-drawer-closed');
@@ -4886,7 +4891,10 @@
             dbLibrarySearch.focus();
         });
         document.querySelectorAll('.mobile-db-icon-btn[data-mobile-view]').forEach(btn => {
-            btn.addEventListener('click', () => setMobileLibraryView(btn.dataset.mobileView || 'results'));
+            btn.addEventListener('click', () => {
+                setMobileLibraryView(btn.dataset.mobileView || 'results');
+                if (btn.dataset.mobileView === 'results') setLibraryActionPanel(isLibrarySelectMode ? 'select' : 'none');
+            });
         });
         document.querySelectorAll('.mobile-db-icon-btn[data-proxy-click]').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -4928,10 +4936,14 @@
             });
         }
         safeBind('btn-db-select-mode', 'click', () => toggleLibrarySelectMode());
-        safeBind('btn-db-settings-mode', 'click', () => setLibraryActionPanel('settings'));
+        safeBind('btn-db-settings-mode', 'click', () => {
+            const opening = libraryDrawer?.dataset.drawerAction !== 'settings';
+            setMobileLibraryView('results');
+            setLibraryActionPanel(opening ? 'settings' : (isLibrarySelectMode ? 'select' : 'none'));
+        });
         safeBind('btn-mobile-select-mode', 'click', () => toggleLibrarySelectMode());
         safeBind('btn-mobile-settings-mode', 'click', () => setLibraryActionPanel('settings'));
-        setLibraryActionPanel(localStorage.getItem('ondaLibraryActionPanel') || 'select');
+        setLibraryActionPanel('none');
         safeBind('btn-db-select-visible', 'click', () => {
             visibleLibraryIds.forEach(id => selectedLibraryIds.add(id));
             updateBulkActionUI();

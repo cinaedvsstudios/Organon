@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><link href="css/tokens.css?v=3.42" rel="stylesheet"/><link href="css/base.css?v=3.42" rel="stylesheet"/><link href="css/layout.css?v=3.42" rel="stylesheet"/><link href="css/player.css?v=3.42" rel="stylesheet"/><link href="css/controls.css?v=3.42" rel="stylesheet"/><link href="css/library.css?v=3.42" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.42" rel="stylesheet"/><link href="css/modals-settings.css?v=3.42" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.42" rel="stylesheet"/><link href="css/streaming.css?v=3.42" rel="stylesheet"/><link href="css/responsive.css?v=3.42" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.42" rel="stylesheet"/>
+<head><link href="css/tokens.css?v=3.43" rel="stylesheet"/><link href="css/base.css?v=3.43" rel="stylesheet"/><link href="css/layout.css?v=3.43" rel="stylesheet"/><link href="css/player.css?v=3.43" rel="stylesheet"/><link href="css/controls.css?v=3.43" rel="stylesheet"/><link href="css/library.css?v=3.43" rel="stylesheet"/><link href="css/playlists-now-playing.css?v=3.43" rel="stylesheet"/><link href="css/modals-settings.css?v=3.43" rel="stylesheet"/><link href="css/visualizer-tools.css?v=3.43" rel="stylesheet"/><link href="css/streaming.css?v=3.43" rel="stylesheet"/><link href="css/responsive.css?v=3.43" rel="stylesheet"/><link href="css/cloud-sync.css?v=3.43" rel="stylesheet"/>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <!-- Onda Android and home-screen app identity -->
 <meta name="theme-color" content="#1e201c"/>
-<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.42"/>
-<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.42"/>
-<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.42"/>
-<link rel="manifest" href="manifest.webmanifest?v=3.42"/>
+<link rel="icon" type="image/png" sizes="192x192" href="icons/onda-icon-192.png?v=3.43"/>
+<link rel="icon" type="image/svg+xml" href="icons/onda-icon.svg?v=3.43"/>
+<link rel="apple-touch-icon" href="icons/onda-icon-192.png?v=3.43"/>
+<link rel="manifest" href="manifest.webmanifest?v=3.43"/>
 <title>Onda Media Player - Engine</title>
 
 
@@ -297,7 +297,7 @@
 <button class="btn-pill onda-bottom-mini-pill" id="btn-toggle-fullscreen" title="Toggle fullscreen" type="button">⛶</button>
 </div>
 <!-- UPWARD LIBRARY / PLAYLIST MANAGER DRAWER -->
-<div aria-hidden="true" data-mobile-view="results" id="library-manager-drawer">
+<div aria-hidden="true" data-mobile-view="results" id="library-manager-drawer" class="onda-clean-drawer" data-drawer-action="none">
 <div class="library-drawer-inner">
 <div class="library-drawer-header">
 <div class="library-drawer-title-row">
@@ -309,27 +309,17 @@
 <button class="tiny-icon-btn" id="btn-close-library-manager" title="Close library manager" aria-label="Close Library">×</button>
 </div>
 </div>
-<div class="onda-mobile-library-nav" role="group" aria-label="Library sections and shortcuts">
-<button type="button" class="mobile-db-icon-btn active-mobile-view" data-mobile-view="results" data-mobile-icon-key="results" title="Results" aria-label="Results" aria-pressed="true">🔎</button>
-<button type="button" class="mobile-db-icon-btn" data-mobile-view="recents" data-mobile-icon-key="recents" title="Recents" aria-label="Recents" aria-pressed="false">🕘</button>
-<button type="button" class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists" aria-label="Playlists" aria-pressed="false">📜</button>
-<button type="button" class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Mobile icon guide and editor" aria-label="Edit mobile icons" aria-pressed="false">?</button>
-<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-import-audio" title="Select audio files to add to the library">📥 Add Files</button>
-<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview an unsaved audio file without importing">▶ Quick Play</button>
-<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="View storage health and cached audio">Storage</button>
-</div>
-<nav class="onda-drawer-workspaces" aria-label="Onda workspaces"><button class="mode-tab-btn" data-workspace-tab="tab-files" id="tab-btn-files" type="button"><span class="mode-tab-icon">📥</span><span class="mode-tab-label">Add</span></button>
+<nav class="onda-drawer-workspaces" aria-label="Onda workspaces"><button type="button" class="mobile-db-icon-btn active-mobile-view" data-mobile-view="results" data-mobile-icon-key="results" title="Results" aria-label="Results" aria-pressed="true"><span class="onda-nav-icon">🔎</span><span>Library</span></button><button class="mode-tab-btn" data-workspace-tab="tab-files" id="tab-btn-files" type="button"><span class="mode-tab-icon">📥</span><span class="mode-tab-label">Add</span></button>
 <button class="mode-tab-btn" data-workspace-tab="tab-history" id="tab-btn-history" type="button"><span class="mode-tab-icon">🕘</span><span class="mode-tab-label">History</span></button>
 <button class="mode-tab-btn" data-workspace-tab="tab-playlists" id="tab-btn-playlists" type="button"><span class="mode-tab-icon">📚</span><span class="mode-tab-label">Playlists</span></button></nav>
-<div class="onda-library-status" id="onda-library-status" aria-live="polite"></div>
 <div class="library-manager-toolbar">
 <div class="search-input-wrap">
-<input aria-autocomplete="none" autocomplete="new-password" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" aria-label="Search library tracks" inputmode="search" name="onda-library-filter-not-login" placeholder="Search filename, nickname, tag, playlist, URL or source..." spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
+<input aria-autocomplete="none" autocomplete="new-password" autocapitalize="off" autocorrect="off" data-1p-ignore="true" data-bwignore="true" data-form-type="other" data-lpignore="true" id="db-library-search" aria-label="Search library tracks" inputmode="search" name="onda-library-filter-not-login" placeholder="Search music…" spellcheck="false" title="Hold to adjust fuzzy search" type="search"/>
 <button aria-label="Clear search" class="search-clear-btn" id="btn-db-clear-search" title="Clear search">×</button>
 </div>
 <div class="library-manager-actions library-actions-menu">
-<button class="btn-pill library-action-main-btn active" data-library-action-panel="select" id="btn-db-select-mode" type="button"><span class="library-action-icon">☝️</span><span class="library-action-label">Select</span></button>
-<button class="btn-pill library-action-main-btn" data-library-action-panel="settings" id="btn-db-settings-mode" type="button"><span class="library-action-icon">⚙️</span><span class="library-action-label">Settings</span></button>
+<button class="btn-pill library-action-main-btn" aria-pressed="false" data-library-action-panel="select" id="btn-db-select-mode" type="button"><span class="library-action-icon">☝️</span><span class="library-action-label">Select</span></button>
+<button class="btn-pill library-action-main-btn" aria-expanded="false" data-library-action-panel="settings" id="btn-db-settings-mode" type="button"><span class="library-action-icon">⚙️</span><span class="library-action-label">Tools</span></button>
 </div>
 <select id="db-library-filter" aria-label="Filter library sources">
 <option value="all">All sources</option>
@@ -338,13 +328,14 @@
 <option value="missing">Needs relink</option>
 </select>
 </div>
+<div class="onda-library-status" id="onda-library-status" aria-live="polite"></div>
 <div class="library-manager-content">
 <aside class="library-sidebar">
 <div class="library-action-panel" id="library-action-panel">
-<section class="library-action-section active" data-library-action-section="select" id="library-action-select">
+<section class="library-action-section" data-library-action-section="select" id="library-action-select">
 <h3>Select</h3>
 <div class="bulk-selection-summary" id="db-selection-summary">0 selected</div>
-<div class="bulk-select-panel bulk-open" id="db-bulk-actions">
+<div class="bulk-select-panel" id="db-bulk-actions">
 <div class="bulk-actions-stack">
 <button class="btn-pill" id="btn-db-select-visible">Select Visible</button>
 <button class="btn-pill btn-muted" id="btn-db-clear-selection">Clear Selection</button>
@@ -358,7 +349,16 @@
 </div>
 </section>
 <section class="library-action-section" data-library-action-section="settings" id="library-action-settings">
-<h3>Settings</h3>
+<h3>Library tools</h3>
+<div class="onda-drawer-extra-tools" role="group" aria-label="Library sections and shortcuts">
+
+<button type="button" class="mobile-db-icon-btn" data-mobile-view="recents" data-mobile-icon-key="recents" title="Recents" aria-label="Recents" aria-pressed="false"><span class="onda-nav-icon">🕘</span><span>Recent tracks</span></button>
+<button type="button" class="mobile-db-icon-btn" data-mobile-view="playlists" data-mobile-icon-key="playlists" title="Playlists" aria-label="Playlists" aria-pressed="false"><span class="onda-nav-icon">📜</span><span>Playlist shortcuts</span></button>
+<button type="button" class="mobile-db-icon-btn" data-mobile-view="help" data-mobile-icon-key="help" title="Mobile icon guide and editor" aria-label="Edit mobile icons" aria-pressed="false"><span class="onda-nav-icon">?</span><span>Custom icons</span></button>
+<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-import-audio" title="Select audio files to add to the library">📥 Add Files</button>
+<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-quick-play-audio" title="Preview an unsaved audio file without importing">▶ Quick Play</button>
+<button type="button" class="btn-pill onda-library-quick-action" id="btn-mobile-storage-health" title="View storage health and cached audio">Storage</button>
+</div>
 <div class="library-settings-actions">
 <button class="btn-pill" id="btn-db-add-folder">Add Folder</button>
 <button class="btn-pill" id="btn-db-link-files" type="button" title="Choose files using Chrome's read-only file handles. Original audio stays in place and Onda keeps its existing cache.">Remember Files</button>
@@ -402,7 +402,7 @@
 <!-- DRAGGABLE FLOATING SETTINGS POPUP -->
 <div class="draggable-popup" id="settings-popup">
 <div class="popup-drag-handle" id="settings-drag-handle">
-<span>☷ Settings &amp; Extras · v3.42</span>
+<span>☷ Settings &amp; Extras · v3.43</span>
 <span class="popup-close" id="btn-close-settings">×</span>
 </div>
 <div class="popup-body">
@@ -696,7 +696,7 @@
 <!-- Toast popup notices -->
 <div class="organon-toast" id="toast-notice">Action Confirmed!</div>
 
-<script src="./onda-midi.js?v=3.42"></script>
+<script src="./onda-midi.js?v=3.43"></script>
 <!-- Onda Cloud Sync + Setup Wizard (Netlify Blobs) -->
 
 <div class="onda-cloud-modal-overlay" id="onda-cloud-modal-overlay"></div>
@@ -744,7 +744,7 @@
 
 
 
-<script src="js/file-access.js?v=3.42"></script><script src="js/storage-audit.js?v=3.42"></script><script src="js/diagnostics.js?v=3.42"></script><script src="js/app-core.js?v=3.42"></script><script src="js/cloud-sync.js?v=3.42"></script><script src="js/media-session.js?v=3.42"></script><script src="js/quick-play.js?v=3.42"></script><script src="js/device-qa.js?v=3.42"></script>
+<script src="js/file-access.js?v=3.43"></script><script src="js/storage-audit.js?v=3.43"></script><script src="js/diagnostics.js?v=3.43"></script><script src="js/app-core.js?v=3.43"></script><script src="js/cloud-sync.js?v=3.43"></script><script src="js/media-session.js?v=3.43"></script><script src="js/quick-play.js?v=3.43"></script><script src="js/device-qa.js?v=3.43"></script>
 <!-- The offline shell stores only this app's static UI assets, never music or profiles. -->
 <script>
 if ('serviceWorker' in navigator && window.isSecureContext) {
