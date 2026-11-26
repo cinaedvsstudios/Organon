@@ -28,17 +28,17 @@ try{
   return {hash,time:Number(c.dataset.previewSeconds),slider:document.getElementById('text-preview-progress').value};});
  const independent=id=>page.evaluate(async id=>{
   const {paintTimelineEffect,requiresCompositeSource,paintEffectPreviewScene}=await import('./js/timeline-effects.mjs');
-  const c=document.createElement('canvas');c.width=640;c.height=360;const ctx=c.getContext('2d',{willReadFrequently:true});
+  const c=document.createElement('canvas');c.width=640;c.height=360;c.style.cssText='position:fixed;left:-10000px;top:0';document.body.append(c);const ctx=c.getContext('2d',{willReadFrequently:true});
   ctx.fillStyle='#0c1722';ctx.fillRect(0,0,640,360);ctx.strokeStyle='rgba(117,178,222,.08)';
   for(let x=0;x<640;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,360);ctx.stroke();}
   if(requiresCompositeSource(id))paintEffectPreviewScene(ctx,640,360);
   paintTimelineEffect(ctx,640,360,{presetId:id},0,3);
-  let hash=2166136261;for(const v of ctx.getImageData(0,0,640,360).data)hash=Math.imul(hash^v,16777619)>>>0;return hash;
+  let hash=2166136261;for(const v of ctx.getImageData(0,0,640,360).data)hash=Math.imul(hash^v,16777619)>>>0;const png=id==='camera-frame'?c.toDataURL():null;c.remove();return {hash,png};
  },id);
  for(const {id} of catalog){
   const card=page.locator('#effects-library-grid [data-preset-id="'+id+'"]');
   await card.dispatchEvent('contextmenu');await modal.waitFor({state:'visible'});
-  const zero=await capture();assert.equal(zero.time,0,id+' opens at exact time zero');assert.equal(zero.slider,'0');assert.equal(zero.hash,await independent(id),id+' first pixels equal independently rendered t=0');
+  const zero=await capture();assert.equal(zero.time,0,id+' opens at exact time zero');assert.equal(zero.slider,'0');const reference=await independent(id);if(zero.hash!==reference.hash&&id==='camera-frame'){console.log('[camera modal PNG] '+await page.locator('#text-preview-canvas').evaluate(c=>c.toDataURL()));console.log('[camera reference PNG] '+reference.png);}assert.equal(zero.hash,reference.hash,id+' first pixels equal independently rendered t=0');
   await progress.fill('137');await progress.dispatchEvent('input');assert.equal((await capture()).time,1.37);
   await progress.fill('0');await progress.dispatchEvent('input');assert.deepEqual(await capture(),zero,id+' reverse seek matches initial pixels');
   await page.locator('#text-preview-close').click();
