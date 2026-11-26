@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.44';
+        const ONDA_VERSION = 'v3.45';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -95,9 +95,7 @@
             '#playlist-detail-track-list .library-track-title',
             '#playlist-detail-track-list .library-file-line',
             '#playlist-edit-track-list .library-track-title',
-            '#playlist-edit-track-list .library-file-line',
-            '#now-playing-playlist-track-list .library-track-title',
-            '#now-playing-playlist-track-list .library-file-line'
+            '#playlist-edit-track-list .library-file-line'
         ].join(', ');
 
         // Start with no hardcoded playlists.
@@ -3465,7 +3463,7 @@
             const finishImportPrepare = window.OndaDiagnostics?.begin('import-prepare');
             const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
-                return Boolean(window.OndaMidi?.isMidiFile(file)) || file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|flac|m4a|aac|mp4|webm|mid|midi)$/i);
+                return Boolean(window.OndaMidi?.isMidiFile(file)) || file.type.startsWith('audio/') || file.type.startsWith('video/') || file.name.match(/\.(mp3|wav|ogg|oga|flac|m4a|aac|opus|mp4|webm|mid|midi)$/i);
             });
 
             if (playableFiles.length === 0) {
@@ -3869,7 +3867,7 @@
                             <div class="library-track-title">${active ? '▶ ' : ''}${escapeHtml(getDisplayTitle(meta))}</div>
                             <div class="library-track-meta library-file-line">
                                 <span class="onda-queue-row-status">${statusLabel}</span>
-                                · ${escapeHtml(meta?.fileName || id || 'Unknown track')}
+
                             </div>
                         </div>
                         <div class="library-row-buttons">
@@ -6995,6 +6993,7 @@
                 if (currentFile && activeAudio && !activeAudio.paused) pauseAudio();
             },
             addToLibrary: file => handleUploadedFiles([file]),
+            addFilesToLibrary: files => handleUploadedFiles(files),
             notify: message => showToast(String(message || 'Quick Play unavailable.')),
             onMainPlayback: callback => {
                 if (typeof callback !== 'function') return;

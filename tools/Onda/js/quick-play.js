@@ -15,6 +15,20 @@
     if (!picker || !panel || !previewAudio || !chooseButton) return;
 
     let selectedFile = null;
+    let selectedFiles = [];
+    const batchLabel = document.getElementById('onda-quick-batch-label');
+    const batchSelect = document.getElementById('onda-quick-batch-select');
+    function updateBatchControls() {
+        if (batchLabel) batchLabel.hidden = selectedFiles.length < 2;
+        if (batchSelect) {
+            batchSelect.replaceChildren(...selectedFiles.map((file,index) => {
+                const option = document.createElement('option');
+                option.value = String(index); option.textContent = (index+1)+'. '+file.name; return option;
+            }));
+            batchSelect.value = String(Math.max(0,selectedFiles.indexOf(selectedFile)));
+        }
+        if (importButton) importButton.textContent = selectedFiles.length > 1 ? 'Add All '+selectedFiles.length+' to Library + Queue' : 'Add to Library + Queue';
+    }
     let previewUrl = null;
     let previewActive = false;
     let playbackGeneration = 0;
@@ -50,6 +64,8 @@
         dropUrl();
         if (forgetFile) {
             selectedFile = null;
+            selectedFiles = [];
+            updateBatchControls();
             panel.hidden = true;
             if (title) title.textContent = '';
         }
@@ -65,6 +81,8 @@
         // Stop Onda's existing track only when a new audition actually starts.
         stopPreview();
         selectedFile = file;
+        if (!selectedFiles.includes(file)) selectedFiles = [file];
+        updateBatchControls();
         panel.hidden = false;
         if (title) title.textContent = file.name;
         try {
@@ -103,16 +121,22 @@
         try { window.switchWorkspaceTab?.('tab-files'); } catch (_) {}
     }
     picker.addEventListener('change', () => {
-        const file = picker.files?.[0] || null;
+        const picked = Array.from(picker.files || []);
         picker.value = '';
-        if (!file) return;
-        if (!isPlayableAudioFile(file)) {
-            showStatus('That file is not audio. Use Add Files for MIDI or video.');
+        if (!picked.length) return;
+        const valid = picked.filter(isPlayableAudioFile);
+        if (!valid.length) {
+            showStatus('No supported audio files selected. Use Add Files for MIDI or video.');
             bridge?.notify?.('Quick Play accepts audio only. Use Add Files for MIDI or video.');
             return;
         }
         returnToAddView();
-        startPreview(file);
+        selectedFiles = valid;
+        startPreview(valid[0]);
+        if (valid.length !== picked.length) bridge?.notify?.((picked.length-valid.length)+' unsupported file(s) skipped.');
+    });
+    batchSelect?.addEventListener('change', () => {
+        if (!importInProgress && selectedFiles[Number(batchSelect.value)]) startPreview(selectedFiles[Number(batchSelect.value)]);
     });
     chooseButton.addEventListener('click', choose);
     mobileChooseButton?.addEventListener('click', choose);
@@ -125,20 +149,28 @@
     importButton?.addEventListener('click', async () => {
         if (!selectedFile || importInProgress) return;
         const file = selectedFile;
+        const files = selectedFiles.slice();
         importInProgress = true;
         importButton.disabled = true;
         // No duplicate import implementation: the existing Add Files path owns
         // metadata, identity, library state, queue and IndexedDB cache.
         stopPreview('Adding through the normal Library importer…');
         try {
-            if (typeof bridge?.addToLibrary !== 'function') throw new Error('Import unavailable');
-            await bridge.addToLibrary(file);
+            if (files.length > 1) {
+                if (typeof bridge?.addFilesToLibrary !== 'function') throw new Error('Batch import unavailable');
+                await bridge.addFilesToLibrary(files);
+            } else {
+                if (typeof bridge?.addToLibrary !== 'function') throw new Error('Import unavailable');
+                await bridge.addToLibrary(file);
+            }
             selectedFile = null;
             panel.hidden = true;
         } catch (_) {
             selectedFile = file;
+            selectedFiles = files;
+            updateBatchControls();
             panel.hidden = false;
-            showStatus('Could not add this file. It is still available to preview or retry in this session.');
+            showStatus('Could not finish importing. Your selection remains available to retry.');
         } finally {
             importInProgress = false;
             importButton.disabled = false;

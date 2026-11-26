@@ -139,6 +139,7 @@ test('Quick Play is transient, cleans object URLs and only imports on explicit A
         OndaQuickPlayBridge: {
             pauseMain: () => pausedMain++,
             addToLibrary: async file => { imported.push(file); },
+            addFilesToLibrary: async files => { imported.push(...files); },
             onMainPlayback: fn => { onMainPlayback = fn; },
             notify: () => {}
         },
@@ -204,6 +205,15 @@ test('Quick Play is transient, cleans object URLs and only imports on explicit A
     onPagehide();
     assert.equal(revoked.length, 5);
     assert.equal(preview.getActiveAudio(), null);
+    const second = {name:'second.wav',type:'audio/wav',size:256};
+    picker.files = [file,second];
+    picker.listeners.change();
+    assert.equal(imported.length,1);
+    await elements['btn-onda-quick-import'].listeners.click();
+    assert.equal(imported.length,3);
+    assert.equal(imported[1],file);
+    assert.equal(imported[2],second);
+    assert.equal(elements['onda-quick-play-panel'].hidden,true);
 });
 
 test('Media Session directs system controls to temporary playback, not saved queue', () => {
