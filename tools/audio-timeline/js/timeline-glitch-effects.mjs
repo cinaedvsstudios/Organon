@@ -1,3 +1,4 @@
+import {renderGlassGlitch} from './timeline-glass-glitch.mjs';
 import {renderRetroGlitch} from './timeline-retro-glitch.mjs';
 import {renderEngineHeat} from './timeline-engine-heat.mjs';
 /**
@@ -44,26 +45,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
  try{
   ctx.globalAlpha=limit(amount,0,1);
   if(e.presetId==='glass-glitch'){
-   // Irregular shattered polygons, each revealing a differently displaced
-   // slice of the underlying image; shard seams are separately highlighted.
-   for(let i=0;i<15;i++){
-    const col=i%5,row=Math.floor(i/5);
-    const x=col*w/5,y=row*h/3,bw=w/5,bh=h/3;
-    const j=seeded(i*17+9)-.5,k=seeded(i*17+12)-.5;
-    const dx=j*amp*2,dy=k*amp*1.4;
-    ctx.save();ctx.beginPath();
-    ctx.moveTo(x,y+k*bh*.22);
-    ctx.lineTo(x+bw,y+j*bh*.18);
-    ctx.lineTo(x+bw*(.9+j*.15),y+bh);
-    ctx.lineTo(x+bw*j*.17,y+bh);
-    ctx.closePath();ctx.clip();
-    draw(ctx,source,0,0,w,h,dx+Math.sin(t*8+i)*amp*.18,dy,w,h);
-    ctx.restore();
-    ctx.strokeStyle=rgba(color,.26+.25*seeded(i+201));
-    ctx.lineWidth=Math.max(1,size);
-    ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+bw,y+bh*.8);
-    ctx.stroke();
-   }
+   return renderGlassGlitch(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='glitch-storm'){
    // High-frequency discontinuous horizontal tearing plus digital block snow.
    const bands=Math.min(38,count);
