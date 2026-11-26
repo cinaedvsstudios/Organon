@@ -2537,3 +2537,11 @@ body button[data-onda-action="more"]{--onda-action-color:#e0a360;--onda-action-b
 .onda-track-menu-action:disabled{opacity:.45;}
 #onda-track-action-title,#onda-track-info-content{overflow-wrap:anywhere;}
 #onda-background-mode{min-height:40px;}
+
+/* v3.55 queue clearing and optional foreground screen wake. */
+body button[data-onda-action="clearqueue"]{--onda-action-color:#f29b9b;--onda-action-bg:#44292b;}
+.onda-wake-setting{display:flex;align-items:center;gap:8px;min-height:40px;cursor:pointer;}
+.onda-wake-setting input{width:20px;height:20px;accent-color:#75b2de;flex:0 0 auto;}
+.onda-clear-queue-actions{flex-wrap:wrap;}
+.onda-clear-queue-actions button{min-height:42px;}
+@media(max-width:480px){#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-tools{gap:3px;flex-wrap:wrap;max-width:144px;}#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-tools .btn-pill{width:40px!important;height:40px!important;min-width:40px!important;min-height:40px!important;flex:0 0 40px!important;}}

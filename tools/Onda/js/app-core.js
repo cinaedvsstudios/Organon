@@ -26,6 +26,10 @@
         let analyser = null;
         let localSource = null;
         let isPlaying = false;
+        const SCREEN_WAKE_KEY='ondaKeepScreenAwakeV1';
+        let keepScreenAwake=false;
+        try {keepScreenAwake=localStorage.getItem(SCREEN_WAKE_KEY)==='1';}catch(_){}
+        let screenWakeLock=null,screenWakePending=false,screenWakeError='';
         let visualizerRunning = false;
         let visualizerFrameId = 0;
         
@@ -83,7 +87,7 @@
         const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.54';
+        const ONDA_VERSION = 'v3.55';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -2344,6 +2348,7 @@
                 libraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
                 volumeBoost: parseFloat(volSlider?.value || '1') || 1,
                 playbackEngine:readPlaybackEnginePreference(),
+                keepScreenAwake,
                 playbackSpeed: parseFloat(speedSlider?.value || activeAudio?.playbackRate || '1') || 1,
                 activeWorkspaceTab: document.querySelector('.viewport-content.active-content')?.id || localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY) || 'tab-files',
                 mobileLibraryView: libraryDrawer?.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results',
@@ -2424,6 +2429,7 @@
             if (settings.libraryName && libraryNameInput) libraryNameInput.value = settings.libraryName;
 
             if(['auto','native','visual'].includes(settings.playbackEngine)){try{localStorage.setItem(PLAYBACK_ENGINE_KEY,settings.playbackEngine);}catch(_){}refreshPlaybackEngineSetting();}
+            if(typeof settings.keepScreenAwake==='boolean')setScreenWakePreference(settings.keepScreenAwake);
             if (typeof settings.volumeBoost !== 'undefined' && volSlider) {
                 const val = Math.max(0, Math.min(2, parseFloat(settings.volumeBoost) || 1));
                 volSlider.value = String(val);
@@ -4182,6 +4188,41 @@
             },150);
         }
 
+        function clearActiveQueue(keepCurrent) {
+            const retained=keepCurrent && currentFile && virtualLibrary[currentFile.name] ? currentFile : null;
+            const oldCount=playlistTracks.length;
+            if(!retained){
+                // Cancel a pending asynchronous track load as well as current playback.
+                ++trackLoadRequestId;
+                pauseAudio();
+                window.OndaMidi?.stopForTrackChange?.();
+                for(const audio of [localAudio,streamAudio]){
+                    audio.pause();
+                    if(audio.src.startsWith('blob:'))URL.revokeObjectURL(audio.src);
+                    audio.removeAttribute('src');audio.load();
+                }
+                activeAudio=localAudio;currentFile=null;currentTrackIndex=-1;
+                document.getElementById('now-playing').textContent='No Track Loaded';
+                document.getElementById('track-nickname-label').textContent='';
+                for(const id of ['meta-file-size','meta-nickname','meta-original-file','meta-source-type','meta-source-detail','meta-playlists-display','meta-tags-list','lyrics-viewer']){const el=document.getElementById(id);if(el)el.textContent='';}
+                for(const id of ['input-inline-tags','input-inline-nickname','input-track-image-url']){const el=document.getElementById(id);if(el)el.value='';}
+                const art=document.getElementById('now-playing-art');if(art)art.textContent='NO IMAGE';
+                tagsBar.replaceChildren();tagsBar.classList.remove('is-open');
+                seekBar.value=0;seekBar.max=0;timeCurrent.textContent='0:00';timeTotal.textContent='0:00';miniMetaSize.textContent='0M';
+                try{localStorage.removeItem(LAST_PLAYED_TRACK_KEY);localStorage.removeItem(LAST_PLAYED_PLAYLIST_KEY);}catch(_){}
+                window.OndaMediaSession?.refresh?.();
+            }
+            playlistTracks=retained?[retained]:[];
+            currentTrackIndex=retained?0:-1;currentPlaybackPlaylistName=null;
+            if(isShuffle)resetShuffleQueue(currentTrackIndex);else{shuffleQueue=[];shuffleSignature='';}
+            if(retained)updateMetadataUI();else updateNowPlayingPlaylistPanel();
+            renderActiveTrackPlaylistEditor();
+            saveActiveLibraryState('manual-clear-active-queue');
+            closeModal('modal-clear-queue');
+            showToast(retained?'Queue cleared. Current track kept.':'Queue cleared. Library and playlists unchanged.');
+            return oldCount-playlistTracks.length;
+        }
+
         function updateNowPlayingPlaylistPanel() {
             const card = document.getElementById('metadata-display-card');
             const panel = document.getElementById('now-playing-playlist-panel');
@@ -4251,6 +4292,7 @@
                     <div class="onda-current-queue-next" title="${escapeHtml(nextLabel)}">${escapeHtml(nextLabel)}</div>
                 </div>
                 <div class="playlist-row-tools onda-current-queue-tools">
+                    <button data-onda-action="clearqueue" type="button" class="btn-pill btn-now-clear-queue" title="Clear queue" aria-label="Clear queue" ${ids.length ? '' : 'disabled'}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 6l1 14h8l1-14M9 6V3h6v3M10 10v6M14 10v6"/></svg></button>
                     <button data-onda-action="shuffle" type="button" class="btn-pill btn-now-reshuffle" title="Reshuffle upcoming tracks" aria-label="Reshuffle upcoming tracks" ${ids.length < 2 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 3-2 5-5M14 8c1-2 2-2 4-2h3M17 2l4 4-4 4"/></svg></button>
                     <button data-onda-action="jump" type="button" class="btn-pill btn-now-jump-current" title="Find current track in queue" aria-label="Find current track in queue" ${selectedIndex < 0 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
                     ${name ? '<button data-onda-action="edit" type="button" class="btn-pill btn-now-edit-source-playlist" title="Edit the source playlist" aria-label="Edit the source playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-.8L20 7l-3-3L5 16zM14 7l3 3"/></svg></button>' : ''}
@@ -4263,6 +4305,11 @@
             `;
             panel.appendChild(header);
         
+            header.querySelector('.btn-now-clear-queue')?.addEventListener('click',()=>{
+                document.getElementById('btn-clear-upcoming').disabled=!(currentFile&&virtualLibrary[currentFile.name]);
+                document.getElementById('onda-clear-queue-message').textContent=ids.length+' track(s) in the active queue. Clear upcoming tracks and keep the current track, or stop and clear everything from the queue. Library, playlists and cached audio are unchanged.';
+                showModal('modal-clear-queue');
+            });
             header.querySelector('.btn-now-reshuffle')?.addEventListener('click', () => {
                 setShuffleEnabled(true);
                 showToast('Upcoming tracks reshuffled.');
@@ -4568,6 +4615,7 @@
                 btnPlay.classList.add('active-state');
                 startVisualizer();
                 finishPlayResponse?.({ trackCount: 1 });
+                syncScreenWakeLock();
             } catch (err) {
                 if (requestedAudio !== activeAudio || requestId !== trackLoadRequestId || err?.name === 'AbortError') return;
                 isPlaying = false;
@@ -4582,6 +4630,7 @@
 
         function pauseAudio() {
             activeAudio.pause();
+            syncScreenWakeLock();
             isPlaying = false;
             btnPlay.textContent = '🧿';
             btnPlay.classList.remove('active-state');
@@ -7143,6 +7192,39 @@
         visualizerPresetSelect?.addEventListener('change', startVisualizer);
 
         // --- 8B. SETTINGS, LAYOUT MODE, FULLSCREEN, AND CURRENT-TRACK MARQUEE ---
+        function wakeLockWanted(){
+            return keepScreenAwake && document.visibilityState==='visible' && !!currentFile && !!activeAudio && !activeAudio.paused && !activeAudio.ended;
+        }
+        function refreshWakeStatus(){
+            const input=document.getElementById('onda-keep-screen-awake'),status=document.getElementById('onda-wake-status');
+            if(input)input.checked=keepScreenAwake;
+            if(status)status.textContent=!keepScreenAwake?'Off — phone can lock normally.':
+                !navigator.wakeLock?.request?'Not supported by this browser.':
+                screenWakeLock&&!screenWakeLock.released?'Active — screen kept awake.':
+                screenWakePending?'Requesting screen wake lock…':
+                screenWakeError||'On — activates while playing with Onda visible.';
+        }
+        async function syncScreenWakeLock(){
+            if(!wakeLockWanted()){
+                const lock=screenWakeLock;screenWakeLock=null;screenWakeError='';
+                if(lock&&!lock.released)try{await lock.release();}catch(_){}
+                refreshWakeStatus();return;
+            }
+            if(!navigator.wakeLock?.request||screenWakePending||(screenWakeLock&&!screenWakeLock.released)){refreshWakeStatus();return;}
+            screenWakePending=true;screenWakeError='';refreshWakeStatus();
+            try{
+                const lock=await navigator.wakeLock.request('screen');
+                if(!wakeLockWanted()){await lock.release();return;}
+                screenWakeLock=lock;
+                lock.addEventListener('release',()=>{if(screenWakeLock===lock){screenWakeLock=null;refreshWakeStatus();}},{once:true});
+            }catch(_){screenWakeError='Screen wake lock unavailable; playback is unaffected.';}
+            finally{screenWakePending=false;refreshWakeStatus();}
+        }
+        function setScreenWakePreference(enabled){
+            keepScreenAwake=Boolean(enabled);
+            try{localStorage.setItem(SCREEN_WAKE_KEY,keepScreenAwake?'1':'0');}catch(_){}
+            refreshWakeStatus();syncScreenWakeLock();
+        }
         function refreshPlaybackEngineSetting(){
             const select=document.getElementById('onda-background-mode'),status=document.getElementById('onda-background-mode-status');
             if(select)select.value=readPlaybackEnginePreference();
@@ -7439,6 +7521,13 @@
         installMobileMarqueeObserver();
         updateNowPlayingPlaylistPanel(); // Show empty/up-next queue on Current at startup.
         announceOndaVersion();
+        refreshWakeStatus();
+        safeBind('onda-keep-screen-awake','change',event=>setScreenWakePreference(event.target.checked));
+        safeBind('btn-clear-upcoming','click',()=>clearActiveQueue(true));
+        safeBind('btn-clear-all-queue','click',()=>clearActiveQueue(false));
+        [localAudio,streamAudio,window.OndaMidi?.audio].forEach(audio=>{if(!audio)return;for(const event of ['playing','play','pause','ended','error'])audio.addEventListener(event,()=>syncScreenWakeLock());});
+        window.addEventListener('pageshow',()=>syncScreenWakeLock());
+        window.addEventListener('pagehide',()=>{const lock=screenWakeLock;screenWakeLock=null;if(lock&&!lock.released)lock.release().catch(()=>{});});
         document.documentElement.dataset.ondaPlaybackEngine=nativeLocalPlayback?'native':'visual';
         refreshPlaybackEngineSetting();
         safeBind('onda-background-mode','change',e=>{if(['auto','native','visual'].includes(e.target.value)){try{localStorage.setItem(PLAYBACK_ENGINE_KEY,e.target.value);refreshPlaybackEngineSetting();showToast('Engine saved. Reopen Onda to apply.');}catch(_){refreshPlaybackEngineSetting();}}});
@@ -7505,6 +7594,7 @@
             flushActiveLibraryState('beforeunload-flush');
         });
         document.addEventListener('visibilitychange', () => {
+            syncScreenWakeLock();
             if (document.visibilityState === 'hidden') {
                 stopVisualizerFrames(); // Audio and lock-screen controls continue.
                 window.OndaMediaSession?.refresh?.();
