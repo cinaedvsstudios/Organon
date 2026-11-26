@@ -2409,3 +2409,26 @@ body.onda-force-mobile-mode #tab-library[data-playback-view="queue"] .now-playin
 }
 #onda-quick-batch-label:not([hidden]) { display:flex; flex-direction:column; gap:5px; font-size:.8rem; color:var(--water-spray); }
 #onda-quick-batch-select { width:100%; min-width:0; min-height:44px; }
+
+/* v3.47: keep the queue's jump/edit tools beside its heading.
+   More specific than legacy mobile playlist header flex-column rules. */
+#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-header {
+  display:grid; grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"title tools" "meta meta";
+  align-items:start; gap:5px 8px;
+}
+#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .playlist-detail-title-block {
+  grid-area:title; width:auto; min-width:0; order:0;
+}
+#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-tools {
+  grid-area:tools; display:flex; flex-direction:row; flex-wrap:nowrap;
+  align-items:center; justify-content:flex-end; justify-self:end;
+  width:auto; min-width:0; max-width:none; margin:0; padding:0; order:0;
+}
+#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-summary {
+  grid-area:meta; width:auto; margin:0; order:0;
+}
+#tab-library[data-playback-view="queue"] #now-playing-playlist-panel .onda-current-queue-tools .btn-pill {
+  flex:0 0 44px; width:44px; min-width:44px; height:44px; min-height:44px;
+  padding:0; margin:0; box-sizing:border-box;
+}
