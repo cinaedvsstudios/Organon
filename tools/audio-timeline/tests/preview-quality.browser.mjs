@@ -12,6 +12,7 @@ const browser=await chromium.launch({executablePath:chrome,headless:true,args:['
 try{
  const page=await browser.newPage({viewport:{width:1450,height:900},acceptDownloads:true}),errors=[];
  page.on('pageerror',e=>errors.push(String(e)));
+ page.on('console',msg=>{if(['error','warning'].includes(msg.type()))console.log('[preview browser]',msg.text().slice(0,500));});
  await page.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',{waitUntil:'domcontentloaded'});
  const quality=page.locator('#preview-quality');
  const size=()=>page.locator('#advanced-canvas').evaluate(c=>[c.width,c.height]);
@@ -52,8 +53,9 @@ try{
  const fmt=page.locator('#export-format');const supported=await fmt.locator('option').evaluateAll(o=>o.filter(x=>!x.disabled&&x.value).map(x=>x.value));
  assert.ok(supported.length);
  await fmt.selectOption(supported[0]);
+ console.log('[preview quality before live]',await page.locator('#export-status').innerText(),await live.isEnabled(),await page.locator('#time-readout').innerText(),supported);
  await live.click();
- await page.waitForFunction(()=>document.querySelector('#advanced-canvas').width===1280);
+ try{await page.waitForFunction(()=>document.querySelector('#advanced-canvas').width===1280, null,{timeout:10000});}catch(error){console.log('[preview quality live diagnostics]',await page.evaluate(()=>({status:document.getElementById('export-status').textContent,overlay:document.getElementById('export-overlay-status').textContent,preview:document.getElementById('preview-state').textContent,hidden:document.hidden,canvas:document.getElementById('advanced-canvas').width,disabled:document.getElementById('btn-export-video').disabled})),errors);throw error;}
  await page.locator('#btn-export-cancel').click();
  await page.waitForFunction(()=>document.querySelector('#advanced-canvas').width===320);
  const video=page.waitForEvent('download',{timeout:60000});await live.click();
