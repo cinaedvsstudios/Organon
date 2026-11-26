@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.32';
+        const ONDA_VERSION = 'v3.33';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4798,9 +4798,10 @@
             const original = new Map(rows.map(r=>[r.id,r.values.slice()]));
             const dialog = document.createElement('dialog');
             dialog.className='onda-bulk-grid';
-            dialog.innerHTML='<header><strong>▦ Bulk Library Editor</strong><button type="button" data-close>✕</button></header><div class="bulk-tools"><input type="search" placeholder="Search tracks..." aria-label="Search tracks"><button data-undo>Undo</button><button data-redo>Redo</button><button data-fill>↓ Fill down</button><span>Separate tags and playlists with semicolons</span></div><div class="bulk-scroll"><table><thead><tr><th>Filename 🔒</th>'+labels.map(l=>'<th>'+l+'</th>').join('')+'</tr></thead><tbody></tbody></table></div><footer><span data-status></span><button data-close>Cancel</button><button data-save>Save changes</button></footer>';
+            dialog.innerHTML='<header><strong>▦ Bulk Library Editor</strong><button type="button" data-close>✕</button></header><div class="bulk-tools"><input type="search" placeholder="Search tracks..." aria-label="Search tracks"><button data-undo>Undo</button><button data-redo>Redo</button><button data-fill>↓ Fill down</button><button data-replace>Find &amp; Replace</button><details class="bulk-columns"><summary>Columns</summary>'+labels.map((l,i)=>'<label><input type="checkbox" data-column="'+i+'" checked>'+l+'</label>').join('')+'</details><span>Separate tags and playlists with semicolons</span></div><div class="bulk-scroll"><table><thead><tr><th>Filename 🔒</th>'+labels.map(l=>'<th>'+l+'</th>').join('')+'</tr></thead><tbody></tbody></table></div><footer><span data-status></span><button data-close>Cancel</button><button data-save>Save changes</button></footer>';
             document.body.append(dialog);
             const tbody=dialog.querySelector('tbody'), search=dialog.querySelector('input'), status=dialog.querySelector('[data-status]');
+            let sortColumn=-2, sortDirection=1; const hiddenColumns=new Set();
             let visible=rows, anchor=null, end=null, undo=[], redo=[], dragging=false;
             const snapshot=()=>rows.map(r=>r.values.slice());
             const checkpoint=()=>{undo.push(snapshot());if(undo.length>30)undo.shift();redo=[];};
@@ -4810,17 +4811,21 @@
             const paint=()=>{tbody.querySelectorAll('td[data-r]').forEach(td=>{const r=+td.dataset.r,c=+td.dataset.c;td.classList.toggle('bulk-selected',!!anchor&&!!end&&r>=Math.min(anchor.r,end.r)&&r<=Math.max(anchor.r,end.r)&&c>=Math.min(anchor.c,end.c)&&c<=Math.max(anchor.c,end.c));});};
             function render(){
                 visible=rows.filter(r=>[r.fileName,...r.values].join(' ').toLowerCase().includes(search.value.toLowerCase()));
+                if(sortColumn!==-2) visible=visible.slice().sort((a,b)=>sortDirection*(sortColumn===-1?a.fileName.localeCompare(b.fileName,undefined,{numeric:true}):a.values[sortColumn].localeCompare(b.values[sortColumn],undefined,{numeric:true})));
                 tbody.replaceChildren();anchor=end=null;
                 const frag=document.createDocumentFragment();
                 visible.forEach((row,r)=>{const tr=document.createElement('tr');const name=document.createElement('td');name.textContent=row.fileName;tr.append(name);
                     row.values.forEach((value,c)=>{const td=document.createElement('td');td.dataset.r=r;td.dataset.c=c;const input=document.createElement('input');input.value=value;input.setAttribute('aria-label',labels[c]+' '+row.fileName);input.addEventListener('change',()=>{if(row.values[c]!==input.value){checkpoint();row.values[c]=input.value;update();}});td.append(input);tr.append(td);});frag.append(tr);});
-                tbody.append(frag);update();
+                tbody.append(frag);dialog.querySelectorAll('thead th').forEach((th,i)=>{th.hidden=hiddenColumns.has(i-1);});tbody.querySelectorAll('td[data-c]').forEach(td=>td.hidden=hiddenColumns.has(+td.dataset.c));update();
             }
             const cell=e=>{const td=e.target.closest('td[data-r]');return td?{r:+td.dataset.r,c:+td.dataset.c}:null;};
             tbody.addEventListener('pointerdown',e=>{const p=cell(e);if(!p)return;if(!e.shiftKey||!anchor)anchor=p;end=p;dragging=true;paint();});
             tbody.addEventListener('pointerover',e=>{if(!dragging||!e.buttons)return;const p=cell(e);if(p){end=p;paint();}});
             dialog.addEventListener('pointerup',()=>dragging=false);
             search.addEventListener('input',render);
+            dialog.querySelectorAll('thead th').forEach((th,i)=>{th.tabIndex=0;th.title='Sort column';const sort=()=>{const c=i-1;sortDirection=sortColumn===c?-sortDirection:1;sortColumn=c;render();};th.onclick=sort;th.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sort();}};});
+            dialog.querySelectorAll('[data-column]').forEach(cb=>cb.onchange=()=>{const c=+cb.dataset.column;if(cb.checked)hiddenColumns.delete(c);else hiddenColumns.add(c);render();});
+            dialog.querySelector('[data-replace]').onclick=()=>{if(!anchor||!end){alert('Select the cells to search first.');return;}const find=prompt('Find text in selected cells:');if(!find)return;const replacement=prompt('Replace with (blank removes text):','');if(replacement===null)return;checkpoint();for(let r=Math.min(anchor.r,end.r);r<=Math.max(anchor.r,end.r);r++)for(let c=Math.min(anchor.c,end.c);c<=Math.max(anchor.c,end.c);c++)if(!hiddenColumns.has(c))visible[r].values[c]=visible[r].values[c].split(find).join(replacement);render();};
             dialog.querySelector('[data-undo]').onclick=()=>{if(undo.length){redo.push(snapshot());restore(undo.pop());}};
             dialog.querySelector('[data-redo]').onclick=()=>{if(redo.length){undo.push(snapshot());restore(redo.pop());}};
             dialog.querySelector('[data-fill]').onclick=()=>{if(!anchor||!end)return;checkpoint();for(let c=Math.min(anchor.c,end.c);c<=Math.max(anchor.c,end.c);c++){const first=Math.min(anchor.r,end.r);for(let r=first+1;r<=Math.max(anchor.r,end.r);r++)visible[r].values[c]=visible[first].values[c];}render();};
