@@ -1,3 +1,4 @@
+import {renderWarningGlitch} from './timeline-warning-glitch.mjs';
 import {renderNegativeChaos} from './timeline-negative-chaos.mjs';
 import {renderGlitchStorm} from './timeline-glitch-storm.mjs';
 import {renderGlassGlitch} from './timeline-glass-glitch.mjs';
@@ -53,21 +54,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   }else if(e.presetId==='negative-chaos'){
    return renderNegativeChaos(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='warning-glitch'){
-   // Alert-color hazard rails + angled stripes + jumping source tears.
-   ctx.strokeStyle='#ff4b32';ctx.lineWidth=Math.max(3,w*.012*size);
-   ctx.strokeRect(w*.015,h*.025,w*.97,h*.95);
-   const moving=wrap(t*.45)*w;
-   ctx.save();ctx.beginPath();ctx.rect(0,h*.83,w,h*.13);ctx.clip();
-   const rail=Math.max(8,w*.036*size);
-   for(let x=-w;x<w*2;x+=rail*2){
-    ctx.fillStyle=(Math.floor(x/rail)%4===0)?'#f4ce3c':'#192128';
-    ctx.beginPath();ctx.moveTo(x+moving,h*.82);ctx.lineTo(x+moving+rail,h*.82);
-    ctx.lineTo(x+moving+rail*2,h*.97);ctx.lineTo(x+moving+rail,h*.97);
-    ctx.closePath();ctx.fill();
-   }
-   ctx.restore();
-   const jitter=(seeded(tick*37)-.5)*amp*3;
-   draw(ctx,source,0,h*.36,w,h*.08,jitter,h*.36,w,h*.08);
+   return renderWarningGlitch(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='misalignment'){
    // Offset semitransparent source ghosts; not horizontal strip tearing.
    const dx=(4+amp*2)*Math.sin(t*4+rad);
