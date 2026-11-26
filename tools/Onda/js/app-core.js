@@ -79,7 +79,7 @@
         const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.52';
+        const ONDA_VERSION = 'v3.53';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -112,6 +112,10 @@
         let nowPlayingHidePlaylist = localStorage.getItem(NOW_PLAYING_HIDE_PLAYLIST_KEY) === "1";
         let editingPlaylistName = null;
         let virtualLibrary = {};
+        let duplicateCleanupAt = 0;
+        let duplicateCleanupRemovedIds = [];
+        let duplicateReviewGroups = [];
+        let duplicateReviewBusy = false;
         let nowPlayingEditMode = false;
         let isLibrarySelectMode = false;
         let selectedLibraryIds = new Set();
@@ -1487,6 +1491,169 @@
             showToast('Selected library listing(s) removed.');
         }
 
+        function duplicateStatus(message) {
+            const el = document.getElementById('onda-duplicate-status');
+            if (el) el.textContent = message;
+        }
+        function duplicateMetadataScore(meta) {
+            return ['nickname','artist','album','genre','year','bpm','key','lyrics','notes','imageData','imageUrl','duration']
+                .reduce((score,key)=>score+(meta[key]?1:0),0) + (meta.tags?.length||0);
+        }
+        async function findExactDuplicateGroups() {
+            const byName = new Map();
+            for (const meta of Object.values(virtualLibrary)) {
+                if (!meta?.id || !meta.fileName || meta.streamUrl || ['stream','reference'].includes(meta.sourceType)) continue;
+                const key = meta.fileName;
+                if (!byName.has(key)) byName.set(key,[]);
+                byName.get(key).push(meta);
+            }
+            const groups = [];
+            let unverified = 0;
+            for (const candidates of byName.values()) {
+                if (candidates.length<2) continue;
+                const clusters=[];
+                for (const meta of candidates) {
+                    let cached = null;
+                    try { const record=await idbGetAudioFile(meta.id); cached=record?.file||record?.blob||null; } catch (_) {}
+                    const blob = cached || meta.blobFile;
+                    if (!blob || typeof blob.slice!=='function') { unverified++; continue; }
+                    let match=null;
+                    for (const cluster of clusters) {
+                        try { if(await equalImportBytes(blob,cluster[0].blob)) {match=cluster;break;} } catch (_) {}
+                    }
+                    const entry={meta,blob,cached:Boolean(cached)};
+                    if(match) match.push(entry); else clusters.push([entry]);
+                }
+                for(const cluster of clusters) {
+                    if(cluster.length<2) continue;
+                    const active=cluster.find(entry=>entry.meta.id===currentFile?.name);
+                    const eligible=cluster.filter(entry=>entry.cached);
+                    if(!eligible.length || (active && !active.cached)) { unverified+=cluster.length;continue; }
+                    const keep=active || eligible.sort((a,b)=>duplicateMetadataScore(b.meta)-duplicateMetadataScore(a.meta))[0];
+                    groups.push({keep:keep.meta.id,remove:cluster.filter(entry=>entry!==keep).map(entry=>entry.meta.id),name:keep.meta.fileName,paths:[...new Set(cluster.map(entry=>entry.meta.localPath||entry.meta.fileName))]});
+                }
+            }
+            return {groups,unverified};
+        }
+        function renderDuplicateReview(groups) {
+            const list=document.getElementById('onda-duplicate-results');
+            list.replaceChildren();
+            groups.forEach((group,index)=>{
+                const label=document.createElement('label');
+                label.className='onda-duplicate-group';
+                const check=document.createElement('input');
+                check.type='checkbox';check.checked=true;check.dataset.duplicateGroup=String(index);
+                const detail=document.createElement('div');
+                const title=document.createElement('strong');title.textContent=group.name;
+                const desc=document.createElement('small');desc.textContent=(group.remove.length+1)+' identical copies · keep 1, merge '+group.remove.length;
+                const paths=document.createElement('small');paths.textContent=group.paths.join(' | ');
+                detail.append(title,desc,paths);label.append(check,detail);list.append(label);
+                check.addEventListener('change',syncDuplicateMergeButton);
+            });
+            syncDuplicateMergeButton();
+        }
+        function syncDuplicateMergeButton() {
+            const selected=[...document.querySelectorAll('#onda-duplicate-results input:checked')].map(el=>duplicateReviewGroups[Number(el.dataset.duplicateGroup)]).filter(Boolean);
+            const count=selected.reduce((n,g)=>n+g.remove.length,0);
+            const button=document.getElementById('btn-duplicate-merge');
+            button.disabled=duplicateReviewBusy||!count;
+            button.textContent=count?'Merge '+count+' Duplicate'+(count===1?'':'s'):'Merge Selected';
+        }
+        async function scanDuplicateLibrary() {
+            if(duplicateReviewBusy) return;
+            duplicateReviewBusy=true;duplicateReviewGroups=[];renderDuplicateReview([]);
+            duplicateStatus('Checking saved file contents…');
+            try {
+                await localImportChain;
+                const result=await findExactDuplicateGroups();
+                duplicateReviewGroups=result.groups;
+                const count=result.groups.reduce((n,g)=>n+g.remove.length,0);
+                duplicateStatus(count+' confirmed duplicate listing(s) in '+result.groups.length+' group(s).'+(result.unverified?' '+result.unverified+' candidate(s) could not be verified and will be kept.':''));
+                renderDuplicateReview(result.groups);
+            } catch(err) { duplicateStatus('Scan failed. No records changed.'); console.warn(err); }
+            finally {duplicateReviewBusy=false;syncDuplicateMergeButton();}
+        }
+        function remapDuplicateIds(ids,aliases) {
+            const seen=new Set();
+            const targets=new Set(aliases.values());
+            return ids.map(id=>aliases.get(id)||id).filter(id=>{
+                if(!targets.has(id)) return true;
+                if(seen.has(id)) return false;
+                seen.add(id);return true;
+            });
+        }
+        async function mergeReviewedDuplicates(groups) {
+            // Re-scan to ensure the review still matches actual bytes and current playback.
+            const fresh=(await findExactDuplicateGroups()).groups;
+            const aliases=new Map();
+            for(const group of groups) {
+                const match=fresh.find(g=>g.keep===group.keep && g.remove.length===group.remove.length && group.remove.every(id=>g.remove.includes(id)));
+                if(!match) throw Error('Library changed. Scan again before merging.');
+                group.remove.forEach(id=>aliases.set(id,group.keep));
+            }
+            if(!aliases.size)return;
+            const backup=buildActiveLibraryAutosavePayload('before-duplicate-cleanup');
+            // Persist a separate, non-autorecoverable pre-merge copy before
+            // modifying catalogue records. Audio and file handles are untouched.
+            const key='duplicate-cleanup-backup-'+Date.now();
+            await idbSetState(key,backup);
+            await idbSetState('last-duplicate-cleanup-backup',key);
+            if(currentFile && aliases.has(currentFile.name)) throw Error('Playing track changed. Scan again.');
+            if(pendingActiveLibrarySaveTimer) {clearTimeout(pendingActiveLibrarySaveTimer);pendingActiveLibrarySaveTimer=null;}
+            for(const [id,keepId] of aliases) {
+                const from=virtualLibrary[id], keep=virtualLibrary[keepId];
+                if(!from||!keep) throw Error('Library changed. Scan again.');
+                for(const [field,value] of Object.entries(from)) {
+                    if(['id','blobFile','fileName','localPath','phonePath','desktopPath','needsRelink','tags','playlists'].includes(field))continue;
+                    if((keep[field]===undefined||keep[field]===null||keep[field]==='') && value!=null) keep[field]=value;
+                }
+                keep.tags=[...new Set([...(Array.isArray(keep.tags)?keep.tags:[]),...(Array.isArray(from.tags)?from.tags:[])])];
+                keep.needsRelink=false;
+            }
+            for(const id of aliases.keys()) delete virtualLibrary[id];
+            for(const [name,tracks] of Object.entries(playlists)) {
+                playlists[name]=playlistIdsToTrackObjects(remapDuplicateIds(normalisePlaylistToIds(tracks),aliases));
+            }
+            const oldQueue=playlistTracks, oldCurrent= currentFile;
+            const oldIndex=currentTrackIndex;
+            const targets=new Set(aliases.values()), seen=new Set();
+            playlistTracks=[];
+            oldQueue.forEach((track,index)=>{
+                const oldId=getTrackId(track),id=aliases.get(oldId)||oldId;
+                if(targets.has(id)) {
+                    if(id===oldCurrent?.name && oldIndex>=0 && index!==oldIndex) return;
+                    if(seen.has(id)) return;
+                    seen.add(id);
+                }
+                playlistTracks.push(aliases.has(oldId)?createPlayableTrackFromMeta(virtualLibrary[id]):track);
+            });
+            currentTrackIndex=oldCurrent?playlistTracks.findIndex(track=>track===oldCurrent):-1;
+            if(currentTrackIndex<0&&oldCurrent)currentTrackIndex=playlistTracks.findIndex(track=>getTrackId(track)===oldCurrent.name);
+            recentTrackIds=[...new Set(recentTrackIds.map(id=>aliases.get(id)||id))].slice(0,50);
+            selectedLibraryIds=new Set([...selectedLibraryIds].map(id=>aliases.get(id)||id));
+            duplicateCleanupAt=Date.now();
+            duplicateCleanupRemovedIds=[...new Set([...duplicateCleanupRemovedIds,...aliases.keys()])];
+            syncAllTrackPlaylistMetadata();
+            if(isShuffle)resetShuffleQueue(currentTrackIndex);
+            saveRecentTrackIds();
+            saveActiveLibraryState('manual-duplicate-cleanup');
+            await flushActiveLibraryState('manual-duplicate-cleanup');
+            renderPlaylistsList();renderLibraryManager();renderHistoryTab();updateNowPlayingPlaylistPanel();
+            duplicateReviewGroups=[];renderDuplicateReview([]);
+            duplicateStatus('Merged '+aliases.size+' duplicate listing(s). '+Object.keys(virtualLibrary).length+' tracks remain. Cached audio and backup retained.');
+            showToast('Merged '+aliases.size+' duplicate listings.');
+        }
+        function applyDuplicateReview() {
+            if(duplicateReviewBusy)return;
+            const groups=[...document.querySelectorAll('#onda-duplicate-results input:checked')].map(el=>duplicateReviewGroups[Number(el.dataset.duplicateGroup)]).filter(Boolean);
+            if(!groups.length)return;
+            duplicateReviewBusy=true;syncDuplicateMergeButton();
+            duplicateStatus('Rechecking and saving pre-cleanup backup…');
+            const operation=localImportChain.then(()=>mergeReviewedDuplicates(groups));
+            localImportChain=operation.catch(()=>{});
+            operation.catch(err=>{duplicateStatus(err.message||'Merge could not finish. Check backup and scan again.');console.warn(err);}).finally(()=>{duplicateReviewBusy=false;syncDuplicateMergeButton();});
+        }
+
         function levenshteinDistance(a, b, limit = 2) {
             if (a === b) return 0;
             if (!a || !b) return Math.max(a.length, b.length);
@@ -2497,7 +2664,9 @@
                 console.warn('Could not scan localStorage for Onda library candidates:', err);
             }
 
+            const cleanupCutoff = Math.max(0,...candidates.map(item => Number(item.payload.duplicateCleanupAt)||0));
             const withTracks = candidates
+                .filter(item => !cleanupCutoff || getPayloadSavedAtMs(item.payload) >= cleanupCutoff)
                 .map(item => ({ ...item, trackCount: getPayloadTrackCount(item.payload), savedAt: getPayloadSavedAtMs(item.payload) }))
                 .filter(item => item.trackCount > 0)
                 .sort((a, b) => (b.trackCount - a.trackCount) || (b.savedAt - a.savedAt) || (b.priority - a.priority));
@@ -2778,6 +2947,8 @@
                 version: 2,
                 savedAt: new Date().toISOString(),
                 reason,
+                duplicateCleanupAt,
+                duplicateCleanupRemovedIds: duplicateCleanupRemovedIds.slice(),
                 library: buildLibraryExport({ streamingOnly: false }),
                 queueIds: playlistTracks.map(getTrackId).filter(Boolean),
                 currentTrackId: currentFile?.name || null,
@@ -2843,6 +3014,13 @@
             const data = saved?.library || saved;
             if (!data || data.type !== 'onda-library') return false;
 
+            if (Number(saved?.duplicateCleanupAt) >= duplicateCleanupAt && Number(saved?.duplicateCleanupAt)>0) {
+                duplicateCleanupAt = Number(saved.duplicateCleanupAt);
+                duplicateCleanupRemovedIds = Array.isArray(saved.duplicateCleanupRemovedIds) ? saved.duplicateCleanupRemovedIds.filter(id=>typeof id==='string') : [];
+                // Only an explicitly confirmed cleanup may suppress an old copy
+                // resurrected by a stale local/IDB autosave.
+                duplicateCleanupRemovedIds.forEach(id=>{ if (!data.tracks?.[id]) delete virtualLibrary[id]; });
+            }
             if (data.libraryName && libraryNameInput) libraryNameInput.value = data.libraryName;
 
             Object.entries(data.tracks || {}).forEach(([key, rawMeta]) => {
@@ -5194,6 +5372,16 @@
         safeBind('btn-db-bulk-attributes', 'click', openBulkAttributesModal);
         safeBind('btn-db-bulk-export', 'click', exportSelectedLibraryJson);
         safeBind('btn-db-bulk-delete', 'click', deleteSelectedFromLibrary);
+        safeBind('btn-db-deduplicate','click',()=>{showModal('modal-duplicate-review');scanDuplicateLibrary();});
+        safeBind('btn-duplicate-rescan','click',scanDuplicateLibrary);
+        safeBind('btn-duplicate-merge','click',applyDuplicateReview);
+        safeBind('btn-duplicate-backup','click',async()=>{
+            try {
+                const key=await idbGetState('last-duplicate-cleanup-backup');
+                const backup=key?await idbGetState(key):null;
+                downloadJsonFile('onda-before-duplicate-cleanup.json',backup?.library||buildLibraryExport({streamingOnly:false}));
+            }catch(err){duplicateStatus('Backup download unavailable: '+err.message);}
+        });
         safeBind('btn-apply-bulk-playlists', 'click', applyBulkPlaylistAdd);
         safeBind('btn-apply-bulk-attributes', 'click', applyBulkAttributes);
         safeBind('btn-save-playlist-edit', 'click', savePlaylistEdit);

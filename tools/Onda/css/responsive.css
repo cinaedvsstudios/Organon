@@ -2518,3 +2518,13 @@ body.onda-force-mobile-mode #tab-library[data-playback-view="queue"] .onda-queue
 #library-manager-drawer .onda-add-source-actions .btn-pill {
   min-height:44px; white-space:normal; font-size:.8rem;
 }
+
+/* v3.53 duplicate cleanup review */
+#onda-duplicate-status { padding:10px 0; color:var(--water-spray); font-weight:600; }
+#onda-duplicate-results { display:grid; gap:7px; }
+.onda-duplicate-group { display:flex; gap:10px; align-items:flex-start; padding:10px; border:1px solid var(--chiseled-bronze); border-radius:8px; cursor:pointer; }
+.onda-duplicate-group input { flex:0 0 auto; width:20px; height:20px; accent-color:var(--water-blue); }
+.onda-duplicate-group div { min-width:0; display:grid; gap:4px; overflow-wrap:anywhere; }
+.onda-duplicate-group small { color:var(--stone-ochre); }
+.onda-duplicate-actions { flex-wrap:wrap; }
+.onda-duplicate-actions button { min-height:40px; }
