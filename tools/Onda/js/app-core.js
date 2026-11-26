@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.34';
+        const ONDA_VERSION = 'v3.35';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -5406,6 +5406,7 @@
                 renderPlaylistsList();
                 renderLibraryManager();
                 if (currentFile) updateMetadataUI();
+                saveActiveLibraryState('playlist-edit');
                 showToast('Playlist updated.');
             };
             const file = fileInput?.files?.[0];
@@ -5501,7 +5502,7 @@
                     <div class="playlist-row-tools">
                         <button type="button" class="btn-pill btn-play-playlist" id="btn-detail-play-playlist" title="Play playlist">▶️</button>
                         <button type="button" class="btn-pill btn-shuffle-playlist" id="btn-detail-shuffle-playlist" title="Shuffle playlist">🔀</button>
-                        <button type="button" class="btn-pill btn-edit-playlist" id="btn-detail-edit-playlist" title="Edit playlist">✏️</button>
+                        <button type="button" class="btn-pill btn-edit-playlist" id="btn-detail-edit-playlist" title="Edit playlist">✏️</button><button type="button" class="btn-pill" id="btn-detail-duplicate-playlist" title="Duplicate playlist" aria-label="Duplicate playlist">⧉</button><button type="button" class="btn-pill" id="btn-detail-reorder-playlist" title="Reorder tracks">↕</button>
                     </div>
                     <div class="playlist-detail-meta-row">
                         <span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'}</span>
@@ -5542,6 +5543,27 @@
             });
             const editBtn = document.getElementById('btn-detail-edit-playlist');
             if (editBtn) editBtn.addEventListener('click', () => openPlaylistEditModal(name));
+            document.getElementById('btn-detail-duplicate-playlist')?.addEventListener('click',()=>{
+                const copy=prompt('Name for duplicate playlist',name+' copy')?.trim();
+                if(!copy)return;
+                if(copy in playlists || ['__proto__','constructor','prototype'].includes(copy)){showToast('Choose a different playlist name.');return;}
+                playlists[copy]=playlists[name].slice();
+                playlistMeta[copy]={...ensurePlaylistMeta(name),createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+                activePlaylistView=copy;renderPlaylistsList();saveActiveLibraryState('duplicate-playlist');showToast('Playlist duplicated.');
+            });
+            document.getElementById('btn-detail-reorder-playlist')?.addEventListener('click',()=>{
+                const original=playlists[name].slice(), order=original.map((_,i)=>i);
+                const dialog=document.createElement('dialog');dialog.className='onda-bulk-grid onda-travel-check';
+                const heading=document.createElement('header');heading.textContent='↕ Reorder '+name;dialog.append(heading);
+                const list=document.createElement('div');list.className='bulk-scroll';dialog.append(list);
+                let dragged=null;
+                const move=(from,to)=>{if(from===to||to<0||to>=order.length)return;order.splice(to,0,order.splice(from,1)[0]);render();};
+                function render(){list.replaceChildren();order.forEach((idx,i)=>{const row=document.createElement('div');row.className='onda-reorder-row';row.draggable=true;
+                    const label=document.createElement('span');const id=getTrackId(original[idx]);label.textContent=(i+1)+'. '+(virtualLibrary[id]?getDisplayTitle(virtualLibrary[id]):id);row.append(label);
+                    for(const [symbol,offset] of [['↑',-1],['↓',1]]){const button=document.createElement('button');button.textContent=symbol;button.setAttribute('aria-label',offset<0?'Move up':'Move down');button.disabled=i+offset<0||i+offset>=order.length;button.onclick=()=>move(i,i+offset);row.append(button);}
+                    row.ondragstart=e=>{dragged=i;e.dataTransfer.setData('text/plain',String(i));};row.ondragover=e=>e.preventDefault();row.ondrop=e=>{e.preventDefault();if(dragged!==null)move(dragged,i);dragged=null;};row.ondragend=()=>dragged=null;list.append(row);});}
+                const footer=document.createElement('footer');for(const label of ['Cancel','Save order']){const button=document.createElement('button');button.textContent=label;button.onclick=()=>{if(label==='Save order'){if(!playlists[name]||playlists[name].length!==original.length||playlists[name].some((t,i)=>getTrackId(t)!==getTrackId(original[i]))){showToast('Playlist changed. Reopen reorder.');return;}playlists[name]=order.map(i=>original[i]);ensurePlaylistMeta(name).updatedAt=new Date().toISOString();saveActiveLibraryState('playlist-reorder');renderPlaylistsList();}dialog.close();};footer.append(button);}dialog.append(footer);dialog.addEventListener('close',()=>dialog.remove(),{once:true});document.body.append(dialog);render();dialog.showModal();
+            });
             const list = document.getElementById('playlist-detail-track-list');
             if (list) list.addEventListener('click', (e) => {
                 const id = e.target.dataset.trackId || e.target.closest('[data-track-id]')?.dataset.trackId;
