@@ -1,6 +1,10 @@
 // --- CORE DUAL AUDIO ENGINE SETUP ---
         const finishOndaCoreInit = window.OndaDiagnostics?.begin('core-init');
         // Using two elements solves WebAudio Context blocking CORS streams while preserving local file visualizers
+        const PLAYBACK_ENGINE_KEY='ondaPlaybackEngineModeV1';
+        function readPlaybackEnginePreference(){try{const v=localStorage.getItem(PLAYBACK_ENGINE_KEY);return ['native','visual'].includes(v)?v:'auto';}catch(_){return 'auto';}}
+        const initialPlaybackEngine=readPlaybackEnginePreference();
+        const nativeLocalPlayback=initialPlaybackEngine==='native'||(initialPlaybackEngine==='auto'&&(/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)||matchMedia('(pointer: coarse)').matches));
         const localAudio = new Audio();
         const streamAudio = new Audio();
 
@@ -79,7 +83,7 @@
         const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.53';
+        const ONDA_VERSION = 'v3.54';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1145,6 +1149,51 @@
             }
         }
 
+        function showSharedTrackInfo(id){
+            const meta=virtualLibrary[id];if(!meta)return;
+            const body=document.getElementById('onda-track-info-content');body.replaceChildren();
+            const title=document.createElement('h3');title.textContent=getDisplayTitle(meta);body.append(title);
+            for(const [label,value] of [['File',meta.fileName],['Artist',meta.artist],['Album',meta.album],['Duration',queueDurationLabel(meta)],['Source',sourceStatus(meta)],['Location',meta.localPath],['Playlists',getTrackPlaylistNames(id).join(', ')],['Tags',(meta.tags||[]).join(', ')]]){if(value){const line=document.createElement('p');line.textContent=label+': '+value;body.append(line);}}
+            showModal('modal-track-info-shared');
+        }
+        function repositionTrackInQueue(id,next){
+            if(!virtualLibrary[id]||id===currentFile?.name)return;
+            const prior=playlistTracks.slice(),current=prior[currentTrackIndex];
+            if(isShuffle&&shuffleSignature!==getPlaylistSignature())resetShuffleQueue(currentTrackIndex);
+            const upcoming=isShuffle?shuffleQueue.map(i=>prior[i]).filter(Boolean):[];
+            const item=prior.find(t=>getTrackId(t)===id)||createPlayableTrackFromMeta(virtualLibrary[id]);
+            playlistTracks=prior.filter(t=>getTrackId(t)!==id);
+            currentTrackIndex=current?playlistTracks.indexOf(current):-1;
+            if(currentTrackIndex<0&&currentFile)currentTrackIndex=playlistTracks.findIndex(t=>getTrackId(t)===currentFile.name);
+            if(next)playlistTracks.splice(currentTrackIndex+1,0,item);else playlistTracks.push(item);
+            if(isShuffle){const rest=upcoming.filter(t=>getTrackId(t)!==id&&playlistTracks.includes(t));shuffleQueue=(next?[item,...rest]:[...rest,item]).map(t=>playlistTracks.indexOf(t)).filter(i=>i>=0&&i!==currentTrackIndex);shuffleSignature=getPlaylistSignature();}
+            saveActiveLibraryState(next?'manual-play-next':'manual-queue-end');updateNowPlayingPlaylistPanel();showToast(next?'Scheduled to play next.':'Moved to end of queue.');
+        }
+        function removeTrackFromActiveQueue(id){
+            const i=playlistTracks.findIndex(t=>getTrackId(t)===id);
+            if(i<0||i===currentTrackIndex||id===currentFile?.name)return;
+            const upcoming=isShuffle?shuffleQueue.map(i=>playlistTracks[i]).filter(Boolean):[];
+            playlistTracks.splice(i,1);if(i<currentTrackIndex)currentTrackIndex--;
+            if(isShuffle){shuffleQueue=upcoming.map(t=>playlistTracks.indexOf(t)).filter(i=>i>=0&&i!==currentTrackIndex);shuffleSignature=getPlaylistSignature();}
+            saveActiveLibraryState('remove-from-active-queue');updateNowPlayingPlaylistPanel();showToast('Removed from queue. Library and playlists unchanged.');
+        }
+        async function downloadSavedTrack(id){
+            const meta=virtualLibrary[id];if(!meta)return;let blob=meta.blobFile;
+            if(!blob){try{const record=await idbGetAudioFile(id);blob=record?.file||record?.blob;}catch(_){}}
+            if(!blob){showToast('No cached audio available to export.');return;}
+            const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=meta.fileName||'onda-track';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+        }
+        function openTrackActions(id){
+            const meta=virtualLibrary[id];if(!meta)return;
+            document.getElementById('onda-track-action-title').textContent=getDisplayTitle(meta);
+            const list=document.getElementById('onda-track-action-list');list.replaceChildren();
+            const current=id===currentFile?.name,queued=playlistTracks.some(t=>getTrackId(t)===id);
+            for(const [symbol,label,handler,disabled] of [['⏭','Play next',()=>repositionTrackInQueue(id,true),current],['☷','Move to end of queue',()=>repositionTrackInQueue(id,false),current],['↓','Export audio file',()=>downloadSavedTrack(id),meta.sourceType==='stream'||meta.sourceType==='reference'],['×','Remove from queue',()=>removeTrackFromActiveQueue(id),current||!queued]]){
+                const b=document.createElement('button');b.type='button';b.className='btn-pill onda-track-menu-action';b.disabled=!!disabled;
+                const icon=document.createElement('span');icon.textContent=symbol;icon.setAttribute('aria-hidden','true');const text=document.createElement('span');text.textContent=label;b.append(icon,text);
+                b.addEventListener('click',()=>{closeModal('modal-track-actions');handler();});list.append(b);
+            }showModal('modal-track-actions');
+        }
         function buildTrackRow(trackId, compact = false, syncedMembership = false) {
             const meta = virtualLibrary[trackId];
             if (!meta) return null;
@@ -1165,7 +1214,7 @@
                         <div class="library-track-meta library-file-line">${escapeHtml(meta.fileName || meta.id)} · ${escapeHtml(sourceStatus(meta))}</div>
                         ${compact ? '' : `<div class="library-track-meta library-playlist-line">${escapeHtml(playlistsForTrack.length ? playlistsForTrack.join(' / ') : 'No playlist assigned')}</div>`}
                     </div>
-                    ${compact ? '' : `<div class="library-row-buttons"><button aria-label="Play" data-onda-action="play" class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>${sourceStatus(meta) === 'needs relink' ? `<button aria-label="Reconnect saved track" data-onda-action="reconnect" type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 8l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></svg></button>` : ''}<button aria-label="Track information" data-onda-action="info" class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button><button aria-label="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button></div>`}
+                    ${compact ? '' : `<div class="library-row-buttons"><button aria-label="Play" data-onda-action="play" class="btn-pill btn-db-play-track" data-track-id="${trackId}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>${sourceStatus(meta) === 'needs relink' ? `<button aria-label="Reconnect saved track" data-onda-action="reconnect" type="button" class="btn-pill btn-db-reconnect-track" data-track-id="${trackId}" title="Reconnect this saved track"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m10 13 4-4M8 16l-1 1a4 4 0 0 1-6-6l4-4a4 4 0 0 1 6 0M16 8l1-1a4 4 0 0 1 6 6l-4 4a4 4 0 0 1-6 0" transform="translate(1 0) scale(.92)"/></svg></button>` : ''}<button aria-label="Track information" data-onda-action="info" class="btn-pill btn-db-info-track" data-track-id="${trackId}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button><button aria-label="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button></div>`}
                 </div>
                 ${tags.length ? `<div class="library-row-tags">${tags.map(tag => `<span class="mini-tag">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             `;
@@ -1219,7 +1268,7 @@
                 <div class="library-row-buttons">
                     <button aria-label="Play" title="Play" data-onda-action="play" class="btn-pill btn-history-play btn-onda-row-play" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
                     <button aria-label="Track information" title="Track information" data-onda-action="info" class="btn-pill btn-history-info" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
-                    <button aria-label="Add to playlist" title="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+                    <button aria-label="Add to playlist" title="Add to playlist" data-onda-action="add" class="btn-pill btn-onda-add-playlist" data-track-id="${trackId}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
                 </div>
             `;
             return row;
@@ -2294,6 +2343,7 @@
             const settings = {
                 libraryName: (libraryNameInput?.value || 'Onda Library').trim() || 'Onda Library',
                 volumeBoost: parseFloat(volSlider?.value || '1') || 1,
+                playbackEngine:readPlaybackEnginePreference(),
                 playbackSpeed: parseFloat(speedSlider?.value || activeAudio?.playbackRate || '1') || 1,
                 activeWorkspaceTab: document.querySelector('.viewport-content.active-content')?.id || localStorage.getItem(ACTIVE_WORKSPACE_TAB_KEY) || 'tab-files',
                 mobileLibraryView: libraryDrawer?.dataset.mobileView || localStorage.getItem(LIBRARY_MOBILE_VIEW_KEY) || 'results',
@@ -2373,11 +2423,13 @@
             const settings = data.settings || {};
             if (settings.libraryName && libraryNameInput) libraryNameInput.value = settings.libraryName;
 
+            if(['auto','native','visual'].includes(settings.playbackEngine)){try{localStorage.setItem(PLAYBACK_ENGINE_KEY,settings.playbackEngine);}catch(_){}refreshPlaybackEngineSetting();}
             if (typeof settings.volumeBoost !== 'undefined' && volSlider) {
                 const val = Math.max(0, Math.min(2, parseFloat(settings.volumeBoost) || 1));
                 volSlider.value = String(val);
                 if (gainNode) gainNode.gain.value = val;
                 streamAudio.volume = Math.min(1, Math.max(0, val));
+                if(nativeLocalPlayback)localAudio.volume=Math.min(1,Math.max(0,val));
                 const volReadout = document.getElementById('vol-readout');
                 if (volReadout) volReadout.innerText = Math.round(val * 100) + '%';
             }
@@ -3301,6 +3353,7 @@
                 return null;
             }
 
+            if(nativeLocalPlayback)return null;
             if (!audioCtx) {
                 audioCtx = new AudioContext();
                 gainNode = audioCtx.createGain();
@@ -3972,7 +4025,7 @@
                     URL.revokeObjectURL(activeAudio.src);
                 }
                 activeAudio.src = URL.createObjectURL(blob);
-                initAudioEngine();
+                if(nativeLocalPlayback)localAudio.volume=Math.min(1,Math.max(0,Number(volSlider.value)||0));else initAudioEngine();
             }
 
             activeAudio.playbackRate = parseFloat(speedSlider.value);
@@ -4258,8 +4311,7 @@
                             <span class="onda-queue-duration" aria-label="Track duration">${escapeHtml(queueDurationLabel(meta))}</span>
                             ${hasRecord ? `<button data-onda-action="play" type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
                             <button data-onda-action="info" type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
-                            <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
-                            ${!active ? '<button data-onda-action="remove" type="button" class="btn-pill btn-now-remove-from-queue" title="Remove from current queue only" aria-label="Remove from current queue only"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 6 12 12M18 6 6 18"/></svg></button>' : ''}
+                            <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>` : ''}
                         </div>`;
                     list.appendChild(row);
                 });
@@ -4503,11 +4555,13 @@
             const requestId = trackLoadRequestId;
             // Start AudioContext resume and media.play() in the same gesture.
             // Waiting for AudioContext first can make Chrome discard tap activation.
-            const engineReady = requestedAudio === localAudio ? initAudioEngine() : Promise.resolve();
+            const engineReady = requestedAudio === localAudio && !nativeLocalPlayback ? initAudioEngine() : Promise.resolve();
+            window.OndaMediaSession?.refresh?.();
 
             try {
                 const playbackStarted = requestedAudio.play();
                 await Promise.all([engineReady, playbackStarted]);
+                window.OndaMediaSession?.refresh?.();
                 if (requestedAudio !== activeAudio || requestId !== trackLoadRequestId || requestedAudio.paused) return;
                 isPlaying = true;
                 btnPlay.textContent = '🧿';
@@ -4801,6 +4855,7 @@
             if (gainNode) gainNode.gain.value = val;
             // Streams are not routed through WebAudio by default, so boost is capped to normal HTMLAudio volume.
             streamAudio.volume = Math.min(1, Math.max(0, val));
+                if(nativeLocalPlayback)localAudio.volume=Math.min(1,Math.max(0,val));
             document.getElementById('vol-readout').innerText = Math.round(val * 100) + "%";
         });
 
@@ -5954,7 +6009,7 @@
                             <div class="library-row-buttons">
                                 ${track ? `<button aria-label="Play" data-onda-action="play" type="button" class="btn-pill btn-detail-play-track" data-track-id="${escapeHtml(id)}" title="Play"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>` : ''}
                                 <button aria-label="Track information" data-onda-action="info" type="button" class="btn-pill btn-detail-info-track" data-track-id="${escapeHtml(id)}" title="Info"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
-                                ${track ? `<button aria-label="Add to playlist" data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
+                                ${track ? `<button aria-label="Add to playlist" data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" data-track-id="${escapeHtml(id)}" title="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button><button type="button" data-onda-action="more" class="btn-pill btn-onda-track-more" title="More track actions" aria-label="More track actions"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="currentColor" stroke="none"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>` : ''}
                             </div>
                         </div>`;
                     }).join('') : '<div class="library-track-meta">This playlist has no tracks yet.</div>'}
@@ -6316,7 +6371,7 @@
 
         // Schedule only visible canvas frames; never pause the audio engine for battery savings.
         function visualizerShouldAnimate() {
-            return document.visibilityState !== 'hidden' && isPlaying && activeAudio && !activeAudio.paused;
+            return document.visibilityState !== 'hidden' && isPlaying && activeAudio && !activeAudio.paused && !(nativeLocalPlayback&&activeAudio===localAudio);
         }
 
         function stopVisualizerFrames() {
@@ -7047,6 +7102,7 @@
                 return;
             }
 
+            if(nativeLocalPlayback&&activeAudio===localAudio){drawIdleOrStreamVisualizer(isPlaying?'BACKGROUND PLAYBACK':'READY');return;}
             if (!analyser) {
                 drawIdleOrStreamVisualizer('READY');
                 return;
@@ -7087,6 +7143,11 @@
         visualizerPresetSelect?.addEventListener('change', startVisualizer);
 
         // --- 8B. SETTINGS, LAYOUT MODE, FULLSCREEN, AND CURRENT-TRACK MARQUEE ---
+        function refreshPlaybackEngineSetting(){
+            const select=document.getElementById('onda-background-mode'),status=document.getElementById('onda-background-mode-status');
+            if(select)select.value=readPlaybackEnginePreference();
+            if(status)status.textContent=(nativeLocalPlayback?'Active: native audio.':'Active: full visualiser engine.')+(readPlaybackEnginePreference()!==initialPlaybackEngine?' Reopen Onda to apply.':'');
+        }
         function setSettingsTab(tab = 'audio') {
             const tabs = Array.from(document.querySelectorAll('.settings-tab-btn[data-settings-tab]'));
             const cards = Array.from(document.querySelectorAll('.settings-card[data-settings-card]'));
@@ -7378,8 +7439,20 @@
         installMobileMarqueeObserver();
         updateNowPlayingPlaylistPanel(); // Show empty/up-next queue on Current at startup.
         announceOndaVersion();
+        document.documentElement.dataset.ondaPlaybackEngine=nativeLocalPlayback?'native':'visual';
+        refreshPlaybackEngineSetting();
+        safeBind('onda-background-mode','change',e=>{if(['auto','native','visual'].includes(e.target.value)){try{localStorage.setItem(PLAYBACK_ENGINE_KEY,e.target.value);refreshPlaybackEngineSetting();showToast('Engine saved. Reopen Onda to apply.');}catch(_){refreshPlaybackEngineSetting();}}});
         document.addEventListener('click', (e) => { document.querySelectorAll('.library-action-group[open]').forEach(menu => { if (!menu.contains(e.target)) menu.removeAttribute('open'); }); }, true);
 
+        document.addEventListener('click',event=>{
+            const button=event.target.closest?.('.btn-onda-track-more,[data-onda-action="info"]');
+            if(!button)return;
+            const row=button.closest('[data-track-id],[data-history-track-id]');
+            const id=button.dataset.trackId||row?.dataset.trackId||row?.dataset.historyTrackId;
+            if(!id||!virtualLibrary[id])return;
+            event.preventDefault();event.stopImmediatePropagation();
+            if(button.classList.contains('btn-onda-track-more'))openTrackActions(id);else showSharedTrackInfo(id);
+        },true);
         document.addEventListener('fullscreenchange', updateFullscreenButton);
         if (typeof mobileLayoutQuery.addEventListener === 'function') {
             mobileLayoutQuery.addEventListener('change', applySavedLayoutMode);
@@ -7434,6 +7507,7 @@
         document.addEventListener('visibilitychange', () => {
             if (document.visibilityState === 'hidden') {
                 stopVisualizerFrames(); // Audio and lock-screen controls continue.
+                window.OndaMediaSession?.refresh?.();
                 saveLocalUiStateCheckpoint('visibility-hidden');
                 flushActiveLibraryState('visibility-hidden-flush');
             } else {
