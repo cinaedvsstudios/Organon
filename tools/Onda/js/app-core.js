@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.36';
+        const ONDA_VERSION = 'v3.37';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -1062,7 +1062,17 @@
         }
 
         function syncAllTrackPlaylistMetadata() {
-            Object.keys(virtualLibrary).forEach(syncTrackPlaylistMetadata);
+            const memberships = new Map();
+            for (const [name, tracks] of Object.entries(playlists)) {
+                if (!Array.isArray(tracks)) continue;
+                for (const id of new Set(tracks.map(getTrackId))) {
+                    if (!memberships.has(id)) memberships.set(id, []);
+                    memberships.get(id).push(name);
+                }
+            }
+            for (const [id, meta] of Object.entries(virtualLibrary)) {
+                if (meta) meta.playlists = memberships.get(id) || [];
+            }
         }
 
         function loadRecentTrackIds() {
@@ -1131,14 +1141,14 @@
             }
         }
 
-        function buildTrackRow(trackId, compact = false) {
+        function buildTrackRow(trackId, compact = false, syncedMembership = false) {
             const meta = virtualLibrary[trackId];
             if (!meta) return null;
             const row = document.createElement('div');
             row.className = compact ? 'library-mini-row' : 'library-result-row';
             if (!compact && selectedLibraryIds.has(trackId)) row.classList.add('selected');
             row.dataset.trackId = trackId;
-            const playlistsForTrack = getTrackPlaylistNames(trackId);
+            const playlistsForTrack = syncedMembership ? (meta.playlists || []) : getTrackPlaylistNames(trackId);
             const tags = Array.isArray(meta.tags) ? meta.tags.slice(0, compact ? 2 : 6) : [];
             const selectIndicator = (!compact)
                 ? `<button type="button" class="selection-indicator" aria-label="Select ${escapeHtml(getDisplayTitle(meta))}" aria-pressed="${selectedLibraryIds.has(trackId)}">${selectedLibraryIds.has(trackId) ? '✓' : ''}</button>`
@@ -1644,7 +1654,7 @@
             const filter = dbLibraryFilter?.value || 'all';
             const entries = Object.entries(virtualLibrary)
                 .filter(([id, meta]) => {
-                    const playlistsForTrack = getTrackPlaylistNames(id);
+                    const playlistsForTrack = meta.playlists || [];
                     const haystack = [
                         id,
                         meta.fileName,
@@ -1679,17 +1689,19 @@
             if (dbSelectionSummary) dbSelectionSummary.textContent = `${selectedLibraryIds.size} selected`;
 
             dbLibraryResults.innerHTML = entries.length ? '' : '<div class="library-track-meta">No matching tracks in this library yet.</div>';
+            const fragment = document.createDocumentFragment();
             entries.forEach(([id]) => {
-                const row = buildTrackRow(id, false);
-                if (row) dbLibraryResults.appendChild(row);
+                const row = buildTrackRow(id, false, true);
+                if (row) fragment.appendChild(row);
             });
+            dbLibraryResults.appendChild(fragment);
 
             if (dbRecentList) {
                 dbRecentList.innerHTML = '';
                 const validRecent = recentTrackIds.filter(id => virtualLibrary[id]).slice(0, 6);
                 if (!validRecent.length) dbRecentList.innerHTML = '<div class="library-track-meta">No recent tracks yet.</div>';
                 validRecent.forEach(id => {
-                    const row = buildTrackRow(id, true);
+                    const row = buildTrackRow(id, true, true);
                     if (row) dbRecentList.appendChild(row);
                 });
             }
