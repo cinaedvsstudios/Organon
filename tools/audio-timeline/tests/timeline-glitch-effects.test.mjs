@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {buildWarningGlitchFrame} from '../js/timeline-warning-glitch.mjs';
 import {buildNegativeChaosFrame} from '../js/timeline-negative-chaos.mjs';
 import {buildGlitchStormFrame,stormPackets} from '../js/timeline-glitch-storm.mjs';
 import {buildGlassGlitchFrame,glassFractureSites} from '../js/timeline-glass-glitch.mjs';
@@ -48,6 +49,7 @@ test('nine genuinely different source-aware glitch IDs populate the existing Gli
 test('nine glitches render distinct structures and reproducible frames under backwards seeking',()=>{
  const signatures=new Set();
  for(const {id} of GLITCH_PRESETS){
+  if(id==='warning-glitch'){const a=warningFrame(.24),b=warningFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,warningFrame(.24).data);signatures.add('source-pixel warning telemetry');continue;}
   if(id==='negative-chaos'){const a=negativeFrame(.24),b=negativeFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,negativeFrame(.24).data);signatures.add('source-pixel negative regions');continue;}
   if(id==='glitch-storm'){const a=stormFrame(.24),b=stormFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,stormFrame(.24).data);signatures.add('source-pixel signal storm');continue;}
   if(id==='glass-glitch'){const a=glassFrame(.24),b=glassFrame(1.34);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,glassFrame(.24).data);signatures.add('source-pixel glass fracture');continue;}
@@ -66,7 +68,7 @@ test('effect algorithms use different geometry, filters and colour operations',(
  assert.ok(new Set(glassFrame(.43).ids).size>8,'Glass Glitch creates irregular contiguous source-sampling facets');
  assert.ok(new Set(stormFrame(.43).packets.map(p=>p.kind)).size>=3,'storm combines distinct packet failures');
  assert.ok(new Set(negativeFrame(.43).regions.map(r=>r.shape)).size>=2,'Negative Chaos uses independent irregular inversion regions');
- assert.ok(sample['warning-glitch'].includes('"strokeRect"'),'Warning Glitch draws visual hazard frame');
+ assert.ok(warningFrame(.43).state.rail>0&&warningFrame(.43).state.bands.length>2,'Warning Glitch combines hazard rails and source dropouts');
  assert.ok(sample.misalignment.includes('hue-rotate'),'Misalignment separates tinted ghost images');
  assert.ok(sample['noir-glitch'].includes('grayscale'),'Noir Glitch uses monochrome contrast');
  assert.ok(sample['glitch-flux'].includes('"drawImage"')||sample['glitch-flux'].includes('"fillRect"'));
@@ -78,6 +80,7 @@ test('effect algorithms use different geometry, filters and colour operations',(
 test('source-aware effects reproject underlying frame pixels, not a static preset PNG',()=>{
  const frame={width:640,height:360};
  for(const {id} of GLITCH_PRESETS){
+  if(id==='warning-glitch'){assert.notDeepEqual(warningFrame(.55,{warningOpacity:0}).data,glassSource());continue;}
   if(id==='negative-chaos'){assert.notDeepEqual(negativeFrame(.55).data,negativeSource());continue;}
   if(id==='glitch-storm'){assert.notDeepEqual(stormFrame(.55).data,glassSource());continue;}
   if(id==='glass-glitch'){assert.notDeepEqual(glassFrame(.55).data,glassSource());continue;}
@@ -197,4 +200,25 @@ test('Negative Chaos independently inverts real image regions with exact alpha a
  assert.notDeepEqual(a.data,negativeFrame(.24,{[k]:v}).data,k);
  const e=normaliseTimelineEffect({presetId:'negative-chaos',negativeSeed:42,negativeLife:.33,negativeChroma:12});
  assert.deepEqual(snapshotClip({id:'negative',type:'sticker',effectOverlay:e}).effectOverlay,e);
+});
+
+function warningFrame(t,opts={},src=glassSource(),amount=1){
+ const e=normaliseTimelineEffect({presetId:'warning-glitch',intensity:95,distortion:95,density:85,warningRail:7,warningOpacity:85,warningTravel:60,warningPulse:75,...opts});
+ return buildWarningGlitchFrame(src,GW,GH,e,t,undefined,amount);
+}
+test('Warning Glitch separates moving warning telemetry from genuine source displacement',()=>{
+ const src=glassSource(),a=warningFrame(.24),b=warningFrame(1.34);
+ assert.deepEqual(warningFrame(.24,{distortion:0,warningOpacity:0}).data,src);
+ assert.deepEqual(warningFrame(.24,{},src,0).data,src);
+ assert.notDeepEqual(a.data,src);assert.notDeepEqual(a.data,b.data);assert.deepEqual(a.data,warningFrame(.24).data);
+ assert.notDeepEqual(warningFrame(.24,{warningOpacity:0}).data,src);
+ assert.notDeepEqual(warningFrame(.24,{distortion:0}).data,src);
+ for(let i=3;i<src.length;i+=4)assert.equal(a.data[i],src[i]);
+ for(const [k,v] of Object.entries({warningRail:2,warningOpacity:15,warningTravel:0,warningPulse:0,warningSeed:42,density:12,scale:180,direction:90,distortion:20,color:'#3366ff'}))
+ assert.notDeepEqual(a.data,warningFrame(.24,{[k]:v}).data,k);
+ const e=normaliseTimelineEffect({presetId:'warning-glitch',warningSeed:42,warningRail:3,warningTravel:12});
+ assert.deepEqual(snapshotClip({id:'warning',type:'sticker',effectOverlay:e}).effectOverlay,e);
+ const contaminated=src.slice();for(let i=0;i<src.length;i+=4)if(!src[i+3])contaminated.set([255,0,255,0],i);
+ const clean=warningFrame(.24,{},contaminated).data;
+ for(let i=0;i<src.length;i+=4)if(src[i+3])assert.deepEqual(a.data.slice(i,i+4),clean.slice(i,i+4));
 });
