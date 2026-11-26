@@ -1162,7 +1162,13 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                           <label class="text-setting-row"><span>Suspension flexibility (%)</span><input id="effect-pendulum-flex" class="range-control" type="range" min="0" max="100" step="1" value="14" title="Subtle delayed elastic motion furthest from the fixed pivot"></label>
                       </details>
                   </div>
-<div id="effect-glitch-storm-controls" hidden><details open class="text-inspector-group"><summary>Glitch Storm — multi-mode signal corruption</summary><label class="text-setting-row"><span>Burst frequency (Hz)</span><input id="effect-storm-rate" class="range-control" type="range" min="2" max="24" step="1" value="12"></label>
+<div id="effect-negative-chaos-controls" hidden><details open class="text-inspector-group"><summary>Negative Chaos — photographic negative regions</summary><label class="text-setting-row"><span>Region frequency (Hz)</span><input id="effect-negative-rate" class="range-control" type="range" min="1" max="12" step="1" value="5"></label>
+<label class="text-setting-row"><span>Region lifetime (s)</span><input id="effect-negative-life" class="range-control" type="range" min="0.12" max="1.5" step="0.01" value="0.55"></label>
+<label class="text-setting-row"><span>Edge feather (%)</span><input id="effect-negative-feather" class="range-control" type="range" min="0" max="100" step="1" value="20"></label>
+<label class="text-setting-row"><span>Negative colour (%)</span><input id="effect-negative-chroma" class="range-control" type="range" min="0" max="100" step="1" value="100"></label>
+<label class="text-setting-row"><span>Negative contrast (%)</span><input id="effect-negative-contrast" class="range-control" type="range" min="0" max="100" step="1" value="35"></label>
+<label class="text-setting-row"><span>Pattern seed</span><input id="effect-negative-seed" class="range-control" type="range" min="0" max="99999" step="1" value="1987"></label></details></div>
+                  <div id="effect-glitch-storm-controls" hidden><details open class="text-inspector-group"><summary>Glitch Storm — multi-mode signal corruption</summary><label class="text-setting-row"><span>Burst frequency (Hz)</span><input id="effect-storm-rate" class="range-control" type="range" min="2" max="24" step="1" value="12"></label>
 <label class="text-setting-row"><span>Packet lifetime (s)</span><input id="effect-storm-life" class="range-control" type="range" min="0.05" max="0.8" step="0.01" value="0.24"></label>
 <label class="text-setting-row"><span>Storm clustering (%)</span><input id="effect-storm-cluster" class="range-control" type="range" min="0" max="100" step="1" value="55"></label>
 <label class="text-setting-row"><span>RGB breakup (%)</span><input id="effect-storm-chroma" class="range-control" type="range" min="0" max="100" step="1" value="65"></label>
