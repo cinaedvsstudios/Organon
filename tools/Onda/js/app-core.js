@@ -77,7 +77,7 @@
         let shuffleSignature = '';
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.37';
+        const ONDA_VERSION = 'v3.38';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -4854,16 +4854,17 @@
             const cell=e=>{const td=e.target.closest('td[data-r]');return td?{r:+td.dataset.r,c:+td.dataset.c}:null;};
             tbody.addEventListener('pointerdown',e=>{const p=cell(e);if(!p)return;if(!e.shiftKey||!anchor)anchor=p;end=p;dragging=true;paint();});
             tbody.addEventListener('pointerover',e=>{if(!dragging||!e.buttons)return;const p=cell(e);if(p){end=p;paint();}});
-            dialog.addEventListener('pointerup',()=>dragging=false);
+            dialog.addEventListener('pointerup',()=>dragging=false);dialog.addEventListener('pointercancel',()=>dragging=false);
+            tbody.addEventListener('focusin',e=>{const p=cell(e);if(p&&!dragging){anchor=end=p;paint();}});
             search.addEventListener('input',render);
             dialog.querySelectorAll('thead th').forEach((th,i)=>{th.tabIndex=0;th.title='Sort column';const sort=()=>{const c=i-1;sortDirection=sortColumn===c?-sortDirection:1;sortColumn=c;render();};th.onclick=sort;th.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();sort();}};});
             dialog.querySelectorAll('[data-column]').forEach(cb=>cb.onchange=()=>{const c=+cb.dataset.column;if(cb.checked)hiddenColumns.delete(c);else hiddenColumns.add(c);render();});
             dialog.querySelector('[data-replace]').onclick=()=>{if(!anchor||!end){alert('Select the cells to search first.');return;}const find=prompt('Find text in selected cells:');if(!find)return;const replacement=prompt('Replace with (blank removes text):','');if(replacement===null)return;checkpoint();for(let r=Math.min(anchor.r,end.r);r<=Math.max(anchor.r,end.r);r++)for(let c=Math.min(anchor.c,end.c);c<=Math.max(anchor.c,end.c);c++)if(!hiddenColumns.has(c))visible[r].values[c]=visible[r].values[c].split(find).join(replacement);render();};
             dialog.querySelector('[data-undo]').onclick=()=>{if(undo.length){redo.push(snapshot());restore(undo.pop());}};
             dialog.querySelector('[data-redo]').onclick=()=>{if(redo.length){undo.push(snapshot());restore(redo.pop());}};
-            dialog.querySelector('[data-fill]').onclick=()=>{if(!anchor||!end)return;checkpoint();for(let c=Math.min(anchor.c,end.c);c<=Math.max(anchor.c,end.c);c++){const first=Math.min(anchor.r,end.r);for(let r=first+1;r<=Math.max(anchor.r,end.r);r++)visible[r].values[c]=visible[first].values[c];}render();};
-            dialog.addEventListener('paste',e=>{if(!anchor||!tbody.contains(e.target))return;const t=e.clipboardData.getData('text/plain');if(!t.includes('\t')&&!t.includes('\n'))return;e.preventDefault();checkpoint();t.replace(/\r/g,'').replace(/\n$/,'').split('\n').forEach((line,i)=>line.split('\t').forEach((v,j)=>{if(visible[anchor.r+i]&&anchor.c+j<fields.length)visible[anchor.r+i].values[anchor.c+j]=v;}));render();});
-            dialog.addEventListener('copy',e=>{if(!anchor||!end||!tbody.contains(e.target)||(anchor.r===end.r&&anchor.c===end.c))return;e.preventDefault();const lines=[];for(let r=Math.min(anchor.r,end.r);r<=Math.max(anchor.r,end.r);r++)lines.push(visible[r].values.slice(Math.min(anchor.c,end.c),Math.max(anchor.c,end.c)+1).join('\t'));e.clipboardData.setData('text/plain',lines.join('\n'));});
+            dialog.querySelector('[data-fill]').onclick=()=>{if(!anchor||!end)return;checkpoint();for(let c=Math.min(anchor.c,end.c);c<=Math.max(anchor.c,end.c);c++){if(hiddenColumns.has(c))continue;const first=Math.min(anchor.r,end.r);for(let r=first+1;r<=Math.max(anchor.r,end.r);r++)visible[r].values[c]=visible[first].values[c];}render();};
+            dialog.addEventListener('paste',e=>{if(!anchor||!tbody.contains(e.target))return;const t=e.clipboardData.getData('text/plain');if(!t.includes('\t')&&!t.includes('\n'))return;e.preventDefault();checkpoint();t.replace(/\r/g,'').replace(/\n$/,'').split('\n').forEach((line,i)=>line.split('\t').forEach((v,j)=>{const cols=fields.map((_,c)=>c).filter(c=>c>=anchor.c&&!hiddenColumns.has(c));if(visible[anchor.r+i]&&cols[j]!==undefined)visible[anchor.r+i].values[cols[j]]=v;}));render();});
+            dialog.addEventListener('copy',e=>{if(!anchor||!end||!tbody.contains(e.target)||(anchor.r===end.r&&anchor.c===end.c))return;e.preventDefault();const lines=[];for(let r=Math.min(anchor.r,end.r);r<=Math.max(anchor.r,end.r);r++)lines.push(visible[r].values.filter((_,c)=>c>=Math.min(anchor.c,end.c)&&c<=Math.max(anchor.c,end.c)&&!hiddenColumns.has(c)).join('\t'));e.clipboardData.setData('text/plain',lines.join('\n'));});
             const close=()=>{if(changed().length&&!confirm('Discard unsaved bulk edits?'))return;dialog.close();dialog.remove();};
             dialog.querySelectorAll('[data-close]').forEach(b=>b.onclick=close);
             dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
@@ -4873,7 +4874,7 @@
                 if(!edits.length){dialog.close();dialog.remove();return;}
                 if(!confirm('Save metadata changes to '+edits.length+' tracks?'))return;
                 for(const r of edits){const m=virtualLibrary[r.id];fields.forEach((f,i)=>{if(r.values[i]===original.get(r.id)[i])return;if(f==='playlists'){const wanted=split(r.values[i]);Object.keys(playlists).forEach(n=>{if(!wanted.includes(n))playlists[n]=playlists[n].filter(t=>getTrackId(t)!==r.id);});wanted.forEach(n=>addTrackIdToPlaylist(r.id,n));syncTrackPlaylistMetadata(r.id);}else m[f]=f==='tags'?split(r.values[i]):r.values[i];});m.updatedAt=new Date().toISOString();}
-                renderLibraryManager();renderPlaylistsList();saveActiveLibraryState('bulk-grid-edit');await flushActiveLibraryState('bulk-grid-edit');dialog.close();dialog.remove();showToast('Bulk metadata saved for '+edits.length+' tracks.');
+                renderPlaylistsList();saveActiveLibraryState('bulk-grid-edit');await flushActiveLibraryState('bulk-grid-edit');dialog.close();dialog.remove();showToast('Bulk metadata saved for '+edits.length+' tracks.');
             };
             render();dialog.showModal();
         });

@@ -18,7 +18,7 @@ const mime = {
 };
 // Only the dedicated version-upgrade browser scenario switches this local test
 // server. All earlier scenarios use normal on-disk Onda files as before.
-let simulatedRelease = null; // null | 'v3.36' | 'v3.37-failing' | 'v3.37'
+let simulatedRelease = null; // null | 'v3.37' | 'v3.38-failing' | 'v3.38'
 let previousWorkerSource = '';
 let previousAssetLinks = new Map();
 function servePreviousIndex(html) {
@@ -53,27 +53,27 @@ function handler(request, response) {
         }
         // Explicitly simulate a failed NEW worker installation by serving an
         // unavailable new-version shell file. Never use this on live Netlify.
-        if (simulatedRelease === 'v3.37-failing' &&
-            url.pathname === '/css/tokens.css' && url.search === '?v=3.37') {
+        if (simulatedRelease === 'v3.38-failing' &&
+            url.pathname === '/css/tokens.css' && url.search === '?v=3.38') {
             response.writeHead(503, { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' })
                 .end('Test-only transient deployment failure');
             return;
         }
         let bytes = await readFile(finalPath);
-        if (simulatedRelease === 'v3.36') {
+        if (simulatedRelease === 'v3.37') {
             if (url.pathname === '/onda-sw.js') {
                 bytes = Buffer.from(previousWorkerSource);
             } else if (url.pathname === '/' || url.pathname === '/index.html') {
                 bytes = Buffer.from(servePreviousIndex(bytes.toString('utf8')));
             } else if (url.pathname === '/js/app-core.js') {
                 bytes = Buffer.from(bytes.toString('utf8')
-                    .replace("const ONDA_VERSION = 'v3.37';", "const ONDA_VERSION = 'v3.36';"));
+                    .replace("const ONDA_VERSION = 'v3.38';", "const ONDA_VERSION = 'v3.37';"));
             } else if (url.pathname === '/manifest.webmanifest') {
-                bytes = Buffer.from(bytes.toString('utf8').replaceAll('?v=3.37', '?v=3.36'));
+                bytes = Buffer.from(bytes.toString('utf8').replaceAll('?v=3.38', '?v=3.37'));
             }
         }
         if (simulatedRelease && url.pathname === '/css/tokens.css') {
-            const tag = simulatedRelease === 'v3.36' ? 'v3.36' : 'v3.37';
+            const tag = simulatedRelease === 'v3.37' ? 'v3.37' : 'v3.38';
             bytes = Buffer.concat([bytes, Buffer.from('\n/* __onda_test_deployed_asset_' + tag + '__ */')]);
         }
         response.writeHead(200, {
@@ -254,6 +254,27 @@ async function desktopSmoke(browser, baseUrl) {
         const savedRow = page.locator('#db-library-results .library-result-row')
             .filter({ hasText: 'onda-synthetic-check.wav' });
         await savedRow.waitFor({ state: 'visible', timeout: 15000 });
+        // Exercise the actual bulk editor against the disposable imported track.
+        await page.locator('#btn-db-spreadsheet').evaluate(el=>el.click());
+        const grid=page.locator('dialog.onda-bulk-grid');
+        await grid.waitFor({state:'visible'});
+        const artist=grid.locator('input[aria-label="Artist onda-synthetic-check.wav"]');
+        await artist.fill('Disposable QA artist');
+        await artist.press('Tab');
+        assert.match(await grid.locator('[data-status]').textContent(),/1 changed tracks/);
+        await grid.locator('[data-undo]').click();
+        assert.equal(await artist.inputValue(),'');
+        await grid.locator('[data-redo]').click();
+        assert.equal(await artist.inputValue(),'Disposable QA artist');
+        page.once('dialog',d=>d.accept());
+        await grid.locator('[data-save]').click();
+        await grid.waitFor({state:'detached'});
+        assert.equal(await cachedAudioCount(page),importedCount);
+        await page.locator('#btn-db-spreadsheet').evaluate(el=>el.click());
+        await grid.waitFor({state:'visible'});
+        assert.equal(await artist.inputValue(),'Disposable QA artist');
+        await grid.locator('footer [data-close]').click();
+        console.log('desktop: bulk editor staged edit, undo, redo, save and unchanged audio count');
         const sourceLine = await savedRow.locator('.library-file-line').textContent();
         assert.match(sourceLine, /local cached|local ready/i,
             'saved file must be identified as available, not requiring relink');
@@ -781,7 +802,7 @@ async function offlineColdStartSmoke(baseUrl) {
         context = await chromium.launchPersistentContext(profile, options);
         const page = context.pages()[0] || await context.newPage();
         const version = await expectLoaded(page, baseUrl);
-        assert.equal(version, 'v3.37', 'offline shell test must use the current app build');
+        assert.equal(version, 'v3.38', 'offline shell test must use the current app build');
         await chooseFreshLocalSession(page);
         await page.waitForFunction(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
@@ -790,7 +811,7 @@ async function offlineColdStartSmoke(baseUrl) {
         }, undefined, { timeout: 25000 });
         const shell = await page.evaluate(async () => {
             const names = await caches.keys();
-            const cache = await caches.open('onda-static-shell-v3.37');
+            const cache = await caches.open('onda-static-shell-v3.38');
             const stored = await cache.keys();
             return {
                 names, stored: stored.map(request => request.url),
@@ -799,9 +820,9 @@ async function offlineColdStartSmoke(baseUrl) {
         });
         assert.equal(shell.names.filter(name => name.startsWith('onda-static-shell-')).length, 1);
         assert.ok(shell.stored.some(url => url.endsWith('/index.html')));
-        assert.ok(shell.stored.some(url => /\/js\/app-core\.js\?v=3\.37$/.test(url)));
-        assert.ok(shell.stored.some(url => /\/css\/responsive\.css\?v=3\.37$/.test(url)));
-        assert.ok(shell.stored.some(url => url.endsWith('/onda-midi.js?v=3.37')));
+        assert.ok(shell.stored.some(url => /\/js\/app-core\.js\?v=3\.38$/.test(url)));
+        assert.ok(shell.stored.some(url => /\/css\/responsive\.css\?v=3\.38$/.test(url)));
+        assert.ok(shell.stored.some(url => url.endsWith('/onda-midi.js?v=3.38')));
         assert.ok(shell.stored.length >= 25, 'the entire static app shell must be cached');
         assert.ok(shell.controller.endsWith('/onda-sw.js'));
         assert.ok(shell.stored.every(url => !/audioFiles|\.wav|netlify\/functions|library\.json/i.test(url)),
@@ -848,7 +869,7 @@ async function offlineColdStartSmoke(baseUrl) {
         const offlinePage = context.pages()[0] || await context.newPage();
         await offlinePage.goto(baseUrl, { waitUntil: 'load', timeout: 20000 });
         await offlinePage.waitForFunction(() =>
-            document.documentElement.dataset.ondaVersion === 'v3.37' &&
+            document.documentElement.dataset.ondaVersion === 'v3.38' &&
             Boolean(window.OndaQuickPlay?.getActiveAudio) &&
             Boolean(window.OndaFileHandles?.readFile),
         undefined, { timeout: 18000 });
@@ -886,7 +907,7 @@ async function offlineColdStartSmoke(baseUrl) {
         assert.equal(unsupported.loaded, false,
             'offline service worker must never fabricate a response for unknown JSON/cloud requests');
         const after = await offlinePage.evaluate(async () => {
-            const cache = await caches.open('onda-static-shell-v3.37');
+            const cache = await caches.open('onda-static-shell-v3.38');
             return (await cache.keys()).map(request => request.url);
         });
         assert.deepEqual(after, shell.stored, 'offline playback must not add media to static shell cache');
@@ -898,10 +919,10 @@ async function offlineColdStartSmoke(baseUrl) {
 }
 
 async function serviceWorkerUpgradeSmoke(baseUrl) {
-    // Test the previous shipped v3.36 worker, NOT an invented stub.
+    // Test the previous shipped v3.37 worker, NOT an invented stub.
     // The local server simulates a deploy changing in place on the same origin.
-    const oldSource = await readFile(resolve(root, 'tests/fixtures/onda-sw-v3.36.js'), 'utf8');
-    assert.match(oldSource, /SHELL_CACHE_PREFIX \+ 'v3\.36'/);
+    const oldSource = await readFile(resolve(root, 'tests/fixtures/onda-sw-v3.37.js'), 'utf8');
+    assert.match(oldSource, /SHELL_CACHE_PREFIX \+ 'v3\.37'/);
     const oldList = oldSource.match(/const SHELL_FILES = \[([\s\S]*?)\];/);
     assert.ok(oldList, 'previous-version fixture must include real asset list');
     previousWorkerSource = oldSource;
@@ -919,17 +940,17 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         serviceWorkers: 'allow'
     };
     let context;
-    simulatedRelease = 'v3.36';
+    simulatedRelease = 'v3.37';
     try {
         context = await chromium.launchPersistentContext(profile, options);
         let page = context.pages()[0] || await context.newPage();
-        assert.equal(await expectLoaded(page, baseUrl), 'v3.36');
+        assert.equal(await expectLoaded(page, baseUrl), 'v3.37');
         await chooseFreshLocalSession(page);
         await page.waitForFunction(async () => {
             const registration = await navigator.serviceWorker.getRegistration();
             return registration?.active?.state === 'activated' &&
                 Boolean(navigator.serviceWorker.controller) &&
-                (await caches.keys()).includes('onda-static-shell-v3.36');
+                (await caches.keys()).includes('onda-static-shell-v3.37');
         }, undefined, { timeout: 25000 });
 
         await page.evaluate(async () => {
@@ -962,16 +983,16 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         const mediaCount = await cachedAudioCount(page);
         assert.ok(mediaCount > 0);
         const previousEntry = await page.evaluate(async () => {
-            const response = await (await caches.open('onda-static-shell-v3.36')).match('./index.html');
+            const response = await (await caches.open('onda-static-shell-v3.37')).match('./index.html');
             return response ? await response.text() : '';
         });
-        assert.match(previousEntry, /js\/app-core\.js\?v=3\.36/,
+        assert.match(previousEntry, /js\/app-core\.js\?v=3\.37/,
             'pinned old worker must cache old HTML with matching old asset query strings');
 
-        // Simulate a partial deployment: the UPDATED v3.37 worker is available,
+        // Simulate a partial deployment: the UPDATED v3.38 worker is available,
         // but one REQUIRED new asset is a 503. Installation must fail without
         // removing the older offline shell or unrelated Cache Storage.
-        simulatedRelease = 'v3.37-failing';
+        simulatedRelease = 'v3.38-failing';
         await page.evaluate(async () => {
             window.__ondaUpgradeState = 'waiting';
             const reg = await navigator.serviceWorker.getRegistration();
@@ -991,13 +1012,13 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             caches: await caches.keys(),
             script: navigator.serviceWorker.controller?.scriptURL || ''
         }));
-        assert.ok(failedInstallState.caches.includes('onda-static-shell-v3.36'));
+        assert.ok(failedInstallState.caches.includes('onda-static-shell-v3.37'));
         // An incomplete candidate cache may remain, but a failed worker must
         // NOT activate or remove the previous usable offline shell. Retry
         // fills the candidate rather than deleting any concurrent installer.
         assert.ok(failedInstallState.caches.includes('onda-unrelated-user-test-cache'));
         assert.ok(failedInstallState.script.endsWith('/onda-sw.js'));
-        console.log('upgrade: new worker installation failed safely; previous v3.36 app shell remained');
+        console.log('upgrade: new worker installation failed safely; previous v3.37 app shell remained');
 
         // Recover the OLD version with NO NETWORK after the bad deployment.
         // Restart the whole Chromium process first. Playwright's offline mode
@@ -1010,18 +1031,18 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         const recoveredPage = context.pages()[0] || await context.newPage();
         await recoveredPage.goto(baseUrl, { waitUntil: 'load', timeout: 20000 });
         await recoveredPage.waitForFunction(() =>
-            document.documentElement.dataset.ondaVersion === 'v3.36' &&
+            document.documentElement.dataset.ondaVersion === 'v3.37' &&
             Boolean(window.OndaQuickPlay?.getActiveAudio),
         undefined, { timeout: 15000 });
         assert.equal(await cachedAudioCount(recoveredPage), mediaCount);
-        console.log('upgrade: old v3.36 and saved media survived failed update in a NEW offline Chrome process');
+        console.log('upgrade: old v3.37 and saved media survived failed update in a NEW offline Chrome process');
 
         // The server deployment is now complete. The real new worker must
-        // INSTALL but WAIT while the v3.36 page still exists. Keep both shell
+        // INSTALL but WAIT while the v3.37 page still exists. Keep both shell
         // generations until that playback tab closes; never force takeover.
-        // After the browser exits, new v3.37 activates and removes only v3.36.
+        // After the browser exits, new v3.38 activates and removes only v3.37.
         await context.setOffline(false);
-        simulatedRelease = 'v3.37';
+        simulatedRelease = 'v3.38';
         page = recoveredPage;
         await page.evaluate(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
@@ -1031,12 +1052,12 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             const reg = await navigator.serviceWorker.getRegistration();
             const names = await caches.keys();
             if (reg?.waiting?.state !== 'installed' ||
-                !names.includes('onda-staged-shell-v3.37') ||
-                !names.includes('onda-static-shell-v3.36')) return false;
-            const cache = await caches.open('onda-staged-shell-v3.37');
+                !names.includes('onda-staged-shell-v3.38') ||
+                !names.includes('onda-static-shell-v3.37')) return false;
+            const cache = await caches.open('onda-staged-shell-v3.38');
             const entries = (await cache.keys()).map(request => request.url);
             return entries.length >= 25 &&
-                entries.some(url => /\/js\/app-core\.js\?v=3\.37$/.test(url));
+                entries.some(url => /\/js\/app-core\.js\?v=3\.38$/.test(url));
         }, undefined, { timeout: 25000 });
         // Cache Storage can transition from staging to active while the
         // browser resolves pending worker lifecycle events. Do not open a
@@ -1059,14 +1080,14 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
 
         await page.reload({ waitUntil: 'load' });
         await page.waitForFunction(() =>
-            document.documentElement.dataset.ondaVersion === 'v3.37' &&
+            document.documentElement.dataset.ondaVersion === 'v3.38' &&
             Boolean(window.OndaMediaSession?.refresh),
         undefined, { timeout: 15000 });
         const tokens = await page.evaluate(async () => {
-            const response = await fetch('./css/tokens.css?v=3.37');
+            const response = await fetch('./css/tokens.css?v=3.38');
             return response.text();
         });
-        assert.match(tokens, /__onda_test_deployed_asset_v3\.37__/,
+        assert.match(tokens, /__onda_test_deployed_asset_v3\.38__/,
             'new release must not render the previous worker cached CSS');
         await page.locator('#btn-database-engine').click();
         const saved = page.locator('#db-library-results .library-result-row')
@@ -1078,9 +1099,9 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             return audio?.src.startsWith('blob:') && !audio.paused && audio.currentTime > 0.12;
         }, undefined, { timeout: 15000 });
         assert.equal(await cachedAudioCount(page), mediaCount);
-        console.log('upgrade: online v3.37 HTML uses new versioned CSS while old worker is waiting');
+        console.log('upgrade: online v3.38 HTML uses new versioned CSS while old worker is waiting');
 
-        // One final real browser PROCESS restart while offline on v3.37.
+        // One final real browser PROCESS restart while offline on v3.38.
         await context.close();
         context = null;
         context = await chromium.launchPersistentContext(profile, options);
@@ -1090,10 +1111,10 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
         await offlinePage.waitForFunction(async () => {
             const reg = await navigator.serviceWorker.getRegistration();
             const names = await caches.keys();
-            return document.documentElement.dataset.ondaVersion === 'v3.37' &&
+            return document.documentElement.dataset.ondaVersion === 'v3.38' &&
                 reg?.active?.state === 'activated' &&
-                names.includes('onda-static-shell-v3.37') &&
-                !names.includes('onda-static-shell-v3.36');
+                names.includes('onda-static-shell-v3.38') &&
+                !names.includes('onda-static-shell-v3.37');
         }, undefined, { timeout: 25000 });
         assert.equal(await cachedAudioCount(offlinePage), mediaCount);
         const offline = await offlinePage.evaluate(async () => {
@@ -1103,8 +1124,8 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             return { names, protectedText: cachedText ? await cachedText.text() : '' };
         });
         assert.deepEqual(offline.names.filter(name => name.startsWith('onda-static-shell-')),
-            ['onda-static-shell-v3.37']);
-        assert.ok(!offline.names.includes('onda-staged-shell-v3.37'),
+            ['onda-static-shell-v3.38']);
+        assert.ok(!offline.names.includes('onda-staged-shell-v3.38'),
             'fully promoted upgrade must discard its staging cache');
         assert.equal(offline.protectedText, 'keep this data intact');
         await offlinePage.locator('#btn-database-engine').click();
@@ -1117,7 +1138,7 @@ async function serviceWorkerUpgradeSmoke(baseUrl) {
             return audio?.src.startsWith('blob:') && !audio.paused && audio.currentTime > 0.1;
         }, undefined, { timeout: 15000 });
         assert.equal(await cachedAudioCount(offlinePage), mediaCount);
-        console.log('upgrade: new v3.37 shell and music survive full Chrome restart with network OFF');
+        console.log('upgrade: new v3.38 shell and music survive full Chrome restart with network OFF');
     } finally {
         await context?.close();
         simulatedRelease = null;
