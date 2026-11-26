@@ -93,3 +93,162 @@ jobs:
         env:
           MOTORICLIP_STILL_PRESET: blue-leak
         run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+  film-grain-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Film grain as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: film-grain
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  scanlines-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Scanlines as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: scanlines
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  edge-neon-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Neon frame as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: edge-neon
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  rainbow-halo-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Prismatic halo as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: rainbow-halo
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  particle-stars-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Particle stars as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: particle-stars
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  letterbox-gold-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Gold letterbox as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: letterbox-gold
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  cyan-gradient-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Cyan gradient as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: cyan-gradient
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs
+
+  ruby-gradient-still-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install real Chrome harness and media tools
+        run: npm install --no-save playwright-core@1.56.1 ffmpeg-static@5.3.0 @ffprobe-installer/ffprobe@2.1.2
+      - name: Expose FFmpeg and ffprobe
+        run: |
+          mkdir -p "$RUNNER_TEMP/motoriclip-media-tools"
+          node -e "const fs=require('fs');const dir=process.env.RUNNER_TEMP+'/motoriclip-media-tools';for(const [name,dep] of [['ffmpeg','ffmpeg-static'],['ffprobe','@ffprobe-installer/ffprobe']]){fs.symlinkSync(dep==='ffmpeg-static'?require(dep):require(dep).path,dir+'/'+name);}"
+          echo "$RUNNER_TEMP/motoriclip-media-tools" >> "$GITHUB_PATH"
+      - name: Qualify Ruby gradient as a genuine still overlay with decoded H264 parity
+        env:
+          MOTORICLIP_STILL_PRESET: ruby-gradient
+        run: node tools/audio-timeline/tests/still-overlay-quality.browser.mjs

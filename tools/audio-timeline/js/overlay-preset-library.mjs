@@ -28,16 +28,18 @@ export const EFFECT_OVERLAYS = Object.freeze([
     {id:'cinema-bars',label:'Cinema bars (still)',group:'effect'},
     {id:'sunset-leak',label:'Warm light leak (still)',group:'effect'},
     {id:'blue-leak',label:'Blue light leak (still)',group:'effect'},
-    {id:'film-grain',label:'Film grain',group:'effect'},
-    {id:'scanlines',label:'Scanlines',group:'effect'},
-    {id:'edge-neon',label:'Neon frame',group:'effect'},
-    {id:'rainbow-halo',label:'Prismatic halo',group:'effect'},
-    {id:'particle-stars',label:'Particle stars',group:'effect'},
-    {id:'letterbox-gold',label:'Gold letterbox',group:'effect'},
-    {id:'cyan-gradient',label:'Cyan gradient',group:'effect'},
-    {id:'ruby-gradient',label:'Ruby gradient',group:'effect'}
+    {id:'film-grain',label:'Film grain (still)',group:'effect'},
+    {id:'scanlines',label:'Scanlines (still)',group:'effect'},
+    {id:'edge-neon',label:'Neon frame (still)',group:'effect'},
+    {id:'rainbow-halo',label:'Prismatic halo (still)',group:'effect'},
+    {id:'particle-stars',label:'Particle stars (still)',group:'effect'},
+    {id:'letterbox-gold',label:'Gold letterbox (still)',group:'effect'},
+    {id:'cyan-gradient',label:'Cyan gradient (still)',group:'effect'},
+    {id:'ruby-gradient',label:'Ruby gradient (still)',group:'effect'}
 ]);
 const seeded=(n)=>((Math.imul((n+1)>>>0,0x9e3779b1)^0x85ebca6b)>>>0)/4294967295;
+// Avalanche hash: independent, reproducible grain cells and stars.
+const artworkRandom=n=>{n=Math.imul(n^0x85ebca6b,0x9e3779b1);n=Math.imul(n^(n>>>16),0x7feb352d);return ((n^(n>>>15))>>>0)/4294967296;};
 const withAlpha=(hex,a)=>{
     const c=hex.replace('#',''),nums=[0,2,4].map(i=>parseInt(c.slice(i,i+2),16));
     return 'rgba('+nums.join(',')+','+a+')';
@@ -92,12 +94,17 @@ function drawEffect(ctx,canvas,preset) {
             break;
         }
         case 'letterbox-gold':{
-            const band=h*.115;
-            ctx.fillStyle=preset.id==='cinema-bars'?'#050505':'#33210d';
-            ctx.fillRect(0,0,w,band);ctx.fillRect(0,h-band,w,band);
-            if(preset.id==='letterbox-gold'){
-                ctx.fillStyle='#f7c476';ctx.fillRect(0,band-2*u,w,2*u);ctx.fillRect(0,h-band,w,2*u);
-            }
+            const band=Math.max(0,Math.round((h-w/2.39)/2));
+            if(!band)break;
+            // Dark satin-gold matte, with mirrored metallic trim at the aperture.
+            const trim=Math.max(1,Math.round(Math.min(w,h)*.009));
+            const matte=ctx.createLinearGradient(0,0,0,band);
+            for(const [p,c] of [[0,'#1b1009'],[.48,'#382313'],[1,'#51371b']])matte.addColorStop(p,c);
+            ctx.fillStyle=matte;ctx.fillRect(0,0,w,band);
+            ctx.save();ctx.translate(0,h);ctx.scale(1,-1);ctx.fillRect(0,0,w,band);ctx.restore();
+            const gold=ctx.createLinearGradient(0,0,w,0);
+            for(const [p,c] of [[0,'#956123'],[.18,'#e3b25b'],[.34,'#fff0b2'],[.54,'#a56c2a'],[.76,'#f7d38a'],[1,'#8e5720']])gold.addColorStop(p,c);
+            ctx.fillStyle=gold;ctx.fillRect(0,band-trim,w,trim);ctx.fillRect(0,h-band,w,trim);
             break;
         }
         case 'sunset-leak':
@@ -117,36 +124,81 @@ function drawEffect(ctx,canvas,preset) {
             for(const [p,c] of stops)g.addColorStop(p,c);
             ctx.fillStyle=g;ctx.fillRect(0,0,w,h);break;
         }
-        case 'cyan-gradient':case 'ruby-gradient':{
-            const warm=['sunset-leak','ruby-gradient'].includes(preset.id);
-            g=ctx.createRadialGradient(w*.12,h*.1,0,w*.12,h*.1,w*.85);
-            g.addColorStop(0,warm?'rgba(255,90,28,.7)':'rgba(33,190,255,.67)');
-            g.addColorStop(.5,warm?'rgba(226,49,77,.24)':'rgba(39,52,255,.2)');
-            g.addColorStop(1,'rgba(0,0,0,0)');
+        case 'cyan-gradient':
+        case 'ruby-gradient': {
+            // Decorative diagonal colour wash, deliberately distinct from
+            // the two photographic radial edge leaks.
+            const cyan=preset.id==='cyan-gradient';
+            g=ctx.createLinearGradient(cyan?0:w,cyan?h:0,cyan?w:0,cyan?0:h);
+            const stops=cyan?[[0,'rgba(0,212,234,.61)'],[.28,'rgba(0,172,201,.40)'],[.60,'rgba(18,112,162,.18)'],[1,'rgba(17,84,142,0)']]:[[0,'rgba(176,9,65,.65)'],[.26,'rgba(203,20,81,.44)'],[.60,'rgba(110,11,70,.19)'],[1,'rgba(80,4,55,0)']];
+            for(const [p,c] of stops)g.addColorStop(p,c);
             ctx.fillStyle=g;ctx.fillRect(0,0,w,h);break;
         }
-        case 'scanlines':
-            ctx.fillStyle='rgba(0,0,0,.37)';
-            for(let y=0;y<h;y+=Math.max(3,4*u))ctx.fillRect(0,y,w,Math.max(1,u));break;
-        case 'film-grain':
-        case 'particle-stars':
-            for(let i=0;i<(preset.id==='film-grain'?Math.round(w*h/350):90);i++){
-                const x=seeded(i*7+1)*w,y=seeded(i*7+2)*h;
-                const a=preset.id==='film-grain'?.04+seeded(i*7+3)*.17:.18+seeded(i*7+3)*.72;
-                ctx.fillStyle=preset.id==='film-grain'?'rgba(255,255,255,'+a+')':'rgba(205,241,255,'+a+')';
-                ctx.fillRect(x,y,Math.max(1, (preset.id==='film-grain'?1:2)*u),Math.max(1,(preset.id==='film-grain'?1:2)*u));
+        case 'scanlines': {
+            // Resolution-normalized static raster, with a softly shaped dark
+            // phosphor gap rather than discontinuously sized rectangles.
+            const img=ctx.createImageData(w,h),period=h/90;
+            for(let y=0;y<h;y++){
+                const wave=.5+.5*Math.cos(y/period*Math.PI*2);
+                const alpha=Math.round(90*Math.pow(wave,2.5));
+                for(let x=0;x<w;x++)img.data[(y*w+x)*4+3]=alpha;
+            }
+            ctx.putImageData(img,0,0);break;
+        }
+        case 'film-grain': {
+            // Fine signed monochrome texture, not a sparse white dot overlay.
+            const img=ctx.createImageData(w,h),cell=Math.max(1,Math.round(Math.min(w/320,h/180)));
+            for(let y=0;y<h;y++)for(let x=0;x<w;x++){
+                const k=Math.floor(x/cell)*73856093^Math.floor(y/cell)*19349663^1946;
+                const r=artworkRandom(k),a=artworkRandom(k^0x71327);
+                const i=(y*w+x)*4,v=r<.5?0:255;
+                img.data[i]=img.data[i+1]=img.data[i+2]=v;
+                img.data[i+3]=Math.round(4+Math.pow(a,2)*51);
+            }
+            ctx.putImageData(img,0,0);break;
+        }
+        case 'particle-stars': {
+            // Sparse starlight: numerous pinpoints and a few asymmetric
+            // four-point flares, with individually seeded sizes and glow.
+            const unit=Math.min(w,h)/360;
+            for(let i=0;i<100;i++){
+                const k=6173+i*97,x=artworkRandom(k+1)*w,y=artworkRandom(k+2)*h;
+                const bright=artworkRandom(k+3),r=(.65+bright*1.5)*unit;
+                const a=.28+.62*bright;
+                ctx.fillStyle='rgba(213,240,255,'+a+')';
+                ctx.beginPath();ctx.arc(x,y,Math.max(.36,r),0,Math.PI*2);ctx.fill();
+                if(i%13===0){
+                    const reach=(5+bright*6)*unit,glow=ctx.createRadialGradient(x,y,0,x,y,reach*1.25);
+                    glow.addColorStop(0,'rgba(185,224,255,.5)');glow.addColorStop(1,'rgba(185,224,255,0)');
+                    ctx.fillStyle=glow;ctx.fillRect(x-reach*1.25,y-reach*1.25,reach*2.5,reach*2.5);
+                    ctx.fillStyle='rgba(240,250,255,.88)';ctx.beginPath();
+                    for(let j=0;j<8;j++){const angle=j*Math.PI/4,dist=j%2?reach*.15:(j%4?reach*.66:reach);
+                        const px=x+Math.cos(angle)*dist,py=y+Math.sin(angle)*dist;
+                        if(j===0)ctx.moveTo(px,py);else ctx.lineTo(px,py);}
+                    ctx.closePath();ctx.fill();
+                }
             }
             break;
-        case 'edge-neon':
-            ctx.strokeStyle='#20cfff';ctx.lineWidth=Math.max(2,9*u);
-            ctx.shadowColor='#30f6ff';ctx.shadowBlur=24*u;
-            ctx.strokeRect(15*u,15*u,w-30*u,h-30*u);ctx.shadowBlur=0;break;
-        case 'rainbow-halo':
+        }
+        case 'edge-neon': {
+            const unit=Math.min(w,h)/360,m=Math.max(2,Math.min(w,h)*.055),r=Math.min(w,h)*.055;
+            const stroke=()=>{ctx.beginPath();ctx.roundRect(m,m,w-2*m,h-2*m,r);ctx.stroke();};
+            const neon=ctx.createLinearGradient(0,0,w,h);
+            for(const [p,c] of [[0,'#33f5ff'],[.36,'#36caff'],[.7,'#548cff'],[1,'#36edff']])neon.addColorStop(p,c);
+            ctx.strokeStyle=neon;ctx.shadowColor='#27c9ff';ctx.shadowBlur=18*unit;
+            ctx.lineWidth=11*unit;ctx.globalAlpha=.50;stroke();
+            ctx.shadowBlur=8*unit;ctx.lineWidth=5.5*unit;ctx.globalAlpha=.9;stroke();
+            ctx.shadowBlur=0;ctx.strokeStyle='#dcfbff';ctx.lineWidth=1.6*unit;ctx.globalAlpha=1;stroke();break;
+        }
+        case 'rainbow-halo': {
+            const unit=Math.min(w,h)/360,ellipse=()=>{ctx.beginPath();ctx.ellipse(w/2,h/2,w*.36,h*.36,0,0,Math.PI*2);ctx.stroke();};
             g=ctx.createConicGradient(0,w/2,h/2);
-            ['#ff3292','#994aff','#28dfff','#44ffc8','#ffe85a','#ff3292']
-                .forEach((color,i)=>g.addColorStop(i/5,color));
-            ctx.strokeStyle=g;ctx.lineWidth=18*u;ctx.shadowBlur=19*u;ctx.shadowColor='#9b57ed';
-            ctx.beginPath();ctx.ellipse(w/2,h/2,w*.39,h*.40,0,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;break;
+            ['#ff4f99','#975aff','#36c8ff','#4bffd4','#e9ff67','#ffad57','#ff4f99'].forEach((c,i)=>g.addColorStop(i/6,c));
+            ctx.strokeStyle=g;ctx.shadowColor='#a45bff';ctx.shadowBlur=20*unit;
+            ctx.globalAlpha=.44;ctx.lineWidth=24*unit;ellipse();
+            ctx.shadowBlur=10*unit;ctx.globalAlpha=.90;ctx.lineWidth=9*unit;ellipse();
+            ctx.shadowBlur=0;ctx.globalAlpha=.85;ctx.strokeStyle='#e9f5ff';ctx.lineWidth=1.8*unit;ellipse();break;
+        }
     }
 }
 export function renderOverlayPreset(canvas,preset,value='YOUR TEXT'){
