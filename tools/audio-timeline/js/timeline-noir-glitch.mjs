@@ -26,7 +26,7 @@ export function buildNoirGlitchFrame(source,w,h,e={},seconds=0,reuse,amount=1){
  if(!mix)return {data,width:w,height:h,state:p};
  const contrast=clamp(e.noirContrast,0,100,65)/100,grain=clamp(e.noirGrain,0,100,35)/100;
  const scratch=clamp(e.noirScratches,0,100,30)/100,vignette=clamp(e.noirVignette,0,100,45)/100;
- const cell=Math.max(1,Math.round(Math.min(w,h)/360*clamp(e.scale,10,300,100)/100));
+ const cell=Math.max(1,Math.min(w,h)/90*clamp(e.scale,10,300,100)/100);
  const index=(x,y)=>(Math.max(0,Math.min(h-1,Math.round(y)))*w+Math.max(0,Math.min(w-1,Math.round(x))))*4;
  const lum=i=>.2126*src[i]+.7152*src[i+1]+.0722*src[i+2];
  const rows=Array.from({length:h},(_,y)=>{let dim=1,jump=0;for(const b of p.bands){const d=Math.abs(y-b.y)/b.height;if(d<1){const k=(1-d)**2*b.depth;dim*=1-k;jump+=b.jump*k;}}return {dim,jump};});
