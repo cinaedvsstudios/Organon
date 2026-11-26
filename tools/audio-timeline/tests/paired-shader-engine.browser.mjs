@@ -181,8 +181,28 @@ try{
     const resized=compare(snapshot(.5),.5,192,108);
     const dimensions={main:[output.width,output.height],gpu:[engine.fadeWebGL.canvas.width,
       engine.fadeWebGL.canvas.height]};
+    // Exercise all 41 effects on one long-lived engine, not a fresh
+    // context per effect. Returning to Fade must reproduce identical pixels.
+    const beforeCache=snapshot(.5);
+    const countGpu=()=>Object.keys(engine).filter(key=>key.endsWith('WebGL')&&engine[key]).length;
+    const countScratch=()=>Object.keys(engine).filter(key=>/(From|To)Scratch$/.test(key)&&engine[key]).length;
+    let maxContexts=0,maxSourceCanvases=0;
+    for(const effect of ACTIVE_PAIR_EFFECTS){
+      b.transitionEffectId=effect;
+      snapshot(.5);
+      maxContexts=Math.max(maxContexts,countGpu());
+      maxSourceCanvases=Math.max(maxSourceCanvases,countScratch());
+    }
+    const fadeEvicted=engine.fadeWebGL===null&&engine.fadeFromScratch===null&&engine.fadeToScratch===null;
+    b.transitionEffectId='fade';
+    const afterCache=snapshot(.5);
+    const cacheStable=beforeCache.length===afterCache.length&&beforeCache.every((v,i)=>v===afterCache[i]);
+    const retained=engine.fadeWebGL;
+    snapshot(.6);
+    const cacheReused=engine.fadeWebGL===retained;
     engine.clearAll();
-    return {fade,letterbox,sticker,multiply,cover,resized,dimensions,gpuUsed,
+    const cache={maxContexts,maxSourceCanvases,fadeEvicted,cacheStable,cacheReused,cleared:countGpu()===0&&countScratch()===0};
+    return {cache,fade,letterbox,sticker,multiply,cover,resized,dimensions,gpuUsed,
       reverseStable,isolated,backgroundOnly:Array.from(backgroundOnly),
       catalog,cleanup:engine.fadeWebGL===null&&engine.pairedBlendScratch===null
         &&engine.fadeFromScratch===null&&engine.fadeToScratch===null,
@@ -203,6 +223,10 @@ try{
   assert.equal(result.catalog.lastFour,true);
   assert.equal(result.gpuUsed,true);
   assert.equal(result.cleanup,true);
+  assert.ok(result.cache.maxContexts<=4,JSON.stringify(result.cache));
+  assert.ok(result.cache.maxSourceCanvases<=8,JSON.stringify(result.cache));
+  for(const key of ['fadeEvicted','cacheStable','cacheReused','cleared'])assert.equal(result.cache[key],true,key);
+  console.log('[MotoriClip #75 cache proof] '+JSON.stringify(result.cache));
   assert.deepEqual(result.problems,[]);
   assert.deepEqual(errors,[]);
   // Pixelize retains precisely a fraction of A when B is transparent, so
