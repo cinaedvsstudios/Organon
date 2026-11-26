@@ -79,7 +79,7 @@
         const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.51';
+        const ONDA_VERSION = 'v3.52';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -3481,7 +3481,7 @@
         }
 
         function normaliseImportPath(path) {
-            return String(path || '').replace(/\\\\/g,'/').replace(/^\.\//,'').replace(/\/+/g,'/');
+            return String(path || '').replace(/\\/g,'/').replace(/^\.\//,'').replace(/\/+/g,'/');
         }
 
         function compatibleImportPath(a,b) {
@@ -3626,8 +3626,12 @@
                 if (handle?.kind === 'file') linkedRecords.push({
                     trackId: id, handle, relativePath, fileName: file.name
                 });
-                if (alreadyInLibrary) refreshedTracks.push(track);
-                else {
+                if (alreadyInLibrary) {
+                    refreshedTracks.push(track);
+                    const candidates = candidateIndex.get(file.name);
+                    const candidatePosition = candidates?.findIndex(meta => meta.id === id) ?? -1;
+                    if (candidatePosition >= 0) candidates[candidatePosition] = virtualLibrary[id];
+                } else {
                     newTracks.push(track);
                     if (!candidateIndex.has(file.name)) candidateIndex.set(file.name,[]);
                     candidateIndex.get(file.name).push(virtualLibrary[id]);
