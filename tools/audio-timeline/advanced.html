@@ -1162,7 +1162,13 @@ h1,h2,h3,h4 { margin:0; color:var(--stone-ochre); font-family:var(--font-headers
                           <label class="text-setting-row"><span>Suspension flexibility (%)</span><input id="effect-pendulum-flex" class="range-control" type="range" min="0" max="100" step="1" value="14" title="Subtle delayed elastic motion furthest from the fixed pivot"></label>
                       </details>
                   </div>
-<div id="effect-noir-glitch-controls" hidden><details open class="text-inspector-group"><summary>Noir Glitch — monochrome film interference</summary><label class="text-setting-row"><span>Film contrast (%)</span><input id="effect-noir-contrast" class="range-control" type="range" min="0" max="100" step="1" value="65"></label>
+<div id="effect-glitch-flux-controls" hidden><details open class="text-inspector-group"><summary>Glitch Flux — travelling signal distortion</summary><label class="text-setting-row"><span>Flux rate (Hz)</span><input id="effect-flux-rate" class="range-control" type="range" min="0.1" max="5" step="0.1" value="1.2"></label>
+<label class="text-setting-row"><span>Turbulence (%)</span><input id="effect-flux-turbulence" class="range-control" type="range" min="0" max="100" step="1" value="55"></label>
+<label class="text-setting-row"><span>Cross-flow shear (%)</span><input id="effect-flux-shear" class="range-control" type="range" min="0" max="100" step="1" value="25"></label>
+<label class="text-setting-row"><span>Crest highlight (%)</span><input id="effect-flux-highlight" class="range-control" type="range" min="0" max="100" step="1" value="30"></label>
+<label class="text-setting-row"><span>Highlight spread (%)</span><input id="effect-flux-spread" class="range-control" type="range" min="0" max="100" step="1" value="45"></label>
+<label class="text-setting-row"><span>Pattern seed</span><input id="effect-flux-seed" class="range-control" type="range" min="0" max="99999" step="1" value="2031"></label></details></div>
+                  <div id="effect-noir-glitch-controls" hidden><details open class="text-inspector-group"><summary>Noir Glitch — monochrome film interference</summary><label class="text-setting-row"><span>Film contrast (%)</span><input id="effect-noir-contrast" class="range-control" type="range" min="0" max="100" step="1" value="65"></label>
 <label class="text-setting-row"><span>Film grain (%)</span><input id="effect-noir-grain" class="range-control" type="range" min="0" max="100" step="1" value="35"></label>
 <label class="text-setting-row"><span>Gate weave (%)</span><input id="effect-noir-weave" class="range-control" type="range" min="0" max="100" step="1" value="45"></label>
 <label class="text-setting-row"><span>Shutter interference (%)</span><input id="effect-noir-shutter" class="range-control" type="range" min="0" max="100" step="1" value="45"></label>

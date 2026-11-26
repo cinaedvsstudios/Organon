@@ -12,6 +12,7 @@ import {buildRippleDistortionFrame} from '../js/timeline-ripple-distortion.mjs';
 import {buildElectricRippleFrame} from '../js/timeline-electric-ripple.mjs';
 import {buildShockwaveFrame} from '../js/timeline-shockwave.mjs';
 import {buildVibrationFlashFrame} from '../js/timeline-vibration-flash.mjs';
+import {buildGlitchFluxFrame} from '../js/timeline-glitch-flux.mjs';
 import {buildNoirGlitchFrame} from '../js/timeline-noir-glitch.mjs';
 import {buildMisalignmentFrame} from '../js/timeline-misalignment.mjs';
 import {buildWarningGlitchFrame} from '../js/timeline-warning-glitch.mjs';
@@ -61,7 +62,7 @@ test('effect recipe clamps unsafe inputs and normalises colour',()=>{
 });
 test('each procedural recipe is deterministic, time-varying, seek-reversible and isolated',()=>{
  for(const preset of TIMELINE_EFFECTS){
-  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk','halo-blur','glass-glitch','glitch-storm','negative-chaos','warning-glitch','misalignment','noir-glitch'].includes(preset.id)){
+  if(['data-burst','signal-tear','rgb-block-glitch','line-corruption','fault-cassette','ripple-distortion','electric-ripple','shockwave','vibration-flash','pendulum-swing','rebound-swing','rhythmic-flicker','glow','edge-glow','chromatic-quirk','halo-blur','glass-glitch','glitch-storm','negative-chaos','warning-glitch','misalignment','noir-glitch','glitch-flux'].includes(preset.id)){
    // This source-pixel effect cannot be evaluated by a mock Canvas call log.
    // Require actual changing pixels and reversible seeking instead.
    const w=160,h=90,data=new Uint8ClampedArray(w*h*4);
@@ -70,7 +71,7 @@ test('each procedural recipe is deterministic, time-varying, seek-reversible and
    electricBranches:3,electricWidth:8,electricChroma:90,electricFlicker:90,electricSeed:7272,shockWidth:8,shockCompression:90,shockTurbulence:65,shockDecay:45,
    vibrationFrequency:18,vibrationDecay:25,vibrationEcho:75,vibrationFlash:90,vibrationSeed:8181,
     pendulumPeriod:2.6,pendulumDamping:18,pendulumShutter:65,pendulumFlex:40});
-   const painter=preset.id==='noir-glitch'?buildNoirGlitchFrame:preset.id==='misalignment'?buildMisalignmentFrame:preset.id==='warning-glitch'?buildWarningGlitchFrame:preset.id==='negative-chaos'?buildNegativeChaosFrame:preset.id==='glitch-storm'?buildGlitchStormFrame:preset.id==='glass-glitch'?buildGlassGlitchFrame:preset.id==='halo-blur'?buildHaloBlurFrame:preset.id==='chromatic-quirk'?buildChromaticQuirkFrame:preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
+   const painter=preset.id==='glitch-flux'?buildGlitchFluxFrame:preset.id==='noir-glitch'?buildNoirGlitchFrame:preset.id==='misalignment'?buildMisalignmentFrame:preset.id==='warning-glitch'?buildWarningGlitchFrame:preset.id==='negative-chaos'?buildNegativeChaosFrame:preset.id==='glitch-storm'?buildGlitchStormFrame:preset.id==='glass-glitch'?buildGlassGlitchFrame:preset.id==='halo-blur'?buildHaloBlurFrame:preset.id==='chromatic-quirk'?buildChromaticQuirkFrame:preset.id==='edge-glow'?buildEdgeGlowFrame:preset.id==='glow'?buildGlowFrame:preset.id==='rhythmic-flicker'?buildRhythmicFlickerFrame:preset.id==='data-burst'?buildDataBurstFrame:preset.id==='signal-tear'?buildSignalTearFrame:preset.id==='rgb-block-glitch'?buildRgbBlockGlitchFrame:preset.id==='fault-cassette'?buildFaultCassetteFrame:preset.id==='ripple-distortion'?buildRippleDistortionFrame:preset.id==='electric-ripple'?buildElectricRippleFrame:preset.id==='shockwave'?buildShockwaveFrame:preset.id==='vibration-flash'?buildVibrationFlashFrame:preset.id==='rebound-swing'?buildReboundSwingFrame:preset.id==='pendulum-swing'?buildPendulumSwingFrame:buildLineCorruptionFrame;
    const frame=t=>painter(data,w,h,recipe,t*recipe.speed).data;
    const early=frame(.3),later=frame(1.19);
    assert.notDeepEqual(early,later,preset.id+' must visually evolve over actual RGBA source');
