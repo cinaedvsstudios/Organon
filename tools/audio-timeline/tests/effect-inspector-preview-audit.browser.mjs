@@ -3,6 +3,7 @@ import {chromium} from 'playwright-core';
 import {createServer} from 'node:http';
 import {readFileSync,existsSync} from 'node:fs';
 import {resolve,extname} from 'node:path';
+import {spawnSync} from 'node:child_process';
 const root=process.cwd(),mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png'};
 const server=createServer((req,res)=>{try{const path=resolve(root,'.'+decodeURIComponent((req.url||'/').split('?')[0]));
  if(!path.startsWith(root+'/')){res.writeHead(403);res.end();return;}
@@ -73,6 +74,18 @@ try{
    assert.equal(await rec.inputValue(),'true','New camera HUD must not inherit previous clip REC setting');
   }
   console.log('[MotoriClip #67 native common groups] PASS',id,entry.groups.join(','));
+  // Inspect each selected recipe in isolation: stacking all 43 effects here
+  // would turn a native control visibility audit into a rendering stress test.
+  // Delete through the real editor keyboard handler, never internal state.
+  await page.evaluate(()=>document.activeElement?.blur());
+  await page.keyboard.press('Delete');
+  await page.locator('#inspector-timeline-effect').waitFor({state:'hidden'});
+  if(id==='camera-frame'){
+   await page.locator('.timeline-clip.sticker:not(.placeholder)').click();
+   await page.evaluate(()=>document.activeElement?.blur());
+   await page.keyboard.press('Delete');
+  }
+  await page.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===0);
  }
  assert.deepEqual(errors,[]);
  // Independent native editor: modify a visible recipe, verify history and portable project persistence.
@@ -109,8 +122,44 @@ try{
  await ui.locator('#project-open-input').setInputFiles({name:download.suggestedFilename(),mimeType:'application/json',buffer:bytes});
  await ui.locator('#timeline-action-modal').waitFor({state:'visible'});await ui.locator('#timeline-action-apply').click();
  await ui.locator('#timeline-action-modal').waitFor({state:'hidden'});
+ // The confirm modal closes before asynchronous decoder restoration completes.
+ // Undo stays disabled until recoveryLoading is cleared in the finally block.
+ await ui.waitForFunction(()=>!document.getElementById('btn-undo').disabled,{},{timeout:30000});
  await ui.locator('.timeline-clip.sticker:not(.placeholder)').waitFor({state:'visible'});
+ const roundTrip=ui.waitForEvent('download',{timeout:20000});
+ await ui.locator('#btn-save-project').click();
+ const reopened=JSON.parse(readFileSync(await (await roundTrip).path()).toString()).tracks.find(t=>t.effectOverlay?.presetId==='starburst');
+ assert.ok(reopened);assert.deepEqual(reopened.effectOverlay,clip.effectOverlay,'Restored recipe metadata');
+ assert.deepEqual(reopened.keyframes,clip.keyframes,'Restored keyframe metadata');
+ assert.equal(reopened.clipDuration,clip.clipDuration,'Restored duration');
  assert.equal(await seek(.7),savedPixels,'Portable Open restores recipe and keyframe preview');
+ // Compare externally decoded H.264 from the edited, reopened recipe and
+ // keyframe state with the same actual preview times.
+ await ui.locator('#btn-project-settings').click();
+ await ui.locator('#canvas-width').fill('320');await ui.locator('#canvas-height').fill('180');
+ await ui.locator('#btn-apply-canvas').click();
+ await ui.locator('#project-fps').selectOption('25');
+ await ui.locator('#project-settings-modal [data-close-modal]').click();
+ const frames=[10,25,35],expected=[];
+ function rgb(args,input){
+  const r=spawnSync('ffmpeg',['-hide_banner','-loglevel','error',...args,'-frames:v','1','-f','rawvideo','-pix_fmt','rgb24','-threads','1','pipe:1'],{input,maxBuffer:2*1024*1024,timeout:30000});
+  assert.equal(r.status,0,String(r.stderr||r.error));assert.equal(r.stdout.length,320*180*3);
+  return r.stdout;
+ }
+ function mae(a,b){assert.equal(a.length,b.length);let s=0;for(let i=0;i<a.length;i++)s+=Math.abs(a[i]-b[i]);return s/a.length;}
+ for(const frame of frames)expected.push(rgb(['-f','image2pipe','-i','pipe:0'],Buffer.from((await seek(frame/25)).split(',')[1],'base64')));
+ assert.ok(mae(expected[0],expected[2])>.05,'Edited recipe must animate');
+ await ui.locator('#btn-project-export').click();
+ await ui.locator('#export-offline-format').selectOption('mp4');
+ await ui.waitForFunction(()=>!document.getElementById('btn-export-offline').disabled);
+ const exportPending=ui.waitForEvent('download',{timeout:180000});
+ await ui.locator('#btn-export-offline').click();
+ const exported=await exportPending;assert.match(exported.suggestedFilename(),/\.mp4$/);
+ await ui.locator('#export-overlay').waitFor({state:'hidden'});
+ const path=await exported.path();assert.ok(path);
+ const differences=frames.map((frame,i)=>mae(rgb(['-i',path,'-vf','select=eq(n\\,'+frame+')']),expected[i]));
+ assert.ok(differences.every(v=>v<31),'Edited recipe/keyframe export differs from preview: '+differences);
+ console.log('[MotoriClip #67 decoded edited recipe] PASS RGB MAE '+JSON.stringify(differences));
  assert.deepEqual(uiErrors,[]);await ui.close();
  console.log('[MotoriClip #67] PASS native recipe edit, duration undo/redo, visual keyframe and portable Save/Open');
 }finally{await browser.close();await new Promise(done=>server.close(done));}
