@@ -1,0 +1,30 @@
+name: MotoriClip effect Inspector and preview audit
+on:
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/js/effect-inspector-controls.mjs'
+      - 'tools/audio-timeline/js/advanced-main-v0.24.js'
+      - 'tools/audio-timeline/tests/effect-inspector-preview-audit.browser.mjs'
+      - '.github/workflows/motoriclip-effect-inspector.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspector-preview-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core@1.56.1
+      - name: Install FFmpeg for externally decoded frame comparison
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version
+      - run: node --check tools/audio-timeline/tests/effect-inspector-preview-audit.browser.mjs
+      - run: node tools/audio-timeline/tests/effect-inspector-preview-audit.browser.mjs
