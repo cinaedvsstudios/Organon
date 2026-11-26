@@ -1,0 +1,31 @@
+name: MotoriClip live preview performance
+on:
+  pull_request:
+    paths:
+      - 'tools/audio-timeline/tests/live-preview-performance.browser.mjs'
+      - '.github/workflows/motoriclip-live-preview-performance.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-preview:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright-core@1.56.1
+      - name: Verify system FFmpeg
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          ffmpeg -version
+      - run: node --check tools/audio-timeline/tests/live-preview-performance.browser.mjs
+      - name: Measure actual Chrome preview playback at 720p, 1080p and 4K
+        env:
+          CHROME_BIN: /usr/bin/google-chrome
+        run: node tools/audio-timeline/tests/live-preview-performance.browser.mjs
