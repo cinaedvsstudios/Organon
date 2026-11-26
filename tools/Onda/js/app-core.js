@@ -75,9 +75,11 @@
         let isShuffle = false;
         let shuffleQueue = [];
         let shuffleSignature = '';
+        let durationScanRunning = false;
+        const durationScanAttempted = new WeakSet();
         let marqueeFrame = 0;
         let marqueeResizeTimer = 0;
-        const ONDA_VERSION = 'v3.49';
+        const ONDA_VERSION = 'v3.53';
         const DESKTOP_MODE_KEY = 'ondaForceDesktopModeV1';
         const MOBILE_BREAKPOINT = 768;
         const mobileLayoutQuery = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -110,6 +112,10 @@
         let nowPlayingHidePlaylist = localStorage.getItem(NOW_PLAYING_HIDE_PLAYLIST_KEY) === "1";
         let editingPlaylistName = null;
         let virtualLibrary = {};
+        let duplicateCleanupAt = 0;
+        let duplicateCleanupRemovedIds = [];
+        let duplicateReviewGroups = [];
+        let duplicateReviewBusy = false;
         let nowPlayingEditMode = false;
         let isLibrarySelectMode = false;
         let selectedLibraryIds = new Set();
@@ -1485,6 +1491,169 @@
             showToast('Selected library listing(s) removed.');
         }
 
+        function duplicateStatus(message) {
+            const el = document.getElementById('onda-duplicate-status');
+            if (el) el.textContent = message;
+        }
+        function duplicateMetadataScore(meta) {
+            return ['nickname','artist','album','genre','year','bpm','key','lyrics','notes','imageData','imageUrl','duration']
+                .reduce((score,key)=>score+(meta[key]?1:0),0) + (meta.tags?.length||0);
+        }
+        async function findExactDuplicateGroups() {
+            const byName = new Map();
+            for (const meta of Object.values(virtualLibrary)) {
+                if (!meta?.id || !meta.fileName || meta.streamUrl || ['stream','reference'].includes(meta.sourceType)) continue;
+                const key = meta.fileName;
+                if (!byName.has(key)) byName.set(key,[]);
+                byName.get(key).push(meta);
+            }
+            const groups = [];
+            let unverified = 0;
+            for (const candidates of byName.values()) {
+                if (candidates.length<2) continue;
+                const clusters=[];
+                for (const meta of candidates) {
+                    let cached = null;
+                    try { const record=await idbGetAudioFile(meta.id); cached=record?.file||record?.blob||null; } catch (_) {}
+                    const blob = cached || meta.blobFile;
+                    if (!blob || typeof blob.slice!=='function') { unverified++; continue; }
+                    let match=null;
+                    for (const cluster of clusters) {
+                        try { if(await equalImportBytes(blob,cluster[0].blob)) {match=cluster;break;} } catch (_) {}
+                    }
+                    const entry={meta,blob,cached:Boolean(cached)};
+                    if(match) match.push(entry); else clusters.push([entry]);
+                }
+                for(const cluster of clusters) {
+                    if(cluster.length<2) continue;
+                    const active=cluster.find(entry=>entry.meta.id===currentFile?.name);
+                    const eligible=cluster.filter(entry=>entry.cached);
+                    if(!eligible.length || (active && !active.cached)) { unverified+=cluster.length;continue; }
+                    const keep=active || eligible.sort((a,b)=>duplicateMetadataScore(b.meta)-duplicateMetadataScore(a.meta))[0];
+                    groups.push({keep:keep.meta.id,remove:cluster.filter(entry=>entry!==keep).map(entry=>entry.meta.id),name:keep.meta.fileName,paths:[...new Set(cluster.map(entry=>entry.meta.localPath||entry.meta.fileName))]});
+                }
+            }
+            return {groups,unverified};
+        }
+        function renderDuplicateReview(groups) {
+            const list=document.getElementById('onda-duplicate-results');
+            list.replaceChildren();
+            groups.forEach((group,index)=>{
+                const label=document.createElement('label');
+                label.className='onda-duplicate-group';
+                const check=document.createElement('input');
+                check.type='checkbox';check.checked=true;check.dataset.duplicateGroup=String(index);
+                const detail=document.createElement('div');
+                const title=document.createElement('strong');title.textContent=group.name;
+                const desc=document.createElement('small');desc.textContent=(group.remove.length+1)+' identical copies · keep 1, merge '+group.remove.length;
+                const paths=document.createElement('small');paths.textContent=group.paths.join(' | ');
+                detail.append(title,desc,paths);label.append(check,detail);list.append(label);
+                check.addEventListener('change',syncDuplicateMergeButton);
+            });
+            syncDuplicateMergeButton();
+        }
+        function syncDuplicateMergeButton() {
+            const selected=[...document.querySelectorAll('#onda-duplicate-results input:checked')].map(el=>duplicateReviewGroups[Number(el.dataset.duplicateGroup)]).filter(Boolean);
+            const count=selected.reduce((n,g)=>n+g.remove.length,0);
+            const button=document.getElementById('btn-duplicate-merge');
+            button.disabled=duplicateReviewBusy||!count;
+            button.textContent=count?'Merge '+count+' Duplicate'+(count===1?'':'s'):'Merge Selected';
+        }
+        async function scanDuplicateLibrary() {
+            if(duplicateReviewBusy) return;
+            duplicateReviewBusy=true;duplicateReviewGroups=[];renderDuplicateReview([]);
+            duplicateStatus('Checking saved file contents…');
+            try {
+                await localImportChain;
+                const result=await findExactDuplicateGroups();
+                duplicateReviewGroups=result.groups;
+                const count=result.groups.reduce((n,g)=>n+g.remove.length,0);
+                duplicateStatus(count+' confirmed duplicate listing(s) in '+result.groups.length+' group(s).'+(result.unverified?' '+result.unverified+' candidate(s) could not be verified and will be kept.':''));
+                renderDuplicateReview(result.groups);
+            } catch(err) { duplicateStatus('Scan failed. No records changed.'); console.warn(err); }
+            finally {duplicateReviewBusy=false;syncDuplicateMergeButton();}
+        }
+        function remapDuplicateIds(ids,aliases) {
+            const seen=new Set();
+            const targets=new Set(aliases.values());
+            return ids.map(id=>aliases.get(id)||id).filter(id=>{
+                if(!targets.has(id)) return true;
+                if(seen.has(id)) return false;
+                seen.add(id);return true;
+            });
+        }
+        async function mergeReviewedDuplicates(groups) {
+            // Re-scan to ensure the review still matches actual bytes and current playback.
+            const fresh=(await findExactDuplicateGroups()).groups;
+            const aliases=new Map();
+            for(const group of groups) {
+                const match=fresh.find(g=>g.keep===group.keep && g.remove.length===group.remove.length && group.remove.every(id=>g.remove.includes(id)));
+                if(!match) throw Error('Library changed. Scan again before merging.');
+                group.remove.forEach(id=>aliases.set(id,group.keep));
+            }
+            if(!aliases.size)return;
+            const backup=buildActiveLibraryAutosavePayload('before-duplicate-cleanup');
+            // Persist a separate, non-autorecoverable pre-merge copy before
+            // modifying catalogue records. Audio and file handles are untouched.
+            const key='duplicate-cleanup-backup-'+Date.now();
+            await idbSetState(key,backup);
+            await idbSetState('last-duplicate-cleanup-backup',key);
+            if(currentFile && aliases.has(currentFile.name)) throw Error('Playing track changed. Scan again.');
+            if(pendingActiveLibrarySaveTimer) {clearTimeout(pendingActiveLibrarySaveTimer);pendingActiveLibrarySaveTimer=null;}
+            for(const [id,keepId] of aliases) {
+                const from=virtualLibrary[id], keep=virtualLibrary[keepId];
+                if(!from||!keep) throw Error('Library changed. Scan again.');
+                for(const [field,value] of Object.entries(from)) {
+                    if(['id','blobFile','fileName','localPath','phonePath','desktopPath','needsRelink','tags','playlists'].includes(field))continue;
+                    if((keep[field]===undefined||keep[field]===null||keep[field]==='') && value!=null) keep[field]=value;
+                }
+                keep.tags=[...new Set([...(Array.isArray(keep.tags)?keep.tags:[]),...(Array.isArray(from.tags)?from.tags:[])])];
+                keep.needsRelink=false;
+            }
+            for(const id of aliases.keys()) delete virtualLibrary[id];
+            for(const [name,tracks] of Object.entries(playlists)) {
+                playlists[name]=playlistIdsToTrackObjects(remapDuplicateIds(normalisePlaylistToIds(tracks),aliases));
+            }
+            const oldQueue=playlistTracks, oldCurrent= currentFile;
+            const oldIndex=currentTrackIndex;
+            const targets=new Set(aliases.values()), seen=new Set();
+            playlistTracks=[];
+            oldQueue.forEach((track,index)=>{
+                const oldId=getTrackId(track),id=aliases.get(oldId)||oldId;
+                if(targets.has(id)) {
+                    if(id===oldCurrent?.name && oldIndex>=0 && index!==oldIndex) return;
+                    if(seen.has(id)) return;
+                    seen.add(id);
+                }
+                playlistTracks.push(aliases.has(oldId)?createPlayableTrackFromMeta(virtualLibrary[id]):track);
+            });
+            currentTrackIndex=oldCurrent?playlistTracks.findIndex(track=>track===oldCurrent):-1;
+            if(currentTrackIndex<0&&oldCurrent)currentTrackIndex=playlistTracks.findIndex(track=>getTrackId(track)===oldCurrent.name);
+            recentTrackIds=[...new Set(recentTrackIds.map(id=>aliases.get(id)||id))].slice(0,50);
+            selectedLibraryIds=new Set([...selectedLibraryIds].map(id=>aliases.get(id)||id));
+            duplicateCleanupAt=Date.now();
+            duplicateCleanupRemovedIds=[...new Set([...duplicateCleanupRemovedIds,...aliases.keys()])];
+            syncAllTrackPlaylistMetadata();
+            if(isShuffle)resetShuffleQueue(currentTrackIndex);
+            saveRecentTrackIds();
+            saveActiveLibraryState('manual-duplicate-cleanup');
+            await flushActiveLibraryState('manual-duplicate-cleanup');
+            renderPlaylistsList();renderLibraryManager();renderHistoryTab();updateNowPlayingPlaylistPanel();
+            duplicateReviewGroups=[];renderDuplicateReview([]);
+            duplicateStatus('Merged '+aliases.size+' duplicate listing(s). '+Object.keys(virtualLibrary).length+' tracks remain. Cached audio and backup retained.');
+            showToast('Merged '+aliases.size+' duplicate listings.');
+        }
+        function applyDuplicateReview() {
+            if(duplicateReviewBusy)return;
+            const groups=[...document.querySelectorAll('#onda-duplicate-results input:checked')].map(el=>duplicateReviewGroups[Number(el.dataset.duplicateGroup)]).filter(Boolean);
+            if(!groups.length)return;
+            duplicateReviewBusy=true;syncDuplicateMergeButton();
+            duplicateStatus('Rechecking and saving pre-cleanup backup…');
+            const operation=localImportChain.then(()=>mergeReviewedDuplicates(groups));
+            localImportChain=operation.catch(()=>{});
+            operation.catch(err=>{duplicateStatus(err.message||'Merge could not finish. Check backup and scan again.');console.warn(err);}).finally(()=>{duplicateReviewBusy=false;syncDuplicateMergeButton();});
+        }
+
         function levenshteinDistance(a, b, limit = 2) {
             if (a === b) return 0;
             if (!a || !b) return Math.max(a.length, b.length);
@@ -2495,7 +2664,9 @@
                 console.warn('Could not scan localStorage for Onda library candidates:', err);
             }
 
+            const cleanupCutoff = Math.max(0,...candidates.map(item => Number(item.payload.duplicateCleanupAt)||0));
             const withTracks = candidates
+                .filter(item => !cleanupCutoff || getPayloadSavedAtMs(item.payload) >= cleanupCutoff)
                 .map(item => ({ ...item, trackCount: getPayloadTrackCount(item.payload), savedAt: getPayloadSavedAtMs(item.payload) }))
                 .filter(item => item.trackCount > 0)
                 .sort((a, b) => (b.trackCount - a.trackCount) || (b.savedAt - a.savedAt) || (b.priority - a.priority));
@@ -2776,6 +2947,8 @@
                 version: 2,
                 savedAt: new Date().toISOString(),
                 reason,
+                duplicateCleanupAt,
+                duplicateCleanupRemovedIds: duplicateCleanupRemovedIds.slice(),
                 library: buildLibraryExport({ streamingOnly: false }),
                 queueIds: playlistTracks.map(getTrackId).filter(Boolean),
                 currentTrackId: currentFile?.name || null,
@@ -2841,6 +3014,13 @@
             const data = saved?.library || saved;
             if (!data || data.type !== 'onda-library') return false;
 
+            if (Number(saved?.duplicateCleanupAt) >= duplicateCleanupAt && Number(saved?.duplicateCleanupAt)>0) {
+                duplicateCleanupAt = Number(saved.duplicateCleanupAt);
+                duplicateCleanupRemovedIds = Array.isArray(saved.duplicateCleanupRemovedIds) ? saved.duplicateCleanupRemovedIds.filter(id=>typeof id==='string') : [];
+                // Only an explicitly confirmed cleanup may suppress an old copy
+                // resurrected by a stale local/IDB autosave.
+                duplicateCleanupRemovedIds.forEach(id=>{ if (!data.tracks?.[id]) delete virtualLibrary[id]; });
+            }
             if (data.libraryName && libraryNameInput) libraryNameInput.value = data.libraryName;
 
             Object.entries(data.tracks || {}).forEach(([key, rawMeta]) => {
@@ -3218,6 +3398,7 @@
             isRepeatOne = nextMode === 'one';
             isRepeatAll = nextMode === 'all';
             syncPlaybackModeButtons();
+            updateNowPlayingPlaylistPanel();
         }
 
         function setShuffleEnabled(enabled, { rebuild = true } = {}) {
@@ -3228,6 +3409,7 @@
                 shuffleSignature = '';
             }
             syncPlaybackModeButtons();
+            updateNowPlayingPlaylistPanel();
         }
 
         function restartCurrentTrack(audioObject) {
@@ -3276,6 +3458,12 @@
                 if (e.target !== activeAudio) return;
                 seekBar.max = audioObj.duration;
                 timeTotal.innerText = formatTime(audioObj.duration);
+                const meta = virtualLibrary[currentFile?.name];
+                if (meta && Number.isFinite(audioObj.duration) && audioObj.duration > 0 && Math.abs((Number(meta.duration)||0)-audioObj.duration) > .1) {
+                    meta.duration = audioObj.duration;
+                    refreshQueueDurationLabels();
+                    saveActiveLibraryState('track-duration-read');
+                }
             });
 
             audioObj.addEventListener('timeupdate', (e) => {
@@ -3421,6 +3609,7 @@
         });
         fileInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) handleUploadedFiles(e.target.files);
+            e.target.value = '';
         });
         if (folderInput) {
             folderInput.addEventListener('change', (e) => {
@@ -3459,7 +3648,83 @@
             }
         }
 
-        async function handleUploadedFiles(files, options = {}) {
+        // File picker calls can overlap while metadata is being read. Serialize
+        // imports so the second selection sees records created by the first.
+        let localImportChain = Promise.resolve();
+        function handleUploadedFiles(files, options = {}) {
+            const selected = Array.from(files || []);
+            const pending = localImportChain.then(() => importUniqueLocalFiles(selected, options));
+            localImportChain = pending.catch(() => {});
+            return pending;
+        }
+
+        function normaliseImportPath(path) {
+            return String(path || '').replace(/\\/g,'/').replace(/^\.\//,'').replace(/\/+/g,'/');
+        }
+
+        function compatibleImportPath(a,b) {
+            a = normaliseImportPath(a); b = normaliseImportPath(b);
+            // Android/normal file input often exposes only a basename.
+            // When both paths are known, do not conflate different locations.
+            return !a.includes('/') || !b.includes('/') || a === b;
+        }
+
+        async function equalImportBytes(a,b) {
+            if (!a || !b || typeof a.slice !== 'function' || typeof b.slice !== 'function') return null;
+            if (a.size !== b.size) return false;
+            // Bounded memory even for very large audio files.
+            const chunkSize = 1024 * 1024;
+            for (let offset=0; offset<a.size; offset+=chunkSize) {
+                const [left,right] = await Promise.all([a.slice(offset,offset+chunkSize).arrayBuffer(),b.slice(offset,offset+chunkSize).arrayBuffer()]);
+                const x=new Uint8Array(left), y=new Uint8Array(right);
+                for(let i=0;i<x.length;i++) if(x[i]!==y[i]) return false;
+            }
+            return true;
+        }
+
+        async function matchLocalImport(file, path, candidates, nextId, legacyId) {
+            let duration = null;
+            let probed = false;
+            const isMidi = /\\.(mid|midi)$/i.test(file.name || '');
+            const getDuration = async () => {
+                if (!probed) {
+                    probed = true;
+                    if (!isMidi) {
+                        try { duration = await probeQueueDuration(file); } catch (_) {}
+                    }
+                }
+                return duration;
+            };
+            for (const meta of candidates || []) {
+                if (!compatibleImportPath(path,meta.localPath || meta.fileName)) continue;
+                const storedSize = Number(meta.sizeBytes);
+                if (storedSize > 0 && storedSize !== file.size) continue;
+                const identityMatch = meta.id === nextId || meta.id === legacyId;
+                let existingBlob = meta.blobFile || null;
+                if (!existingBlob) {
+                    try { const record = await idbGetAudioFile(meta.id); existingBlob = record?.file || record?.blob || null; } catch (_) {}
+                }
+                let sameBytes = null;
+                try { sameBytes = await equalImportBytes(file,existingBlob); } catch (_) {}
+                if (sameBytes === false) continue;
+                const incomingDuration = await getDuration();
+                let oldDuration = Number(meta.duration) || null;
+                if (!oldDuration && existingBlob && !isMidi) {
+                    try { oldDuration = await probeQueueDuration(existingBlob); } catch (_) {}
+                }
+                const durationMatch = incomingDuration > 0 && oldDuration > 0 && Math.abs(incomingDuration-oldDuration) <= .15;
+                if (incomingDuration > 0 && oldDuration > 0 && !durationMatch && sameBytes !== true) continue;
+                // Prefer exact byte comparison. If saved media is unavailable,
+                // a known identity or matching path/name/size/duration may relink
+                // the existing metadata record, not create a second one.
+                if (sameBytes === true || (sameBytes === null && (identityMatch || (storedSize === file.size && durationMatch)))) {
+                    return {meta, duration:incomingDuration || oldDuration, existingBlob};
+                }
+            }
+            return {meta:null,duration};
+        }
+
+        async function importUniqueLocalFiles(files, options = {}) {
             const finishImportPrepare = window.OndaDiagnostics?.begin('import-prepare');
             const linkedRecords = [];
             const playableFiles = Array.from(files).filter(file => {
@@ -3475,8 +3740,16 @@
             const newTracks = [];
             const refreshedTracks = [];
             let queueDuplicates = 0;
+            let skippedDuplicates = 0;
+            const candidateIndex = new Map();
+            for (const meta of Object.values(virtualLibrary)) {
+                if (!meta?.fileName || meta.streamUrl || ['stream','reference'].includes(meta.sourceType)) continue;
+                const name = meta.fileName;
+                if (!candidateIndex.has(name)) candidateIndex.set(name,[]);
+                candidateIndex.get(name).push(meta);
+            }
 
-            playableFiles.forEach(file => {
+            for (const file of playableFiles) {
                 const isMidi = Boolean(window.OndaMidi?.isMidiFile(file)) || /\.(mid|midi)$/i.test(file.name || '');
                 const localSourceType = isMidi ? 'midi' : 'local';
                 const defaultLocalTag = isMidi ? 'MIDI File' : 'Local File';
@@ -3484,9 +3757,21 @@
                 const handle = options.fileHandles?.get(file) || null;
                 const nextId = createTrackIdFromParts(['local', relativePath, file.name, file.size, file.lastModified || '']);
                 const legacyId = createTrackIdFromParts(['local', file.name, file.size, file.lastModified || '']);
-                const id = virtualLibrary[nextId] ? nextId : (virtualLibrary[legacyId] ? legacyId : nextId);
-                const alreadyInLibrary = Boolean(virtualLibrary[id]);
-                const existing = virtualLibrary[id] || {};
+                const match = await matchLocalImport(file, relativePath, candidateIndex.get(file.name), nextId, legacyId);
+                const alreadyInLibrary = Boolean(match.meta);
+                let id = match.meta?.id || nextId;
+                if (!alreadyInLibrary) {
+                    // A distinct file can share old identity inputs. Never overwrite it.
+                    let suffix=1;
+                    while (virtualLibrary[id]) id = nextId+'_'+suffix++;
+                }
+                const existing = match.meta || {};
+                if (alreadyInLibrary && match.existingBlob) {
+                    skippedDuplicates += 1;
+                    if (match.duration > 0 && !(Number(existing.duration)>0)) existing.duration = match.duration;
+                    if (handle?.kind === 'file') linkedRecords.push({trackId:id,handle,relativePath,fileName:file.name});
+                    continue;
+                }
 
                 const track = {
                     name: id,
@@ -3509,9 +3794,9 @@
                     playlists: Array.isArray(existing.playlists) ? existing.playlists : [],
                     size: (file.size / (1024 * 1024)).toFixed(2) + ' MB',
                     sizeBytes: file.size,
-                    duration: existing.duration || null,
+                    duration: match.duration || existing.duration || null,
                     sourceType: localSourceType,
-                    localPath: relativePath || existing.localPath || file.name,
+                    localPath: (alreadyInLibrary && existing.localPath) || relativePath || file.name,
                     streamUrl: null,
                     blobFile: file
                 };
@@ -3519,15 +3804,23 @@
                 if (handle?.kind === 'file') linkedRecords.push({
                     trackId: id, handle, relativePath, fileName: file.name
                 });
-                if (alreadyInLibrary) refreshedTracks.push(track);
-                else newTracks.push(track);
-            });
+                if (alreadyInLibrary) {
+                    refreshedTracks.push(track);
+                    const candidates = candidateIndex.get(file.name);
+                    const candidatePosition = candidates?.findIndex(meta => meta.id === id) ?? -1;
+                    if (candidatePosition >= 0) candidates[candidatePosition] = virtualLibrary[id];
+                } else {
+                    newTracks.push(track);
+                    if (!candidateIndex.has(file.name)) candidateIndex.set(file.name,[]);
+                    candidateIndex.get(file.name).push(virtualLibrary[id]);
+                }
+            }
 
             const wasEmpty = playlistTracks.length === 0;
             const allIncomingTracks = [...newTracks, ...refreshedTracks];
             const queuedIds = new Set(playlistTracks.map(getTrackId).filter(Boolean));
             const tracksToQueue = [];
-            allIncomingTracks.forEach(track => {
+            newTracks.forEach(track => {
                 const trackId = getTrackId(track);
                 if (queuedIds.has(trackId)) {
                     queueDuplicates += 1;
@@ -3538,15 +3831,16 @@
             });
             playlistTracks = [...playlistTracks, ...tracksToQueue];
 
-            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${refreshedTracks.length} refreshed${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
+            const summary = `${playableFiles.length} scanned · ${newTracks.length} new · ${skippedDuplicates} duplicate${skippedDuplicates === 1 ? '' : 's'} skipped${refreshedTracks.length ? ` · ${refreshedTracks.length} reconnected` : ''}${queueDuplicates ? ` · ${queueDuplicates} already in queue` : ''}`;
             if (wasEmpty && playlistTracks.length) switchTrack(0);
+            updateNowPlayingPlaylistPanel();
             renderLibraryManager();
             // The queue and current track are now set. Save their metadata once;
             // caching only changes IndexedDB audio bytes, not the catalogue JSON.
             // Keep this immediate save before awaiting any large audio writes.
             saveActiveLibraryState('add-local-files');
             showToast(summary);
-            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: queueDuplicates });
+            finishImportPrepare?.({ trackCount: playableFiles.length, savedCount: newTracks.length, skippedCount: skippedDuplicates + queueDuplicates });
 
             if (linkedRecords.length && window.OndaFileHandles?.rememberMany) {
                 // The handle index is additive: never remove or bypass existing cache.
@@ -3574,6 +3868,7 @@
         function switchTrack(index) {
             if (index < 0 || index >= playlistTracks.length) return;
             currentTrackIndex = index;
+            if (isShuffle && shuffleSignature === getPlaylistSignature()) shuffleQueue = shuffleQueue.filter(item => item !== index);
             loadTrack(playlistTracks[currentTrackIndex]);
         }
 
@@ -3733,7 +4028,14 @@
                     if (!row || row.offsetParent === null) return;
                     row.classList.add('jump-focus-pulse');
 
-                    if (isMobileLayoutMode()) {
+                    const queueScroller = row.closest('#tab-library[data-playback-view="queue"]');
+                    if (queueScroller) {
+                        const headerHeight = queueScroller.querySelector('.onda-current-queue-header')?.getBoundingClientRect().height || 0;
+                        const rowRect = row.getBoundingClientRect(), viewRect = queueScroller.getBoundingClientRect();
+                        const top = queueScroller.scrollTop + rowRect.top - viewRect.top - headerHeight
+                            - Math.max(0, (queueScroller.clientHeight - headerHeight - rowRect.height) / 2);
+                        queueScroller.scrollTo({top:Math.max(0,top),behavior:'smooth'});
+                    } else if (isMobileLayoutMode()) {
                         const scroller = row.closest('#now-playing-playlist-track-list, #playlist-detail-track-list, .now-playing-queue-list, .playlist-detail-track-list');
                         if (scroller && scroller.scrollHeight > scroller.clientHeight) {
                             const rowRect = row.getBoundingClientRect();
@@ -3759,6 +4061,74 @@
             }, 140);
         }
 
+        function queueDurationLabel(meta) {
+            const value = Number(meta?.duration);
+            return Number.isFinite(value) && value > 0 ? formatTime(value) : '—';
+        }
+
+        function refreshQueueDurationLabels() {
+            document.querySelectorAll('#now-playing-playlist-track-list [data-track-id]').forEach(row => {
+                const label = row.querySelector('.onda-queue-duration');
+                if (label) label.textContent = queueDurationLabel(virtualLibrary[row.dataset.trackId]);
+            });
+        }
+
+        // Metadata-only, one local file at a time. No network, playback,
+        // permission requests or user audio/cache writes.
+        function probeQueueDuration(blob) {
+            return new Promise(resolve => {
+                const audio = document.createElement('audio');
+                const url = URL.createObjectURL(blob);
+                let timer, done = false;
+                const finish = () => {
+                    if (done) return;
+                    done = true;
+                    clearTimeout(timer);
+                    const duration = Number(audio.duration);
+                    audio.removeAttribute('src');
+                    audio.load();
+                    URL.revokeObjectURL(url);
+                    resolve(Number.isFinite(duration) && duration > 0 ? duration : null);
+                };
+                audio.preload = 'metadata';
+                audio.addEventListener('loadedmetadata',finish,{once:true});
+                audio.addEventListener('error',finish,{once:true});
+                timer = setTimeout(finish,4500);
+                audio.src = url;
+            });
+        }
+
+        function scheduleQueueDurationScan() {
+            const visible = () => !document.hidden && document.getElementById('tab-library')?.dataset.playbackView === 'queue';
+            if (durationScanRunning || !visible()) return;
+            durationScanRunning = true;
+            setTimeout(async () => {
+                let changed = false;
+                try {
+                    for (const track of playlistTracks.slice()) {
+                        if (!visible()) break;
+                        const id = getTrackId(track), meta = virtualLibrary[id];
+                        if (!meta || Number(meta.duration) > 0 || durationScanAttempted.has(meta) ||
+                            meta.streamUrl || meta.sourceType === 'stream' || meta.sourceType === 'reference' ||
+                            meta.sourceType === 'midi' || /\\.(mid|midi)$/i.test(meta.fileName || '')) continue;
+                        try {
+                            let blob = track.blobFile || meta.blobFile;
+                            if (!blob) { const record = await idbGetAudioFile(id); blob = record?.file || record?.blob; }
+                            if (!blob || !visible()) continue;
+                            durationScanAttempted.add(meta);
+                            const duration = await probeQueueDuration(blob);
+                            if (duration && virtualLibrary[id] === meta && !(Number(meta.duration)>0)) {
+                                meta.duration = duration; changed = true; refreshQueueDurationLabels();
+                            }
+                        } catch (err) { console.warn('Queue duration unavailable', err); }
+                    }
+                } finally {
+                    durationScanRunning = false;
+                    if (changed) saveActiveLibraryState('queue-duration-metadata');
+                }
+            },150);
+        }
+
         function updateNowPlayingPlaylistPanel() {
             const card = document.getElementById('metadata-display-card');
             const panel = document.getElementById('now-playing-playlist-panel');
@@ -3778,8 +4148,17 @@
                 currentTrackIndex >= 0 && currentTrackIndex < ids.length &&
                 ids[currentTrackIndex] === currentFile?.name
                 ? currentTrackIndex : ids.indexOf(currentFile?.name);
-            const nextIndex = selectedIndex >= 0 && selectedIndex + 1 < ids.length
-                ? selectedIndex + 1 : (selectedIndex >= 0 && isRepeatAll && ids.length > 1 ? 0 : -1);
+            const originalOrder = ids.map((_, index) => index);
+            if (isShuffle && shuffleSignature !== getPlaylistSignature()) resetShuffleQueue(selectedIndex);
+            const upcoming = isShuffle ? shuffleQueue.filter(index => index !== selectedIndex && index >= 0 && index < ids.length) : [];
+            const shownOrder = isShuffle
+                ? [...(selectedIndex >= 0 ? [selectedIndex] : []), ...upcoming,
+                    ...originalOrder.filter(index => index !== selectedIndex && !upcoming.includes(index))]
+                : originalOrder;
+            const nextIndex = isRepeatOne && selectedIndex >= 0 ? selectedIndex
+                : isShuffle ? (upcoming[0] ?? -1)
+                : selectedIndex < 0 ? (ids.length ? 0 : -1)
+                : selectedIndex + 1 < ids.length ? selectedIndex + 1 : (isRepeatAll && ids.length > 1 ? 0 : -1);
             const nextMeta = nextIndex >= 0 ? (virtualLibrary[ids[nextIndex]] || queue[nextIndex]) : null;
         
             if (pills) {
@@ -3807,12 +4186,10 @@
             const header = document.createElement('div');
             header.className = 'playlist-detail-header now-playing-queue-header onda-current-queue-header' + (name ? ' onda-current-queue-has-playlist' : '');
             const playlistArt = name ? getPlaylistArtwork(name) : '';
-            const currentLabel = selectedIndex >= 0 ? 'Playing ' + (selectedIndex + 1) + ' of ' + ids.length
+            const currentLabel = selectedIndex >= 0 ? 'Playing ' + (shownOrder.indexOf(selectedIndex) + 1) + ' of ' + ids.length
                 : ids.length + ' in queue';
-            const nextLabel = isShuffle
-                ? 'Shuffle enabled — upcoming order may vary'
-                : nextMeta ? 'Up next: ' + getDisplayTitle(nextMeta)
-                    : (ids.length ? 'End of queue' : 'Add music using Add or Library');
+            const nextLabel = nextMeta ? (isRepeatOne ? 'Repeating: ' : 'Up next: ') + getDisplayTitle(nextMeta)
+                : (ids.length ? (isShuffle && isRepeatAll ? 'Shuffle repeats after queue ends' : 'End of queue') : 'Add music using Add or Library');
             header.innerHTML = `
                 ${name ? `<div class="playlist-detail-art">${imageHtmlOrFallback(playlistArt || getDefaultArtworkSrc(), name + ' artwork')}</div>` : ''}
                 <div class="playlist-detail-title-block">
@@ -3821,16 +4198,22 @@
                     <div class="onda-current-queue-next" title="${escapeHtml(nextLabel)}">${escapeHtml(nextLabel)}</div>
                 </div>
                 <div class="playlist-row-tools onda-current-queue-tools">
+                    <button data-onda-action="shuffle" type="button" class="btn-pill btn-now-reshuffle" title="Reshuffle upcoming tracks" aria-label="Reshuffle upcoming tracks" ${ids.length < 2 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h3c5 0 7 12 12 12h3M17 14l4 4-4 4M3 18h3c2 0 3-2 5-5M14 8c1-2 2-2 4-2h3M17 2l4 4-4 4"/></svg></button>
                     <button data-onda-action="jump" type="button" class="btn-pill btn-now-jump-current" title="Find current track in queue" aria-label="Find current track in queue" ${selectedIndex < 0 ? 'disabled' : ''}><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></button>
                     ${name ? '<button data-onda-action="edit" type="button" class="btn-pill btn-now-edit-source-playlist" title="Edit the source playlist" aria-label="Edit the source playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m4 20 4-.8L20 7l-3-3L5 16zM14 7l3 3"/></svg></button>' : ''}
                 </div>
                 <div class="playlist-detail-meta-row onda-current-queue-summary">
                     <span class="mini-tag">${escapeHtml(currentLabel)}</span>
-                    <span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'} in active queue</span>
+                    ${selectedIndex >= 0 ? `<span class="mini-tag">${ids.length} track${ids.length === 1 ? '' : 's'}</span>` : ''}
+                    ${isShuffle ? '<span class="mini-tag">Shuffle on</span>' : ''}
                 </div>
             `;
             panel.appendChild(header);
         
+            header.querySelector('.btn-now-reshuffle')?.addEventListener('click', () => {
+                setShuffleEnabled(true);
+                showToast('Upcoming tracks reshuffled.');
+            });
             header.querySelector('.btn-now-jump-current')?.addEventListener('click', () => {
                 scrollCurrentTrackRowsIntoView('manual-queue-jump');
             });
@@ -3847,12 +4230,13 @@
                 empty.textContent = 'Nothing queued yet. Add a file or press Play on a Library track.';
                 list.appendChild(empty);
             } else {
-                queue.forEach((item, idx) => {
+                shownOrder.forEach((idx, displayIndex) => {
+                    const item = queue[idx];
                     const id = ids[idx];
                     const meta = virtualLibrary[id] || item;
                     const hasRecord = Boolean(meta);
                     const active = idx === selectedIndex;
-                    const upNext = !isShuffle && idx === nextIndex && !active;
+                    const upNext = idx === nextIndex && !active;
                     const row = document.createElement('div');
                     row.className = 'now-playing-queue-row library-result-row' +
                         (active ? ' active-track now-playing-current-track' : '') +
@@ -3860,9 +4244,9 @@
                     row.dataset.trackId = id || '';
                     row.dataset.queueIndex = String(idx);
                     if (active) row.setAttribute('aria-current', 'true');
-                    const statusLabel = active ? 'Now playing' : upNext ? 'Up next' : 'Queued';
+                    const statusLabel = active ? 'Now playing' : upNext ? 'Up next' : isShuffle && !upcoming.includes(idx) ? 'Outside upcoming order' : 'Queued';
                     row.innerHTML = `
-                        <div class="history-list-number">${idx + 1}</div>
+                        <div class="history-list-number">${displayIndex + 1}</div>
                         <div class="onda-track-text-wrap">
                             <div class="library-track-title">${active ? '▶ ' : ''}${escapeHtml(getDisplayTitle(meta))}</div>
                             <div class="library-track-meta library-file-line">
@@ -3871,6 +4255,7 @@
                             </div>
                         </div>
                         <div class="library-row-buttons">
+                            <span class="onda-queue-duration" aria-label="Track duration">${escapeHtml(queueDurationLabel(meta))}</span>
                             ${hasRecord ? `<button data-onda-action="play" type="button" class="btn-pill btn-now-play-track btn-onda-row-play" title="Play track" aria-label="Play ${escapeHtml(getDisplayTitle(meta))}"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14l12-7z" fill="currentColor" stroke="none"/></svg></button>
                             <button data-onda-action="info" type="button" class="btn-pill btn-now-info-track" title="Track information" aria-label="Track information"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="6" r="1.5" fill="currentColor" stroke="none"/><path d="M12 10v8"/></svg></button>
                             <button data-onda-action="add" type="button" class="btn-pill btn-onda-add-playlist" title="Add to playlist" aria-label="Add to playlist"><svg class="onda-action-glyph" aria-hidden="true" focusable="false" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>` : ''}
@@ -3945,7 +4330,7 @@
                 renderedRows: list.querySelectorAll('[data-queue-index]').length,
                 activeTrack: currentFile?.name || null
             };
-            if (selectedIndex >= 0) scrollCurrentTrackRowsIntoView('now-playing-queue-render');
+            scheduleQueueDurationScan();
         }
 
         function setNowPlayingEditMode(on) {
@@ -4237,6 +4622,12 @@
         btnNext.addEventListener('click', skipToNextTrack);
 
         function skipToNextTrack() {
+            if (!playlistTracks.length) return;
+            if (currentTrackIndex < 0) {
+                if (isShuffle) { const next = takeNextShuffleIndex(isRepeatAll); switchTrack(next >= 0 ? next : 0); }
+                else switchTrack(0);
+                return;
+            }
             if (playlistTracks.length <= 1) return;
 
             if (isShuffle) {
@@ -4981,6 +5372,16 @@
         safeBind('btn-db-bulk-attributes', 'click', openBulkAttributesModal);
         safeBind('btn-db-bulk-export', 'click', exportSelectedLibraryJson);
         safeBind('btn-db-bulk-delete', 'click', deleteSelectedFromLibrary);
+        safeBind('btn-db-deduplicate','click',()=>{showModal('modal-duplicate-review');scanDuplicateLibrary();});
+        safeBind('btn-duplicate-rescan','click',scanDuplicateLibrary);
+        safeBind('btn-duplicate-merge','click',applyDuplicateReview);
+        safeBind('btn-duplicate-backup','click',async()=>{
+            try {
+                const key=await idbGetState('last-duplicate-cleanup-backup');
+                const backup=key?await idbGetState(key):null;
+                downloadJsonFile('onda-before-duplicate-cleanup.json',backup?.library||buildLibraryExport({streamingOnly:false}));
+            }catch(err){duplicateStatus('Backup download unavailable: '+err.message);}
+        });
         safeBind('btn-apply-bulk-playlists', 'click', applyBulkPlaylistAdd);
         safeBind('btn-apply-bulk-attributes', 'click', applyBulkAttributes);
         safeBind('btn-save-playlist-edit', 'click', savePlaylistEdit);
@@ -5565,8 +5966,8 @@
             if (shuffleBtn) shuffleBtn.addEventListener('click', () => {
                 setShuffleEnabled(true, { rebuild: false });
                 loadPlaylistQueue(name);
-                resetShuffleQueue(currentTrackIndex);
                 syncPlaybackModeButtons();
+                updateNowPlayingPlaylistPanel();
                 showToast(`Shuffle play: ${name}`);
             });
             const editBtn = document.getElementById('btn-detail-edit-playlist');
@@ -5621,6 +6022,7 @@
             activePlaylistView = playlistName;
             currentPlaybackPlaylistName = playlistName;
             playlistTracks = tracksInPl;
+            if (isShuffle) resetShuffleQueue(0);
             switchTrack(0);
             renderPlaylistDetailPanel();
             showToast(`Loaded ${playlistName} playlist queue.`);
