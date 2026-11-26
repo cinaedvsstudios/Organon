@@ -3,7 +3,7 @@ import {chromium} from 'playwright-core';
 import {createServer} from 'node:http';
 import {existsSync,readFileSync} from 'node:fs';
 import {extname,resolve} from 'node:path';
-const root=process.cwd(),mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript'};
+const root=process.cwd(),mime={'.html':'text/html','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.jpg':'image/jpeg'};
 const server=createServer((req,res)=>{
  const file=resolve(root,'.'+new URL(req.url,'http://localhost').pathname);
  if(!file.startsWith(root+'/')||!existsSync(file)){res.writeHead(404);res.end();return;}
@@ -53,4 +53,48 @@ try{
  assert.equal(result.presets,43);assert.equal(result.cases,86);
  assert.deepEqual(result.renderErrors,[]);assert.deepEqual(errors,[]);assert.deepEqual(result.failures,[]);
  console.log('[MotoriClip #76 phase proof] PASS '+JSON.stringify(result));
+ // Exercise the real editor controller, not just synthetic clip metadata.
+ const ui=await browser.newPage({acceptDownloads:true,viewport:{width:1440,height:900}});
+ const uiErrors=[];ui.on('pageerror',e=>uiErrors.push(String(e)));
+ await ui.goto('http://127.0.0.1:'+server.address().port+'/tools/audio-timeline/advanced.html',{waitUntil:'domcontentloaded'});
+ await ui.locator('[data-library-tab="effects"]').click();
+ await ui.locator('#effect-category').selectOption('Light');
+ await ui.locator('#effects-library-grid [data-preset-id="starburst"]').click();
+ await ui.locator('.timeline-clip.sticker:not(.placeholder)').waitFor({timeout:20000});
+ await ui.locator('#effect-speed').evaluate(el=>{el.value='2';el.dispatchEvent(new Event('input',{bubbles:true}));el.dispatchEvent(new Event('change',{bubbles:true}));});
+ const seek=async time=>ui.evaluate(async t=>{
+  const input=document.getElementById('preview-seek');
+  if(Number(input.max)<t)throw Error('Fixture shorter than requested seek: '+input.max);
+  input.value=String(t);input.dispatchEvent(new Event('input',{bubbles:true}));
+  await new Promise(done=>requestAnimationFrame(()=>requestAnimationFrame(done)));
+  return document.getElementById('advanced-canvas').toDataURL();
+ },time);
+ const originalRight=await seek(1.75),originalLeft=await seek(.5);
+ assert.notEqual(originalRight,originalLeft,'Fixture must animate before split');
+ await seek(1);
+ await ui.locator('#btn-split-all').click();
+ await ui.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2);
+ assert.equal(await seek(.5),originalLeft,'Actual UI split preserves left-hand phase');
+ assert.equal(await seek(1.75),originalRight,'Actual UI split preserves right-hand phase');
+ await ui.locator('#btn-undo').click();
+ await ui.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===1);
+ assert.equal(await seek(1.75),originalRight,'Undo restores original pixels');
+ await ui.locator('#btn-redo').click();
+ await ui.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2);
+ assert.equal(await seek(1.75),originalRight,'Redo restores split pixels');
+ const download=ui.waitForEvent('download',{timeout:20000});
+ await ui.locator('#btn-save-project').click();
+ const backup=await download,bytes=readFileSync(await backup.path()),saved=JSON.parse(bytes.toString());
+ const clips=saved.tracks.filter(t=>t.effectOverlay?.presetId==='starburst').sort((a,b)=>a.start-b.start);
+ assert.equal(clips.length,2);assert.equal(clips[1].sourceOffset,1);assert.equal(clips[1].effectOverlay.speed,2);
+ assert.deepEqual(clips[0].effectOverlay,clips[1].effectOverlay);
+ await ui.locator('#project-open-input').setInputFiles({name:backup.suggestedFilename(),mimeType:'application/json',buffer:bytes});
+ await ui.locator('#timeline-action-modal').waitFor({state:'visible'});
+ await ui.locator('#timeline-action-apply').click();
+ await ui.locator('#timeline-action-modal').waitFor({state:'hidden'});
+ await ui.waitForFunction(()=>document.querySelectorAll('.timeline-clip.sticker:not(.placeholder)').length===2);
+ assert.equal(await seek(1.75),originalRight,'Portable Open restores exact split pixels');
+ assert.deepEqual(uiErrors,[]);
+ await ui.close();
+ console.log('[MotoriClip #76 UI] PASS split, undo, redo, portable Save/Open, recipe speed and exact pixels');
 }finally{await browser.close();await new Promise(done=>server.close(done));}
