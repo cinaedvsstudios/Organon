@@ -1,3 +1,4 @@
+import {renderGlitchFlux} from './timeline-glitch-flux.mjs';
 import {renderNoirGlitch} from './timeline-noir-glitch.mjs';
 import {renderMisalignment} from './timeline-misalignment.mjs';
 import {renderWarningGlitch} from './timeline-warning-glitch.mjs';
@@ -62,16 +63,7 @@ export function renderGlitchEffect(ctx,source,w,h,e,time,amount){
   }else if(e.presetId==='noir-glitch'){
    return renderNoirGlitch(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='glitch-flux'){
-   // Sinusoidally warp *vertical columns* (orthogonal to tape/ripple bands).
-   const strips=22;
-   for(let i=0;i<strips;i++){
-    const x=i*w/strips,bw=Math.ceil(w/strips)+1;
-    const dy=Math.sin(t*6+i*.83)*amp*2;
-    draw(ctx,source,x,0,bw,h,x,dy,bw,h);
-   }
-   ctx.globalAlpha=amount*.24;ctx.globalCompositeOperation='screen';
-   ctx.fillStyle=rgba(color,.5);
-   ctx.fillRect(w*wrap(t*.24),0,Math.max(5,w*.055*size),h);
+   return renderGlitchFlux(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='engine-heat'){
    renderEngineHeat(ctx,source,w,h,e,t,amount);
   }else if(e.presetId==='retro-glitch'){
