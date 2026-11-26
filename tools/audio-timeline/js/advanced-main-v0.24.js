@@ -54,6 +54,7 @@ import { normaliseFilmStripOptions } from './gl-transitions/FilmStrip.mjs';
 import { planClipSnap } from './clip-snap.mjs';
 import { normalizeOrgavoxFx, ORGAVOX_FX_PRESETS } from './orgavox-audio-chain.mjs';
 import { TEXT_PRESETS, LEGACY_TEXT_PRESETS, EFFECT_OVERLAYS, renderOverlayPreset, createOverlayFile } from './overlay-preset-library.mjs';
+import { paintEffectThumbnail, createEffectThumbnailHover } from './effect-library-preview.mjs';
 import { TIMELINE_EFFECTS, normaliseTimelineEffect, paintTimelineEffect, requiresCompositeSource, paintEffectPreviewScene } from './timeline-effects.mjs';
 import { TEXT_ANIMATIONS, TEXT_OUT_ANIMATIONS, TEXT_LOOP_ANIMATIONS, normaliseTextOverlay, paintTimelineText } from './text-template-renderer.mjs';
 import { normaliseTimelineColour, resolvedClipColour, resolvedLaneColour } from './timeline-appearance.mjs';
@@ -1202,7 +1203,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         showToast(`${usable.length} imported · ${relinked.length} relinked · ${revealed.length} restored to bin · ${historicalCount} history references${savedHandles?' · '+savedHandles+' remembered handles':''}`);
     }
 
+    const effectThumbnailHover=createEffectThumbnailHover();
     function setLibraryView(view) {
+        if(view!=='effects')effectThumbnailHover.stop();
         if(!['media','effects','text'].includes(view))return;
         elements.projectDropZone.hidden=view!=='media';
         elements.effectsLibraryPanel.hidden=view!=='effects';
@@ -1242,15 +1245,15 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
                 : `${preset.label}: right-click for animated preview, click or drag to insert. Text and colours are editable in Inspector.`;
             button.addEventListener('contextmenu',event=>{
                 event.preventDefault();event.stopPropagation();
+                effectThumbnailHover.stop();
                 openTextPresetPreview(preset);
             });
         }
         const canvas=document.createElement('canvas');
         canvas.width=288;canvas.height=162;
         if(preset.animated){
-            const ctx=canvas.getContext('2d');
-            if(requiresCompositeSource(preset.id))paintEffectPreviewScene(ctx,canvas.width,canvas.height);
-            paintTimelineEffect(ctx,canvas.width,canvas.height,{presetId:preset.id},1,3);
+            paintEffectThumbnail(canvas,preset.id);
+            effectThumbnailHover.bind(button,canvas,preset.id);
         }
         else renderOverlayPreset(canvas,preset,elements.textOverlayValue.value.trim()||'MotoriClip');
         const label=document.createElement('span');label.textContent=preset.label;
@@ -1396,6 +1399,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     }
 
     function filterEffectCards(){
+        effectThumbnailHover.stop();
         const category=elements.effectCategory?.value||'all';
         for(const card of elements.effectsLibraryGrid.children)
             card.hidden=category!=='all'&&card.dataset.effectCategory!==category;
@@ -1423,6 +1427,7 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
         });
     }
     function renderLibraryPresets() {
+        effectThumbnailHover.stop();
         elements.effectsLibraryGrid.replaceChildren(...[...EFFECT_OVERLAYS,...TIMELINE_EFFECTS].map(buildLibraryPresetCard));
         for(const card of elements.effectsLibraryGrid.children){
             const effect=[...EFFECT_OVERLAYS,...TIMELINE_EFFECTS].find(item=>item.id===card.dataset.presetId);

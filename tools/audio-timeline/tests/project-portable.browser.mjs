@@ -103,7 +103,7 @@ try {
         &&track.textOverlay.animation==='neon-flicker'
         &&track.textOverlay.phasedAnimation===true
         &&track.textOverlay.inAnimation==='neon-flicker'
-        &&track.textOverlay.outAnimation==='none'
+        &&track.textOverlay.outAnimation==='reverse-in'
         &&track.textOverlay.loopAnimation==='none'),
         'Portable project must carry editable text and deterministic animation settings');
     assert.ok(record.files.some(file=>file.generated?.group==='effect'

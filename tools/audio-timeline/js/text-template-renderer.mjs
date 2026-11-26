@@ -36,10 +36,11 @@ export const TEXT_ANIMATIONS=Object.freeze([
  ['social-pulse','Social Button Pulse'],['location-drop','Location Pin Drop'],
  ['countdown-roll','Rolling Countdown'],['split-enter','Split Title Entrance']
 ]);
-export const TEXT_OUT_ANIMATIONS=Object.freeze(
- TEXT_ANIMATIONS.filter(([name])=>['none','fade','slide','title-wipe',
-   'letter-pop','kinetic-stagger','typewriter','bounce','outline-fill','split-enter'].includes(name))
-);
+// All entrance and custom exit choices share one catalog. Reverse In
+// references the chosen entrance at render time rather than copying its ID.
+export const TEXT_OUT_ANIMATIONS=Object.freeze([
+ ['reverse-in','Reverse In'],...TEXT_ANIMATIONS
+]);
 export const TEXT_LOOP_ANIMATIONS=Object.freeze(
  TEXT_ANIMATIONS.filter(([name])=>['none','shake','wave','glitch-text',
    'neon-flicker','social-pulse','ticker'].includes(name))
@@ -83,7 +84,8 @@ export function normaliseTextOverlay(input={}) {
     :(animationNames.has(input.animation)?input.animation:design.animation),
   inDuration:safeNumber(input.inDuration,input.animationDuration==null?1.2:
     safeNumber(input.animationDuration,1.2,.1,10),.1,10),
-  outAnimation:outNames.has(input.outAnimation)?input.outAnimation:'none',
+  outAnimation:outNames.has(input.outAnimation)?input.outAnimation
+    :(input.outAnimation==null&&input.phasedAnimation===true?'reverse-in':'none'),
   outDuration:safeNumber(input.outDuration,.6,.1,10),
   loopAnimation:loopNames.has(input.loopAnimation)?input.loopAnimation:'none',
   loopDuration:safeNumber(input.loopDuration,1.5,.1,10),
@@ -185,7 +187,9 @@ export function textAnimationState(input={},localTime=0,clipDuration=3){
  const time=clamp(Number(localTime)||0,0,clip);
  const start=opts.animationDelay;
  const available=Math.max(0,clip-start);
- const wantsIn=opts.inAnimation!=='none',wantsOut=opts.outAnimation!=='none';
+ const wantsIn=opts.inAnimation!=='none';
+ const reverseIn=opts.outAnimation==='reverse-in';
+ const wantsOut=reverseIn?wantsIn:opts.outAnimation!=='none';
  const nominalIn=wantsIn?opts.inDuration:0,nominalOut=wantsOut?opts.outDuration:0;
  const factor=nominalIn+nominalOut>available
   ?available/Math.max(.0001,nominalIn+nominalOut):1;
@@ -207,6 +211,14 @@ export function textAnimationState(input={},localTime=0,clipDuration=3){
  if(wantsOut&&time>=outStart&&outLength>0){
   // A reversing entrance effect starts fully rendered and ends hidden.
   const remaining=Math.max(0,clip-time);
+  if(reverseIn){
+   // Sample the very same entrance clock backwards, including per-letter
+   // time, easing, geometric motion, reveal masks and opacity. A different
+   // Out duration only stretches/compresses that original trajectory.
+   const entranceTime=inLength*clamp(remaining/outLength,0,1);
+   const reversed=state(opts.inAnimation,entranceTime,inLength,'in');
+   return {...reversed,phase:'out',phaseTime:time-outStart};
+  }
   return state(opts.outAnimation,remaining,outLength,'out');
  }
  if(opts.loopAnimation!=='none'){
