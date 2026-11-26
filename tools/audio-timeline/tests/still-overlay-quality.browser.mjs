@@ -60,7 +60,7 @@ try{
  const pageErrors=[];
  page.on('pageerror',err=>pageErrors.push(String(err)));
  await page.goto('http://127.0.0.1:'+port+'/tools/audio-timeline/tests/browser-harness.html');
- const presets=['vignette'];
+ const presets=['vignette','cinema-bars','sunset-leak','blue-leak'];
  const selectedPreset=process.env.MOTORICLIP_STILL_PRESET||'vignette';
  assert.ok(presets.includes(selectedPreset),'Unknown independently qualified still preset');
  for(const preset of [selectedPreset]){
@@ -80,8 +80,14 @@ try{
     const art=document.createElement('canvas');art.width=width;art.height=height;renderOverlayPreset(art,recipe);
     const data=art.getContext('2d').getImageData(0,0,width,height).data;
     const alpha=(x,y)=>data[(Math.floor(y*height)*width+Math.floor(x*width))*4+3];
+    const pixel=(x,y)=>Array.from(data.subarray((Math.floor(y*height)*width+Math.floor(x*width))*4,(Math.floor(y*height)*width+Math.floor(x*width))*4+4));
+    let topRows=0,bottomRows=0;
+    const centerAlpha=y=>data[(y*width+Math.floor(width/2))*4+3];
+    while(topRows<height&&centerAlpha(topRows)===255)topRows++;
+    while(bottomRows<height&&centerAlpha(height-1-bottomRows)===255)bottomRows++;
     metrics.push({width,height,centre:alpha(.5,.5),inner:alpha(.65,.5),mid:alpha(.85,.5),edge:alpha(.98,.5),corner:alpha(.98,.98),
-      opposite:alpha(.02,.02),vertical:alpha(.5,.98)});
+      opposite:alpha(.02,.02),vertical:alpha(.5,.98),topRows,bottomRows,topPixel:pixel(.5,.02),
+      warmEntry:pixel(.02,.08),coolEntry:pixel(.98,.90),warmFar:pixel(.98,.90),coolFar:pixel(.02,.08)});
    }
    const overlayFile=createOverlayFile(recipe),regenerated=createOverlayFile(recipe);
    const first=new Uint8Array(await overlayFile.arrayBuffer()),second=new Uint8Array(await regenerated.arrayBuffer());
@@ -156,15 +162,27 @@ try{
   assert.ok(previewMotion<1,preset+': a deliberately still overlay must stay static over constant source footage');
   assert.ok(preview.exactFile,'Recipe regeneration must reproduce exactly the same PNG bytes');
   for(const m of preview.metrics){
-   assert.equal(m.centre,0);assert.ok(m.inner<m.mid&&m.mid<m.edge&&m.edge<m.corner,'Optical falloff must increase smoothly outward');
-   assert.ok(Math.abs(m.corner-m.opposite)<5&&Math.abs(m.edge-m.vertical)<4,'Normalized vignette must remain symmetric at every aspect ratio');
-   assert.ok(m.corner>175&&m.corner<230,'Corners must be dark but not opaque');
+   if(preset==='vignette'){
+    assert.equal(m.centre,0);assert.ok(m.inner<m.mid&&m.mid<m.edge&&m.edge<m.corner,'Optical falloff must increase smoothly outward');
+    assert.ok(Math.abs(m.corner-m.opposite)<5&&Math.abs(m.edge-m.vertical)<4,'Normalized vignette must remain symmetric at every aspect ratio');
+    assert.ok(m.corner>175&&m.corner<230,'Corners must be dark but not opaque');
+   }else if(preset==='cinema-bars'){
+    const expected=Math.max(0,Math.round((m.height-m.width/2.39)/2));
+    assert.equal(m.topRows,expected);assert.equal(m.bottomRows,expected);
+    assert.equal(m.centre,0);assert.deepEqual(m.topPixel,[0,0,0,255]);
+    assert.ok(Math.abs(m.width/(m.height-2*expected)-2.39)<.08,'Scope aperture should match 2.39:1 to nearest pixel');
+   }else{
+    const warm=preset==='sunset-leak',entry=warm?m.warmEntry:m.coolEntry,far=warm?m.warmFar:m.coolFar;
+    assert.ok(entry[3]>150&&entry[3]>m.centre+60&&far[3]<12,'Leak must enter from its own film edge and taper toward the opposite corner');
+    assert.ok(warm?entry[0]>entry[2]+65:entry[2]>entry[0]+65,'Leak must express its named optical palette');
+    assert.ok(m.centre<140,'Source centre must remain legible');
+   }
   }
   const baseline=Buffer.from(preview.baseline,'base64'),reduced=Buffer.from(preview.reduced,'base64');
   const fullDelta=meanAbs(original,baseline),reducedDelta=meanAbs(reduced,baseline);
-  assert.ok(fullDelta>5&&reducedDelta>1&&reducedDelta<fullDelta,'Native clip opacity must adjust the visible vignette');
-  console.log('[MotoriClip #66 still Vignette Chrome PNG] '+preview.png);
-  console.log('[MotoriClip #66 still Vignette metrics] '+JSON.stringify({alpha:preview.metrics,exactFile:preview.exactFile,fullDelta,reducedDelta,previewMotion}));
+  assert.ok(fullDelta>5&&reducedDelta>1&&reducedDelta<fullDelta,'Native clip opacity must adjust the visible overlay');
+  console.log('[MotoriClip #66 still '+preset+' Chrome PNG] '+preview.png);
+  console.log('[MotoriClip #66 still '+preset+' metrics] '+JSON.stringify({alpha:preview.metrics,exactFile:preview.exactFile,fullDelta,reducedDelta,previewMotion}));
   const download=await downloadPromise;
   const output=join(temp,'effect-'+preset+'.mp4');
   await download.saveAs(output);
@@ -192,8 +210,8 @@ try{
  editor.on('pageerror',e=>crashes.push(String(e)));
  await editor.goto('http://127.0.0.1:'+port+'/tools/audio-timeline/advanced.html',{waitUntil:'domcontentloaded'});
  await editor.locator('[data-library-tab="effects"]').click();
- const card=editor.locator('#effects-library-grid [data-preset-id="vignette"]');
- assert.match(await card.innerText(),/Vignette \(still\)/);
+ const card=editor.locator('#effects-library-grid [data-preset-id="'+selectedPreset+'"]');
+ assert.match(await card.innerText(),/\(still\)/);
  assert.equal(await card.evaluate(e=>e.classList.contains('is-animated')),false);
  await card.click();
  const clip=editor.locator('.timeline-clip.sticker:not(.placeholder)').first();
