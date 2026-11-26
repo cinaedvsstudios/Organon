@@ -1278,8 +1278,9 @@ import { PROJECT_RECOVERY_KEY, MAX_RECOVERY_JSON_BYTES, createRecoveryRecord, pa
     function drawTextPresetPreview(){
         if(!textPreviewPreset)return;
         const canvas=elements.textPreviewCanvas,ctx=canvas.getContext('2d',{willReadFrequently:true});
-        ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';
-        ctx.filter='none';ctx.shadowBlur=0;ctx.lineWidth=1;ctx.imageSmoothingEnabled=true;
+        if(typeof ctx.reset==='function')ctx.reset();
+        else {ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.filter='none';ctx.shadowBlur=0;ctx.lineWidth=1;ctx.imageSmoothingEnabled=true;}
+        ctx.direction='ltr';ctx.textAlign='left';ctx.textBaseline='alphabetic';
         ctx.clearRect(0,0,canvas.width,canvas.height);
         ctx.fillStyle='#0c1722';ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.strokeStyle='rgba(117,178,222,.08)';
